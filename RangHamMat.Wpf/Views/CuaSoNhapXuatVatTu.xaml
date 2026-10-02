@@ -1,0 +1,136 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.CuaSoNhapXuatVatTu">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+    <StackPanel>
+      <TextBlock Text="Nhập xuất vật tư · Thêm mới" Style="{StaticResource Title}" />
+      <TextBlock Text="Điền lần lượt từng nhóm thông tin. Dấu * là trường bắt buộc." Style="{StaticResource Subtitle}" />
+    </StackPanel>
+    <TabControl x:Name="EditorTabs" Grid.Row="1">
+      <TabItem Header="Giao dịch kho" Tag="Table:GIAO_DICH_KHO" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin giao dịch kho" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn lô vật tư">
+                    <TextBlock Text="Lô vật tư *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:GIAO_DICH_KHO.MaLo" AutomationProperties.Name="Lô vật tư" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn kho">
+                    <TextBlock Text="Kho *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:GIAO_DICH_KHO.MaKho" AutomationProperties.Name="Kho" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Thời điểm mặc định khi tạo mới.">
+                    <TextBlock Text="Ngày giao dịch" Margin="0,0,0,6" />
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="90" />
+                      </Grid.ColumnDefinitions>
+                      <DatePicker Tag="DB:GIAO_DICH_KHO.NgayGD" AutomationProperties.Name="Ngày giao dịch" />
+                      <TextBox Grid.Column="1" Margin="8,0,0,0" Tag="Time:GIAO_DICH_KHO.NgayGD" AutomationProperties.Name="Giờ - Ngày giao dịch" ToolTip="HH:mm:ss" MaxLength="8" />
+                    </Grid>
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Số thập phân; tối đa 3 chữ số sau dấu thập phân.">
+                    <TextBlock Text="Biến động số lượng lô *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:GIAO_DICH_KHO.SoLuongLo" AutomationProperties.Name="Biến động số lượng lô" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Lý do *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:GIAO_DICH_KHO.LyDo" AutomationProperties.Name="Lý do" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Ghi chú" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:GIAO_DICH_KHO.GhiChu" AutomationProperties.Name="Ghi chú" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã giao dịch kho" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:GIAO_DICH_KHO.MaGD" AutomationProperties.Name="Mã giao dịch kho" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Hóa đơn kho" Tag="Table:HOA_DON_KHO" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin hóa đơn kho" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn giao dịch kho">
+                    <TextBlock Text="Giao dịch kho *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:HOA_DON_KHO.MaGD" AutomationProperties.Name="Giao dịch kho" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Phương thức thanh toán *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:HOA_DON_KHO.PhuongThucThanhToan" AutomationProperties.Name="Phương thức thanh toán" MaxLength="255" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Số thập phân; tối đa 2 chữ số sau dấu thập phân.">
+                    <TextBlock Text="Đơn giá *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:HOA_DON_KHO.DonGia" AutomationProperties.Name="Đơn giá" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Số thập phân; tối đa 2 chữ số sau dấu thập phân.">
+                    <TextBlock Text="Thành tiền *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:HOA_DON_KHO.ThanhTien" AutomationProperties.Name="Thành tiền" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Thời điểm mặc định khi tạo mới.">
+                    <TextBlock Text="Ngày lập" Margin="0,0,0,6" />
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="90" />
+                      </Grid.ColumnDefinitions>
+                      <DatePicker Tag="DB:HOA_DON_KHO.NgayLap" AutomationProperties.Name="Ngày lập" />
+                      <TextBox Grid.Column="1" Margin="8,0,0,0" Tag="Time:HOA_DON_KHO.NgayLap" AutomationProperties.Name="Giờ - Ngày lập" ToolTip="HH:mm:ss" MaxLength="8" />
+                    </Grid>
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã hóa đơn kho" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:HOA_DON_KHO.MaHDK" AutomationProperties.Name="Mã hóa đơn kho" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+    <Border Grid.Row="2" Padding="0,18,0,0">
+      <WrapPanel>
+        <Button Content="Quay lại danh sách" Tag="DongCuaSo" />
+        <Button Content="Lưu thông tin" IsEnabled="False" Style="{StaticResource Primary}" ToolTip="Bản giao diện chưa kết nối lưu dữ liệu" />
+        <Button Content="Về màn hình chính" Tag="VeTrangChu" />
+        <TextBlock Text="Bản giao diện • Chưa lưu dữ liệu" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="12,0,0,0" />
+      </WrapPanel>
+    </Border>
+  </Grid>
+</UserControl>

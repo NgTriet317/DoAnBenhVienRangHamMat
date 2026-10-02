@@ -1,0 +1,186 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.DichVu">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+    <StackPanel>
+      <TextBlock Text="Dịch vụ và danh mục khám" Style="{StaticResource Title}" />
+      <TextBlock Text="Nhấp đúp vào một dòng để xem chi tiết. Chọn Thêm để tạo mới." Style="{StaticResource Subtitle}" />
+    </StackPanel>
+    <WrapPanel Grid.Row="1" Margin="0,0,0,20" />
+    <TabControl Grid.Row="2">
+      <TabItem Header="Dịch vụ">
+        <Grid Margin="0,20,0,0">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel Margin="0,0,0,18">
+            <WrapPanel DockPanel.Dock="Right">
+              <Button Content="Hiện đủ cột" Tag="ToggleColumns" CommandParameter="DICH_VU" />
+              <Button Content="Thêm dịch vụ" Tag="MoCuaSo:DichVu" CommandParameter="DICH_VU" Style="{StaticResource Primary}" />
+            </WrapPanel>
+            <TextBlock Text="Dịch vụ" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+          </DockPanel>
+          <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
+            <Grid>
+              <DataGrid Tag="Table:DICH_VU" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_DICH_VU" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Mã dịch vụ" SortMemberPath="MaDV" Width="155" Binding="{Binding MaDV}" />
+                  <DataGridTextColumn Header="Tên dịch vụ" SortMemberPath="TenDV" Width="155" Binding="{Binding TenDV}" />
+                  <DataGridTextColumn Header="Chuyên khoa" SortMemberPath="MaCK" Width="155" Binding="{Binding MaCK}" />
+                  <DataGridTextColumn Header="Đơn giá" SortMemberPath="DonGia" Width="155" Binding="{Binding DonGia}" />
+                  <DataGridTextColumn Header="Mô tả" SortMemberPath="MoTa" Width="155" Binding="{Binding MoTa}" />
+                  <DataGridTextColumn Header="Thời gian dự kiến" SortMemberPath="ThoiGianDuKien" Width="155" Binding="{Binding ThoiGianDuKien}" />
+                  <DataGridTextColumn Header="Trạng thái" SortMemberPath="TrangThai" Width="155" Visibility="Collapsed" Binding="{Binding TrangThai}" />
+                </DataGrid.Columns>
+              </DataGrid>
+              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
+                <StackPanel.Style>
+                  <Style TargetType="StackPanel">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding HasItems, ElementName=Grid_DICH_VU}" Value="False">
+                        <Setter Property="Visibility" Value="Visible" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </StackPanel.Style>
+                <TextBlock Text="Chưa có dịch vụ" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                <Button Content="Thêm mới" Tag="MoCuaSo:DichVu" CommandParameter="DICH_VU" HorizontalAlignment="Center" />
+              </StackPanel>
+            </Grid>
+          </Border>
+        </Grid>
+      </TabItem>
+      <TabItem Header="Khoa">
+        <Grid Margin="0,20,0,0">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel Margin="0,0,0,18">
+            <WrapPanel DockPanel.Dock="Right">
+              <Button Content="Thêm khoa" Tag="MoCuaSo:DichVu" CommandParameter="KHOA" Style="{StaticResource Primary}" />
+            </WrapPanel>
+            <TextBlock Text="Khoa" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+          </DockPanel>
+          <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
+            <Grid>
+              <DataGrid Tag="Table:KHOA" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_KHOA" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Mã khoa" SortMemberPath="MaKhoa" Width="155" Binding="{Binding MaKhoa}" />
+                  <DataGridTextColumn Header="Tên khoa" SortMemberPath="TenKhoa" Width="155" Binding="{Binding TenKhoa}" />
+                  <DataGridTextColumn Header="Điện thoại" SortMemberPath="DienThoai" Width="155" Binding="{Binding DienThoai}" />
+                  <DataGridTextColumn Header="Mô tả" SortMemberPath="MoTa" Width="155" Binding="{Binding MoTa}" />
+                  <DataGridTextColumn Header="Trạng thái" SortMemberPath="TrangThai" Width="155" Binding="{Binding TrangThai}" />
+                </DataGrid.Columns>
+              </DataGrid>
+              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
+                <StackPanel.Style>
+                  <Style TargetType="StackPanel">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding HasItems, ElementName=Grid_KHOA}" Value="False">
+                        <Setter Property="Visibility" Value="Visible" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </StackPanel.Style>
+                <TextBlock Text="Chưa có khoa" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                <Button Content="Thêm mới" Tag="MoCuaSo:DichVu" CommandParameter="KHOA" HorizontalAlignment="Center" />
+              </StackPanel>
+            </Grid>
+          </Border>
+        </Grid>
+      </TabItem>
+      <TabItem Header="Chuyên khoa">
+        <Grid Margin="0,20,0,0">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel Margin="0,0,0,18">
+            <WrapPanel DockPanel.Dock="Right">
+              <Button Content="Thêm chuyên khoa" Tag="MoCuaSo:DichVu" CommandParameter="CHUYEN_KHOA" Style="{StaticResource Primary}" />
+            </WrapPanel>
+            <TextBlock Text="Chuyên khoa" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+          </DockPanel>
+          <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
+            <Grid>
+              <DataGrid Tag="Table:CHUYEN_KHOA" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_CHUYEN_KHOA" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Mã chuyên khoa" SortMemberPath="MaCK" Width="155" Binding="{Binding MaCK}" />
+                  <DataGridTextColumn Header="Khoa" SortMemberPath="MaKhoa" Width="155" Binding="{Binding MaKhoa}" />
+                  <DataGridTextColumn Header="Tên chuyên khoa" SortMemberPath="TenCK" Width="155" Binding="{Binding TenCK}" />
+                  <DataGridTextColumn Header="Mô tả" SortMemberPath="MoTa" Width="155" Binding="{Binding MoTa}" />
+                  <DataGridTextColumn Header="Trạng thái" SortMemberPath="TrangThai" Width="155" Binding="{Binding TrangThai}" />
+                </DataGrid.Columns>
+              </DataGrid>
+              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
+                <StackPanel.Style>
+                  <Style TargetType="StackPanel">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding HasItems, ElementName=Grid_CHUYEN_KHOA}" Value="False">
+                        <Setter Property="Visibility" Value="Visible" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </StackPanel.Style>
+                <TextBlock Text="Chưa có chuyên khoa" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                <Button Content="Thêm mới" Tag="MoCuaSo:DichVu" CommandParameter="CHUYEN_KHOA" HorizontalAlignment="Center" />
+              </StackPanel>
+            </Grid>
+          </Border>
+        </Grid>
+      </TabItem>
+      <TabItem Header="Phòng khám">
+        <Grid Margin="0,20,0,0">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel Margin="0,0,0,18">
+            <WrapPanel DockPanel.Dock="Right">
+              <Button Content="Thêm phòng khám" Tag="MoCuaSo:DichVu" CommandParameter="PHONG_KHAM" Style="{StaticResource Primary}" />
+            </WrapPanel>
+            <TextBlock Text="Phòng khám" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+          </DockPanel>
+          <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
+            <Grid>
+              <DataGrid Tag="Table:PHONG_KHAM" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_PHONG_KHAM" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Mã phòng khám" SortMemberPath="MaPhong" Width="155" Binding="{Binding MaPhong}" />
+                  <DataGridTextColumn Header="Tên phòng" SortMemberPath="TenPhong" Width="155" Binding="{Binding TenPhong}" />
+                  <DataGridTextColumn Header="Chuyên khoa" SortMemberPath="MaCK" Width="155" Binding="{Binding MaCK}" />
+                  <DataGridTextColumn Header="Tình trạng" SortMemberPath="TinhTrang" Width="155" Binding="{Binding TinhTrang}" />
+                </DataGrid.Columns>
+              </DataGrid>
+              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
+                <StackPanel.Style>
+                  <Style TargetType="StackPanel">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding HasItems, ElementName=Grid_PHONG_KHAM}" Value="False">
+                        <Setter Property="Visibility" Value="Visible" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </StackPanel.Style>
+                <TextBlock Text="Chưa có phòng khám" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                <Button Content="Thêm mới" Tag="MoCuaSo:DichVu" CommandParameter="PHONG_KHAM" HorizontalAlignment="Center" />
+              </StackPanel>
+            </Grid>
+          </Border>
+        </Grid>
+      </TabItem>
+    </TabControl>
+  </Grid>
+</UserControl>

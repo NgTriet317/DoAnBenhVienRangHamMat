@@ -1,0 +1,34 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Style="{StaticResource WindowBase}" x:Class="RangHamMat.Views.DangNhap" Title="Đăng nhập hệ thống" Width="960" Height="640" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}" MaxWidth="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Width}">
+  <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+    <Grid Background="White" Width="944" Height="600">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="420" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <Border Background="{StaticResource AccentDark}" Padding="44">
+        <Grid>
+          <StackPanel VerticalAlignment="Top">
+            <TextBlock Text="Bệnh viện" Foreground="#DCEAFF" FontSize="18" />
+            <TextBlock Text="Răng Hàm Mặt" Foreground="White" FontSize="30" FontWeight="SemiBold" Margin="0,8,0,0" />
+          </StackPanel>
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Chăm sóc tốt hơn,&#10;bắt đầu từ đây." Foreground="White" FontSize="32" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="Một không gian chung cho công việc mỗi ngày của bạn." Foreground="#DCEAFF" FontSize="16" TextWrapping="Wrap" Margin="0,24,0,0" LineHeight="25" />
+          </StackPanel>
+          <TextBlock Text="Hệ thống quản lý nội bộ" Foreground="#DCEAFF" VerticalAlignment="Bottom" />
+        </Grid>
+      </Border>
+      <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="48">
+        <TextBlock Text="Chào mừng trở lại" Style="{StaticResource Title}" />
+        <TextBlock Text="Đăng nhập để mở không gian làm việc của bạn." Style="{StaticResource Subtitle}" />
+        <TextBlock Text="Tên đăng nhập" Margin="0,10,0,8" />
+        <TextBox AutomationProperties.Name="Tên đăng nhập" Margin="0,0,0,20" />
+        <TextBlock Text="Mật khẩu" Margin="0,0,0,8" />
+        <PasswordBox AutomationProperties.Name="Mật khẩu" Margin="0,0,0,26" />
+        <Button Content="Vào không gian làm việc" Click="DangNhap_Click" Style="{StaticResource Primary}" Margin="0,0,0,12" />
+        <Button Content="Thoát" Click="Thoat_Click" Style="{StaticResource Quiet}" Margin="0" />
+        <TextBlock Text="Bản giao diện mẫu, chưa xác thực tài khoản." FontSize="12" Foreground="{StaticResource Muted}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,26,0,0" />
+      </StackPanel>
+    </Grid>
+  </Viewbox>
+</Window>

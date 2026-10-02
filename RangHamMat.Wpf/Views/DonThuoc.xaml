@@ -1,0 +1,105 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.DonThuoc">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+    <StackPanel>
+      <TextBlock Text="Đơn thuốc" Style="{StaticResource Title}" />
+      <TextBlock Text="Nhấp đúp vào một dòng để xem chi tiết. Chọn Thêm để tạo mới." Style="{StaticResource Subtitle}" />
+    </StackPanel>
+    <WrapPanel Grid.Row="1" Margin="0,0,0,20" />
+    <TabControl Grid.Row="2">
+      <TabItem Header="Đơn thuốc">
+        <Grid Margin="0,20,0,0">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel Margin="0,0,0,18">
+            <WrapPanel DockPanel.Dock="Right">
+              <Button Content="Thêm đơn thuốc" Tag="MoCuaSo:DonThuoc" CommandParameter="DON_THUOC" Style="{StaticResource Primary}" />
+            </WrapPanel>
+            <TextBlock Text="Đơn thuốc" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+          </DockPanel>
+          <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
+            <Grid>
+              <DataGrid Tag="Table:DON_THUOC" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_DON_THUOC" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Mã đơn thuốc" SortMemberPath="MaDT" Width="155" Binding="{Binding MaDT}" />
+                  <DataGridTextColumn Header="Lần khám" SortMemberPath="MaLS" Width="155" Binding="{Binding MaLS}" />
+                  <DataGridTextColumn Header="Bác sĩ" SortMemberPath="MaBS" Width="155" Binding="{Binding MaBS}" />
+                  <DataGridTextColumn Header="Ngày kê" SortMemberPath="NgayKe" Width="155" Binding="{Binding NgayKe}" />
+                  <DataGridTextColumn Header="Chẩn đoán" SortMemberPath="ChanDoan" Width="155" Binding="{Binding ChanDoan}" />
+                  <DataGridTextColumn Header="Ghi chú" SortMemberPath="GhiChu" Width="155" Binding="{Binding GhiChu}" />
+                </DataGrid.Columns>
+              </DataGrid>
+              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
+                <StackPanel.Style>
+                  <Style TargetType="StackPanel">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding HasItems, ElementName=Grid_DON_THUOC}" Value="False">
+                        <Setter Property="Visibility" Value="Visible" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </StackPanel.Style>
+                <TextBlock Text="Chưa có đơn thuốc" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                <Button Content="Thêm mới" Tag="MoCuaSo:DonThuoc" CommandParameter="DON_THUOC" HorizontalAlignment="Center" />
+              </StackPanel>
+            </Grid>
+          </Border>
+        </Grid>
+      </TabItem>
+      <TabItem Header="Chi tiết đơn thuốc" Visibility="Collapsed" Tag="Child:CHI_TIET_DON_THUOC">
+        <Grid Margin="0,20,0,0">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel Margin="0,0,0,18">
+            <WrapPanel DockPanel.Dock="Right">
+              <Button Content="Hiện đủ cột" Tag="ToggleColumns" CommandParameter="CHI_TIET_DON_THUOC" />
+              <Button Content="Thêm chi tiết đơn thuốc" Tag="MoCuaSo:DonThuoc" CommandParameter="CHI_TIET_DON_THUOC" Style="{StaticResource Primary}" />
+            </WrapPanel>
+            <TextBlock Text="Chi tiết đơn thuốc" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+          </DockPanel>
+          <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
+            <Grid>
+              <DataGrid Tag="Table:CHI_TIET_DON_THUOC" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_CHI_TIET_DON_THUOC" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Mã chi tiết đơn thuốc" SortMemberPath="MaCTDT" Width="155" Binding="{Binding MaCTDT}" />
+                  <DataGridTextColumn Header="Đơn thuốc" SortMemberPath="MaDT" Width="155" Binding="{Binding MaDT}" />
+                  <DataGridTextColumn Header="Tên thuốc" SortMemberPath="TenThuoc" Width="155" Binding="{Binding TenThuoc}" />
+                  <DataGridTextColumn Header="Liều dùng" SortMemberPath="LieuDung" Width="155" Binding="{Binding LieuDung}" />
+                  <DataGridTextColumn Header="Số lượng" SortMemberPath="SoLuong" Width="155" Binding="{Binding SoLuong}" />
+                  <DataGridTextColumn Header="Đơn vị tính" SortMemberPath="DonViTinh" Width="155" Binding="{Binding DonViTinh}" />
+                  <DataGridTextColumn Header="Số ngày dùng" SortMemberPath="SoNgayDung" Width="155" Visibility="Collapsed" Binding="{Binding SoNgayDung}" />
+                  <DataGridTextColumn Header="Hướng dẫn" SortMemberPath="HuongDan" Width="155" Visibility="Collapsed" Binding="{Binding HuongDan}" />
+                </DataGrid.Columns>
+              </DataGrid>
+              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
+                <StackPanel.Style>
+                  <Style TargetType="StackPanel">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding HasItems, ElementName=Grid_CHI_TIET_DON_THUOC}" Value="False">
+                        <Setter Property="Visibility" Value="Visible" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </StackPanel.Style>
+                <TextBlock Text="Chưa có chi tiết đơn thuốc" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                <Button Content="Thêm mới" Tag="MoCuaSo:DonThuoc" CommandParameter="CHI_TIET_DON_THUOC" HorizontalAlignment="Center" />
+              </StackPanel>
+            </Grid>
+          </Border>
+        </Grid>
+      </TabItem>
+    </TabControl>
+  </Grid>
+</UserControl>

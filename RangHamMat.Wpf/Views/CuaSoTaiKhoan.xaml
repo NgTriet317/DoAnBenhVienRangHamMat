@@ -1,0 +1,106 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.CuaSoTaiKhoan">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+    <StackPanel>
+      <TextBlock Text="Tài khoản và vai trò · Thêm mới" Style="{StaticResource Title}" />
+      <TextBlock Text="Điền lần lượt từng nhóm thông tin. Dấu * là trường bắt buộc." Style="{StaticResource Subtitle}" />
+    </StackPanel>
+    <TabControl x:Name="EditorTabs" Grid.Row="1">
+      <TabItem Header="Tài khoản" Tag="Table:TAI_KHOAN" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin tài khoản" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Tên đăng nhập *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:TAI_KHOAN.TenDangNhap" AutomationProperties.Name="Tên đăng nhập" MaxLength="100" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Mật khẩu mới *" Margin="0,0,0,6" />
+                    <PasswordBox Tag="DB:TAI_KHOAN.MatKhau" AutomationProperties.Name="Mật khẩu mới" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn vai trò">
+                    <TextBlock Text="Vai trò *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:TAI_KHOAN.MaVaiTro" AutomationProperties.Name="Vai trò" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn nhân viên">
+                    <TextBlock Text="Nhân viên *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:TAI_KHOAN.MaNV" AutomationProperties.Name="Nhân viên" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã tài khoản" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:TAI_KHOAN.MaTK" AutomationProperties.Name="Mã tài khoản" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:TAI_KHOAN.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Vai trò" Tag="Table:VAI_TRO" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin vai trò" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Tên vai trò *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:VAI_TRO.TenVaiTro" AutomationProperties.Name="Tên vai trò" MaxLength="255" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Mô tả" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:VAI_TRO.MoTa" AutomationProperties.Name="Mô tả" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã vai trò" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:VAI_TRO.MaVaiTro" AutomationProperties.Name="Mã vai trò" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+    <Border Grid.Row="2" Padding="0,18,0,0">
+      <WrapPanel>
+        <Button Content="Quay lại danh sách" Tag="DongCuaSo" />
+        <Button Content="Lưu thông tin" IsEnabled="False" Style="{StaticResource Primary}" ToolTip="Bản giao diện chưa kết nối lưu dữ liệu" />
+        <Button Content="Về màn hình chính" Tag="VeTrangChu" />
+        <TextBlock Text="Bản giao diện • Chưa lưu dữ liệu" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="12,0,0,0" />
+      </WrapPanel>
+    </Border>
+  </Grid>
+</UserControl>
