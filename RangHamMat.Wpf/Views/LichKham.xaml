@@ -1,0 +1,69 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:ui="clr-namespace:RangHamMat.Controls" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.LichKham">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+    <StackPanel>
+      <TextBlock Text="Điều phối lịch khám" Style="{StaticResource Title}" />
+      <TextBlock Text="Nhấp đúp vào một dòng để xem chi tiết. Chọn Thêm để tạo mới." Style="{StaticResource Subtitle}" />
+    </StackPanel>
+    <WrapPanel Grid.Row="1" Margin="0,0,0,20">
+      <Button Content="Phiếu khám" Tag="MoTrang:PhieuHuongDan" />
+      <RadioButton Content="Bảng dữ liệu" GroupName="ViewMode" IsChecked="True" Checked="ViewMode_Changed" Tag="Table" Style="{StaticResource ViewSwitch}" />
+      <RadioButton Content="Lịch theo tuần" GroupName="ViewMode" Checked="ViewMode_Changed" Tag="Schedule" Style="{StaticResource ViewSwitch}" />
+    </WrapPanel>
+    <TabControl Grid.Row="2" x:Name="TableView">
+      <TabItem Header="Lịch khám">
+        <Grid Margin="0,20,0,0">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel Margin="0,0,0,18">
+            <WrapPanel DockPanel.Dock="Right">
+              <Button Content="Hiện đủ cột" Tag="ToggleColumns" CommandParameter="LICH_KHAM" />
+              <Button Content="Thêm lịch khám" Tag="MoCuaSo:LichKham" CommandParameter="LICH_KHAM" Style="{StaticResource Primary}" />
+            </WrapPanel>
+            <TextBlock Text="Lịch khám" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+          </DockPanel>
+          <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
+            <Grid>
+              <DataGrid Tag="Table:LICH_KHAM" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_LICH_KHAM" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Mã lịch khám" SortMemberPath="MaLich" Width="155" Binding="{Binding MaLich}" />
+                  <DataGridTextColumn Header="Bệnh nhân" SortMemberPath="MaBN" Width="155" Binding="{Binding MaBN}" />
+                  <DataGridTextColumn Header="Bác sĩ" SortMemberPath="MaBS" Width="155" Binding="{Binding MaBS}" />
+                  <DataGridTextColumn Header="Ngày giờ khám" SortMemberPath="NgayGioKham" Width="155" Binding="{Binding NgayGioKham}" />
+                  <DataGridTextColumn Header="Phòng khám" SortMemberPath="MaPhong" Width="155" Binding="{Binding MaPhong}" />
+                  <DataGridTextColumn Header="Lý do khám" SortMemberPath="LyDoKham" Width="155" Binding="{Binding LyDoKham}" />
+                  <DataGridTextColumn Header="Dịch vụ" SortMemberPath="MaDV" Width="155" Visibility="Collapsed" Binding="{Binding MaDV}" />
+                  <DataGridTextColumn Header="Trạng thái" SortMemberPath="TrangThai" Width="155" Visibility="Collapsed" Binding="{Binding TrangThai}" />
+                  <DataGridTextColumn Header="Ghi chú" SortMemberPath="GhiChu" Width="155" Visibility="Collapsed" Binding="{Binding GhiChu}" />
+                  <DataGridTextColumn Header="Ngày tạo" SortMemberPath="NgayTao" Width="155" Visibility="Collapsed" Binding="{Binding NgayTao}" />
+                </DataGrid.Columns>
+              </DataGrid>
+              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
+                <StackPanel.Style>
+                  <Style TargetType="StackPanel">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding HasItems, ElementName=Grid_LICH_KHAM}" Value="False">
+                        <Setter Property="Visibility" Value="Visible" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </StackPanel.Style>
+                <TextBlock Text="Chưa có lịch khám" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                <Button Content="Thêm mới" Tag="MoCuaSo:LichKham" CommandParameter="LICH_KHAM" HorizontalAlignment="Center" />
+              </StackPanel>
+            </Grid>
+          </Border>
+        </Grid>
+      </TabItem>
+    </TabControl>
+    <ui:ScheduleView Mode="Appointments" Grid.Row="2" Visibility="Collapsed" ItemsSource="{Binding Items, ElementName=Grid_LICH_KHAM}" x:Name="Schedule" />
+  </Grid>
+</UserControl>

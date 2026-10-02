@@ -1,0 +1,208 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.CuaSoDichVu">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+    <StackPanel>
+      <TextBlock Text="Dịch vụ và danh mục khám · Thêm mới" Style="{StaticResource Title}" />
+      <TextBlock Text="Điền lần lượt từng nhóm thông tin. Dấu * là trường bắt buộc." Style="{StaticResource Subtitle}" />
+    </StackPanel>
+    <TabControl x:Name="EditorTabs" Grid.Row="1">
+      <TabItem Header="Dịch vụ" Tag="Table:DICH_VU" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin dịch vụ" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Tên dịch vụ *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:DICH_VU.TenDV" AutomationProperties.Name="Tên dịch vụ" MaxLength="255" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn chuyên khoa">
+                    <TextBlock Text="Chuyên khoa" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:DICH_VU.MaCK" AutomationProperties.Name="Chuyên khoa" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Số thập phân; tối đa 2 chữ số sau dấu thập phân.">
+                    <TextBlock Text="Đơn giá *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:DICH_VU.DonGia" AutomationProperties.Name="Đơn giá" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Thời gian dự kiến *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:DICH_VU.ThoiGianDuKien" AutomationProperties.Name="Thời gian dự kiến" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Mô tả" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:DICH_VU.MoTa" AutomationProperties.Name="Mô tả" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã dịch vụ" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:DICH_VU.MaDV" AutomationProperties.Name="Mã dịch vụ" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:DICH_VU.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Khoa" Tag="Table:KHOA" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin khoa" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Tên khoa *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:KHOA.TenKhoa" AutomationProperties.Name="Tên khoa" MaxLength="255" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Điện thoại" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:KHOA.DienThoai" AutomationProperties.Name="Điện thoại" MaxLength="50" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Mô tả" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:KHOA.MoTa" AutomationProperties.Name="Mô tả" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã khoa" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:KHOA.MaKhoa" AutomationProperties.Name="Mã khoa" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:KHOA.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Chuyên khoa" Tag="Table:CHUYEN_KHOA" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin chuyên khoa" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn khoa">
+                    <TextBlock Text="Khoa *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:CHUYEN_KHOA.MaKhoa" AutomationProperties.Name="Khoa" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Tên chuyên khoa *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:CHUYEN_KHOA.TenCK" AutomationProperties.Name="Tên chuyên khoa" MaxLength="255" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Mô tả" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:CHUYEN_KHOA.MoTa" AutomationProperties.Name="Mô tả" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã chuyên khoa" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:CHUYEN_KHOA.MaCK" AutomationProperties.Name="Mã chuyên khoa" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:CHUYEN_KHOA.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Phòng khám" Tag="Table:PHONG_KHAM" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin phòng khám" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Tên phòng *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:PHONG_KHAM.TenPhong" AutomationProperties.Name="Tên phòng" MaxLength="255" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn chuyên khoa">
+                    <TextBlock Text="Chuyên khoa" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:PHONG_KHAM.MaCK" AutomationProperties.Name="Chuyên khoa" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Tình trạng *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:PHONG_KHAM.TinhTrang" AutomationProperties.Name="Tình trạng" MaxLength="255" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã phòng khám" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:PHONG_KHAM.MaPhong" AutomationProperties.Name="Mã phòng khám" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+    <Border Grid.Row="2" Padding="0,18,0,0">
+      <WrapPanel>
+        <Button Content="Quay lại danh sách" Tag="DongCuaSo" />
+        <Button Content="Lưu thông tin" IsEnabled="False" Style="{StaticResource Primary}" ToolTip="Bản giao diện chưa kết nối lưu dữ liệu" />
+        <Button Content="Về màn hình chính" Tag="VeTrangChu" />
+        <TextBlock Text="Bản giao diện • Chưa lưu dữ liệu" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="12,0,0,0" />
+      </WrapPanel>
+    </Border>
+  </Grid>
+</UserControl>

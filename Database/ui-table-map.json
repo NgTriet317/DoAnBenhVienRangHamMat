@@ -1,0 +1,66 @@
+{
+  "BenhNhan": [
+    "BENH_NHAN",
+    "HO_SO_BENH_AN"
+  ],
+  "KhamDieuTri": [
+    "LICH_SU_KHAM_BENH",
+    "TINH_TRANG_BENH",
+    "KE_HOACH_DIEU_TRI",
+    "CHI_TIET_KE_HOACH"
+  ],
+  "DonThuoc": [
+    "DON_THUOC",
+    "CHI_TIET_DON_THUOC"
+  ],
+  "NhanSu": [
+    "NHAN_VIEN",
+    "CHUC_VU"
+  ],
+  "CaLamViec": [
+    "CA_LAM",
+    "LICH_LAM_VIEC",
+    "DON_XIN_NGHI",
+    "PHAN_CONG_THAY_THE"
+  ],
+  "ThietBi": [
+    "THIET_BI"
+  ],
+  "BaoTri": [
+    "BAO_TRI_THIET_BI"
+  ],
+  "VatTu": [
+    "VAT_TU",
+    "LOAI_VAT_TU",
+    "LO_VAT_TU",
+    "KHO"
+  ],
+  "NhaCungCap": [
+    "NHA_CUNG_CAP"
+  ],
+  "NhapXuatVatTu": [
+    "GIAO_DICH_KHO",
+    "HOA_DON_KHO"
+  ],
+  "LichKham": [
+    "LICH_KHAM"
+  ],
+  "DichVu": [
+    "DICH_VU",
+    "KHOA",
+    "CHUYEN_KHOA",
+    "PHONG_KHAM"
+  ],
+  "HoaDon": [
+    "HOA_DON",
+    "CHI_TIET_HOA_DON",
+    "THANH_TOAN"
+  ],
+  "TaiKhoan": [
+    "TAI_KHOAN",
+    "VAI_TRO"
+  ],
+  "PhieuHuongDan": [
+    "PHIEU_KHAM_BENH"
+  ]
+}

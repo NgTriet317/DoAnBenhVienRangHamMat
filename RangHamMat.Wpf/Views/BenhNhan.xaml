@@ -1,0 +1,111 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.BenhNhan">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+    <StackPanel>
+      <TextBlock Text="Hồ sơ bệnh nhân" Style="{StaticResource Title}" />
+      <TextBlock Text="Nhấp đúp vào một dòng để xem chi tiết. Chọn Thêm để tạo mới." Style="{StaticResource Subtitle}" />
+    </StackPanel>
+    <WrapPanel Grid.Row="1" Margin="0,0,0,20">
+      <Button Content="Lịch khám" Tag="MoTrang:LichKham" />
+      <Button Content="Phiếu khám" Tag="MoTrang:PhieuHuongDan" />
+    </WrapPanel>
+    <TabControl Grid.Row="2">
+      <TabItem Header="Bệnh nhân">
+        <Grid Margin="0,20,0,0">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel Margin="0,0,0,18">
+            <WrapPanel DockPanel.Dock="Right">
+              <Button Content="Hiện đủ cột" Tag="ToggleColumns" CommandParameter="BENH_NHAN" />
+              <Button Content="Thêm bệnh nhân" Tag="MoCuaSo:BenhNhan" CommandParameter="BENH_NHAN" Style="{StaticResource Primary}" />
+            </WrapPanel>
+            <TextBlock Text="Bệnh nhân" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+          </DockPanel>
+          <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
+            <Grid>
+              <DataGrid Tag="Table:BENH_NHAN" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_BENH_NHAN" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Mã bệnh nhân" SortMemberPath="MaBN" Width="155" Binding="{Binding MaBN}" />
+                  <DataGridTextColumn Header="Họ tên bệnh nhân" SortMemberPath="HoTenBN" Width="180" Binding="{Binding HoTenBN}" />
+                  <DataGridTextColumn Header="Giới tính" SortMemberPath="GioiTinh" Width="155" Binding="{Binding GioiTinh}" />
+                  <DataGridTextColumn Header="Ngày sinh" SortMemberPath="NgaySinh" Width="155" Binding="{Binding NgaySinh}" />
+                  <DataGridTextColumn Header="Số điện thoại" SortMemberPath="SDT" Width="155" Binding="{Binding SDT}" />
+                  <DataGridTextColumn Header="Địa chỉ" SortMemberPath="DiaChi" Width="155" Visibility="Collapsed" Binding="{Binding DiaChi}" />
+                  <DataGridTextColumn Header="Mã bảo hiểm y tế" SortMemberPath="MaBHYT" Width="155" Visibility="Collapsed" Binding="{Binding MaBHYT}" />
+                  <DataGridTextColumn Header="Nhóm máu" SortMemberPath="NhomMau" Width="155" Visibility="Collapsed" Binding="{Binding NhomMau}" />
+                  <DataGridTextColumn Header="Tiền sử bệnh" SortMemberPath="TienSuBenh" Width="155" Visibility="Collapsed" Binding="{Binding TienSuBenh}" />
+                  <DataGridTextColumn Header="Dị ứng" SortMemberPath="DiUng" Width="155" Visibility="Collapsed" Binding="{Binding DiUng}" />
+                  <DataGridTextColumn Header="Trạng thái" SortMemberPath="TrangThai" Width="155" Binding="{Binding TrangThai}" />
+                </DataGrid.Columns>
+              </DataGrid>
+              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
+                <StackPanel.Style>
+                  <Style TargetType="StackPanel">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding HasItems, ElementName=Grid_BENH_NHAN}" Value="False">
+                        <Setter Property="Visibility" Value="Visible" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </StackPanel.Style>
+                <TextBlock Text="Chưa có bệnh nhân" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                <Button Content="Thêm mới" Tag="MoCuaSo:BenhNhan" CommandParameter="BENH_NHAN" HorizontalAlignment="Center" />
+              </StackPanel>
+            </Grid>
+          </Border>
+        </Grid>
+      </TabItem>
+      <TabItem Header="Hồ sơ bệnh án"  Tag="Child:HO_SO_BENH_AN">
+        <Grid Margin="0,20,0,0">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel Margin="0,0,0,18">
+            <WrapPanel DockPanel.Dock="Right">
+              <Button Content="Thêm hồ sơ bệnh án" Tag="MoCuaSo:BenhNhan" CommandParameter="HO_SO_BENH_AN" Style="{StaticResource Primary}" />
+            </WrapPanel>
+            <TextBlock Text="Hồ sơ bệnh án" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+          </DockPanel>
+          <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
+            <Grid>
+              <DataGrid Tag="Table:HO_SO_BENH_AN" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_HO_SO_BENH_AN" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Mã hồ sơ bệnh án" SortMemberPath="MaHS" Width="155" Binding="{Binding MaHS}" />
+                  <DataGridTextColumn Header="Bệnh nhân" SortMemberPath="MaBN" Width="155" Binding="{Binding MaBN}" />
+                  <DataGridTextColumn Header="Ngày lập" SortMemberPath="NgayLap" Width="155" Binding="{Binding NgayLap}" />
+                  <DataGridTextColumn Header="Lý do khám ban đầu" SortMemberPath="LyDoKhamBanDau" Width="155" Binding="{Binding LyDoKhamBanDau}" />
+                  <DataGridTextColumn Header="Ghi chú" SortMemberPath="GhiChu" Width="155" Binding="{Binding GhiChu}" />
+                  <DataGridTextColumn Header="Trạng thái" SortMemberPath="TrangThai" Width="155" Binding="{Binding TrangThai}" />
+                </DataGrid.Columns>
+              </DataGrid>
+              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
+                <StackPanel.Style>
+                  <Style TargetType="StackPanel">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding HasItems, ElementName=Grid_HO_SO_BENH_AN}" Value="False">
+                        <Setter Property="Visibility" Value="Visible" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </StackPanel.Style>
+                <TextBlock Text="Chưa có hồ sơ bệnh án" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                <Button Content="Thêm mới" Tag="MoCuaSo:BenhNhan" CommandParameter="HO_SO_BENH_AN" HorizontalAlignment="Center" />
+              </StackPanel>
+            </Grid>
+          </Border>
+        </Grid>
+      </TabItem>
+    </TabControl>
+  </Grid>
+</UserControl>

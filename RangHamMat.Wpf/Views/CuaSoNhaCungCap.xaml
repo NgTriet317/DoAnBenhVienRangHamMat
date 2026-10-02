@@ -1,0 +1,71 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.CuaSoNhaCungCap">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+    <StackPanel>
+      <TextBlock Text="Nhà cung cấp · Thêm mới" Style="{StaticResource Title}" />
+      <TextBlock Text="Điền lần lượt từng nhóm thông tin. Dấu * là trường bắt buộc." Style="{StaticResource Subtitle}" />
+    </StackPanel>
+    <TabControl x:Name="EditorTabs" Grid.Row="1">
+      <TabItem Header="Nhà cung cấp" Tag="Table:NHA_CUNG_CAP" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin nhà cung cấp" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Tên nhà cung cấp *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:NHA_CUNG_CAP.TenNCC" AutomationProperties.Name="Tên nhà cung cấp" MaxLength="255" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Số điện thoại" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:NHA_CUNG_CAP.SDT" AutomationProperties.Name="Số điện thoại" MaxLength="50" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Email" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:NHA_CUNG_CAP.Email" AutomationProperties.Name="Email" MaxLength="255" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Địa chỉ" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:NHA_CUNG_CAP.DiaChi" AutomationProperties.Name="Địa chỉ" MaxLength="255" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Người liên hệ" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:NHA_CUNG_CAP.NguoiLienHe" AutomationProperties.Name="Người liên hệ" MaxLength="255" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã nhà cung cấp" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:NHA_CUNG_CAP.MaNCC" AutomationProperties.Name="Mã nhà cung cấp" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:NHA_CUNG_CAP.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+    <Border Grid.Row="2" Padding="0,18,0,0">
+      <WrapPanel>
+        <Button Content="Quay lại danh sách" Tag="DongCuaSo" />
+        <Button Content="Lưu thông tin" IsEnabled="False" Style="{StaticResource Primary}" ToolTip="Bản giao diện chưa kết nối lưu dữ liệu" />
+        <Button Content="Về màn hình chính" Tag="VeTrangChu" />
+        <TextBlock Text="Bản giao diện • Chưa lưu dữ liệu" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="12,0,0,0" />
+      </WrapPanel>
+    </Border>
+  </Grid>
+</UserControl>

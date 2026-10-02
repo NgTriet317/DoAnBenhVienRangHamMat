@@ -1,0 +1,229 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.NhapXuatVatTu">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock Text="Nhập xuất vật tư" Style="{StaticResource Title}" />
+            <TextBlock Text="Nhấp đúp vào một dòng để xem chi tiết. Chọn Thêm để tạo mới." Style="{StaticResource Subtitle}" />
+        </StackPanel>
+        <WrapPanel Grid.Row="1" Margin="0,0,0,20" />
+        <TabControl Grid.Row="2">
+            <TabItem Header="Giao dịch kho">
+                <Grid Margin="0,20,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <DockPanel Margin="0,0,0,18">
+                        <WrapPanel DockPanel.Dock="Right">
+                            <Button Content="Hiện đủ cột" Tag="ToggleColumns" CommandParameter="GIAO_DICH_KHO" />
+                            <Button Content="Thêm giao dịch kho" Tag="MoCuaSo:NhapXuatVatTu" CommandParameter="GIAO_DICH_KHO" Style="{StaticResource Primary}" />
+                        </WrapPanel>
+                        <TextBlock Text="Giao dịch kho" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
+                        <Grid>
+                            <DataGrid Tag="Table:GIAO_DICH_KHO" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_GIAO_DICH_KHO" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Mã giao dịch kho" SortMemberPath="MaGD" Width="155" Binding="{Binding MaGD}" />
+                                    <DataGridTextColumn Header="Lô vật tư" SortMemberPath="MaLo" Width="155" Binding="{Binding MaLo}" />
+                                    <DataGridTextColumn Header="Kho" SortMemberPath="MaKho" Width="155" Binding="{Binding MaKho}" />
+                                    <DataGridTextColumn Header="Ngày giao dịch" SortMemberPath="NgayGD" Width="155" Binding="{Binding NgayGD}" />
+                                    <DataGridTextColumn Header="Biến động số lượng lô" SortMemberPath="SoLuongLo" Width="155" Binding="{Binding SoLuongLo}" />
+                                    <DataGridTextColumn Header="Lý do" SortMemberPath="LyDo" Width="155" Binding="{Binding LyDo}" />
+                                    <DataGridTextColumn Header="Ghi chú" SortMemberPath="GhiChu" Width="155" Visibility="Collapsed" Binding="{Binding GhiChu}" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasItems, ElementName=Grid_GIAO_DICH_KHO}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <TextBlock Text="Chưa có giao dịch kho" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
+                                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                                <Button Content="Thêm mới" Tag="MoCuaSo:NhapXuatVatTu" CommandParameter="GIAO_DICH_KHO" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Nhập xuất thuốc">
+                <Grid Margin="0,20,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Margin="0,0,0,18">
+                        <WrapPanel DockPanel.Dock="Right">
+                            <Button Content="Hiện đủ cột"
+                        Tag="ToggleColumns"
+                        CommandParameter="GIAO_DICH_KHO_Thuoc" />
+
+                            <Button Content="Thêm giao dịch thuốc"
+                        Tag="MoCuaSo:NhapXuatVatTu"
+                        CommandParameter="GIAO_DICH_KHO"
+                        Style="{StaticResource Primary}" />
+                        </WrapPanel>
+
+                        <StackPanel>
+                            <TextBlock Text="Nhập xuất kho – Thuốc"
+                           Style="{StaticResource SectionTitle}" />
+
+                            <TextBlock Text="Theo dõi các lần nhập, xuất thuốc theo lô."
+                           Foreground="{StaticResource Muted}"
+                           TextWrapping="Wrap"
+                           Margin="0,6,16,0" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <Border Grid.Row="1"
+                Style="{StaticResource Card}"
+                Padding="0">
+                        <Grid>
+                            <DataGrid x:Name="Grid_GIAO_DICH_KHO_Thuoc"
+                          Tag="Table:GIAO_DICH_KHO"
+                          ItemsSource="{Binding GiaoDichKhoThuoc}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết giao dịch thuốc.">
+
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Mã giao dịch"
+                                            SortMemberPath="MaGD"
+                                            Binding="{Binding MaGD}"
+                                            Width="140" />
+
+                                    <DataGridTextColumn Header="Lô thuốc"
+                                            SortMemberPath="MaLo"
+                                            Binding="{Binding MaLo}"
+                                            Width="155" />
+
+                                    <DataGridTextColumn Header="Kho"
+                                            SortMemberPath="MaKho"
+                                            Binding="{Binding MaKho}"
+                                            Width="155" />
+
+                                    <DataGridTextColumn Header="Ngày giao dịch"
+                                            SortMemberPath="NgayGD"
+                                            Binding="{Binding NgayGD,
+                                                StringFormat={}{0:dd/MM/yyyy HH:mm}}"
+                                            Width="180" />
+
+                                    <DataGridTextColumn Header="Biến động số lượng"
+                                            SortMemberPath="SoLuongLo"
+                                            Binding="{Binding SoLuongLo}"
+                                            Width="180" />
+
+                                    <DataGridTextColumn Header="Lý do nhập / xuất"
+                                            SortMemberPath="LyDo"
+                                            Binding="{Binding LyDo}"
+                                            Width="240" />
+
+                                    <DataGridTextColumn Header="Ghi chú"
+                                            SortMemberPath="GhiChu"
+                                            Binding="{Binding GhiChu}"
+                                            Width="240"
+                                            Visibility="Collapsed" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Margin="24,54,24,12">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility"
+                                    Value="Collapsed" />
+
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasItems,
+                                    ElementName=Grid_GIAO_DICH_KHO_Thuoc}"
+                                             Value="False">
+                                                <Setter Property="Visibility"
+                                            Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+
+                                <TextBlock Text="Chưa có giao dịch thuốc"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               TextAlignment="Center" />
+
+                                <TextBlock Text="Các lần nhập, xuất thuốc sẽ hiển thị tại đây."
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource Muted}"
+                               Margin="0,10,0,22" />
+
+                                <Button Content="Thêm giao dịch thuốc"
+                            Tag="MoCuaSo:NhapXuatVatTu"
+                            CommandParameter="GIAO_DICH_KHO"
+                            Style="{StaticResource Primary}"
+                            HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Hóa đơn kho" Visibility="Collapsed" Tag="Child:HOA_DON_KHO">
+                <Grid Margin="0,20,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <DockPanel Margin="0,0,0,18">
+                        <WrapPanel DockPanel.Dock="Right">
+                            <Button Content="Thêm hóa đơn kho" Tag="MoCuaSo:NhapXuatVatTu" CommandParameter="HOA_DON_KHO" Style="{StaticResource Primary}" />
+                        </WrapPanel>
+                        <TextBlock Text="Hóa đơn kho" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
+                        <Grid>
+                            <DataGrid Tag="Table:HOA_DON_KHO" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_HOA_DON_KHO" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Mã hóa đơn kho" SortMemberPath="MaHDK" Width="155" Binding="{Binding MaHDK}" />
+                                    <DataGridTextColumn Header="Giao dịch kho" SortMemberPath="MaGD" Width="155" Binding="{Binding MaGD}" />
+                                    <DataGridTextColumn Header="Phương thức thanh toán" SortMemberPath="PhuongThucThanhToan" Width="155" Binding="{Binding PhuongThucThanhToan}" />
+                                    <DataGridTextColumn Header="Đơn giá" SortMemberPath="DonGia" Width="155" Binding="{Binding DonGia}" />
+                                    <DataGridTextColumn Header="Thành tiền" SortMemberPath="ThanhTien" Width="155" Binding="{Binding ThanhTien}" />
+                                    <DataGridTextColumn Header="Ngày lập" SortMemberPath="NgayLap" Width="155" Binding="{Binding NgayLap}" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasItems, ElementName=Grid_HOA_DON_KHO}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <TextBlock Text="Chưa có hóa đơn kho" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
+                                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                                <Button Content="Thêm mới" Tag="MoCuaSo:NhapXuatVatTu" CommandParameter="HOA_DON_KHO" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

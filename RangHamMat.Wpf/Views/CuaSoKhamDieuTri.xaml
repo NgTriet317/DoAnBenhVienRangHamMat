@@ -1,0 +1,269 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.CuaSoKhamDieuTri">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+    <StackPanel>
+      <TextBlock Text="Khám và điều trị · Thêm mới" Style="{StaticResource Title}" />
+      <TextBlock Text="Điền lần lượt từng nhóm thông tin. Dấu * là trường bắt buộc." Style="{StaticResource Subtitle}" />
+    </StackPanel>
+    <TabControl x:Name="EditorTabs" Grid.Row="1">
+      <TabItem Header="Lịch sử khám" Tag="Table:LICH_SU_KHAM_BENH" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin lịch sử khám" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn hồ sơ bệnh án">
+                    <TextBlock Text="Hồ sơ bệnh án *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:LICH_SU_KHAM_BENH.MaHS" AutomationProperties.Name="Hồ sơ bệnh án" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn lịch khám">
+                    <TextBlock Text="Lịch khám" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:LICH_SU_KHAM_BENH.MaLich" AutomationProperties.Name="Lịch khám" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Thời điểm mặc định khi tạo mới.">
+                    <TextBlock Text="Thời gian khám" Margin="0,0,0,6" />
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="90" />
+                      </Grid.ColumnDefinitions>
+                      <DatePicker Tag="DB:LICH_SU_KHAM_BENH.ThoiGianKham" AutomationProperties.Name="Thời gian khám" />
+                      <TextBox Grid.Column="1" Margin="8,0,0,0" Tag="Time:LICH_SU_KHAM_BENH.ThoiGianKham" AutomationProperties.Name="Giờ - Thời gian khám" ToolTip="HH:mm:ss" MaxLength="8" />
+                    </Grid>
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Kế hoạch xử lý" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:LICH_SU_KHAM_BENH.KeHoachXuLy" AutomationProperties.Name="Kế hoạch xử lý" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Triệu chứng" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:LICH_SU_KHAM_BENH.TrieuChung" AutomationProperties.Name="Triệu chứng" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Chẩn đoán" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:LICH_SU_KHAM_BENH.ChanDoan" AutomationProperties.Name="Chẩn đoán" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Ghi chú" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:LICH_SU_KHAM_BENH.GhiChu" AutomationProperties.Name="Ghi chú" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã lần khám" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:LICH_SU_KHAM_BENH.MaLS" AutomationProperties.Name="Mã lần khám" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Tình trạng bệnh" Tag="Table:TINH_TRANG_BENH" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin tình trạng bệnh" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn lần khám">
+                    <TextBlock Text="Lần khám *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:TINH_TRANG_BENH.MaLS" AutomationProperties.Name="Lần khám" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Tình trạng *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:TINH_TRANG_BENH.TinhTrang" AutomationProperties.Name="Tình trạng" MaxLength="255" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Mức độ" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:TINH_TRANG_BENH.MucDo" AutomationProperties.Name="Mức độ" MaxLength="255" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Chẩn đoán" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:TINH_TRANG_BENH.ChanDoan" AutomationProperties.Name="Chẩn đoán" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Ghi chú" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:TINH_TRANG_BENH.GhiChu" AutomationProperties.Name="Ghi chú" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã tình trạng bệnh" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:TINH_TRANG_BENH.MaTTB" AutomationProperties.Name="Mã tình trạng bệnh" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Kế hoạch điều trị" Tag="Table:KE_HOACH_DIEU_TRI" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin kế hoạch điều trị" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn lần khám">
+                    <TextBlock Text="Lần khám *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:KE_HOACH_DIEU_TRI.MaLS" AutomationProperties.Name="Lần khám" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn bệnh nhân">
+                    <TextBlock Text="Bệnh nhân *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:KE_HOACH_DIEU_TRI.MaBN" AutomationProperties.Name="Bệnh nhân" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn bác sĩ">
+                    <TextBlock Text="Bác sĩ *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:KE_HOACH_DIEU_TRI.MaBS" AutomationProperties.Name="Bác sĩ" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Thời điểm mặc định khi tạo mới.">
+                    <TextBlock Text="Ngày lập" Margin="0,0,0,6" />
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="90" />
+                      </Grid.ColumnDefinitions>
+                      <DatePicker Tag="DB:KE_HOACH_DIEU_TRI.NgayLap" AutomationProperties.Name="Ngày lập" />
+                      <TextBox Grid.Column="1" Margin="8,0,0,0" Tag="Time:KE_HOACH_DIEU_TRI.NgayLap" AutomationProperties.Name="Giờ - Ngày lập" ToolTip="HH:mm:ss" MaxLength="8" />
+                    </Grid>
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Ngày bắt đầu" Margin="0,0,0,6" />
+                    <DatePicker Tag="DB:KE_HOACH_DIEU_TRI.NgayBatDau" AutomationProperties.Name="Ngày bắt đầu" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Ngày dự kiến kết thúc" Margin="0,0,0,6" />
+                    <DatePicker Tag="DB:KE_HOACH_DIEU_TRI.NgayDuKienKetThuc" AutomationProperties.Name="Ngày dự kiến kết thúc" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Ghi chú" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:KE_HOACH_DIEU_TRI.GhiChu" AutomationProperties.Name="Ghi chú" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã kế hoạch điều trị" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:KE_HOACH_DIEU_TRI.MaKHDT" AutomationProperties.Name="Mã kế hoạch điều trị" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:KE_HOACH_DIEU_TRI.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Chi tiết kế hoạch" Tag="Table:CHI_TIET_KE_HOACH" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin chi tiết kế hoạch" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn kế hoạch điều trị">
+                    <TextBlock Text="Kế hoạch điều trị *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:CHI_TIET_KE_HOACH.MaKHDT" AutomationProperties.Name="Kế hoạch điều trị" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn dịch vụ">
+                    <TextBlock Text="Dịch vụ *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:CHI_TIET_KE_HOACH.MaDV" AutomationProperties.Name="Dịch vụ" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Lần thứ *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:CHI_TIET_KE_HOACH.LanThu" AutomationProperties.Name="Lần thứ" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Số thập phân; tối đa 2 chữ số sau dấu thập phân.">
+                    <TextBlock Text="Đơn giá *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:CHI_TIET_KE_HOACH.DonGia" AutomationProperties.Name="Đơn giá" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Số thập phân; tối đa 2 chữ số sau dấu thập phân.">
+                    <TextBlock Text="Thành tiền *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:CHI_TIET_KE_HOACH.ThanhTien" AutomationProperties.Name="Thành tiền" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Ghi chú" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:CHI_TIET_KE_HOACH.GhiChu" AutomationProperties.Name="Ghi chú" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã chi tiết kế hoạch" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:CHI_TIET_KE_HOACH.MaCTKH" AutomationProperties.Name="Mã chi tiết kế hoạch" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:CHI_TIET_KE_HOACH.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+    <Border Grid.Row="2" Padding="0,18,0,0">
+      <WrapPanel>
+        <Button Content="Quay lại danh sách" Tag="DongCuaSo" />
+        <Button Content="Lưu thông tin" IsEnabled="False" Style="{StaticResource Primary}" ToolTip="Bản giao diện chưa kết nối lưu dữ liệu" />
+        <Button Content="Về màn hình chính" Tag="VeTrangChu" />
+        <TextBlock Text="Bản giao diện • Chưa lưu dữ liệu" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="12,0,0,0" />
+      </WrapPanel>
+    </Border>
+  </Grid>
+</UserControl>

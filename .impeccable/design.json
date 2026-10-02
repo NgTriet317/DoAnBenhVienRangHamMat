@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-29T03:10:00Z",
+  "title": "Design System: Răng Hàm Mặt — Blue Care",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Clear blue",
+        "nativeResource": "Accent"
+      },
+      "accent-dark": {
+        "role": "primary",
+        "displayName": "Deep blue",
+        "nativeResource": "AccentDark"
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Pale blue",
+        "nativeResource": "AccentSoft"
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Cool canvas",
+        "nativeResource": "Canvas"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Dark ink",
+        "nativeResource": "Ink"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted slate",
+        "nativeResource": "Muted"
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Soft divider",
+        "nativeResource": "Line"
+      }
+    },
+    "typographyMeta": {
+      "home-heading": {
+        "purpose": "Home content heading."
+      },
+      "title": {
+        "purpose": "Shared view Title style."
+      },
+      "hospital-heading": {
+        "purpose": "Home hospital banner heading."
+      },
+      "app-heading": {
+        "purpose": "App window title."
+      },
+      "body": {
+        "purpose": "Window default text."
+      },
+      "label": {
+        "purpose": "App names and table headings."
+      },
+      "caption": {
+        "purpose": "Role labels and footers."
+      },
+      "category": {
+        "purpose": "Home tile category."
+      }
+    },
+    "shadows": [],
+    "motion": [],
+    "breakpoints": [],
+    "nativeWpf": {
+      "units": "XAML numeric dimensions are device-independent units; frontmatter px preserves their numeric values. Frontmatter padding uses CSS order; XAML two-value Thickness uses horizontal,vertical.",
+      "sourceFiles": [
+        "RangHamMat.Wpf/MainWindow.xaml",
+        "RangHamMat.Wpf/AppWorkspace.xaml",
+        "RangHamMat.Wpf/Themes/Theme.xaml",
+        "RangHamMat.Wpf/MainWindow.xaml.cs",
+        "RangHamMat.Wpf/AppWorkspace.xaml.cs"
+      ],
+      "evidence": "Source inspection only; no rendered screenshots or runtime visual validation.",
+      "componentPreview": "XemTruoc/index.html is an illustrative HTML layout, not a WPF runtime capture.",
+      "layout": {
+        "home": "White header, greeting, search/category filters, wrapping white app tiles.",
+        "windows": "One borderless maximized main window; 19 apps and 16 embedded editor/placeholder controls."
+      },
+      "buttonStates": {
+        "hover": "Surface opacity 0.85; accent border. AppTile background becomes White.",
+        "pressed": "Surface opacity 0.7.",
+        "keyboardFocus": "Accent border thickness 2. AppTile background becomes White.",
+        "disabled": "Surface opacity 0.45."
+      },
+      "inputs": "Rounded TextBox/PasswordBox, 42-DIP minimum, accent focus border; ComboBox/DatePicker retain native behavior.",
+      "persistence": "Static existing forms; no backend persistence.",
+      "windowStyle": "WindowBase: Segoe UI 14, Ink, layout rounding.",
+      "databaseForms": "Lists separated from editors; key-column toggle; grouped 270-DIP wrapping fields, 20-DIP gaps. All 245 schema fields preserved.",
+      "revision": "Weekly schedule/table switches; independent hospital/warehouse chart panels; doubleclick contextual details and child creation; medicine tab; restricted audit activity types; separate warehouse receipts/payments."
+    }
+  },
+  "components": [
+    {
+      "name": "Default button",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "BaseButton; native hover, press, disabled and keyboard-focus triggers."
+    },
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "BaseButton with accent surface and white text."
+    },
+    {
+      "name": "Home app tile",
+      "kind": "custom",
+      "refersTo": "app-tile",
+      "description": "Native WPF AppTile button with icon, name, category, automation name and tooltip."
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Native Border using the shared Card style."
+    },
+    {
+      "name": "Text field",
+      "kind": "input",
+      "refersTo": "text-input",
+      "description": "Rounded TextBox with accent focus border and native editing behavior."
+    },
+    {
+      "name": "Table heading",
+      "kind": "custom",
+      "refersTo": "table-header",
+      "description": "48-DIP neutral canvas header with semibold labels."
+    },
+    {
+      "name": "Home navigation",
+      "kind": "nav",
+      "refersTo": "button-default",
+      "description": "Swaps embedded app content back to the launcher."
+    }
+  ],
+  "narrative": {
+    "northStar": "Blue Care",
+    "overview": "Friendly white-and-blue native fullscreen launcher with focused lists and grouped editors.",
+    "keyCharacteristics": [
+      "Native Segoe UI",
+      "Blue accents and pale surfaces",
+      "Wrapping launcher",
+      "Fullscreen embedded pages",
+      "Explicit Home return"
+    ],
+    "rules": [
+      {
+        "name": "The Blue Accent Rule",
+        "body": "Reuse the named blue brushes for shared accents; do not restore the rejected purple palette.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "**Do** reuse the seven brushes, shared native styles, Vietnamese labels and visible keyboard focus.",
+      "**Do** retain the Home icon grid, embedded pages and forms and explicit Home return."
+    ],
+    "donts": [
+      "**Don't** restore purple or replace Home with a sidebar.",
+      "**Don't** imply backend persistence, real authorization or rendered visual validation."
+    ]
+  }
+}

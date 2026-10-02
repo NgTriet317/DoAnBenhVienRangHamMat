@@ -1,0 +1,261 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.CuaSoCaLamViec">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+    <StackPanel>
+      <TextBlock Text="Ca làm việc và nghỉ phép · Thêm mới" Style="{StaticResource Title}" />
+      <TextBlock Text="Điền lần lượt từng nhóm thông tin. Dấu * là trường bắt buộc." Style="{StaticResource Subtitle}" />
+    </StackPanel>
+    <TabControl x:Name="EditorTabs" Grid.Row="1">
+      <TabItem Header="Ca làm" Tag="Table:CA_LAM" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin ca làm" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Giờ bắt đầu *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:CA_LAM.GioBatDau" AutomationProperties.Name="Giờ bắt đầu" MaxLength="8" ToolTip="HH:mm:ss" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Giờ kết thúc *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:CA_LAM.GioKetThuc" AutomationProperties.Name="Giờ kết thúc" MaxLength="8" ToolTip="HH:mm:ss" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Ghi chú" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:CA_LAM.GhiChu" AutomationProperties.Name="Ghi chú" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã ca làm" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:CA_LAM.MaCa" AutomationProperties.Name="Mã ca làm" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Lịch làm việc" Tag="Table:LICH_LAM_VIEC" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin lịch làm việc" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn nhân viên">
+                    <TextBlock Text="Nhân viên *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:LICH_LAM_VIEC.MaNV" AutomationProperties.Name="Nhân viên" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn ca làm">
+                    <TextBlock Text="Ca làm *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:LICH_LAM_VIEC.MaCa" AutomationProperties.Name="Ca làm" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Ngày làm *" Margin="0,0,0,6" />
+                    <DatePicker Tag="DB:LICH_LAM_VIEC.NgayLam" AutomationProperties.Name="Ngày làm" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn phòng khám">
+                    <TextBlock Text="Phòng khám *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:LICH_LAM_VIEC.MaPhong" AutomationProperties.Name="Phòng khám" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã lịch làm việc" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:LICH_LAM_VIEC.MaLLV" AutomationProperties.Name="Mã lịch làm việc" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:LICH_LAM_VIEC.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Đơn xin nghỉ" Tag="Table:DON_XIN_NGHI" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin đơn xin nghỉ" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn nhân viên">
+                    <TextBlock Text="Nhân viên *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:DON_XIN_NGHI.MaNV" AutomationProperties.Name="Nhân viên" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Từ ngày *" Margin="0,0,0,6" />
+                    <DatePicker Tag="DB:DON_XIN_NGHI.TuNgay" AutomationProperties.Name="Từ ngày" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Đến ngày *" Margin="0,0,0,6" />
+                    <DatePicker Tag="DB:DON_XIN_NGHI.DenNgay" AutomationProperties.Name="Đến ngày" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Lý do *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:DON_XIN_NGHI.LyDo" AutomationProperties.Name="Lý do" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Thời điểm mặc định khi tạo mới.">
+                    <TextBlock Text="Ngày gửi" Margin="0,0,0,6" />
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="90" />
+                      </Grid.ColumnDefinitions>
+                      <DatePicker Tag="DB:DON_XIN_NGHI.NgayGui" AutomationProperties.Name="Ngày gửi" />
+                      <TextBox Grid.Column="1" Margin="8,0,0,0" Tag="Time:DON_XIN_NGHI.NgayGui" AutomationProperties.Name="Giờ - Ngày gửi" ToolTip="HH:mm:ss" MaxLength="8" />
+                    </Grid>
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Trạng thái duyệt *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:DON_XIN_NGHI.TrangThaiDuyet" AutomationProperties.Name="Trạng thái duyệt" MaxLength="50" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn nhân viên duyệt">
+                    <TextBlock Text="Nhân viên duyệt" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:DON_XIN_NGHI.MaNVDuyet" AutomationProperties.Name="Nhân viên duyệt" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Ngày duyệt" Margin="0,0,0,6" />
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="90" />
+                      </Grid.ColumnDefinitions>
+                      <DatePicker Tag="DB:DON_XIN_NGHI.NgayDuyet" AutomationProperties.Name="Ngày duyệt" />
+                      <TextBox Grid.Column="1" Margin="8,0,0,0" Tag="Time:DON_XIN_NGHI.NgayDuyet" AutomationProperties.Name="Giờ - Ngày duyệt" ToolTip="HH:mm:ss" MaxLength="8" />
+                    </Grid>
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Ghi chú" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:DON_XIN_NGHI.GhiChu" AutomationProperties.Name="Ghi chú" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã đơn xin nghỉ" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:DON_XIN_NGHI.MaDonNghi" AutomationProperties.Name="Mã đơn xin nghỉ" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Phân công thay thế" Tag="Table:PHAN_CONG_THAY_THE" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin phân công thay thế" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn đơn xin nghỉ">
+                    <TextBlock Text="Đơn xin nghỉ *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:PHAN_CONG_THAY_THE.MaDonNghi" AutomationProperties.Name="Đơn xin nghỉ" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn lịch làm việc gốc">
+                    <TextBlock Text="Lịch làm việc gốc *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:PHAN_CONG_THAY_THE.MaLLVGoc" AutomationProperties.Name="Lịch làm việc gốc" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn nhân viên thay thế">
+                    <TextBlock Text="Nhân viên thay thế *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:PHAN_CONG_THAY_THE.MaNVThayThe" AutomationProperties.Name="Nhân viên thay thế" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn lịch làm việc thay thế">
+                    <TextBlock Text="Lịch làm việc thay thế" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:PHAN_CONG_THAY_THE.MaLLVThayThe" AutomationProperties.Name="Lịch làm việc thay thế" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Thời điểm mặc định khi tạo mới.">
+                    <TextBlock Text="Ngày xử lý" Margin="0,0,0,6" />
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="90" />
+                      </Grid.ColumnDefinitions>
+                      <DatePicker Tag="DB:PHAN_CONG_THAY_THE.NgayXuLy" AutomationProperties.Name="Ngày xử lý" />
+                      <TextBox Grid.Column="1" Margin="8,0,0,0" Tag="Time:PHAN_CONG_THAY_THE.NgayXuLy" AutomationProperties.Name="Giờ - Ngày xử lý" ToolTip="HH:mm:ss" MaxLength="8" />
+                    </Grid>
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Lý do thay thế" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:PHAN_CONG_THAY_THE.LyDoThayThe" AutomationProperties.Name="Lý do thay thế" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Ghi chú" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:PHAN_CONG_THAY_THE.GhiChu" AutomationProperties.Name="Ghi chú" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã phân công thay thế" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:PHAN_CONG_THAY_THE.MaPCTT" AutomationProperties.Name="Mã phân công thay thế" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:PHAN_CONG_THAY_THE.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+    <Border Grid.Row="2" Padding="0,18,0,0">
+      <WrapPanel>
+        <Button Content="Quay lại danh sách" Tag="DongCuaSo" />
+        <Button Content="Lưu thông tin" IsEnabled="False" Style="{StaticResource Primary}" ToolTip="Bản giao diện chưa kết nối lưu dữ liệu" />
+        <Button Content="Về màn hình chính" Tag="VeTrangChu" />
+        <TextBlock Text="Bản giao diện • Chưa lưu dữ liệu" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="12,0,0,0" />
+      </WrapPanel>
+    </Border>
+  </Grid>
+</UserControl>

@@ -1,0 +1,104 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.CuaSoLichKham">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+    <StackPanel>
+      <TextBlock Text="Điều phối lịch khám · Thêm mới" Style="{StaticResource Title}" />
+      <TextBlock Text="Điền lần lượt từng nhóm thông tin. Dấu * là trường bắt buộc." Style="{StaticResource Subtitle}" />
+    </StackPanel>
+    <TabControl x:Name="EditorTabs" Grid.Row="1">
+      <TabItem Header="Lịch khám" Tag="Table:LICH_KHAM" Visibility="Collapsed">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin lịch khám" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn bệnh nhân">
+                    <TextBlock Text="Bệnh nhân *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:LICH_KHAM.MaBN" AutomationProperties.Name="Bệnh nhân" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn bác sĩ">
+                    <TextBlock Text="Bác sĩ" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:LICH_KHAM.MaBS" AutomationProperties.Name="Bác sĩ" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Ngày giờ khám *" Margin="0,0,0,6" />
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="90" />
+                      </Grid.ColumnDefinitions>
+                      <DatePicker Tag="DB:LICH_KHAM.NgayGioKham" AutomationProperties.Name="Ngày giờ khám" />
+                      <TextBox Grid.Column="1" Margin="8,0,0,0" Tag="Time:LICH_KHAM.NgayGioKham" AutomationProperties.Name="Giờ - Ngày giờ khám" ToolTip="HH:mm:ss" MaxLength="8" />
+                    </Grid>
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn phòng khám">
+                    <TextBlock Text="Phòng khám" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:LICH_KHAM.MaPhong" AutomationProperties.Name="Phòng khám" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Lý do khám" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:LICH_KHAM.LyDoKham" AutomationProperties.Name="Lý do khám" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn dịch vụ">
+                    <TextBlock Text="Dịch vụ *" Margin="0,0,0,6" />
+                    <ComboBox Tag="DB:LICH_KHAM.MaDV" AutomationProperties.Name="Dịch vụ" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Ghi chú" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:LICH_KHAM.GhiChu" AutomationProperties.Name="Ghi chú" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
+              <StackPanel>
+                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
+                <WrapPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
+                    <TextBlock Text="Mã lịch khám" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:LICH_KHAM.MaLich" AutomationProperties.Name="Mã lịch khám" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
+                    <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
+                    <TextBox Tag="DB:LICH_KHAM.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
+                  </StackPanel>
+                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Thời điểm mặc định khi tạo mới.">
+                    <TextBlock Text="Ngày tạo" Margin="0,0,0,6" />
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="90" />
+                      </Grid.ColumnDefinitions>
+                      <DatePicker Tag="DB:LICH_KHAM.NgayTao" AutomationProperties.Name="Ngày tạo" />
+                      <TextBox Grid.Column="1" Margin="8,0,0,0" Tag="Time:LICH_KHAM.NgayTao" AutomationProperties.Name="Giờ - Ngày tạo" ToolTip="HH:mm:ss" MaxLength="8" />
+                    </Grid>
+                  </StackPanel>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+    <Border Grid.Row="2" Padding="0,18,0,0">
+      <WrapPanel>
+        <Button Content="Quay lại danh sách" Tag="DongCuaSo" />
+        <Button Content="Lưu thông tin" IsEnabled="False" Style="{StaticResource Primary}" ToolTip="Bản giao diện chưa kết nối lưu dữ liệu" />
+        <Button Content="Về màn hình chính" Tag="VeTrangChu" />
+        <TextBlock Text="Bản giao diện • Chưa lưu dữ liệu" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="12,0,0,0" />
+      </WrapPanel>
+    </Border>
+  </Grid>
+</UserControl>
