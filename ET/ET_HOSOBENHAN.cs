@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace ET
 {
-    public class ET_HOSOBENHAN
     {
         private string maHS;
         private string maBN;
