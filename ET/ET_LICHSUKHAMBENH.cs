@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace ET
 {
+    public class ET_LICHSUKHAMBENH
     {
         private string maLS;
         private string maHS;
