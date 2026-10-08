@@ -93,6 +93,15 @@
                 <TextBlock Text="Khám chữa bệnh" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <Button Tag="DichVuThucHien" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Dịch vụ thực hiện" ToolTip="Mở dịch vụ thực hiện" CommandParameter="Khám chữa bệnh">
+              <StackPanel>
+                <Border Width="52" Height="52" CornerRadius="14" Background="#E7F8F3" HorizontalAlignment="Center" Margin="0,0,0,10">
+                  <Path Data="M4,5 H20 V19 H4 Z M8,9 H16 M8,13 H13 M16,15 L18,17 L22,12" Style="{StaticResource AppIcon}" />
+                </Border>
+                <TextBlock Text="Dịch vụ thực hiện" TextAlignment="Center" TextWrapping="Wrap" FontWeight="SemiBold" Height="38" VerticalAlignment="Center" FontSize="14" />
+                <TextBlock Text="Khám chữa bệnh" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
+              </StackPanel>
+            </Button>
             <Button Tag="DonThuoc" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Đơn thuốc" ToolTip="Mở đơn thuốc" CommandParameter="Khám chữa bệnh">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -117,6 +126,15 @@
                   <Path Data="M4,7 A3,3 0 1 0 10,7 A3,3 0 1 0 4,7 M14,7 A3,3 0 1 0 20,7 A3,3 0 1 0 14,7 M2,21 V18 C2,12 12,12 12,18 V21 M12,21 V18 C12,12 22,12 22,18 V21" Style="{StaticResource AppIcon}" />
                 </Border>
                 <TextBlock Text="Bác sĩ và nhân sự" TextAlignment="Center" TextWrapping="Wrap" FontWeight="SemiBold" Height="38" VerticalAlignment="Center" FontSize="14" />
+                <TextBlock Text="Nhân sự" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
+              </StackPanel>
+            </Button>
+            <Button Tag="ChungChiNhanVien" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Chứng chỉ nhân viên" ToolTip="Mở chứng chỉ nhân viên" CommandParameter="Nhân sự">
+              <StackPanel>
+                <Border Width="52" Height="52" CornerRadius="14" Background="#F4EEFF" HorizontalAlignment="Center" Margin="0,0,0,10">
+                  <Path Data="M6,3 H18 V15 H6 Z M9,7 H15 M9,10 H15 M10,15 L9,21 L12,19 L15,21 L14,15" Style="{StaticResource AppIcon}" />
+                </Border>
+                <TextBlock Text="Chứng chỉ nhân viên" TextAlignment="Center" TextWrapping="Wrap" FontWeight="SemiBold" Height="38" VerticalAlignment="Center" FontSize="14" />
                 <TextBlock Text="Nhân sự" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
@@ -156,6 +174,15 @@
                 <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <Button Tag="DanhMucHangHoa" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Danh mục hàng hóa" ToolTip="Mở danh mục hàng hóa" CommandParameter="Kho và thiết bị">
+              <StackPanel>
+                <Border Width="52" Height="52" CornerRadius="14" Background="#EEF7FF" HorizontalAlignment="Center" Margin="0,0,0,10">
+                  <Path Data="M3,6 L12,2 L21,6 L12,10 Z M3,11 L12,15 L21,11 M3,16 L12,20 L21,16" Style="{StaticResource AppIcon}" />
+                </Border>
+                <TextBlock Text="Danh mục hàng hóa" TextAlignment="Center" TextWrapping="Wrap" FontWeight="SemiBold" Height="38" VerticalAlignment="Center" FontSize="14" />
+                <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
+              </StackPanel>
+            </Button>
             <Button Tag="NhaCungCap" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Nhà cung cấp" ToolTip="Mở nhà cung cấp" CommandParameter="Kho và thiết bị">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -174,6 +201,24 @@
                 <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <Button Tag="NhapKho" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Nhập kho theo chứng từ" ToolTip="Mở nhập kho" CommandParameter="Kho và thiết bị">
+              <StackPanel>
+                <Border Width="52" Height="52" CornerRadius="14" Background="#E0F2FE" HorizontalAlignment="Center" Margin="0,0,0,10">
+                  <Path Data="M3,8 H21 V20 H3 Z M7,4 H17 V8 M12,10 V17 M8,14 L12,18 L16,14" Style="{StaticResource AppIcon}" />
+                </Border>
+                <TextBlock Text="Nhập kho" TextAlignment="Center" TextWrapping="Wrap" FontWeight="SemiBold" Height="38" VerticalAlignment="Center" FontSize="14" />
+                <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
+              </StackPanel>
+            </Button>
+            <Button Tag="XuatKho" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Xuất kho" ToolTip="Mở xuất kho" CommandParameter="Kho và thiết bị">
+              <StackPanel>
+                <Border Width="52" Height="52" CornerRadius="14" Background="#FFF7ED" HorizontalAlignment="Center" Margin="0,0,0,10">
+                  <Path Data="M3,8 H21 V20 H3 Z M7,4 H17 V8 M12,18 V11 M8,15 L12,11 L16,15" Style="{StaticResource AppIcon}" />
+                </Border>
+                <TextBlock Text="Xuất kho" TextAlignment="Center" TextWrapping="Wrap" FontWeight="SemiBold" Height="38" VerticalAlignment="Center" FontSize="14" />
+                <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
+              </StackPanel>
+            </Button>
             <Button Tag="HoaDon" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Hóa đơn và thanh toán" ToolTip="Mở hóa đơn và thanh toán" CommandParameter="Tài chính">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -189,6 +234,15 @@
                   <Path Data="M3,5 H21 V19 H3 Z M3,9 H21 M7,14 H10 M15,12 A2,2 0 1 0 19,12 A2,2 0 1 0 15,12" Style="{StaticResource AppIcon}" />
                 </Border>
                 <TextBlock Text="Lương và hoa hồng" TextAlignment="Center" TextWrapping="Wrap" FontWeight="SemiBold" Height="38" VerticalAlignment="Center" FontSize="14" />
+                <TextBlock Text="Tài chính" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
+              </StackPanel>
+            </Button>
+            <Button Tag="ChinhSachLuong" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Chính sách lương" ToolTip="Mở chính sách lương" CommandParameter="Tài chính">
+              <StackPanel>
+                <Border Width="52" Height="52" CornerRadius="14" Background="#EEF2FF" HorizontalAlignment="Center" Margin="0,0,0,10">
+                  <Path Data="M4,4 H20 V20 H4 Z M8,8 H16 M8,12 H12 M8,16 H11 M15,13 C18,13 18,17 15,17 C12,17 12,13 15,13 Z" Style="{StaticResource AppIcon}" />
+                </Border>
+                <TextBlock Text="Chính sách lương" TextAlignment="Center" TextWrapping="Wrap" FontWeight="SemiBold" Height="38" VerticalAlignment="Center" FontSize="14" />
                 <TextBlock Text="Tài chính" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>

@@ -11,9 +11,9 @@ public partial class MainWindow : Window
 {
     private static readonly HashSet<string> AllPages = new(StringComparer.Ordinal)
     {
-        "TongQuan", "BenhNhan", "KhamDieuTri", "DonThuoc", "NhanSu", "CaLamViec",
-        "ThietBi", "BaoTri", "VatTu", "NhaCungCap", "NhapXuatVatTu", "LichKham",
-        "DichVu", "HoaDon", "BangLuong", "TaiKhoan", "BaoCao", "PhieuHuongDan",
+        "TongQuan", "BenhNhan", "KhamDieuTri", "DichVuThucHien", "DonThuoc", "NhanSu", "ChungChiNhanVien", "CaLamViec",
+        "ThietBi", "BaoTri", "VatTu", "DanhMucHangHoa", "NhaCungCap", "NhapXuatVatTu", "NhapKho", "XuatKho", "LichKham",
+        "DichVu", "HoaDon", "BangLuong", "ChinhSachLuong", "TaiKhoan", "BaoCao", "PhieuHuongDan",
         "NhatKy"
     };
 
@@ -22,8 +22,8 @@ public partial class MainWindow : Window
         ["Quản trị hệ thống"] = AllPages,
         ["Ban quản lý / Kế toán"] = new(StringComparer.Ordinal)
         {
-            "TongQuan", "BenhNhan", "LichKham", "NhanSu", "CaLamViec", "VatTu", "NhapXuatVatTu",
-            "ThietBi", "BaoTri", "NhaCungCap", "DichVu", "HoaDon", "BangLuong", "BaoCao"
+            "TongQuan", "BenhNhan", "LichKham", "NhanSu", "ChungChiNhanVien", "CaLamViec", "VatTu", "DanhMucHangHoa", "NhapXuatVatTu",
+            "NhapKho", "XuatKho", "ThietBi", "BaoTri", "NhaCungCap", "DichVu", "DichVuThucHien", "HoaDon", "BangLuong", "ChinhSachLuong", "BaoCao"
         },
         ["Người hướng dẫn bệnh nhân"] = new(StringComparer.Ordinal)
         {
@@ -31,12 +31,12 @@ public partial class MainWindow : Window
         },
         ["Bác sĩ"] = new(StringComparer.Ordinal)
         {
-            "TongQuan", "BenhNhan", "LichKham", "CaLamViec", "KhamDieuTri", "DonThuoc", "DichVu",
+            "TongQuan", "BenhNhan", "LichKham", "CaLamViec", "KhamDieuTri", "DichVuThucHien", "DonThuoc", "DichVu",
             "PhieuHuongDan"
         },
         ["Nhân viên kho / thiết bị"] = new(StringComparer.Ordinal)
         {
-            "TongQuan", "VatTu", "NhapXuatVatTu", "ThietBi", "BaoTri", "NhaCungCap"
+            "TongQuan", "VatTu", "DanhMucHangHoa", "NhapXuatVatTu", "NhapKho", "XuatKho", "ThietBi", "BaoTri", "NhaCungCap"
         }
     };
 
@@ -75,17 +75,23 @@ public partial class MainWindow : Window
             "BenhNhan" => new BenhNhan(),
             "LichKham" => new LichKham(),
             "KhamDieuTri" => new KhamDieuTri(),
+            "DichVuThucHien" => new DichVuThucHien(),
             "DonThuoc" => new DonThuoc(),
             "PhieuHuongDan" => new PhieuHuongDan(),
             "NhanSu" => new NhanSu(),
+            "ChungChiNhanVien" => new ChungChiNhanVien(),
             "CaLamViec" => new CaLamViec(),
             "ThietBi" => new ThietBi(),
             "BaoTri" => new BaoTri(),
             "VatTu" => new VatTu(),
+            "DanhMucHangHoa" => new DanhMucHangHoa(),
             "NhaCungCap" => new NhaCungCap(),
             "NhapXuatVatTu" => new NhapXuatVatTu(),
+            "NhapKho" => new NhapKho(),
+            "XuatKho" => new XuatKho(),
             "HoaDon" => new HoaDon(),
             "BangLuong" => new BangLuong(),
+            "ChinhSachLuong" => new ChinhSachLuong(),
             "BaoCao" => new BaoCao(),
             "DichVu" => new DichVu(),
             "TaiKhoan" => new TaiKhoan(),
@@ -109,7 +115,8 @@ public partial class MainWindow : Window
             "LichKham" => new CuaSoLichKham(),
             "KhamDieuTri" => new CuaSoKhamDieuTri(),
             "DonThuoc" => new CuaSoDonThuoc(),
-            "NhanSu" => new CuaSoNhanSu(),
+            // Chi tiết nhân sự cần một ET_NHANVIEN cụ thể và là Window,
+            // không phải form UserControl tạo mới qua luồng chung này.
             "CaLamViec" => new CuaSoCaLamViec(),
             "ThietBi" => new CuaSoThietBi(),
             "BaoTri" => new CuaSoBaoTri(),

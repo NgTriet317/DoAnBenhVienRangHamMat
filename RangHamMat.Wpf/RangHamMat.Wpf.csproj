@@ -5,4 +5,8 @@
     <Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>RangHamMat</RootNamespace><AssemblyName>RangHamMat.Wpf</AssemblyName>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BUS\BUS.csproj" />
+    <ProjectReference Include="..\ET\ET.csproj" />
+  </ItemGroup>
 </Project>

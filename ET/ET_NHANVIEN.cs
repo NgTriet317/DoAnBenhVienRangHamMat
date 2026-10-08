@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dapper.Contrib.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,8 +7,10 @@ using System.Threading.Tasks;
 
 namespace ET
 {
-    internal class ET_NHANVIEN
+    [Table("NHAN_VIEN")]
+    public class ET_NHANVIEN
     {
+        
         private string maNV;
         private string hoTen;
         private string gioiTinh;
@@ -37,11 +40,12 @@ namespace ET
             this.trangThai = trangThai;
         }
 
+        [ExplicitKey]
         public string MaNV { get => maNV; set => maNV = value; }
         public string HoTen { get => hoTen; set => hoTen = value; }
         public string GioiTinh { get => gioiTinh; set => gioiTinh = value; }
         public DateTime NgaySinh { get => ngaySinh; set => ngaySinh = value; }
-        public int Sdt { get => sdt; set => sdt = value; }
+        public int SDT { get => sdt; set => sdt = value; }
         public string DiaChi { get => diaChi; set => diaChi = value; }
         public string MaChucVu { get => maChucVu; set => maChucVu = value; }
         public string MaCK { get => maCK; set => maCK = value; }

@@ -10,7 +10,7 @@
 
 ## Điều hướng
 
-- Home giữ 19 app và bộ chọn vai trò mô phỏng, tông xanh dương.
+- Home hiện có 25 app: giữ nguyên 19 app cũ và bổ sung 6 phân hệ mới theo DB v7; bộ chọn vai trò và tông xanh dương vẫn giữ nguyên.
 - Bấm app để mở nội dung **ngay trong cửa sổ chính**. Chỉ một app được hiển thị tại một thời điểm.
 - **Màn hình chính** đưa về Home. App không mở cửa sổ riêng và không có controlbox.
 - **Thêm / Tạo phiếu** mở form ngay trong vùng nội dung. Các form này cũng không có cửa sổ riêng/controlbox.
@@ -55,12 +55,12 @@ Chỉ có giao diện và điều hướng; không bổ sung database, API, lưu
 - SQL gốc nằm tại `Database/QLBenhVienRangHamMat.sql`, giữ nguyên; chưa chạy script hay kết nối database.
 - Khóa tự sinh chỉ đọc; khóa ngoại là ComboBox chưa nạp dữ liệu; thời điểm có phần ngày và giờ; trạng thái là văn bản theo SQL.
 - Mật khẩu dùng PasswordBox và không hiển thị trên bảng danh sách. Giá trị mật khẩu trong database phải là chuỗi băm khi triển khai chức năng.
-- Lương/hoa hồng và nhật ký không có bảng tương ứng trong SQL: giữ app với thông báo chờ bổ sung, không dựng trường dữ liệu giả.
+- SQL 34 bảng cũ chưa có CHINH_SACH_LUONG/BANG_LUONG/NHAT_KY_THAO_TAC. DB v7 đã bổ sung các bảng này; giao diện Bảng lương và Nhật ký hiện hữu được tái sử dụng, chỉ tạo thêm phân hệ Chính sách lương.
 - Tổng quan là các lối tắt công việc; Báo cáo là danh sách dữ liệu nguồn, chưa tính số liệu tổng hợp. Các nút lưu nghiệp vụ được vô hiệu hóa; nút mở form, chuyển app, Home và Thoát hoạt động ở mức điều hướng.
 
 ## Giao diện mới
 
-- Home có lời chào, nền sáng, 19 app với icon, ô tìm kiếm và bộ lọc nhóm. Tìm kiếm kết hợp nhóm và vai trò đang xem.
+- Home có lời chào, nền sáng, 25 app với icon, ô tìm kiếm và bộ lọc nhóm. Tìm kiếm kết hợp nhóm và vai trò đang xem.
 - Danh sách và form được tách riêng. Danh sách hiện các cột chính; **Hiện đủ cột / Thu gọn cột** đổi mức chi tiết.
 - Bấm **Thêm** mở form tạo mới. Nhấp đúp vào dòng dữ liệu mở màn chi tiết chỉ đọc của chính dòng đó; các mục con được lọc theo mã bản ghi chính.
 - Form gom các trường thành thông tin chính/cá nhân, sức khỏe/nội dung và thông tin quản lý. ID tự sinh chỉ đọc; đủ các trường database như bảng đối chiếu.
@@ -80,3 +80,9 @@ Chỉ có giao diện và điều hướng; không bổ sung database, API, lưu
 - **Thanh toán:** nguồn Doanh thu bệnh viện tách khỏi Thu–chi kho. Kho có tab Thu kho và Chi kho, không gộp vào doanh thu bệnh viện. Không tự suy ra thu/chi từ số lượng nhập/xuất.
 
 Chưa kết nối database nên các bảng, lịch và đồ thị bắt đầu ở trạng thái trống. Không chèn dữ liệu bệnh nhân hoặc doanh thu giả. Double-click cần một dòng dữ liệu được nạp; hướng dẫn nối nguồn và kiểm thử nằm trong `HUONG_DAN_NGUON_DU_LIEU.md`.
+
+## Bổ sung giao diện theo DB v7
+
+Bản này bổ sung **6 phân hệ mới** thay vì tạo lại toàn bộ giao diện cũ: Dịch vụ thực hiện, Chứng chỉ nhân viên, Danh mục hàng hóa, Nhập kho, Xuất kho và Chính sách lương.
+
+Chi tiết đối chiếu xem `PHAN_HE_MOI_DBV7.md` và `Database/ui-table-map-dbv7-new.json`.
