@@ -1,0 +1,118 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="RangHamMat.Views.DichVuThucHien">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel>
+      <Grid Margin="0,0,0,18">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <StackPanel>
+          <TextBlock Text="Dịch vụ thực hiện" Style="{StaticResource Title}" />
+          <TextBlock Text="Ghi nhận dịch vụ thực tế theo từng lần khám, người thực hiện và đơn giá tại thời điểm phát sinh." Style="{StaticResource Subtitle}" Margin="0,2,0,0" />
+        </StackPanel>
+        <Border Grid.Column="1" Background="#E7F8F3" CornerRadius="10" Padding="14,8" VerticalAlignment="Top">
+          <TextBlock Text="Bảng mới · DICH_VU_THUC_HIEN" Foreground="#14765E" FontWeight="SemiBold" />
+        </Border>
+      </Grid>
+
+      <Grid Margin="0,0,0,18">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="12" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="12" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Border Grid.Column="0" Background="#F0F9FF" BorderBrush="#BAE6FD" BorderThickness="1" CornerRadius="12" Padding="18">
+          <StackPanel><TextBlock Text="Chờ thực hiện" Foreground="#0369A1" /><TextBlock Text="0" FontSize="28" FontWeight="SemiBold" Margin="0,6,0,0" /></StackPanel>
+        </Border>
+        <Border Grid.Column="2" Background="#FFF7ED" BorderBrush="#FED7AA" BorderThickness="1" CornerRadius="12" Padding="18">
+          <StackPanel><TextBlock Text="Đang thực hiện" Foreground="#C2410C" /><TextBlock Text="0" FontSize="28" FontWeight="SemiBold" Margin="0,6,0,0" /></StackPanel>
+        </Border>
+        <Border Grid.Column="4" Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1" CornerRadius="12" Padding="18">
+          <StackPanel><TextBlock Text="Hoàn tất hôm nay" Foreground="#047857" /><TextBlock Text="0" FontSize="28" FontWeight="SemiBold" Margin="0,6,0,0" /></StackPanel>
+        </Border>
+      </Grid>
+
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="1.72*" />
+          <ColumnDefinition Width="18" />
+          <ColumnDefinition Width="0.95*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Style="{StaticResource Card}" Padding="0">
+          <Grid>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Border Padding="20,18" BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="180" />
+                  <ColumnDefinition Width="150" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                  <TextBlock Text="Danh sách dịch vụ đã/đang thực hiện" Style="{StaticResource SectionTitle}" />
+                  <TextBlock Text="Theo dõi trực tiếp theo lần khám và dịch vụ." Foreground="{StaticResource Muted}" Margin="0,5,0,0" />
+                </StackPanel>
+                <TextBox Grid.Column="1" Margin="12,0,8,0" ToolTip="Tìm theo mã lần khám, dịch vụ hoặc nhân viên" />
+                <ComboBox Grid.Column="2" SelectedIndex="0">
+                  <ComboBoxItem Content="Tất cả trạng thái" />
+                  <ComboBoxItem Content="Chờ thực hiện" />
+                  <ComboBoxItem Content="Đang thực hiện" />
+                  <ComboBoxItem Content="Hoàn tất" />
+                </ComboBox>
+              </Grid>
+            </Border>
+            <DataGrid x:Name="Grid_DICH_VU_THUC_HIEN" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" FrozenColumnCount="2" ScrollViewer.HorizontalScrollBarVisibility="Auto">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Mã thực hiện" Binding="{Binding MaDVThucHien}" Width="130" />
+                <DataGridTextColumn Header="Lần khám" Binding="{Binding MaLS}" Width="115" />
+                <DataGridTextColumn Header="Chi tiết kế hoạch" Binding="{Binding MaCTKH}" Width="145" />
+                <DataGridTextColumn Header="Dịch vụ" Binding="{Binding MaDV}" Width="120" />
+                <DataGridTextColumn Header="Người thực hiện" Binding="{Binding MaNVThucHien}" Width="145" />
+                <DataGridTextColumn Header="Thời gian thực hiện" Binding="{Binding ThoiGianThucHien}" Width="175" />
+                <DataGridTextColumn Header="Số lượng" Binding="{Binding SoLuong}" Width="95" />
+                <DataGridTextColumn Header="Đơn giá" Binding="{Binding DonGia}" Width="130" />
+                <DataGridTextColumn Header="Kết quả" Binding="{Binding KetQua}" Width="200" />
+                <DataGridTextColumn Header="Trạng thái" Binding="{Binding TrangThai}" Width="130" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </Grid>
+        </Border>
+
+        <Border Grid.Column="2" Background="#FBFEFD" BorderBrush="#CDECE3" BorderThickness="1" CornerRadius="14" Padding="22">
+          <StackPanel>
+            <TextBlock Text="Ghi nhận nhanh" FontSize="20" FontWeight="SemiBold" />
+            <TextBlock Text="Biểu mẫu nằm cùng màn hình để bác sĩ/nhân viên không phải chuyển cửa sổ." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,6,0,18" />
+
+            <TextBlock Text="Lần khám *" FontWeight="SemiBold" Margin="0,0,0,6" />
+            <ComboBox Margin="0,0,0,12"><ComboBoxItem Content="Chọn lần khám" /></ComboBox>
+            <TextBlock Text="Dịch vụ *" FontWeight="SemiBold" Margin="0,0,0,6" />
+            <ComboBox Margin="0,0,0,12"><ComboBoxItem Content="Chọn dịch vụ" /></ComboBox>
+            <TextBlock Text="Người thực hiện *" FontWeight="SemiBold" Margin="0,0,0,6" />
+            <ComboBox Margin="0,0,0,12"><ComboBoxItem Content="Chọn nhân viên" /></ComboBox>
+
+            <Grid Margin="0,0,0,12">
+              <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="10" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+              <StackPanel Grid.Column="0"><TextBlock Text="Số lượng" FontWeight="SemiBold" Margin="0,0,0,6" /><TextBox /></StackPanel>
+              <StackPanel Grid.Column="2"><TextBlock Text="Đơn giá" FontWeight="SemiBold" Margin="0,0,0,6" /><TextBox /></StackPanel>
+            </Grid>
+
+            <TextBlock Text="Kết quả" FontWeight="SemiBold" Margin="0,0,0,6" />
+            <TextBox MinHeight="78" AcceptsReturn="True" TextWrapping="Wrap" Margin="0,0,0,12" />
+            <TextBlock Text="Trạng thái" FontWeight="SemiBold" Margin="0,0,0,6" />
+            <ComboBox SelectedIndex="0" Margin="0,0,0,18"><ComboBoxItem Content="Chờ thực hiện" /><ComboBoxItem Content="Đang thực hiện" /><ComboBoxItem Content="Hoàn tất" /></ComboBox>
+            <Button Content="Ghi nhận dịch vụ" Style="{StaticResource Primary}" HorizontalAlignment="Stretch" Margin="0" ToolTip="Sẽ lưu khi kết nối database" />
+            <TextBlock Text="Mã thực hiện và thời gian hệ thống sẽ tự sinh khi kết nối dữ liệu." FontSize="12" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,10,0,0" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

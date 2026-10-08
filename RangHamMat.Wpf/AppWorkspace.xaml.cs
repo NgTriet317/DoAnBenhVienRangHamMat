@@ -102,6 +102,10 @@ public partial class AppWorkspace : UserControl
             || ItemsControl.ItemsControlFromItemContainer(row) is not DataGrid source
             || source.Tag is not string tag || !tag.StartsWith("Table:", StringComparison.Ordinal)) return;
         var table = tag[6..];
+        // Nhân viên có cửa sổ chi tiết riêng được mở bởi MouseDoubleClick trên DataGrid.
+        // Không thay nội dung workspace bằng RecordDetails cho bảng này.
+        if (table == "NHAN_VIEN") return;
+
         var related = new List<RelatedRows>();
         foreach (var relation in Relations.Where(x => x.Parent == table))
         {

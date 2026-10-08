@@ -1,0 +1,26 @@
+{
+  "DichVuThucHien": [
+    "DICH_VU_THUC_HIEN"
+  ],
+  "ChungChiNhanVien": [
+    "CHUNG_CHI_NHAN_VIEN"
+  ],
+  "DanhMucHangHoa": [
+    "LOAI_HANG_HOA",
+    "HANG_HOA",
+    "THUOC",
+    "LO_HANG_HOA"
+  ],
+  "NhapKho": [
+    "HOA_DON_NHAP",
+    "PHIEU_NHAP",
+    "CHI_TIET_PHIEU_NHAP"
+  ],
+  "XuatKho": [
+    "PHIEU_XUAT",
+    "CHI_TIET_PHIEU_XUAT"
+  ],
+  "ChinhSachLuong": [
+    "CHINH_SACH_LUONG"
+  ]
+}

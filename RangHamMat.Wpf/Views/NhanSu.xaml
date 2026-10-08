@@ -1,112 +1,282 @@
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.NhanSu">
-  <Grid>
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="*" />
-    </Grid.RowDefinitions>
-    <StackPanel>
-      <TextBlock Text="Bác sĩ và nhân sự" Style="{StaticResource Title}" />
-      <TextBlock Text="Nhấp đúp vào một dòng để xem chi tiết. Chọn Thêm để tạo mới." Style="{StaticResource Subtitle}" />
-    </StackPanel>
-    <WrapPanel Grid.Row="1" Margin="0,0,0,20">
-      <Button Content="Ca làm việc" Tag="MoTrang:CaLamViec" />
-      <Button Content="Tài khoản" Tag="MoTrang:TaiKhoan" />
-    </WrapPanel>
-    <TabControl Grid.Row="2">
-      <TabItem Header="Nhân viên">
-        <Grid Margin="0,20,0,0">
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-          </Grid.RowDefinitions>
-          <DockPanel Margin="0,0,0,18">
-            <WrapPanel DockPanel.Dock="Right">
-              <Button Content="Hiện đủ cột" Tag="ToggleColumns" CommandParameter="NHAN_VIEN" />
-              <Button Content="Thêm nhân viên" Tag="MoCuaSo:NhanSu" CommandParameter="NHAN_VIEN" Style="{StaticResource Primary}" />
-            </WrapPanel>
-            <TextBlock Text="Nhân viên" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-          </DockPanel>
-          <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
-            <Grid>
-              <DataGrid Tag="Table:NHAN_VIEN" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_NHAN_VIEN" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
-                <DataGrid.Columns>
-                  <DataGridTextColumn Header="Mã nhân viên" SortMemberPath="MaNV" Width="155" Binding="{Binding MaNV}" />
-                  <DataGridTextColumn Header="Họ tên" SortMemberPath="HoTen" Width="155" Visibility="Collapsed" Binding="{Binding HoTen}" />
-                  <DataGridTextColumn Header="Giới tính" SortMemberPath="GioiTinh" Width="155" Visibility="Collapsed" Binding="{Binding GioiTinh}" />
-                  <DataGridTextColumn Header="Ngày sinh" SortMemberPath="NgaySinh" Width="155" Visibility="Collapsed" Binding="{Binding NgaySinh}" />
-                  <DataGridTextColumn Header="Số điện thoại" SortMemberPath="SDT" Width="155" Binding="{Binding SDT}" />
-                  <DataGridTextColumn Header="Địa chỉ" SortMemberPath="DiaChi" Width="155" Visibility="Collapsed" Binding="{Binding DiaChi}" />
-                  <DataGridTextColumn Header="Chức vụ" SortMemberPath="MaChucVu" Width="155" Visibility="Collapsed" Binding="{Binding MaChucVu}" />
-                  <DataGridTextColumn Header="Chuyên khoa" SortMemberPath="MaCK" Width="155" Visibility="Collapsed" Binding="{Binding MaCK}" />
-                  <DataGridTextColumn Header="Bằng cấp" SortMemberPath="BangCap" Width="155" Visibility="Collapsed" Binding="{Binding BangCap}" />
-                  <DataGridTextColumn Header="Chứng chỉ hành nghề" SortMemberPath="ChungChiHanhNghe" Width="155" Visibility="Collapsed" Binding="{Binding ChungChiHanhNghe}" />
-                  <DataGridTextColumn Header="Ngày cấp chứng chỉ" SortMemberPath="NgayCapChungChi" Width="155" Visibility="Collapsed" Binding="{Binding NgayCapChungChi}" />
-                  <DataGridTextColumn Header="Nơi cấp chứng chỉ" SortMemberPath="NoiCapChungChi" Width="155" Visibility="Collapsed" Binding="{Binding NoiCapChungChi}" />
-                  <DataGridTextColumn Header="Hạn chứng chỉ" SortMemberPath="HanChungChi" Width="155" Visibility="Collapsed" Binding="{Binding HanChungChi}" />
-                  <DataGridTextColumn Header="Ngày vào làm" SortMemberPath="NgayVaoLam" Width="155" Visibility="Collapsed" Binding="{Binding NgayVaoLam}" />
-                  <DataGridTextColumn Header="Trạng thái" SortMemberPath="TrangThai" Width="155" Binding="{Binding TrangThai}" />
-                </DataGrid.Columns>
-              </DataGrid>
-              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
-                <StackPanel.Style>
-                  <Style TargetType="StackPanel">
-                    <Setter Property="Visibility" Value="Collapsed" />
-                    <Style.Triggers>
-                      <DataTrigger Binding="{Binding HasItems, ElementName=Grid_NHAN_VIEN}" Value="False">
-                        <Setter Property="Visibility" Value="Visible" />
-                      </DataTrigger>
-                    </Style.Triggers>
-                  </Style>
-                </StackPanel.Style>
-                <TextBlock Text="Chưa có nhân viên" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
-                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
-                <Button Content="Thêm mới" Tag="MoCuaSo:NhanSu" CommandParameter="NHAN_VIEN" HorizontalAlignment="Center" />
-              </StackPanel>
-            </Grid>
-          </Border>
+<UserControl x:Class="RangHamMat.Views.NhanSu"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <UserControl.Resources>
+        <Style x:Key="NhanSuTabStyle" TargetType="TabItem">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+
+        <Style x:Key="NhanSuDataGridStyle" TargetType="DataGrid">
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
+            <Setter Property="RowHeight" Value="46"/>
+            <Setter Property="ColumnHeaderHeight" Value="46"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <Style x:Key="FormLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+
+        <Style x:Key="FormTextBox" TargetType="TextBox">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,0,14"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Margin="0,0,0,18">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel>
+                <TextBlock Text="Bác sĩ và nhân sự" Style="{StaticResource Title}"/>
+                <TextBlock Text="Quản lý nhân viên, bác sĩ, chức vụ và thông tin làm việc."
+                           Style="{StaticResource Subtitle}" Margin="0,5,0,0"/>
+            </StackPanel>
+
+            <TextBlock Grid.Column="1" Text="Nhấp đúp vào dòng để xem chi tiết"
+                       Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
         </Grid>
-      </TabItem>
-      <TabItem Header="Chức vụ">
-        <Grid Margin="0,20,0,0">
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-          </Grid.RowDefinitions>
-          <DockPanel Margin="0,0,0,18">
-            <WrapPanel DockPanel.Dock="Right">
-              <Button Content="Thêm chức vụ" Tag="MoCuaSo:NhanSu" CommandParameter="CHUC_VU" Style="{StaticResource Primary}" />
-            </WrapPanel>
-            <TextBlock Text="Chức vụ" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-          </DockPanel>
-          <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
-            <Grid>
-              <DataGrid Tag="Table:CHUC_VU" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_CHUC_VU" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
-                <DataGrid.Columns>
-                  <DataGridTextColumn Header="Mã chức vụ" SortMemberPath="MaChucVu" Width="155" Binding="{Binding MaChucVu}" />
-                  <DataGridTextColumn Header="Tên chức vụ" SortMemberPath="TenChucVu" Width="155" Binding="{Binding TenChucVu}" />
-                  <DataGridTextColumn Header="Mô tả" SortMemberPath="MoTa" Width="155" Binding="{Binding MoTa}" />
-                </DataGrid.Columns>
-              </DataGrid>
-              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
-                <StackPanel.Style>
-                  <Style TargetType="StackPanel">
-                    <Setter Property="Visibility" Value="Collapsed" />
-                    <Style.Triggers>
-                      <DataTrigger Binding="{Binding HasItems, ElementName=Grid_CHUC_VU}" Value="False">
-                        <Setter Property="Visibility" Value="Visible" />
-                      </DataTrigger>
-                    </Style.Triggers>
-                  </Style>
-                </StackPanel.Style>
-                <TextBlock Text="Chưa có chức vụ" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
-                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
-                <Button Content="Thêm mới" Tag="MoCuaSo:NhanSu" CommandParameter="CHUC_VU" HorizontalAlignment="Center" />
-              </StackPanel>
-            </Grid>
-          </Border>
-        </Grid>
-      </TabItem>
-    </TabControl>
-  </Grid>
+
+        <!-- Truy cập nhanh -->
+        <Border Grid.Row="1" Style="{StaticResource Card}" Padding="16" Margin="0,0,0,18">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Ca làm việc" Tag="MoTrang:CaLamViec" Margin="0,0,10,0"/>
+                <Button Content="Tài khoản" Tag="MoTrang:TaiKhoan"/>
+            </StackPanel>
+        </Border>
+
+        <TabControl Grid.Row="2" Background="Transparent" BorderThickness="0">
+
+            <!-- NHÂN VIÊN -->
+            <TabItem Header="Nhân viên" Style="{StaticResource NhanSuTabStyle}">
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="7*"/>
+                        <ColumnDefinition Width="18"/>
+                        <ColumnDefinition Width="3*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Danh sách -->
+                    <Border Grid.Column="0" Style="{StaticResource Card}" Padding="0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Margin="22,20,22,15">
+                                <TextBlock Text="Danh sách nhân viên" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock Text="Nhấp đúp để xem toàn bộ thông tin nhân viên."
+                                           Foreground="{StaticResource Muted}" FontSize="12" Margin="0,5,0,0"/>
+                            </StackPanel>
+
+                            <Grid Grid.Row="1" Margin="22,0,22,15">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="150"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBox x:Name="txtTimNhanVien" Height="40" Padding="10,0"
+                                         VerticalContentAlignment="Center"/>
+
+                                <ComboBox x:Name="cboLocTrangThaiNhanVien" Grid.Column="2"
+                                          Height="40" SelectedIndex="0">
+                                    <ComboBoxItem Content="Tất cả"/>
+                                    <ComboBoxItem Content="Đang làm việc"/>
+                                    <ComboBoxItem Content="Tạm nghỉ"/>
+                                    <ComboBoxItem Content="Đã nghỉ"/>
+                                </ComboBox>
+                            </Grid>
+
+                            <Grid Grid.Row="2">
+                                <DataGrid x:Name="dgvNhanVien" Tag="Table:NHAN_VIEN" Style="{StaticResource NhanSuDataGridStyle}" MouseDoubleClick="dgvNhanVien_MouseDoubleClick">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Mã NV" Binding="{Binding MaNV}" Width="95"/>
+                                        <DataGridTextColumn Header="Họ và tên" Binding="{Binding HoTen}" Width="*"/>
+                                        <DataGridTextColumn Header="SĐT" Binding="{Binding SDT}" Width="125"/>
+                                        <DataGridTextColumn Header="Chức vụ" Binding="{Binding MaChucVu}" Width="115"/>
+                                        <DataGridTextColumn Header="Trạng thái" Binding="{Binding TrangThai}" Width="120"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasItems, ElementName=dgvNhanVien}" Value="False">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+
+                                    <TextBlock Text="Chưa có nhân viên" FontSize="19" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Nhập thông tin ở biểu mẫu bên phải để thêm mới."
+                                               Foreground="{StaticResource Muted}" Margin="0,6,0,0"/>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Form thêm -->
+                    <Border Grid.Column="2" Style="{StaticResource Card}" Padding="0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Margin="20,19,20,15">
+                                <TextBlock Text="Thêm nhân viên" FontSize="19" FontWeight="SemiBold"/>
+                                <TextBlock Text="Nhập thông tin cơ bản để tạo hồ sơ."
+                                           Foreground="{StaticResource Muted}" FontSize="11" Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="20,3,20,18">
+                                    <TextBlock Text="Họ và tên *" Style="{StaticResource FormLabel}"/>
+                                    <TextBox x:Name="txtHoTen" Style="{StaticResource FormTextBox}"/>
+
+                                    <TextBlock Text="Giới tính" Style="{StaticResource FormLabel}"/>
+                                    <ComboBox x:Name="cboGioiTinh" Height="40" Margin="0,0,0,14">
+                                        <ComboBoxItem Content="Nam"/>
+                                        <ComboBoxItem Content="Nữ"/>
+                                        <ComboBoxItem Content="Khác"/>
+                                    </ComboBox>
+
+                                    <TextBlock Text="Ngày sinh" Style="{StaticResource FormLabel}"/>
+                                    <DatePicker x:Name="dpNgaySinh" Height="40" Margin="0,0,0,14"/>
+
+                                    <TextBlock Text="Số điện thoại *" Style="{StaticResource FormLabel}"/>
+                                    <TextBox x:Name="txtSDT" Style="{StaticResource FormTextBox}"/>
+
+                                    <TextBlock Text="Chức vụ *" Style="{StaticResource FormLabel}"/>
+                                    <ComboBox x:Name="cboChucVu" Height="40" Margin="0,0,0,14"/>
+
+                                    <TextBlock Text="Chuyên khoa" Style="{StaticResource FormLabel}"/>
+                                    <ComboBox x:Name="cboChuyenKhoa" Height="40" Margin="0,0,0,14"/>
+
+                                    <TextBlock Text="Ngày vào làm" Style="{StaticResource FormLabel}"/>
+                                    <DatePicker x:Name="dpNgayVaoLam" Height="40" Margin="0,0,0,14"/>
+
+                                    <TextBlock Text="Trạng thái" Style="{StaticResource FormLabel}"/>
+                                    <ComboBox x:Name="cboTrangThai" Height="40" SelectedIndex="0" Margin="0,0,0,14">
+                                        <ComboBoxItem Content="Đang làm việc"/>
+                                        <ComboBoxItem Content="Tạm nghỉ"/>
+                                        <ComboBoxItem Content="Đã nghỉ"/>
+                                    </ComboBox>
+
+                                    <TextBlock Text="Địa chỉ" Style="{StaticResource FormLabel}"/>
+                                    <TextBox x:Name="txtDiaChi" MinHeight="70" Padding="10"
+                                             AcceptsReturn="True" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </ScrollViewer>
+
+                            <Grid Grid.Row="2" Margin="20,15">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Button x:Name="btnLamMoiNhanVien" Content="Làm mới" Height="42"/>
+                                <Button x:Name="btnThemNhanVien" Grid.Column="2" Content="Thêm nhân viên"
+                                        Style="{StaticResource Primary}" Height="42"/>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- CHỨC VỤ -->
+            <TabItem Header="Chức vụ" Style="{StaticResource NhanSuTabStyle}">
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="7*"/>
+                        <ColumnDefinition Width="18"/>
+                        <ColumnDefinition Width="3*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource Card}" Padding="0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Margin="22,20,22,15">
+                                <TextBlock Text="Danh mục chức vụ" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock Text="Danh sách chức vụ đang sử dụng trong hệ thống."
+                                           Foreground="{StaticResource Muted}" FontSize="12" Margin="0,5,0,0"/>
+                            </StackPanel>
+
+                            <DataGrid x:Name="Grid_CHUC_VU" Grid.Row="1" Tag="Table:CHUC_VU"
+                                      Style="{StaticResource NhanSuDataGridStyle}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Mã chức vụ" Binding="{Binding MaChucVu}" Width="150"/>
+                                    <DataGridTextColumn Header="Tên chức vụ" Binding="{Binding TenChucVu}" Width="220"/>
+                                    <DataGridTextColumn Header="Mô tả" Binding="{Binding MoTa}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource Card}" Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="Thêm chức vụ" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,18"/>
+
+                            <TextBlock Text="Mã chức vụ *" Style="{StaticResource FormLabel}"/>
+                            <TextBox x:Name="txtMaChucVu" Style="{StaticResource FormTextBox}"/>
+
+                            <TextBlock Text="Tên chức vụ *" Style="{StaticResource FormLabel}"/>
+                            <TextBox x:Name="txtTenChucVu" Style="{StaticResource FormTextBox}"/>
+
+                            <TextBlock Text="Mô tả" Style="{StaticResource FormLabel}"/>
+                            <TextBox x:Name="txtMoTaChucVu" MinHeight="120" Padding="10"
+                                     AcceptsReturn="True" TextWrapping="Wrap" Margin="0,0,0,18"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Button x:Name="btnLamMoiChucVu" Content="Làm mới" Height="42"/>
+                                <Button x:Name="btnThemChucVu" Grid.Column="2" Content="Thêm chức vụ"
+                                        Style="{StaticResource Primary}" Height="42"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+        </TabControl>
+    </Grid>
 </UserControl>

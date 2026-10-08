@@ -88,7 +88,7 @@ var home = documents["MainWindow.xaml"];
 foreach (var (attribute, value) in new[] { ("WindowStyle", "None"), ("ResizeMode", "NoResize"), ("WindowState", "Maximized") })
     if ((string?)home.Root?.Attribute(attribute) != value) errors.Add($"Fullscreen setting missing: {attribute}");
 var launchers = home.Descendants(w + "Button").Where(e => (string?)e.Attribute("Click") == "App_Click").ToArray();
-if (launchers.Length != 19 || launchers.Select(e => (string?)e.Attribute("Tag")).Distinct().Count() != 19) errors.Add("Expected 19 unique Home apps");
+if (launchers.Length != 25 || launchers.Select(e => (string?)e.Attribute("Tag")).Distinct().Count() != 25) errors.Add("Expected 25 unique Home apps");
 var mainCode = File.ReadAllText(Path.Combine(wpfRoot, "MainWindow.xaml.cs"));
 foreach (var launcher in launchers)
 {
