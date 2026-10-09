@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Dapper.Contrib;
+using Dapper.Contrib.Extensions;
 
 namespace ET
 {
+    [Table("CHUYEN_KHOA")]
     public class ET_CHUYENKHOA
     {
         private string maCK;
@@ -24,6 +28,7 @@ namespace ET
             this.trangThai = trangThai;
         }
 
+        [ExplicitKey]
         public string MaCK { get => maCK; set => maCK = value; }
         public string MaKhoa { get => maKhoa; set => maKhoa = value; }
         public string TenCK { get => tenCK; set => tenCK = value; }

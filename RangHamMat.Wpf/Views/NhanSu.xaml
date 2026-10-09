@@ -54,18 +54,9 @@
                 <TextBlock Text="Quản lý nhân viên, bác sĩ, chức vụ và thông tin làm việc."
                            Style="{StaticResource Subtitle}" Margin="0,5,0,0"/>
             </StackPanel>
-
-            <TextBlock Grid.Column="1" Text="Nhấp đúp vào dòng để xem chi tiết"
-                       Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
+            
         </Grid>
-
-        <!-- Truy cập nhanh -->
-        <Border Grid.Row="1" Style="{StaticResource Card}" Padding="16" Margin="0,0,0,18">
-            <StackPanel Orientation="Horizontal">
-                <Button Content="Ca làm việc" Tag="MoTrang:CaLamViec" Margin="0,0,10,0"/>
-                <Button Content="Tài khoản" Tag="MoTrang:TaiKhoan"/>
-            </StackPanel>
-        </Border>
+        
 
         <TabControl Grid.Row="2" Background="Transparent" BorderThickness="0">
 
@@ -112,10 +103,10 @@
                                 </ComboBox>
                             </Grid>
 
-                            <Grid Grid.Row="2">
-                                <DataGrid x:Name="dgvNhanVien" Tag="Table:NHAN_VIEN" Style="{StaticResource NhanSuDataGridStyle}" MouseDoubleClick="dgvNhanVien_MouseDoubleClick">
+                            <Grid Grid.Row="2" >
+                                <DataGrid x:Name="dgvNhanVien" Background="White" Tag="Table:NHAN_VIEN" Style="{StaticResource NhanSuDataGridStyle}" MouseDoubleClick="dgvNhanVien_MouseDoubleClick">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Mã NV" Binding="{Binding MaNV}" Width="95"/>
+                                        <DataGridTextColumn Header="Mã NV" Binding="{Binding MaNV}" Width="120"/>
                                         <DataGridTextColumn Header="Họ và tên" Binding="{Binding HoTen}" Width="*"/>
                                         <DataGridTextColumn Header="SĐT" Binding="{Binding SDT}" Width="125"/>
                                         <DataGridTextColumn Header="Chức vụ" Binding="{Binding MaChucVu}" Width="115"/>
@@ -177,10 +168,13 @@
                                     <TextBox x:Name="txtSDT" Style="{StaticResource FormTextBox}"/>
 
                                     <TextBlock Text="Chức vụ *" Style="{StaticResource FormLabel}"/>
-                                    <ComboBox x:Name="cboChucVu" Height="40" Margin="0,0,0,14"/>
+                                    <ComboBox x:Name="cboChucVu" DisplayMemberPath="TenChucVu" SelectedValuePath="MaChucVu" SelectedValue="{Binding MaChucVu,Mode=TwoWay}" Height="40" Margin="0,0,0,14"/>
 
                                     <TextBlock Text="Chuyên khoa" Style="{StaticResource FormLabel}"/>
-                                    <ComboBox x:Name="cboChuyenKhoa" Height="40" Margin="0,0,0,14"/>
+                                    <ComboBox x:Name="cboChuyenKhoa" DisplayMemberPath="TenCK" SelectedValuePath="MaCK" SelectedValue="{Binding MaCK, Mode=TwoWay}" Height="40" Margin="0,0,0,14"/>
+
+                                    <TextBlock Text="Bằng cấp" Style="{StaticResource FormLabel}"/>
+                                    <TextBox x:Name="txtBangCap" Style="{StaticResource FormTextBox}"/>
 
                                     <TextBlock Text="Ngày vào làm" Style="{StaticResource FormLabel}"/>
                                     <DatePicker x:Name="dpNgayVaoLam" Height="40" Margin="0,0,0,14"/>
@@ -207,7 +201,7 @@
 
                                 <Button x:Name="btnLamMoiNhanVien" Content="Làm mới" Height="42"/>
                                 <Button x:Name="btnThemNhanVien" Grid.Column="2" Content="Thêm nhân viên"
-                                        Style="{StaticResource Primary}" Height="42"/>
+                                        Style="{StaticResource Primary}" Height="42" Click="btnThemNhanVien_Click"/>
                             </Grid>
                         </Grid>
                     </Border>
@@ -236,7 +230,7 @@
                                            Foreground="{StaticResource Muted}" FontSize="12" Margin="0,5,0,0"/>
                             </StackPanel>
 
-                            <DataGrid x:Name="Grid_CHUC_VU" Grid.Row="1" Tag="Table:CHUC_VU"
+                            <DataGrid x:Name="dgvChucVu" Grid.Row="1" Tag="Table:dgvChucVu"
                                       Style="{StaticResource NhanSuDataGridStyle}">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Mã chức vụ" Binding="{Binding MaChucVu}" Width="150"/>
@@ -270,7 +264,7 @@
 
                                 <Button x:Name="btnLamMoiChucVu" Content="Làm mới" Height="42"/>
                                 <Button x:Name="btnThemChucVu" Grid.Column="2" Content="Thêm chức vụ"
-                                        Style="{StaticResource Primary}" Height="42"/>
+                                        Style="{StaticResource Primary}" Height="42" Click="btnThemChucVu_Click"/>
                             </Grid>
                         </StackPanel>
                     </Border>

@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Dapper.Contrib.Extensions;
 
 namespace ET
 {
-    public class ET_CHUCVU
+    [Table("CHUC_VU")]
+    public class ET_CHUCVU  
     {
         private string maChucVu;
         private string tenChucVu;
@@ -21,6 +23,7 @@ namespace ET
             this.moTa = moTa;
         }
 
+        [ExplicitKey]
         public string MaChucVu { get => maChucVu; set => maChucVu = value; }
         public string TenChucVu { get => tenChucVu; set => tenChucVu = value; }
         public string MoTa { get => moTa; set => moTa = value; }

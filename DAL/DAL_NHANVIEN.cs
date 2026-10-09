@@ -13,10 +13,24 @@ namespace DAL
             return connection.GetAll<ET_NHANVIEN>();
         }
 
-        public IEnumerable<ET_NHANVIEN> layNhanVienTheoMa(string maNV)
+        public ET_NHANVIEN layNhanVienTheoMa(string maNV)
         {
             using var connection = CreateConnection();
-            return connection.Query<ET_NHANVIEN>("SELECT * FROM NHAN_VIEN WHERE MaNV = @MaNV", new { MaNV = maNV });
+            return connection.Query<ET_NHANVIEN>("SELECT * FROM NHAN_VIEN WHERE MaNV = @MaNV", new { MaNV = maNV }).FirstOrDefault();
+        }
+        public bool themNhanVien(ET_NHANVIEN nhanVien)
+        {
+            try 
+            {
+                using var connection = CreateConnection();
+                connection.Insert(nhanVien);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+                return false;
+            }            
         }
     }
 }

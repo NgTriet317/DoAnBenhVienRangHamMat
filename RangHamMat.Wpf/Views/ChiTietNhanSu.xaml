@@ -18,7 +18,6 @@
             <Setter Property="Height" Value="40"/>
             <Setter Property="Padding" Value="10,0"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="IsReadOnly" Value="True"/>
             <Setter Property="Margin" Value="0,0,0,14"/>
         </Style>
 
@@ -93,7 +92,7 @@
                         </Grid>
 
                         <TextBlock Text="Họ và tên" Style="{StaticResource DetailLabel}"/>
-                        <TextBox Text="{Binding HoTen}" Style="{StaticResource DetailTextBox}"/>
+                        <TextBox Text="{Binding HoTen}" Style="{DynamicResource DetailTextBox}"/>
 
                         <TextBlock Text="Ngày sinh" Style="{StaticResource DetailLabel}"/>
                         <TextBox Text="{Binding NgaySinh, StringFormat=dd/MM/yyyy}"

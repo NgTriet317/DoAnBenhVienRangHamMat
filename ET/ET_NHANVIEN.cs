@@ -15,17 +15,17 @@ namespace ET
         private string hoTen;
         private string gioiTinh;
         private DateTime ngaySinh;
-        private int sdt;
+        private string sdt;
         private string diaChi;
         private string maChucVu;
         private string maCK;
         private string bangCap;
-        private string ngayVaoLam;
+        private DateTime ngayVaoLam;
         private string trangThai;
 
         public ET_NHANVIEN() { }
 
-        public ET_NHANVIEN(string maNV, string hoTen, string gioiTinh, DateTime ngaySinh, int sdt, string diaChi, string maChucVu, string maCK, string bangCap, string ngayVaoLam, string trangThai)
+        public ET_NHANVIEN(string maNV, string hoTen, string gioiTinh, DateTime ngaySinh, string sdt, string diaChi, string maChucVu, string maCK, string bangCap, DateTime ngayVaoLam, string trangThai)
         {
             this.maNV = maNV;
             this.hoTen = hoTen;
@@ -45,12 +45,12 @@ namespace ET
         public string HoTen { get => hoTen; set => hoTen = value; }
         public string GioiTinh { get => gioiTinh; set => gioiTinh = value; }
         public DateTime NgaySinh { get => ngaySinh; set => ngaySinh = value; }
-        public int SDT { get => sdt; set => sdt = value; }
+        public string SDT { get => sdt; set => sdt = value; }
         public string DiaChi { get => diaChi; set => diaChi = value; }
         public string MaChucVu { get => maChucVu; set => maChucVu = value; }
         public string MaCK { get => maCK; set => maCK = value; }
         public string BangCap { get => bangCap; set => bangCap = value; }
-        public string NgayVaoLam { get => ngayVaoLam; set => ngayVaoLam = value; }
+        public DateTime NgayVaoLam { get => ngayVaoLam; set => ngayVaoLam = value; }
         public string TrangThai { get => trangThai; set => trangThai = value; }
     }
 }
