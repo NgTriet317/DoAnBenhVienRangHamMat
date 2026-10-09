@@ -11,10 +11,15 @@ namespace BUS
             return dalNhanVien.layToanBoNV();
         }
 
-        public IEnumerable<ET_NHANVIEN> layNhanVienTheoMa(string maNV)
+        public ET_NHANVIEN layNhanVienTheoMa(string maNV)
         {
             DAL_NHANVIEN dalNhanVien = new DAL_NHANVIEN();
             return dalNhanVien.layNhanVienTheoMa(maNV);
+        }
+        public bool themNhanVien(ET_NHANVIEN nhanVien)
+        {
+            DAL_NHANVIEN dalNhanVien = new DAL_NHANVIEN();
+            return dalNhanVien.themNhanVien(nhanVien);
         }
     }
 }
