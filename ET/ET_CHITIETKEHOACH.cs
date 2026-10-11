@@ -1,26 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Dapper.Contrib.Extensions;
+using System;
 
 namespace ET
 {
+    [Table("CHI_TIET_KE_HOACH")]
     public class ET_CHITIETKEHOACH
     {
-        private string maCTKH;
-        private string maKHDT;
-        private string maDV;
+        private string maCTKH = string.Empty;
+        private string maKHDT = string.Empty;
+        private string maDV = string.Empty;
         private int lanThu;
-        private int soLuongDuKien;
+        private decimal soLuongDuKien;
         private decimal donGiaDuKien;
         private decimal thanhTienDuKien;
-        private string trangThai;
-        private string ghiChu;
+        private string trangThai = string.Empty;
+        private string? ghiChu;
 
         public ET_CHITIETKEHOACH() { }
 
-        public ET_CHITIETKEHOACH(string maCTKH, string maKHDT, string maDV, int lanThu, int soLuongDuKien, decimal donGiaDuKien, decimal thanhTienDuKien, string trangThai, string ghiChu)
+        public ET_CHITIETKEHOACH(string maCTKH, string maKHDT, string maDV, int lanThu, decimal soLuongDuKien, decimal donGiaDuKien, decimal thanhTienDuKien, string trangThai, string? ghiChu)
         {
             this.maCTKH = maCTKH;
             this.maKHDT = maKHDT;
@@ -33,14 +31,16 @@ namespace ET
             this.ghiChu = ghiChu;
         }
 
+        [ExplicitKey]
         public string MaCTKH { get => maCTKH; set => maCTKH = value; }
         public string MaKHDT { get => maKHDT; set => maKHDT = value; }
         public string MaDV { get => maDV; set => maDV = value; }
         public int LanThu { get => lanThu; set => lanThu = value; }
-        public int SoLuongDuKien { get => soLuongDuKien; set => soLuongDuKien = value; }
+        public decimal SoLuongDuKien { get => soLuongDuKien; set => soLuongDuKien = value; }
         public decimal DonGiaDuKien { get => donGiaDuKien; set => donGiaDuKien = value; }
+        [Write(false)]
         public decimal ThanhTienDuKien { get => thanhTienDuKien; set => thanhTienDuKien = value; }
         public string TrangThai { get => trangThai; set => trangThai = value; }
-        public string GhiChu { get => ghiChu; set => ghiChu = value; }
+        public string? GhiChu { get => ghiChu; set => ghiChu = value; }
     }
 }

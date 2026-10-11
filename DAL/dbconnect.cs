@@ -6,7 +6,7 @@ namespace DAL
     public class dbconnect
     {
         private readonly string _connectionString =
-            @"Data Source=MSI;
+            Environment.GetEnvironmentVariable("RHM_CONNECTION_STRING") ?? @"Data Source=DESKTOP-C9VCE8A;
               Initial Catalog=QLBenhVienRangHamMat;
               Integrated Security=True;
               TrustServerCertificate=True;";

@@ -1,39 +1,39 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Dapper.Contrib.Extensions;
+using System;
 
 namespace ET
 {
+    [Table("CHI_TIET_PHIEU_XUAT")]
     public class ET_CHITIETPHIEUXUAT
     {
-        private string maCTPX;
-        private string maPX;
-        private string maHH;
-        private string maLo;
-        private string soLuong;
-        private string ghiChu;
+        private string maCTPX = string.Empty;
+        private string maPX = string.Empty;
+        private string maHH = string.Empty;
+        private string? maLo;
+        private string? maCTDT;
+        private decimal soLuong;
+        private string ghiChu = string.Empty;
 
-        public ET_CHITIETPHIEUXUAT(string maCTPX, string maPX, string maHH, string maLo, string soLuong, string ghiChu)
+        public ET_CHITIETPHIEUXUAT() { }
+
+        public ET_CHITIETPHIEUXUAT(string maCTPX, string maPX, string maHH, string? maLo, string? maCTDT, decimal soLuong, string ghiChu)
         {
-            this.MaCTPX = maCTPX;
-            this.MaPX = maPX;
-            this.MaHH = maHH;
-            this.MaLo = maLo;
-            this.SoLuong = soLuong;
-            this.GhiChu = ghiChu;
+            this.maCTPX = maCTPX;
+            this.maPX = maPX;
+            this.maHH = maHH;
+            this.maLo = maLo;
+            this.maCTDT = maCTDT;
+            this.soLuong = soLuong;
+            this.ghiChu = ghiChu;
         }
 
-        public ET_CHITIETPHIEUXUAT()
-        {
-        }
-
+        [ExplicitKey]
         public string MaCTPX { get => maCTPX; set => maCTPX = value; }
         public string MaPX { get => maPX; set => maPX = value; }
         public string MaHH { get => maHH; set => maHH = value; }
-        public string MaLo { get => maLo; set => maLo = value; }
-        public string SoLuong { get => soLuong; set => soLuong = value; }
+        public string? MaLo { get => maLo; set => maLo = value; }
+        public string? MaCTDT { get => maCTDT; set => maCTDT = value; }
+        public decimal SoLuong { get => soLuong; set => soLuong = value; }
         public string GhiChu { get => ghiChu; set => ghiChu = value; }
     }
 }

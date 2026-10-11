@@ -1,39 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Dapper.Contrib.Extensions;
+using System;
 
 namespace ET
 {
+    [Table("THUOC")]
     public class ET_THUOC
     {
-        private string maThuoc;
-        private string maHH;
-        private string hamLuong;
-        private string mucTonToiThieu;
-        private string moTa;
-        private string trangThai;
+        private string maThuoc = string.Empty;
+        private string maHH = string.Empty;
+        private string hamLuong = string.Empty;
+        private decimal mucTonToiThieu;
+        private decimal donGiaBan;
 
-        public ET_THUOC(string maThuoc, string maHH, string hamLuong, string mucTonToiThieu, string moTa, string trangThai)
+        public ET_THUOC() { }
+
+        public ET_THUOC(string maThuoc, string maHH, string hamLuong, decimal mucTonToiThieu, decimal donGiaBan)
         {
-            this.MaThuoc = maThuoc;
-            this.MaHH = maHH;
-            this.HamLuong = hamLuong;
-            this.MucTonToiThieu = mucTonToiThieu;
-            this.MoTa = moTa;
-            this.TrangThai = trangThai;
+            this.maThuoc = maThuoc;
+            this.maHH = maHH;
+            this.hamLuong = hamLuong;
+            this.mucTonToiThieu = mucTonToiThieu;
+            this.donGiaBan = donGiaBan;
         }
 
-        public ET_THUOC()
-        {
-        }
-
+        [ExplicitKey]
         public string MaThuoc { get => maThuoc; set => maThuoc = value; }
         public string MaHH { get => maHH; set => maHH = value; }
         public string HamLuong { get => hamLuong; set => hamLuong = value; }
-        public string MucTonToiThieu { get => mucTonToiThieu; set => mucTonToiThieu = value; }
-        public string MoTa { get => moTa; set => moTa = value; }
-        public string TrangThai { get => trangThai; set => trangThai = value; }
+        public decimal MucTonToiThieu { get => mucTonToiThieu; set => mucTonToiThieu = value; }
+        public decimal DonGiaBan { get => donGiaBan; set => donGiaBan = value; }
     }
 }

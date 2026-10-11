@@ -1,0 +1,20 @@
+{
+  "BenhNhan": [
+    "BENH_NHAN",
+    "HO_SO_BENH_AN"
+  ],
+  "LichKham": [
+    "LICH_KHAM"
+  ],
+  "KhamDieuTri": [
+    "LICH_SU_KHAM_BENH",
+    "TINH_TRANG_BENH",
+    "KE_HOACH_DIEU_TRI",
+    "CHI_TIET_KE_HOACH",
+    "DICH_VU_THUC_HIEN"
+  ],
+  "DonThuoc": [
+    "DON_THUOC",
+    "CHI_TIET_DON_THUOC"
+  ]
+}

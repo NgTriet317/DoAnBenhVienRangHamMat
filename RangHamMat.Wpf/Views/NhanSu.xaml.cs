@@ -44,13 +44,6 @@ namespace RangHamMat.Views
 
             dgvChucVu.ItemsSource = new BUS_CHUCVU().layToanBoChucVu();
         }
-        public string taoMaTuDong(string sdt, string chucVu)
-        {
-            string[] catchuoi = chucVu.Split(' ');
-            string ma = catchuoi[0].Substring(0, 1).ToUpper() + catchuoi[1].Substring(0, 1).ToUpper() + sdt;
-            return ma;
-        }
-
         public void clearTextBoxes()
         {
             txtMaChucVu.Text = string.Empty;
@@ -66,27 +59,39 @@ namespace RangHamMat.Views
 
         private void btnThemNhanVien_Click(object sender, RoutedEventArgs e)
         {
-            BUS_NHANVIEN busNhanVien = new BUS_NHANVIEN();
-
-            if(busNhanVien.themNhanVien(new ET_NHANVIEN(
-                taoMaTuDong(txtSDT.Text, cboChucVu.Text),
-                txtHoTen.Text,
-                cboGioiTinh.Text,
-                dpNgaySinh.SelectedDate.Value,
-                txtSDT.Text,
-                txtDiaChi.Text,
-                cboChucVu.SelectedValue.ToString(),
-                cboChuyenKhoa.SelectedValue.ToString(),
-                txtBangCap.Text,
-                dpNgayVaoLam.SelectedDate.Value,
-                cboTrangThai.Text
-                )))
+            if (cboChucVu.SelectedValue is not string maChucVu || dpNgayVaoLam.SelectedDate is not DateTime ngayVaoLam)
             {
-                MessageBox.Show("Thêm nhân viên thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Chọn chức vụ và ngày vào làm.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
-            else
+
+            try
             {
-                MessageBox.Show("Thêm nhân viên thất bại!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
+                BUS_NHANVIEN busNhanVien = new BUS_NHANVIEN();
+                if (busNhanVien.themNhanVien(new ET_NHANVIEN(
+                    string.Empty,
+                    txtHoTen.Text,
+                    cboGioiTinh.Text,
+                    dpNgaySinh.SelectedDate,
+                    txtSDT.Text,
+                    txtDiaChi.Text,
+                    maChucVu,
+                    cboChuyenKhoa.SelectedValue?.ToString(),
+                    txtBangCap.Text,
+                    ngayVaoLam,
+                    cboTrangThai.Text)))
+                {
+                    MessageBox.Show("Thêm nhân viên thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                    dgvNhanVien.ItemsSource = busNhanVien.layToanBoNhanVien();
+                }
+                else
+                {
+                    MessageBox.Show("Thêm nhân viên thất bại!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Không thể thêm nhân viên: " + ex.Message, "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

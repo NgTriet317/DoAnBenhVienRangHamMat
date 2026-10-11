@@ -291,7 +291,7 @@
           <Button Content="Thoát ứng dụng" Click="Exit_Click" DockPanel.Dock="Right" />
           <StackPanel VerticalAlignment="Center">
             <TextBlock x:Name="AppCount" Foreground="{StaticResource Muted}" />
-            <TextBlock Text="Bản giao diện • Chưa kết nối dữ liệu" FontSize="12" Foreground="{StaticResource Muted}" Margin="0,4,0,0" />
+            <TextBlock Text="Hồ sơ • Điều trị • Hóa đơn" FontSize="12" Foreground="{StaticResource Muted}" Margin="0,4,0,0" />
           </StackPanel>
         </DockPanel>
       </Border>

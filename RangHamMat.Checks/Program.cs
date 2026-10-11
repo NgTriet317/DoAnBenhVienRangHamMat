@@ -2,7 +2,9 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using System.Text.Json;
 
-var root = args.Length > 0 ? Path.GetFullPath(args[0]) : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../"));
+var root = args.FirstOrDefault(arg => !arg.StartsWith("--")) is string suppliedRoot ? Path.GetFullPath(suppliedRoot) : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../"));
+// Default checks target this update. --legacy retains the original checker for the older bundled SQL.
+if (!args.Contains("--legacy")) { ClinicalChecks.Run(root); return; }
 var wpfRoot = Path.Combine(root, "RangHamMat.Wpf");
 var errors = new List<string>();
 var sql = File.ReadAllText(Path.Combine(root, "Database", "QLBenhVienRangHamMat.sql"));

@@ -1,45 +1,42 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Dapper.Contrib.Extensions;
 
 namespace ET
 {
+    [Table("LO_HANG_HOA")]
     public class ET_LOHANGHOA
     {
-        private string maLo;
-        private string maHH;
-        private string maNCC;
-        private string maKho;
-        private int soLo;
+        private string maLo = string.Empty;
+        private string maHH = string.Empty;
+        private string maNCC = string.Empty;
+        private string maKho = string.Empty;
+        private string? soLo;
         private DateTime ngayNhap;
-        private DateTime hanSuDung;
-        private string trangThai;
+        private DateTime? hanSuDung;
+        private string trangThai = string.Empty;
 
-        public ET_LOHANGHOA(string maLo, string maHH, string maNCC, string maKho, int soLo, DateTime ngayNhap, DateTime hanSuDung, string trangThai)
+        public ET_LOHANGHOA() { }
+
+        public ET_LOHANGHOA(string maLo, string maHH, string maNCC, string maKho, string? soLo, DateTime ngayNhap, DateTime? hanSuDung, string trangThai)
         {
-            this.MaLo = maLo;
-            this.MaHH = maHH;
-            this.MaNCC = maNCC;
-            this.MaKho = maKho;
-            this.SoLo = soLo;
-            this.NgayNhap = ngayNhap;
-            this.HanSuDung = hanSuDung;
-            this.TrangThai = trangThai;
+            this.maLo = maLo;
+            this.maHH = maHH;
+            this.maNCC = maNCC;
+            this.maKho = maKho;
+            this.soLo = soLo;
+            this.ngayNhap = ngayNhap;
+            this.hanSuDung = hanSuDung;
+            this.trangThai = trangThai;
         }
 
-        public ET_LOHANGHOA()
-        {
-        }
-
+        [ExplicitKey]
         public string MaLo { get => maLo; set => maLo = value; }
         public string MaHH { get => maHH; set => maHH = value; }
         public string MaNCC { get => maNCC; set => maNCC = value; }
         public string MaKho { get => maKho; set => maKho = value; }
-        public int SoLo { get => soLo; set => soLo = value; }
+        public string? SoLo { get => soLo; set => soLo = value; }
         public DateTime NgayNhap { get => ngayNhap; set => ngayNhap = value; }
-        public DateTime HanSuDung { get => hanSuDung; set => hanSuDung = value; }
+        public DateTime? HanSuDung { get => hanSuDung; set => hanSuDung = value; }
         public string TrangThai { get => trangThai; set => trangThai = value; }
     }
 }

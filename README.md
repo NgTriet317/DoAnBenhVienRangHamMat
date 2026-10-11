@@ -1,88 +1,39 @@
-# Bệnh viện Răng Hàm Mặt — Giao diện Blue Care
+# Đồ án Bệnh viện Răng Hàm Mặt
 
-## Chạy trong Visual Studio 2022
+Bản cập nhật 11/10/2026 thực hiện yêu cầu trong `RangHamMat.Wpf/KeHoach.txt`. Hồ sơ bệnh nhân, lịch khám/tiếp nhận, khám điều trị, đơn thuốc, dịch vụ thực hiện, hóa đơn và thanh toán đọc/lưu SQL Server qua ET → DAL → BUS → WPF. Đã bỏ chức năng nạp dữ liệu minh họa. Các thao tác lưu tiếp tục tồn tại khi đóng và mở lại ứng dụng.
 
-1. Giải nén toàn bộ dự án vào thư mục mới.
-2. Cài workload **.NET desktop development** và .NET 8 SDK.
-3. Mở `BenhVienRangHamMat.sln`, đặt `RangHamMat.Wpf` làm **Startup Project**.
-4. Nhấn **F5**, bấm **Vào không gian làm việc** trên form đăng nhập mẫu.
-5. Home xuất hiện **toàn màn hình**, không thanh tiêu đề, không nút thu nhỏ/phóng to/đóng, không kéo thay đổi kích thước.
+Schema hiện tại là **v8**: `Database/DB_Nhom4_v8.docx` và `Database/QLBenhVienRangHamMat.sql`. SQL trong workspace khớp database đang dùng; các tài liệu/JSON mang tên v7 chỉ còn mô tả bản giao diện trước.
 
-## Điều hướng
+Đã viết lại 24 ET liên quan theo mẫu private field, constructor rỗng/đầy đủ và property get/set; mỗi ET có DAL và BUS riêng. Khóa chính/khóa ngoại là chuỗi theo file SQL hiện tại. Mã mới tự cấp theo chữ đầu tên bảng và số tối thiểu hai chữ số: BN01, BN02…, HSBA01, LSKB01; tiếp tục số lớn nhất đang có và giữ các mã cũ. Xem [báo cáo sửa DAL/BUS/ET](CAP_NHAT_DAL_BUS_ET.md) để tra từng lớp và tên view đã đổi.
 
-- Home hiện có 25 app: giữ nguyên 19 app cũ và bổ sung 6 phân hệ mới theo DB v7; bộ chọn vai trò và tông xanh dương vẫn giữ nguyên.
-- Bấm app để mở nội dung **ngay trong cửa sổ chính**. Chỉ một app được hiển thị tại một thời điểm.
-- **Màn hình chính** đưa về Home. App không mở cửa sổ riêng và không có controlbox.
-- **Thêm / Tạo phiếu** mở form ngay trong vùng nội dung. Các form này cũng không có cửa sổ riêng/controlbox.
-- **Quay lại danh sách** hoặc **Esc** đưa về danh sách vừa mở form. Dữ liệu nhập trong form không được lưu.
-- **Về màn hình chính** trong form đi thẳng về Home.
-- Liên kết giữa các app chuyển nội dung trong cùng cửa sổ.
-- **Thoát** ở góc dưới bên phải Home đóng chương trình. Vẫn dùng được Alt+F4 / chuyển ứng dụng của Windows; đây không phải chế độ kiosk khóa hệ điều hành.
-- Khi cửa sổ được khôi phục về trạng thái thường, nó tự trở lại toàn màn hình. Có thể chuyển sang ứng dụng Windows khác bình thường.
+## Chạy ứng dụng
 
-Màn hình đăng nhập vẫn là form mẫu như trước; chế độ toàn màn hình bắt đầu sau khi đăng nhập. Vai trò chỉ mô phỏng ẩn/hiện app, chưa có xác thực hay phân quyền dữ liệu.
+1. Mở `BenhVienRangHamMat.sln` bằng Visual Studio 2022 có .NET desktop development và .NET 8 SDK.
+2. Chọn `RangHamMat.Wpf` làm Startup Project rồi F5.
+3. Kết nối mặc định: SQL Server `DESKTOP-C9VCE8A`, database `QLBenhVienRangHamMat`, Windows Authentication. Máy hiện tại đã có database này.
+4. Nếu dùng máy/server khác, đặt biến môi trường `RHM_CONNECTION_STRING` trước khi mở Visual Studio hoặc chạy ứng dụng:
 
-## Tệp chính
+```powershell
+$env:RHM_CONNECTION_STRING = 'Data Source=TEN_SERVER;Initial Catalog=QLBenhVienRangHamMat;Integrated Security=True;TrustServerCertificate=True;'
+dotnet run --project RangHamMat.Wpf -c Release
+```
 
-| Tệp | Vai trò |
-|---|---|
-| `RangHamMat.Wpf/MainWindow.xaml` | Cửa sổ toàn màn hình chứa Home và AppHost |
-| `RangHamMat.Wpf/MainWindow.xaml.cs` | Chuyển Home/app, mở form nhúng, khóa kích thước và thoát |
-| `RangHamMat.Wpf/AppWorkspace.xaml` | Khung app nhúng có nút Home |
-| `RangHamMat.Wpf/AppWorkspace.xaml.cs` | Chuyển trang/form và xử lý Đóng/Esc/Home |
-| `RangHamMat.Wpf/Views/CuaSo*.xaml` | 16 form nhúng, gồm 15 form theo schema và 1 trang chờ bổ sung lương |
-| `RangHamMat.Wpf/Themes/Theme.xaml` | Bảng màu xanh và style chung |
+Không chạy lại script khởi tạo trên database đang có dữ liệu. Database cần schema v8 và danh mục nhân viên, phòng, dịch vụ, thuốc, kho/lô thực tế. Nút **Tải lại dữ liệu** đọc lại SQL. Đăng nhập/chọn vai trò giữ cách hoạt động của source gốc; chọn vai trò Quản trị để thử toàn bộ luồng liên phân hệ. Trong Hóa đơn cần chọn rõ nhân viên thực hiện.
 
-`AppWindow` của bản cửa sổ riêng đã được thay bằng `AppWorkspace`. `ChonRang` tiếp tục được giữ trong source và ẩn như bản gốc.
+## Luồng sử dụng
+
+**Bệnh nhân → Bệnh án → Tiếp nhận → Lần khám → Kế hoạch/dịch vụ/đơn thuốc → Cấp thuốc → Hóa đơn → Thanh toán → In.**
+
+Các liên kết giữ đúng bệnh nhân và lần khám nguồn. Form bệnh nhân có BHYT, số điện thoại dạng chuỗi, ngày sinh có thể để trống. Xác nhận lần khám lưu đồng thời ngày xác nhận. Bản xác nhận được khóa; thao tác nhiều dòng lưu trong một giao dịch, lỗi thì rollback. Form đã cũ bị chặn ghi đè dữ liệu mới.
+
+Hóa đơn chỉ lấy dịch vụ đã xác nhận và thuốc đã xuất ghi sổ của đúng lần khám. Cấp thuốc chọn một kho đủ toàn bộ đơn, theo FIFO lô còn hạn. Một nguồn thu chỉ vào một hóa đơn; không tính lại khoản đã lập. Thu tiền không vượt số còn phải thu; hoàn không vượt tiền đã thu ròng và phải có lý do. Hóa đơn dài được phân trang; **In / Xuất PDF…** chọn máy in hoặc Microsoft Print to PDF.
+
+Đọc [hướng dẫn thao tác](HUONG_DAN_GIAO_DIEN_BENH_VIEN.md) và [kết quả thực hiện kế hoạch](THUC_HIEN_KE_HOACH.md).
 
 ## Kiểm tra
 
-Chạy `KiemTra.bat` trên Windows hoặc:
+- `KiemTra.bat`: build Release, kiểm tra XAML/luồng và đối chiếu ET với SQL.
+- `KiemTraDatabase.bat`: kiểm tra persistence, nghiệp vụ tài chính và WPF trên SQL thật; mọi bản ghi thử được rollback.
+- `KiemTraWpf.bat`: riêng kiểm tra WPF; cần Windows và database đang chạy.
 
-```powershell
-dotnet build BenhVienRangHamMat.sln -c Release -m:1
-dotnet run --project RangHamMat.Checks -c Release
-```
-
-Xem `KET_QUA_KIEM_TRA.md` để biết các kiểm tra đã chạy và phần cần xác nhận trực tiếp trên Windows.
-
-Chỉ có giao diện và điều hướng; không bổ sung database, API, lưu dữ liệu hay chức năng nghiệp vụ. Khi về Home/chuyển app, nội dung nhập chưa lưu có thể bị bỏ. Gói chỉ chứa mã nguồn và tài liệu, không kèm bản chạy cũ.
-
-## Đối chiếu database mới
-
-- Đã chỉnh các trường nhập và cột danh sách theo **34 bảng / 245 thuộc tính** trong SQL đã gửi.
-- Các bảng phụ được chia thành tab trong phân hệ tương ứng. Xem `DOI_CHIEU_DATABASE.md` để tra đầy đủ từng cột.
-- SQL gốc nằm tại `Database/QLBenhVienRangHamMat.sql`, giữ nguyên; chưa chạy script hay kết nối database.
-- Khóa tự sinh chỉ đọc; khóa ngoại là ComboBox chưa nạp dữ liệu; thời điểm có phần ngày và giờ; trạng thái là văn bản theo SQL.
-- Mật khẩu dùng PasswordBox và không hiển thị trên bảng danh sách. Giá trị mật khẩu trong database phải là chuỗi băm khi triển khai chức năng.
-- SQL 34 bảng cũ chưa có CHINH_SACH_LUONG/BANG_LUONG/NHAT_KY_THAO_TAC. DB v7 đã bổ sung các bảng này; giao diện Bảng lương và Nhật ký hiện hữu được tái sử dụng, chỉ tạo thêm phân hệ Chính sách lương.
-- Tổng quan là các lối tắt công việc; Báo cáo là danh sách dữ liệu nguồn, chưa tính số liệu tổng hợp. Các nút lưu nghiệp vụ được vô hiệu hóa; nút mở form, chuyển app, Home và Thoát hoạt động ở mức điều hướng.
-
-## Giao diện mới
-
-- Home có lời chào, nền sáng, 25 app với icon, ô tìm kiếm và bộ lọc nhóm. Tìm kiếm kết hợp nhóm và vai trò đang xem.
-- Danh sách và form được tách riêng. Danh sách hiện các cột chính; **Hiện đủ cột / Thu gọn cột** đổi mức chi tiết.
-- Bấm **Thêm** mở form tạo mới. Nhấp đúp vào dòng dữ liệu mở màn chi tiết chỉ đọc của chính dòng đó; các mục con được lọc theo mã bản ghi chính.
-- Form gom các trường thành thông tin chính/cá nhân, sức khỏe/nội dung và thông tin quản lý. ID tự sinh chỉ đọc; đủ các trường database như bảng đối chiếu.
-- Ô nhập cao tối thiểu 42 DIP, bảng có dòng 50 DIP, phần đầu cột 48 DIP. Tab có trạng thái đang chọn rõ ràng.
-- Danh sách co theo chiều cao cửa sổ; form và Home cuộn dọc. Form đăng nhập thu vừa vùng làm việc khi DPI lớn.
-
-`XemTruoc/index.html` giữ bản minh họa bố cục Home của lần thiết kế trước, được đánh dấu rõ phạm vi. Các thay đổi lịch/đồ thị/chi tiết trong lần này triển khai ở WPF; chạy solution để xem đầy đủ.
-
-## Cập nhật lịch, đồ thị và chi tiết — 29/09/2026
-
-- **Ca làm / Lịch khám:** chọn Bảng dữ liệu hoặc Lịch theo tuần. Có tuần trước/sau, hôm nay và chọn ngày. Lịch dùng cùng nguồn dữ liệu với bảng; ngày nằm trên đầu cột, giờ chạy dọc 00:00–24:00. Tiêu đề ngày giữ nguyên khi cuộn. Ca qua đêm tách sang ngày kế; lịch khám chỉ biểu thị giờ bắt đầu vì SQL không có giờ kết thúc.
-- **Báo cáo:** chọn Bảng dữ liệu hoặc Đồ thị. Một đồ thị đường cho bệnh viện và một đồ thị cột ghép Thu kho / Chi kho. Giá trị do tầng dữ liệu cung cấp, chưa có tính toán nghiệp vụ.
-- **Chi tiết:** double-click một dòng thật; bấm tiêu đề cột/vùng trắng không mở form. Màn chi tiết chỉ đọc và lọc bảng con theo khóa của dòng đó. Double-click bảng con để xem tiếp; Quay lại/Esc quay đúng cấp trước.
-- **Thêm mới:** vẫn là thao tác riêng. Tại màn chi tiết bản ghi chính, nút thêm mục con mở form tạo mới và điền/khóa mã liên kết cha. Không mở chi tiết bằng nút Thêm.
-- **Vật tư / Thuốc:** hai tab dùng chung VAT_TU, loại `Thuốc` lấy qua LOAI_VAT_TU; lô thuốc dùng LO_VAT_TU. Không thêm bảng/cột SQL. Tab Thuốc có nút Thêm thuốc, loại Thuốc được chọn sẵn.
-- **Nhật ký:** bộ lọc chỉ gồm Đăng nhập, Đăng xuất, Phân quyền, Thay đổi thông tin. Chưa tự ghi nhật ký; SQL gốc chưa có bảng nhật ký.
-- **Thanh toán:** nguồn Doanh thu bệnh viện tách khỏi Thu–chi kho. Kho có tab Thu kho và Chi kho, không gộp vào doanh thu bệnh viện. Không tự suy ra thu/chi từ số lượng nhập/xuất.
-
-Chưa kết nối database nên các bảng, lịch và đồ thị bắt đầu ở trạng thái trống. Không chèn dữ liệu bệnh nhân hoặc doanh thu giả. Double-click cần một dòng dữ liệu được nạp; hướng dẫn nối nguồn và kiểm thử nằm trong `HUONG_DAN_NGUON_DU_LIEU.md`.
-
-## Bổ sung giao diện theo DB v7
-
-Bản này bổ sung **6 phân hệ mới** thay vì tạo lại toàn bộ giao diện cũ: Dịch vụ thực hiện, Chứng chỉ nhân viên, Danh mục hàng hóa, Nhập kho, Xuất kho và Chính sách lương.
-
-Chi tiết đối chiếu xem `PHAN_HE_MOI_DBV7.md` và `Database/ui-table-map-dbv7-new.json`.
+Build và các kiểm tra đã chạy trên máy hiện tại. Xem lệnh, số kiểm tra, ảnh giao diện và giới hạn kiểm chứng trong `THUC_HIEN_KE_HOACH.md`. Các phân hệ ngoài phạm vi KeHoach.txt giữ source hiện có.

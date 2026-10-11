@@ -1,36 +1,37 @@
 ﻿/*
-NHÓM 4 - HỆ THỐNG QUẢN LÝ BỆNH VIỆN RĂNG HÀM MẶT
-Nguồn: YTuongDB_Nhom4_v2(3).docx. Đủ 34 bảng, giữ nguyên các trường chi tiết.
-Hệ quản trị: Microsoft SQL Server (T-SQL).
-Cách chạy: mở file bằng SQL Server Management Studio, kết nối máy chủ,
-chạy toàn bộ script (F5) với tài khoản có quyền tạo database/bảng.
-Script tạo database QLBenhVienRangHamMat nếu chưa có; chỉ cài vào database
-chưa có bảng người dùng. Nếu đã có bảng, dừng và không xóa dữ liệu.
+NHÓM 4 - BỆNH VIỆN RĂNG HÀM MẶT - DATABASE V8 VÀ DỮ LIỆU MẪU
+Nguồn: DB_Nhom4_v8(1).docx do người dùng gửi ngày 11/10/2026.
+44 bảng, đúng tên/cột trong Word. 43 bảng có 10 dòng; HANG_HOA có 30 dòng
+(10 thuốc, 10 vật tư, 10 loại thiết bị), theo lựa chọn của người dùng: 460 dòng.
 
-QUY ƯỚC BỔ SUNG VÌ TÀI LIỆU CHƯA CHỈ ĐỊNH KIỂU DỮ LIỆU:
-- Khóa chính INT IDENTITY; khóa ngoại INT; văn bản tiếng Việt NVARCHAR.
-- Tiền DECIMAL(18,2), số lượng DECIMAL(18,3); thời điểm DATETIME2(0).
-- Trạng thái là NVARCHAR(50), ứng dụng thống nhất bộ giá trị nghiệp vụ.
-- MaBS tham chiếu NHAN_VIEN.MaNV; ứng dụng kiểm tra chức vụ bác sĩ.
-- NHAN_VIEN.MaChucVu là FK theo bảng quan hệ trong tài liệu.
-- Chọn tên TINH_TRANG_BENH theo mục mô tả chi tiết (tổng quan gọi là
-  TINH_TRANG_RANG). Không tự thêm trường số răng vì tài liệu chưa liệt kê.
-- CHI_TIET_HOA_DON giữ MaKHDT; không thêm MaDV dù bảng quan hệ có nêu
-  DICH_VU -> CHI_TIET_HOA_DON, vì danh sách trường chi tiết không có MaDV.
-- MatKhau chỉ chứa chuỗi băm mật khẩu có salt do ứng dụng tạo (không lưu
-  mật khẩu rõ). Không tạo tài khoản hoặc mật khẩu mẫu.
-- ThanhTien hóa đơn = TongTien - GiamGia (GiamGia là số tiền, không phải %).
-  Tổng hóa đơn/chi tiết và tổng thanh toán do ứng dụng cập nhật trong transaction.
-- GIAO_DICH_KHO.SoLuongLo là biến động có dấu: nhập dương, xuất âm,
-  điều chỉnh là chênh lệch. Mọi nhập ban đầu phải có giao dịch dương;
-  tồn = SUM(SoLuongLo), KHÔNG cộng thêm LO_VAT_TU.SoLuongNhap lần nữa.
-  Ứng dụng kiểm tra tồn âm trong transaction có khóa thích hợp.
-- Ngày/giờ lưu theo giờ máy chủ SQL Server; cấu hình thống nhất với ứng dụng.
-- PhongSuDung và NguoiThu giữ là văn bản theo thuộc tính trong tài liệu.
-- Ứng dụng kiểm tra tính nhất quán bệnh nhân/hồ sơ/lịch/lần khám, chuyên khoa,
-  xung đột khoảng giờ, quy trình duyệt nghỉ/thay thế và thanh toán vượt dư nợ.
-- Không dùng CASCADE DELETE để tránh xóa dây chuyền dữ liệu nghiệp vụ.
-- Không kèm dữ liệu mẫu, trigger hay stored procedure ngoài phạm vi tạo schema.
+CÁCH CHẠY: mở toàn bộ file bằng SQL Server Management Studio, kết nối SQL
+Server 2016 trở lên, nhấn F5. File dùng GO; không gửi nguyên file qua Dapper.
+Tên database: QLBenhVienRangHamMat. Chạy trên database trống. Nếu database có bảng người dùng, script dừng; không
+DROP, xóa hay thay dữ liệu đã có. Đây là bản cài mới, không phải migration.
+Nếu đổi tên database, đổi đồng thời DB_ID, CREATE DATABASE và USE.
+
+QUY ƯỚC: tất cả thuộc tính mã là NVARCHAR(50), tương ứng string trong C#;
+PK/FK dùng cùng kiểu và độ dài. Không dùng IDENTITY; ứng dụng phải cấp mã
+chuỗi duy nhất trước khi INSERT (ví dụ BN001, HD001), không lấy MAX rồi +1
+khi có nhiều người dùng. NVARCHAR cho tiếng Việt;
+DECIMAL(18,2) cho tiền, DECIMAL(18,3) cho lượng, DATETIME2(0) cho thời điểm.
+Mốc giờ mẫu là giờ địa phương bệnh viện, ứng dụng phải dùng cùng quy ước.
+ThanhTien tại nguồn là computed PERSISTED; ThanhTien hóa đơn là cột lưu
+thường, được trigger tính từ nguồn, đồng bộ TongTien và khóa khi xác nhận.
+Dịch vụ/điều trị không có đơn vị tính. Giá bán thuốc lịch sử giữ tại dòng
+hóa đơn; lượng lấy qua MaCTPX. Kê đơn không trừ kho; phải cấp đủ toàn đơn.
+Không tính phí kế hoạch hoặc vật tư nội bộ; nguồn chỉ thu một lần.
+
+Triggers xử lý nhiều dòng, kiểm tra liên kết nguồn, tổng tiền, đầy đủ đơn,
+khóa chứng từ đã xác nhận/ghi sổ, ngăn tồn âm và thu/hoàn vượt số dư.
+C# phải đặt thao tác nhiều bảng trong transaction, ghi nhật ký qua tài khoản
+thật. Tài khoản mẫu đều Khóa; không dùng để đăng nhập. MatKhauHash chứa băm
+PBKDF2-SHA256 giả định; cơ chế xác thực C# phải đọc đúng định dạng này.
+Bộ mẫu: 5 lượt có hẹn điện thoại + 5 lượt trực tiếp; đơn DT001 có 3 thuốc;
+8 đơn cấp đủ, 2 đơn nháp; 5 hóa đơn xác nhận, 5 nháp; có thu nhiều lần,
+hoàn khoản thu nhầm, giao dịch nháp/hủy; hàng danh mục có thể chưa có tồn.
+Thuốc, bệnh án và liên hệ hoàn toàn giả định. Không mở rộng thuế/BHYT,
+hóa đơn điện tử, trả thuốc hoặc sửa phí sau xác nhận trong phạm vi đồ án.
 */
 USE [master];
 GO
@@ -43,16 +44,21 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
-
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET ARITHABORT ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET NUMERIC_ROUNDABORT OFF;
+IF EXISTS (SELECT 1 FROM sys.tables WHERE is_ms_shipped=0)
+BEGIN
+    THROW 50001, N'Database đã có bảng. Hãy chọn database trống; script không xóa dữ liệu cũ.', 1;
+END;
 BEGIN TRY
-    IF EXISTS (SELECT 1 FROM sys.tables WHERE is_ms_shipped = 0)
-        THROW 50001, N'Database đã có bảng. Script chỉ dùng khởi tạo database trống.', 1;
-
-    BEGIN TRANSACTION;
+BEGIN TRANSACTION;
 
 -- 01. BENH_NHAN
 CREATE TABLE [dbo].[BENH_NHAN] (
-    [MaBN] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_BENH_NHAN] PRIMARY KEY,
+    [MaBN] NVARCHAR(50) NOT NULL CONSTRAINT [PK_BENH_NHAN] PRIMARY KEY,
     [HoTenBN] NVARCHAR(255) NOT NULL,
     [GioiTinh] NVARCHAR(50) NULL,
     [NgaySinh] DATE NULL,
@@ -67,10 +73,10 @@ CREATE TABLE [dbo].[BENH_NHAN] (
 
 -- 02. HO_SO_BENH_AN
 CREATE TABLE [dbo].[HO_SO_BENH_AN] (
-    [MaHS] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_HO_SO_BENH_AN] PRIMARY KEY,
-    [MaBN] INT NOT NULL,
-    [NgayLap] DATETIME2(0) NOT NULL DEFAULT (SYSDATETIME()),
-    [LyDoKhamBanDau] NVARCHAR(MAX) NULL,
+    [MaHS] NVARCHAR(50) NOT NULL CONSTRAINT [PK_HO_SO_BENH_AN] PRIMARY KEY,
+    [MaBN] NVARCHAR(50) NOT NULL,
+    [NgayLap] DATETIME2(0) NOT NULL,
+    [LyDoKhamBanDau] NVARCHAR(MAX) NOT NULL,
     [GhiChu] NVARCHAR(MAX) NULL,
     [TrangThai] NVARCHAR(50) NOT NULL,
     CONSTRAINT [UQ_HO_SO_BENH_AN_MaBN] UNIQUE ([MaBN])
@@ -78,520 +84,1827 @@ CREATE TABLE [dbo].[HO_SO_BENH_AN] (
 
 -- 03. PHIEU_KHAM_BENH
 CREATE TABLE [dbo].[PHIEU_KHAM_BENH] (
-    [MaPhieu] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_PHIEU_KHAM_BENH] PRIMARY KEY,
-    [MaBN] INT NOT NULL,
-    [MaHS] INT NOT NULL,
-    [MaLich] INT NULL,
-    [MaKhoa] INT NOT NULL,
-    [MaPhong] INT NOT NULL,
-    [MaBS] INT NULL,
-    [MaDV] INT NOT NULL,
+    [MaPhieu] NVARCHAR(50) NOT NULL CONSTRAINT [PK_PHIEU_KHAM_BENH] PRIMARY KEY,
+    [MaHS] NVARCHAR(50) NOT NULL,
+    [MaLich] NVARCHAR(50) NULL,
+    [MaPhong] NVARCHAR(50) NOT NULL,
+    [MaBS] NVARCHAR(50) NULL,
+    [MaNVTiepNhan] NVARCHAR(50) NOT NULL,
+    [MaDV] NVARCHAR(50) NULL,
     [SoThuTu] INT NOT NULL,
-    [ThoiGianTiepNhan] DATETIME2(0) NOT NULL DEFAULT (SYSDATETIME()),
-    [LyDoKham] NVARCHAR(MAX) NULL,
+    [ThoiGianTiepNhan] DATETIME2(0) NOT NULL,
+    [LyDoKham] NVARCHAR(MAX) NOT NULL,
     [TrangThai] NVARCHAR(50) NOT NULL,
     [GhiChu] NVARCHAR(MAX) NULL,
-    CONSTRAINT [CK_PHIEU_KHAM_BENH_SoThuTu] CHECK ([SoThuTu] > 0)
+    CONSTRAINT [CK_PHIEU_KHAM_BENH_1] CHECK ([SoThuTu] > 0)
 );
 
 -- 04. LICH_SU_KHAM_BENH
 CREATE TABLE [dbo].[LICH_SU_KHAM_BENH] (
-    [MaLS] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_LICH_SU_KHAM_BENH] PRIMARY KEY,
-    [MaHS] INT NOT NULL,
-    [MaLich] INT NULL,
-    [ThoiGianKham] DATETIME2(0) NOT NULL DEFAULT (SYSDATETIME()),
-    [TrieuChung] NVARCHAR(MAX) NULL,
-    [ChanDoan] NVARCHAR(MAX) NULL,
-    [KeHoachXuLy] NVARCHAR(MAX) NULL,
-    [GhiChu] NVARCHAR(MAX) NULL
+    [MaLS] NVARCHAR(50) NOT NULL CONSTRAINT [PK_LICH_SU_KHAM_BENH] PRIMARY KEY,
+    [MaPhieu] NVARCHAR(50) NOT NULL,
+    [MaBS] NVARCHAR(50) NOT NULL,
+    [MaPhong] NVARCHAR(50) NOT NULL,
+    [ThoiGianKham] DATETIME2(0) NOT NULL,
+    [TrieuChung] NVARCHAR(MAX) NOT NULL,
+    [ChanDoan] NVARCHAR(MAX) NOT NULL,
+    [KeHoachXuLy] NVARCHAR(MAX) NOT NULL,
+    [TrangThai] NVARCHAR(50) NOT NULL,
+    [NgayXacNhan] DATETIME2(0) NULL,
+    [GhiChu] NVARCHAR(MAX) NULL,
+    CONSTRAINT [UQ_LICH_SU_KHAM_BENH_MaPhieu] UNIQUE ([MaPhieu]),
+    CONSTRAINT [CK_LICH_SU_KHAM_BENH_1] CHECK ([TrangThai] IN (N'Nháp', N'Đã xác nhận') AND (([TrangThai] = N'Đã xác nhận' AND [NgayXacNhan] IS NOT NULL AND [NgayXacNhan] >= [ThoiGianKham]) OR ([TrangThai] = N'Nháp' AND [NgayXacNhan] IS NULL)))
 );
 
 -- 05. TINH_TRANG_BENH
 CREATE TABLE [dbo].[TINH_TRANG_BENH] (
-    [MaTTB] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_TINH_TRANG_BENH] PRIMARY KEY,
-    [MaLS] INT NOT NULL,
-    [TinhTrang] NVARCHAR(255) NOT NULL,
-    [ChanDoan] NVARCHAR(MAX) NULL,
-    [MucDo] NVARCHAR(255) NULL,
+    [MaTTB] NVARCHAR(50) NOT NULL CONSTRAINT [PK_TINH_TRANG_BENH] PRIMARY KEY,
+    [MaLS] NVARCHAR(50) NOT NULL,
+    [LoaiTinhTrang] NVARCHAR(255) NOT NULL,
+    [MoTaTinhTrang] NVARCHAR(MAX) NOT NULL,
+    [MucDo] NVARCHAR(255) NOT NULL,
     [GhiChu] NVARCHAR(MAX) NULL
 );
 
--- 06. DON_THUOC
-CREATE TABLE [dbo].[DON_THUOC] (
-    [MaDT] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_DON_THUOC] PRIMARY KEY,
-    [MaLS] INT NOT NULL,
-    [MaBS] INT NOT NULL,
-    [NgayKe] DATETIME2(0) NOT NULL DEFAULT (SYSDATETIME()),
-    [ChanDoan] NVARCHAR(MAX) NULL,
-    [GhiChu] NVARCHAR(MAX) NULL
-);
-
--- 07. CHI_TIET_DON_THUOC
-CREATE TABLE [dbo].[CHI_TIET_DON_THUOC] (
-    [MaCTDT] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_CHI_TIET_DON_THUOC] PRIMARY KEY,
-    [MaDT] INT NOT NULL,
-    [TenThuoc] NVARCHAR(255) NOT NULL,
-    [LieuDung] NVARCHAR(255) NULL,
-    [SoLuong] DECIMAL(18,3) NOT NULL,
-    [DonViTinh] NVARCHAR(255) NOT NULL,
-    [SoNgayDung] INT NOT NULL,
-    [HuongDan] NVARCHAR(MAX) NULL,
-    CONSTRAINT [CK_CHI_TIET_DON_THUOC_SoLuong] CHECK ([SoLuong] > 0),
-    CONSTRAINT [CK_CHI_TIET_DON_THUOC_SoNgayDung] CHECK ([SoNgayDung] > 0)
-);
-
--- 08. DICH_VU
+-- 06. DICH_VU
 CREATE TABLE [dbo].[DICH_VU] (
-    [MaDV] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_DICH_VU] PRIMARY KEY,
+    [MaDV] NVARCHAR(50) NOT NULL CONSTRAINT [PK_DICH_VU] PRIMARY KEY,
     [TenDV] NVARCHAR(255) NOT NULL,
-    [MaCK] INT NULL,
+    [NhomDV] NVARCHAR(255) NOT NULL,
+    [MaCK] NVARCHAR(50) NOT NULL,
     [DonGia] DECIMAL(18,2) NOT NULL,
-    [MoTa] NVARCHAR(MAX) NULL,
     [ThoiGianDuKien] INT NOT NULL,
+    [MoTa] NVARCHAR(MAX) NULL,
+    [NgayApDung] DATE NOT NULL,
     [TrangThai] NVARCHAR(50) NOT NULL,
-    CONSTRAINT [CK_DICH_VU_DonGia] CHECK ([DonGia] >= 0),
-    CONSTRAINT [CK_DICH_VU_ThoiGianDuKien] CHECK ([ThoiGianDuKien] > 0)
+    CONSTRAINT [CK_DICH_VU_1] CHECK ([DonGia] >= 0),
+    CONSTRAINT [CK_DICH_VU_2] CHECK ([ThoiGianDuKien] > 0)
 );
 
--- 09. VAI_TRO
+-- 07. KE_HOACH_DIEU_TRI
+CREATE TABLE [dbo].[KE_HOACH_DIEU_TRI] (
+    [MaKHDT] NVARCHAR(50) NOT NULL CONSTRAINT [PK_KE_HOACH_DIEU_TRI] PRIMARY KEY,
+    [MaLS] NVARCHAR(50) NOT NULL,
+    [MaBS] NVARCHAR(50) NOT NULL,
+    [NgayLap] DATETIME2(0) NOT NULL,
+    [NgayBatDau] DATE NULL,
+    [NgayDuKienKetThuc] DATE NULL,
+    [TongTienDuKien] DECIMAL(18,2) NOT NULL DEFAULT (0),
+    [TrangThai] NVARCHAR(50) NOT NULL,
+    [GhiChu] NVARCHAR(MAX) NULL,
+    CONSTRAINT [CK_KE_HOACH_DIEU_TRI_1] CHECK ([TongTienDuKien] >= 0),
+    CONSTRAINT [CK_KE_HOACH_DIEU_TRI_2] CHECK ([NgayDuKienKetThuc] IS NULL OR [NgayBatDau] IS NULL OR [NgayDuKienKetThuc] >= [NgayBatDau])
+);
+
+-- 08. CHI_TIET_KE_HOACH
+CREATE TABLE [dbo].[CHI_TIET_KE_HOACH] (
+    [MaCTKH] NVARCHAR(50) NOT NULL CONSTRAINT [PK_CHI_TIET_KE_HOACH] PRIMARY KEY,
+    [MaKHDT] NVARCHAR(50) NOT NULL,
+    [MaDV] NVARCHAR(50) NOT NULL,
+    [LanThu] INT NOT NULL,
+    [SoLuongDuKien] DECIMAL(18,3) NOT NULL,
+    [DonGiaDuKien] DECIMAL(18,2) NOT NULL,
+    [ThanhTienDuKien] AS (CAST(ROUND([SoLuongDuKien] * [DonGiaDuKien], 2) AS DECIMAL(18,2))) PERSISTED,
+    [TrangThai] NVARCHAR(50) NOT NULL,
+    [GhiChu] NVARCHAR(MAX) NULL,
+    CONSTRAINT [CK_CHI_TIET_KE_HOACH_1] CHECK ([LanThu] > 0),
+    CONSTRAINT [CK_CHI_TIET_KE_HOACH_2] CHECK ([SoLuongDuKien] > 0),
+    CONSTRAINT [CK_CHI_TIET_KE_HOACH_3] CHECK ([DonGiaDuKien] >= 0)
+);
+
+-- 09. DICH_VU_THUC_HIEN
+CREATE TABLE [dbo].[DICH_VU_THUC_HIEN] (
+    [MaDVThucHien] NVARCHAR(50) NOT NULL CONSTRAINT [PK_DICH_VU_THUC_HIEN] PRIMARY KEY,
+    [MaLS] NVARCHAR(50) NOT NULL,
+    [MaCTKH] NVARCHAR(50) NULL,
+    [MaDV] NVARCHAR(50) NOT NULL,
+    [MaNVThucHien] NVARCHAR(50) NOT NULL,
+    [ThoiGianThucHien] DATETIME2(0) NOT NULL,
+    [SoLuong] DECIMAL(18,3) NOT NULL,
+    [DonGia] DECIMAL(18,2) NOT NULL,
+    [ThanhTien] AS (CAST(ROUND([SoLuong] * [DonGia], 2) AS DECIMAL(18,2))) PERSISTED,
+    [KetQua] NVARCHAR(MAX) NULL,
+    [TrangThai] NVARCHAR(50) NOT NULL,
+    CONSTRAINT [CK_DICH_VU_THUC_HIEN_1] CHECK ([SoLuong] > 0),
+    CONSTRAINT [CK_DICH_VU_THUC_HIEN_2] CHECK ([DonGia] >= 0),
+    CONSTRAINT [CK_DICH_VU_THUC_HIEN_3] CHECK ([ThanhTien] >= 0),
+    CONSTRAINT [CK_DICH_VU_THUC_HIEN_4] CHECK ([TrangThai] IN (N'Nháp',N'Đã xác nhận',N'Hủy',N'Ngừng áp dụng'))
+);
+
+-- 10. DON_THUOC
+CREATE TABLE [dbo].[DON_THUOC] (
+    [MaDT] NVARCHAR(50) NOT NULL CONSTRAINT [PK_DON_THUOC] PRIMARY KEY,
+    [MaLS] NVARCHAR(50) NOT NULL,
+    [MaBS] NVARCHAR(50) NOT NULL,
+    [NgayKe] DATETIME2(0) NOT NULL,
+    [LyDoThayThe] NVARCHAR(MAX) NULL,
+    [TrangThai] NVARCHAR(50) NOT NULL,
+    [GhiChu] NVARCHAR(MAX) NULL,
+    CONSTRAINT [CK_DON_THUOC_1] CHECK ([TrangThai] IN (N'Nháp',N'Đã xác nhận',N'Hủy',N'Ngừng áp dụng'))
+);
+
+-- 11. CHI_TIET_DON_THUOC
+CREATE TABLE [dbo].[CHI_TIET_DON_THUOC] (
+    [MaCTDT] NVARCHAR(50) NOT NULL CONSTRAINT [PK_CHI_TIET_DON_THUOC] PRIMARY KEY,
+    [MaDT] NVARCHAR(50) NOT NULL,
+    [MaThuoc] NVARCHAR(50) NOT NULL,
+    [LieuDung] NVARCHAR(255) NOT NULL,
+    [SoLuong] DECIMAL(18,3) NOT NULL,
+    [SoNgayDung] INT NOT NULL,
+    [HuongDan] NVARCHAR(MAX) NOT NULL,
+    CONSTRAINT [CK_CHI_TIET_DON_THUOC_1] CHECK ([SoLuong] > 0),
+    CONSTRAINT [CK_CHI_TIET_DON_THUOC_2] CHECK ([SoNgayDung] > 0)
+);
+
+-- 12. VAI_TRO
 CREATE TABLE [dbo].[VAI_TRO] (
-    [MaVaiTro] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_VAI_TRO] PRIMARY KEY,
+    [MaVaiTro] NVARCHAR(50) NOT NULL CONSTRAINT [PK_VAI_TRO] PRIMARY KEY,
     [TenVaiTro] NVARCHAR(255) NOT NULL,
-    [MoTa] NVARCHAR(MAX) NULL
+    [MoTa] NVARCHAR(MAX) NOT NULL
 );
 
--- 10. CHUC_VU
+-- 13. CHUC_VU
 CREATE TABLE [dbo].[CHUC_VU] (
-    [MaChucVu] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_CHUC_VU] PRIMARY KEY,
+    [MaChucVu] NVARCHAR(50) NOT NULL CONSTRAINT [PK_CHUC_VU] PRIMARY KEY,
     [TenChucVu] NVARCHAR(255) NOT NULL,
-    [MoTa] NVARCHAR(MAX) NULL
+    [MoTa] NVARCHAR(MAX) NOT NULL
 );
 
--- 11. TAI_KHOAN
+-- 14. TAI_KHOAN
 CREATE TABLE [dbo].[TAI_KHOAN] (
-    [MaTK] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_TAI_KHOAN] PRIMARY KEY,
+    [MaTK] NVARCHAR(50) NOT NULL CONSTRAINT [PK_TAI_KHOAN] PRIMARY KEY,
     [TenDangNhap] NVARCHAR(100) NOT NULL,
-    [MatKhau] NVARCHAR(255) NOT NULL,
-    [MaVaiTro] INT NOT NULL,
-    [MaNV] INT NOT NULL,
+    [MatKhauHash] NVARCHAR(512) NOT NULL,
+    [MaVaiTro] NVARCHAR(50) NOT NULL,
+    [MaNV] NVARCHAR(50) NOT NULL,
+    [MaKhoa] NVARCHAR(50) NULL,
+    [MaPhong] NVARCHAR(50) NULL,
     [TrangThai] NVARCHAR(50) NOT NULL,
     CONSTRAINT [UQ_TAI_KHOAN_TenDangNhap] UNIQUE ([TenDangNhap]),
-    CONSTRAINT [UQ_TAI_KHOAN_MaNV] UNIQUE ([MaNV])
+    CONSTRAINT [UQ_TAI_KHOAN_MaNV] UNIQUE ([MaNV]),
+    CONSTRAINT [CK_TAI_KHOAN_1] CHECK ([MaKhoa] IS NULL OR [MaPhong] IS NULL)
 );
 
--- 12. NHAN_VIEN
+-- 15. NHAN_VIEN
 CREATE TABLE [dbo].[NHAN_VIEN] (
-    [MaNV] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_NHAN_VIEN] PRIMARY KEY,
+    [MaNV] NVARCHAR(50) NOT NULL CONSTRAINT [PK_NHAN_VIEN] PRIMARY KEY,
     [HoTen] NVARCHAR(255) NOT NULL,
     [GioiTinh] NVARCHAR(50) NULL,
     [NgaySinh] DATE NULL,
     [SDT] NVARCHAR(50) NULL,
     [DiaChi] NVARCHAR(255) NULL,
-    [MaChucVu] INT NOT NULL,
-    [MaCK] INT NULL,
+    [MaChucVu] NVARCHAR(50) NOT NULL,
+    [MaCK] NVARCHAR(50) NULL,
     [BangCap] NVARCHAR(255) NULL,
-    [ChungChiHanhNghe] NVARCHAR(255) NULL,
-    [NgayCapChungChi] DATE NULL,
-    [NoiCapChungChi] NVARCHAR(255) NULL,
+    [NgayVaoLam] DATE NOT NULL,
+    [TrangThai] NVARCHAR(50) NOT NULL
+);
+
+-- 16. CHUNG_CHI_NHAN_VIEN
+CREATE TABLE [dbo].[CHUNG_CHI_NHAN_VIEN] (
+    [MaCC] NVARCHAR(50) NOT NULL CONSTRAINT [PK_CHUNG_CHI_NHAN_VIEN] PRIMARY KEY,
+    [MaNV] NVARCHAR(50) NOT NULL,
+    [SoChungChi] NVARCHAR(255) NOT NULL,
+    [TenChungChi] NVARCHAR(255) NOT NULL,
+    [NgayCap] DATE NOT NULL,
+    [NoiCap] NVARCHAR(255) NOT NULL,
     [HanChungChi] DATE NULL,
-    [NgayVaoLam] DATE NULL,
     [TrangThai] NVARCHAR(50) NOT NULL,
-    CONSTRAINT [CK_NHAN_VIEN_ChungChi] CHECK ([HanChungChi] >= [NgayCapChungChi])
+    [GhiChu] NVARCHAR(MAX) NULL,
+    CONSTRAINT [CK_CHUNG_CHI_NHAN_VIEN_1] CHECK ([HanChungChi] IS NULL OR [HanChungChi] >= [NgayCap])
 );
 
--- 13. KHOA
+-- 17. KHOA
 CREATE TABLE [dbo].[KHOA] (
-    [MaKhoa] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_KHOA] PRIMARY KEY,
+    [MaKhoa] NVARCHAR(50) NOT NULL CONSTRAINT [PK_KHOA] PRIMARY KEY,
     [TenKhoa] NVARCHAR(255) NOT NULL,
-    [DienThoai] NVARCHAR(50) NULL,
-    [MoTa] NVARCHAR(MAX) NULL,
+    [DienThoai] NVARCHAR(50) NOT NULL,
+    [MoTa] NVARCHAR(MAX) NOT NULL,
     [TrangThai] NVARCHAR(50) NOT NULL
 );
 
--- 14. CHUYEN_KHOA
+-- 18. CHUYEN_KHOA
 CREATE TABLE [dbo].[CHUYEN_KHOA] (
-    [MaCK] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_CHUYEN_KHOA] PRIMARY KEY,
-    [MaKhoa] INT NOT NULL,
+    [MaCK] NVARCHAR(50) NOT NULL CONSTRAINT [PK_CHUYEN_KHOA] PRIMARY KEY,
+    [MaKhoa] NVARCHAR(50) NOT NULL,
     [TenCK] NVARCHAR(255) NOT NULL,
-    [MoTa] NVARCHAR(MAX) NULL,
+    [MoTa] NVARCHAR(MAX) NOT NULL,
     [TrangThai] NVARCHAR(50) NOT NULL
 );
 
--- 15. KE_HOACH_DIEU_TRI
-CREATE TABLE [dbo].[KE_HOACH_DIEU_TRI] (
-    [MaKHDT] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_KE_HOACH_DIEU_TRI] PRIMARY KEY,
-    [MaLS] INT NOT NULL,
-    [MaBN] INT NOT NULL,
-    [MaBS] INT NOT NULL,
-    [NgayLap] DATETIME2(0) NOT NULL DEFAULT (SYSDATETIME()),
-    [NgayBatDau] DATE NULL,
-    [NgayDuKienKetThuc] DATE NULL,
-    [TrangThai] NVARCHAR(50) NOT NULL,
-    [GhiChu] NVARCHAR(MAX) NULL,
-    CONSTRAINT [CK_KE_HOACH_DIEU_TRI_Ngay] CHECK ([NgayDuKienKetThuc] >= [NgayBatDau])
-);
-
--- 16. CHI_TIET_KE_HOACH
-CREATE TABLE [dbo].[CHI_TIET_KE_HOACH] (
-    [MaCTKH] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_CHI_TIET_KE_HOACH] PRIMARY KEY,
-    [MaKHDT] INT NOT NULL,
-    [MaDV] INT NOT NULL,
-    [LanThu] INT NOT NULL,
-    [DonGia] DECIMAL(18,2) NOT NULL,
-    [ThanhTien] DECIMAL(18,2) NOT NULL,
-    [TrangThai] NVARCHAR(50) NOT NULL,
-    [GhiChu] NVARCHAR(MAX) NULL,
-    CONSTRAINT [CK_CHI_TIET_KE_HOACH_LanThu] CHECK ([LanThu] > 0),
-    CONSTRAINT [CK_CHI_TIET_KE_HOACH_DonGia] CHECK ([DonGia] >= 0),
-    CONSTRAINT [CK_CHI_TIET_KE_HOACH_ThanhTien] CHECK ([ThanhTien] >= 0)
-);
-
--- 17. THIET_BI
-CREATE TABLE [dbo].[THIET_BI] (
-    [MaTB] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_THIET_BI] PRIMARY KEY,
-    [TenTB] NVARCHAR(255) NOT NULL,
-    [LoaiTB] NVARCHAR(255) NULL,
-    [SoSerial] NVARCHAR(50) NULL,
-    [NgayMua] DATE NULL,
-    [MaNCC] INT NULL,
-    [PhongSuDung] NVARCHAR(255) NULL,
-    [SoLuong] DECIMAL(18,3) NOT NULL,
+-- 19. PHONG
+CREATE TABLE [dbo].[PHONG] (
+    [MaPhong] NVARCHAR(50) NOT NULL CONSTRAINT [PK_PHONG] PRIMARY KEY,
+    [TenPhong] NVARCHAR(255) NOT NULL,
+    [MaKhoa] NVARCHAR(50) NOT NULL,
+    [LoaiPhong] NVARCHAR(255) NOT NULL,
     [TinhTrang] NVARCHAR(255) NOT NULL,
-    [NgayBaoHanh] DATE NULL,
-    [GhiChu] NVARCHAR(MAX) NULL,
-    CONSTRAINT [CK_THIET_BI_SoLuong] CHECK ([SoLuong] > 0)
+    [TrangThai] NVARCHAR(50) NOT NULL
 );
 
--- 18. BAO_TRI_THIET_BI
+-- 20. THIET_BI
+CREATE TABLE [dbo].[THIET_BI] (
+    [MaTB] NVARCHAR(50) NOT NULL CONSTRAINT [PK_THIET_BI] PRIMARY KEY,
+    [MaHH] NVARCHAR(50) NOT NULL,
+    [SoSerial] NVARCHAR(255) NOT NULL,
+    [NgayMua] DATE NULL,
+    [MaNCC] NVARCHAR(50) NULL,
+    [MaPhong] NVARCHAR(50) NULL,
+    [TinhTrang] NVARCHAR(255) NOT NULL,
+    [HanBaoHanh] DATE NULL,
+    [TrangThai] NVARCHAR(50) NOT NULL,
+    [GhiChu] NVARCHAR(MAX) NULL,
+    CONSTRAINT [UQ_THIET_BI_SoSerial] UNIQUE ([SoSerial]),
+    CONSTRAINT [CK_THIET_BI_1] CHECK ([HanBaoHanh] IS NULL OR [NgayMua] IS NULL OR [HanBaoHanh] >= [NgayMua])
+);
+
+-- 21. BAO_TRI_THIET_BI
 CREATE TABLE [dbo].[BAO_TRI_THIET_BI] (
-    [MaBT] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_BAO_TRI_THIET_BI] PRIMARY KEY,
-    [MaTB] INT NOT NULL,
-    [NgayBaoTri] DATE NULL,
-    [LoaiBaoTri] NVARCHAR(255) NULL,
+    [MaBT] NVARCHAR(50) NOT NULL CONSTRAINT [PK_BAO_TRI_THIET_BI] PRIMARY KEY,
+    [MaTB] NVARCHAR(50) NOT NULL,
+    [MaNV] NVARCHAR(50) NOT NULL,
+    [NgayBatDau] DATE NOT NULL,
+    [NgayKetThuc] DATETIME2(0) NULL,
     [NoiDung] NVARCHAR(MAX) NOT NULL,
     [ChiPhi] DECIMAL(18,2) NOT NULL,
-    [NguoiThucHien] NVARCHAR(255) NULL,
     [NgayBaoTriTiepTheo] DATE NULL,
     [TrangThai] NVARCHAR(50) NOT NULL,
     [GhiChu] NVARCHAR(MAX) NULL,
-    CONSTRAINT [CK_BAO_TRI_THIET_BI_ChiPhi] CHECK ([ChiPhi] >= 0)
+    CONSTRAINT [CK_BAO_TRI_THIET_BI_1] CHECK ([ChiPhi] >= 0),
+    CONSTRAINT [CK_BAO_TRI_THIET_BI_2] CHECK ([NgayKetThuc] IS NULL OR [NgayKetThuc] >= [NgayBatDau])
 );
 
--- 19. NHA_CUNG_CAP
+-- 22. NHA_CUNG_CAP
 CREATE TABLE [dbo].[NHA_CUNG_CAP] (
-    [MaNCC] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_NHA_CUNG_CAP] PRIMARY KEY,
+    [MaNCC] NVARCHAR(50) NOT NULL CONSTRAINT [PK_NHA_CUNG_CAP] PRIMARY KEY,
     [TenNCC] NVARCHAR(255) NOT NULL,
     [SDT] NVARCHAR(50) NULL,
-    [Email] NVARCHAR(255) NULL,
+    [Email] NVARCHAR(255) NOT NULL,
     [DiaChi] NVARCHAR(255) NULL,
-    [NguoiLienHe] NVARCHAR(255) NULL,
+    [NguoiLienHe] NVARCHAR(255) NOT NULL,
     [TrangThai] NVARCHAR(50) NOT NULL
 );
 
--- 20. PHONG_KHAM
-CREATE TABLE [dbo].[PHONG_KHAM] (
-    [MaPhong] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_PHONG_KHAM] PRIMARY KEY,
-    [TenPhong] NVARCHAR(255) NOT NULL,
-    [MaCK] INT NULL,
-    [TinhTrang] NVARCHAR(255) NOT NULL
-);
-
--- 21. KHO
+-- 23. KHO
 CREATE TABLE [dbo].[KHO] (
-    [MaKho] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_KHO] PRIMARY KEY,
+    [MaKho] NVARCHAR(50) NOT NULL CONSTRAINT [PK_KHO] PRIMARY KEY,
     [TenKho] NVARCHAR(255) NOT NULL,
-    [MaNV] INT NOT NULL,
-    [LoaiKho] NVARCHAR(255) NULL,
+    [MaNV] NVARCHAR(50) NOT NULL,
+    [LoaiKho] NVARCHAR(255) NOT NULL,
     [TrangThai] NVARCHAR(50) NOT NULL
 );
 
--- 22. VAT_TU
-CREATE TABLE [dbo].[VAT_TU] (
-    [MaVT] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_VAT_TU] PRIMARY KEY,
-    [TenVT] NVARCHAR(255) NOT NULL,
+-- 24. LOAI_HANG_HOA
+CREATE TABLE [dbo].[LOAI_HANG_HOA] (
+    [MaLoaiHH] NVARCHAR(50) NOT NULL CONSTRAINT [PK_LOAI_HANG_HOA] PRIMARY KEY,
+    [TenLoaiHH] NVARCHAR(255) NOT NULL,
+    [MoTa] NVARCHAR(MAX) NOT NULL,
+    [TrangThai] NVARCHAR(50) NOT NULL
+);
+
+-- 25. HANG_HOA
+CREATE TABLE [dbo].[HANG_HOA] (
+    [MaHH] NVARCHAR(50) NOT NULL CONSTRAINT [PK_HANG_HOA] PRIMARY KEY,
+    [TenHH] NVARCHAR(255) NOT NULL,
+    [MaLoaiHH] NVARCHAR(50) NOT NULL,
     [DonViTinh] NVARCHAR(255) NOT NULL,
-    [MaLVT] INT NOT NULL,
+    [MoTa] NVARCHAR(MAX) NOT NULL,
+    [TrangThai] NVARCHAR(50) NOT NULL
+);
+
+-- 26. VAT_TU
+CREATE TABLE [dbo].[VAT_TU] (
+    [MaVT] NVARCHAR(50) NOT NULL CONSTRAINT [PK_VAT_TU] PRIMARY KEY,
+    [MaHH] NVARCHAR(50) NOT NULL,
     [MucTonToiThieu] DECIMAL(18,3) NOT NULL,
-    [TrangThai] NVARCHAR(50) NOT NULL,
-    CONSTRAINT [CK_VAT_TU_MucTonToiThieu] CHECK ([MucTonToiThieu] >= 0)
+    CONSTRAINT [UQ_VAT_TU_MaHH] UNIQUE ([MaHH]),
+    CONSTRAINT [CK_VAT_TU_1] CHECK ([MucTonToiThieu] >= 0)
 );
 
--- 23. LOAI_VAT_TU
-CREATE TABLE [dbo].[LOAI_VAT_TU] (
-    [MaLVT] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_LOAI_VAT_TU] PRIMARY KEY,
-    [TenLVT] NVARCHAR(255) NOT NULL,
-    [GhiChu] NVARCHAR(MAX) NULL
+-- 27. THUOC
+CREATE TABLE [dbo].[THUOC] (
+    [MaThuoc] NVARCHAR(50) NOT NULL CONSTRAINT [PK_THUOC] PRIMARY KEY,
+    [MaHH] NVARCHAR(50) NOT NULL,
+    [HamLuong] NVARCHAR(255) NOT NULL,
+    [MucTonToiThieu] DECIMAL(18,3) NOT NULL,
+    [DonGiaBan] DECIMAL(18,2) NOT NULL,
+    CONSTRAINT [UQ_THUOC_MaHH] UNIQUE ([MaHH]),
+    CONSTRAINT [CK_THUOC_1] CHECK ([MucTonToiThieu] >= 0),
+    CONSTRAINT [CK_THUOC_2] CHECK ([DonGiaBan] >= 0)
 );
 
--- 24. LO_VAT_TU
-CREATE TABLE [dbo].[LO_VAT_TU] (
-    [MaLo] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_LO_VAT_TU] PRIMARY KEY,
-    [MaVT] INT NOT NULL,
-    [MaNCC] INT NOT NULL,
-    [MaKho] INT NOT NULL,
-    [NgayNhap] DATE NOT NULL,
+-- 28. LO_HANG_HOA
+CREATE TABLE [dbo].[LO_HANG_HOA] (
+    [MaLo] NVARCHAR(50) NOT NULL CONSTRAINT [PK_LO_HANG_HOA] PRIMARY KEY,
+    [MaHH] NVARCHAR(50) NOT NULL,
+    [MaNCC] NVARCHAR(50) NOT NULL,
+    [MaKho] NVARCHAR(50) NOT NULL,
+    [SoLo] NVARCHAR(255) NULL,
+    [NgayNhap] DATETIME2(0) NOT NULL,
     [HanSuDung] DATE NULL,
-    [SoLuongNhap] DECIMAL(18,3) NOT NULL,
-    [DonGiaNhap] DECIMAL(18,2) NOT NULL,
-    CONSTRAINT [CK_LO_VAT_TU_SoLuongNhap] CHECK ([SoLuongNhap] > 0),
-    CONSTRAINT [CK_LO_VAT_TU_DonGiaNhap] CHECK ([DonGiaNhap] >= 0),
-    CONSTRAINT [UQ_LO_VAT_TU_MaLo_MaKho] UNIQUE ([MaLo], [MaKho])
+    [TrangThai] NVARCHAR(50) NOT NULL
 );
 
--- 25. CA_LAM
+-- 29. HOA_DON_NHAP
+CREATE TABLE [dbo].[HOA_DON_NHAP] (
+    [MaHDN] NVARCHAR(50) NOT NULL CONSTRAINT [PK_HOA_DON_NHAP] PRIMARY KEY,
+    [SoHoaDonNCC] NVARCHAR(255) NOT NULL,
+    [MaNCC] NVARCHAR(50) NOT NULL,
+    [MaNV] NVARCHAR(50) NOT NULL,
+    [NgayHoaDon] DATETIME2(0) NOT NULL,
+    [TongTien] DECIMAL(18,2) NOT NULL,
+    [TrangThai] NVARCHAR(50) NOT NULL,
+    [GhiChu] NVARCHAR(MAX) NULL,
+    CONSTRAINT [CK_HOA_DON_NHAP_1] CHECK ([TongTien] >= 0)
+);
+
+-- 30. PHIEU_NHAP
+CREATE TABLE [dbo].[PHIEU_NHAP] (
+    [MaPN] NVARCHAR(50) NOT NULL CONSTRAINT [PK_PHIEU_NHAP] PRIMARY KEY,
+    [MaHDN] NVARCHAR(50) NOT NULL,
+    [MaKho] NVARCHAR(50) NOT NULL,
+    [MaNV] NVARCHAR(50) NOT NULL,
+    [NgayNhap] DATETIME2(0) NOT NULL,
+    [TongTien] DECIMAL(18,2) NOT NULL DEFAULT (0),
+    [TrangThai] NVARCHAR(50) NOT NULL,
+    [LyDo] NVARCHAR(MAX) NOT NULL,
+    [GhiChu] NVARCHAR(MAX) NULL,
+    CONSTRAINT [CK_PHIEU_NHAP_1] CHECK ([TongTien] >= 0),
+    CONSTRAINT [CK_PHIEU_NHAP_2] CHECK ([TrangThai] IN (N'Nháp',N'Đã ghi sổ',N'Hủy'))
+);
+
+-- 31. CHI_TIET_PHIEU_NHAP
+CREATE TABLE [dbo].[CHI_TIET_PHIEU_NHAP] (
+    [MaCTPN] NVARCHAR(50) NOT NULL CONSTRAINT [PK_CHI_TIET_PHIEU_NHAP] PRIMARY KEY,
+    [MaPN] NVARCHAR(50) NOT NULL,
+    [MaHH] NVARCHAR(50) NOT NULL,
+    [MaLo] NVARCHAR(50) NULL,
+    [SoLuong] DECIMAL(18,3) NOT NULL,
+    [DonGia] DECIMAL(18,2) NOT NULL,
+    [ThanhTien] AS (CAST(ROUND([SoLuong] * [DonGia], 2) AS DECIMAL(18,2))) PERSISTED,
+    [GhiChu] NVARCHAR(MAX) NULL,
+    CONSTRAINT [CK_CHI_TIET_PHIEU_NHAP_1] CHECK ([SoLuong] > 0),
+    CONSTRAINT [CK_CHI_TIET_PHIEU_NHAP_2] CHECK ([DonGia] >= 0),
+    CONSTRAINT [CK_CHI_TIET_PHIEU_NHAP_3] CHECK ([ThanhTien] >= 0)
+);
+
+-- 32. PHIEU_XUAT
+CREATE TABLE [dbo].[PHIEU_XUAT] (
+    [MaPX] NVARCHAR(50) NOT NULL CONSTRAINT [PK_PHIEU_XUAT] PRIMARY KEY,
+    [MaKho] NVARCHAR(50) NOT NULL,
+    [MaNV] NVARCHAR(50) NOT NULL,
+    [MaKhoa] NVARCHAR(50) NULL,
+    [MaPhong] NVARCHAR(50) NULL,
+    [MaLS] NVARCHAR(50) NULL,
+    [NgayXuat] DATETIME2(0) NOT NULL,
+    [LyDo] NVARCHAR(MAX) NOT NULL,
+    [TrangThai] NVARCHAR(50) NOT NULL,
+    [GhiChu] NVARCHAR(MAX) NULL,
+    CONSTRAINT [CK_PHIEU_XUAT_1] CHECK (([MaKhoa] IS NULL OR [MaPhong] IS NULL) AND ([MaLS] IS NULL OR ([MaKhoa] IS NULL AND [MaPhong] IS NULL))),
+    CONSTRAINT [CK_PHIEU_XUAT_2] CHECK ([TrangThai] IN (N'Nháp',N'Đã ghi sổ',N'Hủy'))
+);
+
+-- 33. CHI_TIET_PHIEU_XUAT
+CREATE TABLE [dbo].[CHI_TIET_PHIEU_XUAT] (
+    [MaCTPX] NVARCHAR(50) NOT NULL CONSTRAINT [PK_CHI_TIET_PHIEU_XUAT] PRIMARY KEY,
+    [MaPX] NVARCHAR(50) NOT NULL,
+    [MaHH] NVARCHAR(50) NOT NULL,
+    [MaLo] NVARCHAR(50) NULL,
+    [MaCTDT] NVARCHAR(50) NULL,
+    [SoLuong] DECIMAL(18,3) NOT NULL,
+    [GhiChu] NVARCHAR(MAX) NOT NULL,
+    CONSTRAINT [CK_CHI_TIET_PHIEU_XUAT_1] CHECK ([SoLuong] > 0)
+);
+
+-- 34. CA_LAM
 CREATE TABLE [dbo].[CA_LAM] (
-    [MaCa] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_CA_LAM] PRIMARY KEY,
+    [MaCa] NVARCHAR(50) NOT NULL CONSTRAINT [PK_CA_LAM] PRIMARY KEY,
     [GioBatDau] TIME(0) NOT NULL,
     [GioKetThuc] TIME(0) NOT NULL,
-    [GhiChu] NVARCHAR(MAX) NULL,
-    CONSTRAINT [CK_CA_LAM_Gio] CHECK ([GioBatDau] <> [GioKetThuc])
-);
-
--- 26. LICH_LAM_VIEC
-CREATE TABLE [dbo].[LICH_LAM_VIEC] (
-    [MaLLV] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_LICH_LAM_VIEC] PRIMARY KEY,
-    [MaNV] INT NOT NULL,
-    [MaCa] INT NOT NULL,
-    [NgayLam] DATE NOT NULL,
-    [MaPhong] INT NOT NULL,
     [TrangThai] NVARCHAR(50) NOT NULL,
-    CONSTRAINT [UQ_LICH_LAM_VIEC_MaNV_MaCa_NgayLam] UNIQUE ([MaNV], [MaCa], [NgayLam])
+    [GhiChu] NVARCHAR(MAX) NULL,
+    CONSTRAINT [CK_CA_LAM_1] CHECK ([GioBatDau] <> [GioKetThuc])
 );
 
--- 27. DON_XIN_NGHI
+-- 35. LICH_LAM_VIEC
+CREATE TABLE [dbo].[LICH_LAM_VIEC] (
+    [MaLLV] NVARCHAR(50) NOT NULL CONSTRAINT [PK_LICH_LAM_VIEC] PRIMARY KEY,
+    [MaNV] NVARCHAR(50) NOT NULL,
+    [MaCa] NVARCHAR(50) NOT NULL,
+    [NgayLam] DATE NOT NULL,
+    [MaPhong] NVARCHAR(50) NULL,
+    [TrangThai] NVARCHAR(50) NOT NULL,
+    [TrangThaiHienDien] NVARCHAR(50) NOT NULL,
+    [GioVao] DATETIME2(0) NULL,
+    [GioRa] DATETIME2(0) NULL,
+    [GhiChu] NVARCHAR(MAX) NULL,
+    CONSTRAINT [CK_LICH_LAM_VIEC_1] CHECK ([GioRa] IS NULL OR [GioVao] IS NULL OR [GioRa] >= [GioVao])
+);
+
+-- 36. DON_XIN_NGHI
 CREATE TABLE [dbo].[DON_XIN_NGHI] (
-    [MaDonNghi] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_DON_XIN_NGHI] PRIMARY KEY,
-    [MaNV] INT NOT NULL,
+    [MaDonNghi] NVARCHAR(50) NOT NULL CONSTRAINT [PK_DON_XIN_NGHI] PRIMARY KEY,
+    [MaNV] NVARCHAR(50) NOT NULL,
     [TuNgay] DATE NOT NULL,
     [DenNgay] DATE NOT NULL,
     [LyDo] NVARCHAR(MAX) NOT NULL,
-    [NgayGui] DATETIME2(0) NOT NULL DEFAULT (SYSDATETIME()),
+    [NgayGui] DATETIME2(0) NOT NULL,
     [TrangThaiDuyet] NVARCHAR(50) NOT NULL,
-    [MaNVDuyet] INT NULL,
+    [MaNVDuyet] NVARCHAR(50) NULL,
     [NgayDuyet] DATETIME2(0) NULL,
     [GhiChu] NVARCHAR(MAX) NULL,
-    CONSTRAINT [CK_DON_XIN_NGHI_Ngay] CHECK ([DenNgay] >= [TuNgay]),
-    CONSTRAINT [CK_DON_XIN_NGHI_Duyet] CHECK (([NgayDuyet] IS NULL AND [MaNVDuyet] IS NULL) OR ([NgayDuyet] IS NOT NULL AND [MaNVDuyet] IS NOT NULL))
+    CONSTRAINT [CK_DON_XIN_NGHI_1] CHECK ([DenNgay] >= [TuNgay] AND ([MaNVDuyet] IS NULL OR [MaNVDuyet] <> [MaNV]))
 );
 
--- 28. PHAN_CONG_THAY_THE
+-- 37. PHAN_CONG_THAY_THE
 CREATE TABLE [dbo].[PHAN_CONG_THAY_THE] (
-    [MaPCTT] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_PHAN_CONG_THAY_THE] PRIMARY KEY,
-    [MaDonNghi] INT NOT NULL,
-    [MaLLVGoc] INT NOT NULL,
-    [MaNVThayThe] INT NOT NULL,
-    [MaLLVThayThe] INT NULL,
-    [NgayXuLy] DATETIME2(0) NOT NULL DEFAULT (SYSDATETIME()),
+    [MaPCTT] NVARCHAR(50) NOT NULL CONSTRAINT [PK_PHAN_CONG_THAY_THE] PRIMARY KEY,
+    [MaDonNghi] NVARCHAR(50) NOT NULL,
+    [MaLLVThayThe] NVARCHAR(50) NOT NULL,
+    [NgayXuLy] DATETIME2(0) NOT NULL,
     [TrangThai] NVARCHAR(50) NOT NULL,
-    [LyDoThayThe] NVARCHAR(MAX) NULL,
-    [GhiChu] NVARCHAR(MAX) NULL,
-    CONSTRAINT [CK_PHAN_CONG_THAY_THE_LichKhac] CHECK ([MaLLVThayThe] <> [MaLLVGoc])
+    [GhiChu] NVARCHAR(MAX) NULL
 );
 
--- 29. LICH_KHAM
+-- 38. LICH_KHAM
 CREATE TABLE [dbo].[LICH_KHAM] (
-    [MaLich] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_LICH_KHAM] PRIMARY KEY,
-    [MaBN] INT NOT NULL,
-    [MaBS] INT NULL,
+    [MaLich] NVARCHAR(50) NOT NULL CONSTRAINT [PK_LICH_KHAM] PRIMARY KEY,
+    [MaBN] NVARCHAR(50) NOT NULL,
+    [MaBS] NVARCHAR(50) NOT NULL,
+    [MaCa] NVARCHAR(50) NOT NULL,
+    [MaPhong] NVARCHAR(50) NOT NULL,
+    [MaDV] NVARCHAR(50) NULL,
     [NgayGioKham] DATETIME2(0) NOT NULL,
-    [MaPhong] INT NULL,
-    [LyDoKham] NVARCHAR(MAX) NULL,
-    [MaDV] INT NOT NULL,
+    [ThoiLuongDuKien] INT NOT NULL,
+    [UuTien] NVARCHAR(50) NOT NULL,
+    [LyDoKham] NVARCHAR(MAX) NOT NULL,
+    [LyDoThayDoi] NVARCHAR(MAX) NULL,
     [TrangThai] NVARCHAR(50) NOT NULL,
     [GhiChu] NVARCHAR(MAX) NULL,
-    [NgayTao] DATETIME2(0) NOT NULL DEFAULT (SYSDATETIME())
+    [NgayTao] DATETIME2(0) NOT NULL,
+    [NgayCapNhat] DATETIME2(0) NULL,
+    CONSTRAINT [CK_LICH_KHAM_1] CHECK ([ThoiLuongDuKien] > 0)
 );
 
--- 30. HOA_DON
+-- 39. HOA_DON
 CREATE TABLE [dbo].[HOA_DON] (
-    [MaHD] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_HOA_DON] PRIMARY KEY,
-    [MaBN] INT NOT NULL,
-    [MaLS] INT NULL,
-    [NgayLap] DATETIME2(0) NOT NULL DEFAULT (SYSDATETIME()),
-    [TongTien] DECIMAL(18,2) NOT NULL,
+    [MaHD] NVARCHAR(50) NOT NULL CONSTRAINT [PK_HOA_DON] PRIMARY KEY,
+    [MaLS] NVARCHAR(50) NOT NULL,
+    [MaNV] NVARCHAR(50) NOT NULL,
+    [NgayLap] DATETIME2(0) NOT NULL,
+    [NgayXacNhan] DATETIME2(0) NULL,
+    [TongTien] DECIMAL(18,2) NOT NULL DEFAULT (0),
     [GiamGia] DECIMAL(18,2) NOT NULL DEFAULT (0),
-    [ThanhTien] DECIMAL(18,2) NOT NULL,
+    [SoTienPhaiThu] AS (CAST([TongTien] - [GiamGia] AS DECIMAL(18,2))) PERSISTED,
     [TrangThai] NVARCHAR(50) NOT NULL,
-    CONSTRAINT [CK_HOA_DON_TongTien] CHECK ([TongTien] >= 0),
-    CONSTRAINT [CK_HOA_DON_GiamGia] CHECK ([GiamGia] >= 0),
-    CONSTRAINT [CK_HOA_DON_ThanhTien] CHECK ([ThanhTien] >= 0),
-    CONSTRAINT [CK_HOA_DON_TinhTien] CHECK ([GiamGia] <= [TongTien] AND [ThanhTien] = [TongTien] - [GiamGia])
+    CONSTRAINT [CK_HOA_DON_1] CHECK ([TongTien] >= 0),
+    CONSTRAINT [CK_HOA_DON_2] CHECK ([GiamGia] >= 0),
+    CONSTRAINT [CK_HOA_DON_3] CHECK ([GiamGia] <= [TongTien]),
+    CONSTRAINT [CK_HOA_DON_4] CHECK ([TrangThai] IN (N'Nháp', N'Đã xác nhận', N'Hủy') AND (([TrangThai] = N'Đã xác nhận' AND [NgayXacNhan] IS NOT NULL AND [NgayXacNhan] >= [NgayLap]) OR ([TrangThai] <> N'Đã xác nhận' AND [NgayXacNhan] IS NULL)))
 );
 
--- 31. CHI_TIET_HOA_DON
+-- 40. CHI_TIET_HOA_DON
 CREATE TABLE [dbo].[CHI_TIET_HOA_DON] (
-    [MaCTHD] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_CHI_TIET_HOA_DON] PRIMARY KEY,
-    [MaHD] INT NOT NULL,
-    [MaKHDT] INT NULL,
+    [MaCTHD] NVARCHAR(50) NOT NULL CONSTRAINT [PK_CHI_TIET_HOA_DON] PRIMARY KEY,
+    [MaHD] NVARCHAR(50) NOT NULL,
+    [MaDVThucHien] NVARCHAR(50) NULL,
+    [MaCTPX] NVARCHAR(50) NULL,
     [NoiDung] NVARCHAR(MAX) NOT NULL,
-    [ThanhTien] DECIMAL(18,2) NOT NULL,
-    CONSTRAINT [CK_CHI_TIET_HOA_DON_ThanhTien] CHECK ([ThanhTien] >= 0)
+    [DonGia] DECIMAL(18,2) NULL,
+    [ThanhTien] DECIMAL(18,2) NOT NULL DEFAULT (0),
+    CONSTRAINT [CK_CHI_TIET_HOA_DON_1] CHECK ([DonGia] >= 0),
+    CONSTRAINT [CK_CHI_TIET_HOA_DON_2] CHECK ([ThanhTien] >= 0),
+    CONSTRAINT [CK_CHI_TIET_HOA_DON_3] CHECK (([MaDVThucHien] IS NOT NULL AND [MaCTPX] IS NULL AND [DonGia] IS NULL) OR ([MaDVThucHien] IS NULL AND [MaCTPX] IS NOT NULL AND [DonGia] IS NOT NULL AND [DonGia] >= 0))
 );
 
--- 32. THANH_TOAN
+-- 41. THANH_TOAN
 CREATE TABLE [dbo].[THANH_TOAN] (
-    [MaTT] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_THANH_TOAN] PRIMARY KEY,
-    [MaHD] INT NOT NULL,
-    [NgayThanhToan] DATETIME2(0) NOT NULL DEFAULT (SYSDATETIME()),
+    [MaTT] NVARCHAR(50) NOT NULL CONSTRAINT [PK_THANH_TOAN] PRIMARY KEY,
+    [MaHD] NVARCHAR(50) NOT NULL,
+    [MaNV] NVARCHAR(50) NOT NULL,
+    [NgayThanhToan] DATETIME2(0) NOT NULL,
     [SoTien] DECIMAL(18,2) NOT NULL,
-    [PhuongThuc] NVARCHAR(255) NOT NULL,
-    [NguoiThu] NVARCHAR(255) NULL,
+    [LoaiGiaoDich] NVARCHAR(50) NOT NULL,
+    [PhuongThuc] NVARCHAR(50) NOT NULL,
+    [LyDo] NVARCHAR(MAX) NULL,
+    [TrangThai] NVARCHAR(50) NOT NULL,
+    CONSTRAINT [CK_THANH_TOAN_1] CHECK ([SoTien] >= 0),
+    CONSTRAINT [CK_THANH_TOAN_2] CHECK ([SoTien] > 0 AND [LoaiGiaoDich] IN (N'Thu',N'Hoàn') AND [TrangThai] IN (N'Nháp',N'Đã xác nhận',N'Hủy') AND ([LoaiGiaoDich] <> N'Hoàn' OR NULLIF(LTRIM(RTRIM([LyDo])),N'') IS NOT NULL))
+);
+
+-- 42. CHINH_SACH_LUONG
+CREATE TABLE [dbo].[CHINH_SACH_LUONG] (
+    [MaCSL] NVARCHAR(50) NOT NULL CONSTRAINT [PK_CHINH_SACH_LUONG] PRIMARY KEY,
+    [MaChucVu] NVARCHAR(50) NOT NULL,
+    [TenChinhSach] NVARCHAR(255) NOT NULL,
+    [PhienBan] INT NOT NULL,
+    [NgayHieuLuc] DATE NOT NULL,
+    [NgayHetHieuLuc] DATE NULL,
+    [LuongCoBan] DECIMAL(18,2) NOT NULL,
+    [SoCaDinhMuc] INT NOT NULL,
+    [CoSoHoaHong] NVARCHAR(255) NOT NULL,
+    [TyLeHoaHong] DECIMAL(9,6) NOT NULL,
+    [MaNVDuyet] NVARCHAR(50) NULL,
+    [NgayDuyet] DATETIME2(0) NULL,
+    [TrangThai] NVARCHAR(50) NOT NULL,
+    CONSTRAINT [CK_CHINH_SACH_LUONG_1] CHECK ([PhienBan] > 0),
+    CONSTRAINT [CK_CHINH_SACH_LUONG_2] CHECK ([LuongCoBan] >= 0),
+    CONSTRAINT [CK_CHINH_SACH_LUONG_3] CHECK ([SoCaDinhMuc] > 0),
+    CONSTRAINT [CK_CHINH_SACH_LUONG_4] CHECK ([NgayHetHieuLuc] IS NULL OR [NgayHetHieuLuc] >= [NgayHieuLuc]),
+    CONSTRAINT [CK_CHINH_SACH_LUONG_5] CHECK ([TyLeHoaHong] >= 0 AND [TyLeHoaHong] <= 1)
+);
+
+-- 43. BANG_LUONG
+CREATE TABLE [dbo].[BANG_LUONG] (
+    [MaBL] NVARCHAR(50) NOT NULL CONSTRAINT [PK_BANG_LUONG] PRIMARY KEY,
+    [MaNV] NVARCHAR(50) NOT NULL,
+    [MaCSL] NVARCHAR(50) NOT NULL,
+    [TuNgay] DATE NOT NULL,
+    [DenNgay] DATE NOT NULL,
+    [SoCaTinh] INT NOT NULL,
+    [LuongCoBan] DECIMAL(18,2) NOT NULL,
+    [SoCaDinhMuc] INT NOT NULL,
+    [LuongTheoCa] AS (CAST(ROUND(CAST([LuongCoBan] AS DECIMAL(28,6)) * [SoCaTinh] / [SoCaDinhMuc], 2) AS DECIMAL(18,2))) PERSISTED,
+    [TienHoaHong] DECIMAL(18,2) NOT NULL,
+    [TongLuong] AS (CAST(CAST(ROUND(CAST([LuongCoBan] AS DECIMAL(28,6)) * [SoCaTinh] / [SoCaDinhMuc], 2) AS DECIMAL(18,2)) + [TienHoaHong] AS DECIMAL(18,2))) PERSISTED,
+    [TrangThai] NVARCHAR(50) NOT NULL,
+    [NgayChot] DATETIME2(0) NULL,
     [GhiChu] NVARCHAR(MAX) NULL,
-    CONSTRAINT [CK_THANH_TOAN_SoTien] CHECK ([SoTien] > 0)
+    CONSTRAINT [CK_BANG_LUONG_1] CHECK ([LuongCoBan] >= 0),
+    CONSTRAINT [CK_BANG_LUONG_2] CHECK ([SoCaDinhMuc] > 0),
+    CONSTRAINT [CK_BANG_LUONG_3] CHECK ([TienHoaHong] >= 0),
+    CONSTRAINT [CK_BANG_LUONG_4] CHECK ([DenNgay] >= [TuNgay] AND [SoCaTinh] >= 0)
 );
 
--- 33. GIAO_DICH_KHO
-CREATE TABLE [dbo].[GIAO_DICH_KHO] (
-    [MaGD] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_GIAO_DICH_KHO] PRIMARY KEY,
-    [MaLo] INT NOT NULL,
-    [MaKho] INT NOT NULL,
-    [NgayGD] DATETIME2(0) NOT NULL DEFAULT (SYSDATETIME()),
-    [SoLuongLo] DECIMAL(18,3) NOT NULL,
-    [LyDo] NVARCHAR(MAX) NOT NULL,
-    [GhiChu] NVARCHAR(MAX) NULL,
-    CONSTRAINT [CK_GIAO_DICH_KHO_SoLuongLo] CHECK ([SoLuongLo] <> 0)
+-- 44. NHAT_KY_THAO_TAC
+CREATE TABLE [dbo].[NHAT_KY_THAO_TAC] (
+    [MaNK] NVARCHAR(50) NOT NULL CONSTRAINT [PK_NHAT_KY_THAO_TAC] PRIMARY KEY,
+    [MaTK] NVARCHAR(50) NOT NULL,
+    [ThoiGian] DATETIME2(0) NOT NULL,
+    [HanhDong] NVARCHAR(255) NOT NULL,
+    [LoaiDoiTuong] NVARCHAR(255) NOT NULL,
+    [MaDoiTuong] NVARCHAR(50) NOT NULL,
+    [KetQua] NVARCHAR(MAX) NOT NULL,
+    [DuLieuTruoc] NVARCHAR(MAX) NULL,
+    [DuLieuSau] NVARCHAR(MAX) NULL
 );
-
--- 34. HOA_DON_KHO
-CREATE TABLE [dbo].[HOA_DON_KHO] (
-    [MaHDK] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_HOA_DON_KHO] PRIMARY KEY,
-    [MaGD] INT NOT NULL,
-    [PhuongThucThanhToan] NVARCHAR(255) NOT NULL,
-    [DonGia] DECIMAL(18,2) NOT NULL,
-    [ThanhTien] DECIMAL(18,2) NOT NULL,
-    [NgayLap] DATETIME2(0) NOT NULL DEFAULT (SYSDATETIME()),
-    CONSTRAINT [CK_HOA_DON_KHO_DonGia] CHECK ([DonGia] >= 0),
-    CONSTRAINT [CK_HOA_DON_KHO_ThanhTien] CHECK ([ThanhTien] >= 0),
-    CONSTRAINT [UQ_HOA_DON_KHO_MaGD] UNIQUE ([MaGD])
-);
-
--- Khóa ngoại: tạo sau khi tất cả bảng đã tồn tại.
-ALTER TABLE [dbo].[HO_SO_BENH_AN] ADD CONSTRAINT [FK_HO_SO_BENH_AN_MaBN] FOREIGN KEY ([MaBN]) REFERENCES [dbo].[BENH_NHAN] ([MaBN]);
-ALTER TABLE [dbo].[PHIEU_KHAM_BENH] ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaBN] FOREIGN KEY ([MaBN]) REFERENCES [dbo].[BENH_NHAN] ([MaBN]);
-ALTER TABLE [dbo].[PHIEU_KHAM_BENH] ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaHS] FOREIGN KEY ([MaHS]) REFERENCES [dbo].[HO_SO_BENH_AN] ([MaHS]);
-ALTER TABLE [dbo].[PHIEU_KHAM_BENH] ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaLich] FOREIGN KEY ([MaLich]) REFERENCES [dbo].[LICH_KHAM] ([MaLich]);
-ALTER TABLE [dbo].[PHIEU_KHAM_BENH] ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaKhoa] FOREIGN KEY ([MaKhoa]) REFERENCES [dbo].[KHOA] ([MaKhoa]);
-ALTER TABLE [dbo].[PHIEU_KHAM_BENH] ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaPhong] FOREIGN KEY ([MaPhong]) REFERENCES [dbo].[PHONG_KHAM] ([MaPhong]);
-ALTER TABLE [dbo].[PHIEU_KHAM_BENH] ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaBS] FOREIGN KEY ([MaBS]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
-ALTER TABLE [dbo].[PHIEU_KHAM_BENH] ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaDV] FOREIGN KEY ([MaDV]) REFERENCES [dbo].[DICH_VU] ([MaDV]);
-ALTER TABLE [dbo].[LICH_SU_KHAM_BENH] ADD CONSTRAINT [FK_LICH_SU_KHAM_BENH_MaHS] FOREIGN KEY ([MaHS]) REFERENCES [dbo].[HO_SO_BENH_AN] ([MaHS]);
-ALTER TABLE [dbo].[LICH_SU_KHAM_BENH] ADD CONSTRAINT [FK_LICH_SU_KHAM_BENH_MaLich] FOREIGN KEY ([MaLich]) REFERENCES [dbo].[LICH_KHAM] ([MaLich]);
-ALTER TABLE [dbo].[TINH_TRANG_BENH] ADD CONSTRAINT [FK_TINH_TRANG_BENH_MaLS] FOREIGN KEY ([MaLS]) REFERENCES [dbo].[LICH_SU_KHAM_BENH] ([MaLS]);
-ALTER TABLE [dbo].[DON_THUOC] ADD CONSTRAINT [FK_DON_THUOC_MaLS] FOREIGN KEY ([MaLS]) REFERENCES [dbo].[LICH_SU_KHAM_BENH] ([MaLS]);
-ALTER TABLE [dbo].[DON_THUOC] ADD CONSTRAINT [FK_DON_THUOC_MaBS] FOREIGN KEY ([MaBS]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
-ALTER TABLE [dbo].[CHI_TIET_DON_THUOC] ADD CONSTRAINT [FK_CHI_TIET_DON_THUOC_MaDT] FOREIGN KEY ([MaDT]) REFERENCES [dbo].[DON_THUOC] ([MaDT]);
-ALTER TABLE [dbo].[DICH_VU] ADD CONSTRAINT [FK_DICH_VU_MaCK] FOREIGN KEY ([MaCK]) REFERENCES [dbo].[CHUYEN_KHOA] ([MaCK]);
-ALTER TABLE [dbo].[TAI_KHOAN] ADD CONSTRAINT [FK_TAI_KHOAN_MaVaiTro] FOREIGN KEY ([MaVaiTro]) REFERENCES [dbo].[VAI_TRO] ([MaVaiTro]);
-ALTER TABLE [dbo].[TAI_KHOAN] ADD CONSTRAINT [FK_TAI_KHOAN_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
-ALTER TABLE [dbo].[NHAN_VIEN] ADD CONSTRAINT [FK_NHAN_VIEN_MaChucVu] FOREIGN KEY ([MaChucVu]) REFERENCES [dbo].[CHUC_VU] ([MaChucVu]);
-ALTER TABLE [dbo].[NHAN_VIEN] ADD CONSTRAINT [FK_NHAN_VIEN_MaCK] FOREIGN KEY ([MaCK]) REFERENCES [dbo].[CHUYEN_KHOA] ([MaCK]);
-ALTER TABLE [dbo].[CHUYEN_KHOA] ADD CONSTRAINT [FK_CHUYEN_KHOA_MaKhoa] FOREIGN KEY ([MaKhoa]) REFERENCES [dbo].[KHOA] ([MaKhoa]);
-ALTER TABLE [dbo].[KE_HOACH_DIEU_TRI] ADD CONSTRAINT [FK_KE_HOACH_DIEU_TRI_MaLS] FOREIGN KEY ([MaLS]) REFERENCES [dbo].[LICH_SU_KHAM_BENH] ([MaLS]);
-ALTER TABLE [dbo].[KE_HOACH_DIEU_TRI] ADD CONSTRAINT [FK_KE_HOACH_DIEU_TRI_MaBN] FOREIGN KEY ([MaBN]) REFERENCES [dbo].[BENH_NHAN] ([MaBN]);
-ALTER TABLE [dbo].[KE_HOACH_DIEU_TRI] ADD CONSTRAINT [FK_KE_HOACH_DIEU_TRI_MaBS] FOREIGN KEY ([MaBS]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
-ALTER TABLE [dbo].[CHI_TIET_KE_HOACH] ADD CONSTRAINT [FK_CHI_TIET_KE_HOACH_MaKHDT] FOREIGN KEY ([MaKHDT]) REFERENCES [dbo].[KE_HOACH_DIEU_TRI] ([MaKHDT]);
-ALTER TABLE [dbo].[CHI_TIET_KE_HOACH] ADD CONSTRAINT [FK_CHI_TIET_KE_HOACH_MaDV] FOREIGN KEY ([MaDV]) REFERENCES [dbo].[DICH_VU] ([MaDV]);
-ALTER TABLE [dbo].[THIET_BI] ADD CONSTRAINT [FK_THIET_BI_MaNCC] FOREIGN KEY ([MaNCC]) REFERENCES [dbo].[NHA_CUNG_CAP] ([MaNCC]);
-ALTER TABLE [dbo].[BAO_TRI_THIET_BI] ADD CONSTRAINT [FK_BAO_TRI_THIET_BI_MaTB] FOREIGN KEY ([MaTB]) REFERENCES [dbo].[THIET_BI] ([MaTB]);
-ALTER TABLE [dbo].[PHONG_KHAM] ADD CONSTRAINT [FK_PHONG_KHAM_MaCK] FOREIGN KEY ([MaCK]) REFERENCES [dbo].[CHUYEN_KHOA] ([MaCK]);
-ALTER TABLE [dbo].[KHO] ADD CONSTRAINT [FK_KHO_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
-ALTER TABLE [dbo].[VAT_TU] ADD CONSTRAINT [FK_VAT_TU_MaLVT] FOREIGN KEY ([MaLVT]) REFERENCES [dbo].[LOAI_VAT_TU] ([MaLVT]);
-ALTER TABLE [dbo].[LO_VAT_TU] ADD CONSTRAINT [FK_LO_VAT_TU_MaVT] FOREIGN KEY ([MaVT]) REFERENCES [dbo].[VAT_TU] ([MaVT]);
-ALTER TABLE [dbo].[LO_VAT_TU] ADD CONSTRAINT [FK_LO_VAT_TU_MaNCC] FOREIGN KEY ([MaNCC]) REFERENCES [dbo].[NHA_CUNG_CAP] ([MaNCC]);
-ALTER TABLE [dbo].[LO_VAT_TU] ADD CONSTRAINT [FK_LO_VAT_TU_MaKho] FOREIGN KEY ([MaKho]) REFERENCES [dbo].[KHO] ([MaKho]);
-ALTER TABLE [dbo].[LICH_LAM_VIEC] ADD CONSTRAINT [FK_LICH_LAM_VIEC_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
-ALTER TABLE [dbo].[LICH_LAM_VIEC] ADD CONSTRAINT [FK_LICH_LAM_VIEC_MaCa] FOREIGN KEY ([MaCa]) REFERENCES [dbo].[CA_LAM] ([MaCa]);
-ALTER TABLE [dbo].[LICH_LAM_VIEC] ADD CONSTRAINT [FK_LICH_LAM_VIEC_MaPhong] FOREIGN KEY ([MaPhong]) REFERENCES [dbo].[PHONG_KHAM] ([MaPhong]);
-ALTER TABLE [dbo].[DON_XIN_NGHI] ADD CONSTRAINT [FK_DON_XIN_NGHI_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
-ALTER TABLE [dbo].[DON_XIN_NGHI] ADD CONSTRAINT [FK_DON_XIN_NGHI_MaNVDuyet] FOREIGN KEY ([MaNVDuyet]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
-ALTER TABLE [dbo].[PHAN_CONG_THAY_THE] ADD CONSTRAINT [FK_PHAN_CONG_THAY_THE_MaDonNghi] FOREIGN KEY ([MaDonNghi]) REFERENCES [dbo].[DON_XIN_NGHI] ([MaDonNghi]);
-ALTER TABLE [dbo].[PHAN_CONG_THAY_THE] ADD CONSTRAINT [FK_PHAN_CONG_THAY_THE_MaLLVGoc] FOREIGN KEY ([MaLLVGoc]) REFERENCES [dbo].[LICH_LAM_VIEC] ([MaLLV]);
-ALTER TABLE [dbo].[PHAN_CONG_THAY_THE] ADD CONSTRAINT [FK_PHAN_CONG_THAY_THE_MaNVThayThe] FOREIGN KEY ([MaNVThayThe]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
-ALTER TABLE [dbo].[PHAN_CONG_THAY_THE] ADD CONSTRAINT [FK_PHAN_CONG_THAY_THE_MaLLVThayThe] FOREIGN KEY ([MaLLVThayThe]) REFERENCES [dbo].[LICH_LAM_VIEC] ([MaLLV]);
-ALTER TABLE [dbo].[LICH_KHAM] ADD CONSTRAINT [FK_LICH_KHAM_MaBN] FOREIGN KEY ([MaBN]) REFERENCES [dbo].[BENH_NHAN] ([MaBN]);
-ALTER TABLE [dbo].[LICH_KHAM] ADD CONSTRAINT [FK_LICH_KHAM_MaBS] FOREIGN KEY ([MaBS]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
-ALTER TABLE [dbo].[LICH_KHAM] ADD CONSTRAINT [FK_LICH_KHAM_MaPhong] FOREIGN KEY ([MaPhong]) REFERENCES [dbo].[PHONG_KHAM] ([MaPhong]);
-ALTER TABLE [dbo].[LICH_KHAM] ADD CONSTRAINT [FK_LICH_KHAM_MaDV] FOREIGN KEY ([MaDV]) REFERENCES [dbo].[DICH_VU] ([MaDV]);
-ALTER TABLE [dbo].[HOA_DON] ADD CONSTRAINT [FK_HOA_DON_MaBN] FOREIGN KEY ([MaBN]) REFERENCES [dbo].[BENH_NHAN] ([MaBN]);
-ALTER TABLE [dbo].[HOA_DON] ADD CONSTRAINT [FK_HOA_DON_MaLS] FOREIGN KEY ([MaLS]) REFERENCES [dbo].[LICH_SU_KHAM_BENH] ([MaLS]);
-ALTER TABLE [dbo].[CHI_TIET_HOA_DON] ADD CONSTRAINT [FK_CHI_TIET_HOA_DON_MaHD] FOREIGN KEY ([MaHD]) REFERENCES [dbo].[HOA_DON] ([MaHD]);
-ALTER TABLE [dbo].[CHI_TIET_HOA_DON] ADD CONSTRAINT [FK_CHI_TIET_HOA_DON_MaKHDT] FOREIGN KEY ([MaKHDT]) REFERENCES [dbo].[KE_HOACH_DIEU_TRI] ([MaKHDT]);
-ALTER TABLE [dbo].[THANH_TOAN] ADD CONSTRAINT [FK_THANH_TOAN_MaHD] FOREIGN KEY ([MaHD]) REFERENCES [dbo].[HOA_DON] ([MaHD]);
-ALTER TABLE [dbo].[GIAO_DICH_KHO] ADD CONSTRAINT [FK_GIAO_DICH_KHO_MaLo] FOREIGN KEY ([MaLo]) REFERENCES [dbo].[LO_VAT_TU] ([MaLo]);
-ALTER TABLE [dbo].[GIAO_DICH_KHO] ADD CONSTRAINT [FK_GIAO_DICH_KHO_MaKho] FOREIGN KEY ([MaKho]) REFERENCES [dbo].[KHO] ([MaKho]);
-ALTER TABLE [dbo].[HOA_DON_KHO] ADD CONSTRAINT [FK_HOA_DON_KHO_MaGD] FOREIGN KEY ([MaGD]) REFERENCES [dbo].[GIAO_DICH_KHO] ([MaGD]);
-
--- Bảo đảm kho của giao dịch chính là kho đang giữ lô.
-ALTER TABLE [dbo].[GIAO_DICH_KHO] ADD CONSTRAINT [FK_GIAO_DICH_KHO_LoKho]
-    FOREIGN KEY ([MaLo], [MaKho]) REFERENCES [dbo].[LO_VAT_TU] ([MaLo], [MaKho]);
--- Lịch hẹn chỉ được lập tối đa một phiếu; bệnh nhân vãng lai có MaLich NULL.
-CREATE UNIQUE INDEX [UX_PHIEU_KHAM_BENH_MaLich]
-    ON [dbo].[PHIEU_KHAM_BENH] ([MaLich]) WHERE [MaLich] IS NOT NULL;
-
--- Chỉ mục hỗ trợ tra cứu các liên kết nghiệp vụ.
-CREATE INDEX [IX_PHIEU_KHAM_BENH_MaBN] ON [dbo].[PHIEU_KHAM_BENH] ([MaBN]);
+ALTER TABLE [dbo].[HO_SO_BENH_AN] WITH CHECK ADD CONSTRAINT [FK_HO_SO_BENH_AN_MaBN] FOREIGN KEY ([MaBN]) REFERENCES [dbo].[BENH_NHAN] ([MaBN]);
+ALTER TABLE [dbo].[PHIEU_KHAM_BENH] WITH CHECK ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaHS] FOREIGN KEY ([MaHS]) REFERENCES [dbo].[HO_SO_BENH_AN] ([MaHS]);
+ALTER TABLE [dbo].[PHIEU_KHAM_BENH] WITH CHECK ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaLich] FOREIGN KEY ([MaLich]) REFERENCES [dbo].[LICH_KHAM] ([MaLich]);
+ALTER TABLE [dbo].[PHIEU_KHAM_BENH] WITH CHECK ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaPhong] FOREIGN KEY ([MaPhong]) REFERENCES [dbo].[PHONG] ([MaPhong]);
+ALTER TABLE [dbo].[PHIEU_KHAM_BENH] WITH CHECK ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaBS] FOREIGN KEY ([MaBS]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[PHIEU_KHAM_BENH] WITH CHECK ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaNVTiepNhan] FOREIGN KEY ([MaNVTiepNhan]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[PHIEU_KHAM_BENH] WITH CHECK ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaDV] FOREIGN KEY ([MaDV]) REFERENCES [dbo].[DICH_VU] ([MaDV]);
+ALTER TABLE [dbo].[LICH_SU_KHAM_BENH] WITH CHECK ADD CONSTRAINT [FK_LICH_SU_KHAM_BENH_MaPhieu] FOREIGN KEY ([MaPhieu]) REFERENCES [dbo].[PHIEU_KHAM_BENH] ([MaPhieu]);
+ALTER TABLE [dbo].[LICH_SU_KHAM_BENH] WITH CHECK ADD CONSTRAINT [FK_LICH_SU_KHAM_BENH_MaBS] FOREIGN KEY ([MaBS]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[LICH_SU_KHAM_BENH] WITH CHECK ADD CONSTRAINT [FK_LICH_SU_KHAM_BENH_MaPhong] FOREIGN KEY ([MaPhong]) REFERENCES [dbo].[PHONG] ([MaPhong]);
+ALTER TABLE [dbo].[TINH_TRANG_BENH] WITH CHECK ADD CONSTRAINT [FK_TINH_TRANG_BENH_MaLS] FOREIGN KEY ([MaLS]) REFERENCES [dbo].[LICH_SU_KHAM_BENH] ([MaLS]);
+ALTER TABLE [dbo].[DICH_VU] WITH CHECK ADD CONSTRAINT [FK_DICH_VU_MaCK] FOREIGN KEY ([MaCK]) REFERENCES [dbo].[CHUYEN_KHOA] ([MaCK]);
+ALTER TABLE [dbo].[KE_HOACH_DIEU_TRI] WITH CHECK ADD CONSTRAINT [FK_KE_HOACH_DIEU_TRI_MaLS] FOREIGN KEY ([MaLS]) REFERENCES [dbo].[LICH_SU_KHAM_BENH] ([MaLS]);
+ALTER TABLE [dbo].[KE_HOACH_DIEU_TRI] WITH CHECK ADD CONSTRAINT [FK_KE_HOACH_DIEU_TRI_MaBS] FOREIGN KEY ([MaBS]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[CHI_TIET_KE_HOACH] WITH CHECK ADD CONSTRAINT [FK_CHI_TIET_KE_HOACH_MaKHDT] FOREIGN KEY ([MaKHDT]) REFERENCES [dbo].[KE_HOACH_DIEU_TRI] ([MaKHDT]);
+ALTER TABLE [dbo].[CHI_TIET_KE_HOACH] WITH CHECK ADD CONSTRAINT [FK_CHI_TIET_KE_HOACH_MaDV] FOREIGN KEY ([MaDV]) REFERENCES [dbo].[DICH_VU] ([MaDV]);
+ALTER TABLE [dbo].[DICH_VU_THUC_HIEN] WITH CHECK ADD CONSTRAINT [FK_DICH_VU_THUC_HIEN_MaLS] FOREIGN KEY ([MaLS]) REFERENCES [dbo].[LICH_SU_KHAM_BENH] ([MaLS]);
+ALTER TABLE [dbo].[DICH_VU_THUC_HIEN] WITH CHECK ADD CONSTRAINT [FK_DICH_VU_THUC_HIEN_MaCTKH] FOREIGN KEY ([MaCTKH]) REFERENCES [dbo].[CHI_TIET_KE_HOACH] ([MaCTKH]);
+ALTER TABLE [dbo].[DICH_VU_THUC_HIEN] WITH CHECK ADD CONSTRAINT [FK_DICH_VU_THUC_HIEN_MaDV] FOREIGN KEY ([MaDV]) REFERENCES [dbo].[DICH_VU] ([MaDV]);
+ALTER TABLE [dbo].[DICH_VU_THUC_HIEN] WITH CHECK ADD CONSTRAINT [FK_DICH_VU_THUC_HIEN_MaNVThucHien] FOREIGN KEY ([MaNVThucHien]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[DON_THUOC] WITH CHECK ADD CONSTRAINT [FK_DON_THUOC_MaLS] FOREIGN KEY ([MaLS]) REFERENCES [dbo].[LICH_SU_KHAM_BENH] ([MaLS]);
+ALTER TABLE [dbo].[DON_THUOC] WITH CHECK ADD CONSTRAINT [FK_DON_THUOC_MaBS] FOREIGN KEY ([MaBS]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[CHI_TIET_DON_THUOC] WITH CHECK ADD CONSTRAINT [FK_CHI_TIET_DON_THUOC_MaDT] FOREIGN KEY ([MaDT]) REFERENCES [dbo].[DON_THUOC] ([MaDT]);
+ALTER TABLE [dbo].[CHI_TIET_DON_THUOC] WITH CHECK ADD CONSTRAINT [FK_CHI_TIET_DON_THUOC_MaThuoc] FOREIGN KEY ([MaThuoc]) REFERENCES [dbo].[THUOC] ([MaThuoc]);
+ALTER TABLE [dbo].[TAI_KHOAN] WITH CHECK ADD CONSTRAINT [FK_TAI_KHOAN_MaVaiTro] FOREIGN KEY ([MaVaiTro]) REFERENCES [dbo].[VAI_TRO] ([MaVaiTro]);
+ALTER TABLE [dbo].[TAI_KHOAN] WITH CHECK ADD CONSTRAINT [FK_TAI_KHOAN_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[TAI_KHOAN] WITH CHECK ADD CONSTRAINT [FK_TAI_KHOAN_MaKhoa] FOREIGN KEY ([MaKhoa]) REFERENCES [dbo].[KHOA] ([MaKhoa]);
+ALTER TABLE [dbo].[TAI_KHOAN] WITH CHECK ADD CONSTRAINT [FK_TAI_KHOAN_MaPhong] FOREIGN KEY ([MaPhong]) REFERENCES [dbo].[PHONG] ([MaPhong]);
+ALTER TABLE [dbo].[NHAN_VIEN] WITH CHECK ADD CONSTRAINT [FK_NHAN_VIEN_MaChucVu] FOREIGN KEY ([MaChucVu]) REFERENCES [dbo].[CHUC_VU] ([MaChucVu]);
+ALTER TABLE [dbo].[NHAN_VIEN] WITH CHECK ADD CONSTRAINT [FK_NHAN_VIEN_MaCK] FOREIGN KEY ([MaCK]) REFERENCES [dbo].[CHUYEN_KHOA] ([MaCK]);
+ALTER TABLE [dbo].[CHUNG_CHI_NHAN_VIEN] WITH CHECK ADD CONSTRAINT [FK_CHUNG_CHI_NHAN_VIEN_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[CHUYEN_KHOA] WITH CHECK ADD CONSTRAINT [FK_CHUYEN_KHOA_MaKhoa] FOREIGN KEY ([MaKhoa]) REFERENCES [dbo].[KHOA] ([MaKhoa]);
+ALTER TABLE [dbo].[PHONG] WITH CHECK ADD CONSTRAINT [FK_PHONG_MaKhoa] FOREIGN KEY ([MaKhoa]) REFERENCES [dbo].[KHOA] ([MaKhoa]);
+ALTER TABLE [dbo].[THIET_BI] WITH CHECK ADD CONSTRAINT [FK_THIET_BI_MaHH] FOREIGN KEY ([MaHH]) REFERENCES [dbo].[HANG_HOA] ([MaHH]);
+ALTER TABLE [dbo].[THIET_BI] WITH CHECK ADD CONSTRAINT [FK_THIET_BI_MaNCC] FOREIGN KEY ([MaNCC]) REFERENCES [dbo].[NHA_CUNG_CAP] ([MaNCC]);
+ALTER TABLE [dbo].[THIET_BI] WITH CHECK ADD CONSTRAINT [FK_THIET_BI_MaPhong] FOREIGN KEY ([MaPhong]) REFERENCES [dbo].[PHONG] ([MaPhong]);
+ALTER TABLE [dbo].[BAO_TRI_THIET_BI] WITH CHECK ADD CONSTRAINT [FK_BAO_TRI_THIET_BI_MaTB] FOREIGN KEY ([MaTB]) REFERENCES [dbo].[THIET_BI] ([MaTB]);
+ALTER TABLE [dbo].[BAO_TRI_THIET_BI] WITH CHECK ADD CONSTRAINT [FK_BAO_TRI_THIET_BI_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[KHO] WITH CHECK ADD CONSTRAINT [FK_KHO_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[HANG_HOA] WITH CHECK ADD CONSTRAINT [FK_HANG_HOA_MaLoaiHH] FOREIGN KEY ([MaLoaiHH]) REFERENCES [dbo].[LOAI_HANG_HOA] ([MaLoaiHH]);
+ALTER TABLE [dbo].[VAT_TU] WITH CHECK ADD CONSTRAINT [FK_VAT_TU_MaHH] FOREIGN KEY ([MaHH]) REFERENCES [dbo].[HANG_HOA] ([MaHH]);
+ALTER TABLE [dbo].[THUOC] WITH CHECK ADD CONSTRAINT [FK_THUOC_MaHH] FOREIGN KEY ([MaHH]) REFERENCES [dbo].[HANG_HOA] ([MaHH]);
+ALTER TABLE [dbo].[LO_HANG_HOA] WITH CHECK ADD CONSTRAINT [FK_LO_HANG_HOA_MaHH] FOREIGN KEY ([MaHH]) REFERENCES [dbo].[HANG_HOA] ([MaHH]);
+ALTER TABLE [dbo].[LO_HANG_HOA] WITH CHECK ADD CONSTRAINT [FK_LO_HANG_HOA_MaNCC] FOREIGN KEY ([MaNCC]) REFERENCES [dbo].[NHA_CUNG_CAP] ([MaNCC]);
+ALTER TABLE [dbo].[LO_HANG_HOA] WITH CHECK ADD CONSTRAINT [FK_LO_HANG_HOA_MaKho] FOREIGN KEY ([MaKho]) REFERENCES [dbo].[KHO] ([MaKho]);
+ALTER TABLE [dbo].[HOA_DON_NHAP] WITH CHECK ADD CONSTRAINT [FK_HOA_DON_NHAP_MaNCC] FOREIGN KEY ([MaNCC]) REFERENCES [dbo].[NHA_CUNG_CAP] ([MaNCC]);
+ALTER TABLE [dbo].[HOA_DON_NHAP] WITH CHECK ADD CONSTRAINT [FK_HOA_DON_NHAP_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[PHIEU_NHAP] WITH CHECK ADD CONSTRAINT [FK_PHIEU_NHAP_MaHDN] FOREIGN KEY ([MaHDN]) REFERENCES [dbo].[HOA_DON_NHAP] ([MaHDN]);
+ALTER TABLE [dbo].[PHIEU_NHAP] WITH CHECK ADD CONSTRAINT [FK_PHIEU_NHAP_MaKho] FOREIGN KEY ([MaKho]) REFERENCES [dbo].[KHO] ([MaKho]);
+ALTER TABLE [dbo].[PHIEU_NHAP] WITH CHECK ADD CONSTRAINT [FK_PHIEU_NHAP_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[CHI_TIET_PHIEU_NHAP] WITH CHECK ADD CONSTRAINT [FK_CHI_TIET_PHIEU_NHAP_MaPN] FOREIGN KEY ([MaPN]) REFERENCES [dbo].[PHIEU_NHAP] ([MaPN]);
+ALTER TABLE [dbo].[CHI_TIET_PHIEU_NHAP] WITH CHECK ADD CONSTRAINT [FK_CHI_TIET_PHIEU_NHAP_MaHH] FOREIGN KEY ([MaHH]) REFERENCES [dbo].[HANG_HOA] ([MaHH]);
+ALTER TABLE [dbo].[CHI_TIET_PHIEU_NHAP] WITH CHECK ADD CONSTRAINT [FK_CHI_TIET_PHIEU_NHAP_MaLo] FOREIGN KEY ([MaLo]) REFERENCES [dbo].[LO_HANG_HOA] ([MaLo]);
+ALTER TABLE [dbo].[PHIEU_XUAT] WITH CHECK ADD CONSTRAINT [FK_PHIEU_XUAT_MaKho] FOREIGN KEY ([MaKho]) REFERENCES [dbo].[KHO] ([MaKho]);
+ALTER TABLE [dbo].[PHIEU_XUAT] WITH CHECK ADD CONSTRAINT [FK_PHIEU_XUAT_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[PHIEU_XUAT] WITH CHECK ADD CONSTRAINT [FK_PHIEU_XUAT_MaKhoa] FOREIGN KEY ([MaKhoa]) REFERENCES [dbo].[KHOA] ([MaKhoa]);
+ALTER TABLE [dbo].[PHIEU_XUAT] WITH CHECK ADD CONSTRAINT [FK_PHIEU_XUAT_MaPhong] FOREIGN KEY ([MaPhong]) REFERENCES [dbo].[PHONG] ([MaPhong]);
+ALTER TABLE [dbo].[PHIEU_XUAT] WITH CHECK ADD CONSTRAINT [FK_PHIEU_XUAT_MaLS] FOREIGN KEY ([MaLS]) REFERENCES [dbo].[LICH_SU_KHAM_BENH] ([MaLS]);
+ALTER TABLE [dbo].[CHI_TIET_PHIEU_XUAT] WITH CHECK ADD CONSTRAINT [FK_CHI_TIET_PHIEU_XUAT_MaPX] FOREIGN KEY ([MaPX]) REFERENCES [dbo].[PHIEU_XUAT] ([MaPX]);
+ALTER TABLE [dbo].[CHI_TIET_PHIEU_XUAT] WITH CHECK ADD CONSTRAINT [FK_CHI_TIET_PHIEU_XUAT_MaHH] FOREIGN KEY ([MaHH]) REFERENCES [dbo].[HANG_HOA] ([MaHH]);
+ALTER TABLE [dbo].[CHI_TIET_PHIEU_XUAT] WITH CHECK ADD CONSTRAINT [FK_CHI_TIET_PHIEU_XUAT_MaLo] FOREIGN KEY ([MaLo]) REFERENCES [dbo].[LO_HANG_HOA] ([MaLo]);
+ALTER TABLE [dbo].[CHI_TIET_PHIEU_XUAT] WITH CHECK ADD CONSTRAINT [FK_CHI_TIET_PHIEU_XUAT_MaCTDT] FOREIGN KEY ([MaCTDT]) REFERENCES [dbo].[CHI_TIET_DON_THUOC] ([MaCTDT]);
+ALTER TABLE [dbo].[LICH_LAM_VIEC] WITH CHECK ADD CONSTRAINT [FK_LICH_LAM_VIEC_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[LICH_LAM_VIEC] WITH CHECK ADD CONSTRAINT [FK_LICH_LAM_VIEC_MaCa] FOREIGN KEY ([MaCa]) REFERENCES [dbo].[CA_LAM] ([MaCa]);
+ALTER TABLE [dbo].[LICH_LAM_VIEC] WITH CHECK ADD CONSTRAINT [FK_LICH_LAM_VIEC_MaPhong] FOREIGN KEY ([MaPhong]) REFERENCES [dbo].[PHONG] ([MaPhong]);
+ALTER TABLE [dbo].[DON_XIN_NGHI] WITH CHECK ADD CONSTRAINT [FK_DON_XIN_NGHI_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[DON_XIN_NGHI] WITH CHECK ADD CONSTRAINT [FK_DON_XIN_NGHI_MaNVDuyet] FOREIGN KEY ([MaNVDuyet]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[PHAN_CONG_THAY_THE] WITH CHECK ADD CONSTRAINT [FK_PHAN_CONG_THAY_THE_MaDonNghi] FOREIGN KEY ([MaDonNghi]) REFERENCES [dbo].[DON_XIN_NGHI] ([MaDonNghi]);
+ALTER TABLE [dbo].[PHAN_CONG_THAY_THE] WITH CHECK ADD CONSTRAINT [FK_PHAN_CONG_THAY_THE_MaLLVThayThe] FOREIGN KEY ([MaLLVThayThe]) REFERENCES [dbo].[LICH_LAM_VIEC] ([MaLLV]);
+ALTER TABLE [dbo].[LICH_KHAM] WITH CHECK ADD CONSTRAINT [FK_LICH_KHAM_MaBN] FOREIGN KEY ([MaBN]) REFERENCES [dbo].[BENH_NHAN] ([MaBN]);
+ALTER TABLE [dbo].[LICH_KHAM] WITH CHECK ADD CONSTRAINT [FK_LICH_KHAM_MaBS] FOREIGN KEY ([MaBS]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[LICH_KHAM] WITH CHECK ADD CONSTRAINT [FK_LICH_KHAM_MaCa] FOREIGN KEY ([MaCa]) REFERENCES [dbo].[CA_LAM] ([MaCa]);
+ALTER TABLE [dbo].[LICH_KHAM] WITH CHECK ADD CONSTRAINT [FK_LICH_KHAM_MaPhong] FOREIGN KEY ([MaPhong]) REFERENCES [dbo].[PHONG] ([MaPhong]);
+ALTER TABLE [dbo].[LICH_KHAM] WITH CHECK ADD CONSTRAINT [FK_LICH_KHAM_MaDV] FOREIGN KEY ([MaDV]) REFERENCES [dbo].[DICH_VU] ([MaDV]);
+ALTER TABLE [dbo].[HOA_DON] WITH CHECK ADD CONSTRAINT [FK_HOA_DON_MaLS] FOREIGN KEY ([MaLS]) REFERENCES [dbo].[LICH_SU_KHAM_BENH] ([MaLS]);
+ALTER TABLE [dbo].[HOA_DON] WITH CHECK ADD CONSTRAINT [FK_HOA_DON_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[CHI_TIET_HOA_DON] WITH CHECK ADD CONSTRAINT [FK_CHI_TIET_HOA_DON_MaHD] FOREIGN KEY ([MaHD]) REFERENCES [dbo].[HOA_DON] ([MaHD]);
+ALTER TABLE [dbo].[CHI_TIET_HOA_DON] WITH CHECK ADD CONSTRAINT [FK_CHI_TIET_HOA_DON_MaDVThucHien] FOREIGN KEY ([MaDVThucHien]) REFERENCES [dbo].[DICH_VU_THUC_HIEN] ([MaDVThucHien]);
+ALTER TABLE [dbo].[CHI_TIET_HOA_DON] WITH CHECK ADD CONSTRAINT [FK_CHI_TIET_HOA_DON_MaCTPX] FOREIGN KEY ([MaCTPX]) REFERENCES [dbo].[CHI_TIET_PHIEU_XUAT] ([MaCTPX]);
+ALTER TABLE [dbo].[THANH_TOAN] WITH CHECK ADD CONSTRAINT [FK_THANH_TOAN_MaHD] FOREIGN KEY ([MaHD]) REFERENCES [dbo].[HOA_DON] ([MaHD]);
+ALTER TABLE [dbo].[THANH_TOAN] WITH CHECK ADD CONSTRAINT [FK_THANH_TOAN_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[CHINH_SACH_LUONG] WITH CHECK ADD CONSTRAINT [FK_CHINH_SACH_LUONG_MaChucVu] FOREIGN KEY ([MaChucVu]) REFERENCES [dbo].[CHUC_VU] ([MaChucVu]);
+ALTER TABLE [dbo].[CHINH_SACH_LUONG] WITH CHECK ADD CONSTRAINT [FK_CHINH_SACH_LUONG_MaNVDuyet] FOREIGN KEY ([MaNVDuyet]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[BANG_LUONG] WITH CHECK ADD CONSTRAINT [FK_BANG_LUONG_MaNV] FOREIGN KEY ([MaNV]) REFERENCES [dbo].[NHAN_VIEN] ([MaNV]);
+ALTER TABLE [dbo].[BANG_LUONG] WITH CHECK ADD CONSTRAINT [FK_BANG_LUONG_MaCSL] FOREIGN KEY ([MaCSL]) REFERENCES [dbo].[CHINH_SACH_LUONG] ([MaCSL]);
+ALTER TABLE [dbo].[NHAT_KY_THAO_TAC] WITH CHECK ADD CONSTRAINT [FK_NHAT_KY_THAO_TAC_MaTK] FOREIGN KEY ([MaTK]) REFERENCES [dbo].[TAI_KHOAN] ([MaTK]);
+CREATE UNIQUE INDEX [UX_CTHD_DichVu] ON [dbo].[CHI_TIET_HOA_DON]([MaDVThucHien]) WHERE [MaDVThucHien] IS NOT NULL;
+CREATE UNIQUE INDEX [UX_CTHD_XuatThuoc] ON [dbo].[CHI_TIET_HOA_DON]([MaCTPX]) WHERE [MaCTPX] IS NOT NULL;
 CREATE INDEX [IX_PHIEU_KHAM_BENH_MaHS] ON [dbo].[PHIEU_KHAM_BENH] ([MaHS]);
-CREATE INDEX [IX_PHIEU_KHAM_BENH_MaKhoa] ON [dbo].[PHIEU_KHAM_BENH] ([MaKhoa]);
+CREATE INDEX [IX_PHIEU_KHAM_BENH_MaLich] ON [dbo].[PHIEU_KHAM_BENH] ([MaLich]);
 CREATE INDEX [IX_PHIEU_KHAM_BENH_MaPhong] ON [dbo].[PHIEU_KHAM_BENH] ([MaPhong]);
 CREATE INDEX [IX_PHIEU_KHAM_BENH_MaBS] ON [dbo].[PHIEU_KHAM_BENH] ([MaBS]);
+CREATE INDEX [IX_PHIEU_KHAM_BENH_MaNVTiepNhan] ON [dbo].[PHIEU_KHAM_BENH] ([MaNVTiepNhan]);
 CREATE INDEX [IX_PHIEU_KHAM_BENH_MaDV] ON [dbo].[PHIEU_KHAM_BENH] ([MaDV]);
-CREATE INDEX [IX_LICH_SU_KHAM_BENH_MaHS] ON [dbo].[LICH_SU_KHAM_BENH] ([MaHS]);
-CREATE INDEX [IX_LICH_SU_KHAM_BENH_MaLich] ON [dbo].[LICH_SU_KHAM_BENH] ([MaLich]);
+CREATE INDEX [IX_LICH_SU_KHAM_BENH_MaBS] ON [dbo].[LICH_SU_KHAM_BENH] ([MaBS]);
+CREATE INDEX [IX_LICH_SU_KHAM_BENH_MaPhong] ON [dbo].[LICH_SU_KHAM_BENH] ([MaPhong]);
 CREATE INDEX [IX_TINH_TRANG_BENH_MaLS] ON [dbo].[TINH_TRANG_BENH] ([MaLS]);
-CREATE INDEX [IX_DON_THUOC_MaLS] ON [dbo].[DON_THUOC] ([MaLS]);
-CREATE INDEX [IX_DON_THUOC_MaBS] ON [dbo].[DON_THUOC] ([MaBS]);
-CREATE INDEX [IX_CHI_TIET_DON_THUOC_MaDT] ON [dbo].[CHI_TIET_DON_THUOC] ([MaDT]);
 CREATE INDEX [IX_DICH_VU_MaCK] ON [dbo].[DICH_VU] ([MaCK]);
-CREATE INDEX [IX_TAI_KHOAN_MaVaiTro] ON [dbo].[TAI_KHOAN] ([MaVaiTro]);
-CREATE INDEX [IX_NHAN_VIEN_MaChucVu] ON [dbo].[NHAN_VIEN] ([MaChucVu]);
-CREATE INDEX [IX_NHAN_VIEN_MaCK] ON [dbo].[NHAN_VIEN] ([MaCK]);
-CREATE INDEX [IX_CHUYEN_KHOA_MaKhoa] ON [dbo].[CHUYEN_KHOA] ([MaKhoa]);
 CREATE INDEX [IX_KE_HOACH_DIEU_TRI_MaLS] ON [dbo].[KE_HOACH_DIEU_TRI] ([MaLS]);
-CREATE INDEX [IX_KE_HOACH_DIEU_TRI_MaBN] ON [dbo].[KE_HOACH_DIEU_TRI] ([MaBN]);
 CREATE INDEX [IX_KE_HOACH_DIEU_TRI_MaBS] ON [dbo].[KE_HOACH_DIEU_TRI] ([MaBS]);
 CREATE INDEX [IX_CHI_TIET_KE_HOACH_MaKHDT] ON [dbo].[CHI_TIET_KE_HOACH] ([MaKHDT]);
 CREATE INDEX [IX_CHI_TIET_KE_HOACH_MaDV] ON [dbo].[CHI_TIET_KE_HOACH] ([MaDV]);
+CREATE INDEX [IX_DICH_VU_THUC_HIEN_MaLS] ON [dbo].[DICH_VU_THUC_HIEN] ([MaLS]);
+CREATE INDEX [IX_DICH_VU_THUC_HIEN_MaCTKH] ON [dbo].[DICH_VU_THUC_HIEN] ([MaCTKH]);
+CREATE INDEX [IX_DICH_VU_THUC_HIEN_MaDV] ON [dbo].[DICH_VU_THUC_HIEN] ([MaDV]);
+CREATE INDEX [IX_DICH_VU_THUC_HIEN_MaNVThucHien] ON [dbo].[DICH_VU_THUC_HIEN] ([MaNVThucHien]);
+CREATE INDEX [IX_DON_THUOC_MaLS] ON [dbo].[DON_THUOC] ([MaLS]);
+CREATE INDEX [IX_DON_THUOC_MaBS] ON [dbo].[DON_THUOC] ([MaBS]);
+CREATE INDEX [IX_CHI_TIET_DON_THUOC_MaDT] ON [dbo].[CHI_TIET_DON_THUOC] ([MaDT]);
+CREATE INDEX [IX_CHI_TIET_DON_THUOC_MaThuoc] ON [dbo].[CHI_TIET_DON_THUOC] ([MaThuoc]);
+CREATE INDEX [IX_TAI_KHOAN_MaVaiTro] ON [dbo].[TAI_KHOAN] ([MaVaiTro]);
+CREATE INDEX [IX_TAI_KHOAN_MaKhoa] ON [dbo].[TAI_KHOAN] ([MaKhoa]);
+CREATE INDEX [IX_TAI_KHOAN_MaPhong] ON [dbo].[TAI_KHOAN] ([MaPhong]);
+CREATE INDEX [IX_NHAN_VIEN_MaChucVu] ON [dbo].[NHAN_VIEN] ([MaChucVu]);
+CREATE INDEX [IX_NHAN_VIEN_MaCK] ON [dbo].[NHAN_VIEN] ([MaCK]);
+CREATE INDEX [IX_CHUNG_CHI_NHAN_VIEN_MaNV] ON [dbo].[CHUNG_CHI_NHAN_VIEN] ([MaNV]);
+CREATE INDEX [IX_CHUYEN_KHOA_MaKhoa] ON [dbo].[CHUYEN_KHOA] ([MaKhoa]);
+CREATE INDEX [IX_PHONG_MaKhoa] ON [dbo].[PHONG] ([MaKhoa]);
+CREATE INDEX [IX_THIET_BI_MaHH] ON [dbo].[THIET_BI] ([MaHH]);
 CREATE INDEX [IX_THIET_BI_MaNCC] ON [dbo].[THIET_BI] ([MaNCC]);
+CREATE INDEX [IX_THIET_BI_MaPhong] ON [dbo].[THIET_BI] ([MaPhong]);
 CREATE INDEX [IX_BAO_TRI_THIET_BI_MaTB] ON [dbo].[BAO_TRI_THIET_BI] ([MaTB]);
-CREATE INDEX [IX_PHONG_KHAM_MaCK] ON [dbo].[PHONG_KHAM] ([MaCK]);
+CREATE INDEX [IX_BAO_TRI_THIET_BI_MaNV] ON [dbo].[BAO_TRI_THIET_BI] ([MaNV]);
 CREATE INDEX [IX_KHO_MaNV] ON [dbo].[KHO] ([MaNV]);
-CREATE INDEX [IX_VAT_TU_MaLVT] ON [dbo].[VAT_TU] ([MaLVT]);
-CREATE INDEX [IX_LO_VAT_TU_MaVT] ON [dbo].[LO_VAT_TU] ([MaVT]);
-CREATE INDEX [IX_LO_VAT_TU_MaNCC] ON [dbo].[LO_VAT_TU] ([MaNCC]);
-CREATE INDEX [IX_LO_VAT_TU_MaKho] ON [dbo].[LO_VAT_TU] ([MaKho]);
+CREATE INDEX [IX_HANG_HOA_MaLoaiHH] ON [dbo].[HANG_HOA] ([MaLoaiHH]);
+CREATE INDEX [IX_LO_HANG_HOA_MaHH] ON [dbo].[LO_HANG_HOA] ([MaHH]);
+CREATE INDEX [IX_LO_HANG_HOA_MaNCC] ON [dbo].[LO_HANG_HOA] ([MaNCC]);
+CREATE INDEX [IX_LO_HANG_HOA_MaKho] ON [dbo].[LO_HANG_HOA] ([MaKho]);
+CREATE INDEX [IX_HOA_DON_NHAP_MaNCC] ON [dbo].[HOA_DON_NHAP] ([MaNCC]);
+CREATE INDEX [IX_HOA_DON_NHAP_MaNV] ON [dbo].[HOA_DON_NHAP] ([MaNV]);
+CREATE INDEX [IX_PHIEU_NHAP_MaHDN] ON [dbo].[PHIEU_NHAP] ([MaHDN]);
+CREATE INDEX [IX_PHIEU_NHAP_MaKho] ON [dbo].[PHIEU_NHAP] ([MaKho]);
+CREATE INDEX [IX_PHIEU_NHAP_MaNV] ON [dbo].[PHIEU_NHAP] ([MaNV]);
+CREATE INDEX [IX_CHI_TIET_PHIEU_NHAP_MaPN] ON [dbo].[CHI_TIET_PHIEU_NHAP] ([MaPN]);
+CREATE INDEX [IX_CHI_TIET_PHIEU_NHAP_MaHH] ON [dbo].[CHI_TIET_PHIEU_NHAP] ([MaHH]);
+CREATE INDEX [IX_CHI_TIET_PHIEU_NHAP_MaLo] ON [dbo].[CHI_TIET_PHIEU_NHAP] ([MaLo]);
+CREATE INDEX [IX_PHIEU_XUAT_MaKho] ON [dbo].[PHIEU_XUAT] ([MaKho]);
+CREATE INDEX [IX_PHIEU_XUAT_MaNV] ON [dbo].[PHIEU_XUAT] ([MaNV]);
+CREATE INDEX [IX_PHIEU_XUAT_MaKhoa] ON [dbo].[PHIEU_XUAT] ([MaKhoa]);
+CREATE INDEX [IX_PHIEU_XUAT_MaPhong] ON [dbo].[PHIEU_XUAT] ([MaPhong]);
+CREATE INDEX [IX_PHIEU_XUAT_MaLS] ON [dbo].[PHIEU_XUAT] ([MaLS]);
+CREATE INDEX [IX_CHI_TIET_PHIEU_XUAT_MaPX] ON [dbo].[CHI_TIET_PHIEU_XUAT] ([MaPX]);
+CREATE INDEX [IX_CHI_TIET_PHIEU_XUAT_MaHH] ON [dbo].[CHI_TIET_PHIEU_XUAT] ([MaHH]);
+CREATE INDEX [IX_CHI_TIET_PHIEU_XUAT_MaLo] ON [dbo].[CHI_TIET_PHIEU_XUAT] ([MaLo]);
+CREATE INDEX [IX_CHI_TIET_PHIEU_XUAT_MaCTDT] ON [dbo].[CHI_TIET_PHIEU_XUAT] ([MaCTDT]);
+CREATE INDEX [IX_LICH_LAM_VIEC_MaNV] ON [dbo].[LICH_LAM_VIEC] ([MaNV]);
 CREATE INDEX [IX_LICH_LAM_VIEC_MaCa] ON [dbo].[LICH_LAM_VIEC] ([MaCa]);
 CREATE INDEX [IX_LICH_LAM_VIEC_MaPhong] ON [dbo].[LICH_LAM_VIEC] ([MaPhong]);
 CREATE INDEX [IX_DON_XIN_NGHI_MaNV] ON [dbo].[DON_XIN_NGHI] ([MaNV]);
 CREATE INDEX [IX_DON_XIN_NGHI_MaNVDuyet] ON [dbo].[DON_XIN_NGHI] ([MaNVDuyet]);
 CREATE INDEX [IX_PHAN_CONG_THAY_THE_MaDonNghi] ON [dbo].[PHAN_CONG_THAY_THE] ([MaDonNghi]);
-CREATE INDEX [IX_PHAN_CONG_THAY_THE_MaLLVGoc] ON [dbo].[PHAN_CONG_THAY_THE] ([MaLLVGoc]);
-CREATE INDEX [IX_PHAN_CONG_THAY_THE_MaNVThayThe] ON [dbo].[PHAN_CONG_THAY_THE] ([MaNVThayThe]);
 CREATE INDEX [IX_PHAN_CONG_THAY_THE_MaLLVThayThe] ON [dbo].[PHAN_CONG_THAY_THE] ([MaLLVThayThe]);
 CREATE INDEX [IX_LICH_KHAM_MaBN] ON [dbo].[LICH_KHAM] ([MaBN]);
 CREATE INDEX [IX_LICH_KHAM_MaBS] ON [dbo].[LICH_KHAM] ([MaBS]);
+CREATE INDEX [IX_LICH_KHAM_MaCa] ON [dbo].[LICH_KHAM] ([MaCa]);
 CREATE INDEX [IX_LICH_KHAM_MaPhong] ON [dbo].[LICH_KHAM] ([MaPhong]);
 CREATE INDEX [IX_LICH_KHAM_MaDV] ON [dbo].[LICH_KHAM] ([MaDV]);
-CREATE INDEX [IX_HOA_DON_MaBN] ON [dbo].[HOA_DON] ([MaBN]);
 CREATE INDEX [IX_HOA_DON_MaLS] ON [dbo].[HOA_DON] ([MaLS]);
+CREATE INDEX [IX_HOA_DON_MaNV] ON [dbo].[HOA_DON] ([MaNV]);
 CREATE INDEX [IX_CHI_TIET_HOA_DON_MaHD] ON [dbo].[CHI_TIET_HOA_DON] ([MaHD]);
-CREATE INDEX [IX_CHI_TIET_HOA_DON_MaKHDT] ON [dbo].[CHI_TIET_HOA_DON] ([MaKHDT]);
 CREATE INDEX [IX_THANH_TOAN_MaHD] ON [dbo].[THANH_TOAN] ([MaHD]);
-CREATE INDEX [IX_GIAO_DICH_KHO_MaLo] ON [dbo].[GIAO_DICH_KHO] ([MaLo]);
-CREATE INDEX [IX_GIAO_DICH_KHO_MaKho] ON [dbo].[GIAO_DICH_KHO] ([MaKho]);
+CREATE INDEX [IX_THANH_TOAN_MaNV] ON [dbo].[THANH_TOAN] ([MaNV]);
+CREATE INDEX [IX_CHINH_SACH_LUONG_MaChucVu] ON [dbo].[CHINH_SACH_LUONG] ([MaChucVu]);
+CREATE INDEX [IX_CHINH_SACH_LUONG_MaNVDuyet] ON [dbo].[CHINH_SACH_LUONG] ([MaNVDuyet]);
+CREATE INDEX [IX_BANG_LUONG_MaNV] ON [dbo].[BANG_LUONG] ([MaNV]);
+CREATE INDEX [IX_BANG_LUONG_MaCSL] ON [dbo].[BANG_LUONG] ([MaCSL]);
+CREATE INDEX [IX_NHAT_KY_THAO_TAC_MaTK] ON [dbo].[NHAT_KY_THAO_TAC] ([MaTK]);
+EXEC sys.sp_executesql N'-- TỰ TÍNH THÀNH TIỀN HÓA ĐƠN, ĐỒNG BỘ TỔNG VÀ KHÓA CHỨNG TỪ.
+CREATE TRIGGER dbo.TR_CTHD_TinhTien ON dbo.CHI_TIET_HOA_DON
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF TRIGGER_NESTLEVEL(OBJECT_ID(N''dbo.TR_CTHD_TinhTien'')) > 1 RETURN;
+ DECLARE @Lock NVARCHAR(50);
+ SELECT @Lock=h.MaHD FROM dbo.HOA_DON h WITH(UPDLOCK,HOLDLOCK)
+ WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted);
+ IF EXISTS(SELECT 1 FROM dbo.HOA_DON h JOIN (SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted) x ON x.MaHD=h.MaHD WHERE h.TrangThai<>N''Nháp'')
+  THROW 51001,N''Chỉ được thay đổi chi tiết của hóa đơn nháp.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD
+  LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=i.MaDVThucHien
+  LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=i.MaCTPX
+  LEFT JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX
+  LEFT JOIN dbo.CHI_TIET_DON_THUOC d ON d.MaCTDT=x.MaCTDT
+  LEFT JOIN dbo.DON_THUOC r ON r.MaDT=d.MaDT
+  WHERE (i.MaDVThucHien IS NOT NULL AND(s.MaLS<>h.MaLS OR s.TrangThai<>N''Đã xác nhận''))
+     OR (i.MaCTPX IS NOT NULL AND(x.MaCTDT IS NULL OR p.MaLS<>h.MaLS OR r.MaLS<>h.MaLS OR p.TrangThai<>N''Đã ghi sổ'')))
+  THROW 51002,N''Nguồn thu phải là dịch vụ xác nhận/thuốc đã cấp cùng lần khám; không thu vật tư nội bộ.'',1;
+ UPDATE c SET ThanhTien=CASE WHEN c.MaDVThucHien IS NOT NULL THEN s.ThanhTien ELSE CAST(ROUND(x.SoLuong*c.DonGia,2) AS DECIMAL(18,2)) END
+ FROM dbo.CHI_TIET_HOA_DON c JOIN inserted i ON i.MaCTHD=c.MaCTHD
+ LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
+ LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX;
+ IF EXISTS(SELECT 1 FROM dbo.HOA_DON h WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted)
+ AND h.GiamGia>COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0))
+  THROW 51003,N''Tổng mới thấp hơn giảm giá. Giảm hoặc bỏ giảm giá trước khi gỡ khoản thu nháp.'',1;
+ UPDATE h SET TongTien=COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0)
+ FROM dbo.HOA_DON h WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted);
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_HD_XacNhan ON dbo.HOA_DON
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted WHERE TrangThai=N''Đã xác nhận'')
+  THROW 51004,N''Hóa đơn đã xác nhận giữ nguyên; không sửa, hủy hay xóa.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã xác nhận'' AND NOT EXISTS(SELECT 1 FROM deleted d WHERE d.MaHD=i.MaHD))
+  THROW 51005,N''Tạo hóa đơn nháp và chi tiết trước khi xác nhận.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Hủy'' AND EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=i.MaHD))
+  THROW 51006,N''Gỡ chi tiết hóa đơn nháp trước khi hủy để giải phóng nguồn.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TongTien<>COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=i.MaHD),0))
+  THROW 51007,N''TongTien phải bằng tổng ThanhTien chi tiết; không nhập tổng độc lập.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã xác nhận'' AND
+ (NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=i.MaHD)
+ OR EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaLS=i.MaLS AND(l.TrangThai<>N''Đã xác nhận'' OR i.NgayLap<l.ThoiGianKham))
+ OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c
+ LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
+ LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
+ LEFT JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX
+ WHERE c.MaHD=i.MaHD AND((c.MaDVThucHien IS NOT NULL AND(s.TrangThai<>N''Đã xác nhận'' OR s.MaLS<>i.MaLS OR s.ThanhTien<>c.ThanhTien OR s.ThoiGianThucHien>i.NgayXacNhan))
+ OR(c.MaCTPX IS NOT NULL AND(p.TrangThai<>N''Đã ghi sổ'' OR p.MaLS<>i.MaLS OR x.MaCTDT IS NULL OR CAST(ROUND(x.SoLuong*c.DonGia,2) AS DECIMAL(18,2))<>c.ThanhTien OR p.NgayXuat>i.NgayXacNhan))))))
+  THROW 51008,N''Không xác nhận hóa đơn rỗng, nguồn sai, thời gian sai hoặc thành tiền chưa khớp.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_TT_KiemTraSoDu ON dbo.THANH_TOAN
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ DECLARE @Lock NVARCHAR(50);
+ SELECT @Lock=h.MaHD FROM dbo.HOA_DON h WITH(UPDLOCK,HOLDLOCK)
+ WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted);
+ IF EXISTS(SELECT 1 FROM deleted WHERE TrangThai=N''Đã xác nhận'')
+  THROW 51009,N''Giao dịch đã xác nhận không sửa/xóa; lập giao dịch điều chỉnh mới.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD WHERE i.TrangThai=N''Đã xác nhận'' AND(h.TrangThai<>N''Đã xác nhận'' OR i.NgayThanhToan<h.NgayXacNhan))
+  THROW 51010,N''Chỉ thu/hoàn sau khi hóa đơn đã xác nhận.'',1;
+ IF EXISTS(SELECT 1 FROM dbo.HOA_DON h JOIN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted) z ON z.MaHD=h.MaHD
+ OUTER APPLY(SELECT SUM(CASE WHEN t.LoaiGiaoDich=N''Thu'' THEN t.SoTien ELSE -t.SoTien END) ThuRong FROM dbo.THANH_TOAN t WHERE t.MaHD=h.MaHD AND t.TrangThai=N''Đã xác nhận'') a
+ WHERE COALESCE(a.ThuRong,0)<0 OR COALESCE(a.ThuRong,0)>h.SoTienPhaiThu)
+  THROW 51011,N''Thu vượt tiền phải trả hoặc hoàn vượt tiền đang giữ.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_CTDT_KhoaDon ON dbo.CHI_TIET_DON_THUOC
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM dbo.DON_THUOC r JOIN(SELECT MaDT FROM inserted UNION SELECT MaDT FROM deleted) x ON x.MaDT=r.MaDT WHERE r.TrangThai<>N''Nháp'')
+  THROW 51012,N''Chỉ sửa chi tiết đơn thuốc nháp; đơn xác nhận giữ nguyên.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_DT_XacNhan ON dbo.DON_THUOC
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaDT=d.MaDT WHERE d.TrangThai<>N''Nháp'' AND(i.MaDT IS NULL OR i.TrangThai=N''Nháp'' OR EXISTS(SELECT i.MaLS,i.MaBS,i.NgayKe,i.LyDoThayThe,i.GhiChu EXCEPT SELECT d.MaLS,d.MaBS,d.NgayKe,d.LyDoThayThe,d.GhiChu)))
+  THROW 51013,N''Đơn đã xác nhận chỉ được đổi trạng thái nghiệp vụ; thay chỉ định bằng đơn mới.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã xác nhận'' AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c WHERE c.MaDT=i.MaDT))
+  THROW 51014,N''Không xác nhận đơn thuốc rỗng.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_DVTH_KhoaNguon ON dbo.DICH_VU_THUC_HIEN
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted WHERE TrangThai=N''Đã xác nhận'')
+  THROW 51015,N''Dịch vụ đã xác nhận không sửa hoặc xóa nguồn thu.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.CHI_TIET_KE_HOACH c ON c.MaCTKH=i.MaCTKH JOIN dbo.KE_HOACH_DIEU_TRI k ON k.MaKHDT=c.MaKHDT
+ JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=i.MaLS JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
+ JOIN dbo.LICH_SU_KHAM_BENH l0 ON l0.MaLS=k.MaLS JOIN dbo.PHIEU_KHAM_BENH p0 ON p0.MaPhieu=l0.MaPhieu
+ WHERE c.MaDV<>i.MaDV OR p.MaHS<>p0.MaHS OR c.TrangThai=N''Hủy'')
+  THROW 51016,N''Dịch vụ phải khớp kế hoạch và cùng hồ sơ bệnh án; không thực hiện dòng đã hủy.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_CTKH_TongDuKien ON dbo.CHI_TIET_KE_HOACH
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ UPDATE k SET TongTienDuKien=COALESCE((SELECT SUM(c.ThanhTienDuKien) FROM dbo.CHI_TIET_KE_HOACH c WHERE c.MaKHDT=k.MaKHDT AND c.TrangThai<>N''Hủy''),0)
+ FROM dbo.KE_HOACH_DIEU_TRI k WITH(UPDLOCK) WHERE k.MaKHDT IN(SELECT MaKHDT FROM inserted UNION SELECT MaKHDT FROM deleted);
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_KHDT_Tong ON dbo.KE_HOACH_DIEU_TRI
+AFTER INSERT, UPDATE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TongTienDuKien<>COALESCE((SELECT SUM(c.ThanhTienDuKien) FROM dbo.CHI_TIET_KE_HOACH c WHERE c.MaKHDT=i.MaKHDT AND c.TrangThai<>N''Hủy''),0))
+  THROW 51017,N''Tổng dự kiến phải bằng chi tiết chưa hủy.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_CTPN_TongVaNguon ON dbo.CHI_TIET_PHIEU_NHAP
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM dbo.PHIEU_NHAP p WITH(UPDLOCK,HOLDLOCK) JOIN(SELECT MaPN FROM inserted UNION SELECT MaPN FROM deleted) z ON z.MaPN=p.MaPN WHERE p.TrangThai<>N''Nháp'')
+  THROW 51018,N''Chỉ thay đổi chi tiết phiếu nhập nháp.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.PHIEU_NHAP p ON p.MaPN=i.MaPN JOIN dbo.HOA_DON_NHAP h ON h.MaHDN=p.MaHDN JOIN dbo.LO_HANG_HOA l ON l.MaLo=i.MaLo
+ WHERE l.MaHH<>i.MaHH OR l.MaKho<>p.MaKho OR l.MaNCC<>h.MaNCC)
+  THROW 51019,N''Lô nhập phải khớp hàng hóa, kho và nhà cung cấp.'',1;
+ UPDATE p SET TongTien=COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_PHIEU_NHAP c WHERE c.MaPN=p.MaPN),0)
+ FROM dbo.PHIEU_NHAP p WHERE p.MaPN IN(SELECT MaPN FROM inserted UNION SELECT MaPN FROM deleted);
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_PN_GhiSo ON dbo.PHIEU_NHAP
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ DECLARE @Lock NVARCHAR(50);
+ SELECT @Lock=h.MaHH FROM dbo.HANG_HOA h WITH(UPDLOCK,HOLDLOCK)
+ JOIN dbo.CHI_TIET_PHIEU_NHAP c ON c.MaHH=h.MaHH JOIN inserted i ON i.MaPN=c.MaPN;
+ IF EXISTS(SELECT 1 FROM deleted WHERE TrangThai=N''Đã ghi sổ'')
+  THROW 51020,N''Phiếu nhập đã ghi sổ giữ nguyên.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.CHI_TIET_PHIEU_NHAP c ON c.MaPN=i.MaPN JOIN dbo.HOA_DON_NHAP h ON h.MaHDN=i.MaHDN JOIN dbo.LO_HANG_HOA l ON l.MaLo=c.MaLo
+ WHERE l.MaHH<>c.MaHH OR l.MaKho<>i.MaKho OR l.MaNCC<>h.MaNCC)
+  THROW 51019,N''Nguồn phiếu nhập phải khớp hàng hóa, kho và nhà cung cấp của các lô chi tiết.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TongTien<>COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_PHIEU_NHAP c WHERE c.MaPN=i.MaPN),0))
+  THROW 51021,N''Tổng nhập phải bằng chi tiết.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã ghi sổ'' AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_NHAP c WHERE c.MaPN=i.MaPN))
+  THROW 51022,N''Không ghi sổ phiếu nhập rỗng.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_CTPX_Nguon ON dbo.CHI_TIET_PHIEU_XUAT
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM dbo.PHIEU_XUAT p WITH(UPDLOCK,HOLDLOCK) JOIN(SELECT MaPX FROM inserted UNION SELECT MaPX FROM deleted) z ON z.MaPX=p.MaPX WHERE p.TrangThai<>N''Nháp'')
+  THROW 51023,N''Chỉ thay đổi chi tiết phiếu xuất nháp.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.PHIEU_XUAT p ON p.MaPX=i.MaPX
+ LEFT JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=i.MaCTDT LEFT JOIN dbo.DON_THUOC d ON d.MaDT=c.MaDT
+ LEFT JOIN dbo.THUOC t ON t.MaThuoc=c.MaThuoc LEFT JOIN dbo.LO_HANG_HOA l ON l.MaLo=i.MaLo
+ WHERE (p.MaLS IS NOT NULL AND(i.MaCTDT IS NULL OR p.MaLS<>d.MaLS OR i.MaHH<>t.MaHH OR i.MaLo IS NULL))
+ OR (p.MaLS IS NULL AND i.MaCTDT IS NOT NULL) OR(i.MaLo IS NOT NULL AND(l.MaHH<>i.MaHH OR l.MaKho<>p.MaKho)))
+  THROW 51024,N''Dòng xuất phải đúng thuốc của đơn/lần khám và đúng lô, kho; xuất nội bộ không dùng MaCTDT.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_PX_GhiSoDuDon ON dbo.PHIEU_XUAT
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ DECLARE @Lock NVARCHAR(50);
+ -- Khóa mặt hàng dùng chung cho nhập/xuất để tránh hai quầy cùng dùng tồn.
+ SELECT @Lock=h.MaHH FROM dbo.HANG_HOA h WITH(UPDLOCK,HOLDLOCK)
+ JOIN dbo.CHI_TIET_PHIEU_XUAT c ON c.MaHH=h.MaHH JOIN inserted i ON i.MaPX=c.MaPX;
+ SELECT @Lock=d.MaDT FROM dbo.DON_THUOC d WITH(UPDLOCK,HOLDLOCK) JOIN dbo.CHI_TIET_DON_THUOC ct ON ct.MaDT=d.MaDT
+ JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTDT=ct.MaCTDT JOIN inserted i ON i.MaPX=x.MaPX;
+ IF EXISTS(SELECT 1 FROM deleted WHERE TrangThai=N''Đã ghi sổ'')
+  THROW 51025,N''Phiếu xuất đã ghi sổ giữ nguyên; không giảm lượng hoặc cấp lại.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaPX=i.MaPX
+ LEFT JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT LEFT JOIN dbo.DON_THUOC d ON d.MaDT=c.MaDT
+ LEFT JOIN dbo.THUOC t ON t.MaThuoc=c.MaThuoc LEFT JOIN dbo.LO_HANG_HOA l ON l.MaLo=x.MaLo
+ WHERE(i.MaLS IS NOT NULL AND(x.MaCTDT IS NULL OR i.MaLS<>d.MaLS OR x.MaHH<>t.MaHH OR x.MaLo IS NULL))
+ OR(i.MaLS IS NULL AND x.MaCTDT IS NOT NULL) OR(x.MaLo IS NOT NULL AND(l.MaHH<>x.MaHH OR l.MaKho<>i.MaKho)))
+  THROW 51024,N''Nguồn phiếu xuất phải khớp đơn thuốc, bệnh nhân, lô và kho của mọi chi tiết.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã ghi sổ'' AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT c WHERE c.MaPX=i.MaPX))
+  THROW 51026,N''Không ghi sổ phiếu xuất rỗng.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaPX=i.MaPX
+ LEFT JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT LEFT JOIN dbo.DON_THUOC d ON d.MaDT=c.MaDT
+ LEFT JOIN dbo.LO_HANG_HOA l ON l.MaLo=x.MaLo
+ WHERE i.TrangThai=N''Đã ghi sổ'' AND((x.MaCTDT IS NOT NULL AND(d.TrangThai<>N''Đã xác nhận'' OR d.NgayKe>i.NgayXuat))
+ OR (x.MaLo IS NOT NULL AND(l.TrangThai<>N''Còn sử dụng'' OR l.NgayNhap>i.NgayXuat OR(l.HanSuDung IS NOT NULL AND l.HanSuDung<CAST(i.NgayXuat AS DATE))))))
+  THROW 51027,N''Đơn chưa xác nhận/ngừng áp dụng hoặc lô không hợp lệ, hết hạn.'',1;
+ -- Mọi dòng của các đơn đang cấp phải đã xuất đủ trong cùng transaction.
+ IF EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c WHERE c.MaDT IN
+ (SELECT ct.MaDT FROM inserted i JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaPX=i.MaPX JOIN dbo.CHI_TIET_DON_THUOC ct ON ct.MaCTDT=x.MaCTDT WHERE i.TrangThai=N''Đã ghi sổ'')
+ AND c.SoLuong<>COALESCE((SELECT SUM(x.SoLuong) FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX WHERE x.MaCTDT=c.MaCTDT AND p.TrangThai=N''Đã ghi sổ''),0))
+  THROW 51028,N''Phải cấp đủ toàn bộ đơn trong một lần xác nhận; không cấp một phần hoặc cấp lại.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaPX=i.MaPX WHERE i.TrangThai=N''Đã ghi sổ'' AND
+ COALESCE((SELECT SUM(n.SoLuong) FROM dbo.CHI_TIET_PHIEU_NHAP n JOIN dbo.PHIEU_NHAP p ON p.MaPN=n.MaPN WHERE p.TrangThai=N''Đã ghi sổ'' AND p.MaKho=i.MaKho AND n.MaHH=x.MaHH AND(n.MaLo=x.MaLo OR(n.MaLo IS NULL AND x.MaLo IS NULL))),0)
+ < COALESCE((SELECT SUM(e.SoLuong) FROM dbo.CHI_TIET_PHIEU_XUAT e JOIN dbo.PHIEU_XUAT p ON p.MaPX=e.MaPX WHERE p.TrangThai=N''Đã ghi sổ'' AND p.MaKho=i.MaKho AND e.MaHH=x.MaHH AND(e.MaLo=x.MaLo OR(e.MaLo IS NULL AND x.MaLo IS NULL))),0))
+  THROW 51029,N''Không đủ tồn kho/lô; rollback toàn bộ lần cấp.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_LO_KhoaNguon ON dbo.LO_HANG_HOA
+AFTER UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted d WHERE EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_NHAP c JOIN dbo.PHIEU_NHAP p ON p.MaPN=c.MaPN WHERE c.MaLo=d.MaLo AND p.TrangThai=N''Đã ghi sổ'') OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT c JOIN dbo.PHIEU_XUAT p ON p.MaPX=c.MaPX WHERE c.MaLo=d.MaLo AND p.TrangThai=N''Đã ghi sổ''))
+  THROW 51030,N''Lô đã có chứng từ ghi sổ giữ nguyên thuộc tính nguồn.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_HH_KhoaDonVi ON dbo.HANG_HOA
+AFTER UPDATE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaHH=i.MaHH WHERE i.DonViTinh<>d.DonViTinh AND
+ (EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_NHAP c WHERE c.MaHH=i.MaHH) OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT c WHERE c.MaHH=i.MaHH) OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c JOIN dbo.THUOC t ON t.MaThuoc=c.MaThuoc WHERE t.MaHH=i.MaHH)))
+  THROW 51031,N''Không đổi đơn vị cơ sở sau khi đã kê/nhập/xuất.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_THUOC_KhoaHangHoa ON dbo.THUOC
+AFTER UPDATE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaThuoc=i.MaThuoc WHERE i.MaHH<>d.MaHH AND EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c WHERE c.MaThuoc=i.MaThuoc))
+  THROW 51032,N''Thuốc đã kê đơn không đổi hàng hóa nguồn; DonGiaBan hiện hành vẫn được cập nhật.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_PHIEU_LienKet ON dbo.PHIEU_KHAM_BENH
+AFTER INSERT, UPDATE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HO_SO_BENH_AN h ON h.MaHS=i.MaHS JOIN dbo.LICH_KHAM l ON l.MaLich=i.MaLich WHERE l.MaBN<>h.MaBN OR l.MaPhong<>i.MaPhong OR(i.MaBS IS NOT NULL AND l.MaBS<>i.MaBS))
+  THROW 51033,N''Phiếu tiếp nhận có lịch phải khớp bệnh nhân, phòng và bác sĩ.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaPhieu=i.MaPhieu WHERE EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaPhieu=i.MaPhieu) AND EXISTS(SELECT i.MaHS,i.MaLich EXCEPT SELECT d.MaHS,d.MaLich))
+  THROW 51034,N''Phiếu đã phát sinh lần khám không đổi hồ sơ/lịch nguồn.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_LS_LienKet ON dbo.LICH_SU_KHAM_BENH
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaLS=i.MaLS WHERE d.TrangThai=N''Đã xác nhận'' AND EXISTS(SELECT i.MaPhieu,i.MaBS,i.MaPhong,i.ThoiGianKham,i.TrangThai,i.NgayXacNhan EXCEPT SELECT d.MaPhieu,d.MaBS,d.MaPhong,d.ThoiGianKham,d.TrangThai,d.NgayXacNhan))
+  THROW 51035,N''Lần khám đã xác nhận giữ nguyên liên kết và thời gian nguồn.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=i.MaPhieu WHERE i.ThoiGianKham<p.ThoiGianTiepNhan OR i.MaPhong<>p.MaPhong OR(p.MaBS IS NOT NULL AND i.MaBS<>p.MaBS))
+  THROW 51036,N''Lần khám phải khớp phiếu tiếp nhận và không trước giờ tiếp nhận.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_CSL_KhoaChinhSach ON dbo.CHINH_SACH_LUONG
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted WHERE TrangThai=N''Đã duyệt'')
+  THROW 51037,N''Chính sách đã duyệt giữ nguyên; thay đổi bằng phiên bản mới.'',1;
+ IF EXISTS(SELECT 1 FROM inserted WHERE TrangThai=N''Đã duyệt'' AND(MaNVDuyet IS NULL OR NgayDuyet IS NULL))
+  THROW 51037,N''Chính sách đã duyệt phải ghi người và ngày duyệt.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_BL_ChotLuong ON dbo.BANG_LUONG
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted WHERE TrangThai=N''Đã chốt'')
+  THROW 51038,N''Bảng lương đã chốt không sửa hoặc xóa các thành phần.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.NHAN_VIEN n ON n.MaNV=i.MaNV JOIN dbo.CHINH_SACH_LUONG cs ON cs.MaCSL=i.MaCSL
+ WHERE i.TrangThai=N''Đã chốt'' AND(i.NgayChot IS NULL OR CAST(i.NgayChot AS DATE)<i.DenNgay OR cs.TrangThai<>N''Đã duyệt'' OR n.MaChucVu<>cs.MaChucVu OR i.TuNgay<cs.NgayHieuLuc OR(cs.NgayHetHieuLuc IS NOT NULL AND i.DenNgay>cs.NgayHetHieuLuc)
+ OR i.LuongCoBan<>cs.LuongCoBan OR i.SoCaDinhMuc<>cs.SoCaDinhMuc
+ OR i.SoCaTinh<>(SELECT COUNT(*) FROM dbo.LICH_LAM_VIEC l WHERE l.MaNV=i.MaNV AND l.NgayLam BETWEEN i.TuNgay AND i.DenNgay AND l.TrangThai=N''Đã xác nhận'' AND l.TrangThaiHienDien=N''Có mặt'')
+ OR i.TienHoaHong<>CAST(ROUND(COALESCE((SELECT SUM(s.ThanhTien) FROM dbo.DICH_VU_THUC_HIEN s WHERE s.MaNVThucHien=i.MaNV AND CAST(s.ThoiGianThucHien AS DATE) BETWEEN i.TuNgay AND i.DenNgay AND s.TrangThai=N''Đã xác nhận''),0)*cs.TyLeHoaHong,2) AS DECIMAL(18,2))))
+  THROW 51039,N''Chốt lương phải khớp chính sách, hiện diện và hoa hồng dịch vụ trong kỳ.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_HS_KhoaBenhNhanNguon ON dbo.HO_SO_BENH_AN
+AFTER UPDATE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaHS=i.MaHS WHERE i.MaBN<>d.MaBN AND EXISTS(SELECT 1 FROM dbo.PHIEU_KHAM_BENH p WHERE p.MaHS=i.MaHS))
+  THROW 51040,N''Hồ sơ đã tiếp nhận không chuyển sang bệnh nhân khác; giữ nguyên nguồn bệnh án và hóa đơn.'',1;
+END;';
 
-    COMMIT TRANSACTION;
-    PRINT N'Đã tạo thành công 34 bảng và các ràng buộc.';
+-- DỮ LIỆU MẪU: nhập theo thứ tự phụ thuộc, nguồn ban đầu là nháp.
+
+-- VAI_TRO: 10 dòng
+INSERT INTO [dbo].[VAI_TRO] ([MaVaiTro], [TenVaiTro], [MoTa])
+VALUES
+    (N'VTRO001', N'Quản trị hệ thống', N'Vai trò quản trị hệ thống trong ứng dụng nội bộ'),
+    (N'VTRO002', N'Bác sĩ', N'Vai trò bác sĩ trong ứng dụng nội bộ'),
+    (N'VTRO003', N'Điều dưỡng', N'Vai trò điều dưỡng trong ứng dụng nội bộ'),
+    (N'VTRO004', N'Tiếp nhận', N'Vai trò tiếp nhận trong ứng dụng nội bộ'),
+    (N'VTRO005', N'Dược sĩ', N'Vai trò dược sĩ trong ứng dụng nội bộ'),
+    (N'VTRO006', N'Thủ kho', N'Vai trò thủ kho trong ứng dụng nội bộ'),
+    (N'VTRO007', N'Thu ngân', N'Vai trò thu ngân trong ứng dụng nội bộ'),
+    (N'VTRO008', N'Kỹ thuật viên', N'Vai trò kỹ thuật viên trong ứng dụng nội bộ'),
+    (N'VTRO009', N'Nhân sự', N'Vai trò nhân sự trong ứng dụng nội bộ'),
+    (N'VTRO010', N'Quản lý bệnh viện', N'Vai trò quản lý bệnh viện trong ứng dụng nội bộ');
+
+-- CHUC_VU: 10 dòng
+INSERT INTO [dbo].[CHUC_VU] ([MaChucVu], [TenChucVu], [MoTa])
+VALUES
+    (N'CV001', N'Quản trị viên', N'Chức vụ quản trị viên'),
+    (N'CV002', N'Bác sĩ', N'Chức vụ bác sĩ'),
+    (N'CV003', N'Điều dưỡng', N'Chức vụ điều dưỡng'),
+    (N'CV004', N'Nhân viên tiếp nhận', N'Chức vụ nhân viên tiếp nhận'),
+    (N'CV005', N'Dược sĩ', N'Chức vụ dược sĩ'),
+    (N'CV006', N'Thủ kho', N'Chức vụ thủ kho'),
+    (N'CV007', N'Thu ngân', N'Chức vụ thu ngân'),
+    (N'CV008', N'Kỹ thuật viên', N'Chức vụ kỹ thuật viên'),
+    (N'CV009', N'Nhân sự', N'Chức vụ nhân sự'),
+    (N'CV010', N'Trưởng phòng', N'Chức vụ trưởng phòng');
+
+-- KHOA: 10 dòng
+INSERT INTO [dbo].[KHOA] ([MaKhoa], [TenKhoa], [DienThoai], [MoTa], [TrangThai])
+VALUES
+    (N'KHOA001', N'Khám tổng hợp', N'02871000001', N'Khoa khám tổng hợp', N'Đang hoạt động'),
+    (N'KHOA002', N'Điều trị răng', N'02871000002', N'Khoa điều trị răng', N'Đang hoạt động'),
+    (N'KHOA003', N'Phẫu thuật hàm mặt', N'02871000003', N'Khoa phẫu thuật hàm mặt', N'Đang hoạt động'),
+    (N'KHOA004', N'Chẩn đoán hình ảnh', N'02871000004', N'Khoa chẩn đoán hình ảnh', N'Đang hoạt động'),
+    (N'KHOA005', N'Xét nghiệm', N'02871000005', N'Khoa xét nghiệm', N'Đang hoạt động'),
+    (N'KHOA006', N'Gây mê hồi sức', N'02871000006', N'Khoa gây mê hồi sức', N'Đang hoạt động'),
+    (N'KHOA007', N'Chăm sóc và phục hồi', N'02871000007', N'Khoa chăm sóc và phục hồi', N'Đang hoạt động'),
+    (N'KHOA008', N'Dược', N'02871000008', N'Khoa dược', N'Đang hoạt động'),
+    (N'KHOA009', N'Kiểm soát nhiễm khuẩn', N'02871000009', N'Khoa kiểm soát nhiễm khuẩn', N'Đang hoạt động'),
+    (N'KHOA010', N'Hành chính quản trị', N'02871000010', N'Khoa hành chính quản trị', N'Đang hoạt động');
+
+-- CHUYEN_KHOA: 10 dòng
+INSERT INTO [dbo].[CHUYEN_KHOA] ([MaCK], [MaKhoa], [TenCK], [MoTa], [TrangThai])
+VALUES
+    (N'CK001', N'KHOA001', N'Khám răng hàm mặt tổng quát', N'Khám răng hàm mặt tổng quát', N'Đang hoạt động'),
+    (N'CK002', N'KHOA002', N'Điều trị bảo tồn', N'Điều trị bảo tồn', N'Đang hoạt động'),
+    (N'CK003', N'KHOA003', N'Phẫu thuật hàm mặt', N'Phẫu thuật hàm mặt', N'Đang hoạt động'),
+    (N'CK004', N'KHOA004', N'Hình ảnh y học', N'Hình ảnh y học', N'Đang hoạt động'),
+    (N'CK005', N'KHOA005', N'Xét nghiệm y học', N'Xét nghiệm y học', N'Đang hoạt động'),
+    (N'CK006', N'KHOA006', N'Gây mê hồi sức', N'Gây mê hồi sức', N'Đang hoạt động'),
+    (N'CK007', N'KHOA007', N'Phục hồi chức năng', N'Phục hồi chức năng', N'Đang hoạt động'),
+    (N'CK008', N'KHOA008', N'Dược lâm sàng', N'Dược lâm sàng', N'Đang hoạt động'),
+    (N'CK009', N'KHOA009', N'Kiểm soát nhiễm khuẩn', N'Kiểm soát nhiễm khuẩn', N'Đang hoạt động'),
+    (N'CK010', N'KHOA010', N'Quản lý y tế', N'Quản lý y tế', N'Đang hoạt động');
+
+-- PHONG: 10 dòng
+INSERT INTO [dbo].[PHONG] ([MaPhong], [TenPhong], [MaKhoa], [LoaiPhong], [TinhTrang], [TrangThai])
+VALUES
+    (N'PH001', N'P01 - Khám tổng hợp', N'KHOA001', N'Khám tổng hợp', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH002', N'P02 - Điều trị răng', N'KHOA002', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH003', N'P03 - Phẫu thuật hàm mặt', N'KHOA003', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH004', N'P04 - Chẩn đoán hình ảnh', N'KHOA004', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH005', N'P05 - Xét nghiệm', N'KHOA005', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH006', N'P06 - Gây mê hồi sức', N'KHOA006', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH007', N'P07 - Chăm sóc và phục hồi', N'KHOA007', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH008', N'P08 - Dược', N'KHOA008', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH009', N'P09 - Kiểm soát nhiễm khuẩn', N'KHOA009', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH010', N'P10 - Hành chính quản trị', N'KHOA010', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động');
+
+-- NHAN_VIEN: 10 dòng
+INSERT INTO [dbo].[NHAN_VIEN] ([MaNV], [HoTen], [GioiTinh], [NgaySinh], [SDT], [DiaChi], [MaChucVu], [MaCK], [BangCap], [NgayVaoLam], [TrangThai])
+VALUES
+    (N'NV001', N'Nguyễn Minh Quang', N'Nam', N'1979-06-12', N'0902000001', N'21 Đường Mẫu, TP. Hồ Chí Minh', N'CV001', NULL, N'Đại học', N'2022-01-10', N'Đang làm việc'),
+    (N'NV002', N'Trần Quốc Bảo', N'Nam', N'1980-06-12', N'0902000002', N'22 Đường Mẫu, TP. Hồ Chí Minh', N'CV002', N'CK001', N'Đại học', N'2022-01-10', N'Đang làm việc'),
+    (N'NV003', N'Lê Thu Hà', N'Nữ', N'1981-06-12', N'0902000003', N'23 Đường Mẫu, TP. Hồ Chí Minh', N'CV002', N'CK001', N'Đại học', N'2022-01-10', N'Đang làm việc'),
+    (N'NV004', N'Phạm Ngọc Mai', N'Nữ', N'1982-06-12', N'0902000004', N'24 Đường Mẫu, TP. Hồ Chí Minh', N'CV003', N'CK001', N'Đại học', N'2022-01-10', N'Đang làm việc'),
+    (N'NV005', N'Võ Thảo Vy', N'Nữ', N'1983-06-12', N'0902000005', N'25 Đường Mẫu, TP. Hồ Chí Minh', N'CV004', NULL, N'Đại học', N'2022-01-10', N'Đang làm việc'),
+    (N'NV006', N'Đặng Thanh Lan', N'Nữ', N'1984-06-12', N'0902000006', N'26 Đường Mẫu, TP. Hồ Chí Minh', N'CV005', N'CK008', N'Đại học', N'2022-01-10', N'Đang làm việc'),
+    (N'NV007', N'Bùi Minh Tuấn', N'Nam', N'1985-06-12', N'0902000007', N'27 Đường Mẫu, TP. Hồ Chí Minh', N'CV006', NULL, N'Đại học', N'2022-01-10', N'Đang làm việc'),
+    (N'NV008', N'Hoàng Khánh Linh', N'Nữ', N'1986-06-12', N'0902000008', N'28 Đường Mẫu, TP. Hồ Chí Minh', N'CV007', NULL, N'Đại học', N'2022-01-10', N'Đang làm việc'),
+    (N'NV009', N'Đỗ Văn Hưng', N'Nam', N'1987-06-12', N'0902000009', N'29 Đường Mẫu, TP. Hồ Chí Minh', N'CV008', NULL, N'Đại học', N'2022-01-10', N'Đang làm việc'),
+    (N'NV010', N'Nguyễn Gia Hân', N'Nữ', N'1988-06-12', N'0902000010', N'30 Đường Mẫu, TP. Hồ Chí Minh', N'CV009', NULL, N'Đại học', N'2022-01-10', N'Đang làm việc');
+
+-- TAI_KHOAN: 10 dòng
+INSERT INTO [dbo].[TAI_KHOAN] ([MaTK], [TenDangNhap], [MatKhauHash], [MaVaiTro], [MaNV], [MaKhoa], [MaPhong], [TrangThai])
+VALUES
+    (N'TK001', N'mau01', N'pbkdf2_sha256$210000$/J3BcaN7TS4U3PvKozPj2A==$lYpYoyAgRrU9UVvp+45G7kjEoeJGH1tn7MD3O/wax/U=', N'VTRO001', N'NV001', NULL, NULL, N'Khóa'),
+    (N'TK002', N'mau02', N'pbkdf2_sha256$210000$orRavgtSkKvLcQat9pgLDg==$9qiSzpp6lLqPOOvokEyolz6trc8mac5Y/AUO8wsS0u4=', N'VTRO002', N'NV002', N'KHOA001', NULL, N'Khóa'),
+    (N'TK003', N'mau03', N'pbkdf2_sha256$210000$6+QWI1t2ULOagkEzCKeMXQ==$uIcm3Lr+GSUefsG0SNAUyOAyL9nxUqMYljcZMwGK+cY=', N'VTRO002', N'NV003', N'KHOA001', NULL, N'Khóa'),
+    (N'TK004', N'mau04', N'pbkdf2_sha256$210000$5Kj+02fLLdMztUK5cchizw==$sxUcoQ1pQ5dasGazOIWbk3rU/hWA11b2mk/d/L+s6L4=', N'VTRO003', N'NV004', N'KHOA001', NULL, N'Khóa'),
+    (N'TK005', N'mau05', N'pbkdf2_sha256$210000$n8D6FpH9k5J6jedL//YsaA==$dP1r4hgxexBXNUdq3bf4DPwt8+RZ2UGKdTsNxLMbjcM=', N'VTRO004', N'NV005', NULL, NULL, N'Khóa'),
+    (N'TK006', N'mau06', N'pbkdf2_sha256$210000$4Abpb7pGCUdV6YhPYdsXIQ==$8krwzM34EGJCnd0ABU0jJ7Ahh3HrjElV5EpgwY0nO/o=', N'VTRO005', N'NV006', NULL, NULL, N'Khóa'),
+    (N'TK007', N'mau07', N'pbkdf2_sha256$210000$tOmTJ9bFvMLN7i0rH4+OZQ==$5cfVJC0mwZnJIE3FEcdxwszyCjMdLPaLq3N3vXQ3ViY=', N'VTRO006', N'NV007', NULL, NULL, N'Khóa'),
+    (N'TK008', N'mau08', N'pbkdf2_sha256$210000$JYpxzH34LZ+vlak/Z5lYdg==$vCauWuAYf9CcBwOFcljUJoA2PcU/wMnvgZxAHjgKzrU=', N'VTRO007', N'NV008', NULL, NULL, N'Khóa'),
+    (N'TK009', N'mau09', N'pbkdf2_sha256$210000$FV560XHUJO+RtgqgqUZNNA==$E2CYY1PadeVo9ByPZYpDOkEvxOxlkZtpu6Rs7mlDquI=', N'VTRO008', N'NV009', NULL, NULL, N'Khóa'),
+    (N'TK010', N'mau10', N'pbkdf2_sha256$210000$Fziml82I6+/meVwKOZZ6zg==$PxJNL9ghxtKHECJjEI3sxdCRDQw0d5fExED+/nLkTjQ=', N'VTRO009', N'NV010', NULL, NULL, N'Khóa');
+
+-- CHUNG_CHI_NHAN_VIEN: 10 dòng
+INSERT INTO [dbo].[CHUNG_CHI_NHAN_VIEN] ([MaCC], [MaNV], [SoChungChi], [TenChungChi], [NgayCap], [NoiCap], [HanChungChi], [TrangThai], [GhiChu])
+VALUES
+    (N'CC001', N'NV001', N'CC-MAU-2022-001', N'Chứng nhận đào tạo nghiệp vụ nội bộ', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', NULL, N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
+    (N'CC002', N'NV002', N'CC-MAU-2022-002', N'Chứng chỉ hành nghề mô phỏng', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', N'2030-01-05', N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
+    (N'CC003', N'NV003', N'CC-MAU-2022-003', N'Chứng chỉ hành nghề mô phỏng', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', N'2030-01-05', N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
+    (N'CC004', N'NV004', N'CC-MAU-2022-004', N'Chứng chỉ hành nghề mô phỏng', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', N'2030-01-05', N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
+    (N'CC005', N'NV005', N'CC-MAU-2022-005', N'Chứng nhận đào tạo nghiệp vụ nội bộ', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', NULL, N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
+    (N'CC006', N'NV006', N'CC-MAU-2022-006', N'Chứng chỉ hành nghề mô phỏng', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', N'2030-01-05', N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
+    (N'CC007', N'NV007', N'CC-MAU-2022-007', N'Chứng nhận đào tạo nghiệp vụ nội bộ', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', NULL, N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
+    (N'CC008', N'NV008', N'CC-MAU-2022-008', N'Chứng nhận đào tạo nghiệp vụ nội bộ', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', NULL, N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
+    (N'CC009', N'NV009', N'CC-MAU-2022-009', N'Chứng nhận đào tạo nghiệp vụ nội bộ', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', NULL, N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
+    (N'CC010', N'NV010', N'CC-MAU-2022-010', N'Chứng nhận đào tạo nghiệp vụ nội bộ', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', NULL, N'Còn hiệu lực', N'Dữ liệu mẫu đồ án');
+
+-- NHA_CUNG_CAP: 10 dòng
+INSERT INTO [dbo].[NHA_CUNG_CAP] ([MaNCC], [TenNCC], [SDT], [Email], [DiaChi], [NguoiLienHe], [TrangThai])
+VALUES
+    (N'NCC001', N'Công ty cung ứng y tế mẫu 01', N'02872000001', N'ncc01@example.com', N'101 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 01', N'Đang hoạt động'),
+    (N'NCC002', N'Công ty cung ứng y tế mẫu 02', N'02872000002', N'ncc02@example.com', N'102 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 02', N'Đang hoạt động'),
+    (N'NCC003', N'Công ty cung ứng y tế mẫu 03', N'02872000003', N'ncc03@example.com', N'103 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 03', N'Đang hoạt động'),
+    (N'NCC004', N'Công ty cung ứng y tế mẫu 04', N'02872000004', N'ncc04@example.com', N'104 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 04', N'Đang hoạt động'),
+    (N'NCC005', N'Công ty cung ứng y tế mẫu 05', N'02872000005', N'ncc05@example.com', N'105 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 05', N'Đang hoạt động'),
+    (N'NCC006', N'Công ty cung ứng y tế mẫu 06', N'02872000006', N'ncc06@example.com', N'106 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 06', N'Đang hoạt động'),
+    (N'NCC007', N'Công ty cung ứng y tế mẫu 07', N'02872000007', N'ncc07@example.com', N'107 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 07', N'Đang hoạt động'),
+    (N'NCC008', N'Công ty cung ứng y tế mẫu 08', N'02872000008', N'ncc08@example.com', N'108 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 08', N'Đang hoạt động'),
+    (N'NCC009', N'Công ty cung ứng y tế mẫu 09', N'02872000009', N'ncc09@example.com', N'109 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 09', N'Đang hoạt động'),
+    (N'NCC010', N'Công ty cung ứng y tế mẫu 10', N'02872000010', N'ncc10@example.com', N'110 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 10', N'Đang hoạt động');
+
+-- KHO: 10 dòng
+INSERT INTO [dbo].[KHO] ([MaKho], [TenKho], [MaNV], [LoaiKho], [TrangThai])
+VALUES
+    (N'KHO001', N'Kho thuốc cấp phát', N'NV007', N'Thuốc', N'Đang hoạt động'),
+    (N'KHO002', N'Kho dự phòng 02', N'NV007', N'Thuốc', N'Đang hoạt động'),
+    (N'KHO003', N'Kho dự phòng 03', N'NV007', N'Thuốc', N'Đang hoạt động'),
+    (N'KHO004', N'Kho dự phòng 04', N'NV007', N'Vật tư', N'Đang hoạt động'),
+    (N'KHO005', N'Kho dự phòng 05', N'NV007', N'Vật tư', N'Đang hoạt động'),
+    (N'KHO006', N'Kho dự phòng 06', N'NV007', N'Vật tư', N'Đang hoạt động'),
+    (N'KHO007', N'Kho dự phòng 07', N'NV007', N'Vật tư', N'Đang hoạt động'),
+    (N'KHO008', N'Kho dự phòng 08', N'NV007', N'Thiết bị', N'Đang hoạt động'),
+    (N'KHO009', N'Kho dự phòng 09', N'NV007', N'Thiết bị', N'Đang hoạt động'),
+    (N'KHO010', N'Kho dự phòng 10', N'NV007', N'Thiết bị', N'Đang hoạt động');
+
+-- LOAI_HANG_HOA: 10 dòng
+INSERT INTO [dbo].[LOAI_HANG_HOA] ([MaLoaiHH], [TenLoaiHH], [MoTa], [TrangThai])
+VALUES
+    (N'LHH001', N'Thuốc dạng viên', N'Nhóm thuốc dạng viên', N'Đang hoạt động'),
+    (N'LHH002', N'Thuốc dạng dung dịch', N'Nhóm thuốc dạng dung dịch', N'Đang hoạt động'),
+    (N'LHH003', N'Thuốc dùng ngoài', N'Nhóm thuốc dùng ngoài', N'Đang hoạt động'),
+    (N'LHH004', N'Vật tư bảo hộ', N'Nhóm vật tư bảo hộ', N'Đang hoạt động'),
+    (N'LHH005', N'Vật tư băng gạc', N'Nhóm vật tư băng gạc', N'Đang hoạt động'),
+    (N'LHH006', N'Vật tư vô khuẩn', N'Nhóm vật tư vô khuẩn', N'Đang hoạt động'),
+    (N'LHH007', N'Vật tư xét nghiệm', N'Nhóm vật tư xét nghiệm', N'Đang hoạt động'),
+    (N'LHH008', N'Thiết bị theo dõi', N'Nhóm thiết bị theo dõi', N'Đang hoạt động'),
+    (N'LHH009', N'Thiết bị chẩn đoán', N'Nhóm thiết bị chẩn đoán', N'Đang hoạt động'),
+    (N'LHH010', N'Thiết bị hỗ trợ điều trị', N'Nhóm thiết bị hỗ trợ điều trị', N'Đang hoạt động');
+
+-- HANG_HOA: 30 dòng
+INSERT INTO [dbo].[HANG_HOA] ([MaHH], [TenHH], [MaLoaiHH], [DonViTinh], [MoTa], [TrangThai])
+VALUES
+    (N'HH001', N'Thuốc mẫu A', N'LHH001', N'Viên', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
+    (N'HH002', N'Thuốc mẫu B', N'LHH001', N'Viên', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
+    (N'HH003', N'Thuốc mẫu C', N'LHH003', N'Tuýp', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
+    (N'HH004', N'Thuốc mẫu D', N'LHH001', N'Viên', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
+    (N'HH005', N'Thuốc mẫu E', N'LHH001', N'Viên', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
+    (N'HH006', N'Thuốc mẫu F', N'LHH002', N'Chai', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
+    (N'HH007', N'Thuốc mẫu G', N'LHH001', N'Viên', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
+    (N'HH008', N'Thuốc mẫu H', N'LHH003', N'Tuýp', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
+    (N'HH009', N'Thuốc mẫu I', N'LHH002', N'Chai', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
+    (N'HH010', N'Thuốc mẫu J', N'LHH001', N'Viên', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
+    (N'HH011', N'Găng tay y tế', N'LHH004', N'Đôi', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
+    (N'HH012', N'Khẩu trang y tế', N'LHH004', N'Cái', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
+    (N'HH013', N'Gạc vô khuẩn', N'LHH005', N'Miếng', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
+    (N'HH014', N'Băng cuộn', N'LHH005', N'Cuộn', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
+    (N'HH015', N'Bông y tế', N'LHH005', N'Gói', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
+    (N'HH016', N'Áo choàng bảo hộ', N'LHH004', N'Cái', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
+    (N'HH017', N'Ống lấy mẫu', N'LHH007', N'Ống', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
+    (N'HH018', N'Túi vô khuẩn', N'LHH006', N'Túi', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
+    (N'HH019', N'Miếng băng dán', N'LHH005', N'Miếng', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
+    (N'HH020', N'Ống nghiệm', N'LHH007', N'Ống', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
+    (N'HH021', N'Máy theo dõi sinh hiệu', N'LHH008', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
+    (N'HH022', N'Máy đo huyết áp', N'LHH008', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
+    (N'HH023', N'Máy đo SpO2', N'LHH008', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
+    (N'HH024', N'Máy điện tim', N'LHH008', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
+    (N'HH025', N'Máy chụp X-quang', N'LHH009', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
+    (N'HH026', N'Máy siêu âm', N'LHH009', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
+    (N'HH027', N'Máy hấp tiệt trùng', N'LHH010', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
+    (N'HH028', N'Máy hút dịch', N'LHH010', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
+    (N'HH029', N'Đèn khám', N'LHH010', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
+    (N'HH030', N'Máy lọc không khí', N'LHH010', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động');
+
+-- VAT_TU: 10 dòng
+INSERT INTO [dbo].[VAT_TU] ([MaVT], [MaHH], [MucTonToiThieu])
+VALUES
+    (N'VT001', N'HH011', 10),
+    (N'VT002', N'HH012', 10),
+    (N'VT003', N'HH013', 10),
+    (N'VT004', N'HH014', 10),
+    (N'VT005', N'HH015', 10),
+    (N'VT006', N'HH016', 10),
+    (N'VT007', N'HH017', 10),
+    (N'VT008', N'HH018', 10),
+    (N'VT009', N'HH019', 10),
+    (N'VT010', N'HH020', 10);
+
+-- THUOC: 10 dòng
+INSERT INTO [dbo].[THUOC] ([MaThuoc], [MaHH], [HamLuong], [MucTonToiThieu], [DonGiaBan])
+VALUES
+    (N'TH001', N'HH001', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 2000),
+    (N'TH002', N'HH002', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 3000),
+    (N'TH003', N'HH003', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 25000),
+    (N'TH004', N'HH004', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 5000),
+    (N'TH005', N'HH005', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 3500),
+    (N'TH006', N'HH006', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 40000),
+    (N'TH007', N'HH007', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 1500),
+    (N'TH008', N'HH008', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 30000),
+    (N'TH009', N'HH009', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 45000),
+    (N'TH010', N'HH010', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 2500);
+
+-- THIET_BI: 10 dòng
+INSERT INTO [dbo].[THIET_BI] ([MaTB], [MaHH], [SoSerial], [NgayMua], [MaNCC], [MaPhong], [TinhTrang], [HanBaoHanh], [TrangThai], [GhiChu])
+VALUES
+    (N'TB001', N'HH021', N'RHM-MAU-0001', N'2024-01-10', N'NCC001', N'PH001', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
+    (N'TB002', N'HH022', N'RHM-MAU-0002', N'2024-01-10', N'NCC002', N'PH002', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
+    (N'TB003', N'HH023', N'RHM-MAU-0003', N'2024-01-10', N'NCC003', N'PH003', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
+    (N'TB004', N'HH024', N'RHM-MAU-0004', N'2024-01-10', N'NCC004', N'PH004', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
+    (N'TB005', N'HH025', N'RHM-MAU-0005', N'2024-01-10', N'NCC005', N'PH005', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
+    (N'TB006', N'HH026', N'RHM-MAU-0006', N'2024-01-10', N'NCC006', N'PH006', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
+    (N'TB007', N'HH027', N'RHM-MAU-0007', N'2024-01-10', N'NCC007', N'PH007', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
+    (N'TB008', N'HH028', N'RHM-MAU-0008', N'2024-01-10', N'NCC008', N'PH008', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
+    (N'TB009', N'HH029', N'RHM-MAU-0009', N'2024-01-10', N'NCC009', N'PH009', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
+    (N'TB010', N'HH030', N'RHM-MAU-0010', N'2024-01-10', N'NCC010', N'PH010', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này');
+
+-- BAO_TRI_THIET_BI: 10 dòng
+INSERT INTO [dbo].[BAO_TRI_THIET_BI] ([MaBT], [MaTB], [MaNV], [NgayBatDau], [NgayKetThuc], [NoiDung], [ChiPhi], [NgayBaoTriTiepTheo], [TrangThai], [GhiChu])
+VALUES
+    (N'BT001', N'TB001', N'NV009', N'2026-09-01T08:00:00', N'2026-09-01T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 160000, N'2027-03-01', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
+    (N'BT002', N'TB002', N'NV009', N'2026-09-02T08:00:00', N'2026-09-02T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 170000, N'2027-03-02', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
+    (N'BT003', N'TB003', N'NV009', N'2026-09-03T08:00:00', N'2026-09-03T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 180000, N'2027-03-03', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
+    (N'BT004', N'TB004', N'NV009', N'2026-09-04T08:00:00', N'2026-09-04T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 190000, N'2027-03-04', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
+    (N'BT005', N'TB005', N'NV009', N'2026-09-05T08:00:00', N'2026-09-05T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 200000, N'2027-03-05', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
+    (N'BT006', N'TB006', N'NV009', N'2026-09-06T08:00:00', N'2026-09-06T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 210000, N'2027-03-06', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
+    (N'BT007', N'TB007', N'NV009', N'2026-09-07T08:00:00', N'2026-09-07T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 220000, N'2027-03-07', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
+    (N'BT008', N'TB008', N'NV009', N'2026-09-08T08:00:00', N'2026-09-08T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 230000, N'2027-03-08', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
+    (N'BT009', N'TB009', N'NV009', N'2026-09-09T08:00:00', N'2026-09-09T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 240000, N'2027-03-09', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
+    (N'BT010', N'TB010', N'NV009', N'2026-09-10T08:00:00', N'2026-09-10T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 250000, N'2027-03-10', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân');
+
+-- CA_LAM: 10 dòng
+INSERT INTO [dbo].[CA_LAM] ([MaCa], [GioBatDau], [GioKetThuc], [TrangThai], [GhiChu])
+VALUES
+    (N'CA001', N'08:00:00', N'12:00:00', N'Đang hoạt động', N'Khám sáng'),
+    (N'CA002', N'13:00:00', N'17:00:00', N'Đang hoạt động', N'Khám chiều'),
+    (N'CA003', N'17:00:00', N'21:00:00', N'Đang hoạt động', N'Khám ngoài giờ'),
+    (N'CA004', N'07:00:00', N'11:00:00', N'Đang hoạt động', N'Hỗ trợ tiếp nhận sáng'),
+    (N'CA005', N'11:00:00', N'15:00:00', N'Đang hoạt động', N'Hỗ trợ tiếp nhận trưa'),
+    (N'CA006', N'15:00:00', N'19:00:00', N'Đang hoạt động', N'Hỗ trợ tiếp nhận chiều'),
+    (N'CA007', N'07:00:00', N'15:00:00', N'Đang hoạt động', N'Điều dưỡng ngày'),
+    (N'CA008', N'15:00:00', N'23:00:00', N'Đang hoạt động', N'Điều dưỡng tối'),
+    (N'CA009', N'23:00:00', N'07:00:00', N'Đang hoạt động', N'Trực qua đêm'),
+    (N'CA010', N'08:00:00', N'17:00:00', N'Đang hoạt động', N'Hành chính');
+
+-- BENH_NHAN: 10 dòng
+INSERT INTO [dbo].[BENH_NHAN] ([MaBN], [HoTenBN], [GioiTinh], [NgaySinh], [SDT], [DiaChi], [MaBHYT], [NhomMau], [TienSuBenh], [DiUng], [TrangThai])
+VALUES
+    (N'BN001', N'Nguyễn Văn An', N'Nam', N'1981-03-15', N'0901000001', N'41 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'O+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
+    (N'BN002', N'Trần Thị Bình', N'Nữ', N'1982-03-15', N'0901000002', N'42 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'A+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
+    (N'BN003', N'Lê Quốc Cường', N'Nam', N'1983-03-15', N'0901000003', N'43 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'B+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
+    (N'BN004', N'Phạm Ngọc Dung', N'Nữ', N'1984-03-15', N'0901000004', N'44 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'AB+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
+    (N'BN005', N'Võ Minh Đức', N'Nam', N'1985-03-15', N'0901000005', N'45 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'O+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
+    (N'BN006', N'Đặng Thị Hạnh', N'Nữ', N'1986-03-15', N'0901000006', N'46 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'A+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
+    (N'BN007', N'Bùi Gia Huy', N'Nam', N'1987-03-15', N'0901000007', N'47 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'B+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
+    (N'BN008', N'Hoàng Thị Lan', N'Nữ', N'1988-03-15', N'0901000008', N'48 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'AB+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
+    (N'BN009', N'Đỗ Thành Nam', N'Nam', N'1989-03-15', N'0901000009', N'49 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'O+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
+    (N'BN010', N'Nguyễn Khánh Vy', N'Nữ', N'1990-03-15', N'0901000010', N'50 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'A+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi');
+
+-- HO_SO_BENH_AN: 10 dòng
+INSERT INTO [dbo].[HO_SO_BENH_AN] ([MaHS], [MaBN], [NgayLap], [LyDoKhamBanDau], [GhiChu], [TrangThai])
+VALUES
+    (N'HS001', N'BN001', N'2026-09-25T08:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
+    (N'HS002', N'BN002', N'2026-09-25T08:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
+    (N'HS003', N'BN003', N'2026-09-25T08:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
+    (N'HS004', N'BN004', N'2026-09-25T08:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
+    (N'HS005', N'BN005', N'2026-09-25T08:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
+    (N'HS006', N'BN006', N'2026-10-01T09:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
+    (N'HS007', N'BN007', N'2026-10-02T09:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
+    (N'HS008', N'BN008', N'2026-10-03T09:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
+    (N'HS009', N'BN009', N'2026-10-04T09:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
+    (N'HS010', N'BN010', N'2026-10-05T09:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi');
+
+-- DICH_VU: 10 dòng
+INSERT INTO [dbo].[DICH_VU] ([MaDV], [TenDV], [NhomDV], [MaCK], [DonGia], [ThoiGianDuKien], [MoTa], [NgayApDung], [TrangThai])
+VALUES
+    (N'DV001', N'Khám răng hàm mặt tổng quát', N'Khám và tư vấn', N'CK001', 100000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV002', N'Tái khám và đánh giá', N'Khám và tư vấn', N'CK001', 120000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV003', N'Tư vấn kế hoạch điều trị', N'Khám và tư vấn', N'CK001', 80000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV004', N'Theo dõi sau điều trị', N'Khám và tư vấn', N'CK001', 100000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV005', N'Đánh giá phục hồi chức năng', N'Khám và tư vấn', N'CK001', 150000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV006', N'Chụp X-quang hàm mặt', N'Hỗ trợ điều trị', N'CK004', 200000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV007', N'Xét nghiệm hỗ trợ điều trị', N'Hỗ trợ điều trị', N'CK005', 180000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV008', N'Chăm sóc vết thương', N'Hỗ trợ điều trị', N'CK007', 160000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV009', N'Thay băng và theo dõi', N'Hỗ trợ điều trị', N'CK007', 90000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV010', N'Điều trị hỗ trợ theo chỉ định', N'Hỗ trợ điều trị', N'CK001', 250000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động');
+
+-- LICH_LAM_VIEC: 10 dòng
+INSERT INTO [dbo].[LICH_LAM_VIEC] ([MaLLV], [MaNV], [MaCa], [NgayLam], [MaPhong], [TrangThai], [TrangThaiHienDien], [GioVao], [GioRa], [GhiChu])
+VALUES
+    (N'LLV001', N'NV002', N'CA001', N'2026-10-01', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Lịch gốc bị ảnh hưởng bởi đơn nghỉ'),
+    (N'LLV002', N'NV002', N'CA001', N'2026-10-02', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Lịch gốc bị ảnh hưởng bởi đơn nghỉ'),
+    (N'LLV003', N'NV002', N'CA001', N'2026-10-03', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Lịch gốc bị ảnh hưởng bởi đơn nghỉ'),
+    (N'LLV004', N'NV002', N'CA001', N'2026-10-04', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Lịch gốc bị ảnh hưởng bởi đơn nghỉ'),
+    (N'LLV005', N'NV002', N'CA001', N'2026-10-05', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Lịch gốc bị ảnh hưởng bởi đơn nghỉ'),
+    (N'LLV006', N'NV003', N'CA001', N'2026-10-01', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-01T08:00:00', N'2026-10-01T12:00:00', N'Lịch thay thế bác sĩ nghỉ phép'),
+    (N'LLV007', N'NV003', N'CA001', N'2026-10-02', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-02T08:00:00', N'2026-10-02T12:00:00', N'Lịch thay thế bác sĩ nghỉ phép'),
+    (N'LLV008', N'NV003', N'CA001', N'2026-10-03', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-03T08:00:00', N'2026-10-03T12:00:00', N'Lịch thay thế bác sĩ nghỉ phép'),
+    (N'LLV009', N'NV003', N'CA001', N'2026-10-04', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-04T08:00:00', N'2026-10-04T12:00:00', N'Lịch thay thế bác sĩ nghỉ phép'),
+    (N'LLV010', N'NV003', N'CA001', N'2026-10-05', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-05T08:00:00', N'2026-10-05T12:00:00', N'Lịch thay thế bác sĩ nghỉ phép');
+
+-- DON_XIN_NGHI: 10 dòng
+INSERT INTO [dbo].[DON_XIN_NGHI] ([MaDonNghi], [MaNV], [TuNgay], [DenNgay], [LyDo], [NgayGui], [TrangThaiDuyet], [MaNVDuyet], [NgayDuyet], [GhiChu])
+VALUES
+    (N'DN001', N'NV002', N'2026-10-01', N'2026-10-01', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', NULL),
+    (N'DN002', N'NV002', N'2026-10-02', N'2026-10-02', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', NULL),
+    (N'DN003', N'NV002', N'2026-10-03', N'2026-10-03', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', NULL),
+    (N'DN004', N'NV002', N'2026-10-04', N'2026-10-04', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', NULL),
+    (N'DN005', N'NV002', N'2026-10-05', N'2026-10-05', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', NULL),
+    (N'DN006', N'NV004', N'2026-10-21', N'2026-10-21', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Chờ duyệt', NULL, NULL, NULL),
+    (N'DN007', N'NV004', N'2026-10-22', N'2026-10-22', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Chờ duyệt', NULL, NULL, NULL),
+    (N'DN008', N'NV004', N'2026-10-23', N'2026-10-23', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Chờ duyệt', NULL, NULL, NULL),
+    (N'DN009', N'NV004', N'2026-10-24', N'2026-10-24', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Chờ duyệt', NULL, NULL, NULL),
+    (N'DN010', N'NV004', N'2026-10-25', N'2026-10-25', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Chờ duyệt', NULL, NULL, NULL);
+
+-- PHAN_CONG_THAY_THE: 10 dòng
+INSERT INTO [dbo].[PHAN_CONG_THAY_THE] ([MaPCTT], [MaDonNghi], [MaLLVThayThe], [NgayXuLy], [TrangThai], [GhiChu])
+VALUES
+    (N'PCTT001', N'DN001', N'LLV006', N'2026-09-21T09:30:00', N'Hủy', N'Phương án cũ hủy trước áp dụng'),
+    (N'PCTT002', N'DN002', N'LLV007', N'2026-09-21T09:30:00', N'Hủy', N'Phương án cũ hủy trước áp dụng'),
+    (N'PCTT003', N'DN003', N'LLV008', N'2026-09-21T09:30:00', N'Hủy', N'Phương án cũ hủy trước áp dụng'),
+    (N'PCTT004', N'DN004', N'LLV009', N'2026-09-21T09:30:00', N'Hủy', N'Phương án cũ hủy trước áp dụng'),
+    (N'PCTT005', N'DN005', N'LLV010', N'2026-09-21T09:30:00', N'Hủy', N'Phương án cũ hủy trước áp dụng'),
+    (N'PCTT006', N'DN001', N'LLV006', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức; thay ca gốc cùng ngày/phòng'),
+    (N'PCTT007', N'DN002', N'LLV007', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức; thay ca gốc cùng ngày/phòng'),
+    (N'PCTT008', N'DN003', N'LLV008', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức; thay ca gốc cùng ngày/phòng'),
+    (N'PCTT009', N'DN004', N'LLV009', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức; thay ca gốc cùng ngày/phòng'),
+    (N'PCTT010', N'DN005', N'LLV010', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức; thay ca gốc cùng ngày/phòng');
+
+-- LICH_KHAM: 10 dòng
+INSERT INTO [dbo].[LICH_KHAM] ([MaLich], [MaBN], [MaBS], [MaCa], [MaPhong], [MaDV], [NgayGioKham], [ThoiLuongDuKien], [UuTien], [LyDoKham], [LyDoThayDoi], [TrangThai], [GhiChu], [NgayTao], [NgayCapNhat])
+VALUES
+    (N'LK001', N'BN001', N'NV003', N'CA001', N'PH001', N'DV001', N'2026-10-01T08:15:00', 30, N'Bình thường', N'Khám răng hàm mặt', NULL, N'Đã khám', N'Đặt lịch qua điện thoại', N'2026-09-25T10:00:00', NULL),
+    (N'LK002', N'BN002', N'NV003', N'CA001', N'PH001', N'DV002', N'2026-10-02T08:15:00', 30, N'Bình thường', N'Khám răng hàm mặt', NULL, N'Đã khám', N'Đặt lịch qua điện thoại', N'2026-09-25T10:00:00', NULL),
+    (N'LK003', N'BN003', N'NV003', N'CA001', N'PH001', N'DV003', N'2026-10-03T08:15:00', 30, N'Bình thường', N'Khám răng hàm mặt', NULL, N'Đã khám', N'Đặt lịch qua điện thoại', N'2026-09-25T10:00:00', NULL),
+    (N'LK004', N'BN004', N'NV003', N'CA001', N'PH001', N'DV004', N'2026-10-04T08:15:00', 30, N'Bình thường', N'Khám răng hàm mặt', NULL, N'Đã khám', N'Đặt lịch qua điện thoại', N'2026-09-25T10:00:00', NULL),
+    (N'LK005', N'BN005', N'NV003', N'CA001', N'PH001', N'DV005', N'2026-10-05T08:15:00', 30, N'Bình thường', N'Khám răng hàm mặt', NULL, N'Đã khám', N'Đặt lịch qua điện thoại', N'2026-09-25T10:00:00', NULL),
+    (N'LK006', N'BN006', N'NV002', N'CA002', N'PH001', N'DV002', N'2026-10-12T14:00:00', 30, N'Bình thường', N'Tái khám theo hẹn', NULL, N'Nháp', N'Đặt qua điện thoại; chờ xác nhận ca làm', N'2026-10-05T11:00:00', NULL),
+    (N'LK007', N'BN007', N'NV002', N'CA002', N'PH001', N'DV002', N'2026-10-13T14:00:00', 30, N'Bình thường', N'Tái khám theo hẹn', NULL, N'Nháp', N'Đặt qua điện thoại; chờ xác nhận ca làm', N'2026-10-05T11:00:00', NULL),
+    (N'LK008', N'BN008', N'NV002', N'CA002', N'PH001', N'DV002', N'2026-10-14T14:00:00', 30, N'Bình thường', N'Tái khám theo hẹn', NULL, N'Nháp', N'Đặt qua điện thoại; chờ xác nhận ca làm', N'2026-10-05T11:00:00', NULL),
+    (N'LK009', N'BN009', N'NV002', N'CA002', N'PH001', N'DV002', N'2026-10-15T14:00:00', 30, N'Bình thường', N'Tái khám theo hẹn', NULL, N'Nháp', N'Đặt qua điện thoại; chờ xác nhận ca làm', N'2026-10-05T11:00:00', NULL),
+    (N'LK010', N'BN010', N'NV002', N'CA002', N'PH001', N'DV002', N'2026-10-16T14:00:00', 30, N'Bình thường', N'Tái khám theo hẹn', NULL, N'Nháp', N'Đặt qua điện thoại; chờ xác nhận ca làm', N'2026-10-05T11:00:00', NULL);
+
+-- PHIEU_KHAM_BENH: 10 dòng
+INSERT INTO [dbo].[PHIEU_KHAM_BENH] ([MaPhieu], [MaHS], [MaLich], [MaPhong], [MaBS], [MaNVTiepNhan], [MaDV], [SoThuTu], [ThoiGianTiepNhan], [LyDoKham], [TrangThai], [GhiChu])
+VALUES
+    (N'PKB001', N'HS001', N'LK001', N'PH001', N'NV003', N'NV005', N'DV001', 1, N'2026-10-01T08:05:00', N'Khám theo hẹn', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
+    (N'PKB002', N'HS002', N'LK002', N'PH001', N'NV003', N'NV005', N'DV002', 1, N'2026-10-02T08:05:00', N'Khám theo hẹn', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
+    (N'PKB003', N'HS003', N'LK003', N'PH001', N'NV003', N'NV005', N'DV003', 1, N'2026-10-03T08:05:00', N'Khám theo hẹn', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
+    (N'PKB004', N'HS004', N'LK004', N'PH001', N'NV003', N'NV005', N'DV004', 1, N'2026-10-04T08:05:00', N'Khám theo hẹn', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
+    (N'PKB005', N'HS005', N'LK005', N'PH001', N'NV003', N'NV005', N'DV005', 1, N'2026-10-05T08:05:00', N'Khám theo hẹn', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
+    (N'PKB006', N'HS006', NULL, N'PH001', N'NV003', N'NV005', N'DV006', 2, N'2026-10-01T09:05:00', N'Khám trực tiếp tại bệnh viện', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
+    (N'PKB007', N'HS007', NULL, N'PH001', N'NV003', N'NV005', N'DV007', 2, N'2026-10-02T09:05:00', N'Khám trực tiếp tại bệnh viện', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
+    (N'PKB008', N'HS008', NULL, N'PH001', N'NV003', N'NV005', N'DV008', 2, N'2026-10-03T09:05:00', N'Khám trực tiếp tại bệnh viện', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
+    (N'PKB009', N'HS009', NULL, N'PH001', N'NV003', N'NV005', N'DV009', 2, N'2026-10-04T09:05:00', N'Khám trực tiếp tại bệnh viện', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
+    (N'PKB010', N'HS010', NULL, N'PH001', N'NV003', N'NV005', N'DV010', 2, N'2026-10-05T09:05:00', N'Khám trực tiếp tại bệnh viện', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu');
+
+-- LICH_SU_KHAM_BENH: 10 dòng
+INSERT INTO [dbo].[LICH_SU_KHAM_BENH] ([MaLS], [MaPhieu], [MaBS], [MaPhong], [ThoiGianKham], [TrieuChung], [ChanDoan], [KeHoachXuLy], [TrangThai], [NgayXacNhan], [GhiChu])
+VALUES
+    (N'LS001', N'PKB001', N'NV003', N'PH001', N'2026-10-01T08:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 01', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
+    (N'LS002', N'PKB002', N'NV003', N'PH001', N'2026-10-02T08:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 02', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
+    (N'LS003', N'PKB003', N'NV003', N'PH001', N'2026-10-03T08:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 03', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
+    (N'LS004', N'PKB004', N'NV003', N'PH001', N'2026-10-04T08:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 04', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
+    (N'LS005', N'PKB005', N'NV003', N'PH001', N'2026-10-05T08:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 05', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
+    (N'LS006', N'PKB006', N'NV003', N'PH001', N'2026-10-01T09:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 06', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
+    (N'LS007', N'PKB007', N'NV003', N'PH001', N'2026-10-02T09:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 07', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
+    (N'LS008', N'PKB008', N'NV003', N'PH001', N'2026-10-03T09:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 08', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
+    (N'LS009', N'PKB009', N'NV003', N'PH001', N'2026-10-04T09:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 09', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
+    (N'LS010', N'PKB010', N'NV003', N'PH001', N'2026-10-05T09:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 10', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án');
+UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận', NgayXacNhan=DATEADD(MINUTE,30,ThoiGianKham);
+
+-- TINH_TRANG_BENH: 10 dòng
+INSERT INTO [dbo].[TINH_TRANG_BENH] ([MaTTB], [MaLS], [LoaiTinhTrang], [MoTaTinhTrang], [MucDo], [GhiChu])
+VALUES
+    (N'TTB001', N'LS001', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 01', N'Nhẹ', N'Không phân tách theo từng răng'),
+    (N'TTB002', N'LS002', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 02', N'Trung bình', N'Không phân tách theo từng răng'),
+    (N'TTB003', N'LS003', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 03', N'Nhẹ', N'Không phân tách theo từng răng'),
+    (N'TTB004', N'LS004', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 04', N'Trung bình', N'Không phân tách theo từng răng'),
+    (N'TTB005', N'LS005', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 05', N'Nhẹ', N'Không phân tách theo từng răng'),
+    (N'TTB006', N'LS006', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 06', N'Trung bình', N'Không phân tách theo từng răng'),
+    (N'TTB007', N'LS007', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 07', N'Nhẹ', N'Không phân tách theo từng răng'),
+    (N'TTB008', N'LS008', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 08', N'Trung bình', N'Không phân tách theo từng răng'),
+    (N'TTB009', N'LS009', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 09', N'Nhẹ', N'Không phân tách theo từng răng'),
+    (N'TTB010', N'LS010', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 10', N'Trung bình', N'Không phân tách theo từng răng');
+
+-- KE_HOACH_DIEU_TRI: 10 dòng
+INSERT INTO [dbo].[KE_HOACH_DIEU_TRI] ([MaKHDT], [MaLS], [MaBS], [NgayLap], [NgayBatDau], [NgayDuKienKetThuc], [TongTienDuKien], [TrangThai], [GhiChu])
+VALUES
+    (N'KHDT001', N'LS001', N'NV003', N'2026-10-01T08:25:00', N'2026-10-01', N'2026-10-08', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
+    (N'KHDT002', N'LS002', N'NV003', N'2026-10-02T08:25:00', N'2026-10-02', N'2026-10-09', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
+    (N'KHDT003', N'LS003', N'NV003', N'2026-10-03T08:25:00', N'2026-10-03', N'2026-10-10', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
+    (N'KHDT004', N'LS004', N'NV003', N'2026-10-04T08:25:00', N'2026-10-04', N'2026-10-11', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
+    (N'KHDT005', N'LS005', N'NV003', N'2026-10-05T08:25:00', N'2026-10-05', N'2026-10-12', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
+    (N'KHDT006', N'LS006', N'NV003', N'2026-10-01T09:25:00', N'2026-10-01', N'2026-10-08', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
+    (N'KHDT007', N'LS007', N'NV003', N'2026-10-02T09:25:00', N'2026-10-02', N'2026-10-09', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
+    (N'KHDT008', N'LS008', N'NV003', N'2026-10-03T09:25:00', N'2026-10-03', N'2026-10-10', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
+    (N'KHDT009', N'LS009', N'NV003', N'2026-10-04T09:25:00', N'2026-10-04', N'2026-10-11', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
+    (N'KHDT010', N'LS010', N'NV003', N'2026-10-05T09:25:00', N'2026-10-05', N'2026-10-12', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ');
+
+-- CHI_TIET_KE_HOACH: 10 dòng
+INSERT INTO [dbo].[CHI_TIET_KE_HOACH] ([MaCTKH], [MaKHDT], [MaDV], [LanThu], [SoLuongDuKien], [DonGiaDuKien], [TrangThai], [GhiChu])
+VALUES
+    (N'CTKH001', N'KHDT001', N'DV001', 1, 1, 100000, N'Đã hoàn thành', NULL),
+    (N'CTKH002', N'KHDT002', N'DV002', 1, 1, 120000, N'Đã hoàn thành', NULL),
+    (N'CTKH003', N'KHDT003', N'DV003', 1, 1, 80000, N'Đã hoàn thành', NULL),
+    (N'CTKH004', N'KHDT004', N'DV004', 1, 1, 100000, N'Đã hoàn thành', NULL),
+    (N'CTKH005', N'KHDT005', N'DV005', 1, 1, 150000, N'Đã hoàn thành', NULL),
+    (N'CTKH006', N'KHDT006', N'DV006', 1, 1, 200000, N'Đã hoàn thành', NULL),
+    (N'CTKH007', N'KHDT007', N'DV007', 1, 1, 180000, N'Đã hoàn thành', NULL),
+    (N'CTKH008', N'KHDT008', N'DV008', 1, 1, 160000, N'Đã hoàn thành', NULL),
+    (N'CTKH009', N'KHDT009', N'DV009', 1, 1, 90000, N'Đã hoàn thành', NULL),
+    (N'CTKH010', N'KHDT010', N'DV010', 1, 1, 250000, N'Đã hoàn thành', NULL);
+
+-- DICH_VU_THUC_HIEN: 10 dòng
+INSERT INTO [dbo].[DICH_VU_THUC_HIEN] ([MaDVThucHien], [MaLS], [MaCTKH], [MaDV], [MaNVThucHien], [ThoiGianThucHien], [SoLuong], [DonGia], [KetQua], [TrangThai])
+VALUES
+    (N'DVTH001', N'LS001', N'CTKH001', N'DV001', N'NV003', N'2026-10-01T08:30:00', 1, 100000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
+    (N'DVTH002', N'LS002', N'CTKH002', N'DV002', N'NV003', N'2026-10-02T08:30:00', 1, 120000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
+    (N'DVTH003', N'LS003', N'CTKH003', N'DV003', N'NV003', N'2026-10-03T08:30:00', 1, 80000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
+    (N'DVTH004', N'LS004', N'CTKH004', N'DV004', N'NV003', N'2026-10-04T08:30:00', 1, 100000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
+    (N'DVTH005', N'LS005', N'CTKH005', N'DV005', N'NV003', N'2026-10-05T08:30:00', 1, 150000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
+    (N'DVTH006', N'LS006', N'CTKH006', N'DV006', N'NV009', N'2026-10-01T09:30:00', 1, 200000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
+    (N'DVTH007', N'LS007', N'CTKH007', N'DV007', N'NV009', N'2026-10-02T09:30:00', 1, 180000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
+    (N'DVTH008', N'LS008', N'CTKH008', N'DV008', N'NV004', N'2026-10-03T09:30:00', 1, 160000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
+    (N'DVTH009', N'LS009', N'CTKH009', N'DV009', N'NV004', N'2026-10-04T09:30:00', 1, 90000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
+    (N'DVTH010', N'LS010', N'CTKH010', N'DV010', N'NV003', N'2026-10-05T09:30:00', 1, 250000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp');
+UPDATE dbo.DICH_VU_THUC_HIEN SET TrangThai=N'Đã xác nhận';
+
+-- DON_THUOC: 10 dòng
+INSERT INTO [dbo].[DON_THUOC] ([MaDT], [MaLS], [MaBS], [NgayKe], [LyDoThayThe], [TrangThai], [GhiChu])
+VALUES
+    (N'DT001', N'LS001', N'NV003', N'2026-10-01T08:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
+    (N'DT002', N'LS002', N'NV003', N'2026-10-02T08:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
+    (N'DT003', N'LS003', N'NV003', N'2026-10-03T08:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
+    (N'DT004', N'LS004', N'NV003', N'2026-10-04T08:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
+    (N'DT005', N'LS005', N'NV003', N'2026-10-05T08:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
+    (N'DT006', N'LS006', N'NV003', N'2026-10-01T09:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
+    (N'DT007', N'LS007', N'NV003', N'2026-10-02T09:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
+    (N'DT008', N'LS008', N'NV003', N'2026-10-03T09:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
+    (N'DT009', N'LS009', N'NV003', N'2026-10-04T09:40:00', NULL, N'Nháp', N'Đơn nháp chưa có dòng thuốc; chưa xác nhận'),
+    (N'DT010', N'LS010', N'NV003', N'2026-10-05T09:40:00', NULL, N'Nháp', N'Đơn nháp chưa có dòng thuốc; chưa xác nhận');
+
+-- CHI_TIET_DON_THUOC: 10 dòng
+INSERT INTO [dbo].[CHI_TIET_DON_THUOC] ([MaCTDT], [MaDT], [MaThuoc], [LieuDung], [SoLuong], [SoNgayDung], [HuongDan])
+VALUES
+    (N'CTDT001', N'DT001', N'TH001', N'Theo chỉ định trong hồ sơ mô phỏng', 20, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
+    (N'CTDT002', N'DT001', N'TH002', N'Theo chỉ định trong hồ sơ mô phỏng', 10, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
+    (N'CTDT003', N'DT001', N'TH003', N'Theo chỉ định trong hồ sơ mô phỏng', 1, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
+    (N'CTDT004', N'DT002', N'TH004', N'Theo chỉ định trong hồ sơ mô phỏng', 15, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
+    (N'CTDT005', N'DT003', N'TH005', N'Theo chỉ định trong hồ sơ mô phỏng', 10, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
+    (N'CTDT006', N'DT004', N'TH006', N'Theo chỉ định trong hồ sơ mô phỏng', 1, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
+    (N'CTDT007', N'DT005', N'TH007', N'Theo chỉ định trong hồ sơ mô phỏng', 20, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
+    (N'CTDT008', N'DT006', N'TH008', N'Theo chỉ định trong hồ sơ mô phỏng', 1, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
+    (N'CTDT009', N'DT007', N'TH009', N'Theo chỉ định trong hồ sơ mô phỏng', 1, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
+    (N'CTDT010', N'DT008', N'TH010', N'Theo chỉ định trong hồ sơ mô phỏng', 12, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị');
+UPDATE dbo.DON_THUOC SET TrangThai=N'Đã xác nhận' WHERE MaDT IN (N'DT001', N'DT002', N'DT003', N'DT004', N'DT005', N'DT006', N'DT007', N'DT008');
+
+-- LO_HANG_HOA: 10 dòng
+INSERT INTO [dbo].[LO_HANG_HOA] ([MaLo], [MaHH], [MaNCC], [MaKho], [SoLo], [NgayNhap], [HanSuDung], [TrangThai])
+VALUES
+    (N'LO001', N'HH001', N'NCC001', N'KHO001', N'LO-THUOC-MAU-001', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
+    (N'LO002', N'HH002', N'NCC002', N'KHO001', N'LO-THUOC-MAU-002', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
+    (N'LO003', N'HH003', N'NCC003', N'KHO001', N'LO-THUOC-MAU-003', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
+    (N'LO004', N'HH004', N'NCC004', N'KHO001', N'LO-THUOC-MAU-004', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
+    (N'LO005', N'HH005', N'NCC005', N'KHO001', N'LO-THUOC-MAU-005', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
+    (N'LO006', N'HH006', N'NCC006', N'KHO001', N'LO-THUOC-MAU-006', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
+    (N'LO007', N'HH007', N'NCC007', N'KHO001', N'LO-THUOC-MAU-007', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
+    (N'LO008', N'HH008', N'NCC008', N'KHO001', N'LO-THUOC-MAU-008', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
+    (N'LO009', N'HH009', N'NCC009', N'KHO001', N'LO-THUOC-MAU-009', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
+    (N'LO010', N'HH010', N'NCC010', N'KHO001', N'LO-THUOC-MAU-010', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng');
+
+-- HOA_DON_NHAP: 10 dòng
+INSERT INTO [dbo].[HOA_DON_NHAP] ([MaHDN], [SoHoaDonNCC], [MaNCC], [MaNV], [NgayHoaDon], [TongTien], [TrangThai], [GhiChu])
+VALUES
+    (N'HDN001', N'NCC-01-20260915', N'NCC001', N'NV007', N'2026-09-15T07:30:00', 240000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
+    (N'HDN002', N'NCC-02-20260915', N'NCC002', N'NV007', N'2026-09-15T07:30:00', 360000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
+    (N'HDN003', N'NCC-03-20260915', N'NCC003', N'NV007', N'2026-09-15T07:30:00', 3000000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
+    (N'HDN004', N'NCC-04-20260915', N'NCC004', N'NV007', N'2026-09-15T07:30:00', 600000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
+    (N'HDN005', N'NCC-05-20260915', N'NCC005', N'NV007', N'2026-09-15T07:30:00', 420000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
+    (N'HDN006', N'NCC-06-20260915', N'NCC006', N'NV007', N'2026-09-15T07:30:00', 4800000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
+    (N'HDN007', N'NCC-07-20260915', N'NCC007', N'NV007', N'2026-09-15T07:30:00', 180000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
+    (N'HDN008', N'NCC-08-20260915', N'NCC008', N'NV007', N'2026-09-15T07:30:00', 3600000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
+    (N'HDN009', N'NCC-09-20260915', N'NCC009', N'NV007', N'2026-09-15T07:30:00', 5400000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
+    (N'HDN010', N'NCC-10-20260915', N'NCC010', N'NV007', N'2026-09-15T07:30:00', 300000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng');
+
+-- PHIEU_NHAP: 10 dòng
+INSERT INTO [dbo].[PHIEU_NHAP] ([MaPN], [MaHDN], [MaKho], [MaNV], [NgayNhap], [TongTien], [TrangThai], [LyDo], [GhiChu])
+VALUES
+    (N'PN001', N'HDN001', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
+    (N'PN002', N'HDN002', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
+    (N'PN003', N'HDN003', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
+    (N'PN004', N'HDN004', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
+    (N'PN005', N'HDN005', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
+    (N'PN006', N'HDN006', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
+    (N'PN007', N'HDN007', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
+    (N'PN008', N'HDN008', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
+    (N'PN009', N'HDN009', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
+    (N'PN010', N'HDN010', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL);
+
+-- CHI_TIET_PHIEU_NHAP: 10 dòng
+INSERT INTO [dbo].[CHI_TIET_PHIEU_NHAP] ([MaCTPN], [MaPN], [MaHH], [MaLo], [SoLuong], [DonGia], [GhiChu])
+VALUES
+    (N'CTPN001', N'PN001', N'HH001', N'LO001', 200, 1200.0, N'Giá nhập khác giá bán'),
+    (N'CTPN002', N'PN002', N'HH002', N'LO002', 200, 1800.0, N'Giá nhập khác giá bán'),
+    (N'CTPN003', N'PN003', N'HH003', N'LO003', 200, 15000.0, N'Giá nhập khác giá bán'),
+    (N'CTPN004', N'PN004', N'HH004', N'LO004', 200, 3000.0, N'Giá nhập khác giá bán'),
+    (N'CTPN005', N'PN005', N'HH005', N'LO005', 200, 2100.0, N'Giá nhập khác giá bán'),
+    (N'CTPN006', N'PN006', N'HH006', N'LO006', 200, 24000.0, N'Giá nhập khác giá bán'),
+    (N'CTPN007', N'PN007', N'HH007', N'LO007', 200, 900.0, N'Giá nhập khác giá bán'),
+    (N'CTPN008', N'PN008', N'HH008', N'LO008', 200, 18000.0, N'Giá nhập khác giá bán'),
+    (N'CTPN009', N'PN009', N'HH009', N'LO009', 200, 27000.0, N'Giá nhập khác giá bán'),
+    (N'CTPN010', N'PN010', N'HH010', N'LO010', 200, 1500.0, N'Giá nhập khác giá bán');
+UPDATE dbo.PHIEU_NHAP SET TrangThai=N'Đã ghi sổ';
+
+-- PHIEU_XUAT: 10 dòng
+INSERT INTO [dbo].[PHIEU_XUAT] ([MaPX], [MaKho], [MaNV], [MaKhoa], [MaPhong], [MaLS], [NgayXuat], [LyDo], [TrangThai], [GhiChu])
+VALUES
+    (N'PX001', N'KHO001', N'NV006', NULL, NULL, N'LS001', N'2026-10-01T08:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
+    (N'PX002', N'KHO001', N'NV006', NULL, NULL, N'LS002', N'2026-10-02T08:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
+    (N'PX003', N'KHO001', N'NV006', NULL, NULL, N'LS003', N'2026-10-03T08:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
+    (N'PX004', N'KHO001', N'NV006', NULL, NULL, N'LS004', N'2026-10-04T08:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
+    (N'PX005', N'KHO001', N'NV006', NULL, NULL, N'LS005', N'2026-10-05T08:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
+    (N'PX006', N'KHO001', N'NV006', NULL, NULL, N'LS006', N'2026-10-01T09:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
+    (N'PX007', N'KHO001', N'NV006', NULL, NULL, N'LS007', N'2026-10-02T09:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
+    (N'PX008', N'KHO001', N'NV006', NULL, NULL, N'LS008', N'2026-10-03T09:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
+    (N'PX009', N'KHO001', N'NV006', NULL, NULL, N'LS009', N'2026-10-04T09:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Chưa cấp: đơn thuốc còn nháp'),
+    (N'PX010', N'KHO001', N'NV006', NULL, NULL, N'LS010', N'2026-10-05T09:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Chưa cấp: đơn thuốc còn nháp');
+
+-- CHI_TIET_PHIEU_XUAT: 10 dòng
+INSERT INTO [dbo].[CHI_TIET_PHIEU_XUAT] ([MaCTPX], [MaPX], [MaHH], [MaLo], [MaCTDT], [SoLuong], [GhiChu])
+VALUES
+    (N'CTPX001', N'PX001', N'HH001', N'LO001', N'CTDT001', 20, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
+    (N'CTPX002', N'PX001', N'HH002', N'LO002', N'CTDT002', 10, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
+    (N'CTPX003', N'PX001', N'HH003', N'LO003', N'CTDT003', 1, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
+    (N'CTPX004', N'PX002', N'HH004', N'LO004', N'CTDT004', 15, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
+    (N'CTPX005', N'PX003', N'HH005', N'LO005', N'CTDT005', 10, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
+    (N'CTPX006', N'PX004', N'HH006', N'LO006', N'CTDT006', 1, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
+    (N'CTPX007', N'PX005', N'HH007', N'LO007', N'CTDT007', 20, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
+    (N'CTPX008', N'PX006', N'HH008', N'LO008', N'CTDT008', 1, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
+    (N'CTPX009', N'PX007', N'HH009', N'LO009', N'CTDT009', 1, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
+    (N'CTPX010', N'PX008', N'HH010', N'LO010', N'CTDT010', 12, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng');
+UPDATE dbo.PHIEU_XUAT SET TrangThai=N'Đã ghi sổ' WHERE MaPX IN (N'PX001', N'PX002', N'PX003', N'PX004', N'PX005', N'PX006', N'PX007', N'PX008');
+
+-- HOA_DON: 10 dòng
+INSERT INTO [dbo].[HOA_DON] ([MaHD], [MaLS], [MaNV], [NgayLap], [NgayXacNhan], [TongTien], [GiamGia], [TrangThai])
+VALUES
+    (N'HD001', N'LS001', N'NV008', N'2026-10-01T09:00:00', NULL, 0, 0, N'Nháp'),
+    (N'HD002', N'LS002', N'NV008', N'2026-10-02T09:00:00', NULL, 0, 0, N'Nháp'),
+    (N'HD003', N'LS003', N'NV008', N'2026-10-03T09:00:00', NULL, 0, 0, N'Nháp'),
+    (N'HD004', N'LS004', N'NV008', N'2026-10-04T09:00:00', NULL, 0, 0, N'Nháp'),
+    (N'HD005', N'LS005', N'NV008', N'2026-10-05T09:00:00', NULL, 0, 0, N'Nháp'),
+    (N'HD006', N'LS006', N'NV008', N'2026-10-01T10:00:00', NULL, 0, 0, N'Nháp'),
+    (N'HD007', N'LS007', N'NV008', N'2026-10-02T10:00:00', NULL, 0, 0, N'Nháp'),
+    (N'HD008', N'LS008', N'NV008', N'2026-10-03T10:00:00', NULL, 0, 0, N'Nháp'),
+    (N'HD009', N'LS009', N'NV008', N'2026-10-04T10:00:00', NULL, 0, 0, N'Nháp'),
+    (N'HD010', N'LS010', N'NV008', N'2026-10-05T10:00:00', NULL, 0, 0, N'Nháp');
+
+-- CHI_TIET_HOA_DON: 10 dòng
+INSERT INTO [dbo].[CHI_TIET_HOA_DON] ([MaCTHD], [MaHD], [MaDVThucHien], [MaCTPX], [NoiDung], [DonGia], [ThanhTien])
+VALUES
+    (N'CTHD001', N'HD001', N'DVTH001', NULL, N'Khám răng hàm mặt tổng quát', NULL, 0),
+    (N'CTHD002', N'HD002', N'DVTH002', NULL, N'Tái khám và đánh giá', NULL, 0),
+    (N'CTHD003', N'HD003', N'DVTH003', NULL, N'Tư vấn kế hoạch điều trị', NULL, 0),
+    (N'CTHD004', N'HD004', N'DVTH004', NULL, N'Theo dõi sau điều trị', NULL, 0),
+    (N'CTHD005', N'HD005', N'DVTH005', NULL, N'Đánh giá phục hồi chức năng', NULL, 0),
+    (N'CTHD006', N'HD001', NULL, N'CTPX001', N'Thuốc mẫu A', 2000, 0),
+    (N'CTHD007', N'HD001', NULL, N'CTPX002', N'Thuốc mẫu B', 3000, 0),
+    (N'CTHD008', N'HD001', NULL, N'CTPX003', N'Thuốc mẫu C', 25000, 0),
+    (N'CTHD009', N'HD002', NULL, N'CTPX004', N'Thuốc mẫu D', 5000, 0),
+    (N'CTHD010', N'HD003', NULL, N'CTPX005', N'Thuốc mẫu E', 3500, 0);
+UPDATE dbo.HOA_DON SET GiamGia=15000 WHERE MaHD=N'HD001';
+UPDATE dbo.HOA_DON SET TrangThai=N'Đã xác nhận', NgayXacNhan=DATEADD(MINUTE,5,NgayLap) WHERE MaHD IN (N'HD001', N'HD002', N'HD003', N'HD004', N'HD005');
+
+-- THANH_TOAN: 10 dòng
+INSERT INTO [dbo].[THANH_TOAN] ([MaTT], [MaHD], [MaNV], [NgayThanhToan], [SoTien], [LoaiGiaoDich], [PhuongThuc], [LyDo], [TrangThai])
+VALUES
+    (N'TT001', N'HD001', N'NV008', N'2026-10-01T09:11:00', 100000, N'Thu', N'Tiền mặt', NULL, N'Đã xác nhận'),
+    (N'TT002', N'HD001', N'NV008', N'2026-10-01T09:12:00', 80000, N'Thu', N'Chuyển khoản', NULL, N'Đã xác nhận'),
+    (N'TT003', N'HD001', N'NV008', N'2026-10-01T09:13:00', 20000, N'Hoàn', N'Tiền mặt', N'Đảo khoản thu nhầm trong mẫu', N'Đã xác nhận'),
+    (N'TT004', N'HD001', N'NV008', N'2026-10-01T09:14:00', 20000, N'Thu', N'Tiền mặt', N'Thu lại sau đối chiếu', N'Đã xác nhận'),
+    (N'TT005', N'HD002', N'NV008', N'2026-10-02T09:15:00', 195000, N'Thu', N'Chuyển khoản', NULL, N'Đã xác nhận'),
+    (N'TT006', N'HD003', N'NV008', N'2026-10-03T09:16:00', 50000, N'Thu', N'Tiền mặt', NULL, N'Đã xác nhận'),
+    (N'TT007', N'HD004', N'NV008', N'2026-10-04T09:17:00', 100000, N'Thu', N'Tiền mặt', NULL, N'Đã xác nhận'),
+    (N'TT008', N'HD005', N'NV008', N'2026-10-05T09:18:00', 70000, N'Thu', N'Chuyển khoản', NULL, N'Đã xác nhận'),
+    (N'TT009', N'HD003', N'NV008', N'2026-10-03T09:19:00', 65000, N'Thu', N'Chuyển khoản', N'Giao dịch đang đối soát', N'Nháp'),
+    (N'TT010', N'HD005', N'NV008', N'2026-10-05T09:20:00', 80000, N'Thu', N'Tiền mặt', N'Giao dịch nháp bị hủy', N'Hủy');
+
+-- CHINH_SACH_LUONG: 10 dòng
+INSERT INTO [dbo].[CHINH_SACH_LUONG] ([MaCSL], [MaChucVu], [TenChinhSach], [PhienBan], [NgayHieuLuc], [NgayHetHieuLuc], [LuongCoBan], [SoCaDinhMuc], [CoSoHoaHong], [TyLeHoaHong], [MaNVDuyet], [NgayDuyet], [TrangThai])
+VALUES
+    (N'CSL001', N'CV001', N'Chính sách lương chức vụ 01', 1, N'2026-01-01', NULL, 6500000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL002', N'CV002', N'Chính sách lương chức vụ 02', 1, N'2026-01-01', NULL, 7000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0.05, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL003', N'CV003', N'Chính sách lương chức vụ 03', 1, N'2026-01-01', NULL, 7500000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL004', N'CV004', N'Chính sách lương chức vụ 04', 1, N'2026-01-01', NULL, 8000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL005', N'CV005', N'Chính sách lương chức vụ 05', 1, N'2026-01-01', NULL, 8500000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL006', N'CV006', N'Chính sách lương chức vụ 06', 1, N'2026-01-01', NULL, 9000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL007', N'CV007', N'Chính sách lương chức vụ 07', 1, N'2026-01-01', NULL, 9500000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL008', N'CV008', N'Chính sách lương chức vụ 08', 1, N'2026-01-01', NULL, 10000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL009', N'CV009', N'Chính sách lương chức vụ 09', 1, N'2026-01-01', NULL, 10500000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL010', N'CV010', N'Chính sách lương chức vụ 10', 1, N'2026-01-01', NULL, 11000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt');
+
+-- BANG_LUONG: 10 dòng
+INSERT INTO [dbo].[BANG_LUONG] ([MaBL], [MaNV], [MaCSL], [TuNgay], [DenNgay], [SoCaTinh], [LuongCoBan], [SoCaDinhMuc], [TienHoaHong], [TrangThai], [NgayChot], [GhiChu])
+VALUES
+    (N'BL001', N'NV001', N'CSL001', N'2026-10-01', N'2026-10-10', 0, 6500000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
+    (N'BL002', N'NV002', N'CSL002', N'2026-10-01', N'2026-10-10', 0, 7000000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
+    (N'BL003', N'NV003', N'CSL002', N'2026-10-01', N'2026-10-10', 5, 7000000, 26, 40000.00, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
+    (N'BL004', N'NV004', N'CSL003', N'2026-10-01', N'2026-10-10', 0, 7500000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
+    (N'BL005', N'NV005', N'CSL004', N'2026-10-01', N'2026-10-10', 0, 8000000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
+    (N'BL006', N'NV006', N'CSL005', N'2026-10-01', N'2026-10-10', 0, 8500000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
+    (N'BL007', N'NV007', N'CSL006', N'2026-10-01', N'2026-10-10', 0, 9000000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
+    (N'BL008', N'NV008', N'CSL007', N'2026-10-01', N'2026-10-10', 0, 9500000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
+    (N'BL009', N'NV009', N'CSL008', N'2026-10-01', N'2026-10-10', 0, 10000000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
+    (N'BL010', N'NV010', N'CSL009', N'2026-10-01', N'2026-10-10', 0, 10500000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận');
+
+-- NHAT_KY_THAO_TAC: 10 dòng
+INSERT INTO [dbo].[NHAT_KY_THAO_TAC] ([MaNK], [MaTK], [ThoiGian], [HanhDong], [LoaiDoiTuong], [MaDoiTuong], [KetQua], [DuLieuTruoc], [DuLieuSau])
+VALUES
+    (N'NK001', N'TK008', N'2026-10-01T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD001', N'Thành công', NULL, N'{"MaHD": "HD001", "TrangThai": "Đã xác nhận"}'),
+    (N'NK002', N'TK008', N'2026-10-02T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD002', N'Thành công', NULL, N'{"MaHD": "HD002", "TrangThai": "Đã xác nhận"}'),
+    (N'NK003', N'TK008', N'2026-10-03T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD003', N'Thành công', NULL, N'{"MaHD": "HD003", "TrangThai": "Đã xác nhận"}'),
+    (N'NK004', N'TK008', N'2026-10-04T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD004', N'Thành công', NULL, N'{"MaHD": "HD004", "TrangThai": "Đã xác nhận"}'),
+    (N'NK005', N'TK008', N'2026-10-05T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD005', N'Thành công', NULL, N'{"MaHD": "HD005", "TrangThai": "Đã xác nhận"}'),
+    (N'NK006', N'TK008', N'2026-10-01T09:05:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD006', N'Thành công', NULL, N'{"MaHD": "HD006", "TrangThai": "Nháp"}'),
+    (N'NK007', N'TK008', N'2026-10-02T09:05:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD007', N'Thành công', NULL, N'{"MaHD": "HD007", "TrangThai": "Nháp"}'),
+    (N'NK008', N'TK008', N'2026-10-03T09:05:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD008', N'Thành công', NULL, N'{"MaHD": "HD008", "TrangThai": "Nháp"}'),
+    (N'NK009', N'TK008', N'2026-10-04T09:05:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD009', N'Thành công', NULL, N'{"MaHD": "HD009", "TrangThai": "Nháp"}'),
+    (N'NK010', N'TK008', N'2026-10-05T09:05:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD010', N'Thành công', NULL, N'{"MaHD": "HD010", "TrangThai": "Nháp"}');
+-- Nếu bất kỳ kiểm tra nào không đạt, rollback toàn bộ cài đặt.
+DECLARE @Table SYSNAME,@Expected INT,@Actual BIGINT,@Query NVARCHAR(MAX),@Total BIGINT=0;
+DECLARE CountTables CURSOR LOCAL FAST_FORWARD FOR SELECT name FROM sys.tables WHERE is_ms_shipped=0 ORDER BY name;
+OPEN CountTables;
+FETCH NEXT FROM CountTables INTO @Table;
+WHILE @@FETCH_STATUS=0
+BEGIN
+ SET @Expected=CASE WHEN @Table=N'HANG_HOA' THEN 30 ELSE 10 END;
+ SET @Query=N'SELECT @n=COUNT_BIG(*) FROM dbo.'+QUOTENAME(@Table);
+ EXEC sys.sp_executesql @Query,N'@n BIGINT OUTPUT',@n=@Actual OUTPUT;
+ IF @Actual<>@Expected THROW 51101,N'Số dòng mẫu không đúng 10/bảng hoặc HANG_HOA=30.',1;
+ SET @Total+=@Actual;
+ FETCH NEXT FROM CountTables INTO @Table;
+END;
+CLOSE CountTables;
+DEALLOCATE CountTables;
+IF @Total<>460 OR (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0)<>44
+ THROW 51102,N'Phải có 44 bảng và 460 dòng.',1;
+IF EXISTS(SELECT 1 FROM dbo.HOA_DON h WHERE h.TongTien<>COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0))
+ THROW 51103,N'Tổng hóa đơn lệch chi tiết.',1;
+IF EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
+ WHERE c.ThanhTien<>CASE WHEN c.MaDVThucHien IS NOT NULL THEN s.ThanhTien ELSE CAST(ROUND(x.SoLuong*c.DonGia,2) AS DECIMAL(18,2)) END)
+ THROW 51104,N'Thành tiền hóa đơn sai công thức nguồn.',1;
+IF EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c WHERE c.SoLuong<>COALESCE((SELECT SUM(x.SoLuong) FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX WHERE x.MaCTDT=c.MaCTDT AND p.TrangThai=N'Đã ghi sổ'),0))
+ THROW 51105,N'Dữ liệu mẫu phải cấp đủ mỗi dòng của 8 đơn xác nhận.',1;
+IF (SELECT TongTien FROM dbo.HOA_DON WHERE MaHD=N'HD001')<>195000 OR (SELECT SoTienPhaiThu FROM dbo.HOA_DON WHERE MaHD=N'HD001')<>180000
+ THROW 51106,N'Ví dụ hóa đơn 1 phải có dịch vụ 100.000 + thuốc 95.000 - giảm 15.000.',1;
+IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG b WHERE b.SoCaTinh<>(SELECT COUNT(*) FROM dbo.LICH_LAM_VIEC l WHERE l.MaNV=b.MaNV AND l.NgayLam BETWEEN b.TuNgay AND b.DenNgay AND l.TrangThai=N'Đã xác nhận' AND l.TrangThaiHienDien=N'Có mặt'))
+ THROW 51107,N'Số ca tính lương không khớp hiện diện.',1;
+IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG b JOIN dbo.CHINH_SACH_LUONG cs ON cs.MaCSL=b.MaCSL WHERE b.TienHoaHong<>CAST(ROUND(COALESCE((SELECT SUM(s.ThanhTien) FROM dbo.DICH_VU_THUC_HIEN s WHERE s.MaNVThucHien=b.MaNV AND CAST(s.ThoiGianThucHien AS DATE) BETWEEN b.TuNgay AND b.DenNgay AND s.TrangThai=N'Đã xác nhận'),0)*cs.TyLeHoaHong,2) AS DECIMAL(18,2)))
+ THROW 51108,N'Hoa hồng không khớp dịch vụ thực hiện.',1;
+DBCC CHECKCONSTRAINTS WITH ALL_CONSTRAINTS;
+EXEC sys.sp_executesql N'-- Các VIEW chỉ truy vấn, không tạo thêm bảng hoặc lặp tổng thanh toán.
+CREATE VIEW dbo.VW_CHI_TIET_HOA_DON AS
+SELECT c.MaCTHD,c.MaHD,c.MaDVThucHien,c.MaCTPX,c.NoiDung,
+ CASE WHEN c.MaDVThucHien IS NOT NULL THEN N''Dịch vụ'' ELSE N''Thuốc'' END AS LoaiKhoanThu,
+ CASE WHEN c.MaDVThucHien IS NOT NULL THEN s.SoLuong ELSE x.SoLuong END AS SoLuong,
+ CASE WHEN c.MaDVThucHien IS NOT NULL THEN s.DonGia ELSE c.DonGia END AS DonGia,
+ CASE WHEN c.MaCTPX IS NOT NULL THEN hh.DonViTinh ELSE NULL END AS DonViTinhThuoc,
+ c.ThanhTien
+FROM dbo.CHI_TIET_HOA_DON c
+LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
+LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
+LEFT JOIN dbo.HANG_HOA hh ON hh.MaHH=x.MaHH;';
+EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_HOA_DON_THANH_TOAN AS
+SELECT h.MaHD,h.MaLS,b.MaBN,b.HoTenBN,h.NgayLap,h.NgayXacNhan,h.TrangThai,
+ h.TongTien,h.GiamGia,h.SoTienPhaiThu,COALESCE(t.DaThuRong,0) AS DaThuRong,
+ h.SoTienPhaiThu-COALESCE(t.DaThuRong,0) AS ConPhaiTra,
+ CASE WHEN h.TrangThai<>N''Đã xác nhận'' THEN N''Chưa xác nhận''
+ WHEN h.SoTienPhaiThu=COALESCE(t.DaThuRong,0) THEN N''Đã thanh toán''
+ WHEN COALESCE(t.DaThuRong,0)=0 THEN N''Chưa thanh toán'' ELSE N''Thanh toán một phần'' END AS TinhTrangThanhToan
+FROM dbo.HOA_DON h JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=h.MaLS
+JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS
+JOIN dbo.BENH_NHAN b ON b.MaBN=hs.MaBN
+LEFT JOIN(SELECT MaHD,SUM(CASE WHEN LoaiGiaoDich=N''Thu'' THEN SoTien ELSE -SoTien END) AS DaThuRong
+ FROM dbo.THANH_TOAN WHERE TrangThai=N''Đã xác nhận'' GROUP BY MaHD) t ON t.MaHD=h.MaHD;';
+EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_TIEN_THUOC_THEO_DON AS
+SELECT d.MaDT,d.MaLS,d.TrangThai,a.TongTienThuocDaChot
+FROM dbo.DON_THUOC d LEFT JOIN
+(SELECT ct.MaDT,SUM(hdct.ThanhTien) AS TongTienThuocDaChot
+ FROM dbo.CHI_TIET_DON_THUOC ct JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTDT=ct.MaCTDT
+ JOIN dbo.CHI_TIET_HOA_DON hdct ON hdct.MaCTPX=x.MaCTPX
+ JOIN dbo.HOA_DON h ON h.MaHD=hdct.MaHD AND h.TrangThai=N''Đã xác nhận''
+ GROUP BY ct.MaDT) a ON a.MaDT=d.MaDT;';
+EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_TON_KHO AS
+SELECT z.MaKho,z.MaHH,hh.TenHH,z.MaLo,hh.DonViTinh,
+ SUM(z.Nhap) AS TongNhap,SUM(z.Xuat) AS TongXuat,SUM(z.Nhap-z.Xuat) AS SoLuongTon
+FROM(
+ SELECT p.MaKho,c.MaHH,c.MaLo,c.SoLuong AS Nhap,CAST(0 AS DECIMAL(18,3)) AS Xuat
+ FROM dbo.CHI_TIET_PHIEU_NHAP c JOIN dbo.PHIEU_NHAP p ON p.MaPN=c.MaPN AND p.TrangThai=N''Đã ghi sổ''
+ UNION ALL SELECT p.MaKho,c.MaHH,c.MaLo,CAST(0 AS DECIMAL(18,3)),c.SoLuong
+ FROM dbo.CHI_TIET_PHIEU_XUAT c JOIN dbo.PHIEU_XUAT p ON p.MaPX=c.MaPX AND p.TrangThai=N''Đã ghi sổ''
+ UNION ALL SELECT MaKho,MaHH,MaLo,CAST(0 AS DECIMAL(18,3)),CAST(0 AS DECIMAL(18,3)) FROM dbo.LO_HANG_HOA
+) z JOIN dbo.HANG_HOA hh ON hh.MaHH=z.MaHH
+GROUP BY z.MaKho,z.MaHH,hh.TenHH,z.MaLo,hh.DonViTinh;';
+EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_LICH_SU_KHAM_BENH_NHAN AS
+SELECT b.MaBN,b.HoTenBN,hs.MaHS,p.MaPhieu,p.MaLich,
+ CASE WHEN p.MaLich IS NULL THEN N''Đến trực tiếp'' ELSE N''Có lịch hẹn'' END AS HinhThucTiepNhan,
+ l.MaLS,l.ThoiGianKham,l.TrieuChung,l.ChanDoan,l.KeHoachXuLy,l.TrangThai,
+ l.MaBS,nv.HoTen AS TenBacSi,l.MaPhong,ph.TenPhong,
+ (SELECT COUNT(*) FROM dbo.KE_HOACH_DIEU_TRI k WHERE k.MaLS=l.MaLS) AS SoKeHoach,
+ (SELECT COUNT(*) FROM dbo.DON_THUOC d WHERE d.MaLS=l.MaLS) AS SoDonThuoc,
+ (SELECT COUNT(*) FROM dbo.HOA_DON h WHERE h.MaLS=l.MaLS) AS SoHoaDon
+FROM dbo.LICH_SU_KHAM_BENH l JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
+JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS JOIN dbo.BENH_NHAN b ON b.MaBN=hs.MaBN
+JOIN dbo.NHAN_VIEN nv ON nv.MaNV=l.MaBS JOIN dbo.PHONG ph ON ph.MaPhong=l.MaPhong;';
+EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_THONG_KE_SO_DONG AS
+SELECT N''BENH_NHAN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[BENH_NHAN]
+UNION ALL
+SELECT N''HO_SO_BENH_AN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[HO_SO_BENH_AN]
+UNION ALL
+SELECT N''PHIEU_KHAM_BENH'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[PHIEU_KHAM_BENH]
+UNION ALL
+SELECT N''LICH_SU_KHAM_BENH'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[LICH_SU_KHAM_BENH]
+UNION ALL
+SELECT N''TINH_TRANG_BENH'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[TINH_TRANG_BENH]
+UNION ALL
+SELECT N''DICH_VU'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[DICH_VU]
+UNION ALL
+SELECT N''KE_HOACH_DIEU_TRI'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[KE_HOACH_DIEU_TRI]
+UNION ALL
+SELECT N''CHI_TIET_KE_HOACH'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHI_TIET_KE_HOACH]
+UNION ALL
+SELECT N''DICH_VU_THUC_HIEN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[DICH_VU_THUC_HIEN]
+UNION ALL
+SELECT N''DON_THUOC'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[DON_THUOC]
+UNION ALL
+SELECT N''CHI_TIET_DON_THUOC'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHI_TIET_DON_THUOC]
+UNION ALL
+SELECT N''VAI_TRO'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[VAI_TRO]
+UNION ALL
+SELECT N''CHUC_VU'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHUC_VU]
+UNION ALL
+SELECT N''TAI_KHOAN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[TAI_KHOAN]
+UNION ALL
+SELECT N''NHAN_VIEN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[NHAN_VIEN]
+UNION ALL
+SELECT N''CHUNG_CHI_NHAN_VIEN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHUNG_CHI_NHAN_VIEN]
+UNION ALL
+SELECT N''KHOA'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[KHOA]
+UNION ALL
+SELECT N''CHUYEN_KHOA'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHUYEN_KHOA]
+UNION ALL
+SELECT N''PHONG'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[PHONG]
+UNION ALL
+SELECT N''THIET_BI'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[THIET_BI]
+UNION ALL
+SELECT N''BAO_TRI_THIET_BI'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[BAO_TRI_THIET_BI]
+UNION ALL
+SELECT N''NHA_CUNG_CAP'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[NHA_CUNG_CAP]
+UNION ALL
+SELECT N''KHO'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[KHO]
+UNION ALL
+SELECT N''LOAI_HANG_HOA'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[LOAI_HANG_HOA]
+UNION ALL
+SELECT N''HANG_HOA'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[HANG_HOA]
+UNION ALL
+SELECT N''VAT_TU'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[VAT_TU]
+UNION ALL
+SELECT N''THUOC'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[THUOC]
+UNION ALL
+SELECT N''LO_HANG_HOA'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[LO_HANG_HOA]
+UNION ALL
+SELECT N''HOA_DON_NHAP'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[HOA_DON_NHAP]
+UNION ALL
+SELECT N''PHIEU_NHAP'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[PHIEU_NHAP]
+UNION ALL
+SELECT N''CHI_TIET_PHIEU_NHAP'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHI_TIET_PHIEU_NHAP]
+UNION ALL
+SELECT N''PHIEU_XUAT'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[PHIEU_XUAT]
+UNION ALL
+SELECT N''CHI_TIET_PHIEU_XUAT'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHI_TIET_PHIEU_XUAT]
+UNION ALL
+SELECT N''CA_LAM'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CA_LAM]
+UNION ALL
+SELECT N''LICH_LAM_VIEC'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[LICH_LAM_VIEC]
+UNION ALL
+SELECT N''DON_XIN_NGHI'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[DON_XIN_NGHI]
+UNION ALL
+SELECT N''PHAN_CONG_THAY_THE'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[PHAN_CONG_THAY_THE]
+UNION ALL
+SELECT N''LICH_KHAM'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[LICH_KHAM]
+UNION ALL
+SELECT N''HOA_DON'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[HOA_DON]
+UNION ALL
+SELECT N''CHI_TIET_HOA_DON'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHI_TIET_HOA_DON]
+UNION ALL
+SELECT N''THANH_TOAN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[THANH_TOAN]
+UNION ALL
+SELECT N''CHINH_SACH_LUONG'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHINH_SACH_LUONG]
+UNION ALL
+SELECT N''BANG_LUONG'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[BANG_LUONG]
+UNION ALL
+SELECT N''NHAT_KY_THAO_TAC'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[NHAT_KY_THAO_TAC];';
+
+COMMIT TRANSACTION;
+PRINT N'Hoàn tất: 44 bảng, 460 dòng mẫu; HANG_HOA=30, mỗi bảng còn lại=10.';
 END TRY
 BEGIN CATCH
-    IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
-    THROW;
+ IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ THROW;
 END CATCH;
 GO
--- Kiểm tra sau khi chạy: kết quả phải có đủ 34 bảng của thiết kế.
-SELECT t.name AS TenBang, COUNT(c.column_id) AS SoCot
-FROM sys.tables AS t
-JOIN sys.columns AS c ON c.object_id = t.object_id
-WHERE t.schema_id = SCHEMA_ID(N'dbo') AND t.is_ms_shipped = 0
-GROUP BY t.name
-ORDER BY t.name;
-GO
+
+-- KẾT QUẢ KIỂM TRA / TRA CỨU SAU CÀI ĐẶT
+SELECT N'44 bảng, 460 dòng' AS KetQua, COUNT(*) AS SoBang FROM sys.tables WHERE is_ms_shipped=0;
+SELECT * FROM dbo.VW_THONG_KE_SO_DONG ORDER BY TenBang;
+SELECT * FROM dbo.VW_HOA_DON_THANH_TOAN ORDER BY MaHD;
+SELECT * FROM dbo.VW_TIEN_THUOC_THEO_DON ORDER BY MaDT;
+SELECT * FROM dbo.VW_TON_KHO ORDER BY MaKho,MaHH,MaLo;

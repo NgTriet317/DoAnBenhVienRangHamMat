@@ -1,27 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Dapper.Contrib.Extensions;
+using System;
 
 namespace ET
 {
-
+    [Table("HO_SO_BENH_AN")]
     public class ET_HOSOBENHAN
-
     {
-        private string maHS;
-        private string maBN;
+        private string maHS = string.Empty;
+        private string maBN = string.Empty;
         private DateTime ngayLap;
-        private string lyDoKhamBanDau;
-        private string ghiChu;
-        private string trangThai;
+        private string lyDoKhamBanDau = string.Empty;
+        private string? ghiChu;
+        private string trangThai = string.Empty;
 
-        public ET_HOSOBENHAN()
-        {
+        public ET_HOSOBENHAN() { }
 
-        }
-        public ET_HOSOBENHAN(string maHS, string maBN, DateTime ngayLap, string lyDoKhamBanDau, string ghiChu, string trangThai)
+        public ET_HOSOBENHAN(string maHS, string maBN, DateTime ngayLap, string lyDoKhamBanDau, string? ghiChu, string trangThai)
         {
             this.maHS = maHS;
             this.maBN = maBN;
@@ -31,11 +25,12 @@ namespace ET
             this.trangThai = trangThai;
         }
 
+        [ExplicitKey]
         public string MaHS { get => maHS; set => maHS = value; }
         public string MaBN { get => maBN; set => maBN = value; }
         public DateTime NgayLap { get => ngayLap; set => ngayLap = value; }
         public string LyDoKhamBanDau { get => lyDoKhamBanDau; set => lyDoKhamBanDau = value; }
-        public string GhiChu { get => ghiChu; set => ghiChu = value; }
+        public string? GhiChu { get => ghiChu; set => ghiChu = value; }
         public string TrangThai { get => trangThai; set => trangThai = value; }
     }
 }

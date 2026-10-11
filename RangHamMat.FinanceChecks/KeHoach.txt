@@ -1,0 +1,7 @@
++ Hãy bỏ hết tất cả phần nạp dữ liệu mẫu và kết hợp database thực tế của tui vào và xử lý 3 lớp sao cho các mục chức năng hồ sơ bệnh nhân, khám điều trị, đơn thuốc chạy được hoàn chỉnh và liên kết với database. Cách làm về xử lý giống như các mục chức năng bác sĩ và nhân sự.
++ Làm sao mà mục chức năng dịch vụ thực hiện liên kết được với 3 chức năng hồ sơ bệnh nhân, khám điều trị, đơn thuốc hiện tại và sửa lại form thêm bệnh nhân sao cho đẹp và hợp lý với database.
++ Làm cho tất các các mục chức năng hồ sơ bệnh nhân, khám điều trị, đơn thuốc, dịch vụ thực hiện có thể liên kết chặt chẽ với mục chức năng hóa đơn và thanh toán. Để khi bệnh nhân tới khám thì sẽ có thể lưu lại và xuất hóa đơn để bệnh nhân thanh toán các khoản phí của bệnh viện.
++ Tất cả các mục chức năng trên phải được xử lý liên kết chặt chẽ và chuẩn xác với database.
++ Xem lại các ET liên quan tới các mục chức năng trên xem đã chuẩn xác như file database chưa nếu chưa thì hãy sửa các ET có liên quan sao cho phù hợp với database.
++ Ngoài ra nếu giao diện các mục chứng năng trên chưa hợp lý với database thì hãy tinh chỉnh, thêm, sửa sao cho phù hợp nhưng vẫn giữa được sự liên kết của form gốc giữa các mục chức năng.
++ Sau khi xong hết thì các mục chức năng tôi nêu trên phải chạy được hoàn chỉnh và có kết nối xử lý với database.

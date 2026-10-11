@@ -1,25 +1,40 @@
-﻿using DAL;
+using DAL;
 using ET;
 
 namespace BUS
 {
     public class BUS_NHANVIEN
     {
-        public IEnumerable<ET_NHANVIEN> layToanBoNhanVien()
+        private readonly DAL_NHANVIEN dalNhanVien;
+
+        public BUS_NHANVIEN(DAL_GIAODICH? giaoDich = null)
         {
-            DAL_NHANVIEN dalNhanVien = new DAL_NHANVIEN();
-            return dalNhanVien.layToanBoNV();
+            dalNhanVien = new DAL_NHANVIEN(giaoDich);
         }
 
-        public ET_NHANVIEN layNhanVienTheoMa(string maNV)
+        public IEnumerable<ET_NHANVIEN> layToanBoNhanVien()
         {
-            DAL_NHANVIEN dalNhanVien = new DAL_NHANVIEN();
-            return dalNhanVien.layNhanVienTheoMa(maNV);
+            return XuLyLoi.ThucHien(() => dalNhanVien.layToanBoNhanVien());
         }
-        public bool themNhanVien(ET_NHANVIEN nhanVien)
+
+        public ET_NHANVIEN? layNhanVienTheoMa(string ma)
         {
-            DAL_NHANVIEN dalNhanVien = new DAL_NHANVIEN();
-            return dalNhanVien.themNhanVien(nhanVien);
+            return XuLyLoi.ThucHien(() => dalNhanVien.layNhanVienTheoMa(ma));
+        }
+
+        public bool themNhanVien(ET_NHANVIEN duLieu)
+        {
+            return XuLyLoi.ThucHien(() => dalNhanVien.themNhanVien(duLieu));
+        }
+
+        public bool suaNhanVien(ET_NHANVIEN duLieu, ET_NHANVIEN? banGoc = null, bool chiDoiTrangThai = false)
+        {
+            return XuLyLoi.ThucHien(() => dalNhanVien.suaNhanVien(duLieu, banGoc, chiDoiTrangThai));
+        }
+
+        public bool xoaNhanVien(string ma, ET_NHANVIEN? banGoc = null)
+        {
+            return XuLyLoi.ThucHien(() => dalNhanVien.xoaNhanVien(ma, banGoc));
         }
     }
 }

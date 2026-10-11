@@ -6,9 +6,12 @@ namespace RangHamMat.Controls;
 
 public static class UiRecord
 {
-    public static object? Get(object row, string field)
+    public static object? Get(object? row, string field)
     {
-        var value = row is IDictionary dictionary ? dictionary[field] : TypeDescriptor.GetProperties(row)[field]?.GetValue(row);
+        if (row is null) return null;
+        var value = row is IDictionary<string, object?> values ? (values.TryGetValue(field, out var item) ? item : null)
+            : row is IDictionary dictionary ? dictionary[field]
+            : TypeDescriptor.GetProperties(row).Find(field, true)?.GetValue(row);
         return value is DBNull ? null : value;
     }
     public static string Text(object row, string field) => Convert.ToString(Get(row, field), CultureInfo.CurrentCulture) ?? "";

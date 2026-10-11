@@ -54,6 +54,8 @@ public partial class MainWindow : Window
 
     private string CurrentRole => (RolePicker.SelectedItem as ComboBoxItem)?.Content as string ?? "Quản trị hệ thống";
 
+    internal bool CanOpen(string module) => RolePermissions[CurrentRole].Contains(module);
+
     private void App_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: string tag })
@@ -69,6 +71,11 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (tag is "BenhNhan" or "LichKham" or "KhamDieuTri" or "DichVuThucHien" or "DonThuoc" or "HoaDon")
+        {
+            try {ClinicalData.EnsureLoaded();}
+            catch(InvalidOperationException ex) {MessageBox.Show(ex.Message,"Kết nối database",MessageBoxButton.OK,MessageBoxImage.Error);return;}
+        }
         UserControl? page = tag switch
         {
             "TongQuan" => new TongQuan(),
@@ -104,6 +111,15 @@ public partial class MainWindow : Window
         AppHost.Content = new AppWorkspace(this, AutomationProperties.GetName(tile), CurrentRole, page);
         HomeSurface.Visibility = Visibility.Collapsed;
         AppHost.Visibility = Visibility.Visible;
+    }
+
+    internal AppWorkspace? AppHostWorkspace() => AppHost.Content as AppWorkspace;
+
+    internal void OpenClinicalApp(string module, string? patientId, string? visitId = null, string? prescriptionId = null)
+    {
+        if (!CanOpen(module)) { MessageBox.Show("Vai trò hiện tại không được mở chức năng này.", "Quyền truy cập"); return; }
+        OpenApp(module);
+        if (AppHost.Content is AppWorkspace workspace) workspace.FocusClinical(patientId, visitId, prescriptionId);
     }
 
     internal void OpenModuleWindow(string tag, AppWorkspace workspace, string? table = null, CreationContext? context = null)

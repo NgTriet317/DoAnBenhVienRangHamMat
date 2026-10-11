@@ -1,65 +1,37 @@
----
-name: Răng Hàm Mặt — Blue Care
-description: Friendly native WPF workspace for everyday hospital tasks.
-colors:
-  accent: "#2468CD"
-  accent-dark: "#163C70"
-  accent-soft: "#EAF2FF"
-  canvas: "#F5F7FA"
-  ink: "#21344B"
-  muted: "#64758A"
-  line: "#E2E8F0"
-typography:
-  home-heading: {fontFamily: Segoe UI, fontSize: 30px, fontWeight: 600}
-  title: {fontFamily: Segoe UI, fontSize: 28px, fontWeight: 600}
-  section: {fontFamily: Segoe UI, fontSize: 18px, fontWeight: 600}
-  body: {fontFamily: Segoe UI, fontSize: 14px, fontWeight: 400}
-rounded:
-  button: 9px
-  card: 14px
-  input: 8px
-  icon: 14px
-spacing:
-  control: 8px
-  section: 20px
-  card: 24px
-  workspace: 32px
-components:
-  app-tile: {width: 180px, height: 156px, backgroundColor: White}
-  text-input: {minHeight: 42px}
-  table: {rowHeight: 50px, headerHeight: 48px}
----
+# Giao diện WPF cho hồ sơ và điều trị bệnh viện
 
-# Design System: Blue Care
+Phạm vi hiện tại: Bệnh nhân, Lịch khám, Khám điều trị, Đơn thuốc và các form/chi tiết liên quan. Thiết kế riêng theo database mới nhất, giữ màu xanh và cửa sổ ứng dụng gốc. Mục tiêu là thao tác thường xuyên, đọc dễ và xác định rõ bệnh nhân/lần khám đang xem.
 
-The desktop launcher stays central. The redesign replaces the dense database-sheet presentation with a welcoming Home, focused lists and separate grouped editors. Blue remains the approved accent; no purple. Native Segoe UI supports Vietnamese and familiar Windows interaction. Numeric dimensions are WPF device-independent units.
+## Bố cục
 
-## Home
+Danh sách và chi tiết cùng màn hình. Bệnh nhân là điểm vào chính: thông tin, bệnh án, lịch hẹn, lịch sử; mở lần khám dùng cùng control chi tiết với mục Khám điều trị. Đơn thuốc dùng một control chi tiết chung và có liên kết trở lại bệnh nhân/lần khám nguồn. Danh sách toàn cục không tự chọn bản ghi đầu tiên để thay thế mã được yêu cầu.
 
-White hospital header; quiet role selector; a friendly greeting and search; wrapping category controls and 19 white app tiles. Line icons reuse the source Paths (28 DIP, 1.6 stroke, 52-DIP pale blue backplate). Tiles retain their automation names and tooltips. Search, category and role combine. The footer has a visible exit action and honest demo status.
+Hồ sơ có hai hành động riêng: tiếp nhận trực tiếp và đặt lịch qua điện thoại. Form tiếp nhận đặt lịch là mắt xích của PHIEU_KHAM_BENH theo DB, không phải một phân loại phiếu khám. Kế hoạch hiển thị nguồn lần khám, các bước và thực hiện; thực hiện có thể diễn ra ở lần khám sau của cùng bệnh nhân. Đơn thuốc vẫn thuộc lần khám theo khóa ngoại thực tế.
 
-## Lists and editors
+## Quy ước thị giác
 
-Lists initially show around six columns. An explicit button expands or collapses secondary columns. Empty states describe what will appear and link to the correct form tab. No invented records or summary metrics.
+| Thành phần | Quy ước |
+|---|---|
+| Nền | #F3F6FA, panel trắng, viền nhạt |
+| Màu chính | #2468CD, chữ #21344B, chữ phụ #64758A |
+| Chữ | Segoe UI; tiêu đề 24, mục 16, nội dung 14 DIP |
+| Bảng | Dòng 46 DIP, đầu bảng 42 DIP, nền nhạt, chọn một dòng, cuộn theo vùng hiển thị |
+| Thao tác | Nút chính xanh; nút phụ trắng; nút bị khóa thể hiện trạng thái disabled |
+| Tab | Nhãn ngắn, đường xanh dưới tab đang chọn, nền focus rõ |
+| Form | Nhóm trường theo nghiệp vụ, mã chỉ đọc, quan hệ cha được khóa khi sửa, vùng nội dung cuộn và chân lưu/hủy cố định |
 
-Editors preserve every database attribute and split them into main/personal, clinical/content and management sections. Fields wrap at 270 DIP with 20-DIP gaps; cards use 24-DIP padding. The form scrolls vertically; back/Home actions stay outside the scroll area. Identity fields are read-only, foreign keys are unpopulated selectors, datetime fields include date and time, passwords only use PasswordBox. Save is disabled because no backend was requested.
+Tokens và style dùng `Themes/HospitalStyles.xaml`, các style form/điều trị kế thừa thay vì thêm thư viện. Không có sơ đồ răng, số liệu trang trí hoặc ảnh y khoa. Các template/control được khai báo trong XAML; C# không dựng cây bố cục runtime cho các màn hình này.
 
-## Navigation and adaptation
+## Dữ liệu và trạng thái
 
-After login, one borderless, maximized, non-resizable window hosts every app and form. Home returns to launcher, back/Escape returns to the app list. Main Window restores to maximized; OS app switching remains possible. Login fits the work area through a down-only Viewbox. DataGrid height follows available space rather than forcing a fixed minimum. Home and editors use vertical ScrollViewers.
+Nguồn giao diện trong phiên chạy, ban đầu trống. Nạp dữ liệu minh họa là thao tác rõ ràng. Khóa và quan hệ được kiểm tra khi lưu, bản xác nhận không sửa nội dung, dòng thuốc/tình trạng bệnh theo quyền sửa bản cha. Thực hiện hoàn thành cộng số lượng để hiển thị tiến độ bước. Lưu mục con cập nhật dữ liệu liên quan và giữ bản nháp phần khám chung.
 
-## Tokens and states
+SQL gốc và các module ngoài phạm vi giữ nguyên. Không coi schema giao diện là migration SQL. Không khẳng định render/build WPF đã kiểm tra: môi trường sửa không có .NET/Windows; cần nghiệm thu kích thước/DPI và bản in trên Windows.
 
-Named colors map to Accent, AccentDark, AccentSoft, Canvas, Ink, Muted and Line in Theme.xaml. White is a literal surface. Buttons use 42-DIP minimum height and 16,10 padding; hover, pressed, disabled and keyboard focus remain explicit. Text/Password inputs use rounded borders with an accent focus border; ComboBox and DatePicker retain platform interactions. Selected tabs have pale blue surfaces and deep blue text. No gradients, shadows or decorative animations are needed.
+## Tinh chỉnh sau ảnh giao diện thực tế
 
-## Evidence
+Danh sách bệnh nhân mặc định 330 DIP, có thể kéo vách chia trong khoảng 270–420 DIP; phần hồ sơ nhận diện tích còn lại. Dòng bệnh nhân 72 DIP để đọc tên và thông tin liên hệ. Thanh tiếp nhận trở thành toolbar gọn thay vì một dải nền xanh lớn. Nút không giãn theo toàn bộ chiều cao tiêu đề.
 
-Source/XML/schema checks and C# contract compilation completed. WPF cannot run in this Linux environment, and full WPF build is not confirmed. XemTruoc/index.html is an illustrative HTML layout, not a WPF screenshot. Actual Windows/DPI inspection remains required.
+TextBox và ComboBox dùng template XAML chung, giữ các part native, thao tác chuột/bàn phím và validation. Ô chọn ngày giữ DatePicker native, định dạng ngắn theo vi-VN. Nền trắng, viền #D9E2ED, hover và focus xanh; selection bảng/list xanh nhạt với chữ tối.
 
-## Revision: schedule, charts and contextual details
-
-Approved changes preserve the existing blue visual system. Segmented ViewSwitch radio controls expose table/week schedule on shifts and appointments, and table/charts on reports. Calendar columns are days, rows are hours; day headers stay visible on vertical scroll. Report charts keep hospital revenue separate from warehouse receipts/payments. Empty chart states have no invented values.
-
-RecordDetails opens only on a double-clicked data row and displays related child rows filtered to the parent key. Separate creation forms retain contextual Add actions, with parent key locked. Back/Escape follow history. Medicine is a dedicated material-type view sharing the existing schema. Audit categories are limited to access, permissions and information changes. Warehouse financial pages have explicit receipt/payment tabs.
-
-Source verification only; native Windows rendering remains required. The previous HTML Home mockup is retained as reference and explicitly excludes these new WPF behaviors.
+Nháp/chờ khám dùng nền vàng nhạt, xác nhận/đang thực hiện xanh nhạt, hoàn thành xanh lá nhạt, hủy màu trung tính đỏ nhạt. Nhãn trạng thái luôn còn chữ, không chỉ dựa vào màu. Form điều trị kế thừa cùng template với các mục còn lại. Các token chữ/nền chính đã được tính tương phản ≥4.5:1; chưa kiểm tra render/DPI WPF.

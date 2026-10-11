@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using RangHamMat.Controls;
+using RangHamMat.Views;
 
 namespace RangHamMat;
 
@@ -11,6 +12,8 @@ public partial class AppWorkspace : UserControl
     private readonly MainWindow home;
     private readonly UserControl page;
     private readonly Stack<object> history = new();
+    private IInputElement? previousFocus;
+    private readonly Stack<object> modalHistory = new();
     private readonly Dictionary<DataGrid, List<DataGridColumn>> extraColumns = new();
 
     public AppWorkspace(MainWindow home, string title, string role, UserControl page)
@@ -21,12 +24,47 @@ public partial class AppWorkspace : UserControl
         AppTitle.Text = title;
         RoleLabel.Text = role;
         Workspace.Content = page;
+        if(page is BenhNhan patients) patients.ConfigureAccess(home.CanOpen);
+        if(page is KhamDieuTri visits) visits.ConfigureAccess(home.CanOpen);
+        PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape && ModalLayer.Visibility == Visibility.Visible) { ReturnToPage(); e.Handled = true; } };
         AddHandler(Button.ClickEvent, new RoutedEventHandler(Navigate));
         AddHandler(Mouse.PreviewMouseDownEvent, new MouseButtonEventHandler(OpenDetails), true);
     }
 
+    public bool CanOpen(string module) => home.CanOpen(module);
+    public void FocusClinical(string? patientId, string? visitId = null, string? prescriptionId = null)
+    {
+        if (page is BenhNhan patients) patients.FocusContext(patientId,visitId,prescriptionId);
+        else if (page is KhamDieuTri visits) visits.FocusContext(patientId,visitId,prescriptionId);
+        else if (page is DonThuoc orders) orders.FocusContext(patientId,visitId,prescriptionId);
+        else if (page is DichVuThucHien services) services.FocusContext(patientId,visitId,prescriptionId);
+        else if (page is HoaDon invoices) invoices.FocusContext(patientId,visitId,prescriptionId);
+        else if (page is LichKham appointments && !string.IsNullOrWhiteSpace(patientId)) appointments.SetPatient(patientId);
+    }
+    public void NavigateClinical(string module, string patientId, string? visitId = null, string? prescriptionId = null)
+    {
+        if (ClinicalData.Find("BENH_NHAN",patientId) is null) { MessageBox.Show("Không tìm thấy bệnh nhân liên kết. Hãy kiểm tra nguồn dữ liệu."); return; }
+        if (!string.IsNullOrEmpty(visitId))
+        {
+            var visit=ClinicalData.Find("LICH_SU_KHAM_BENH",visitId);
+            if(visit is null || ClinicalData.PatientId("LICH_SU_KHAM_BENH",visit)!=patientId) { MessageBox.Show("Lần khám không thuộc bệnh nhân đang xem."); return; }
+        }
+        if (!string.IsNullOrEmpty(prescriptionId))
+        {
+            var order=ClinicalData.Find("DON_THUOC",prescriptionId);
+            if(order is null || ClinicalData.PatientId("DON_THUOC",order)!=patientId || !string.IsNullOrEmpty(visitId) && UiRecord.Text(order,"MaLS")!=visitId) { MessageBox.Show("Đơn thuốc không thuộc hồ sơ/lần khám đang xem."); return; }
+        }
+        home.OpenClinicalApp(module,patientId,visitId,prescriptionId);
+    }
+
     internal bool ReturnToPage()
     {
+        if (ModalLayer.Visibility == Visibility.Visible)
+        {
+            if (modalHistory.Count > 0) { ModalContent.Content = modalHistory.Pop(); if(ModalContent.Content is UserControl prior) Dispatcher.BeginInvoke(new Action(()=>prior.MoveFocus(new TraversalRequest(FocusNavigationDirection.First)))); }
+            else { ModalLayer.Visibility = Visibility.Collapsed; ModalContent.Content = null; Workspace.IsEnabled=true; ShellBar.IsEnabled=true; if(previousFocus is not null) Keyboard.Focus(previousFocus); }
+            return true;
+        }
         if (history.Count == 0) return false;
         Workspace.Content = history.Pop();
         return true;
@@ -34,8 +72,22 @@ public partial class AppWorkspace : UserControl
 
     internal void ShowForm(UserControl form, string? table = null, CreationContext? context = null)
     {
-        history.Push(Workspace.Content);
-        Workspace.Content = form;
+        if (context is { Table: "CHI_TIET_DON_THUOC", ParentField: "MaDT" })
+        {
+            var prescription = ClinicalData.Find("DON_THUOC", context.ParentValue);
+            if (prescription is null || !UiRecord.Text(prescription, "TrangThai").Equals("Nháp", StringComparison.CurrentCultureIgnoreCase))
+            {
+                MessageBox.Show("Chỉ thêm thuốc vào đơn nháp. Đơn đã xác nhận cần lập đơn mới.", "Đơn thuốc", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+        }
+        if (form is CuaSoBenhNhan or CuaSoLichKham or CuaSoKhamDieuTri or CuaSoDonThuoc or TiepNhanLamSang)
+        {
+            var name = table?.Split('|')[0] ?? (form switch { CuaSoBenhNhan => "BENH_NHAN", CuaSoLichKham => "LICH_KHAM", CuaSoDonThuoc => "DON_THUOC", TiepNhanLamSang => "PHIEU_KHAM_BENH", _ => "LICH_SU_KHAM_BENH" });
+            ClinicalForm.Configure(form, name, context: context, patient: (Workspace.Content as IPatientScoped)?.PatientId);
+            ShowModal(form); return;
+        }
+        history.Push(Workspace.Content); Workspace.Content = form;
         var tableName = table?.Split('|')[0];
         if (form.FindName("EditorTabs") is TabControl tabs)
         {
@@ -51,7 +103,9 @@ public partial class AppWorkspace : UserControl
                 foreach (var field in Elements(form).OfType<ComboBox>())
                     if ((string?)field.Tag == "DB:" + context.Table + "." + context.ParentField)
                     {
-                        field.ItemsSource = new[] { context.ParentValue };
+                        field.ItemsSource = form is CuaSoBenhNhan or CuaSoLichKham or CuaSoKhamDieuTri or CuaSoDonThuoc
+                            ? new[] { new ClinicalOption(Convert.ToString(context.ParentValue)!, ClinicalData.Lookup(context.ParentField, context.ParentValue)) }
+                            : new object[] { context.ParentValue };
                         field.SelectedIndex = 0;
                         field.IsEnabled = false;
                         field.ToolTip = "Liên kết với bản ghi đang xem";
@@ -71,6 +125,24 @@ public partial class AppWorkspace : UserControl
                     }
             }
         }
+    }
+    public void ShowClinicalEditor(string module, string table, object? existing = null, CreationContext? context = null, string? patient = null)
+    {
+        var permission = module == "TiepNhanLamSang" ? "BenhNhan" : module;
+        if (!home.CanOpen(permission)) { MessageBox.Show("Vai trò hiện tại không được thực hiện thao tác này."); return; }
+        if (existing is not null && ClinicalData.Find(table,UiRecord.Get(existing,ClinicalData.Key(table))) is object actual && !ClinicalData.CanEdit(table,actual) && table != "LICH_KHAM") { MessageBox.Show("Bản ghi đã xác nhận được giữ nguyên. Hãy lập bản mới nếu cần thay đổi."); return; }
+        UserControl form = module switch { "BenhNhan" => new CuaSoBenhNhan(), "LichKham" => new CuaSoLichKham(), "DonThuoc" => new CuaSoDonThuoc(), "TiepNhanLamSang" => new TiepNhanLamSang(), _ => new CuaSoKhamDieuTri() };
+        ClinicalForm.Configure(form, table, existing, context, patient ?? (Workspace.Content as IPatientScoped)?.PatientId);
+        ShowModal(form);
+    }
+    public void ShowModal(UserControl control)
+    {
+        if (ModalLayer.Visibility == Visibility.Visible && ModalContent.Content is object previous) modalHistory.Push(previous);
+        if (ModalLayer.Visibility != Visibility.Visible) previousFocus=Keyboard.FocusedElement;
+        Workspace.IsEnabled=false; ShellBar.IsEnabled=false;
+        ModalFrame.MaxWidth = control is CuaSoBenhNhan or TiepNhanLamSang ? 850 : 1160;
+        ModalContent.Content = control; ModalLayer.Visibility = Visibility.Visible;
+        Dispatcher.BeginInvoke(new Action(() => control.MoveFocus(new TraversalRequest(FocusNavigationDirection.First))));
     }
 
     private static IEnumerable<DependencyObject> Elements(DependencyObject parent)
@@ -92,6 +164,32 @@ public partial class AppWorkspace : UserControl
         ("VAT_TU", "LO_VAT_TU", "MaVT", "Các lô hàng / lô thuốc")
     };
 
+    public bool ShowClinicalDetails(string table, object record)
+    {
+        if (table == "BENH_NHAN")
+        {
+            if (page is BenhNhan patients) { patients.OpenProfile(record, home.CanOpen); Workspace.Content = page; return true; }
+            var profile = new HoSoBenhNhan(record);
+            profile.ConfigureAccess(home.CanOpen);
+            history.Push(Workspace.Content);
+            Workspace.Content = profile;
+            return true;
+        }
+        if (table == "LICH_SU_KHAM_BENH") { NavigateClinical("KhamDieuTri",ClinicalData.PatientId(table,record),UiRecord.Text(record,"MaLS")); return true; }
+        if (table == "DON_THUOC") { NavigateClinical("DonThuoc",ClinicalData.PatientId(table,record),UiRecord.Text(record,"MaLS"),UiRecord.Text(record,"MaDT")); return true; }
+        var titles = new Dictionary<string, string>
+        {
+            ["HO_SO_BENH_AN"] = "Hồ sơ bệnh án", ["LICH_KHAM"] = "Chi tiết lịch khám",
+            ["LICH_SU_KHAM_BENH"] = "Thông tin lần khám", ["TINH_TRANG_BENH"] = "Tình trạng bệnh",
+            ["KE_HOACH_DIEU_TRI"] = "Kế hoạch điều trị", ["CHI_TIET_KE_HOACH"] = "Dịch vụ dự kiến",
+            ["DICH_VU_THUC_HIEN"] = "Dịch vụ thực hiện", ["DON_THUOC"] = "Thông tin đơn thuốc",
+            ["CHI_TIET_DON_THUOC"] = "Chi tiết thuốc"
+        };
+        if (!titles.TryGetValue(table, out var title)) return false;
+        ShowModal(new ChiTietLamSang(table, title, record));
+        return true;
+    }
+
     private void OpenDetails(object sender, MouseButtonEventArgs e)
     {
         if (e.ChangedButton != MouseButton.Left || e.ClickCount != 2) return;
@@ -103,9 +201,10 @@ public partial class AppWorkspace : UserControl
             || source.Tag is not string tag || !tag.StartsWith("Table:", StringComparison.Ordinal)) return;
         var table = tag[6..];
         // Nhân viên có cửa sổ chi tiết riêng được mở bởi MouseDoubleClick trên DataGrid.
-        // Không thay nội dung workspace bằng RecordDetails cho bảng này.
+        // Giữ luồng nhân sự của repository gốc.
         if (table == "NHAN_VIEN") return;
-
+        var selectedRecord = row.Item is TreatmentRow treatment ? treatment.Record : row.Item;
+        if (ShowClinicalDetails(table, selectedRecord)) { e.Handled = true; return; }
         var related = new List<RelatedRows>();
         foreach (var relation in Relations.Where(x => x.Parent == table))
         {
@@ -136,11 +235,64 @@ public partial class AppWorkspace : UserControl
         Workspace.Content = new RecordDetails(source, row.Item, related);
     }
 
+    private void Reload_Click(object sender, RoutedEventArgs e)
+    {
+        try {ClinicalData.RefreshFromDatabase();}
+        catch(InvalidOperationException ex) {MessageBox.Show(ex.Message,"Tải dữ liệu",MessageBoxButton.OK,MessageBoxImage.Error);}
+    }
+
     private void Navigate(object sender, RoutedEventArgs e)
     {
         if (e.OriginalSource is not Button { Tag: string tag } button) return;
 
-        if (tag == "ToggleColumns" && button.CommandParameter is string table
+        if (tag == "ClinicalSave" && ModalContent.Content is UserControl editor)
+        {
+            e.Handled = true;
+            string error=""; bool saved;
+            try
+            {
+                saved = ClinicalData.Transaction(()=>
+                {
+                    var success=editor is IClinicalEditor custom ? custom.Commit(out error) : ClinicalForm.TrySave(editor, out _, out error);
+                    if (success && ClinicalForm.GetTable(editor)=="PHIEU_KHAM_BENH" && ClinicalForm.GetSaved(editor) is object receipt && ClinicalData.Find("LICH_KHAM",UiRecord.Get(receipt,"MaLich")) is object appointment && (UiRecord.Text(appointment,"TrangThai") is "Nháp" or "Đã xác nhận"))
+                        ClinicalData.SetValue("LICH_KHAM",appointment,"TrangThai","Chờ khám");
+                    return success;
+                });
+            }
+            catch (InvalidOperationException ex) { saved = false; error = ex.Message; }
+            if (saved)
+            {
+                var table=ClinicalForm.GetTable(editor); var record=ClinicalForm.GetSaved(editor);
+                var newPatient=table=="BENH_NHAN" && (ClinicalForm.GetRecord(editor) is null || ClinicalData.Find(table,UiRecord.Get(ClinicalForm.GetRecord(editor)!,"MaBN")) is null);
+                var openMedical=(editor.FindName("CreateMedical") as CheckBox)?.IsChecked==true;
+                var openVisit=(editor.FindName("OpenVisitAfterSave") as CheckBox)?.IsChecked==true;
+                modalHistory.Clear(); ReturnToPage();
+                if(record is not null && table=="BENH_NHAN")
+                {
+                    var id=UiRecord.Text(record,"MaBN"); home.OpenClinicalApp("BenhNhan",id);
+                    if(newPatient && openMedical && ClinicalData.Children("HO_SO_BENH_AN","MaBN",id).Length==0 && home.AppHostWorkspace() is AppWorkspace target) target.ShowClinicalEditor("BenhNhan","HO_SO_BENH_AN",context:new CreationContext("HO_SO_BENH_AN","MaBN",id),patient:id);
+                }
+                else if(record is not null && table=="HO_SO_BENH_AN" && page is BenhNhan patients) patients.OpenMedicalRecord();
+                else if(record is not null && table=="LICH_SU_KHAM_BENH") home.OpenClinicalApp("KhamDieuTri",ClinicalData.PatientId(table,record),UiRecord.Text(record,"MaLS"));
+                // Child saves refresh the current visit in place, keeping its unsaved general draft.
+                else if(record is not null && table=="DON_THUOC" && page is DonThuoc) FocusClinical(ClinicalData.PatientId(table,record),UiRecord.Text(record,"MaLS"),UiRecord.Text(record,"MaDT"));
+                else if(record is not null && table=="PHIEU_KHAM_BENH" && openVisit && home.CanOpen("KhamDieuTri"))
+                {
+                    var id=ClinicalData.PatientId(table,record); home.OpenClinicalApp("KhamDieuTri",id);
+                    home.AppHostWorkspace()?.ShowClinicalEditor("KhamDieuTri","LICH_SU_KHAM_BENH", new Dictionary<string,object?> { ["MaPhieu"]=UiRecord.Get(record,"MaPhieu"), ["MaBS"]=UiRecord.Get(record,"MaBS"), ["MaPhong"]=UiRecord.Get(record,"MaPhong") }, new CreationContext("LICH_SU_KHAM_BENH","MaPhieu",UiRecord.Get(record,"MaPhieu")!), id);
+                }
+            }
+            else if (editor.FindName("FormError") is TextBlock label) label.Text = error;
+            else MessageBox.Show(error, "Kiểm tra thông tin", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        else if (tag == "ClinicalDetails")
+        {
+            if (ModalContent.Content is ChiTietLamSang) { e.Handled = true; return; }
+            if (button.CommandParameter is ExaminationCard exam) ShowClinicalDetails(exam.Table, exam.Record);
+            if (button.CommandParameter is PrescriptionCard prescription) ShowClinicalDetails(prescription.Table, prescription.Record);
+            e.Handled = true;
+        }
+        else if (tag == "ToggleColumns" && button.CommandParameter is string table
             && page.FindName("Grid_" + table) is DataGrid grid)
         {
             e.Handled = true;
