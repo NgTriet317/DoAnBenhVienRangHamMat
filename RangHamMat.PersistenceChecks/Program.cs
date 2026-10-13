@@ -170,19 +170,19 @@ try
     });
     Check("DAL/BUS danh mục bổ sung có CRUD typed và chống phiên bản cũ",()=>
     {
-        using var connection = new DAL.DAL_MAVAITRO().MoKetNoi();
+        using var connection = new DAL.DAL_VAITRO().MoKetNoi();
         using var transaction = connection.BeginTransaction(IsolationLevel.Serializable);
         try
         {
-            var roles = new BUS_MAVAITRO(transaction);
-            var role = new ET_MAVAITRO { TenVaiTro = "Vai trò kiểm tra", MoTa = "Rollback" };
-            Require(roles.themMaVaiTro(role), "Thêm vai trò typed.");
-            var original = roles.layMaVaiTroTheoMa(role.MaVaiTro)!;
+            var roles = new BUS_VAITRO(transaction);
+            var role = new ET_VAITRO { TenVaiTro = "Vai trò kiểm tra", MoTa = "Rollback" };
+            Require(roles.themVaiTro(role), "Thêm vai trò typed.");
+            var original = roles.layVaiTroTheoMa(role.MaVaiTro)!;
             Require(original.TenVaiTro == role.TenVaiTro && role.MaVaiTro.StartsWith("VT"), "Ánh xạ VAI_TRO và mã tự cấp.");
             role.MoTa = "Đã sửa";
-            Require(roles.suaMaVaiTro(role, original), "Sửa vai trò typed.");
-            Reject(() => roles.xoaMaVaiTro(role.MaVaiTro, original), "Phải chặn xóa vai trò với phiên bản cũ.");
-            Require(roles.xoaMaVaiTro(role.MaVaiTro, role), "Xóa vai trò typed.");
+            Require(roles.suaVaiTro(role, original), "Sửa vai trò typed.");
+            Reject(() => roles.xoaVaiTro(role.MaVaiTro, original), "Phải chặn xóa vai trò với phiên bản cũ.");
+            Require(roles.xoaVaiTro(role.MaVaiTro, role), "Xóa vai trò typed.");
             var providers = new BUS_NHACUNGCAP(transaction);
             var provider = new ET_NHACUNGCAP { TenNCC = "NCC kiểm tra", Email = "check@example.test", NguoiLienHe = "Kiểm tra", TrangThai = "Đang hoạt động" };
             Require(providers.themNhaCungCap(provider), "Thêm nhà cung cấp nullable.");

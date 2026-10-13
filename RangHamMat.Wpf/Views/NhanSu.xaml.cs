@@ -1,5 +1,5 @@
 // AI bổ sung kiểm tra nhập liệu: tạo TryReadEmployee/TryReadPosition, chặn thông tin sai trước khi gọi BUS và phân biệt lỗi lưu với lỗi tải lại.
-// PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung chú thích cho các chức năng nhân sự hiện có: nạp danh sách qua BUS, thêm/sửa/xóa, đọc dòng được chọn và mở ChiTietNhanSu.
+// PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung chú thích cho các chức năng nhân sự hiện có: nạp danh sách qua BUS, thêm nhân viên/chức vụ, kiểm tra nhập liệu, đọc dòng được chọn và mở ChiTietNhanSu. Giao diện này chưa có thao tác sửa/xóa nhân viên.
 // AI hỗ trợ: bổ sung chú thích tiếng Việt cho file này ngày 13/10/2026.
 // Nhãn này ghi nhận phần hỗ trợ/chú thích;
 using BUS;

@@ -6,11 +6,15 @@
 
 Đọc [kiểm tra nhập liệu](KIEM_TRA_NHAP_LIEU.md) để xem các trường hợp đã chặn, thông báo lỗi, kết quả kiểm thử và phạm vi các form mẫu chưa nối lưu SQL.
 
+Đọc [hướng dẫn trình bày dbconnect và DAL](HUONG_DAN_TRINH_BAY_CODE_DAL.md) để hiểu luồng lưu theo từng bước, phần code đã đơn giản hóa và các câu hỏi thường gặp khi bảo vệ đồ án.
+
+Đọc [tình trạng toàn bộ chức năng](TINH_TRANG_CHUC_NANG.md) để tra 25 phân hệ, phần đã nối SQL, phần còn là giao diện mẫu và đối chiếu ET–DAL–BUS với database. Bộ vai trò dùng tên `ET_VAITRO`, `DAL_VAITRO`, `BUS_VAITRO` và ánh xạ bảng `VAI_TRO`.
+
 Bản chú thích mở rộng đã bao gồm toàn bộ BUS/DAL. Biểu đồ, lịch tuần, chi tiết chung và bản in hóa đơn có file XAML hiện hữu; code-behind chỉ xử lý dữ liệu/sự kiện và phân trang bản in. Xem [kết quả rà toàn bộ code và XAML](KET_QUA_TOAN_BO_CODE_XAML.md).
 
-Bản cập nhật 11/10/2026 thực hiện yêu cầu trong `RangHamMat.Wpf/KeHoach.txt`. Hồ sơ bệnh nhân, lịch khám/tiếp nhận, khám điều trị, đơn thuốc, dịch vụ thực hiện, hóa đơn và thanh toán đọc/lưu SQL Server qua ET → DAL → BUS → WPF. Đã bỏ chức năng nạp dữ liệu minh họa. Các thao tác lưu tiếp tục tồn tại khi đóng và mở lại ứng dụng.
+Bản cập nhật 11/10/2026 thực hiện luồng hồ sơ theo kế hoạch ban đầu, được ghi lại trong [kết quả thực hiện kế hoạch](THUC_HIEN_KE_HOACH.md). Hồ sơ bệnh nhân, lịch khám/tiếp nhận, khám điều trị, đơn thuốc, dịch vụ thực hiện, hóa đơn và thanh toán đọc/lưu SQL Server qua ET → DAL → BUS → WPF. Đã bỏ chức năng nạp dữ liệu minh họa. Các thao tác lưu tiếp tục tồn tại khi đóng và mở lại ứng dụng.
 
-Schema hiện tại là **v8**: `Database/DB_Nhom4_v8.docx` và `Database/QLBenhVienRangHamMat.sql`. SQL trong workspace khớp database đang dùng; các tài liệu/JSON mang tên v7 chỉ còn mô tả bản giao diện trước.
+Schema các bảng đang chạy là **v8**: `Database/DB_Nhom4_v8.docx` và `Database/QLBenhVienRangHamMat.sql`. Database đang chạy có 44 bảng; file SQL hiện khai báo thêm `CA_THEO_NGAY` thành 45 bảng, nhưng bảng bổ sung này chưa tồn tại trong database đang chạy. Các tài liệu/JSON mang tên v7 và một số giao diện mẫu còn mô tả cấu trúc trước; xem báo cáo tình trạng để biết các trường chưa khớp v8.
 
 Bản sửa 13/10/2026 có đủ 39 bộ ET–DAL–BUS cùng hậu tố, khớp 303 cột SQL. Xử lý liên kết nằm trong các DAL/BUS của từng thực thể; giao dịch nhiều dòng dùng chung IDbTransaction. Giao diện tiếp nhận và chi tiết đổi thành TiepNhanKham và ChiTietHoSo. Khóa chính/khóa ngoại là chuỗi theo SQL hiện tại. Mã tự cấp theo chữ đầu tên bảng và số tối thiểu hai chữ số: BN01, HSBA01, LSKB01; tiếp tục số lớn nhất đang có và giữ mã cũ. Xem [báo cáo sửa DAL/BUS/ET](CAP_NHAT_DAL_BUS_ET.md) để tra cấu trúc và kết quả kiểm tra mới nhất.
 
@@ -44,4 +48,4 @@ Hóa đơn chỉ lấy dịch vụ đã xác nhận và thuốc đã xuất ghi 
 - `KiemTraDatabase.bat`: kiểm tra persistence, nghiệp vụ tài chính và WPF trên SQL thật; mọi bản ghi thử được rollback.
 - `KiemTraWpf.bat`: riêng kiểm tra WPF; cần Windows và database đang chạy.
 
-Build và các kiểm tra đã chạy trên máy hiện tại. Xem lệnh, số kiểm tra, ảnh giao diện và giới hạn kiểm chứng trong `THUC_HIEN_KE_HOACH.md`. Các phân hệ ngoài phạm vi KeHoach.txt giữ source hiện có.
+Build và các kiểm tra đã chạy trên máy hiện tại. Xem lệnh, số kiểm tra, ảnh giao diện và giới hạn kiểm chứng trong `THUC_HIEN_KE_HOACH.md`; [báo cáo tình trạng mới nhất](TINH_TRANG_CHUC_NANG.md) ghi rõ các phân hệ chưa nối SQL. Bộ WPF hiện kiểm tra thêm việc mở đủ 25 màn hình từ các nút trang chủ.

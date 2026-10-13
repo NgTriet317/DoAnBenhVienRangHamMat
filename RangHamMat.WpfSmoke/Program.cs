@@ -93,6 +93,7 @@ internal static class Program
             CheckFinance(host);
             GiaoDienXamlChecks.Run(host);
             NhapLieuChecks.Run(host);
+            DieuHuongPhanHeChecks.Run();
             Console.WriteLine("PASS: SQL → hồ sơ/lịch sử; lịch theo bệnh nhân; phạm vi dịch vụ; form v8; lưu/sửa đơn nhiều dòng; kế hoạch/dịch vụ; hóa đơn/phân trang in; rollback SQL và cache.");
             return 0;
         }
