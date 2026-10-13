@@ -8,9 +8,11 @@ BUS từng thực thể kiểm tra dữ liệu và gọi DAL tương ứng. DAL 
 
 ## Các bộ đã bổ sung
 
-BAOTRITHIETBI, CHITIETPHIEUNHAP, CHUNGCHINHANVIEN, HOADONNHAP, KHOA, LICHLAMVIEC, LOAIHANGHOA, MAVAITRO, NHACUNGCAP, PHIEUNHAP, TAIKHOAN, THIETBI, VATTU.
+BAOTRITHIETBI, CHITIETPHIEUNHAP, CHUNGCHINHANVIEN, HOADONNHAP, KHOA, LICHLAMVIEC, LOAIHANGHOA, VAITRO, NHACUNGCAP, PHIEUNHAP, TAIKHOAN, THIETBI, VATTU.
 
-Ví dụ: `ET_NHACUNGCAP.cs` → `DAL_NHACUNGCAP.cs` → `BUS_NHACUNGCAP.cs`. Hậu tố MAVAITRO giữ theo ET hiện có, ánh xạ bảng SQL VAI_TRO.
+Ví dụ: `ET_NHACUNGCAP.cs` → `DAL_NHACUNGCAP.cs` → `BUS_NHACUNGCAP.cs`. Bộ vai trò đã đổi từ hậu tố MAVAITRO thành VAITRO: `ET_VAITRO.cs` → `DAL_VAITRO.cs` → `BUS_VAITRO.cs`, ánh xạ đúng bảng SQL `VAI_TRO`. `MaVaiTro` chỉ là thuộc tính khóa chính, không phải tên thực thể.
+
+Xem [tình trạng chức năng và đối chiếu database](TINH_TRANG_CHUC_NANG.md) để phân biệt lớp CRUD đã có với giao diện đã nối SQL; file SQL hiện thêm `CA_THEO_NGAY` nhưng database đang chạy chưa có bảng này.
 
 Các ET cũ đã được đối chiếu tên cột, kiểu dữ liệu, nullable, khóa và constructor với SQL hiện có. Tổng/computed do SQL tính được đánh dấu `Write(false)` và không ghi đè từ ET. Các DAL chức vụ/chuyên khoa đã sửa SQL theo cột hiện tại và dùng mã tự cấp.
 

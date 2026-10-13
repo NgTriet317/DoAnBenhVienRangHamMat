@@ -244,8 +244,8 @@
                                            Foreground="{StaticResource Muted}" FontSize="12" Margin="0,5,0,0"/>
                             </StackPanel>
 
-                            <!-- Bảng dgvChucVu: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:dgvChucVu cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
-                            <DataGrid x:Name="dgvChucVu" Grid.Row="1" Tag="Table:dgvChucVu"
+                            <!-- AI sửa Tag thành Table:CHUC_VU để workspace nhận đúng bảng SQL; dgvChucVu chỉ là tên control. Các cột Binding đọc ET_CHUCVU từ ItemsSource. -->
+                            <DataGrid x:Name="dgvChucVu" Grid.Row="1" Tag="Table:CHUC_VU"
                                       Style="{StaticResource NhanSuDataGridStyle}">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Mã chức vụ" Binding="{Binding MaChucVu}" Width="150"/>

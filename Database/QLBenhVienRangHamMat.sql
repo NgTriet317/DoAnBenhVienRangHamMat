@@ -1,5 +1,4 @@
--- AI hỗ trợ: bổ sung giải thích các trigger/view hiện có; không thay lệnh SQL và không chạy lại cài đặt database.
-/*
+﻿/*
 NHÓM 4 - BỆNH VIỆN RĂNG HÀM MẶT - DATABASE V8, MÃ CHUỖI
 Dữ liệu mô phỏng sát nghiệp vụ, cập nhật ngày 13/10/2026.
 Tên người, doanh nghiệp, liên hệ, số chứng nhận và bệnh án đều hư cấu;
@@ -662,6 +661,26 @@ CREATE TABLE [dbo].[NHAT_KY_THAO_TAC] (
     [DuLieuTruoc] NVARCHAR(MAX) NULL,
     [DuLieuSau] NVARCHAR(MAX) NULL
 );
+
+-- Chạy một lần trên database hiện có.
+-- MaCa cần cùng kiểu dữ liệu với CA_LAM.MaCa (điều chỉnh NVARCHAR(30) nếu cần).
+CREATE TABLE CA_THEO_NGAY
+(
+    NgayLam DATE NOT NULL,
+    MaCa NVARCHAR(30) NOT NULL,
+    CONSTRAINT PK_CA_THEO_NGAY PRIMARY KEY (NgayLam, MaCa)
+);
+
+-- Nếu CA_LAM.MaCa cũng là NVARCHAR tương thích, có thể bật khóa ngoại:
+-- ALTER TABLE CA_THEO_NGAY ADD CONSTRAINT FK_CA_THEO_NGAY_CA_LAM
+--     FOREIGN KEY (MaCa) REFERENCES CA_LAM(MaCa);
+
+-- Đưa các ca đã có lịch nhân viên vào danh sách được mở để giữ dữ liệu cũ.
+INSERT INTO CA_THEO_NGAY (NgayLam, MaCa)
+SELECT DISTINCT CAST(l.NgayLam AS DATE), l.MaCa
+FROM LICH_LAM_VIEC l
+INNER JOIN CA_LAM c ON c.MaCa = l.MaCa;
+
 ALTER TABLE [dbo].[HO_SO_BENH_AN] WITH CHECK ADD CONSTRAINT [FK_HO_SO_BENH_AN_MaBN] FOREIGN KEY ([MaBN]) REFERENCES [dbo].[BENH_NHAN] ([MaBN]);
 ALTER TABLE [dbo].[PHIEU_KHAM_BENH] WITH CHECK ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaHS] FOREIGN KEY ([MaHS]) REFERENCES [dbo].[HO_SO_BENH_AN] ([MaHS]);
 ALTER TABLE [dbo].[PHIEU_KHAM_BENH] WITH CHECK ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaLich] FOREIGN KEY ([MaLich]) REFERENCES [dbo].[LICH_KHAM] ([MaLich]);
@@ -829,7 +848,6 @@ CREATE INDEX [IX_CHINH_SACH_LUONG_MaNVDuyet] ON [dbo].[CHINH_SACH_LUONG] ([MaNVD
 CREATE INDEX [IX_BANG_LUONG_MaNV] ON [dbo].[BANG_LUONG] ([MaNV]);
 CREATE INDEX [IX_BANG_LUONG_MaCSL] ON [dbo].[BANG_LUONG] ([MaCSL]);
 CREATE INDEX [IX_NHAT_KY_THAO_TAC_MaTK] ON [dbo].[NHAT_KY_THAO_TAC] ([MaTK]);
--- AI hỗ trợ chú thích TR_CTHD_TinhTien: Khóa đầu hóa đơn liên quan; chỉ cho sửa chi tiết nháp; kiểm tra nguồn dịch vụ/thuốc cùng lần khám, tính thành tiền và cập nhật tổng, chặn tổng thấp hơn giảm giá.
 EXEC sys.sp_executesql N'-- TỰ TÍNH THÀNH TIỀN HÓA ĐƠN, ĐỒNG BỘ TỔNG VÀ KHÓA CHỨNG TỪ.
 CREATE TRIGGER dbo.TR_CTHD_TinhTien ON dbo.CHI_TIET_HOA_DON
 AFTER INSERT, UPDATE, DELETE AS
@@ -860,7 +878,6 @@ BEGIN
  UPDATE h SET TongTien=COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0)
  FROM dbo.HOA_DON h WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted);
 END;';
--- AI hỗ trợ chú thích TR_HD_XacNhan: Giữ nguyên hóa đơn đã xác nhận; khi xác nhận kiểm tra đầu/chi tiết, lần khám, giảm giá và ngày xác nhận để chứng từ đủ điều kiện thu tiền.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_HD_XacNhan ON dbo.HOA_DON
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -884,7 +901,6 @@ BEGIN
  OR(c.MaCTPX IS NOT NULL AND(p.TrangThai<>N''Đã ghi sổ'' OR p.MaLS<>i.MaLS OR x.MaCTDT IS NULL OR CAST(ROUND(x.SoLuong*c.DonGia,2) AS DECIMAL(18,2))<>c.ThanhTien OR p.NgayXuat>i.NgayXacNhan))))))
   THROW 51008,N''Không xác nhận hóa đơn rỗng, nguồn sai, thời gian sai hoặc thành tiền chưa khớp.'',1;
 END;';
--- AI hỗ trợ chú thích TR_TT_KiemTraSoDu: Khóa hóa đơn, giữ giao dịch xác nhận không sửa/xóa; chỉ thu/hoàn sau xác nhận hóa đơn và kiểm tra thu ròng nằm từ 0 đến số phải thu.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_TT_KiemTraSoDu ON dbo.THANH_TOAN
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -901,7 +917,6 @@ BEGIN
  WHERE COALESCE(a.ThuRong,0)<0 OR COALESCE(a.ThuRong,0)>h.SoTienPhaiThu)
   THROW 51011,N''Thu vượt tiền phải trả hoặc hoàn vượt tiền đang giữ.'',1;
 END;';
--- AI hỗ trợ chú thích TR_CTDT_KhoaDon: Chỉ cho thêm/sửa/xóa dòng thuốc khi đầu đơn còn Nháp; khóa chi tiết của đơn đã chốt.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_CTDT_KhoaDon ON dbo.CHI_TIET_DON_THUOC
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -909,7 +924,6 @@ BEGIN
  IF EXISTS(SELECT 1 FROM dbo.DON_THUOC r JOIN(SELECT MaDT FROM inserted UNION SELECT MaDT FROM deleted) x ON x.MaDT=r.MaDT WHERE r.TrangThai<>N''Nháp'')
   THROW 51012,N''Chỉ sửa chi tiết đơn thuốc nháp; đơn xác nhận giữ nguyên.'',1;
 END;';
--- AI hỗ trợ chú thích TR_DT_XacNhan: Giữ nguyên nội dung đơn không còn Nháp, cho chuyển trạng thái nghiệp vụ phù hợp; chặn xác nhận đơn chưa có dòng thuốc.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_DT_XacNhan ON dbo.DON_THUOC
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -919,7 +933,6 @@ BEGIN
  IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã xác nhận'' AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c WHERE c.MaDT=i.MaDT))
   THROW 51014,N''Không xác nhận đơn thuốc rỗng.'',1;
 END;';
--- AI hỗ trợ chú thích TR_DVTH_KhoaNguon: Khóa dịch vụ đã xác nhận; nếu có bước kế hoạch thì yêu cầu cùng dịch vụ và bệnh án, bước chưa hủy.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_DVTH_KhoaNguon ON dbo.DICH_VU_THUC_HIEN
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -932,7 +945,6 @@ BEGIN
  WHERE c.MaDV<>i.MaDV OR p.MaHS<>p0.MaHS OR c.TrangThai=N''Hủy'')
   THROW 51016,N''Dịch vụ phải khớp kế hoạch và cùng hồ sơ bệnh án; không thực hiện dòng đã hủy.'',1;
 END;';
--- AI hỗ trợ chú thích TR_CTKH_TongDuKien: Sau đổi các bước, cộng thành tiền dự kiến của bước chưa hủy và cập nhật tổng đầu kế hoạch liên quan.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_CTKH_TongDuKien ON dbo.CHI_TIET_KE_HOACH
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -940,7 +952,6 @@ BEGIN
  UPDATE k SET TongTienDuKien=COALESCE((SELECT SUM(c.ThanhTienDuKien) FROM dbo.CHI_TIET_KE_HOACH c WHERE c.MaKHDT=k.MaKHDT AND c.TrangThai<>N''Hủy''),0)
  FROM dbo.KE_HOACH_DIEU_TRI k WITH(UPDLOCK) WHERE k.MaKHDT IN(SELECT MaKHDT FROM inserted UNION SELECT MaKHDT FROM deleted);
 END;';
--- AI hỗ trợ chú thích TR_KHDT_Tong: Chặn tổng dự kiến của đầu kế hoạch khác tổng các chi tiết chưa hủy; tổng phải do chi tiết quyết định.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_KHDT_Tong ON dbo.KE_HOACH_DIEU_TRI
 AFTER INSERT, UPDATE AS
 BEGIN
@@ -948,7 +959,6 @@ BEGIN
  IF EXISTS(SELECT 1 FROM inserted i WHERE i.TongTienDuKien<>COALESCE((SELECT SUM(c.ThanhTienDuKien) FROM dbo.CHI_TIET_KE_HOACH c WHERE c.MaKHDT=i.MaKHDT AND c.TrangThai<>N''Hủy''),0))
   THROW 51017,N''Tổng dự kiến phải bằng chi tiết chưa hủy.'',1;
 END;';
--- AI hỗ trợ chú thích TR_CTPN_TongVaNguon: Chỉ cho đổi chi tiết phiếu nhập nháp; lô phải khớp hàng/kho/nhà cung cấp; cập nhật tổng phiếu nhập theo chi tiết.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_CTPN_TongVaNguon ON dbo.CHI_TIET_PHIEU_NHAP
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -961,7 +971,6 @@ BEGIN
  UPDATE p SET TongTien=COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_PHIEU_NHAP c WHERE c.MaPN=p.MaPN),0)
  FROM dbo.PHIEU_NHAP p WHERE p.MaPN IN(SELECT MaPN FROM inserted UNION SELECT MaPN FROM deleted);
 END;';
--- AI hỗ trợ chú thích TR_PN_GhiSo: Giữ nguyên phiếu nhập đã ghi sổ, kiểm tra nguồn lô và tổng chi tiết; không ghi sổ phiếu nhập rỗng.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_PN_GhiSo ON dbo.PHIEU_NHAP
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -979,7 +988,6 @@ BEGIN
  IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã ghi sổ'' AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_NHAP c WHERE c.MaPN=i.MaPN))
   THROW 51022,N''Không ghi sổ phiếu nhập rỗng.'',1;
 END;';
--- AI hỗ trợ chú thích TR_CTPX_Nguon: Chỉ cho đổi chi tiết phiếu xuất nháp; dòng cấp thuốc phải đúng đơn/lần khám/hàng/lô/kho, xuất nội bộ không gắn dòng đơn thuốc.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_CTPX_Nguon ON dbo.CHI_TIET_PHIEU_XUAT
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -993,7 +1001,6 @@ BEGIN
  OR (p.MaLS IS NULL AND i.MaCTDT IS NOT NULL) OR(i.MaLo IS NOT NULL AND(l.MaHH<>i.MaHH OR l.MaKho<>p.MaKho)))
   THROW 51024,N''Dòng xuất phải đúng thuốc của đơn/lần khám và đúng lô, kho; xuất nội bộ không dùng MaCTDT.'',1;
 END;';
--- AI hỗ trợ chú thích TR_PX_GhiSoDuDon: Khóa hàng và đơn, giữ phiếu ghi sổ, kiểm tra nguồn/lô/hạn và đơn xác nhận; yêu cầu cấp đủ toàn bộ đơn, chặn xuất vượt tồn theo kho/lô.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_PX_GhiSoDuDon ON dbo.PHIEU_XUAT
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -1030,7 +1037,6 @@ BEGIN
  < COALESCE((SELECT SUM(e.SoLuong) FROM dbo.CHI_TIET_PHIEU_XUAT e JOIN dbo.PHIEU_XUAT p ON p.MaPX=e.MaPX WHERE p.TrangThai=N''Đã ghi sổ'' AND p.MaKho=i.MaKho AND e.MaHH=x.MaHH AND(e.MaLo=x.MaLo OR(e.MaLo IS NULL AND x.MaLo IS NULL))),0))
   THROW 51029,N''Không đủ tồn kho/lô; rollback toàn bộ lần cấp.'',1;
 END;';
--- AI hỗ trợ chú thích TR_LO_KhoaNguon: Không sửa/xóa thuộc tính nguồn của lô đã xuất/nhập bằng chứng từ ghi sổ để giữ nguồn tồn kho.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_LO_KhoaNguon ON dbo.LO_HANG_HOA
 AFTER UPDATE, DELETE AS
 BEGIN
@@ -1038,7 +1044,6 @@ BEGIN
  IF EXISTS(SELECT 1 FROM deleted d WHERE EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_NHAP c JOIN dbo.PHIEU_NHAP p ON p.MaPN=c.MaPN WHERE c.MaLo=d.MaLo AND p.TrangThai=N''Đã ghi sổ'') OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT c JOIN dbo.PHIEU_XUAT p ON p.MaPX=c.MaPX WHERE c.MaLo=d.MaLo AND p.TrangThai=N''Đã ghi sổ''))
   THROW 51030,N''Lô đã có chứng từ ghi sổ giữ nguyên thuộc tính nguồn.'',1;
 END;';
--- AI hỗ trợ chú thích TR_HH_KhoaDonVi: Không đổi đơn vị tính hàng hóa khi đã có kê thuốc/nhập/xuất, tránh đổi ý nghĩa số lượng đã lưu.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_HH_KhoaDonVi ON dbo.HANG_HOA
 AFTER UPDATE AS
 BEGIN
@@ -1047,7 +1052,6 @@ BEGIN
  (EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_NHAP c WHERE c.MaHH=i.MaHH) OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT c WHERE c.MaHH=i.MaHH) OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c JOIN dbo.THUOC t ON t.MaThuoc=c.MaThuoc WHERE t.MaHH=i.MaHH)))
   THROW 51031,N''Không đổi đơn vị cơ sở sau khi đã kê/nhập/xuất.'',1;
 END;';
--- AI hỗ trợ chú thích TR_THUOC_KhoaHangHoa: Không đổi hàng hóa nguồn của thuốc đã được kê; vẫn cho cập nhật giá bán hiện hành.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_THUOC_KhoaHangHoa ON dbo.THUOC
 AFTER UPDATE AS
 BEGIN
@@ -1055,7 +1059,6 @@ BEGIN
  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaThuoc=i.MaThuoc WHERE i.MaHH<>d.MaHH AND EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c WHERE c.MaThuoc=i.MaThuoc))
   THROW 51032,N''Thuốc đã kê đơn không đổi hàng hóa nguồn; DonGiaBan hiện hành vẫn được cập nhật.'',1;
 END;';
--- AI hỗ trợ chú thích TR_PHIEU_LienKet: Phiếu theo lịch phải khớp bệnh nhân/phòng/bác sĩ; phiếu đã có lần khám không đổi hồ sơ hoặc lịch nguồn.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_PHIEU_LienKet ON dbo.PHIEU_KHAM_BENH
 AFTER INSERT, UPDATE AS
 BEGIN
@@ -1065,7 +1068,6 @@ BEGIN
  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaPhieu=i.MaPhieu WHERE EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaPhieu=i.MaPhieu) AND EXISTS(SELECT i.MaHS,i.MaLich EXCEPT SELECT d.MaHS,d.MaLich))
   THROW 51034,N''Phiếu đã phát sinh lần khám không đổi hồ sơ/lịch nguồn.'',1;
 END;';
--- AI hỗ trợ chú thích TR_LS_LienKet: Lần khám phải khớp phiếu tiếp nhận và không trước giờ tiếp nhận; giữ liên kết/thời gian nguồn của lần khám đã xác nhận.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_LS_LienKet ON dbo.LICH_SU_KHAM_BENH
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -1075,7 +1077,6 @@ BEGIN
  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=i.MaPhieu WHERE i.ThoiGianKham<p.ThoiGianTiepNhan OR i.MaPhong<>p.MaPhong OR(p.MaBS IS NOT NULL AND i.MaBS<>p.MaBS))
   THROW 51036,N''Lần khám phải khớp phiếu tiếp nhận và không trước giờ tiếp nhận.'',1;
 END;';
--- AI hỗ trợ chú thích TR_CSL_KhoaChinhSach: Giữ chính sách lương đã duyệt, thay đổi bằng phiên bản mới; trạng thái duyệt cần có nhân viên và ngày duyệt.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_CSL_KhoaChinhSach ON dbo.CHINH_SACH_LUONG
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -1085,7 +1086,6 @@ BEGIN
  IF EXISTS(SELECT 1 FROM inserted WHERE TrangThai=N''Đã duyệt'' AND(MaNVDuyet IS NULL OR NgayDuyet IS NULL))
   THROW 51037,N''Chính sách đã duyệt phải ghi người và ngày duyệt.'',1;
 END;';
--- AI hỗ trợ chú thích TR_BL_ChotLuong: Giữ bảng lương đã chốt; khi chốt đối chiếu kỳ, chính sách được duyệt, chức vụ, số ca có mặt và hoa hồng dịch vụ xác nhận.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_BL_ChotLuong ON dbo.BANG_LUONG
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -1099,7 +1099,6 @@ BEGIN
  OR i.TienHoaHong<>CAST(ROUND(COALESCE((SELECT SUM(s.ThanhTien) FROM dbo.DICH_VU_THUC_HIEN s WHERE s.MaNVThucHien=i.MaNV AND CAST(s.ThoiGianThucHien AS DATE) BETWEEN i.TuNgay AND i.DenNgay AND s.TrangThai=N''Đã xác nhận''),0)*cs.TyLeHoaHong,2) AS DECIMAL(18,2))))
   THROW 51039,N''Chốt lương phải khớp chính sách, hiện diện và hoa hồng dịch vụ trong kỳ.'',1;
 END;';
--- AI hỗ trợ chú thích TR_HS_KhoaBenhNhanNguon: Không chuyển bệnh án đã tiếp nhận sang bệnh nhân khác, giữ chuỗi nguồn của khám và hóa đơn.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_HS_KhoaBenhNhanNguon ON dbo.HO_SO_BENH_AN
 AFTER UPDATE AS
 BEGIN
@@ -1776,7 +1775,6 @@ IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG b WHERE b.SoCaTinh<>(SELECT COUNT(*) FROM
 IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG b JOIN dbo.CHINH_SACH_LUONG cs ON cs.MaCSL=b.MaCSL WHERE b.TienHoaHong<>CAST(ROUND(COALESCE((SELECT SUM(s.ThanhTien) FROM dbo.DICH_VU_THUC_HIEN s WHERE s.MaNVThucHien=b.MaNV AND CAST(s.ThoiGianThucHien AS DATE) BETWEEN b.TuNgay AND b.DenNgay AND s.TrangThai=N'Đã xác nhận'),0)*cs.TyLeHoaHong,2) AS DECIMAL(18,2)))
  THROW 51108,N'Hoa hồng không khớp dịch vụ thực hiện.',1;
 DBCC CHECKCONSTRAINTS WITH ALL_CONSTRAINTS;
--- AI hỗ trợ chú thích VW_CHI_TIET_HOA_DON: Ghép chi tiết hóa đơn với dịch vụ hoặc dòng xuất thuốc để hiển thị khoản thu, số lượng, giá chốt và thành tiền.
 EXEC sys.sp_executesql N'-- Các VIEW chỉ truy vấn, không tạo thêm bảng hoặc lặp tổng thanh toán.
 CREATE VIEW dbo.VW_CHI_TIET_HOA_DON AS
 SELECT c.MaCTHD,c.MaHD,c.MaDVThucHien,c.MaCTPX,c.NoiDung,
@@ -1789,7 +1787,6 @@ FROM dbo.CHI_TIET_HOA_DON c
 LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
 LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
 LEFT JOIN dbo.HANG_HOA hh ON hh.MaHH=x.MaHH;';
--- AI hỗ trợ chú thích VW_HOA_DON_THANH_TOAN: Tổng hợp hóa đơn cùng tiền Thu trừ Hoàn đã xác nhận, số còn phải thu và trạng thái thanh toán để tra cứu.
 EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_HOA_DON_THANH_TOAN AS
 SELECT h.MaHD,h.MaLS,b.MaBN,b.HoTenBN,h.NgayLap,h.NgayXacNhan,h.TrangThai,
  h.TongTien,h.GiamGia,h.SoTienPhaiThu,COALESCE(t.DaThuRong,0) AS DaThuRong,
@@ -1802,7 +1799,6 @@ JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN hs ON h
 JOIN dbo.BENH_NHAN b ON b.MaBN=hs.MaBN
 LEFT JOIN(SELECT MaHD,SUM(CASE WHEN LoaiGiaoDich=N''Thu'' THEN SoTien ELSE -SoTien END) AS DaThuRong
  FROM dbo.THANH_TOAN WHERE TrangThai=N''Đã xác nhận'' GROUP BY MaHD) t ON t.MaHD=h.MaHD;';
--- AI hỗ trợ chú thích VW_TIEN_THUOC_THEO_DON: Cộng tiền các dòng xuất thuốc của đơn đã nằm trên hóa đơn xác nhận; đơn chưa có khoản thuốc trên hóa đơn xác nhận có tổng NULL.
 EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_TIEN_THUOC_THEO_DON AS
 SELECT d.MaDT,d.MaLS,d.TrangThai,a.TongTienThuocDaChot
 FROM dbo.DON_THUOC d LEFT JOIN
@@ -1811,7 +1807,6 @@ FROM dbo.DON_THUOC d LEFT JOIN
  JOIN dbo.CHI_TIET_HOA_DON hdct ON hdct.MaCTPX=x.MaCTPX
  JOIN dbo.HOA_DON h ON h.MaHD=hdct.MaHD AND h.TrangThai=N''Đã xác nhận''
  GROUP BY ct.MaDT) a ON a.MaDT=d.MaDT;';
--- AI hỗ trợ chú thích VW_TON_KHO: Tính tồn theo kho/hàng/lô bằng nhập ghi sổ trừ xuất ghi sổ; không cộng chứng từ nháp.
 EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_TON_KHO AS
 SELECT z.MaKho,z.MaHH,hh.TenHH,z.MaLo,hh.DonViTinh,
  SUM(z.Nhap) AS TongNhap,SUM(z.Xuat) AS TongXuat,SUM(z.Nhap-z.Xuat) AS SoLuongTon
@@ -1823,7 +1818,6 @@ FROM(
  UNION ALL SELECT MaKho,MaHH,MaLo,CAST(0 AS DECIMAL(18,3)),CAST(0 AS DECIMAL(18,3)) FROM dbo.LO_HANG_HOA
 ) z JOIN dbo.HANG_HOA hh ON hh.MaHH=z.MaHH
 GROUP BY z.MaKho,z.MaHH,hh.TenHH,z.MaLo,hh.DonViTinh;';
--- AI hỗ trợ chú thích VW_LICH_SU_KHAM_BENH_NHAN: Ghép lần khám với phiếu, bệnh án và bệnh nhân để tra cứu lịch sử khám đúng hồ sơ.
 EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_LICH_SU_KHAM_BENH_NHAN AS
 SELECT b.MaBN,b.HoTenBN,hs.MaHS,p.MaPhieu,p.MaLich,
  CASE WHEN p.MaLich IS NULL THEN N''Đến trực tiếp'' ELSE N''Có lịch hẹn'' END AS HinhThucTiepNhan,
@@ -1835,7 +1829,6 @@ SELECT b.MaBN,b.HoTenBN,hs.MaHS,p.MaPhieu,p.MaLich,
 FROM dbo.LICH_SU_KHAM_BENH l JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
 JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS JOIN dbo.BENH_NHAN b ON b.MaBN=hs.MaBN
 JOIN dbo.NHAN_VIEN nv ON nv.MaNV=l.MaBS JOIN dbo.PHONG ph ON ph.MaPhong=l.MaPhong;';
--- AI hỗ trợ chú thích VW_THONG_KE_SO_DONG: Đếm số dòng của các bảng để tra cứu/kiểm tra sau khi cài database.
 EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_THONG_KE_SO_DONG AS
 SELECT N''BENH_NHAN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[BENH_NHAN]
 UNION ALL

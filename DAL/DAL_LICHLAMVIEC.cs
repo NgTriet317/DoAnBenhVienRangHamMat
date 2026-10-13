@@ -13,71 +13,115 @@ namespace DAL
         /// <summary>
         /// Tạo DAL quản lý lịch làm việc, chuyển giao dịch tùy chọn cho dbconnect để nhiều thao tác có thể dùng chung kết nối và phạm vi lưu.
         /// </summary>
-        /// <param name="transaction">Giao dịch của nơi gọi; null để hạ tầng tham gia giao dịch môi trường hoặc tự mở giao dịch cục bộ. Nếu truyền vào, nơi gọi quản lý commit/rollback.</param>
-        public DAL_LICHLAMVIEC(IDbTransaction? transaction = null) : base(transaction) { }
+        /// <param name = "transaction">Giao dịch của nơi gọi; null để hạ tầng tham gia giao dịch môi trường hoặc tự mở giao dịch cục bộ. Nếu truyền vào, nơi gọi quản lý commit/rollback.</param>
+        public DAL_LICHLAMVIEC(IDbTransaction? transaction = null) : base(transaction)
+        {
+        }
+
         /// <summary>
         /// Đọc toàn bộ lịch làm việc từ dbo.LICH_LAM_VIEC, Dapper ánh xạ từng dòng sang ET, sắp theo mã; ToArray nạp hết dữ liệu trước khi hạ tầng kết thúc phạm vi kết nối/giao dịch.
         /// </summary>
         /// <returns>Danh sách ET đã vật hóa; không có bản ghi thì trả danh sách rỗng.</returns>
-        public IEnumerable<ET_LICHLAMVIEC> layToanBoLichLamViec() => ThucHien((connection, transaction) =>
-            connection.Query<ET_LICHLAMVIEC>("SELECT * FROM dbo.[LICH_LAM_VIEC] ORDER BY [MaLLV]", transaction: transaction).ToArray());
+        public IEnumerable<ET_LICHLAMVIEC> layToanBoLichLamViec()
+        {
+            return ThucHien((connection, transaction) =>
+            {
+                return connection.Query<ET_LICHLAMVIEC>("SELECT * FROM dbo.[LICH_LAM_VIEC] ORDER BY [MaLLV]", transaction: transaction).ToArray();
+            });
+        }
+
         /// <summary>
         /// Tìm lịch làm việc theo khóa trong dbo.LICH_LAM_VIEC; mã được truyền bằng tham số SQL và QuerySingleOrDefault ánh xạ tối đa một bản ghi sang ET.
         /// </summary>
-        /// <param name="ma">Mã khóa chính của bản ghi cần đọc, sửa hoặc xóa; truyền bằng tham số SQL.</param>
+        /// <param name = "ma">Mã khóa chính của bản ghi cần đọc, sửa hoặc xóa; truyền bằng tham số SQL.</param>
         /// <returns>ET của bản ghi tìm thấy, hoặc null nếu mã không tồn tại.</returns>
-        public ET_LICHLAMVIEC? layLichLamViecTheoMa(string ma) => ThucHien((connection, transaction) =>
-            connection.QuerySingleOrDefault<ET_LICHLAMVIEC>("SELECT * FROM dbo.[LICH_LAM_VIEC] WHERE [MaLLV]=@Ma", new { Ma = ma }, transaction));
+        public ET_LICHLAMVIEC? layLichLamViecTheoMa(string ma)
+        {
+            return ThucHien((connection, transaction) =>
+            {
+                return connection.QuerySingleOrDefault<ET_LICHLAMVIEC>("SELECT * FROM dbo.[LICH_LAM_VIEC] WHERE [MaLLV]=@Ma", new { Ma = ma }, transaction);
+            });
+        }
+
         /// <summary>
         /// Thêm lịch làm việc: cấp mã có khóa ngay vào duLieu, chuẩn hóa và kiểm tra ET theo metadata SQL rồi INSERT có tham số vào dbo.LICH_LAM_VIEC trong cùng giao dịch.
         /// </summary>
-        /// <param name="duLieu">ET chứa dữ liệu cần lưu; thêm mới sẽ được gán mã, và kiểm tra metadata có thể chuẩn hóa lại các giá trị ngay trên đối tượng.</param>
+        /// <param name = "duLieu">ET chứa dữ liệu cần lưu; thêm mới sẽ được gán mã, và kiểm tra metadata có thể chuẩn hóa lại các giá trị ngay trên đối tượng.</param>
         /// <returns>true sau khi INSERT thành công; lỗi dữ liệu/SQL được phát ra bằng ngoại lệ. Giao dịch ngoài chỉ commit khi nơi gọi quyết định.</returns>
-        public bool themLichLamViec(ET_LICHLAMVIEC duLieu) => ThucHien((connection, transaction) =>
+        public bool themLichLamViec(ET_LICHLAMVIEC duLieu)
         {
-            duLieu.MaLLV = TaoMa(connection, transaction, "LICH_LAM_VIEC", "MaLLV");
+            return ThucHien((connection, transaction) =>
+            {
+                duLieu.MaLLV = TaoMa(connection, transaction, "LICH_LAM_VIEC", "MaLLV");
+                KiemTra<ET_LICHLAMVIEC>(connection, transaction, "LICH_LAM_VIEC", duLieu, null, null);
+                connection.Execute("""
+                INSERT INTO dbo.[LICH_LAM_VIEC] ([MaLLV],[MaNV],[MaCa],
+                    [NgayLam],[MaPhong],[TrangThai],
+                    [TrangThaiHienDien],[GioVao],[GioRa],
+                    [GhiChu])
+                VALUES (@MaLLV,@MaNV,@MaCa,
+                    @NgayLam,@MaPhong,@TrangThai,
+                    @TrangThaiHienDien,@GioVao,@GioRa,
+                    @GhiChu)
+                """, duLieu, transaction);
+                return true;
+            });
+        }
 
-            KiemTra<ET_LICHLAMVIEC>(connection, transaction, "LICH_LAM_VIEC", duLieu, null, null);
-            connection.Execute("INSERT INTO dbo.[LICH_LAM_VIEC] ([MaLLV],[MaNV],[MaCa],[NgayLam],[MaPhong],[TrangThai],[TrangThaiHienDien],[GioVao],[GioRa],[GhiChu]) VALUES (@MaLLV,@MaNV,@MaCa,@NgayLam,@MaPhong,@TrangThai,@TrangThaiHienDien,@GioVao,@GioRa,@GhiChu)", duLieu, transaction);
-            return true;
-        });
         /// <summary>
         /// Sửa lịch làm việc: đọc và giữ khóa UPDLOCK/HOLDLOCK, báo lỗi nếu bản không còn, chuẩn hóa ET và đối chiếu banGoc để phát hiện sửa đồng thời. Khi chỉ đổi trạng thái, chặn thay đổi các trường ngoài TrangThai/NgayXacNhan/NgayCapNhat/LyDoThayDoi, sau đó UPDATE có tham số trong cùng giao dịch.
         /// </summary>
-        /// <param name="duLieu">ET chứa dữ liệu cần lưu; thêm mới sẽ được gán mã, và kiểm tra metadata có thể chuẩn hóa lại các giá trị ngay trên đối tượng.</param>
-        /// <param name="banGoc">Bản ET đã đọc trước khi thao tác; có giá trị để so với SQL và chặn ghi đè/xóa khi bản đã thay đổi, null để bỏ đối chiếu bản gốc.</param>
-        /// <param name="chiDoiTrangThai">true để cấm thay đổi trường nội dung ngoài nhóm trường trạng thái cho phép; không tự đảm bảo mọi chuyển trạng thái đều hợp lệ.</param>
+        /// <param name = "duLieu">ET chứa dữ liệu cần lưu; thêm mới sẽ được gán mã, và kiểm tra metadata có thể chuẩn hóa lại các giá trị ngay trên đối tượng.</param>
+        /// <param name = "banGoc">Bản ET đã đọc trước khi thao tác; có giá trị để so với SQL và chặn ghi đè/xóa khi bản đã thay đổi, null để bỏ đối chiếu bản gốc.</param>
+        /// <param name = "chiDoiTrangThai">true để cấm thay đổi trường nội dung ngoài nhóm trường trạng thái cho phép; không tự đảm bảo mọi chuyển trạng thái đều hợp lệ.</param>
         /// <returns>true khi UPDATE chạy thành công; bản bị mất/thay đổi hoặc dữ liệu sai gây ngoại lệ. Không trả false để biểu thị lỗi.</returns>
-        public bool suaLichLamViec(ET_LICHLAMVIEC duLieu, ET_LICHLAMVIEC? banGoc = null, bool chiDoiTrangThai = false) => ThucHien((connection, transaction) =>
+        public bool suaLichLamViec(ET_LICHLAMVIEC duLieu, ET_LICHLAMVIEC? banGoc = null, bool chiDoiTrangThai = false)
         {
-            var hienTai = connection.QuerySingleOrDefault<ET_LICHLAMVIEC>("SELECT * FROM dbo.[LICH_LAM_VIEC] WITH(UPDLOCK,HOLDLOCK) WHERE [MaLLV]=@Ma", new { Ma = duLieu.MaLLV }, transaction)
-                ?? throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
+            return ThucHien((connection, transaction) =>
+            {
+                var hienTai = connection.QuerySingleOrDefault<ET_LICHLAMVIEC>("SELECT * FROM dbo.[LICH_LAM_VIEC] WITH(UPDLOCK,HOLDLOCK) WHERE [MaLLV]=@Ma", new { Ma = duLieu.MaLLV }, transaction);
+                if (hienTai is null)
+                {
+                    throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
+                }
 
-            KiemTra(connection, transaction, "LICH_LAM_VIEC", duLieu, hienTai, banGoc);
+                KiemTra(connection, transaction, "LICH_LAM_VIEC", duLieu, hienTai, banGoc);
                 if (chiDoiTrangThai)
-                    foreach (var pair in GiaTri(duLieu))
-                        if (pair.Key is not "TrangThai" and not "NgayXacNhan" and not "NgayCapNhat" and not "LyDoThayDoi"
-                            && !Equals(pair.Value, GiaTri(hienTai).GetValueOrDefault(pair.Key)))
-                            throw new InvalidOperationException("Thao tác đổi trạng thái không được thay đổi nội dung bản ghi.");
-            connection.Execute("UPDATE dbo.[LICH_LAM_VIEC] SET [MaNV]=@MaNV,[MaCa]=@MaCa,[NgayLam]=@NgayLam,[MaPhong]=@MaPhong,[TrangThai]=@TrangThai,[TrangThaiHienDien]=@TrangThaiHienDien,[GioVao]=@GioVao,[GioRa]=@GioRa,[GhiChu]=@GhiChu WHERE [MaLLV]=@MaLLV", duLieu, transaction);
-            return true;
-        });
+                {
+                    KiemTraChiDoiTrangThai(duLieu, hienTai);
+                }
+
+                connection.Execute("""
+                UPDATE dbo.[LICH_LAM_VIEC]
+                SET [MaNV]=@MaNV,[MaCa]=@MaCa,[NgayLam]=@NgayLam,
+                    [MaPhong]=@MaPhong,[TrangThai]=@TrangThai,[TrangThaiHienDien]=@TrangThaiHienDien,
+                    [GioVao]=@GioVao,[GioRa]=@GioRa,[GhiChu]=@GhiChu
+                WHERE [MaLLV]=@MaLLV
+                """, duLieu, transaction);
+                return true;
+            });
+        }
+
         /// <summary>
         /// Xóa lịch làm việc: đọc bản hiện tại với UPDLOCK/HOLDLOCK, báo lỗi nếu đã mất, so banGoc khi có rồi DELETE theo mã trong dbo.LICH_LAM_VIEC; toàn bộ thao tác giữ cùng giao dịch và lỗi ràng buộc SQL được phát ra.
         /// </summary>
-        /// <param name="ma">Mã khóa chính của bản ghi cần đọc, sửa hoặc xóa; truyền bằng tham số SQL.</param>
-        /// <param name="banGoc">Bản ET đã đọc trước khi thao tác; có giá trị để so với SQL và chặn ghi đè/xóa khi bản đã thay đổi, null để bỏ đối chiếu bản gốc.</param>
+        /// <param name = "ma">Mã khóa chính của bản ghi cần đọc, sửa hoặc xóa; truyền bằng tham số SQL.</param>
+        /// <param name = "banGoc">Bản ET đã đọc trước khi thao tác; có giá trị để so với SQL và chặn ghi đè/xóa khi bản đã thay đổi, null để bỏ đối chiếu bản gốc.</param>
         /// <returns>true khi DELETE chạy thành công; không tồn tại, xung đột hoặc vi phạm SQL gây ngoại lệ.</returns>
-        public bool xoaLichLamViec(string ma, ET_LICHLAMVIEC? banGoc = null) => ThucHien((connection, transaction) =>
+        public bool xoaLichLamViec(string ma, ET_LICHLAMVIEC? banGoc = null)
         {
-            var hienTai = connection.QuerySingleOrDefault<ET_LICHLAMVIEC>("SELECT * FROM dbo.[LICH_LAM_VIEC] WITH(UPDLOCK,HOLDLOCK) WHERE [MaLLV]=@Ma", new { Ma = ma }, transaction)
-                ?? throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
+            return ThucHien((connection, transaction) =>
+            {
+                var hienTai = connection.QuerySingleOrDefault<ET_LICHLAMVIEC>("SELECT * FROM dbo.[LICH_LAM_VIEC] WITH(UPDLOCK,HOLDLOCK) WHERE [MaLLV]=@Ma", new { Ma = ma }, transaction);
+                if (hienTai is null)
+                {
+                    throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
+                }
 
-            KiemTra(connection, transaction, "LICH_LAM_VIEC", hienTai, hienTai, banGoc);
-            connection.Execute("DELETE FROM dbo.[LICH_LAM_VIEC] WHERE [MaLLV]=@Ma", new { Ma = ma }, transaction);
-            return true;
-        });
-
-
+                KiemTra(connection, transaction, "LICH_LAM_VIEC", hienTai, hienTai, banGoc);
+                connection.Execute("DELETE FROM dbo.[LICH_LAM_VIEC] WHERE [MaLLV]=@Ma", new { Ma = ma }, transaction);
+                return true;
+            });
+        }
     }
 }

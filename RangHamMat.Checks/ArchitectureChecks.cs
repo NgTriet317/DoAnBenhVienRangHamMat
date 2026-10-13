@@ -15,6 +15,7 @@ internal static class ArchitectureChecks
     {
         KiemTraBoCucXaml(root, errors);
         KiemTraQuyTacNhapLieu(root,errors);
+        KiemTraLienKetBangSql(root, errors);
         var entities = Directory.GetFiles(Path.Combine(root, "ET"), "ET_*.cs");
         foreach (var entity in entities)
         {
@@ -42,6 +43,43 @@ internal static class ArchitectureChecks
             .Where(path => !path.Split(Path.DirectorySeparatorChar).Any(part => part is "bin" or "obj")))
             if (Regex.IsMatch(Path.GetFileName(path), "Clinical|LamSang")) errors.Add("Nonfunctional UI filename: " + Path.GetFileName(path));
         Console.WriteLine($"Architecture: checked {entities.Length} ET/DAL/BUS triplets.");
+    }
+
+    /// <summary>
+    /// Đối chiếu tên bảng trong SQL với [Table] của ET và tên bộ ET–DAL–BUS.
+    /// Bảng chưa có ET được liệt kê để biết phần chưa triển khai; DAL/BUS không có ET vẫn là lỗi.
+    /// </summary>
+    private static void KiemTraLienKetBangSql(string root, List<string> errors)
+    {
+        var sql = File.ReadAllText(Path.Combine(root, "Database", "QLBenhVienRangHamMat.sql"));
+        // Chấp nhận cả CREATE TABLE [dbo].[TEN_BANG] và CREATE TABLE TEN_BANG.
+        var tables = Regex.Matches(sql, @"\bCREATE\s+TABLE\s+(?:\[?dbo\]?\s*\.\s*)?\[?(\w+)\]?", RegexOptions.IgnoreCase)
+            .Select(match => match.Groups[1].Value).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var mapped = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var path in Directory.GetFiles(Path.Combine(root, "ET"), "ET_*.cs"))
+        {
+            var source = File.ReadAllText(path);
+            var table = Regex.Match(source, "\\[Table\\(\"([^\"]+)\"\\)\\]").Groups[1].Value;
+            var suffix = Path.GetFileNameWithoutExtension(path)[3..];
+            if (!tables.Contains(table)) errors.Add("ET không ánh xạ bảng có trong SQL: " + Path.GetFileName(path));
+            if (!mapped.Add(table)) errors.Add("Nhiều ET cùng ánh xạ bảng SQL: " + table);
+            if (suffix != table.Replace("_", "")) errors.Add("Tên ET khác tên bảng SQL: ET_" + suffix + " → " + table);
+            foreach (var layer in new[] { "ET", "DAL", "BUS" })
+            {
+                var file = Path.Combine(root, layer, layer + "_" + suffix + ".cs");
+                if (!File.Exists(file)) continue; // Run báo lỗi thiếu file ở kiểm tra bộ ba.
+                var code = File.ReadAllText(file);
+                if (!Regex.IsMatch(code, @"\bclass\s+" + layer + "_" + suffix + @"\b"))
+                    errors.Add("Tên lớp khác tên file: " + Path.GetFileName(file));
+                if (layer == "BUS" && !code.Contains("DAL_" + suffix))
+                    errors.Add("BUS không gọi DAL tương ứng: BUS_" + suffix);
+            }
+        }
+        // Chặn truy vấn dbo tới bảng tự đặt tên không có trong file database của dự án.
+        foreach (var path in Directory.GetFiles(Path.Combine(root, "DAL"), "DAL_*.cs"))
+            foreach (Match table in Regex.Matches(File.ReadAllText(path), @"\bdbo\.\[?(\w+)\]?"))
+                if (!tables.Contains(table.Groups[1].Value)) errors.Add("DAL dùng bảng ngoài SQL: " + Path.GetFileName(path) + " / " + table.Groups[1].Value);
+        Console.WriteLine($"SQL mapping: {mapped.Count}/{tables.Count} tables have ET/DAL/BUS; no ET: {string.Join(", ", tables.Except(mapped).Order())}.");
     }
 
     /// <summary>AI tạo: đối chiếu metadata nhập liệu với SQL để thay đổi schema không làm giao diện dùng giới hạn cũ.</summary>

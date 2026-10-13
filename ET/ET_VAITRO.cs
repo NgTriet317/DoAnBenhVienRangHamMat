@@ -8,7 +8,7 @@ namespace ET
     /// Thực thể ánh xạ bảng VAI_TRO qua Dapper.Contrib; chứa các cột đúng kiểu SQL để truyền giữa DAL/BUS và giao diện, không tự mở kết nối hoặc xử lý nghiệp vụ.
     /// </summary>
     [Table("VAI_TRO")]
-    public class ET_MAVAITRO
+    public class ET_VAITRO
     {
         private string maVaiTro = string.Empty;
         private string tenVaiTro = string.Empty;
@@ -17,11 +17,11 @@ namespace ET
         /// <summary>
         /// Khởi tạo thực thể rỗng để Dapper hoặc cơ chế chuyển dictionary điền các cột; các giá trị mặc định chưa phải một bản ghi đã lưu.
         /// </summary>
-        public ET_MAVAITRO() { }
+        public ET_VAITRO() { }
         /// <summary>
         /// Nhận các giá trị cột qua tham số và gán cho thực thể; việc gọi constructor không ghi dữ liệu xuống SQL.
         /// </summary>
-        public ET_MAVAITRO(string maVaiTro, string tenVaiTro, string moTa)
+        public ET_VAITRO(string maVaiTro, string tenVaiTro, string moTa)
         {
             this.maVaiTro = maVaiTro;
             this.tenVaiTro = tenVaiTro;

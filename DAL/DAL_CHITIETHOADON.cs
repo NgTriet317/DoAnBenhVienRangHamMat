@@ -4,7 +4,6 @@ using Dapper;
 using ET;
 
 namespace DAL;
-
 /// <summary>
 /// Tầng truy cập SQL cho chi tiết hóa đơn trong bảng CHI_TIET_HOA_DON. Đọc các khoản thu dịch vụ và thuốc đã xuất; tìm nguồn chưa tính tiền và ghi chi tiết trong giao dịch lập hóa đơn. Dapper ánh xạ dòng SQL sang ET; ThucHien dùng giao dịch được truyền vào hoặc tự quản lý giao dịch cục bộ.
 /// </summary>
@@ -13,54 +12,70 @@ public sealed class DAL_CHITIETHOADON : dbconnect
     /// <summary>
     /// Tạo DAL quản lý chi tiết hóa đơn, chuyển giao dịch tùy chọn cho dbconnect để nhiều thao tác có thể dùng chung kết nối và phạm vi lưu.
     /// </summary>
-    /// <param name="transaction">Giao dịch của nơi gọi; null để hạ tầng tham gia giao dịch môi trường hoặc tự mở giao dịch cục bộ. Nếu truyền vào, nơi gọi quản lý commit/rollback.</param>
-    public DAL_CHITIETHOADON(IDbTransaction? transaction = null) : base(transaction) { }
+    /// <param name = "transaction">Giao dịch của nơi gọi; null để hạ tầng tham gia giao dịch môi trường hoặc tự mở giao dịch cục bộ. Nếu truyền vào, nơi gọi quản lý commit/rollback.</param>
+    public DAL_CHITIETHOADON(IDbTransaction? transaction = null) : base(transaction)
+    {
+    }
+
     /// <summary>
     /// Trả danh sách chi tiết hóa đơn dưới dạng mảng bằng luồng layToanBo, phù hợp nơi gọi cần truy cập và đếm kết quả ngay.
     /// </summary>
     /// <returns>Mảng ET; không có bản ghi thì mảng rỗng.</returns>
-    public ET_CHITIETHOADON[] LayDanhSach() => layToanBo().ToArray();
+    public ET_CHITIETHOADON[] LayDanhSach()
+    {
+        return layToanBo().ToArray();
+    }
+
     /// <summary>
     /// Đọc toàn bộ chi tiết hóa đơn từ dbo.CHI_TIET_HOA_DON, Dapper ánh xạ từng dòng sang ET; SQL không quy định thứ tự; ToArray nạp hết dữ liệu trước khi hạ tầng kết thúc phạm vi kết nối/giao dịch.
     /// </summary>
     /// <returns>Danh sách ET đã vật hóa; không có bản ghi thì trả danh sách rỗng.</returns>
-    public IEnumerable<ET_CHITIETHOADON> layToanBo() => Doc((db, tx) =>
-        db.Query<ET_CHITIETHOADON>("SELECT * FROM dbo.CHI_TIET_HOA_DON", transaction: tx).ToArray());
+    public IEnumerable<ET_CHITIETHOADON> layToanBo()
+    {
+        return ThucHien((db, tx) =>
+        {
+            return db.Query<ET_CHITIETHOADON>("SELECT * FROM dbo.CHI_TIET_HOA_DON", transaction: tx).ToArray();
+        });
+    }
+
     /// <summary>
     /// Tìm chi tiết hóa đơn theo khóa trong dbo.CHI_TIET_HOA_DON; mã được truyền bằng tham số SQL và QuerySingleOrDefault ánh xạ tối đa một bản ghi sang ET.
     /// </summary>
-    /// <param name="ma">Mã khóa chính của bản ghi cần đọc, sửa hoặc xóa; truyền bằng tham số SQL.</param>
+    /// <param name = "ma">Mã khóa chính của bản ghi cần đọc, sửa hoặc xóa; truyền bằng tham số SQL.</param>
     /// <returns>ET của bản ghi tìm thấy, hoặc null nếu mã không tồn tại.</returns>
-    public ET_CHITIETHOADON? layTheoMa(string ma) => Doc((db, tx) =>
-        db.QuerySingleOrDefault<ET_CHITIETHOADON>("SELECT * FROM dbo.CHI_TIET_HOA_DON WHERE MaCTHD=@ma", new { ma }, tx));
-
-    /// <summary>
-    /// Chuyển hàm đọc cho ThucHien để dùng kết nối và giao dịch chung; khi không có giao dịch ngoài, hạ tầng tự mở giao dịch Serializable.
-    /// </summary>
-    /// <param name="operation">Hàm nhận kết nối và giao dịch đang dùng, chạy truy vấn/thao tác và trả kết quả cho hạ tầng.</param>
-    /// <returns>Kết quả do hàm operation tạo ra; ngoại lệ được chuyển về nơi gọi.</returns>
-    private T Doc<T>(Func<IDbConnection, IDbTransaction?, T> operation) => ThucHien(operation);
+    public ET_CHITIETHOADON? layTheoMa(string ma)
+    {
+        return ThucHien((db, tx) =>
+        {
+            return db.QuerySingleOrDefault<ET_CHITIETHOADON>("SELECT * FROM dbo.CHI_TIET_HOA_DON WHERE MaCTHD=@ma", new { ma }, tx);
+        });
+    }
 
     /// <summary>
     /// Chạy SQL có tham số bằng Dapper, nạp toàn bộ IDataReader vào DataTable rồi giải phóng reader; bảng trả về dùng cho hiển thị hoặc truy vấn tổng hợp.
     /// </summary>
-    /// <param name="sql">Câu lệnh SQL cần thực thi bằng reader.</param>
-    /// <param name="parameters">Đối tượng ánh xạ tên tham số SQL sang giá trị; null nếu câu lệnh không có tham số.</param>
+    /// <param name = "sql">Câu lệnh SQL cần thực thi bằng reader.</param>
+    /// <param name = "parameters">Đối tượng ánh xạ tên tham số SQL sang giá trị; null nếu câu lệnh không có tham số.</param>
     /// <returns>DataTable đã nạp đủ các dòng kết quả; có thể rỗng nếu chưa có dữ liệu phù hợp.</returns>
-    private DataTable Query(string sql, object? parameters = null) => Doc((connection, tx) =>
+    private DataTable Query(string sql, object? parameters = null)
     {
-        using var reader = connection.ExecuteReader(sql, parameters, tx);
-        var table = new DataTable();
-        table.Load(reader);
-        return table;
-    });
+        return ThucHien((connection, tx) =>
+        {
+            using var reader = connection.ExecuteReader(sql, parameters, tx);
+            var table = new DataTable();
+            table.Load(reader);
+            return table;
+        });
+    }
 
     /// <summary>
     /// Đọc chi tiết của một hóa đơn, ghép dịch vụ hoặc dòng xuất thuốc để lấy lượng, giá chốt, loại khoản thu, đơn thuốc, số lô và đơn vị tính; sắp theo mã chi tiết.
     /// </summary>
-    /// <param name="invoiceId">Mã hóa đơn cần đọc, khóa, xác nhận, hủy hoặc ghi nhận thanh toán.</param>
+    /// <param name = "invoiceId">Mã hóa đơn cần đọc, khóa, xác nhận, hủy hoặc ghi nhận thanh toán.</param>
     /// <returns>DataTable đã nạp đủ các dòng kết quả; có thể rỗng nếu chưa có dữ liệu phù hợp.</returns>
-    public DataTable GetInvoiceDetails(string invoiceId) => Query("""
+    public DataTable GetInvoiceDetails(string invoiceId)
+    {
+        return Query("""
         SELECT c.*,COALESCE(s.SoLuong,x.SoLuong) SoLuong,
             COALESCE(s.DonGia,c.DonGia) DonGiaChot,
             CASE WHEN c.MaDVThucHien IS NOT NULL THEN N'Dịch vụ' ELSE N'Thuốc đã cấp' END Loai,
@@ -73,6 +88,7 @@ public sealed class DAL_CHITIETHOADON : dbconnect
         LEFT JOIN dbo.LO_HANG_HOA l ON l.MaLo=x.MaLo
         WHERE c.MaHD=@invoiceId ORDER BY c.MaCTHD
         """, new { invoiceId });
+    }
 
     /// <summary>
     /// SQL hợp nhất dịch vụ đã xác nhận và thuốc đã xuất của cùng lần khám; NOT EXISTS loại nguồn đã có chi tiết hóa đơn. HOLDLOCK giữ ổn định giá thuốc khi đọc; dòng thuốc tính thành tiền bằng lượng xuất nhân giá bán và làm tròn hai chữ số.
@@ -96,28 +112,34 @@ public sealed class DAL_CHITIETHOADON : dbconnect
     /// <summary>
     /// Trả bảng khoản thu chưa nằm trên hóa đơn nào của lần khám: dịch vụ Đã xác nhận và thuốc từ phiếu xuất Đã ghi sổ; giá thuốc lấy từ danh mục hiện hành.
     /// </summary>
-    /// <param name="visitId">Mã lần khám liên kết; dùng để xác định bệnh nhân hoặc nguồn thu hợp lệ.</param>
+    /// <param name = "visitId">Mã lần khám liên kết; dùng để xác định bệnh nhân hoặc nguồn thu hợp lệ.</param>
     /// <returns>DataTable đã nạp đủ các dòng kết quả; có thể rỗng nếu chưa có dữ liệu phù hợp.</returns>
-    public DataTable GetEligibleCharges(string visitId) => Query(EligibleChargesSql, new { visitId });
+    public DataTable GetEligibleCharges(string visitId)
+    {
+        return Query(EligibleChargesSql, new { visitId });
+    }
 
     /// <summary>
     /// Cấp mã chi tiết trong giao dịch lập hóa đơn, chèn liên kết dịch vụ hoặc dòng xuất cùng nội dung và giá thuốc đã chọn; số lượng/thành tiền không được INSERT trực tiếp ở hàm này.
     /// </summary>
-    /// <param name="db">Kết nối SQL đang mở của giao dịch do nơi gọi quản lý.</param>
-    /// <param name="tx">Giao dịch đang dùng để đọc/ghi và giữ khóa đồng bộ; được truyền tiếp cho các DAL liên quan nếu có.</param>
-    /// <param name="invoiceId">Mã hóa đơn cần đọc, khóa, xác nhận, hủy hoặc ghi nhận thanh toán.</param>
-    /// <param name="charge">Khoản thu đã chọn gồm nguồn dịch vụ/dòng xuất, nội dung và đơn giá; điều kiện đủ để tính tiền do truy vấn nguồn và nơi gọi kiểm tra.</param>
+    /// <param name = "db">Kết nối SQL đang mở của giao dịch do nơi gọi quản lý.</param>
+    /// <param name = "tx">Giao dịch đang dùng để đọc/ghi và giữ khóa đồng bộ; được truyền tiếp cho các DAL liên quan nếu có.</param>
+    /// <param name = "invoiceId">Mã hóa đơn cần đọc, khóa, xác nhận, hủy hoặc ghi nhận thanh toán.</param>
+    /// <param name = "charge">Khoản thu đã chọn gồm nguồn dịch vụ/dòng xuất, nội dung và đơn giá; điều kiện đủ để tính tiền do truy vấn nguồn và nơi gọi kiểm tra.</param>
     internal static void ThemChiTiet(IDbConnection db, IDbTransaction? tx, string invoiceId, ET_CHITIETHOADON charge)
     {
         var detailId = TaoMa(db, tx, "CHI_TIET_HOA_DON", "MaCTHD");
         db.Execute("INSERT dbo.CHI_TIET_HOA_DON(MaCTHD,MaHD,MaDVThucHien,MaCTPX,NoiDung,DonGia) VALUES(@detailId,@invoiceId,@MaDVThucHien,@MaCTPX,@NoiDung,@DonGia)", new { detailId, invoiceId, charge.MaDVThucHien, charge.MaCTPX, charge.NoiDung, charge.DonGia }, tx);
     }
+
     /// <summary>
     /// Xóa mọi dòng chi tiết của hóa đơn trong giao dịch được truyền vào để giải phóng các nguồn thu khi hủy; kiểm tra hóa đơn còn Nháp do nơi gọi thực hiện.
     /// </summary>
-    /// <param name="db">Kết nối SQL đang mở của giao dịch do nơi gọi quản lý.</param>
-    /// <param name="tx">Giao dịch đang dùng để đọc/ghi và giữ khóa đồng bộ; được truyền tiếp cho các DAL liên quan nếu có.</param>
-    /// <param name="invoiceId">Mã hóa đơn cần đọc, khóa, xác nhận, hủy hoặc ghi nhận thanh toán.</param>
-    internal static void GoChiTietNhap(IDbConnection db, IDbTransaction? tx, string invoiceId) =>
+    /// <param name = "db">Kết nối SQL đang mở của giao dịch do nơi gọi quản lý.</param>
+    /// <param name = "tx">Giao dịch đang dùng để đọc/ghi và giữ khóa đồng bộ; được truyền tiếp cho các DAL liên quan nếu có.</param>
+    /// <param name = "invoiceId">Mã hóa đơn cần đọc, khóa, xác nhận, hủy hoặc ghi nhận thanh toán.</param>
+    internal static void GoChiTietNhap(IDbConnection db, IDbTransaction? tx, string invoiceId)
+    {
         db.Execute("DELETE dbo.CHI_TIET_HOA_DON WHERE MaHD=@invoiceId", new { invoiceId }, tx);
+    }
 }
