@@ -1,0 +1,54 @@
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã tạo bố cục XAML hiện hữu cho lịch: tiêu đề ngày, mốc giờ, khối ca/lịch hẹn và vùng cuộn; binding dữ liệu đã tính từ ScheduleView.xaml.cs. -->
+<!-- AI hỗ trợ chuyển lịch tuần sang XAML: toolbar, tiêu đề, ô giờ và thẻ lịch được khai báo sẵn; C# chỉ tính dữ liệu và làn trùng giờ. -->
+<UserControl x:Class="RangHamMat.Controls.ScheduleView"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:ui="clr-namespace:RangHamMat.Controls">
+ <Grid DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type ui:ScheduleView}}}">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="54"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+  <!-- Sự kiện chỉ đổi ngày đang xem; việc lấy nguồn/lưu lịch vẫn thuộc màn hình cha. -->
+  <WrapPanel>
+   <Button Content="Tuần trước" Click="Previous_Click"/><Button Content="Hôm nay" Click="Today_Click"/><Button Content="Tuần sau" Click="Next_Click"/>
+   <DatePicker x:Name="WeekDate" Width="150" Margin="8,0,16,0" SelectedDateChanged="Date_Changed" AutomationProperties.Name="Chọn ngày trong tuần cần xem"/>
+   <TextBlock Text="Lịch theo tuần · khung giờ 00:00–24:00" VerticalAlignment="Center"/>
+  </WrapPanel>
+  <TextBlock Grid.Row="1" Text="{Binding StatusText}" Foreground="{DynamicResource Muted}" Margin="0,12,0,14" TextWrapping="Wrap"/>
+  <!-- Tiêu đề cuộn ngang đồng bộ với bảng bên dưới, giữ cố định khi cuộn dọc. -->
+  <ScrollViewer x:Name="HeaderScroll" Grid.Row="2" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Margin="0,0,17,0" Focusable="False">
+   <Grid Width="{Binding BoardWidth}"><Grid.ColumnDefinitions><ColumnDefinition Width="68"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+    <ItemsControl Grid.Column="1" ItemsSource="{Binding Days}">
+     <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="7"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+     <ItemsControl.ItemTemplate><DataTemplate>
+      <Border Height="54" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,1"><Border.Style><Style TargetType="Border"><Setter Property="Background" Value="{DynamicResource Canvas}"/><Style.Triggers><DataTrigger Binding="{Binding IsToday}" Value="True"><Setter Property="Background" Value="{DynamicResource AccentSoft}"/></DataTrigger></Style.Triggers></Style></Border.Style>
+       <TextBlock Text="{Binding Heading}" TextAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"/>
+      </Border>
+     </DataTemplate></ItemsControl.ItemTemplate>
+    </ItemsControl>
+   </Grid>
+  </ScrollViewer>
+  <ScrollViewer x:Name="CalendarScroll" Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" ScrollChanged="CalendarScroll_Changed">
+   <Grid Width="{Binding BoardWidth}" Height="1152"><Grid.ColumnDefinitions><ColumnDefinition Width="68"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+    <ItemsControl ItemsSource="{Binding HourLabels}"><ItemsControl.ItemTemplate><DataTemplate><TextBlock Height="48" Text="{Binding}" Foreground="{DynamicResource Muted}" Padding="8,4,8,0"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+    <ItemsControl Grid.Column="1" ItemsSource="{Binding Days}">
+     <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="7"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+     <ItemsControl.ItemTemplate><DataTemplate>
+      <Grid Height="1152">
+       <!-- Hai mươi bốn ô nền theo giờ; nền và viền ở XAML, không thêm Border từ C#. -->
+       <ItemsControl ItemsSource="{Binding HourLabels, RelativeSource={RelativeSource AncestorType={x:Type ui:ScheduleView}}}"><ItemsControl.ItemTemplate><DataTemplate><Border Height="48" Background="White" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,1"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+       <!-- Collection Blocks chứa dữ liệu Top/Left/Width/Height của các đoạn lịch sau khi tách qua đêm. -->
+       <ItemsControl ItemsSource="{Binding Blocks}">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Top" Value="{Binding Top}"/><Setter Property="Canvas.Left" Value="{Binding Left}"/></Style></ItemsControl.ItemContainerStyle>
+        <ItemsControl.ItemTemplate><DataTemplate>
+         <Border Width="{Binding Width}" Height="{Binding Height}" Background="{DynamicResource AccentSoft}" CornerRadius="6" Padding="6,3" ClipToBounds="True" ToolTip="{Binding Description}" AutomationProperties.Name="{Binding Description}">
+          <TextBlock Text="{Binding Description}" Foreground="{DynamicResource AccentDark}" FontSize="12" TextWrapping="Wrap"/>
+         </Border>
+        </DataTemplate></ItemsControl.ItemTemplate>
+       </ItemsControl>
+      </Grid>
+     </DataTemplate></ItemsControl.ItemTemplate>
+    </ItemsControl>
+   </Grid>
+  </ScrollViewer>
+ </Grid>
+</UserControl>

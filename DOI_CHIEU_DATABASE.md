@@ -1,3 +1,5 @@
+> Tài liệu từ phiên bản trước. Với bốn giao diện cập nhật 08/10/2026, đọc README.md, HUONG_DAN_GIAO_DIEN_BENH_VIEN.md và DOI_CHIEU_GIAO_DIEN_DBV7.md. Nội dung dưới đây chỉ còn làm tài liệu lịch sử cho bản gốc/các phần ngoài phạm vi.
+
 # Đối chiếu giao diện với database
 
 Nguồn: `Database/QLBenhVienRangHamMat.sql`, giữ nguyên nội dung SQL đã gửi. Không chạy hay chỉnh schema.

@@ -1,191 +1,21 @@
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.CuaSoHoaDon">
-  <Grid>
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="*" />
-      <RowDefinition Height="Auto" />
-    </Grid.RowDefinitions>
-    <StackPanel>
-      <TextBlock Text="Hóa đơn và thanh toán · Thêm mới" Style="{StaticResource Title}" />
-      <TextBlock Text="Điền lần lượt từng nhóm thông tin. Dấu * là trường bắt buộc." Style="{StaticResource Subtitle}" />
-    </StackPanel>
-    <TabControl x:Name="EditorTabs" Grid.Row="1">
-      <TabItem Header="Hóa đơn" Tag="Table:HOA_DON" Visibility="Collapsed">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
-            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-              <StackPanel>
-                <TextBlock Text="Thông tin hóa đơn" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                <WrapPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn bệnh nhân">
-                    <TextBlock Text="Bệnh nhân *" Margin="0,0,0,6" />
-                    <ComboBox Tag="DB:HOA_DON.MaBN" AutomationProperties.Name="Bệnh nhân" />
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn lần khám">
-                    <TextBlock Text="Lần khám" Margin="0,0,0,6" />
-                    <ComboBox Tag="DB:HOA_DON.MaLS" AutomationProperties.Name="Lần khám" />
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Thời điểm mặc định khi tạo mới.">
-                    <TextBlock Text="Ngày lập" Margin="0,0,0,6" />
-                    <Grid>
-                      <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="90" />
-                      </Grid.ColumnDefinitions>
-                      <DatePicker Tag="DB:HOA_DON.NgayLap" AutomationProperties.Name="Ngày lập" />
-                      <TextBox Grid.Column="1" Margin="8,0,0,0" Tag="Time:HOA_DON.NgayLap" AutomationProperties.Name="Giờ - Ngày lập" ToolTip="HH:mm:ss" MaxLength="8" />
-                    </Grid>
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Số thập phân; tối đa 2 chữ số sau dấu thập phân.">
-                    <TextBlock Text="Tổng tiền *" Margin="0,0,0,6" />
-                    <TextBox Tag="DB:HOA_DON.TongTien" AutomationProperties.Name="Tổng tiền" />
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Giá trị mặc định: 0.">
-                    <TextBlock Text="Giảm giá (số tiền)" Margin="0,0,0,6" />
-                    <TextBox Tag="DB:HOA_DON.GiamGia" AutomationProperties.Name="Giảm giá (số tiền)" />
-                  </StackPanel>
-                </WrapPanel>
-              </StackPanel>
-            </Border>
-            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-              <StackPanel>
-                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                <WrapPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
-                    <TextBlock Text="Mã hóa đơn" Margin="0,0,0,6" />
-                    <TextBox Tag="DB:HOA_DON.MaHD" AutomationProperties.Name="Mã hóa đơn" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tổng tiền trừ giảm giá; chưa có xử lý tính toán.">
-                    <TextBlock Text="Thành tiền *" Margin="0,0,0,6" />
-                    <TextBox Tag="DB:HOA_DON.ThanhTien" AutomationProperties.Name="Thành tiền" IsReadOnly="True" Background="{StaticResource Canvas}" />
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                    <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
-                    <TextBox Tag="DB:HOA_DON.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
-                  </StackPanel>
-                </WrapPanel>
-              </StackPanel>
-            </Border>
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
-      <TabItem Header="Chi tiết hóa đơn" Tag="Table:CHI_TIET_HOA_DON" Visibility="Collapsed">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
-            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-              <StackPanel>
-                <TextBlock Text="Thông tin chi tiết hóa đơn" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                <WrapPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn hóa đơn">
-                    <TextBlock Text="Hóa đơn *" Margin="0,0,0,6" />
-                    <ComboBox Tag="DB:CHI_TIET_HOA_DON.MaHD" AutomationProperties.Name="Hóa đơn" />
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn kế hoạch điều trị">
-                    <TextBlock Text="Kế hoạch điều trị" Margin="0,0,0,6" />
-                    <ComboBox Tag="DB:CHI_TIET_HOA_DON.MaKHDT" AutomationProperties.Name="Kế hoạch điều trị" />
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Số thập phân; tối đa 2 chữ số sau dấu thập phân.">
-                    <TextBlock Text="Thành tiền *" Margin="0,0,0,6" />
-                    <TextBox Tag="DB:CHI_TIET_HOA_DON.ThanhTien" AutomationProperties.Name="Thành tiền" />
-                  </StackPanel>
-                </WrapPanel>
-              </StackPanel>
-            </Border>
-            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-              <StackPanel>
-                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                <WrapPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                    <TextBlock Text="Nội dung *" Margin="0,0,0,6" />
-                    <TextBox Tag="DB:CHI_TIET_HOA_DON.NoiDung" AutomationProperties.Name="Nội dung" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
-                  </StackPanel>
-                </WrapPanel>
-              </StackPanel>
-            </Border>
-            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-              <StackPanel>
-                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                <WrapPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
-                    <TextBlock Text="Mã chi tiết hóa đơn" Margin="0,0,0,6" />
-                    <TextBox Tag="DB:CHI_TIET_HOA_DON.MaCTHD" AutomationProperties.Name="Mã chi tiết hóa đơn" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
-                  </StackPanel>
-                </WrapPanel>
-              </StackPanel>
-            </Border>
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
-      <TabItem Header="Thanh toán" Tag="Table:THANH_TOAN" Visibility="Collapsed">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
-            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-              <StackPanel>
-                <TextBlock Text="Thông tin thanh toán" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                <WrapPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn hóa đơn">
-                    <TextBlock Text="Hóa đơn *" Margin="0,0,0,6" />
-                    <ComboBox Tag="DB:THANH_TOAN.MaHD" AutomationProperties.Name="Hóa đơn" />
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Thời điểm mặc định khi tạo mới.">
-                    <TextBlock Text="Ngày thanh toán" Margin="0,0,0,6" />
-                    <Grid>
-                      <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="90" />
-                      </Grid.ColumnDefinitions>
-                      <DatePicker Tag="DB:THANH_TOAN.NgayThanhToan" AutomationProperties.Name="Ngày thanh toán" />
-                      <TextBox Grid.Column="1" Margin="8,0,0,0" Tag="Time:THANH_TOAN.NgayThanhToan" AutomationProperties.Name="Giờ - Ngày thanh toán" ToolTip="HH:mm:ss" MaxLength="8" />
-                    </Grid>
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Số thập phân; tối đa 2 chữ số sau dấu thập phân.">
-                    <TextBlock Text="Số tiền *" Margin="0,0,0,6" />
-                    <TextBox Tag="DB:THANH_TOAN.SoTien" AutomationProperties.Name="Số tiền" />
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                    <TextBlock Text="Phương thức *" Margin="0,0,0,6" />
-                    <TextBox Tag="DB:THANH_TOAN.PhuongThuc" AutomationProperties.Name="Phương thức" MaxLength="255" />
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                    <TextBlock Text="Người thu" Margin="0,0,0,6" />
-                    <TextBox Tag="DB:THANH_TOAN.NguoiThu" AutomationProperties.Name="Người thu" MaxLength="255" />
-                  </StackPanel>
-                </WrapPanel>
-              </StackPanel>
-            </Border>
-            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-              <StackPanel>
-                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                <WrapPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                    <TextBlock Text="Ghi chú" Margin="0,0,0,6" />
-                    <TextBox Tag="DB:THANH_TOAN.GhiChu" AutomationProperties.Name="Ghi chú" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
-                  </StackPanel>
-                </WrapPanel>
-              </StackPanel>
-            </Border>
-            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-              <StackPanel>
-                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                <WrapPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
-                    <TextBlock Text="Mã thanh toán" Margin="0,0,0,6" />
-                    <TextBox Tag="DB:THANH_TOAN.MaTT" AutomationProperties.Name="Mã thanh toán" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
-                  </StackPanel>
-                </WrapPanel>
-              </StackPanel>
-            </Border>
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
-    </TabControl>
-    <Border Grid.Row="2" Padding="0,18,0,0">
-      <WrapPanel>
-        <Button Content="Quay lại danh sách" Tag="DongCuaSo" />
-        <Button Content="Lưu thông tin" IsEnabled="False" Style="{StaticResource Primary}" ToolTip="Bản giao diện chưa kết nối lưu dữ liệu" />
-        <Button Content="Về màn hình chính" Tag="VeTrangChu" />
-        <TextBlock Text="Bản giao diện • Chưa lưu dữ liệu" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="12,0,0,0" />
-      </WrapPanel>
-    </Border>
-  </Grid>
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của CuaSoHoaDon.xaml; các vùng liên quan: ChargeGrid. -->
+<!-- AI hỗ trợ: bổ sung chú thích cho biểu mẫu lập hóa đơn nháp theo lần khám. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
+<UserControl x:Class="RangHamMat.Views.CuaSoHoaDon" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:views="clr-namespace:RangHamMat.Views">
+ <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><!-- Nạp tài nguyên /RangHamMat.Wpf;component/Themes/HospitalStyles.xaml để các control dùng cùng màu, font, template và trạng thái của ứng dụng. -->
+ <ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/HospitalStyles.xaml"/></ResourceDictionary.MergedDictionaries><views:InvoiceMoneyConverter x:Key="InvoiceMoney"/></ResourceDictionary></UserControl.Resources>
+ <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <StackPanel Margin="0,0,0,18"><TextBlock Text="Lập hóa đơn theo lần khám" Style="{StaticResource HospitalHeading}"/><TextBlock Text="Chỉ lấy dịch vụ xác nhận và thuốc đã cấp đủ chưa nằm trên hóa đơn khác. Kiểm tra các khoản rồi lưu nháp." Style="{StaticResource HospitalMuted}"/></StackPanel>
+  <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
+   <WrapPanel><StackPanel Width="250" Margin="0,0,14,16"><TextBlock Text="Bệnh nhân *" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="PatientBox" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Patient_Changed" AutomationProperties.Name="Bệnh nhân lập hóa đơn"/></StackPanel><StackPanel Width="260" Margin="0,0,14,16"><TextBlock Text="Lần khám đã xác nhận *" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="VisitBox" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Visit_Changed" AutomationProperties.Name="Lần khám lập hóa đơn"/></StackPanel><StackPanel Width="250" Margin="0,0,14,16"><TextBlock Text="Nhân viên lập *" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="EmployeeBox" DisplayMemberPath="Label" SelectedValuePath="Value" AutomationProperties.Name="Nhân viên lập hóa đơn"/></StackPanel></WrapPanel>
+   <TextBlock Text="Các khoản thu thực tế" Style="{StaticResource HospitalSection}" Margin="0,4,0,12"/>
+   <!-- Bảng ChargeGrid: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. -->
+   <DataGrid x:Name="ChargeGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" MaxHeight="340" MinHeight="120"><DataGrid.Columns><DataGridTextColumn Header="Loại" Binding="{Binding Loai}" Width="120"/><DataGridTextColumn Header="Nội dung" Binding="{Binding NoiDung}" Width="2*"/><DataGridTextColumn Header="Số lượng" Binding="{Binding SoLuong, StringFormat=N3}" Width="90"/><DataGridTextColumn Header="Đơn giá" Binding="{Binding DonGiaChot, Converter={StaticResource InvoiceMoney}}" Width="110"/><DataGridTextColumn Header="Thành tiền" Binding="{Binding ThanhTien, Converter={StaticResource InvoiceMoney}}" Width="120"/></DataGrid.Columns></DataGrid>
+   <TextBlock x:Name="ChargesInfo" Style="{StaticResource HospitalMuted}" Margin="0,12,0,16"/>
+   <WrapPanel><StackPanel Width="220" Margin="0,0,18,16"><TextBlock Text="Giảm giá (số tiền ₫)" Style="{StaticResource FieldLabel}"/><TextBox x:Name="DiscountBox" Tag="DB:HOA_DON.GiamGia" Text="0" TextChanged="Discount_Changed" AutomationProperties.Name="Giảm giá hóa đơn"/></StackPanel><StackPanel Width="280" Margin="0,0,18,16"><TextBlock Text="Tổng phải thu" Style="{StaticResource FieldLabel}"/><TextBlock x:Name="NetTotal" FontWeight="SemiBold" Foreground="{StaticResource AccentDark}" FontSize="20" Margin="0,6,0,0"/></StackPanel></WrapPanel>
+   <TextBlock x:Name="Feedback" TextWrapping="Wrap" Foreground="#8F3B32" Margin="0,0,0,12" AutomationProperties.LiveSetting="Polite"/>
+  </StackPanel></ScrollViewer>
+  <WrapPanel Grid.Row="2" Margin="0,18,0,0"><!-- Thao tác Quay lại: gọi Back_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
+  <Button Content="Quay lại" Click="Back_Click"/><!-- Thao tác Lưu hóa đơn nháp: gọi Save_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
+  <Button x:Name="SaveButton" Content="Lưu hóa đơn nháp" Click="Save_Click" Style="{StaticResource HospitalPrimary}"/></WrapPanel>
+ </Grid>
 </UserControl>

@@ -1,10 +1,14 @@
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của CuaSoBangLuong.xaml. -->
+<!-- AI hỗ trợ: bổ sung chú thích cho biểu mẫu bảng lương. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.CuaSoBangLuong">
   <Grid Margin="24">
     <StackPanel VerticalAlignment="Center" MaxWidth="720" HorizontalAlignment="Center">
       <TextBlock Text="Lương và hoa hồng" Style="{StaticResource Title}" />
       <TextBlock Text="Thông tin lương và hoa hồng sẽ được bổ sung ở bước tiếp theo." TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontSize="16" Margin="0,12,0,24" />
       <WrapPanel>
+        <!-- Nút điều hướng DongCuaSo: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
         <Button Content="Đóng" Tag="DongCuaSo" />
+        <!-- Nút điều hướng VeTrangChu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
         <Button Content="Về màn hình chính" Tag="VeTrangChu" />
       </WrapPanel>
     </StackPanel>

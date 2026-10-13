@@ -1,0 +1,441 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--AI tạo metadata kiểm tra nhập liệu từ schema v8; chỉ chứa tên/kiểu/giới hạn cột, không chứa dữ liệu bệnh nhân. Cập nhật cùng schema SQL.-->
+<QuyTacNhapLieu>
+  <Bang Ten="BENH_NHAN">
+    <Cot Ten="MaBN" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="HoTenBN" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GioiTinh" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NgaySinh" Kieu="date" QuyCach="" ChoTrong="true" Khoa="false" />
+    <Cot Ten="SDT" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="DiaChi" Kieu="nvarchar" QuyCach="255" ChoTrong="true" Khoa="false" />
+    <Cot Ten="MaBHYT" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NhomMau" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TienSuBenh" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+    <Cot Ten="DiUng" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="HO_SO_BENH_AN">
+    <Cot Ten="MaHS" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaBN" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayLap" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LyDoKhamBanDau" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="PHIEU_KHAM_BENH">
+    <Cot Ten="MaPhieu" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaHS" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaLich" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="MaPhong" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaBS" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="MaNVTiepNhan" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaDV" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="SoThuTu" Kieu="int" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="ThoiGianTiepNhan" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LyDoKham" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="LICH_SU_KHAM_BENH">
+    <Cot Ten="MaLS" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaPhieu" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaBS" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaPhong" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="ThoiGianKham" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrieuChung" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="ChanDoan" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="KeHoachXuLy" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayXacNhan" Kieu="datetime2" QuyCach="0" ChoTrong="true" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="TINH_TRANG_BENH">
+    <Cot Ten="MaTTB" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaLS" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LoaiTinhTrang" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MoTaTinhTrang" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MucDo" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="DICH_VU">
+    <Cot Ten="MaDV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="TenDV" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NhomDV" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaCK" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="DonGia" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+    <Cot Ten="ThoiGianDuKien" Kieu="int" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MoTa" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NgayApDung" Kieu="date" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="KE_HOACH_DIEU_TRI">
+    <Cot Ten="MaKHDT" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaLS" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaBS" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayLap" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayBatDau" Kieu="date" QuyCach="" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NgayDuKienKetThuc" Kieu="date" QuyCach="" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TongTienDuKien" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="CHI_TIET_KE_HOACH">
+    <Cot Ten="MaCTKH" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaKHDT" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaDV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LanThu" Kieu="int" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="SoLuongDuKien" Kieu="decimal" QuyCach="18,3" ChoTrong="false" Khoa="false" />
+    <Cot Ten="DonGiaDuKien" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="DICH_VU_THUC_HIEN">
+    <Cot Ten="MaDVThucHien" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaLS" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaCTKH" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="MaDV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaNVThucHien" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="ThoiGianThucHien" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="SoLuong" Kieu="decimal" QuyCach="18,3" ChoTrong="false" Khoa="false" />
+    <Cot Ten="DonGia" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+    <Cot Ten="KetQua" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="DON_THUOC">
+    <Cot Ten="MaDT" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaLS" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaBS" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayKe" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LyDoThayThe" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="CHI_TIET_DON_THUOC">
+    <Cot Ten="MaCTDT" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaDT" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaThuoc" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LieuDung" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="SoLuong" Kieu="decimal" QuyCach="18,3" ChoTrong="false" Khoa="false" />
+    <Cot Ten="SoNgayDung" Kieu="int" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="HuongDan" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="VAI_TRO">
+    <Cot Ten="MaVaiTro" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="TenVaiTro" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MoTa" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="CHUC_VU">
+    <Cot Ten="MaChucVu" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="TenChucVu" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MoTa" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="TAI_KHOAN">
+    <Cot Ten="MaTK" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="TenDangNhap" Kieu="nvarchar" QuyCach="100" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MatKhauHash" Kieu="nvarchar" QuyCach="512" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaVaiTro" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaNV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaKhoa" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="MaPhong" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="NHAN_VIEN">
+    <Cot Ten="MaNV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="HoTen" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GioiTinh" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NgaySinh" Kieu="date" QuyCach="" ChoTrong="true" Khoa="false" />
+    <Cot Ten="SDT" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="DiaChi" Kieu="nvarchar" QuyCach="255" ChoTrong="true" Khoa="false" />
+    <Cot Ten="MaChucVu" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaCK" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="BangCap" Kieu="nvarchar" QuyCach="255" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NgayVaoLam" Kieu="date" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="CHUNG_CHI_NHAN_VIEN">
+    <Cot Ten="MaCC" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaNV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="SoChungChi" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TenChungChi" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayCap" Kieu="date" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NoiCap" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="HanChungChi" Kieu="date" QuyCach="" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="KHOA">
+    <Cot Ten="MaKhoa" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="TenKhoa" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="DienThoai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MoTa" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="CHUYEN_KHOA">
+    <Cot Ten="MaCK" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaKhoa" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TenCK" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MoTa" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="PHONG">
+    <Cot Ten="MaPhong" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="TenPhong" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaKhoa" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LoaiPhong" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TinhTrang" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="THIET_BI">
+    <Cot Ten="MaTB" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaHH" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="SoSerial" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayMua" Kieu="date" QuyCach="" ChoTrong="true" Khoa="false" />
+    <Cot Ten="MaNCC" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="MaPhong" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TinhTrang" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="HanBaoHanh" Kieu="date" QuyCach="" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="BAO_TRI_THIET_BI">
+    <Cot Ten="MaBT" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaTB" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaNV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayBatDau" Kieu="date" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayKetThuc" Kieu="datetime2" QuyCach="0" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NoiDung" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="ChiPhi" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayBaoTriTiepTheo" Kieu="date" QuyCach="" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="NHA_CUNG_CAP">
+    <Cot Ten="MaNCC" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="TenNCC" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="SDT" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="Email" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="DiaChi" Kieu="nvarchar" QuyCach="255" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NguoiLienHe" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="KHO">
+    <Cot Ten="MaKho" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="TenKho" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaNV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LoaiKho" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="LOAI_HANG_HOA">
+    <Cot Ten="MaLoaiHH" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="TenLoaiHH" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MoTa" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="HANG_HOA">
+    <Cot Ten="MaHH" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="TenHH" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaLoaiHH" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="DonViTinh" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MoTa" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="VAT_TU">
+    <Cot Ten="MaVT" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaHH" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MucTonToiThieu" Kieu="decimal" QuyCach="18,3" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="THUOC">
+    <Cot Ten="MaThuoc" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaHH" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="HamLuong" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MucTonToiThieu" Kieu="decimal" QuyCach="18,3" ChoTrong="false" Khoa="false" />
+    <Cot Ten="DonGiaBan" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="LO_HANG_HOA">
+    <Cot Ten="MaLo" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaHH" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaNCC" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaKho" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="SoLo" Kieu="nvarchar" QuyCach="255" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NgayNhap" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="HanSuDung" Kieu="date" QuyCach="" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="HOA_DON_NHAP">
+    <Cot Ten="MaHDN" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="SoHoaDonNCC" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaNCC" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaNV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayHoaDon" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TongTien" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="PHIEU_NHAP">
+    <Cot Ten="MaPN" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaHDN" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaKho" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaNV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayNhap" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TongTien" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LyDo" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="CHI_TIET_PHIEU_NHAP">
+    <Cot Ten="MaCTPN" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaPN" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaHH" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaLo" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="SoLuong" Kieu="decimal" QuyCach="18,3" ChoTrong="false" Khoa="false" />
+    <Cot Ten="DonGia" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="PHIEU_XUAT">
+    <Cot Ten="MaPX" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaKho" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaNV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaKhoa" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="MaPhong" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="MaLS" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NgayXuat" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LyDo" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="CHI_TIET_PHIEU_XUAT">
+    <Cot Ten="MaCTPX" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaPX" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaHH" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaLo" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="MaCTDT" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="SoLuong" Kieu="decimal" QuyCach="18,3" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="CA_LAM">
+    <Cot Ten="MaCa" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="GioBatDau" Kieu="time" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GioKetThuc" Kieu="time" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="LICH_LAM_VIEC">
+    <Cot Ten="MaLLV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaNV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaCa" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayLam" Kieu="date" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaPhong" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThaiHienDien" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GioVao" Kieu="datetime2" QuyCach="0" ChoTrong="true" Khoa="false" />
+    <Cot Ten="GioRa" Kieu="datetime2" QuyCach="0" ChoTrong="true" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="DON_XIN_NGHI">
+    <Cot Ten="MaDonNghi" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaNV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TuNgay" Kieu="date" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="DenNgay" Kieu="date" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LyDo" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayGui" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThaiDuyet" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaNVDuyet" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NgayDuyet" Kieu="datetime2" QuyCach="0" ChoTrong="true" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="PHAN_CONG_THAY_THE">
+    <Cot Ten="MaPCTT" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaDonNghi" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaLLVThayThe" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayXuLy" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="LICH_KHAM">
+    <Cot Ten="MaLich" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaBN" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaBS" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaCa" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaPhong" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaDV" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NgayGioKham" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="ThoiLuongDuKien" Kieu="int" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="UuTien" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LyDoKham" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LyDoThayDoi" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NgayTao" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayCapNhat" Kieu="datetime2" QuyCach="0" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="HOA_DON">
+    <Cot Ten="MaHD" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaLS" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaNV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayLap" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayXacNhan" Kieu="datetime2" QuyCach="0" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TongTien" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GiamGia" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="CHI_TIET_HOA_DON">
+    <Cot Ten="MaCTHD" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaHD" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaDVThucHien" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="MaCTPX" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NoiDung" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="DonGia" Kieu="decimal" QuyCach="18,2" ChoTrong="true" Khoa="false" />
+    <Cot Ten="ThanhTien" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="THANH_TOAN">
+    <Cot Ten="MaTT" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaHD" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaNV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayThanhToan" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="SoTien" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LoaiGiaoDich" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="PhuongThuc" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LyDo" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="CHINH_SACH_LUONG">
+    <Cot Ten="MaCSL" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaChucVu" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TenChinhSach" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="PhienBan" Kieu="int" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayHieuLuc" Kieu="date" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayHetHieuLuc" Kieu="date" QuyCach="" ChoTrong="true" Khoa="false" />
+    <Cot Ten="LuongCoBan" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+    <Cot Ten="SoCaDinhMuc" Kieu="int" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="CoSoHoaHong" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TyLeHoaHong" Kieu="decimal" QuyCach="9,6" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaNVDuyet" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NgayDuyet" Kieu="datetime2" QuyCach="0" ChoTrong="true" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+  </Bang>
+  <Bang Ten="BANG_LUONG">
+    <Cot Ten="MaBL" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaNV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaCSL" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TuNgay" Kieu="date" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="DenNgay" Kieu="date" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="SoCaTinh" Kieu="int" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LuongCoBan" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+    <Cot Ten="SoCaDinhMuc" Kieu="int" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TienHoaHong" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TrangThai" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayChot" Kieu="datetime2" QuyCach="0" ChoTrong="true" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="NHAT_KY_THAO_TAC">
+    <Cot Ten="MaNK" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaTK" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="ThoiGian" Kieu="datetime2" QuyCach="0" ChoTrong="false" Khoa="false" />
+    <Cot Ten="HanhDong" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LoaiDoiTuong" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="MaDoiTuong" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="KetQua" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
+    <Cot Ten="DuLieuTruoc" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+    <Cot Ten="DuLieuSau" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+</QuyTacNhapLieu>

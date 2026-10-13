@@ -1,57 +1,101 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+// AI hỗ trợ: bổ sung chú thích tiếng Việt cho file này ngày 13/10/2026.
+// Nhãn này ghi nhận phần hỗ trợ/chú thích;
+using Dapper.Contrib.Extensions;
+using System;
 
 namespace ET
 {
+    /// <summary>
+    /// Thực thể ánh xạ bảng PHIEU_KHAM_BENH qua Dapper.Contrib; chứa các cột đúng kiểu SQL để truyền giữa DAL/BUS và giao diện, không tự mở kết nối hoặc xử lý nghiệp vụ.
+    /// </summary>
+    [Table("PHIEU_KHAM_BENH")]
     public class ET_PHIEUKHAMBENH
     {
-        private string maPhieu;
-        private string maBN;
-        private string maHS;
-        private string maLich;
-        private string maKhoa;
-        private string maPhong;
-        private string maBS;
-        private string maKhoNVTiepNhan;
-        private string maDV;
-        private int stt;
-        private string lyDoKham;
-        private string trangThai;
-        private string ghiChu;
+        private string maPhieu = string.Empty;
+        private string maHS = string.Empty;
+        private string? maLich;
+        private string maPhong = string.Empty;
+        private string? maBS;
+        private string maNVTiepNhan = string.Empty;
+        private string? maDV;
+        private int soThuTu;
+        private DateTime thoiGianTiepNhan;
+        private string lyDoKham = string.Empty;
+        private string trangThai = string.Empty;
+        private string? ghiChu;
 
+        /// <summary>
+        /// Khởi tạo thực thể rỗng để Dapper hoặc cơ chế chuyển dictionary điền các cột; các giá trị mặc định chưa phải một bản ghi đã lưu.
+        /// </summary>
         public ET_PHIEUKHAMBENH() { }
-        public ET_PHIEUKHAMBENH(string maPhieu, string maBN, string maHS, string maLich, string maKhoa, string maPhong, string maBS, string maKhoNVTiepNhan, string maDV, int stt, string lyDoKham, string trangThai, string ghiChu)
+
+        /// <summary>
+        /// Nhận các giá trị cột qua tham số và gán cho thực thể; việc gọi constructor không ghi dữ liệu xuống SQL.
+        /// </summary>
+        public ET_PHIEUKHAMBENH(string maPhieu, string maHS, string? maLich, string maPhong, string? maBS, string maNVTiepNhan, string? maDV, int soThuTu, DateTime thoiGianTiepNhan, string lyDoKham, string trangThai, string? ghiChu)
         {
             this.maPhieu = maPhieu;
-            this.maBN = maBN;
             this.maHS = maHS;
             this.maLich = maLich;
-            this.maKhoa = maKhoa;
             this.maPhong = maPhong;
             this.maBS = maBS;
-            this.maKhoNVTiepNhan = maKhoNVTiepNhan;
+            this.maNVTiepNhan = maNVTiepNhan;
             this.maDV = maDV;
-            this.stt = stt;
+            this.soThuTu = soThuTu;
+            this.thoiGianTiepNhan = thoiGianTiepNhan;
             this.lyDoKham = lyDoKham;
             this.trangThai = trangThai;
             this.ghiChu = ghiChu;
         }
 
+        /// <summary>
+        /// Mã phiếu tiếp nhận khám bệnh; ánh xạ cột MaPhieu của bảng trong TableAttribute. Khóa chính dạng mã chuỗi; thao tác tạo mới cấp mã trong tầng lưu.
+        /// </summary>
+        [ExplicitKey]
         public string MaPhieu { get => maPhieu; set => maPhieu = value; }
-        public string MaBN { get => maBN; set => maBN = value; }
+        /// <summary>
+        /// Mã hồ sơ bệnh án; ánh xạ cột MaHS của bảng trong TableAttribute.
+        /// </summary>
         public string MaHS { get => maHS; set => maHS = value; }
-        public string MaLich { get => maLich; set => maLich = value; }
-        public string MaKhoa { get => maKhoa; set => maKhoa = value; }
+        /// <summary>
+        /// Mã lịch hẹn khám; ánh xạ cột MaLich của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
+        /// </summary>
+        public string? MaLich { get => maLich; set => maLich = value; }
+        /// <summary>
+        /// Mã phòng; ánh xạ cột MaPhong của bảng trong TableAttribute.
+        /// </summary>
         public string MaPhong { get => maPhong; set => maPhong = value; }
-        public string MaBS { get => maBS; set => maBS = value; }
-        public string MaKhoNVTiepNhan { get => maKhoNVTiepNhan; set => maKhoNVTiepNhan = value; }
-        public string MaDV { get => maDV; set => maDV = value; }
-        public int Stt { get => stt; set => stt = value; }
+        /// <summary>
+        /// Mã bác sĩ, liên kết danh mục nhân viên; ánh xạ cột MaBS của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
+        /// </summary>
+        public string? MaBS { get => maBS; set => maBS = value; }
+        /// <summary>
+        /// Mã nhân viên tiếp nhận bệnh nhân; ánh xạ cột MaNVTiepNhan của bảng trong TableAttribute.
+        /// </summary>
+        public string MaNVTiepNhan { get => maNVTiepNhan; set => maNVTiepNhan = value; }
+        /// <summary>
+        /// Mã dịch vụ; ánh xạ cột MaDV của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
+        /// </summary>
+        public string? MaDV { get => maDV; set => maDV = value; }
+        /// <summary>
+        /// Số thứ tự tiếp nhận khám; ánh xạ cột SoThuTu của bảng trong TableAttribute.
+        /// </summary>
+        public int SoThuTu { get => soThuTu; set => soThuTu = value; }
+        /// <summary>
+        /// Thời điểm tiếp nhận tại bệnh viện; ánh xạ cột ThoiGianTiepNhan của bảng trong TableAttribute.
+        /// </summary>
+        public DateTime ThoiGianTiepNhan { get => thoiGianTiepNhan; set => thoiGianTiepNhan = value; }
+        /// <summary>
+        /// Lý do đến khám; ánh xạ cột LyDoKham của bảng trong TableAttribute.
+        /// </summary>
         public string LyDoKham { get => lyDoKham; set => lyDoKham = value; }
+        /// <summary>
+        /// Trạng thái nghiệp vụ của bản ghi; ánh xạ cột TrangThai của bảng trong TableAttribute.
+        /// </summary>
         public string TrangThai { get => trangThai; set => trangThai = value; }
-        public string GhiChu { get => ghiChu; set => ghiChu = value; }
+        /// <summary>
+        /// Ghi chú bổ sung; ánh xạ cột GhiChu của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
+        /// </summary>
+        public string? GhiChu { get => ghiChu; set => ghiChu = value; }
     }
 }

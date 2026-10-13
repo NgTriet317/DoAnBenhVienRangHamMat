@@ -6,6 +6,7 @@
     <RootNamespace>RangHamMat</RootNamespace><AssemblyName>RangHamMat.Wpf</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Controls\QuyTacNhapLieu.xml" />
     <ProjectReference Include="..\BUS\BUS.csproj" />
     <ProjectReference Include="..\ET\ET.csproj" />
   </ItemGroup>

@@ -1,3 +1,5 @@
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của CuaSoBaoTri.xaml; các vùng liên quan: Bảo trì. -->
+<!-- AI hỗ trợ: bổ sung chú thích cho biểu mẫu bảo trì thiết bị. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.CuaSoBaoTri">
   <Grid>
     <Grid.RowDefinitions>
@@ -10,6 +12,7 @@
       <TextBlock Text="Điền lần lượt từng nhóm thông tin. Dấu * là trường bắt buộc." Style="{StaticResource Subtitle}" />
     </StackPanel>
     <TabControl x:Name="EditorTabs" Grid.Row="1">
+      <!-- Nhóm Bảo trì: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
       <TabItem Header="Bảo trì" Tag="Table:BAO_TRI_THIET_BI" Visibility="Collapsed">
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
           <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
@@ -19,26 +22,32 @@
                 <WrapPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn thiết bị">
                     <TextBlock Text="Thiết bị *" Margin="0,0,0,6" />
+                    <!-- Trường Mã thiết bị (BAO_TRI_THIET_BI.MaTB): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <ComboBox Tag="DB:BAO_TRI_THIET_BI.MaTB" AutomationProperties.Name="Thiết bị" />
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Ngày bảo trì" Margin="0,0,0,6" />
+                    <!-- Trường NgayBaoTri (BAO_TRI_THIET_BI.NgayBaoTri): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <DatePicker Tag="DB:BAO_TRI_THIET_BI.NgayBaoTri" AutomationProperties.Name="Ngày bảo trì" />
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Loại bảo trì" Margin="0,0,0,6" />
+                    <!-- Trường LoaiBaoTri (BAO_TRI_THIET_BI.LoaiBaoTri): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <TextBox Tag="DB:BAO_TRI_THIET_BI.LoaiBaoTri" AutomationProperties.Name="Loại bảo trì" MaxLength="255" />
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Số thập phân; tối đa 2 chữ số sau dấu thập phân.">
                     <TextBlock Text="Chi phí *" Margin="0,0,0,6" />
+                    <!-- Trường Chi phí bảo trì (BAO_TRI_THIET_BI.ChiPhi): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <TextBox Tag="DB:BAO_TRI_THIET_BI.ChiPhi" AutomationProperties.Name="Chi phí" />
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Người thực hiện" Margin="0,0,0,6" />
+                    <!-- Trường NguoiThucHien (BAO_TRI_THIET_BI.NguoiThucHien): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <TextBox Tag="DB:BAO_TRI_THIET_BI.NguoiThucHien" AutomationProperties.Name="Người thực hiện" MaxLength="255" />
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Ngày bảo trì tiếp theo" Margin="0,0,0,6" />
+                    <!-- Trường Ngày dự kiến bảo trì thiết bị lần sau (BAO_TRI_THIET_BI.NgayBaoTriTiepTheo): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <DatePicker Tag="DB:BAO_TRI_THIET_BI.NgayBaoTriTiepTheo" AutomationProperties.Name="Ngày bảo trì tiếp theo" />
                   </StackPanel>
                 </WrapPanel>
@@ -50,10 +59,12 @@
                 <WrapPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Nội dung *" Margin="0,0,0,6" />
+                    <!-- Trường Nội dung chứng từ hoặc khoản thu (BAO_TRI_THIET_BI.NoiDung): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <TextBox Tag="DB:BAO_TRI_THIET_BI.NoiDung" AutomationProperties.Name="Nội dung" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Ghi chú" Margin="0,0,0,6" />
+                    <!-- Trường Ghi chú bổ sung (BAO_TRI_THIET_BI.GhiChu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <TextBox Tag="DB:BAO_TRI_THIET_BI.GhiChu" AutomationProperties.Name="Ghi chú" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
                   </StackPanel>
                 </WrapPanel>
@@ -65,10 +76,12 @@
                 <WrapPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
                     <TextBlock Text="Mã lần bảo trì" Margin="0,0,0,6" />
+                    <!-- Trường Mã bản bảo trì thiết bị (BAO_TRI_THIET_BI.MaBT): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. Ô chỉ đọc, không cho nhập lại mã/giá trị nguồn. -->
                     <TextBox Tag="DB:BAO_TRI_THIET_BI.MaBT" AutomationProperties.Name="Mã lần bảo trì" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
+                    <!-- Trường Trạng thái nghiệp vụ của bản ghi (BAO_TRI_THIET_BI.TrangThai): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <TextBox Tag="DB:BAO_TRI_THIET_BI.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
                   </StackPanel>
                 </WrapPanel>
@@ -80,8 +93,10 @@
     </TabControl>
     <Border Grid.Row="2" Padding="0,18,0,0">
       <WrapPanel>
+        <!-- Nút điều hướng DongCuaSo: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
         <Button Content="Quay lại danh sách" Tag="DongCuaSo" />
         <Button Content="Lưu thông tin" IsEnabled="False" Style="{StaticResource Primary}" ToolTip="Bản giao diện chưa kết nối lưu dữ liệu" />
+        <!-- Nút điều hướng VeTrangChu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
         <Button Content="Về màn hình chính" Tag="VeTrangChu" />
         <TextBlock Text="Bản giao diện • Chưa lưu dữ liệu" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="12,0,0,0" />
       </WrapPanel>

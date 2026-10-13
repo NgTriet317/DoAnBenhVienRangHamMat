@@ -1,4 +1,6 @@
-﻿<Application x:Class="wpftest.App"
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích tài nguyên cấp ứng dụng, cách nạp theme dùng chung và liên hệ với luồng khởi động trong App.xaml.cs. -->
+<!-- AI hỗ trợ: bổ sung chú thích cho Điểm khởi động WPF: điều phối hộp thoại đăng nhập, cửa sổ chính và thời điểm kết thúc ứng dụng.. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
+<Application x:Class="wpftest.App"
                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                Startup="App_Startup"
@@ -6,6 +8,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- Nạp tài nguyên Themes/Theme.xaml để các control dùng cùng màu, font, template và trạng thái của ứng dụng. -->
                 <ResourceDictionary Source="Themes/Theme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

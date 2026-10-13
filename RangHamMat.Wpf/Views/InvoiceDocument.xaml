@@ -1,0 +1,51 @@
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã tạo mẫu hóa đơn XAML hiện hữu gồm đầu hóa đơn, các dòng dịch vụ/thuốc, tổng tiền và chữ ký; áp dụng InvoiceText tường minh để đo/in đúng các dòng. -->
+<!-- AI hỗ trợ: chứng từ hoàn toàn bằng XAML; chiều cao dòng tự giãn và paginator đọc các dải dòng chữ để ngắt trang. -->
+<UserControl x:Class="RangHamMat.Views.InvoiceDocument" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ FontFamily="Segoe UI" FontSize="13" Foreground="#21344B" Background="White">
+ <UserControl.Resources>
+  <!-- Style gán tường minh cả trong DataTemplate: mỗi TextBlock nhận LineHeight hữu hạn để không cắt chữ khi phân trang.
+       VerticalAlignment Top giữ ô SL/giá một dòng không giãn cao theo ô mô tả nhiều dòng bên cạnh. -->
+  <Style x:Key="InvoiceText" TargetType="TextBlock">
+   <Setter Property="VerticalAlignment" Value="Top"/><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="LineHeight" Value="20"/><Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+  </Style>
+ </UserControl.Resources>
+ <StackPanel>
+  <TextBlock Style="{StaticResource InvoiceText}" Text="BỆNH VIỆN RĂNG HÀM MẶT" TextAlignment="Center" FontWeight="Bold" FontSize="16" LineHeight="24"/>
+  <TextBlock Style="{StaticResource InvoiceText}" Text="HÓA ĐƠN THANH TOÁN" TextAlignment="Center" FontWeight="Bold" FontSize="22" LineHeight="30" Margin="0,10,0,10"/>
+  <TextBlock Style="{StaticResource InvoiceText}" TextAlignment="Center" Margin="0,0,0,16"><Run Text="{Binding Code, Mode=OneWay}"/> · <Run Text="{Binding Status, Mode=OneWay}"/></TextBlock>
+  <!-- Binding đầu hóa đơn giữ nguyên bệnh nhân, lần khám, ngày và nhân viên nguồn. -->
+  <TextBlock Style="{StaticResource InvoiceText}"><Bold>Người bệnh: </Bold><Run Text="{Binding Patient, Mode=OneWay}"/></TextBlock>
+  <TextBlock Style="{StaticResource InvoiceText}"><Bold>Lần khám: </Bold><Run Text="{Binding Visit, Mode=OneWay}"/></TextBlock>
+  <TextBlock Style="{StaticResource InvoiceText}"><Bold>Ngày lập: </Bold><Run Text="{Binding Date, Mode=OneWay}"/></TextBlock>
+  <TextBlock Style="{StaticResource InvoiceText}" Margin="0,0,0,16"><Bold>Nhân viên lập: </Bold><Run Text="{Binding Employee, Mode=OneWay}"/></TextBlock>
+  <Border Background="#EAF2FF" Padding="8">
+   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="60"/><ColumnDefinition Width="130"/><ColumnDefinition Width="130"/></Grid.ColumnDefinitions>
+    <TextBlock Style="{StaticResource InvoiceText}" Text="Nội dung" FontWeight="Bold"/><TextBlock Style="{StaticResource InvoiceText}" Grid.Column="1" Text="SL" FontWeight="Bold"/>
+    <TextBlock Style="{StaticResource InvoiceText}" Grid.Column="2" Text="Đơn giá" FontWeight="Bold" TextAlignment="Right"/><TextBlock Style="{StaticResource InvoiceText}" Grid.Column="3" Text="Thành tiền" FontWeight="Bold" TextAlignment="Right"/>
+   </Grid>
+  </Border>
+  <!-- ItemsControl không ảo hóa: mọi dòng được materialize từ DataTemplate XAML trước khi phân trang. -->
+  <ItemsControl x:Name="InvoiceLines" ItemsSource="{Binding Lines}">
+   <ItemsControl.ItemTemplate><DataTemplate>
+    <Border BorderBrush="#D9E2ED" BorderThickness="0,0,0,1" Padding="8">
+     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="60"/><ColumnDefinition Width="130"/><ColumnDefinition Width="130"/></Grid.ColumnDefinitions>
+      <TextBlock Style="{StaticResource InvoiceText}" Text="{Binding Description}" Margin="0,0,8,0"/>
+      <TextBlock Style="{StaticResource InvoiceText}" Grid.Column="1" Text="{Binding Quantity}"/>
+      <TextBlock Style="{StaticResource InvoiceText}" Grid.Column="2" Text="{Binding Price}" TextAlignment="Right" Margin="8,0,0,0"/>
+      <TextBlock Style="{StaticResource InvoiceText}" Grid.Column="3" Text="{Binding Amount}" TextAlignment="Right" Margin="8,0,0,0"/>
+     </Grid>
+    </Border>
+   </DataTemplate></ItemsControl.ItemTemplate>
+  </ItemsControl>
+  <!-- Tổng và phần ký nằm sau tất cả dòng; paginator tiếp tục tới hết chiều cao nội dung. -->
+  <StackPanel Margin="0,16,0,16">
+   <TextBlock Style="{StaticResource InvoiceText}" TextAlignment="Right"><Bold>Tổng tiền: </Bold><Run Text="{Binding Total, Mode=OneWay}"/></TextBlock>
+   <TextBlock Style="{StaticResource InvoiceText}" TextAlignment="Right"><Bold>Giảm giá: </Bold><Run Text="{Binding Discount, Mode=OneWay}"/></TextBlock>
+   <TextBlock Style="{StaticResource InvoiceText}" TextAlignment="Right"><Bold>Phải thu: </Bold><Run Text="{Binding Due, Mode=OneWay}"/></TextBlock>
+   <TextBlock Style="{StaticResource InvoiceText}" TextAlignment="Right"><Bold>Đã thu ròng: </Bold><Run Text="{Binding Collected, Mode=OneWay}"/></TextBlock>
+   <TextBlock Style="{StaticResource InvoiceText}" TextAlignment="Right"><Bold>Còn phải trả: </Bold><Run Text="{Binding Remaining, Mode=OneWay}"/></TextBlock>
+  </StackPanel>
+  <TextBlock Style="{StaticResource InvoiceText}" Text="Khoản thuốc dựa trên thuốc đã cấp; đơn giá chốt khi lập hóa đơn. Số đã thu là tiền thu trừ các khoản hoàn đã xác nhận." FontSize="11" Foreground="#586B82"/>
+  <TextBlock Style="{StaticResource InvoiceText}" Text="NHÂN VIÊN THU TIỀN" TextAlignment="Right" FontWeight="SemiBold" Margin="0,24,0,0"/>
+ </StackPanel>
+</UserControl>

@@ -1,3 +1,5 @@
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của BaoCao.xaml; các vùng liên quan: Hóa đơn bệnh viện, Grid_HOA_DON, Thu bệnh viện, Grid_THANH_TOAN, Thu–chi kho, Thu kho, Grid_HOA_DON_KHO, Chi kho. -->
+<!-- AI hỗ trợ: bổ sung chú thích cho báo cáo. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:ui="clr-namespace:RangHamMat.Controls" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.BaoCao">
   <Grid>
     <Grid.RowDefinitions>
@@ -14,6 +16,7 @@
       <RadioButton Content="Đồ thị" GroupName="ReportMode" Checked="ViewMode_Changed" Tag="Charts" Style="{StaticResource ViewSwitch}" />
     </WrapPanel>
     <TabControl Grid.Row="2" x:Name="TableView">
+      <!-- Nhóm Hóa đơn bệnh viện: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
       <TabItem Header="Hóa đơn bệnh viện">
         <Grid Margin="18">
           <Grid.RowDefinitions>
@@ -21,6 +24,7 @@
             <RowDefinition Height="*" />
           </Grid.RowDefinitions>
           <TextBlock Text="Báo cáo sẽ hiển thị khi có dữ liệu." Foreground="{StaticResource Muted}" Margin="0,12,0,20" />
+          <!-- Bảng Grid_HOA_DON: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:HOA_DON cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
           <DataGrid Grid.Row="1" Tag="Table:HOA_DON" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow" x:Name="Grid_HOA_DON">
             <DataGrid.Columns>
               <DataGridTextColumn Header="Mã hóa đơn" SortMemberPath="MaHD" Width="160" Binding="{Binding MaHD}" />
@@ -35,6 +39,7 @@
           </DataGrid>
         </Grid>
       </TabItem>
+      <!-- Nhóm Thu bệnh viện: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
       <TabItem Header="Thu bệnh viện">
         <Grid Margin="18">
           <Grid.RowDefinitions>
@@ -42,6 +47,7 @@
             <RowDefinition Height="*" />
           </Grid.RowDefinitions>
           <TextBlock Text="Báo cáo sẽ hiển thị khi có dữ liệu." Foreground="{StaticResource Muted}" Margin="0,12,0,20" />
+          <!-- Bảng Grid_THANH_TOAN: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:THANH_TOAN cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
           <DataGrid Grid.Row="1" Tag="Table:THANH_TOAN" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow" x:Name="Grid_THANH_TOAN">
             <DataGrid.Columns>
               <DataGridTextColumn Header="Mã thanh toán" SortMemberPath="MaTT" Width="160" Binding="{Binding MaTT}" />
@@ -55,8 +61,10 @@
           </DataGrid>
         </Grid>
       </TabItem>
+      <!-- Nhóm Thu–chi kho: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
       <TabItem Header="Thu–chi kho">
         <TabControl Margin="0,18,0,0">
+          <!-- Nhóm Thu kho: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
           <TabItem Header="Thu kho">
             <Grid Margin="0,20,0,0">
               <Grid.RowDefinitions>
@@ -70,6 +78,7 @@
               </DockPanel>
               <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
                 <Grid>
+                  <!-- Bảng Grid_HOA_DON_KHO: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:HOA_DON_KHO cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
                   <DataGrid Tag="Table:HOA_DON_KHO" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_HOA_DON_KHO" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
                     <DataGrid.Columns>
                       <DataGridTextColumn Header="Mã hóa đơn kho" SortMemberPath="MaHDK" Width="155" Binding="{Binding MaHDK}" />
@@ -82,6 +91,7 @@
                   </DataGrid>
                   <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
                     <StackPanel.Style>
+                      <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
                       <Style TargetType="StackPanel">
                         <Setter Property="Visibility" Value="Collapsed" />
                         <Style.Triggers>
@@ -98,6 +108,7 @@
               </Border>
             </Grid>
           </TabItem>
+          <!-- Nhóm Chi kho: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
           <TabItem Header="Chi kho">
             <Grid Margin="0,20,0,0">
               <Grid.RowDefinitions>
@@ -111,6 +122,7 @@
               </DockPanel>
               <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
                 <Grid>
+                  <!-- Bảng Grid_HOA_DON_KHO_Chi: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:HOA_DON_KHO cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
                   <DataGrid Tag="Table:HOA_DON_KHO" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_HOA_DON_KHO_Chi" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
                     <DataGrid.Columns>
                       <DataGridTextColumn Header="Mã hóa đơn kho" SortMemberPath="MaHDK" Width="155" Binding="{Binding MaHDK}" />
@@ -123,6 +135,7 @@
                   </DataGrid>
                   <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
                     <StackPanel.Style>
+                      <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
                       <Style TargetType="StackPanel">
                         <Setter Property="Visibility" Value="Collapsed" />
                         <Style.Triggers>
@@ -141,6 +154,7 @@
           </TabItem>
         </TabControl>
       </TabItem>
+      <!-- Nhóm Biến động kho: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
       <TabItem Header="Biến động kho">
         <Grid Margin="18">
           <Grid.RowDefinitions>
@@ -148,6 +162,7 @@
             <RowDefinition Height="*" />
           </Grid.RowDefinitions>
           <TextBlock Text="Báo cáo sẽ hiển thị khi có dữ liệu." Foreground="{StaticResource Muted}" Margin="0,12,0,20" />
+          <!-- Bảng Grid_GIAO_DICH_KHO: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:GIAO_DICH_KHO cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
           <DataGrid Grid.Row="1" Tag="Table:GIAO_DICH_KHO" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow" x:Name="Grid_GIAO_DICH_KHO">
             <DataGrid.Columns>
               <DataGridTextColumn Header="Mã giao dịch kho" SortMemberPath="MaGD" Width="160" Binding="{Binding MaGD}" />
@@ -161,6 +176,7 @@
           </DataGrid>
         </Grid>
       </TabItem>
+      <!-- Nhóm Lịch khám: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
       <TabItem Header="Lịch khám">
         <Grid Margin="18">
           <Grid.RowDefinitions>
@@ -168,6 +184,7 @@
             <RowDefinition Height="*" />
           </Grid.RowDefinitions>
           <TextBlock Text="Báo cáo sẽ hiển thị khi có dữ liệu." Foreground="{StaticResource Muted}" Margin="0,12,0,20" />
+          <!-- Bảng Grid_LICH_KHAM: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:LICH_KHAM cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
           <DataGrid Grid.Row="1" Tag="Table:LICH_KHAM" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow" x:Name="Grid_LICH_KHAM">
             <DataGrid.Columns>
               <DataGridTextColumn Header="Mã lịch khám" SortMemberPath="MaLich" Width="160" Binding="{Binding MaLich}" />
@@ -184,6 +201,7 @@
           </DataGrid>
         </Grid>
       </TabItem>
+      <!-- Nhóm Chi tiết hóa đơn: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
       <TabItem Header="Chi tiết hóa đơn" Visibility="Collapsed" Tag="Child:CHI_TIET_HOA_DON">
         <Grid Margin="0,20,0,0">
           <Grid.RowDefinitions>
@@ -192,12 +210,14 @@
           </Grid.RowDefinitions>
           <DockPanel Margin="0,0,0,18">
             <WrapPanel DockPanel.Dock="Right">
+              <!-- Nút điều hướng MoCuaSo:HoaDon: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
               <Button Content="Thêm chi tiết hóa đơn" Tag="MoCuaSo:HoaDon" CommandParameter="CHI_TIET_HOA_DON" Style="{StaticResource Primary}" />
             </WrapPanel>
             <TextBlock Text="Chi tiết hóa đơn" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
           </DockPanel>
           <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
             <Grid>
+              <!-- Bảng Grid_CHI_TIET_HOA_DON: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:CHI_TIET_HOA_DON cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
               <DataGrid Tag="Table:CHI_TIET_HOA_DON" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_CHI_TIET_HOA_DON" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
                 <DataGrid.Columns>
                   <DataGridTextColumn Header="Mã chi tiết hóa đơn" SortMemberPath="MaCTHD" Width="155" Binding="{Binding MaCTHD}" />
@@ -209,6 +229,7 @@
               </DataGrid>
               <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
                 <StackPanel.Style>
+                  <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
                   <Style TargetType="StackPanel">
                     <Setter Property="Visibility" Value="Collapsed" />
                     <Style.Triggers>
@@ -220,6 +241,7 @@
                 </StackPanel.Style>
                 <TextBlock Text="Chưa có chi tiết hóa đơn" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
                 <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                <!-- Nút điều hướng MoCuaSo:HoaDon: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                 <Button Content="Thêm mới" Tag="MoCuaSo:HoaDon" CommandParameter="CHI_TIET_HOA_DON" HorizontalAlignment="Center" />
               </StackPanel>
             </Grid>
