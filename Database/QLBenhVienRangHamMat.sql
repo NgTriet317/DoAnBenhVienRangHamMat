@@ -1,37 +1,51 @@
-﻿/*
-NHÓM 4 - BỆNH VIỆN RĂNG HÀM MẶT - DATABASE V8 VÀ DỮ LIỆU MẪU
-Nguồn: DB_Nhom4_v8(1).docx do người dùng gửi ngày 11/10/2026.
-44 bảng, đúng tên/cột trong Word. 43 bảng có 10 dòng; HANG_HOA có 30 dòng
-(10 thuốc, 10 vật tư, 10 loại thiết bị), theo lựa chọn của người dùng: 460 dòng.
+-- AI hỗ trợ: bổ sung giải thích các trigger/view hiện có; không thay lệnh SQL và không chạy lại cài đặt database.
+/*
+NHÓM 4 - BỆNH VIỆN RĂNG HÀM MẶT - DATABASE V8, MÃ CHUỖI
+Dữ liệu mô phỏng sát nghiệp vụ, cập nhật ngày 13/10/2026.
+Tên người, doanh nghiệp, liên hệ, số chứng nhận và bệnh án đều hư cấu;
+không phải hồ sơ thật hay dữ liệu của doanh nghiệp/bệnh viện có thật.
+Giá dịch vụ, thuốc và lương là giá nội bộ minh họa, không phải giá thị trường.
+44 bảng: VAI_TRO=2, HANG_HOA=30, 42 bảng còn lại=10; tổng cộng 452 dòng.
+Giữ nguyên cấu trúc, mã NVARCHAR(50), khóa ngoại, trigger và view.
+
+TÀI KHOẢN: TK001/admin001/Admin; TK002..TK010/user002..user010/User.
+Cả 10 tài khoản liên kết 10 nhân viên, trạng thái Đang hoạt động,
+MaKhoa=NULL, MaPhong=NULL. Mật khẩu đăng nhập của cả 10 là 123456.
+MatKhauHash lưu PBKDF2-HMAC-SHA256: pbkdf2_sha256$210000$base64(salt)$base64(hash).
+Salt ngẫu nhiên 16 byte, hash 32 byte; mật khẩu UTF-8. C# cần xác minh theo
+định dạng này; không so sánh trực tiếp MatKhauHash với chuỗi nhập 123456.
+Vai trò Admin/User dùng để phân quyền hệ thống; chức vụ nghề nghiệp vẫn
+lưu ở NHAN_VIEN, không thay chức vụ bác sĩ/dược sĩ bằng vai trò tài khoản.
 
 CÁCH CHẠY: mở toàn bộ file bằng SQL Server Management Studio, kết nối SQL
 Server 2016 trở lên, nhấn F5. File dùng GO; không gửi nguyên file qua Dapper.
-Tên database: QLBenhVienRangHamMat. Chạy trên database trống. Nếu database có bảng người dùng, script dừng; không
-DROP, xóa hay thay dữ liệu đã có. Đây là bản cài mới, không phải migration.
-Nếu đổi tên database, đổi đồng thời DB_ID, CREATE DATABASE và USE.
+Tên database: QLBenhVienRangHamMat. Chạy trên database trống. Nếu đã có bảng,
+script dừng, không DROP/xóa/sửa dữ liệu cũ. Đây là bản cài mới, không phải
+migration. Nếu đổi tên, sửa đồng thời DB_ID, CREATE DATABASE và USE.
 
-QUY ƯỚC: tất cả thuộc tính mã là NVARCHAR(50), tương ứng string trong C#;
-PK/FK dùng cùng kiểu và độ dài. Không dùng IDENTITY; ứng dụng phải cấp mã
-chuỗi duy nhất trước khi INSERT (ví dụ BN001, HD001), không lấy MAX rồi +1
-khi có nhiều người dùng. NVARCHAR cho tiếng Việt;
-DECIMAL(18,2) cho tiền, DECIMAL(18,3) cho lượng, DATETIME2(0) cho thời điểm.
-Mốc giờ mẫu là giờ địa phương bệnh viện, ứng dụng phải dùng cùng quy ước.
-ThanhTien tại nguồn là computed PERSISTED; ThanhTien hóa đơn là cột lưu
-thường, được trigger tính từ nguồn, đồng bộ TongTien và khóa khi xác nhận.
-Dịch vụ/điều trị không có đơn vị tính. Giá bán thuốc lịch sử giữ tại dòng
-hóa đơn; lượng lấy qua MaCTPX. Kê đơn không trừ kho; phải cấp đủ toàn đơn.
-Không tính phí kế hoạch hoặc vật tư nội bộ; nguồn chỉ thu một lần.
+QUY ƯỚC: mã NVARCHAR(50) tương ứng string C#; ứng dụng cấp mã duy nhất trước
+INSERT. DECIMAL(18,2) cho tiền, DECIMAL(18,3) cho lượng; giờ địa phương bệnh
+viện tại DATETIME2(0). C# đặt thao tác nhiều bảng trong transaction.
+Thành tiền nguồn dùng computed PERSISTED; thành tiền hóa đơn lưu thường,
+trigger tính từ nguồn, đồng bộ tổng và khóa chứng từ khi đã xác nhận.
+Dịch vụ/điều trị không có đơn vị tính. Thuốc dùng đơn vị cấp phát cơ sở
+(viên/chai/tuýp); kê đơn không trừ kho; chỉ phiếu xuất ghi sổ mới trừ kho.
+Mỗi đơn xác nhận phải cấp đủ toàn đơn, không cấp thiếu/cấp lại.
 
-Triggers xử lý nhiều dòng, kiểm tra liên kết nguồn, tổng tiền, đầy đủ đơn,
-khóa chứng từ đã xác nhận/ghi sổ, ngăn tồn âm và thu/hoàn vượt số dư.
-C# phải đặt thao tác nhiều bảng trong transaction, ghi nhật ký qua tài khoản
-thật. Tài khoản mẫu đều Khóa; không dùng để đăng nhập. MatKhauHash chứa băm
-PBKDF2-SHA256 giả định; cơ chế xác thực C# phải đọc đúng định dạng này.
-Bộ mẫu: 5 lượt có hẹn điện thoại + 5 lượt trực tiếp; đơn DT001 có 3 thuốc;
-8 đơn cấp đủ, 2 đơn nháp; 5 hóa đơn xác nhận, 5 nháp; có thu nhiều lần,
-hoàn khoản thu nhầm, giao dịch nháp/hủy; hàng danh mục có thể chưa có tồn.
-Thuốc, bệnh án và liên hệ hoàn toàn giả định. Không mở rộng thuế/BHYT,
-hóa đơn điện tử, trả thuốc hoặc sửa phí sau xác nhận trong phạm vi đồ án.
+Dữ liệu: 5 lượt đặt lịch điện thoại + 5 lượt đến trực tiếp, 5 lịch tái khám
+điện thoại đang chờ xác nhận ca. Bác sĩ Lê Thu Hà thay 5 ca của Trần Quốc Bảo.
+8 đơn xác nhận đã cấp đủ, 2 đơn hủy do không có chỉ định thuốc; không trừ kho.
+3 hóa đơn đã gom đủ dịch vụ và thuốc, xác nhận và thu đủ. HD004/HD005 đang
+nháp vì chưa bổ sung thuốc đã cấp vào hóa đơn; HD006..HD010 chờ lập khoản thu.
+Giữ đúng 10 chi tiết hóa đơn nên các nguồn chưa đưa vào hóa đơn là công việc
+thu phí đang chờ xử lý, không được xem là đã thu hoặc đã thanh toán.
+HD001: dịch vụ 100.000 + thuốc 105.000 - giảm 15.000 = phải thu 190.000.
+HD002 phải thu 180.000; HD003 phải thu 97.500. Thu/hoàn nháp hoặc hủy không
+được tính vào số dư. Bảng lương BL003 chốt 5 ca; 9 bảng khác chờ chấm công,
+giữ nháp để không khẳng định nhân viên không được nhận lương.
+Thiết bị đã bàn giao thuộc tài sản sử dụng; vật tư chỉ có danh mục, chưa
+có nhập/xuất trong kỳ, không tự tạo tồn đầu kỳ khi không có chứng từ.
+Nội dung đơn thuốc chỉ mô phỏng cấp phát, không phải hướng dẫn điều trị.
 */
 USE [master];
 GO
@@ -815,6 +829,7 @@ CREATE INDEX [IX_CHINH_SACH_LUONG_MaNVDuyet] ON [dbo].[CHINH_SACH_LUONG] ([MaNVD
 CREATE INDEX [IX_BANG_LUONG_MaNV] ON [dbo].[BANG_LUONG] ([MaNV]);
 CREATE INDEX [IX_BANG_LUONG_MaCSL] ON [dbo].[BANG_LUONG] ([MaCSL]);
 CREATE INDEX [IX_NHAT_KY_THAO_TAC_MaTK] ON [dbo].[NHAT_KY_THAO_TAC] ([MaTK]);
+-- AI hỗ trợ chú thích TR_CTHD_TinhTien: Khóa đầu hóa đơn liên quan; chỉ cho sửa chi tiết nháp; kiểm tra nguồn dịch vụ/thuốc cùng lần khám, tính thành tiền và cập nhật tổng, chặn tổng thấp hơn giảm giá.
 EXEC sys.sp_executesql N'-- TỰ TÍNH THÀNH TIỀN HÓA ĐƠN, ĐỒNG BỘ TỔNG VÀ KHÓA CHỨNG TỪ.
 CREATE TRIGGER dbo.TR_CTHD_TinhTien ON dbo.CHI_TIET_HOA_DON
 AFTER INSERT, UPDATE, DELETE AS
@@ -845,6 +860,7 @@ BEGIN
  UPDATE h SET TongTien=COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0)
  FROM dbo.HOA_DON h WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted);
 END;';
+-- AI hỗ trợ chú thích TR_HD_XacNhan: Giữ nguyên hóa đơn đã xác nhận; khi xác nhận kiểm tra đầu/chi tiết, lần khám, giảm giá và ngày xác nhận để chứng từ đủ điều kiện thu tiền.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_HD_XacNhan ON dbo.HOA_DON
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -868,6 +884,7 @@ BEGIN
  OR(c.MaCTPX IS NOT NULL AND(p.TrangThai<>N''Đã ghi sổ'' OR p.MaLS<>i.MaLS OR x.MaCTDT IS NULL OR CAST(ROUND(x.SoLuong*c.DonGia,2) AS DECIMAL(18,2))<>c.ThanhTien OR p.NgayXuat>i.NgayXacNhan))))))
   THROW 51008,N''Không xác nhận hóa đơn rỗng, nguồn sai, thời gian sai hoặc thành tiền chưa khớp.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_TT_KiemTraSoDu: Khóa hóa đơn, giữ giao dịch xác nhận không sửa/xóa; chỉ thu/hoàn sau xác nhận hóa đơn và kiểm tra thu ròng nằm từ 0 đến số phải thu.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_TT_KiemTraSoDu ON dbo.THANH_TOAN
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -884,6 +901,7 @@ BEGIN
  WHERE COALESCE(a.ThuRong,0)<0 OR COALESCE(a.ThuRong,0)>h.SoTienPhaiThu)
   THROW 51011,N''Thu vượt tiền phải trả hoặc hoàn vượt tiền đang giữ.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_CTDT_KhoaDon: Chỉ cho thêm/sửa/xóa dòng thuốc khi đầu đơn còn Nháp; khóa chi tiết của đơn đã chốt.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_CTDT_KhoaDon ON dbo.CHI_TIET_DON_THUOC
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -891,6 +909,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM dbo.DON_THUOC r JOIN(SELECT MaDT FROM inserted UNION SELECT MaDT FROM deleted) x ON x.MaDT=r.MaDT WHERE r.TrangThai<>N''Nháp'')
   THROW 51012,N''Chỉ sửa chi tiết đơn thuốc nháp; đơn xác nhận giữ nguyên.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_DT_XacNhan: Giữ nguyên nội dung đơn không còn Nháp, cho chuyển trạng thái nghiệp vụ phù hợp; chặn xác nhận đơn chưa có dòng thuốc.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_DT_XacNhan ON dbo.DON_THUOC
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -900,6 +919,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã xác nhận'' AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c WHERE c.MaDT=i.MaDT))
   THROW 51014,N''Không xác nhận đơn thuốc rỗng.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_DVTH_KhoaNguon: Khóa dịch vụ đã xác nhận; nếu có bước kế hoạch thì yêu cầu cùng dịch vụ và bệnh án, bước chưa hủy.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_DVTH_KhoaNguon ON dbo.DICH_VU_THUC_HIEN
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -912,6 +932,7 @@ BEGIN
  WHERE c.MaDV<>i.MaDV OR p.MaHS<>p0.MaHS OR c.TrangThai=N''Hủy'')
   THROW 51016,N''Dịch vụ phải khớp kế hoạch và cùng hồ sơ bệnh án; không thực hiện dòng đã hủy.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_CTKH_TongDuKien: Sau đổi các bước, cộng thành tiền dự kiến của bước chưa hủy và cập nhật tổng đầu kế hoạch liên quan.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_CTKH_TongDuKien ON dbo.CHI_TIET_KE_HOACH
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -919,6 +940,7 @@ BEGIN
  UPDATE k SET TongTienDuKien=COALESCE((SELECT SUM(c.ThanhTienDuKien) FROM dbo.CHI_TIET_KE_HOACH c WHERE c.MaKHDT=k.MaKHDT AND c.TrangThai<>N''Hủy''),0)
  FROM dbo.KE_HOACH_DIEU_TRI k WITH(UPDLOCK) WHERE k.MaKHDT IN(SELECT MaKHDT FROM inserted UNION SELECT MaKHDT FROM deleted);
 END;';
+-- AI hỗ trợ chú thích TR_KHDT_Tong: Chặn tổng dự kiến của đầu kế hoạch khác tổng các chi tiết chưa hủy; tổng phải do chi tiết quyết định.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_KHDT_Tong ON dbo.KE_HOACH_DIEU_TRI
 AFTER INSERT, UPDATE AS
 BEGIN
@@ -926,6 +948,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM inserted i WHERE i.TongTienDuKien<>COALESCE((SELECT SUM(c.ThanhTienDuKien) FROM dbo.CHI_TIET_KE_HOACH c WHERE c.MaKHDT=i.MaKHDT AND c.TrangThai<>N''Hủy''),0))
   THROW 51017,N''Tổng dự kiến phải bằng chi tiết chưa hủy.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_CTPN_TongVaNguon: Chỉ cho đổi chi tiết phiếu nhập nháp; lô phải khớp hàng/kho/nhà cung cấp; cập nhật tổng phiếu nhập theo chi tiết.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_CTPN_TongVaNguon ON dbo.CHI_TIET_PHIEU_NHAP
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -938,6 +961,7 @@ BEGIN
  UPDATE p SET TongTien=COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_PHIEU_NHAP c WHERE c.MaPN=p.MaPN),0)
  FROM dbo.PHIEU_NHAP p WHERE p.MaPN IN(SELECT MaPN FROM inserted UNION SELECT MaPN FROM deleted);
 END;';
+-- AI hỗ trợ chú thích TR_PN_GhiSo: Giữ nguyên phiếu nhập đã ghi sổ, kiểm tra nguồn lô và tổng chi tiết; không ghi sổ phiếu nhập rỗng.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_PN_GhiSo ON dbo.PHIEU_NHAP
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -955,6 +979,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã ghi sổ'' AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_NHAP c WHERE c.MaPN=i.MaPN))
   THROW 51022,N''Không ghi sổ phiếu nhập rỗng.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_CTPX_Nguon: Chỉ cho đổi chi tiết phiếu xuất nháp; dòng cấp thuốc phải đúng đơn/lần khám/hàng/lô/kho, xuất nội bộ không gắn dòng đơn thuốc.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_CTPX_Nguon ON dbo.CHI_TIET_PHIEU_XUAT
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -968,6 +993,7 @@ BEGIN
  OR (p.MaLS IS NULL AND i.MaCTDT IS NOT NULL) OR(i.MaLo IS NOT NULL AND(l.MaHH<>i.MaHH OR l.MaKho<>p.MaKho)))
   THROW 51024,N''Dòng xuất phải đúng thuốc của đơn/lần khám và đúng lô, kho; xuất nội bộ không dùng MaCTDT.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_PX_GhiSoDuDon: Khóa hàng và đơn, giữ phiếu ghi sổ, kiểm tra nguồn/lô/hạn và đơn xác nhận; yêu cầu cấp đủ toàn bộ đơn, chặn xuất vượt tồn theo kho/lô.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_PX_GhiSoDuDon ON dbo.PHIEU_XUAT
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -1004,6 +1030,7 @@ BEGIN
  < COALESCE((SELECT SUM(e.SoLuong) FROM dbo.CHI_TIET_PHIEU_XUAT e JOIN dbo.PHIEU_XUAT p ON p.MaPX=e.MaPX WHERE p.TrangThai=N''Đã ghi sổ'' AND p.MaKho=i.MaKho AND e.MaHH=x.MaHH AND(e.MaLo=x.MaLo OR(e.MaLo IS NULL AND x.MaLo IS NULL))),0))
   THROW 51029,N''Không đủ tồn kho/lô; rollback toàn bộ lần cấp.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_LO_KhoaNguon: Không sửa/xóa thuộc tính nguồn của lô đã xuất/nhập bằng chứng từ ghi sổ để giữ nguồn tồn kho.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_LO_KhoaNguon ON dbo.LO_HANG_HOA
 AFTER UPDATE, DELETE AS
 BEGIN
@@ -1011,6 +1038,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM deleted d WHERE EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_NHAP c JOIN dbo.PHIEU_NHAP p ON p.MaPN=c.MaPN WHERE c.MaLo=d.MaLo AND p.TrangThai=N''Đã ghi sổ'') OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT c JOIN dbo.PHIEU_XUAT p ON p.MaPX=c.MaPX WHERE c.MaLo=d.MaLo AND p.TrangThai=N''Đã ghi sổ''))
   THROW 51030,N''Lô đã có chứng từ ghi sổ giữ nguyên thuộc tính nguồn.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_HH_KhoaDonVi: Không đổi đơn vị tính hàng hóa khi đã có kê thuốc/nhập/xuất, tránh đổi ý nghĩa số lượng đã lưu.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_HH_KhoaDonVi ON dbo.HANG_HOA
 AFTER UPDATE AS
 BEGIN
@@ -1019,6 +1047,7 @@ BEGIN
  (EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_NHAP c WHERE c.MaHH=i.MaHH) OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT c WHERE c.MaHH=i.MaHH) OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c JOIN dbo.THUOC t ON t.MaThuoc=c.MaThuoc WHERE t.MaHH=i.MaHH)))
   THROW 51031,N''Không đổi đơn vị cơ sở sau khi đã kê/nhập/xuất.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_THUOC_KhoaHangHoa: Không đổi hàng hóa nguồn của thuốc đã được kê; vẫn cho cập nhật giá bán hiện hành.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_THUOC_KhoaHangHoa ON dbo.THUOC
 AFTER UPDATE AS
 BEGIN
@@ -1026,6 +1055,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaThuoc=i.MaThuoc WHERE i.MaHH<>d.MaHH AND EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c WHERE c.MaThuoc=i.MaThuoc))
   THROW 51032,N''Thuốc đã kê đơn không đổi hàng hóa nguồn; DonGiaBan hiện hành vẫn được cập nhật.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_PHIEU_LienKet: Phiếu theo lịch phải khớp bệnh nhân/phòng/bác sĩ; phiếu đã có lần khám không đổi hồ sơ hoặc lịch nguồn.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_PHIEU_LienKet ON dbo.PHIEU_KHAM_BENH
 AFTER INSERT, UPDATE AS
 BEGIN
@@ -1035,6 +1065,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaPhieu=i.MaPhieu WHERE EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaPhieu=i.MaPhieu) AND EXISTS(SELECT i.MaHS,i.MaLich EXCEPT SELECT d.MaHS,d.MaLich))
   THROW 51034,N''Phiếu đã phát sinh lần khám không đổi hồ sơ/lịch nguồn.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_LS_LienKet: Lần khám phải khớp phiếu tiếp nhận và không trước giờ tiếp nhận; giữ liên kết/thời gian nguồn của lần khám đã xác nhận.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_LS_LienKet ON dbo.LICH_SU_KHAM_BENH
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -1044,6 +1075,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=i.MaPhieu WHERE i.ThoiGianKham<p.ThoiGianTiepNhan OR i.MaPhong<>p.MaPhong OR(p.MaBS IS NOT NULL AND i.MaBS<>p.MaBS))
   THROW 51036,N''Lần khám phải khớp phiếu tiếp nhận và không trước giờ tiếp nhận.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_CSL_KhoaChinhSach: Giữ chính sách lương đã duyệt, thay đổi bằng phiên bản mới; trạng thái duyệt cần có nhân viên và ngày duyệt.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_CSL_KhoaChinhSach ON dbo.CHINH_SACH_LUONG
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -1053,6 +1085,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM inserted WHERE TrangThai=N''Đã duyệt'' AND(MaNVDuyet IS NULL OR NgayDuyet IS NULL))
   THROW 51037,N''Chính sách đã duyệt phải ghi người và ngày duyệt.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_BL_ChotLuong: Giữ bảng lương đã chốt; khi chốt đối chiếu kỳ, chính sách được duyệt, chức vụ, số ca có mặt và hoa hồng dịch vụ xác nhận.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_BL_ChotLuong ON dbo.BANG_LUONG
 AFTER INSERT, UPDATE, DELETE AS
 BEGIN
@@ -1066,6 +1099,7 @@ BEGIN
  OR i.TienHoaHong<>CAST(ROUND(COALESCE((SELECT SUM(s.ThanhTien) FROM dbo.DICH_VU_THUC_HIEN s WHERE s.MaNVThucHien=i.MaNV AND CAST(s.ThoiGianThucHien AS DATE) BETWEEN i.TuNgay AND i.DenNgay AND s.TrangThai=N''Đã xác nhận''),0)*cs.TyLeHoaHong,2) AS DECIMAL(18,2))))
   THROW 51039,N''Chốt lương phải khớp chính sách, hiện diện và hoa hồng dịch vụ trong kỳ.'',1;
 END;';
+-- AI hỗ trợ chú thích TR_HS_KhoaBenhNhanNguon: Không chuyển bệnh án đã tiếp nhận sang bệnh nhân khác, giữ chuỗi nguồn của khám và hóa đơn.
 EXEC sys.sp_executesql N'CREATE TRIGGER dbo.TR_HS_KhoaBenhNhanNguon ON dbo.HO_SO_BENH_AN
 AFTER UPDATE AS
 BEGIN
@@ -1076,561 +1110,553 @@ END;';
 
 -- DỮ LIỆU MẪU: nhập theo thứ tự phụ thuộc, nguồn ban đầu là nháp.
 
--- VAI_TRO: 10 dòng
+-- VAI_TRO: 2 dòng (Admin, User)
 INSERT INTO [dbo].[VAI_TRO] ([MaVaiTro], [TenVaiTro], [MoTa])
 VALUES
-    (N'VTRO001', N'Quản trị hệ thống', N'Vai trò quản trị hệ thống trong ứng dụng nội bộ'),
-    (N'VTRO002', N'Bác sĩ', N'Vai trò bác sĩ trong ứng dụng nội bộ'),
-    (N'VTRO003', N'Điều dưỡng', N'Vai trò điều dưỡng trong ứng dụng nội bộ'),
-    (N'VTRO004', N'Tiếp nhận', N'Vai trò tiếp nhận trong ứng dụng nội bộ'),
-    (N'VTRO005', N'Dược sĩ', N'Vai trò dược sĩ trong ứng dụng nội bộ'),
-    (N'VTRO006', N'Thủ kho', N'Vai trò thủ kho trong ứng dụng nội bộ'),
-    (N'VTRO007', N'Thu ngân', N'Vai trò thu ngân trong ứng dụng nội bộ'),
-    (N'VTRO008', N'Kỹ thuật viên', N'Vai trò kỹ thuật viên trong ứng dụng nội bộ'),
-    (N'VTRO009', N'Nhân sự', N'Vai trò nhân sự trong ứng dụng nội bộ'),
-    (N'VTRO010', N'Quản lý bệnh viện', N'Vai trò quản lý bệnh viện trong ứng dụng nội bộ');
+    (N'VTRO001', N'Admin', N'Quản trị tài khoản, danh mục và cấu hình hệ thống.'),
+    (N'VTRO002', N'User', N'Nhân viên sử dụng chức năng nghiệp vụ; chức vụ lưu tại NHAN_VIEN.');
 
 -- CHUC_VU: 10 dòng
 INSERT INTO [dbo].[CHUC_VU] ([MaChucVu], [TenChucVu], [MoTa])
 VALUES
-    (N'CV001', N'Quản trị viên', N'Chức vụ quản trị viên'),
-    (N'CV002', N'Bác sĩ', N'Chức vụ bác sĩ'),
-    (N'CV003', N'Điều dưỡng', N'Chức vụ điều dưỡng'),
-    (N'CV004', N'Nhân viên tiếp nhận', N'Chức vụ nhân viên tiếp nhận'),
-    (N'CV005', N'Dược sĩ', N'Chức vụ dược sĩ'),
-    (N'CV006', N'Thủ kho', N'Chức vụ thủ kho'),
-    (N'CV007', N'Thu ngân', N'Chức vụ thu ngân'),
-    (N'CV008', N'Kỹ thuật viên', N'Chức vụ kỹ thuật viên'),
-    (N'CV009', N'Nhân sự', N'Chức vụ nhân sự'),
-    (N'CV010', N'Trưởng phòng', N'Chức vụ trưởng phòng');
+    (N'CV001', N'Quản trị hệ thống', N'Quản lý tài khoản, sao lưu và hỗ trợ hệ thống thông tin.'),
+    (N'CV002', N'Bác sĩ răng hàm mặt', N'Khám, chẩn đoán, lập kế hoạch điều trị và kê đơn.'),
+    (N'CV003', N'Điều dưỡng', N'Chăm sóc, thay băng và hỗ trợ người bệnh trong quá trình điều trị.'),
+    (N'CV004', N'Nhân viên tiếp nhận', N'Tiếp nhận bệnh nhân đến trực tiếp và đặt lịch qua điện thoại.'),
+    (N'CV005', N'Dược sĩ', N'Đối chiếu đơn thuốc và cấp phát đủ thuốc theo chỉ định đã xác nhận.'),
+    (N'CV006', N'Thủ kho', N'Nhập hàng, theo dõi lô, hạn sử dụng và đối chiếu tồn kho.'),
+    (N'CV007', N'Nhân viên thu ngân', N'Lập hóa đơn, thu tiền và đối chiếu giao dịch thanh toán.'),
+    (N'CV008', N'Kỹ thuật viên y học', N'Thực hiện kỹ thuật chẩn đoán hình ảnh theo phân công.'),
+    (N'CV009', N'Nhân viên nhân sự', N'Quản lý hồ sơ nhân viên, ca làm việc và tổng hợp tiền lương.'),
+    (N'CV010', N'Trưởng phòng hành chính', N'Điều hành công tác hành chính và kiểm tra chứng từ nội bộ.');
 
 -- KHOA: 10 dòng
 INSERT INTO [dbo].[KHOA] ([MaKhoa], [TenKhoa], [DienThoai], [MoTa], [TrangThai])
 VALUES
-    (N'KHOA001', N'Khám tổng hợp', N'02871000001', N'Khoa khám tổng hợp', N'Đang hoạt động'),
-    (N'KHOA002', N'Điều trị răng', N'02871000002', N'Khoa điều trị răng', N'Đang hoạt động'),
-    (N'KHOA003', N'Phẫu thuật hàm mặt', N'02871000003', N'Khoa phẫu thuật hàm mặt', N'Đang hoạt động'),
-    (N'KHOA004', N'Chẩn đoán hình ảnh', N'02871000004', N'Khoa chẩn đoán hình ảnh', N'Đang hoạt động'),
-    (N'KHOA005', N'Xét nghiệm', N'02871000005', N'Khoa xét nghiệm', N'Đang hoạt động'),
-    (N'KHOA006', N'Gây mê hồi sức', N'02871000006', N'Khoa gây mê hồi sức', N'Đang hoạt động'),
-    (N'KHOA007', N'Chăm sóc và phục hồi', N'02871000007', N'Khoa chăm sóc và phục hồi', N'Đang hoạt động'),
-    (N'KHOA008', N'Dược', N'02871000008', N'Khoa dược', N'Đang hoạt động'),
-    (N'KHOA009', N'Kiểm soát nhiễm khuẩn', N'02871000009', N'Khoa kiểm soát nhiễm khuẩn', N'Đang hoạt động'),
-    (N'KHOA010', N'Hành chính quản trị', N'02871000010', N'Khoa hành chính quản trị', N'Đang hoạt động');
+    (N'KHOA001', N'Khám tổng hợp', N'02838256010', N'Khám, tư vấn và tiếp nhận điều trị ngoại trú răng hàm mặt.', N'Đang hoạt động'),
+    (N'KHOA002', N'Điều trị răng', N'02838256011', N'Điều trị bảo tồn và các bệnh lý răng, mô quanh răng.', N'Đang hoạt động'),
+    (N'KHOA003', N'Phẫu thuật hàm mặt', N'02838256012', N'Khám và xử trí bệnh lý, chấn thương vùng hàm mặt.', N'Đang hoạt động'),
+    (N'KHOA004', N'Chẩn đoán hình ảnh', N'02838256013', N'Thực hiện chẩn đoán hình ảnh theo chỉ định.', N'Đang hoạt động'),
+    (N'KHOA005', N'Xét nghiệm', N'02838256014', N'Thực hiện xét nghiệm phục vụ chẩn đoán và theo dõi.', N'Đang hoạt động'),
+    (N'KHOA006', N'Gây mê hồi sức', N'02838256015', N'Đánh giá trước gây mê, hồi sức và theo dõi sau thủ thuật.', N'Đang hoạt động'),
+    (N'KHOA007', N'Chăm sóc và phục hồi', N'02838256016', N'Chăm sóc vết thương và hướng dẫn phục hồi chức năng.', N'Đang hoạt động'),
+    (N'KHOA008', N'Dược', N'02838256017', N'Quản lý thuốc, kiểm tra đơn và cấp phát tại bệnh viện.', N'Đang hoạt động'),
+    (N'KHOA009', N'Kiểm soát nhiễm khuẩn', N'02838256018', N'Quản lý vô khuẩn, tiệt khuẩn và vật tư kiểm soát nhiễm khuẩn.', N'Đang hoạt động'),
+    (N'KHOA010', N'Hành chính quản trị', N'02838256019', N'Quản lý nhân sự, tài chính và hệ thống thông tin.', N'Đang hoạt động');
 
 -- CHUYEN_KHOA: 10 dòng
 INSERT INTO [dbo].[CHUYEN_KHOA] ([MaCK], [MaKhoa], [TenCK], [MoTa], [TrangThai])
 VALUES
-    (N'CK001', N'KHOA001', N'Khám răng hàm mặt tổng quát', N'Khám răng hàm mặt tổng quát', N'Đang hoạt động'),
-    (N'CK002', N'KHOA002', N'Điều trị bảo tồn', N'Điều trị bảo tồn', N'Đang hoạt động'),
-    (N'CK003', N'KHOA003', N'Phẫu thuật hàm mặt', N'Phẫu thuật hàm mặt', N'Đang hoạt động'),
-    (N'CK004', N'KHOA004', N'Hình ảnh y học', N'Hình ảnh y học', N'Đang hoạt động'),
-    (N'CK005', N'KHOA005', N'Xét nghiệm y học', N'Xét nghiệm y học', N'Đang hoạt động'),
-    (N'CK006', N'KHOA006', N'Gây mê hồi sức', N'Gây mê hồi sức', N'Đang hoạt động'),
-    (N'CK007', N'KHOA007', N'Phục hồi chức năng', N'Phục hồi chức năng', N'Đang hoạt động'),
-    (N'CK008', N'KHOA008', N'Dược lâm sàng', N'Dược lâm sàng', N'Đang hoạt động'),
-    (N'CK009', N'KHOA009', N'Kiểm soát nhiễm khuẩn', N'Kiểm soát nhiễm khuẩn', N'Đang hoạt động'),
-    (N'CK010', N'KHOA010', N'Quản lý y tế', N'Quản lý y tế', N'Đang hoạt động');
+    (N'CK001', N'KHOA001', N'Khám răng hàm mặt tổng quát', N'Đánh giá toàn diện triệu chứng và tình trạng răng hàm mặt.', N'Đang hoạt động'),
+    (N'CK002', N'KHOA002', N'Điều trị bảo tồn', N'Điều trị bảo tồn răng và mô quanh răng.', N'Đang hoạt động'),
+    (N'CK003', N'KHOA003', N'Phẫu thuật hàm mặt', N'Đánh giá và điều trị bệnh lý, chấn thương hàm mặt.', N'Đang hoạt động'),
+    (N'CK004', N'KHOA004', N'Hình ảnh y học', N'Thực hiện, đọc và lưu kết quả chẩn đoán hình ảnh.', N'Đang hoạt động'),
+    (N'CK005', N'KHOA005', N'Xét nghiệm y học', N'Phân tích mẫu và trả kết quả xét nghiệm.', N'Đang hoạt động'),
+    (N'CK006', N'KHOA006', N'Gây mê hồi sức', N'Đánh giá nguy cơ, theo dõi gây mê và hồi sức.', N'Đang hoạt động'),
+    (N'CK007', N'KHOA007', N'Phục hồi chức năng', N'Chăm sóc vết thương và phục hồi vận động hàm mặt.', N'Đang hoạt động'),
+    (N'CK008', N'KHOA008', N'Dược lâm sàng', N'Đối chiếu chỉ định, tư vấn sử dụng và cấp phát thuốc.', N'Đang hoạt động'),
+    (N'CK009', N'KHOA009', N'Kiểm soát nhiễm khuẩn', N'Giám sát vệ sinh, khử khuẩn và tiệt khuẩn.', N'Đang hoạt động'),
+    (N'CK010', N'KHOA010', N'Quản lý y tế', N'Quản lý quy trình hành chính và vận hành bệnh viện.', N'Đang hoạt động');
 
 -- PHONG: 10 dòng
 INSERT INTO [dbo].[PHONG] ([MaPhong], [TenPhong], [MaKhoa], [LoaiPhong], [TinhTrang], [TrangThai])
 VALUES
-    (N'PH001', N'P01 - Khám tổng hợp', N'KHOA001', N'Khám tổng hợp', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH002', N'P02 - Điều trị răng', N'KHOA002', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH003', N'P03 - Phẫu thuật hàm mặt', N'KHOA003', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH004', N'P04 - Chẩn đoán hình ảnh', N'KHOA004', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH005', N'P05 - Xét nghiệm', N'KHOA005', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH006', N'P06 - Gây mê hồi sức', N'KHOA006', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH007', N'P07 - Chăm sóc và phục hồi', N'KHOA007', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH008', N'P08 - Dược', N'KHOA008', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH009', N'P09 - Kiểm soát nhiễm khuẩn', N'KHOA009', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH010', N'P10 - Hành chính quản trị', N'KHOA010', N'Phòng chuyên môn', N'Sẵn sàng', N'Đang hoạt động');
+    (N'PH001', N'Phòng 101 - Khám răng hàm mặt', N'KHOA001', N'Phòng khám', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH002', N'Phòng 102 - Điều trị bảo tồn', N'KHOA002', N'Phòng điều trị', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH003', N'Phòng 201 - Khám và tiểu phẫu hàm mặt', N'KHOA003', N'Phòng khám và thủ thuật', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH004', N'Phòng 202 - Chẩn đoán hình ảnh', N'KHOA004', N'Phòng chẩn đoán', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH005', N'Phòng 203 - Xét nghiệm', N'KHOA005', N'Phòng xét nghiệm', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH006', N'Phòng 204 - Theo dõi và hồi sức', N'KHOA006', N'Phòng theo dõi', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH007', N'Phòng 205 - Chăm sóc và thay băng', N'KHOA007', N'Phòng chăm sóc', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH008', N'Phòng 103 - Cấp phát thuốc', N'KHOA008', N'Phòng cấp phát', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH009', N'Phòng 206 - Tiệt khuẩn dụng cụ', N'KHOA009', N'Phòng tiệt khuẩn', N'Sẵn sàng', N'Đang hoạt động'),
+    (N'PH010', N'Phòng 301 - Hành chính và nhân sự', N'KHOA010', N'Phòng hành chính', N'Sẵn sàng', N'Đang hoạt động');
 
 -- NHAN_VIEN: 10 dòng
 INSERT INTO [dbo].[NHAN_VIEN] ([MaNV], [HoTen], [GioiTinh], [NgaySinh], [SDT], [DiaChi], [MaChucVu], [MaCK], [BangCap], [NgayVaoLam], [TrangThai])
 VALUES
-    (N'NV001', N'Nguyễn Minh Quang', N'Nam', N'1979-06-12', N'0902000001', N'21 Đường Mẫu, TP. Hồ Chí Minh', N'CV001', NULL, N'Đại học', N'2022-01-10', N'Đang làm việc'),
-    (N'NV002', N'Trần Quốc Bảo', N'Nam', N'1980-06-12', N'0902000002', N'22 Đường Mẫu, TP. Hồ Chí Minh', N'CV002', N'CK001', N'Đại học', N'2022-01-10', N'Đang làm việc'),
-    (N'NV003', N'Lê Thu Hà', N'Nữ', N'1981-06-12', N'0902000003', N'23 Đường Mẫu, TP. Hồ Chí Minh', N'CV002', N'CK001', N'Đại học', N'2022-01-10', N'Đang làm việc'),
-    (N'NV004', N'Phạm Ngọc Mai', N'Nữ', N'1982-06-12', N'0902000004', N'24 Đường Mẫu, TP. Hồ Chí Minh', N'CV003', N'CK001', N'Đại học', N'2022-01-10', N'Đang làm việc'),
-    (N'NV005', N'Võ Thảo Vy', N'Nữ', N'1983-06-12', N'0902000005', N'25 Đường Mẫu, TP. Hồ Chí Minh', N'CV004', NULL, N'Đại học', N'2022-01-10', N'Đang làm việc'),
-    (N'NV006', N'Đặng Thanh Lan', N'Nữ', N'1984-06-12', N'0902000006', N'26 Đường Mẫu, TP. Hồ Chí Minh', N'CV005', N'CK008', N'Đại học', N'2022-01-10', N'Đang làm việc'),
-    (N'NV007', N'Bùi Minh Tuấn', N'Nam', N'1985-06-12', N'0902000007', N'27 Đường Mẫu, TP. Hồ Chí Minh', N'CV006', NULL, N'Đại học', N'2022-01-10', N'Đang làm việc'),
-    (N'NV008', N'Hoàng Khánh Linh', N'Nữ', N'1986-06-12', N'0902000008', N'28 Đường Mẫu, TP. Hồ Chí Minh', N'CV007', NULL, N'Đại học', N'2022-01-10', N'Đang làm việc'),
-    (N'NV009', N'Đỗ Văn Hưng', N'Nam', N'1987-06-12', N'0902000009', N'29 Đường Mẫu, TP. Hồ Chí Minh', N'CV008', NULL, N'Đại học', N'2022-01-10', N'Đang làm việc'),
-    (N'NV010', N'Nguyễn Gia Hân', N'Nữ', N'1988-06-12', N'0902000010', N'30 Đường Mẫu, TP. Hồ Chí Minh', N'CV009', NULL, N'Đại học', N'2022-01-10', N'Đang làm việc');
+    (N'NV001', N'Nguyễn Minh Quang', N'Nam', N'1979-04-18', N'0903764281', N'18 Nguyễn Đình Chiểu, TP. Hồ Chí Minh', N'CV001', NULL, N'Kỹ sư công nghệ thông tin', N'2018-03-05', N'Đang làm việc'),
+    (N'NV002', N'Trần Quốc Bảo', N'Nam', N'1982-11-06', N'0918426735', N'52 Võ Thị Sáu, TP. Hồ Chí Minh', N'CV002', N'CK001', N'Bác sĩ răng hàm mặt', N'2017-09-11', N'Đang làm việc'),
+    (N'NV003', N'Lê Thu Hà', N'Nữ', N'1986-07-22', N'0935271864', N'27 Lê Văn Sỹ, TP. Hồ Chí Minh', N'CV002', N'CK001', N'Bác sĩ chuyên khoa I răng hàm mặt', N'2019-04-15', N'Đang làm việc'),
+    (N'NV004', N'Phạm Ngọc Mai', N'Nữ', N'1990-02-15', N'0986142357', N'96 Phan Đăng Lưu, TP. Hồ Chí Minh', N'CV003', N'CK001', N'Cử nhân điều dưỡng', N'2020-07-06', N'Đang làm việc'),
+    (N'NV005', N'Võ Thảo Vy', N'Nữ', N'1993-09-08', N'0973284615', N'14 Hoàng Hoa Thám, TP. Hồ Chí Minh', N'CV004', NULL, N'Cử nhân quản trị văn phòng', N'2022-02-14', N'Đang làm việc'),
+    (N'NV006', N'Đặng Thanh Lan', N'Nữ', N'1988-12-03', N'0908423167', N'63 Nguyễn Văn Đậu, TP. Hồ Chí Minh', N'CV005', N'CK008', N'Dược sĩ đại học', N'2020-11-02', N'Đang làm việc'),
+    (N'NV007', N'Bùi Minh Tuấn', N'Nam', N'1985-06-27', N'0915368742', N'81 Lý Thường Kiệt, TP. Hồ Chí Minh', N'CV006', NULL, N'Cử nhân quản lý kho và cung ứng', N'2018-06-18', N'Đang làm việc'),
+    (N'NV008', N'Hoàng Khánh Linh', N'Nữ', N'1994-05-19', N'0938146725', N'45 Trần Hưng Đạo, TP. Hồ Chí Minh', N'CV007', NULL, N'Cử nhân kế toán', N'2022-08-08', N'Đang làm việc'),
+    (N'NV009', N'Đỗ Văn Hưng', N'Nam', N'1987-10-11', N'0983257146', N'32 Nguyễn Tri Phương, TP. Hồ Chí Minh', N'CV008', N'CK004', N'Cử nhân kỹ thuật hình ảnh y học', N'2019-10-21', N'Đang làm việc'),
+    (N'NV010', N'Nguyễn Gia Hân', N'Nữ', N'1991-08-24', N'0976421835', N'70 Điện Biên Phủ, TP. Hồ Chí Minh', N'CV009', NULL, N'Cử nhân quản trị nhân lực', N'2021-05-10', N'Đang làm việc');
 
 -- TAI_KHOAN: 10 dòng
 INSERT INTO [dbo].[TAI_KHOAN] ([MaTK], [TenDangNhap], [MatKhauHash], [MaVaiTro], [MaNV], [MaKhoa], [MaPhong], [TrangThai])
 VALUES
-    (N'TK001', N'mau01', N'pbkdf2_sha256$210000$/J3BcaN7TS4U3PvKozPj2A==$lYpYoyAgRrU9UVvp+45G7kjEoeJGH1tn7MD3O/wax/U=', N'VTRO001', N'NV001', NULL, NULL, N'Khóa'),
-    (N'TK002', N'mau02', N'pbkdf2_sha256$210000$orRavgtSkKvLcQat9pgLDg==$9qiSzpp6lLqPOOvokEyolz6trc8mac5Y/AUO8wsS0u4=', N'VTRO002', N'NV002', N'KHOA001', NULL, N'Khóa'),
-    (N'TK003', N'mau03', N'pbkdf2_sha256$210000$6+QWI1t2ULOagkEzCKeMXQ==$uIcm3Lr+GSUefsG0SNAUyOAyL9nxUqMYljcZMwGK+cY=', N'VTRO002', N'NV003', N'KHOA001', NULL, N'Khóa'),
-    (N'TK004', N'mau04', N'pbkdf2_sha256$210000$5Kj+02fLLdMztUK5cchizw==$sxUcoQ1pQ5dasGazOIWbk3rU/hWA11b2mk/d/L+s6L4=', N'VTRO003', N'NV004', N'KHOA001', NULL, N'Khóa'),
-    (N'TK005', N'mau05', N'pbkdf2_sha256$210000$n8D6FpH9k5J6jedL//YsaA==$dP1r4hgxexBXNUdq3bf4DPwt8+RZ2UGKdTsNxLMbjcM=', N'VTRO004', N'NV005', NULL, NULL, N'Khóa'),
-    (N'TK006', N'mau06', N'pbkdf2_sha256$210000$4Abpb7pGCUdV6YhPYdsXIQ==$8krwzM34EGJCnd0ABU0jJ7Ahh3HrjElV5EpgwY0nO/o=', N'VTRO005', N'NV006', NULL, NULL, N'Khóa'),
-    (N'TK007', N'mau07', N'pbkdf2_sha256$210000$tOmTJ9bFvMLN7i0rH4+OZQ==$5cfVJC0mwZnJIE3FEcdxwszyCjMdLPaLq3N3vXQ3ViY=', N'VTRO006', N'NV007', NULL, NULL, N'Khóa'),
-    (N'TK008', N'mau08', N'pbkdf2_sha256$210000$JYpxzH34LZ+vlak/Z5lYdg==$vCauWuAYf9CcBwOFcljUJoA2PcU/wMnvgZxAHjgKzrU=', N'VTRO007', N'NV008', NULL, NULL, N'Khóa'),
-    (N'TK009', N'mau09', N'pbkdf2_sha256$210000$FV560XHUJO+RtgqgqUZNNA==$E2CYY1PadeVo9ByPZYpDOkEvxOxlkZtpu6Rs7mlDquI=', N'VTRO008', N'NV009', NULL, NULL, N'Khóa'),
-    (N'TK010', N'mau10', N'pbkdf2_sha256$210000$Fziml82I6+/meVwKOZZ6zg==$PxJNL9ghxtKHECJjEI3sxdCRDQw0d5fExED+/nLkTjQ=', N'VTRO009', N'NV010', NULL, NULL, N'Khóa');
+    (N'TK001', N'admin001', N'pbkdf2_sha256$210000$ySuolQNsbz9U0BKJXyRbdg==$kUN94Gb5yQWin2GY8bV997yDKFahhZQ66+LQOekQkIQ=', N'VTRO001', N'NV001', NULL, NULL, N'Đang hoạt động'),
+    (N'TK002', N'user002', N'pbkdf2_sha256$210000$/EzMpN8Zle1enHuKF8iRbg==$UbiXNcDloKUtErucAi771pq1q8r6PyYrttT1DmntZKc=', N'VTRO002', N'NV002', NULL, NULL, N'Đang hoạt động'),
+    (N'TK003', N'user003', N'pbkdf2_sha256$210000$UbT1x/u+PIdfsXb9RlHyZA==$jngv/FY5fY9WmHL1MejTO7f6s8DvbApx3W7LNm1ChwA=', N'VTRO002', N'NV003', NULL, NULL, N'Đang hoạt động'),
+    (N'TK004', N'user004', N'pbkdf2_sha256$210000$PE6JbVdw34HDrGfnnUuNiQ==$k/wfTkvdAjGoU2XbtciF4CVN7cvW2EPoO2LOzGF8p1M=', N'VTRO002', N'NV004', NULL, NULL, N'Đang hoạt động'),
+    (N'TK005', N'user005', N'pbkdf2_sha256$210000$cK+vxMJLLD68yvadN+jbbw==$Y4Y6S2U9PZbHcKqFGptNPD4ReJrtRPCrdCtzH8AhkKU=', N'VTRO002', N'NV005', NULL, NULL, N'Đang hoạt động'),
+    (N'TK006', N'user006', N'pbkdf2_sha256$210000$Lm/sjBztWCuTTxe/NJxOaA==$q1jtS0KaIuhvT+32BLKSfJjzl1ZedQkrryn0OjhV8cY=', N'VTRO002', N'NV006', NULL, NULL, N'Đang hoạt động'),
+    (N'TK007', N'user007', N'pbkdf2_sha256$210000$DQlO0johQCwWyDlnxHArYw==$ThJayvriBNy4LVDrEhiXKnc6unN6byEtHLaHY0798eg=', N'VTRO002', N'NV007', NULL, NULL, N'Đang hoạt động'),
+    (N'TK008', N'user008', N'pbkdf2_sha256$210000$LiC31Bm7kqa6VkBk9OeUKA==$39aBjqsGoks0HaB7yN8++H4Fzctg2la9IN1q4tXaY4M=', N'VTRO002', N'NV008', NULL, NULL, N'Đang hoạt động'),
+    (N'TK009', N'user009', N'pbkdf2_sha256$210000$RyAkMqy7zUllGmiXFw071Q==$o7sbwqOBmcBObjUBcwb1CO1obYWZFEI/XsWFm5FyzRs=', N'VTRO002', N'NV009', NULL, NULL, N'Đang hoạt động'),
+    (N'TK010', N'user010', N'pbkdf2_sha256$210000$jDi/FV0/u6DskkZW/ziRJg==$axus2cbl2BLjVYO9dqsx+XGd+EU3XT5X/KclyNRnPZE=', N'VTRO002', N'NV010', NULL, NULL, N'Đang hoạt động');
 
 -- CHUNG_CHI_NHAN_VIEN: 10 dòng
 INSERT INTO [dbo].[CHUNG_CHI_NHAN_VIEN] ([MaCC], [MaNV], [SoChungChi], [TenChungChi], [NgayCap], [NoiCap], [HanChungChi], [TrangThai], [GhiChu])
 VALUES
-    (N'CC001', N'NV001', N'CC-MAU-2022-001', N'Chứng nhận đào tạo nghiệp vụ nội bộ', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', NULL, N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
-    (N'CC002', N'NV002', N'CC-MAU-2022-002', N'Chứng chỉ hành nghề mô phỏng', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', N'2030-01-05', N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
-    (N'CC003', N'NV003', N'CC-MAU-2022-003', N'Chứng chỉ hành nghề mô phỏng', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', N'2030-01-05', N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
-    (N'CC004', N'NV004', N'CC-MAU-2022-004', N'Chứng chỉ hành nghề mô phỏng', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', N'2030-01-05', N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
-    (N'CC005', N'NV005', N'CC-MAU-2022-005', N'Chứng nhận đào tạo nghiệp vụ nội bộ', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', NULL, N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
-    (N'CC006', N'NV006', N'CC-MAU-2022-006', N'Chứng chỉ hành nghề mô phỏng', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', N'2030-01-05', N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
-    (N'CC007', N'NV007', N'CC-MAU-2022-007', N'Chứng nhận đào tạo nghiệp vụ nội bộ', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', NULL, N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
-    (N'CC008', N'NV008', N'CC-MAU-2022-008', N'Chứng nhận đào tạo nghiệp vụ nội bộ', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', NULL, N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
-    (N'CC009', N'NV009', N'CC-MAU-2022-009', N'Chứng nhận đào tạo nghiệp vụ nội bộ', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', NULL, N'Còn hiệu lực', N'Dữ liệu mẫu đồ án'),
-    (N'CC010', N'NV010', N'CC-MAU-2022-010', N'Chứng nhận đào tạo nghiệp vụ nội bộ', N'2022-01-05', N'Đơn vị đào tạo mô phỏng', NULL, N'Còn hiệu lực', N'Dữ liệu mẫu đồ án');
+    (N'CC001', N'NV001', N'CN-ATTT-2023-014', N'Bồi dưỡng an toàn thông tin hệ thống', N'2023-06-20', N'Trung tâm đào tạo công nghệ thông tin', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
+    (N'CC002', N'NV002', N'CCHN-RHM-2016-082', N'Chứng chỉ hành nghề khám chữa bệnh răng hàm mặt', N'2016-08-15', N'Cơ quan quản lý y tế', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
+    (N'CC003', N'NV003', N'CCHN-RHM-2018-127', N'Chứng chỉ hành nghề khám chữa bệnh răng hàm mặt', N'2018-11-12', N'Cơ quan quản lý y tế', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
+    (N'CC004', N'NV004', N'CCHN-DD-2019-236', N'Chứng chỉ hành nghề điều dưỡng', N'2019-10-07', N'Cơ quan quản lý y tế', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
+    (N'CC005', N'NV005', N'CN-TN-2024-038', N'Bồi dưỡng tiếp nhận và chăm sóc người bệnh', N'2024-03-18', N'Trung tâm đào tạo nghiệp vụ bệnh viện', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
+    (N'CC006', N'NV006', N'CCHN-D-2019-054', N'Chứng chỉ hành nghề dược', N'2019-07-22', N'Cơ quan quản lý y tế', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
+    (N'CC007', N'NV007', N'CN-GSP-2024-016', N'Đào tạo bảo quản thuốc và quản lý lô', N'2024-05-06', N'Trung tâm đào tạo nghiệp vụ dược', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
+    (N'CC008', N'NV008', N'CN-KT-2023-071', N'Bồi dưỡng nghiệp vụ kế toán và đối chiếu thu phí', N'2023-09-15', N'Trung tâm đào tạo kế toán', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
+    (N'CC009', N'NV009', N'CN-ATBX-2025-024', N'Đào tạo an toàn bức xạ cho nhân viên chẩn đoán hình ảnh', N'2025-02-17', N'Trung tâm đào tạo an toàn bức xạ', N'2028-02-17', N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
+    (N'CC010', N'NV010', N'CN-NS-2024-059', N'Bồi dưỡng quản lý nhân sự và chấm công', N'2024-08-12', N'Trung tâm đào tạo quản trị nhân lực', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.');
 
 -- NHA_CUNG_CAP: 10 dòng
 INSERT INTO [dbo].[NHA_CUNG_CAP] ([MaNCC], [TenNCC], [SDT], [Email], [DiaChi], [NguoiLienHe], [TrangThai])
 VALUES
-    (N'NCC001', N'Công ty cung ứng y tế mẫu 01', N'02872000001', N'ncc01@example.com', N'101 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 01', N'Đang hoạt động'),
-    (N'NCC002', N'Công ty cung ứng y tế mẫu 02', N'02872000002', N'ncc02@example.com', N'102 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 02', N'Đang hoạt động'),
-    (N'NCC003', N'Công ty cung ứng y tế mẫu 03', N'02872000003', N'ncc03@example.com', N'103 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 03', N'Đang hoạt động'),
-    (N'NCC004', N'Công ty cung ứng y tế mẫu 04', N'02872000004', N'ncc04@example.com', N'104 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 04', N'Đang hoạt động'),
-    (N'NCC005', N'Công ty cung ứng y tế mẫu 05', N'02872000005', N'ncc05@example.com', N'105 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 05', N'Đang hoạt động'),
-    (N'NCC006', N'Công ty cung ứng y tế mẫu 06', N'02872000006', N'ncc06@example.com', N'106 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 06', N'Đang hoạt động'),
-    (N'NCC007', N'Công ty cung ứng y tế mẫu 07', N'02872000007', N'ncc07@example.com', N'107 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 07', N'Đang hoạt động'),
-    (N'NCC008', N'Công ty cung ứng y tế mẫu 08', N'02872000008', N'ncc08@example.com', N'108 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 08', N'Đang hoạt động'),
-    (N'NCC009', N'Công ty cung ứng y tế mẫu 09', N'02872000009', N'ncc09@example.com', N'109 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 09', N'Đang hoạt động'),
-    (N'NCC010', N'Công ty cung ứng y tế mẫu 10', N'02872000010', N'ncc10@example.com', N'110 Đường Cung Ứng, TP. Hồ Chí Minh', N'Đại diện NCC mẫu 10', N'Đang hoạt động');
+    (N'NCC001', N'Công ty TNHH Dược phẩm An Phúc', N'02838241762', N'kinhdoanh@anphuc.example', N'70 Điện Biên Phủ, TP. Hồ Chí Minh', N'Nguyễn Hoàng Phúc', N'Đang hoạt động'),
+    (N'NCC002', N'Công ty TNHH Dược phẩm Minh Hòa', N'02838652914', N'kinhdoanh@minhhoa.example', N'32 Nguyễn Tri Phương, TP. Hồ Chí Minh', N'Trần Minh Hòa', N'Đang hoạt động'),
+    (N'NCC003', N'Công ty TNHH Dược và Vật tư Hải An', N'02838164825', N'kinhdoanh@haian.example', N'45 Trần Hưng Đạo, TP. Hồ Chí Minh', N'Lê Hải Yến', N'Đang hoạt động'),
+    (N'NCC004', N'Công ty TNHH Dược phẩm Nam Thành', N'02838571436', N'kinhdoanh@namthanh.example', N'81 Lý Thường Kiệt, TP. Hồ Chí Minh', N'Phạm Thành Đạt', N'Đang hoạt động'),
+    (N'NCC005', N'Công ty TNHH Dược phẩm Tâm Việt', N'02838362951', N'kinhdoanh@tamviet.example', N'63 Nguyễn Văn Đậu, TP. Hồ Chí Minh', N'Võ Thanh Tâm', N'Đang hoạt động'),
+    (N'NCC006', N'Công ty TNHH Dược phẩm Bình Minh', N'02838741623', N'kinhdoanh@binhminh.example', N'14 Hoàng Hoa Thám, TP. Hồ Chí Minh', N'Đặng Nhật Minh', N'Đang hoạt động'),
+    (N'NCC007', N'Công ty TNHH Dược phẩm Đông An', N'02838915274', N'kinhdoanh@dongan.example', N'96 Phan Đăng Lưu, TP. Hồ Chí Minh', N'Bùi Đông Anh', N'Đang hoạt động'),
+    (N'NCC008', N'Công ty TNHH Vật tư Y tế Gia Khang', N'02838426718', N'kinhdoanh@giakhang.example', N'27 Lê Văn Sỹ, TP. Hồ Chí Minh', N'Hoàng Gia Khang', N'Đang hoạt động'),
+    (N'NCC009', N'Công ty TNHH Dược và Thiết bị Y tế Hồng Phúc', N'02838853146', N'kinhdoanh@hongphuc.example', N'52 Võ Thị Sáu, TP. Hồ Chí Minh', N'Đỗ Hồng Nhung', N'Đang hoạt động'),
+    (N'NCC010', N'Công ty TNHH Dược và Thiết bị Y tế Phương Nam', N'02838297615', N'kinhdoanh@phuongnam.example', N'18 Nguyễn Đình Chiểu, TP. Hồ Chí Minh', N'Nguyễn Phương Thảo', N'Đang hoạt động');
 
 -- KHO: 10 dòng
 INSERT INTO [dbo].[KHO] ([MaKho], [TenKho], [MaNV], [LoaiKho], [TrangThai])
 VALUES
-    (N'KHO001', N'Kho thuốc cấp phát', N'NV007', N'Thuốc', N'Đang hoạt động'),
-    (N'KHO002', N'Kho dự phòng 02', N'NV007', N'Thuốc', N'Đang hoạt động'),
-    (N'KHO003', N'Kho dự phòng 03', N'NV007', N'Thuốc', N'Đang hoạt động'),
-    (N'KHO004', N'Kho dự phòng 04', N'NV007', N'Vật tư', N'Đang hoạt động'),
-    (N'KHO005', N'Kho dự phòng 05', N'NV007', N'Vật tư', N'Đang hoạt động'),
-    (N'KHO006', N'Kho dự phòng 06', N'NV007', N'Vật tư', N'Đang hoạt động'),
-    (N'KHO007', N'Kho dự phòng 07', N'NV007', N'Vật tư', N'Đang hoạt động'),
-    (N'KHO008', N'Kho dự phòng 08', N'NV007', N'Thiết bị', N'Đang hoạt động'),
-    (N'KHO009', N'Kho dự phòng 09', N'NV007', N'Thiết bị', N'Đang hoạt động'),
-    (N'KHO010', N'Kho dự phòng 10', N'NV007', N'Thiết bị', N'Đang hoạt động');
+    (N'KHO001', N'Kho thuốc ngoại trú', N'NV007', N'Thuốc', N'Đang hoạt động'),
+    (N'KHO002', N'Kho thuốc dự trữ', N'NV007', N'Thuốc', N'Đang hoạt động'),
+    (N'KHO003', N'Kho thuốc theo dõi đặc biệt', N'NV007', N'Thuốc', N'Đang hoạt động'),
+    (N'KHO004', N'Kho vật tư bảo hộ', N'NV007', N'Vật tư', N'Đang hoạt động'),
+    (N'KHO005', N'Kho băng gạc và chăm sóc', N'NV007', N'Vật tư', N'Đang hoạt động'),
+    (N'KHO006', N'Kho dụng cụ vô khuẩn', N'NV007', N'Vật tư', N'Đang hoạt động'),
+    (N'KHO007', N'Kho vật tư xét nghiệm', N'NV007', N'Vật tư', N'Đang hoạt động'),
+    (N'KHO008', N'Kho thiết bị chờ bàn giao', N'NV007', N'Thiết bị', N'Đang hoạt động'),
+    (N'KHO009', N'Kho thiết bị dự phòng', N'NV007', N'Thiết bị', N'Đang hoạt động'),
+    (N'KHO010', N'Kho thiết bị chờ bảo trì', N'NV007', N'Thiết bị', N'Đang hoạt động');
 
 -- LOAI_HANG_HOA: 10 dòng
 INSERT INTO [dbo].[LOAI_HANG_HOA] ([MaLoaiHH], [TenLoaiHH], [MoTa], [TrangThai])
 VALUES
-    (N'LHH001', N'Thuốc dạng viên', N'Nhóm thuốc dạng viên', N'Đang hoạt động'),
-    (N'LHH002', N'Thuốc dạng dung dịch', N'Nhóm thuốc dạng dung dịch', N'Đang hoạt động'),
-    (N'LHH003', N'Thuốc dùng ngoài', N'Nhóm thuốc dùng ngoài', N'Đang hoạt động'),
-    (N'LHH004', N'Vật tư bảo hộ', N'Nhóm vật tư bảo hộ', N'Đang hoạt động'),
-    (N'LHH005', N'Vật tư băng gạc', N'Nhóm vật tư băng gạc', N'Đang hoạt động'),
-    (N'LHH006', N'Vật tư vô khuẩn', N'Nhóm vật tư vô khuẩn', N'Đang hoạt động'),
-    (N'LHH007', N'Vật tư xét nghiệm', N'Nhóm vật tư xét nghiệm', N'Đang hoạt động'),
-    (N'LHH008', N'Thiết bị theo dõi', N'Nhóm thiết bị theo dõi', N'Đang hoạt động'),
-    (N'LHH009', N'Thiết bị chẩn đoán', N'Nhóm thiết bị chẩn đoán', N'Đang hoạt động'),
-    (N'LHH010', N'Thiết bị hỗ trợ điều trị', N'Nhóm thiết bị hỗ trợ điều trị', N'Đang hoạt động');
+    (N'LHH001', N'Thuốc dạng viên', N'Phân nhóm thuốc dạng viên để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
+    (N'LHH002', N'Thuốc dạng dung dịch', N'Phân nhóm thuốc dạng dung dịch để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
+    (N'LHH003', N'Thuốc dùng ngoài', N'Phân nhóm thuốc dùng ngoài để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
+    (N'LHH004', N'Vật tư bảo hộ', N'Phân nhóm vật tư bảo hộ để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
+    (N'LHH005', N'Vật tư băng gạc', N'Phân nhóm vật tư băng gạc để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
+    (N'LHH006', N'Vật tư vô khuẩn', N'Phân nhóm vật tư vô khuẩn để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
+    (N'LHH007', N'Vật tư xét nghiệm', N'Phân nhóm vật tư xét nghiệm để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
+    (N'LHH008', N'Thiết bị theo dõi', N'Phân nhóm thiết bị theo dõi để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
+    (N'LHH009', N'Thiết bị chẩn đoán', N'Phân nhóm thiết bị chẩn đoán để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
+    (N'LHH010', N'Thiết bị hỗ trợ điều trị', N'Phân nhóm thiết bị hỗ trợ điều trị để quản lý danh mục và tồn kho.', N'Đang hoạt động');
 
 -- HANG_HOA: 30 dòng
 INSERT INTO [dbo].[HANG_HOA] ([MaHH], [TenHH], [MaLoaiHH], [DonViTinh], [MoTa], [TrangThai])
 VALUES
-    (N'HH001', N'Thuốc mẫu A', N'LHH001', N'Viên', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
-    (N'HH002', N'Thuốc mẫu B', N'LHH001', N'Viên', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
-    (N'HH003', N'Thuốc mẫu C', N'LHH003', N'Tuýp', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
-    (N'HH004', N'Thuốc mẫu D', N'LHH001', N'Viên', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
-    (N'HH005', N'Thuốc mẫu E', N'LHH001', N'Viên', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
-    (N'HH006', N'Thuốc mẫu F', N'LHH002', N'Chai', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
-    (N'HH007', N'Thuốc mẫu G', N'LHH001', N'Viên', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
-    (N'HH008', N'Thuốc mẫu H', N'LHH003', N'Tuýp', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
-    (N'HH009', N'Thuốc mẫu I', N'LHH002', N'Chai', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
-    (N'HH010', N'Thuốc mẫu J', N'LHH001', N'Viên', N'Thuốc giả định để kiểm thử kê đơn, cấp phát và tính phí', N'Đang hoạt động'),
-    (N'HH011', N'Găng tay y tế', N'LHH004', N'Đôi', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
-    (N'HH012', N'Khẩu trang y tế', N'LHH004', N'Cái', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
-    (N'HH013', N'Gạc vô khuẩn', N'LHH005', N'Miếng', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
-    (N'HH014', N'Băng cuộn', N'LHH005', N'Cuộn', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
-    (N'HH015', N'Bông y tế', N'LHH005', N'Gói', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
-    (N'HH016', N'Áo choàng bảo hộ', N'LHH004', N'Cái', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
-    (N'HH017', N'Ống lấy mẫu', N'LHH007', N'Ống', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
-    (N'HH018', N'Túi vô khuẩn', N'LHH006', N'Túi', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
-    (N'HH019', N'Miếng băng dán', N'LHH005', N'Miếng', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
-    (N'HH020', N'Ống nghiệm', N'LHH007', N'Ống', N'Vật tư sử dụng nội bộ', N'Đang hoạt động'),
-    (N'HH021', N'Máy theo dõi sinh hiệu', N'LHH008', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
-    (N'HH022', N'Máy đo huyết áp', N'LHH008', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
-    (N'HH023', N'Máy đo SpO2', N'LHH008', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
-    (N'HH024', N'Máy điện tim', N'LHH008', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
-    (N'HH025', N'Máy chụp X-quang', N'LHH009', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
-    (N'HH026', N'Máy siêu âm', N'LHH009', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
-    (N'HH027', N'Máy hấp tiệt trùng', N'LHH010', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
-    (N'HH028', N'Máy hút dịch', N'LHH010', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
-    (N'HH029', N'Đèn khám', N'LHH010', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động'),
-    (N'HH030', N'Máy lọc không khí', N'LHH010', N'Cái', N'Thiết bị quản lý theo tài sản và số serial', N'Đang hoạt động');
+    (N'HH001', N'Paracetamol 500 mg', N'LHH001', N'Viên', N'Thuốc dạng viên, đường uống.', N'Đang hoạt động'),
+    (N'HH002', N'Amoxicillin 500 mg', N'LHH001', N'Viên', N'Thuốc kháng sinh dạng viên, cấp theo đơn bác sĩ.', N'Đang hoạt động'),
+    (N'HH003', N'Chlorhexidine 0,12% - chai 100 ml', N'LHH002', N'Chai', N'Dung dịch súc miệng, quản lý theo chai 100 ml.', N'Đang hoạt động'),
+    (N'HH004', N'Ibuprofen 200 mg', N'LHH001', N'Viên', N'Thuốc dạng viên, đường uống.', N'Đang hoạt động'),
+    (N'HH005', N'Cetirizine 10 mg', N'LHH001', N'Viên', N'Thuốc dạng viên, đường uống.', N'Đang hoạt động'),
+    (N'HH006', N'Triamcinolone acetonide 0,1% - tuýp 5 g', N'LHH003', N'Tuýp', N'Thuốc dùng tại chỗ trong khoang miệng, quản lý theo tuýp 5 g.', N'Đang hoạt động'),
+    (N'HH007', N'Cefalexin 500 mg', N'LHH001', N'Viên', N'Thuốc kháng sinh dạng viên, cấp theo đơn bác sĩ.', N'Đang hoạt động'),
+    (N'HH008', N'Natri clorid 0,9% - chai 500 ml', N'LHH002', N'Chai', N'Dung dịch rửa dùng ngoài, quản lý theo chai 500 ml.', N'Đang hoạt động'),
+    (N'HH009', N'Povidone iodine 10% - chai 100 ml', N'LHH003', N'Chai', N'Dung dịch sát khuẩn ngoài da, quản lý theo chai 100 ml.', N'Đang hoạt động'),
+    (N'HH010', N'Loratadine 10 mg', N'LHH001', N'Viên', N'Thuốc dạng viên, đường uống.', N'Đang hoạt động'),
+    (N'HH011', N'Găng tay y tế không bột cỡ M', N'LHH004', N'Đôi', N'Bảo hộ khi khám và chăm sóc người bệnh.', N'Đang hoạt động'),
+    (N'HH012', N'Khẩu trang y tế 3 lớp', N'LHH004', N'Cái', N'Bảo hộ đường hô hấp cho nhân viên.', N'Đang hoạt động'),
+    (N'HH013', N'Gạc vô khuẩn 10 x 10 cm', N'LHH005', N'Miếng', N'Chăm sóc và che phủ vết thương.', N'Đang hoạt động'),
+    (N'HH014', N'Băng cuộn y tế 5 cm', N'LHH005', N'Cuộn', N'Cố định băng gạc trong chăm sóc.', N'Đang hoạt động'),
+    (N'HH015', N'Bông y tế thấm nước 100 g', N'LHH005', N'Gói', N'Vật tư làm sạch trong chăm sóc.', N'Đang hoạt động'),
+    (N'HH016', N'Áo choàng bảo hộ dùng một lần', N'LHH004', N'Cái', N'Bảo hộ trong thủ thuật.', N'Đang hoạt động'),
+    (N'HH017', N'Ống lấy máu chân không EDTA', N'LHH007', N'Ống', N'Vật tư lấy mẫu xét nghiệm huyết học.', N'Đang hoạt động'),
+    (N'HH018', N'Túi ép tiệt khuẩn 10 x 20 cm', N'LHH006', N'Túi', N'Đóng gói dụng cụ trước tiệt khuẩn.', N'Đang hoạt động'),
+    (N'HH019', N'Băng dán vết thương vô khuẩn', N'LHH005', N'Miếng', N'Che phủ vết thương nhỏ.', N'Đang hoạt động'),
+    (N'HH020', N'Ống nghiệm lấy mẫu 10 ml', N'LHH007', N'Ống', N'Vật tư lưu mẫu xét nghiệm.', N'Đang hoạt động'),
+    (N'HH021', N'Máy theo dõi sinh hiệu', N'LHH008', N'Cái', N'Theo dõi huyết áp, nhịp tim và SpO2 tại phòng hồi sức.', N'Đang hoạt động'),
+    (N'HH022', N'Máy đo huyết áp', N'LHH008', N'Cái', N'Đo huyết áp trong khám và đánh giá trước điều trị.', N'Đang hoạt động'),
+    (N'HH023', N'Máy đo SpO2', N'LHH008', N'Cái', N'Theo dõi độ bão hòa oxy khi xử trí thủ thuật.', N'Đang hoạt động'),
+    (N'HH024', N'Máy điện tim', N'LHH008', N'Cái', N'Ghi điện tim phục vụ đánh giá người bệnh.', N'Đang hoạt động'),
+    (N'HH025', N'Máy chụp X-quang', N'LHH009', N'Cái', N'Chụp X-quang vùng hàm mặt theo chỉ định.', N'Đang hoạt động'),
+    (N'HH026', N'Máy siêu âm', N'LHH009', N'Cái', N'Hỗ trợ khảo sát mô mềm vùng hàm mặt.', N'Đang hoạt động'),
+    (N'HH027', N'Máy hấp tiệt trùng', N'LHH010', N'Cái', N'Tiệt khuẩn dụng cụ trước sử dụng.', N'Đang hoạt động'),
+    (N'HH028', N'Máy hút dịch', N'LHH010', N'Cái', N'Hút dịch trong chăm sóc và thủ thuật.', N'Đang hoạt động'),
+    (N'HH029', N'Đèn khám', N'LHH010', N'Cái', N'Chiếu sáng vùng khám tại phòng khám.', N'Đang hoạt động'),
+    (N'HH030', N'Máy lọc không khí', N'LHH010', N'Cái', N'Lọc không khí tại khu vực chăm sóc.', N'Đang hoạt động');
 
 -- VAT_TU: 10 dòng
 INSERT INTO [dbo].[VAT_TU] ([MaVT], [MaHH], [MucTonToiThieu])
 VALUES
-    (N'VT001', N'HH011', 10),
-    (N'VT002', N'HH012', 10),
-    (N'VT003', N'HH013', 10),
-    (N'VT004', N'HH014', 10),
-    (N'VT005', N'HH015', 10),
-    (N'VT006', N'HH016', 10),
-    (N'VT007', N'HH017', 10),
-    (N'VT008', N'HH018', 10),
-    (N'VT009', N'HH019', 10),
-    (N'VT010', N'HH020', 10);
+    (N'VT001', N'HH011', 200),
+    (N'VT002', N'HH012', 300),
+    (N'VT003', N'HH013', 100),
+    (N'VT004', N'HH014', 30),
+    (N'VT005', N'HH015', 20),
+    (N'VT006', N'HH016', 30),
+    (N'VT007', N'HH017', 100),
+    (N'VT008', N'HH018', 100),
+    (N'VT009', N'HH019', 50),
+    (N'VT010', N'HH020', 100);
 
 -- THUOC: 10 dòng
 INSERT INTO [dbo].[THUOC] ([MaThuoc], [MaHH], [HamLuong], [MucTonToiThieu], [DonGiaBan])
 VALUES
-    (N'TH001', N'HH001', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 2000),
-    (N'TH002', N'HH002', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 3000),
-    (N'TH003', N'HH003', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 25000),
-    (N'TH004', N'HH004', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 5000),
-    (N'TH005', N'HH005', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 3500),
-    (N'TH006', N'HH006', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 40000),
-    (N'TH007', N'HH007', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 1500),
-    (N'TH008', N'HH008', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 30000),
-    (N'TH009', N'HH009', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 45000),
-    (N'TH010', N'HH010', N'Hàm lượng mẫu; dùng cho kiểm thử', 20, 2500);
+    (N'TH001', N'HH001', N'500 mg', 100, 2000),
+    (N'TH002', N'HH002', N'500 mg', 100, 3000),
+    (N'TH003', N'HH003', N'0,12%', 10, 40000),
+    (N'TH004', N'HH004', N'200 mg', 100, 5000),
+    (N'TH005', N'HH005', N'10 mg', 100, 3500),
+    (N'TH006', N'HH006', N'0,1%', 10, 30000),
+    (N'TH007', N'HH007', N'500 mg', 100, 4500),
+    (N'TH008', N'HH008', N'0,9%', 10, 12000),
+    (N'TH009', N'HH009', N'10%', 10, 25000),
+    (N'TH010', N'HH010', N'10 mg', 100, 2500);
 
 -- THIET_BI: 10 dòng
 INSERT INTO [dbo].[THIET_BI] ([MaTB], [MaHH], [SoSerial], [NgayMua], [MaNCC], [MaPhong], [TinhTrang], [HanBaoHanh], [TrangThai], [GhiChu])
 VALUES
-    (N'TB001', N'HH021', N'RHM-MAU-0001', N'2024-01-10', N'NCC001', N'PH001', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
-    (N'TB002', N'HH022', N'RHM-MAU-0002', N'2024-01-10', N'NCC002', N'PH002', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
-    (N'TB003', N'HH023', N'RHM-MAU-0003', N'2024-01-10', N'NCC003', N'PH003', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
-    (N'TB004', N'HH024', N'RHM-MAU-0004', N'2024-01-10', N'NCC004', N'PH004', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
-    (N'TB005', N'HH025', N'RHM-MAU-0005', N'2024-01-10', N'NCC005', N'PH005', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
-    (N'TB006', N'HH026', N'RHM-MAU-0006', N'2024-01-10', N'NCC006', N'PH006', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
-    (N'TB007', N'HH027', N'RHM-MAU-0007', N'2024-01-10', N'NCC007', N'PH007', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
-    (N'TB008', N'HH028', N'RHM-MAU-0008', N'2024-01-10', N'NCC008', N'PH008', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
-    (N'TB009', N'HH029', N'RHM-MAU-0009', N'2024-01-10', N'NCC009', N'PH009', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này'),
-    (N'TB010', N'HH030', N'RHM-MAU-0010', N'2024-01-10', N'NCC010', N'PH010', N'Hoạt động tốt', N'2027-01-10', N'Đang sử dụng', N'Tài sản mua trước kỳ mẫu; không tạo lại tồn kho kỳ này');
+    (N'TB001', N'HH021', N'MON-240315-1082', N'2024-03-10', N'NCC009', N'PH006', N'Hoạt động tốt', N'2027-03-10', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
+    (N'TB002', N'HH022', N'BPM-240318-2564', N'2024-03-11', N'NCC009', N'PH001', N'Hoạt động tốt', N'2027-03-11', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
+    (N'TB003', N'HH023', N'OXI-240402-1735', N'2024-03-12', N'NCC009', N'PH003', N'Hoạt động tốt', N'2027-03-12', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
+    (N'TB004', N'HH024', N'ECG-240410-0681', N'2024-04-13', N'NCC009', N'PH006', N'Hoạt động tốt', N'2027-04-13', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
+    (N'TB005', N'HH025', N'XR-240422-0319', N'2024-04-14', N'NCC009', N'PH004', N'Hoạt động tốt', N'2027-04-14', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
+    (N'TB006', N'HH026', N'US-240506-0842', N'2024-04-15', N'NCC009', N'PH004', N'Hoạt động tốt', N'2027-04-15', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
+    (N'TB007', N'HH027', N'AC-240513-1468', N'2024-05-16', N'NCC010', N'PH009', N'Hoạt động tốt', N'2027-05-16', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
+    (N'TB008', N'HH028', N'SU-240527-2156', N'2024-05-17', N'NCC010', N'PH003', N'Hoạt động tốt', N'2027-05-17', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
+    (N'TB009', N'HH029', N'EXL-240603-3512', N'2024-05-18', N'NCC010', N'PH001', N'Hoạt động tốt', N'2027-05-18', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
+    (N'TB010', N'HH030', N'AIR-240617-4295', N'2024-06-19', N'NCC010', N'PH007', N'Hoạt động tốt', N'2027-06-19', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.');
 
 -- BAO_TRI_THIET_BI: 10 dòng
 INSERT INTO [dbo].[BAO_TRI_THIET_BI] ([MaBT], [MaTB], [MaNV], [NgayBatDau], [NgayKetThuc], [NoiDung], [ChiPhi], [NgayBaoTriTiepTheo], [TrangThai], [GhiChu])
 VALUES
-    (N'BT001', N'TB001', N'NV009', N'2026-09-01T08:00:00', N'2026-09-01T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 160000, N'2027-03-01', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
-    (N'BT002', N'TB002', N'NV009', N'2026-09-02T08:00:00', N'2026-09-02T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 170000, N'2027-03-02', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
-    (N'BT003', N'TB003', N'NV009', N'2026-09-03T08:00:00', N'2026-09-03T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 180000, N'2027-03-03', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
-    (N'BT004', N'TB004', N'NV009', N'2026-09-04T08:00:00', N'2026-09-04T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 190000, N'2027-03-04', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
-    (N'BT005', N'TB005', N'NV009', N'2026-09-05T08:00:00', N'2026-09-05T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 200000, N'2027-03-05', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
-    (N'BT006', N'TB006', N'NV009', N'2026-09-06T08:00:00', N'2026-09-06T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 210000, N'2027-03-06', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
-    (N'BT007', N'TB007', N'NV009', N'2026-09-07T08:00:00', N'2026-09-07T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 220000, N'2027-03-07', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
-    (N'BT008', N'TB008', N'NV009', N'2026-09-08T08:00:00', N'2026-09-08T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 230000, N'2027-03-08', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
-    (N'BT009', N'TB009', N'NV009', N'2026-09-09T08:00:00', N'2026-09-09T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 240000, N'2027-03-09', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân'),
-    (N'BT010', N'TB010', N'NV009', N'2026-09-10T08:00:00', N'2026-09-10T10:00:00', N'Kiểm tra, vệ sinh và hiệu chuẩn định kỳ', 250000, N'2027-03-10', N'Đã xác nhận', N'Chi phí nội bộ, không thu từ bệnh nhân');
+    (N'BT001', N'TB001', N'NV009', N'2026-09-01T08:00:00', N'2026-09-01T10:00:00', N'Kiểm tra cảm biến, vệ sinh máy và kiểm tra cảnh báo sinh hiệu.', 450000, N'2027-03-01', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
+    (N'BT002', N'TB002', N'NV009', N'2026-09-02T08:00:00', N'2026-09-02T10:00:00', N'Kiểm tra vòng bít, ống dẫn và đối chiếu độ chính xác đo.', 180000, N'2027-03-02', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
+    (N'BT003', N'TB003', N'NV009', N'2026-09-03T08:00:00', N'2026-09-03T10:00:00', N'Vệ sinh cảm biến SpO2, kiểm tra pin và tín hiệu đo.', 150000, N'2027-03-03', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
+    (N'BT004', N'TB004', N'NV009', N'2026-09-04T08:00:00', N'2026-09-04T10:00:00', N'Kiểm tra điện cực, dây dẫn và chất lượng bản ghi điện tim.', 350000, N'2027-03-04', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
+    (N'BT005', N'TB005', N'NV009', N'2026-09-05T08:00:00', N'2026-09-05T10:00:00', N'Kiểm tra bộ phát tia, chất lượng ảnh và cơ cấu an toàn.', 1500000, N'2027-03-05', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
+    (N'BT006', N'TB006', N'NV009', N'2026-09-06T08:00:00', N'2026-09-06T10:00:00', N'Kiểm tra đầu dò, vệ sinh máy và chất lượng hình ảnh.', 850000, N'2027-03-06', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
+    (N'BT007', N'TB007', N'NV009', N'2026-09-07T08:00:00', N'2026-09-07T10:00:00', N'Kiểm tra gioăng cửa, áp suất và chu trình tiệt khuẩn.', 650000, N'2027-03-07', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
+    (N'BT008', N'TB008', N'NV009', N'2026-09-08T08:00:00', N'2026-09-08T10:00:00', N'Vệ sinh bình chứa, kiểm tra lực hút và đường ống.', 280000, N'2027-03-08', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
+    (N'BT009', N'TB009', N'NV009', N'2026-09-09T08:00:00', N'2026-09-09T10:00:00', N'Vệ sinh đèn, kiểm tra độ sáng và khớp điều chỉnh.', 120000, N'2027-03-09', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
+    (N'BT010', N'TB010', N'NV009', N'2026-09-10T08:00:00', N'2026-09-10T10:00:00', N'Thay bộ lọc, vệ sinh quạt và kiểm tra lưu lượng khí.', 480000, N'2027-03-10', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.');
 
 -- CA_LAM: 10 dòng
 INSERT INTO [dbo].[CA_LAM] ([MaCa], [GioBatDau], [GioKetThuc], [TrangThai], [GhiChu])
 VALUES
-    (N'CA001', N'08:00:00', N'12:00:00', N'Đang hoạt động', N'Khám sáng'),
-    (N'CA002', N'13:00:00', N'17:00:00', N'Đang hoạt động', N'Khám chiều'),
-    (N'CA003', N'17:00:00', N'21:00:00', N'Đang hoạt động', N'Khám ngoài giờ'),
-    (N'CA004', N'07:00:00', N'11:00:00', N'Đang hoạt động', N'Hỗ trợ tiếp nhận sáng'),
-    (N'CA005', N'11:00:00', N'15:00:00', N'Đang hoạt động', N'Hỗ trợ tiếp nhận trưa'),
-    (N'CA006', N'15:00:00', N'19:00:00', N'Đang hoạt động', N'Hỗ trợ tiếp nhận chiều'),
-    (N'CA007', N'07:00:00', N'15:00:00', N'Đang hoạt động', N'Điều dưỡng ngày'),
-    (N'CA008', N'15:00:00', N'23:00:00', N'Đang hoạt động', N'Điều dưỡng tối'),
-    (N'CA009', N'23:00:00', N'07:00:00', N'Đang hoạt động', N'Trực qua đêm'),
-    (N'CA010', N'08:00:00', N'17:00:00', N'Đang hoạt động', N'Hành chính');
+    (N'CA001', N'08:00:00', N'12:00:00', N'Đang hoạt động', N'Ca khám sáng.'),
+    (N'CA002', N'13:00:00', N'17:00:00', N'Đang hoạt động', N'Ca khám chiều.'),
+    (N'CA003', N'17:00:00', N'21:00:00', N'Đang hoạt động', N'Ca khám ngoài giờ.'),
+    (N'CA004', N'07:00:00', N'11:00:00', N'Đang hoạt động', N'Ca hỗ trợ tiếp nhận sáng.'),
+    (N'CA005', N'11:00:00', N'15:00:00', N'Đang hoạt động', N'Ca hỗ trợ tiếp nhận trưa.'),
+    (N'CA006', N'15:00:00', N'19:00:00', N'Đang hoạt động', N'Ca hỗ trợ tiếp nhận chiều.'),
+    (N'CA007', N'07:00:00', N'15:00:00', N'Đang hoạt động', N'Ca điều dưỡng ngày.'),
+    (N'CA008', N'15:00:00', N'23:00:00', N'Đang hoạt động', N'Ca điều dưỡng tối.'),
+    (N'CA009', N'23:00:00', N'07:00:00', N'Đang hoạt động', N'Ca trực qua đêm (kết thúc vào ngày kế tiếp).'),
+    (N'CA010', N'08:00:00', N'17:00:00', N'Đang hoạt động', N'Ca hành chính.');
 
 -- BENH_NHAN: 10 dòng
 INSERT INTO [dbo].[BENH_NHAN] ([MaBN], [HoTenBN], [GioiTinh], [NgaySinh], [SDT], [DiaChi], [MaBHYT], [NhomMau], [TienSuBenh], [DiUng], [TrangThai])
 VALUES
-    (N'BN001', N'Nguyễn Văn An', N'Nam', N'1981-03-15', N'0901000001', N'41 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'O+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
-    (N'BN002', N'Trần Thị Bình', N'Nữ', N'1982-03-15', N'0901000002', N'42 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'A+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
-    (N'BN003', N'Lê Quốc Cường', N'Nam', N'1983-03-15', N'0901000003', N'43 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'B+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
-    (N'BN004', N'Phạm Ngọc Dung', N'Nữ', N'1984-03-15', N'0901000004', N'44 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'AB+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
-    (N'BN005', N'Võ Minh Đức', N'Nam', N'1985-03-15', N'0901000005', N'45 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'O+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
-    (N'BN006', N'Đặng Thị Hạnh', N'Nữ', N'1986-03-15', N'0901000006', N'46 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'A+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
-    (N'BN007', N'Bùi Gia Huy', N'Nam', N'1987-03-15', N'0901000007', N'47 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'B+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
-    (N'BN008', N'Hoàng Thị Lan', N'Nữ', N'1988-03-15', N'0901000008', N'48 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'AB+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
-    (N'BN009', N'Đỗ Thành Nam', N'Nam', N'1989-03-15', N'0901000009', N'49 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'O+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi'),
-    (N'BN010', N'Nguyễn Khánh Vy', N'Nữ', N'1990-03-15', N'0901000010', N'50 Đường Minh Họa, TP. Hồ Chí Minh', NULL, N'A+', N'Không ghi nhận trong hồ sơ mẫu', N'Không ghi nhận trong hồ sơ mẫu', N'Đang theo dõi');
+    (N'BN001', N'Nguyễn Văn An', N'Nam', N'1981-03-15', N'0905824176', N'24 Nguyễn Văn Cừ, TP. Hồ Chí Minh', NULL, NULL, N'Chưa ghi nhận bệnh nền.', N'Chưa ghi nhận', N'Đang theo dõi'),
+    (N'BN002', N'Trần Thị Bình', N'Nữ', N'1988-09-24', N'0913672854', N'57 Cách Mạng Tháng Tám, TP. Hồ Chí Minh', NULL, NULL, N'Chưa ghi nhận bệnh nền; nghiến răng về đêm.', N'Chưa ghi nhận', N'Đang theo dõi'),
+    (N'BN003', N'Lê Quốc Cường', N'Nam', N'1992-12-08', N'0938465127', N'39 Phan Xích Long, TP. Hồ Chí Minh', NULL, NULL, N'Có tiền sử dị ứng mỹ phẩm tiếp xúc.', N'Kích ứng sau tiếp xúc mỹ phẩm', N'Đang theo dõi'),
+    (N'BN004', N'Phạm Ngọc Dung', N'Nữ', N'1976-06-17', N'0982736145', N'112 Nguyễn Kiệm, TP. Hồ Chí Minh', NULL, NULL, N'Đã từng loét niêm mạc miệng tái phát.', N'Chưa ghi nhận', N'Đang theo dõi'),
+    (N'BN005', N'Võ Minh Đức', N'Nam', N'1985-01-29', N'0975143286', N'68 Hoàng Văn Thụ, TP. Hồ Chí Minh', NULL, NULL, N'Đã khâu vết thương má tại cơ sở y tế ngày 28/09/2026.', N'Chưa ghi nhận', N'Đang theo dõi'),
+    (N'BN006', N'Đặng Thị Hạnh', N'Nữ', N'1996-08-13', N'0906281374', N'43 Lê Quang Định, TP. Hồ Chí Minh', NULL, NULL, N'Đau vùng hàm sau va chạm nhẹ ngày 30/09/2026.', N'Chưa ghi nhận', N'Đang theo dõi'),
+    (N'BN007', N'Bùi Gia Huy', N'Nam', N'1967-11-05', N'0918746523', N'85 Xô Viết Nghệ Tĩnh, TP. Hồ Chí Minh', NULL, NULL, N'Đã xử trí vết thương ngoài da vùng má ngày 29/09/2026.', N'Chưa ghi nhận', N'Đang theo dõi'),
+    (N'BN008', N'Hoàng Thị Lan', N'Nữ', N'1990-04-21', N'0932178465', N'17 Nguyễn Thị Minh Khai, TP. Hồ Chí Minh', NULL, NULL, N'Có tiền sử kích ứng da khi tiếp xúc chất tẩy rửa.', N'Kích ứng sau tiếp xúc chất tẩy rửa', N'Đang theo dõi'),
+    (N'BN009', N'Đỗ Thành Nam', N'Nam', N'1983-07-09', N'0986423157', N'76 Trần Bình Trọng, TP. Hồ Chí Minh', NULL, NULL, N'Đang theo dõi vết thương vùng cằm sau xử trí ban đầu.', N'Chưa ghi nhận', N'Đang theo dõi'),
+    (N'BN010', N'Nguyễn Khánh Vy', N'Nữ', N'2001-10-26', N'0973864215', N'29 Tô Hiến Thành, TP. Hồ Chí Minh', NULL, NULL, N'Đã điều trị hạn chế há miệng; đến đánh giá vận động hàm.', N'Chưa ghi nhận', N'Đang theo dõi');
 
 -- HO_SO_BENH_AN: 10 dòng
 INSERT INTO [dbo].[HO_SO_BENH_AN] ([MaHS], [MaBN], [NgayLap], [LyDoKhamBanDau], [GhiChu], [TrangThai])
 VALUES
-    (N'HS001', N'BN001', N'2026-09-25T08:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
-    (N'HS002', N'BN002', N'2026-09-25T08:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
-    (N'HS003', N'BN003', N'2026-09-25T08:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
-    (N'HS004', N'BN004', N'2026-09-25T08:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
-    (N'HS005', N'BN005', N'2026-09-25T08:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
-    (N'HS006', N'BN006', N'2026-10-01T09:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
-    (N'HS007', N'BN007', N'2026-10-02T09:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
-    (N'HS008', N'BN008', N'2026-10-03T09:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
-    (N'HS009', N'BN009', N'2026-10-04T09:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi'),
-    (N'HS010', N'BN010', N'2026-10-05T09:00:00', N'Khám và đánh giá tình trạng răng hàm mặt', N'Thông tin bệnh nhân mẫu', N'Đang theo dõi');
+    (N'HS001', N'BN001', N'2026-09-25T08:00:00', N'Sưng đau trong khoang miệng 2 ngày, khó chịu khi ăn.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
+    (N'HS002', N'BN002', N'2026-09-25T08:00:00', N'Đau vùng khớp hàm khi nhai, há miệng còn thực hiện được.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
+    (N'HS003', N'BN003', N'2026-09-25T08:00:00', N'Ngứa và sưng nhẹ môi sau tiếp xúc mỹ phẩm.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
+    (N'HS004', N'BN004', N'2026-09-25T08:00:00', N'Đau rát do loét nhỏ niêm mạc miệng, ăn uống giảm.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
+    (N'HS005', N'BN005', N'2026-09-25T08:00:00', N'Vết thương má sau khâu còn đỏ và đau quanh mép.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
+    (N'HS006', N'BN006', N'2026-10-01T09:00:00', N'Đau vùng hàm sau va chạm, sưng nhẹ.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
+    (N'HS007', N'BN007', N'2026-10-02T09:00:00', N'Vết trầy vùng má sau ngã, còn đau khi chạm vùng gò má.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
+    (N'HS008', N'BN008', N'2026-10-03T09:00:00', N'Ngứa da vùng mặt sau tiếp xúc chất tẩy rửa.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
+    (N'HS009', N'BN009', N'2026-10-04T09:00:00', N'Đến thay băng vùng cằm sau xử trí vết thương.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
+    (N'HS010', N'BN010', N'2026-10-05T09:00:00', N'Còn hạn chế há miệng nhẹ sau đợt điều trị.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi');
 
 -- DICH_VU: 10 dòng
 INSERT INTO [dbo].[DICH_VU] ([MaDV], [TenDV], [NhomDV], [MaCK], [DonGia], [ThoiGianDuKien], [MoTa], [NgayApDung], [TrangThai])
 VALUES
-    (N'DV001', N'Khám răng hàm mặt tổng quát', N'Khám và tư vấn', N'CK001', 100000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV002', N'Tái khám và đánh giá', N'Khám và tư vấn', N'CK001', 120000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV003', N'Tư vấn kế hoạch điều trị', N'Khám và tư vấn', N'CK001', 80000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV004', N'Theo dõi sau điều trị', N'Khám và tư vấn', N'CK001', 100000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV005', N'Đánh giá phục hồi chức năng', N'Khám và tư vấn', N'CK001', 150000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV006', N'Chụp X-quang hàm mặt', N'Hỗ trợ điều trị', N'CK004', 200000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV007', N'Xét nghiệm hỗ trợ điều trị', N'Hỗ trợ điều trị', N'CK005', 180000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV008', N'Chăm sóc vết thương', N'Hỗ trợ điều trị', N'CK007', 160000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV009', N'Thay băng và theo dõi', N'Hỗ trợ điều trị', N'CK007', 90000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV010', N'Điều trị hỗ trợ theo chỉ định', N'Hỗ trợ điều trị', N'CK001', 250000, 30, N'Dịch vụ mẫu răng hàm mặt; không có đơn vị tính', N'2026-01-01', N'Đang hoạt động');
+    (N'DV001', N'Khám răng hàm mặt tổng quát', N'Khám và tư vấn', N'CK001', 100000, 30, N'Thăm khám và đánh giá tổng quát vùng răng hàm mặt.', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV002', N'Khám khớp thái dương hàm', N'Khám và tư vấn', N'CK001', 120000, 30, N'Đánh giá đau và khả năng vận động khớp hàm.', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV003', N'Khám bệnh lý niêm mạc và vùng môi', N'Khám và tư vấn', N'CK001', 80000, 25, N'Đánh giá tổn thương niêm mạc, vùng môi và yếu tố tiếp xúc.', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV004', N'Khám theo dõi loét niêm mạc miệng', N'Khám và tư vấn', N'CK001', 100000, 25, N'Đánh giá tiến triển tổn thương và hướng dẫn chăm sóc.', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV005', N'Khám theo dõi vết thương hàm mặt', N'Khám và tư vấn', N'CK001', 150000, 30, N'Đánh giá vết thương vùng hàm mặt sau xử trí.', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV006', N'Chụp X-quang hàm mặt', N'Chẩn đoán hình ảnh', N'CK004', 200000, 20, N'Thực hiện hình ảnh theo vùng khảo sát được bác sĩ chỉ định.', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV007', N'Chụp X-quang hàm mặt bổ sung', N'Chẩn đoán hình ảnh', N'CK004', 180000, 20, N'Bổ sung hình ảnh để khảo sát tổn thương vùng hàm mặt.', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV008', N'Chăm sóc vùng da bị tổn thương', N'Chăm sóc điều trị', N'CK007', 160000, 20, N'Làm sạch và chăm sóc vùng da tổn thương theo chỉ định.', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV009', N'Thay băng và đánh giá vết thương', N'Chăm sóc điều trị', N'CK007', 90000, 20, N'Thay băng và ghi nhận tình trạng liền thương.', N'2026-01-01', N'Đang hoạt động'),
+    (N'DV010', N'Tư vấn phục hồi vận động hàm', N'Khám và tư vấn', N'CK001', 250000, 30, N'Đánh giá vận động hàm và tư vấn kế hoạch theo dõi.', N'2026-01-01', N'Đang hoạt động');
 
 -- LICH_LAM_VIEC: 10 dòng
 INSERT INTO [dbo].[LICH_LAM_VIEC] ([MaLLV], [MaNV], [MaCa], [NgayLam], [MaPhong], [TrangThai], [TrangThaiHienDien], [GioVao], [GioRa], [GhiChu])
 VALUES
-    (N'LLV001', N'NV002', N'CA001', N'2026-10-01', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Lịch gốc bị ảnh hưởng bởi đơn nghỉ'),
-    (N'LLV002', N'NV002', N'CA001', N'2026-10-02', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Lịch gốc bị ảnh hưởng bởi đơn nghỉ'),
-    (N'LLV003', N'NV002', N'CA001', N'2026-10-03', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Lịch gốc bị ảnh hưởng bởi đơn nghỉ'),
-    (N'LLV004', N'NV002', N'CA001', N'2026-10-04', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Lịch gốc bị ảnh hưởng bởi đơn nghỉ'),
-    (N'LLV005', N'NV002', N'CA001', N'2026-10-05', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Lịch gốc bị ảnh hưởng bởi đơn nghỉ'),
-    (N'LLV006', N'NV003', N'CA001', N'2026-10-01', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-01T08:00:00', N'2026-10-01T12:00:00', N'Lịch thay thế bác sĩ nghỉ phép'),
-    (N'LLV007', N'NV003', N'CA001', N'2026-10-02', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-02T08:00:00', N'2026-10-02T12:00:00', N'Lịch thay thế bác sĩ nghỉ phép'),
-    (N'LLV008', N'NV003', N'CA001', N'2026-10-03', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-03T08:00:00', N'2026-10-03T12:00:00', N'Lịch thay thế bác sĩ nghỉ phép'),
-    (N'LLV009', N'NV003', N'CA001', N'2026-10-04', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-04T08:00:00', N'2026-10-04T12:00:00', N'Lịch thay thế bác sĩ nghỉ phép'),
-    (N'LLV010', N'NV003', N'CA001', N'2026-10-05', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-05T08:00:00', N'2026-10-05T12:00:00', N'Lịch thay thế bác sĩ nghỉ phép');
+    (N'LLV001', N'NV002', N'CA001', N'2026-10-01', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Ca khám đã hủy do bác sĩ Trần Quốc Bảo nghỉ; đã phân công Lê Thu Hà thay thế.'),
+    (N'LLV002', N'NV002', N'CA001', N'2026-10-02', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Ca khám đã hủy do bác sĩ Trần Quốc Bảo nghỉ; đã phân công Lê Thu Hà thay thế.'),
+    (N'LLV003', N'NV002', N'CA001', N'2026-10-03', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Ca khám đã hủy do bác sĩ Trần Quốc Bảo nghỉ; đã phân công Lê Thu Hà thay thế.'),
+    (N'LLV004', N'NV002', N'CA001', N'2026-10-04', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Ca khám đã hủy do bác sĩ Trần Quốc Bảo nghỉ; đã phân công Lê Thu Hà thay thế.'),
+    (N'LLV005', N'NV002', N'CA001', N'2026-10-05', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Ca khám đã hủy do bác sĩ Trần Quốc Bảo nghỉ; đã phân công Lê Thu Hà thay thế.'),
+    (N'LLV006', N'NV003', N'CA001', N'2026-10-01', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-01T08:00:00', N'2026-10-01T12:00:00', N'Bác sĩ Lê Thu Hà thay ca tại phòng khám 101; đã đối chiếu giờ vào/ra.'),
+    (N'LLV007', N'NV003', N'CA001', N'2026-10-02', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-02T08:00:00', N'2026-10-02T12:00:00', N'Bác sĩ Lê Thu Hà thay ca tại phòng khám 101; đã đối chiếu giờ vào/ra.'),
+    (N'LLV008', N'NV003', N'CA001', N'2026-10-03', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-03T08:00:00', N'2026-10-03T12:00:00', N'Bác sĩ Lê Thu Hà thay ca tại phòng khám 101; đã đối chiếu giờ vào/ra.'),
+    (N'LLV009', N'NV003', N'CA001', N'2026-10-04', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-04T08:00:00', N'2026-10-04T12:00:00', N'Bác sĩ Lê Thu Hà thay ca tại phòng khám 101; đã đối chiếu giờ vào/ra.'),
+    (N'LLV010', N'NV003', N'CA001', N'2026-10-05', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-05T08:00:00', N'2026-10-05T12:00:00', N'Bác sĩ Lê Thu Hà thay ca tại phòng khám 101; đã đối chiếu giờ vào/ra.');
 
 -- DON_XIN_NGHI: 10 dòng
 INSERT INTO [dbo].[DON_XIN_NGHI] ([MaDonNghi], [MaNV], [TuNgay], [DenNgay], [LyDo], [NgayGui], [TrangThaiDuyet], [MaNVDuyet], [NgayDuyet], [GhiChu])
 VALUES
-    (N'DN001', N'NV002', N'2026-10-01', N'2026-10-01', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', NULL),
-    (N'DN002', N'NV002', N'2026-10-02', N'2026-10-02', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', NULL),
-    (N'DN003', N'NV002', N'2026-10-03', N'2026-10-03', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', NULL),
-    (N'DN004', N'NV002', N'2026-10-04', N'2026-10-04', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', NULL),
-    (N'DN005', N'NV002', N'2026-10-05', N'2026-10-05', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', NULL),
-    (N'DN006', N'NV004', N'2026-10-21', N'2026-10-21', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Chờ duyệt', NULL, NULL, NULL),
-    (N'DN007', N'NV004', N'2026-10-22', N'2026-10-22', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Chờ duyệt', NULL, NULL, NULL),
-    (N'DN008', N'NV004', N'2026-10-23', N'2026-10-23', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Chờ duyệt', NULL, NULL, NULL),
-    (N'DN009', N'NV004', N'2026-10-24', N'2026-10-24', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Chờ duyệt', NULL, NULL, NULL),
-    (N'DN010', N'NV004', N'2026-10-25', N'2026-10-25', N'Việc gia đình (mô phỏng)', N'2026-09-20T09:00:00', N'Chờ duyệt', NULL, NULL, NULL);
+    (N'DN001', N'NV002', N'2026-10-01', N'2026-10-01', N'Nghỉ phép chăm sóc người thân', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', N'Đã chuyển bộ phận điều phối để bố trí bác sĩ thay ca.'),
+    (N'DN002', N'NV002', N'2026-10-02', N'2026-10-02', N'Nghỉ phép giải quyết thủ tục gia đình', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', N'Đã chuyển bộ phận điều phối để bố trí bác sĩ thay ca.'),
+    (N'DN003', N'NV002', N'2026-10-03', N'2026-10-03', N'Nghỉ phép theo kế hoạch cá nhân', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', N'Đã chuyển bộ phận điều phối để bố trí bác sĩ thay ca.'),
+    (N'DN004', N'NV002', N'2026-10-04', N'2026-10-04', N'Nghỉ phép giải quyết việc gia đình', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', N'Đã chuyển bộ phận điều phối để bố trí bác sĩ thay ca.'),
+    (N'DN005', N'NV002', N'2026-10-05', N'2026-10-05', N'Nghỉ phép chăm sóc người thân', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', N'Đã chuyển bộ phận điều phối để bố trí bác sĩ thay ca.'),
+    (N'DN006', N'NV004', N'2026-10-21', N'2026-10-21', N'Xin nghỉ giải quyết thủ tục hành chính', N'2026-10-10T09:00:00', N'Chờ duyệt', NULL, NULL, N'Chờ xét duyệt và sắp xếp nhân sự thay ca.'),
+    (N'DN007', N'NV004', N'2026-10-22', N'2026-10-22', N'Xin nghỉ chăm sóc con', N'2026-10-10T09:00:00', N'Chờ duyệt', NULL, NULL, N'Chờ xét duyệt và sắp xếp nhân sự thay ca.'),
+    (N'DN008', N'NV004', N'2026-10-23', N'2026-10-23', N'Xin nghỉ theo kế hoạch cá nhân', N'2026-10-10T09:00:00', N'Chờ duyệt', NULL, NULL, N'Chờ xét duyệt và sắp xếp nhân sự thay ca.'),
+    (N'DN009', N'NV004', N'2026-10-24', N'2026-10-24', N'Xin nghỉ dự việc gia đình', N'2026-10-10T09:00:00', N'Chờ duyệt', NULL, NULL, N'Chờ xét duyệt và sắp xếp nhân sự thay ca.'),
+    (N'DN010', N'NV004', N'2026-10-25', N'2026-10-25', N'Xin nghỉ khám sức khỏe cá nhân', N'2026-10-10T09:00:00', N'Chờ duyệt', NULL, NULL, N'Chờ xét duyệt và sắp xếp nhân sự thay ca.');
 
 -- PHAN_CONG_THAY_THE: 10 dòng
 INSERT INTO [dbo].[PHAN_CONG_THAY_THE] ([MaPCTT], [MaDonNghi], [MaLLVThayThe], [NgayXuLy], [TrangThai], [GhiChu])
 VALUES
-    (N'PCTT001', N'DN001', N'LLV006', N'2026-09-21T09:30:00', N'Hủy', N'Phương án cũ hủy trước áp dụng'),
-    (N'PCTT002', N'DN002', N'LLV007', N'2026-09-21T09:30:00', N'Hủy', N'Phương án cũ hủy trước áp dụng'),
-    (N'PCTT003', N'DN003', N'LLV008', N'2026-09-21T09:30:00', N'Hủy', N'Phương án cũ hủy trước áp dụng'),
-    (N'PCTT004', N'DN004', N'LLV009', N'2026-09-21T09:30:00', N'Hủy', N'Phương án cũ hủy trước áp dụng'),
-    (N'PCTT005', N'DN005', N'LLV010', N'2026-09-21T09:30:00', N'Hủy', N'Phương án cũ hủy trước áp dụng'),
-    (N'PCTT006', N'DN001', N'LLV006', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức; thay ca gốc cùng ngày/phòng'),
-    (N'PCTT007', N'DN002', N'LLV007', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức; thay ca gốc cùng ngày/phòng'),
-    (N'PCTT008', N'DN003', N'LLV008', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức; thay ca gốc cùng ngày/phòng'),
-    (N'PCTT009', N'DN004', N'LLV009', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức; thay ca gốc cùng ngày/phòng'),
-    (N'PCTT010', N'DN005', N'LLV010', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức; thay ca gốc cùng ngày/phòng');
+    (N'PCTT001', N'DN001', N'LLV006', N'2026-09-21T09:30:00', N'Hủy', N'Đề xuất thay ca được rút trước khi áp dụng; dùng phương án xác nhận sau.'),
+    (N'PCTT002', N'DN002', N'LLV007', N'2026-09-21T09:30:00', N'Hủy', N'Đề xuất thay ca được rút trước khi áp dụng; dùng phương án xác nhận sau.'),
+    (N'PCTT003', N'DN003', N'LLV008', N'2026-09-21T09:30:00', N'Hủy', N'Đề xuất thay ca được rút trước khi áp dụng; dùng phương án xác nhận sau.'),
+    (N'PCTT004', N'DN004', N'LLV009', N'2026-09-21T09:30:00', N'Hủy', N'Đề xuất thay ca được rút trước khi áp dụng; dùng phương án xác nhận sau.'),
+    (N'PCTT005', N'DN005', N'LLV010', N'2026-09-21T09:30:00', N'Hủy', N'Đề xuất thay ca được rút trước khi áp dụng; dùng phương án xác nhận sau.'),
+    (N'PCTT006', N'DN001', N'LLV006', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức: Lê Thu Hà thay Trần Quốc Bảo, ca sáng tại phòng 101.'),
+    (N'PCTT007', N'DN002', N'LLV007', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức: Lê Thu Hà thay Trần Quốc Bảo, ca sáng tại phòng 101.'),
+    (N'PCTT008', N'DN003', N'LLV008', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức: Lê Thu Hà thay Trần Quốc Bảo, ca sáng tại phòng 101.'),
+    (N'PCTT009', N'DN004', N'LLV009', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức: Lê Thu Hà thay Trần Quốc Bảo, ca sáng tại phòng 101.'),
+    (N'PCTT010', N'DN005', N'LLV010', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức: Lê Thu Hà thay Trần Quốc Bảo, ca sáng tại phòng 101.');
 
 -- LICH_KHAM: 10 dòng
 INSERT INTO [dbo].[LICH_KHAM] ([MaLich], [MaBN], [MaBS], [MaCa], [MaPhong], [MaDV], [NgayGioKham], [ThoiLuongDuKien], [UuTien], [LyDoKham], [LyDoThayDoi], [TrangThai], [GhiChu], [NgayTao], [NgayCapNhat])
 VALUES
-    (N'LK001', N'BN001', N'NV003', N'CA001', N'PH001', N'DV001', N'2026-10-01T08:15:00', 30, N'Bình thường', N'Khám răng hàm mặt', NULL, N'Đã khám', N'Đặt lịch qua điện thoại', N'2026-09-25T10:00:00', NULL),
-    (N'LK002', N'BN002', N'NV003', N'CA001', N'PH001', N'DV002', N'2026-10-02T08:15:00', 30, N'Bình thường', N'Khám răng hàm mặt', NULL, N'Đã khám', N'Đặt lịch qua điện thoại', N'2026-09-25T10:00:00', NULL),
-    (N'LK003', N'BN003', N'NV003', N'CA001', N'PH001', N'DV003', N'2026-10-03T08:15:00', 30, N'Bình thường', N'Khám răng hàm mặt', NULL, N'Đã khám', N'Đặt lịch qua điện thoại', N'2026-09-25T10:00:00', NULL),
-    (N'LK004', N'BN004', N'NV003', N'CA001', N'PH001', N'DV004', N'2026-10-04T08:15:00', 30, N'Bình thường', N'Khám răng hàm mặt', NULL, N'Đã khám', N'Đặt lịch qua điện thoại', N'2026-09-25T10:00:00', NULL),
-    (N'LK005', N'BN005', N'NV003', N'CA001', N'PH001', N'DV005', N'2026-10-05T08:15:00', 30, N'Bình thường', N'Khám răng hàm mặt', NULL, N'Đã khám', N'Đặt lịch qua điện thoại', N'2026-09-25T10:00:00', NULL),
-    (N'LK006', N'BN006', N'NV002', N'CA002', N'PH001', N'DV002', N'2026-10-12T14:00:00', 30, N'Bình thường', N'Tái khám theo hẹn', NULL, N'Nháp', N'Đặt qua điện thoại; chờ xác nhận ca làm', N'2026-10-05T11:00:00', NULL),
-    (N'LK007', N'BN007', N'NV002', N'CA002', N'PH001', N'DV002', N'2026-10-13T14:00:00', 30, N'Bình thường', N'Tái khám theo hẹn', NULL, N'Nháp', N'Đặt qua điện thoại; chờ xác nhận ca làm', N'2026-10-05T11:00:00', NULL),
-    (N'LK008', N'BN008', N'NV002', N'CA002', N'PH001', N'DV002', N'2026-10-14T14:00:00', 30, N'Bình thường', N'Tái khám theo hẹn', NULL, N'Nháp', N'Đặt qua điện thoại; chờ xác nhận ca làm', N'2026-10-05T11:00:00', NULL),
-    (N'LK009', N'BN009', N'NV002', N'CA002', N'PH001', N'DV002', N'2026-10-15T14:00:00', 30, N'Bình thường', N'Tái khám theo hẹn', NULL, N'Nháp', N'Đặt qua điện thoại; chờ xác nhận ca làm', N'2026-10-05T11:00:00', NULL),
-    (N'LK010', N'BN010', N'NV002', N'CA002', N'PH001', N'DV002', N'2026-10-16T14:00:00', 30, N'Bình thường', N'Tái khám theo hẹn', NULL, N'Nháp', N'Đặt qua điện thoại; chờ xác nhận ca làm', N'2026-10-05T11:00:00', NULL);
+    (N'LK001', N'BN001', N'NV003', N'CA001', N'PH001', N'DV001', N'2026-10-01T08:15:00', 30, N'Bình thường', N'Sưng đau trong khoang miệng 2 ngày, khó chịu khi ăn.', NULL, N'Đã khám', N'Đặt lịch qua điện thoại; người bệnh đã đến và hoàn tất khám.', N'2026-09-25T10:00:00', N'2026-10-01T08:45:00'),
+    (N'LK002', N'BN002', N'NV003', N'CA001', N'PH001', N'DV002', N'2026-10-02T08:15:00', 30, N'Bình thường', N'Đau vùng khớp hàm khi nhai, há miệng còn thực hiện được.', NULL, N'Đã khám', N'Đặt lịch qua điện thoại; người bệnh đã đến và hoàn tất khám.', N'2026-09-25T10:00:00', N'2026-10-02T08:45:00'),
+    (N'LK003', N'BN003', N'NV003', N'CA001', N'PH001', N'DV003', N'2026-10-03T08:15:00', 30, N'Bình thường', N'Ngứa và sưng nhẹ môi sau tiếp xúc mỹ phẩm.', NULL, N'Đã khám', N'Đặt lịch qua điện thoại; người bệnh đã đến và hoàn tất khám.', N'2026-09-25T10:00:00', N'2026-10-03T08:45:00'),
+    (N'LK004', N'BN004', N'NV003', N'CA001', N'PH001', N'DV004', N'2026-10-04T08:15:00', 30, N'Bình thường', N'Đau rát do loét nhỏ niêm mạc miệng, ăn uống giảm.', NULL, N'Đã khám', N'Đặt lịch qua điện thoại; người bệnh đã đến và hoàn tất khám.', N'2026-09-25T10:00:00', N'2026-10-04T08:45:00'),
+    (N'LK005', N'BN005', N'NV003', N'CA001', N'PH001', N'DV005', N'2026-10-05T08:15:00', 30, N'Bình thường', N'Vết thương má sau khâu còn đỏ và đau quanh mép.', NULL, N'Đã khám', N'Đặt lịch qua điện thoại; người bệnh đã đến và hoàn tất khám.', N'2026-09-25T10:00:00', N'2026-10-05T08:45:00'),
+    (N'LK006', N'BN006', N'NV002', N'CA002', N'PH001', N'DV001', N'2026-10-15T14:00:00', 30, N'Bình thường', N'Tái khám và đánh giá tiến triển: Chấn thương phần mềm vùng hàm mặt; cần đánh giá hình ảnh.', NULL, N'Nháp', N'Bệnh nhân gọi điện đặt lịch tái khám; đang chờ xác nhận ca chiều.', N'2026-10-01T11:00:00', NULL),
+    (N'LK007', N'BN007', N'NV002', N'CA002', N'PH001', N'DV001', N'2026-10-16T14:00:00', 30, N'Bình thường', N'Tái khám và đánh giá tiến triển: Chấn thương vùng gò má kèm vết trầy ngoài da.', NULL, N'Nháp', N'Bệnh nhân gọi điện đặt lịch tái khám; đang chờ xác nhận ca chiều.', N'2026-10-02T11:00:00', NULL),
+    (N'LK008', N'BN008', N'NV002', N'CA002', N'PH001', N'DV001', N'2026-10-17T14:00:00', 30, N'Bình thường', N'Tái khám và đánh giá tiến triển: Kích ứng da vùng mặt do tiếp xúc.', NULL, N'Nháp', N'Bệnh nhân gọi điện đặt lịch tái khám; đang chờ xác nhận ca chiều.', N'2026-10-03T11:00:00', NULL),
+    (N'LK009', N'BN009', N'NV002', N'CA002', N'PH001', N'DV001', N'2026-10-18T14:00:00', 30, N'Bình thường', N'Tái khám và đánh giá tiến triển: Vết thương vùng cằm đang liền.', NULL, N'Nháp', N'Bệnh nhân gọi điện đặt lịch tái khám; đang chờ xác nhận ca chiều.', N'2026-10-04T11:00:00', NULL),
+    (N'LK010', N'BN010', N'NV002', N'CA002', N'PH001', N'DV001', N'2026-10-19T14:00:00', 30, N'Bình thường', N'Tái khám và đánh giá tiến triển: Theo dõi phục hồi vận động hàm.', NULL, N'Nháp', N'Bệnh nhân gọi điện đặt lịch tái khám; đang chờ xác nhận ca chiều.', N'2026-10-05T11:00:00', NULL);
 
 -- PHIEU_KHAM_BENH: 10 dòng
 INSERT INTO [dbo].[PHIEU_KHAM_BENH] ([MaPhieu], [MaHS], [MaLich], [MaPhong], [MaBS], [MaNVTiepNhan], [MaDV], [SoThuTu], [ThoiGianTiepNhan], [LyDoKham], [TrangThai], [GhiChu])
 VALUES
-    (N'PKB001', N'HS001', N'LK001', N'PH001', N'NV003', N'NV005', N'DV001', 1, N'2026-10-01T08:05:00', N'Khám theo hẹn', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
-    (N'PKB002', N'HS002', N'LK002', N'PH001', N'NV003', N'NV005', N'DV002', 1, N'2026-10-02T08:05:00', N'Khám theo hẹn', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
-    (N'PKB003', N'HS003', N'LK003', N'PH001', N'NV003', N'NV005', N'DV003', 1, N'2026-10-03T08:05:00', N'Khám theo hẹn', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
-    (N'PKB004', N'HS004', N'LK004', N'PH001', N'NV003', N'NV005', N'DV004', 1, N'2026-10-04T08:05:00', N'Khám theo hẹn', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
-    (N'PKB005', N'HS005', N'LK005', N'PH001', N'NV003', N'NV005', N'DV005', 1, N'2026-10-05T08:05:00', N'Khám theo hẹn', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
-    (N'PKB006', N'HS006', NULL, N'PH001', N'NV003', N'NV005', N'DV006', 2, N'2026-10-01T09:05:00', N'Khám trực tiếp tại bệnh viện', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
-    (N'PKB007', N'HS007', NULL, N'PH001', N'NV003', N'NV005', N'DV007', 2, N'2026-10-02T09:05:00', N'Khám trực tiếp tại bệnh viện', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
-    (N'PKB008', N'HS008', NULL, N'PH001', N'NV003', N'NV005', N'DV008', 2, N'2026-10-03T09:05:00', N'Khám trực tiếp tại bệnh viện', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
-    (N'PKB009', N'HS009', NULL, N'PH001', N'NV003', N'NV005', N'DV009', 2, N'2026-10-04T09:05:00', N'Khám trực tiếp tại bệnh viện', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
-    (N'PKB010', N'HS010', NULL, N'PH001', N'NV003', N'NV005', N'DV010', 2, N'2026-10-05T09:05:00', N'Khám trực tiếp tại bệnh viện', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu');
+    (N'PKB001', N'HS001', N'LK001', N'PH001', N'NV003', N'NV005', N'DV001', 1, N'2026-10-01T08:05:00', N'Sưng đau trong khoang miệng 2 ngày, khó chịu khi ăn.', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
+    (N'PKB002', N'HS002', N'LK002', N'PH001', N'NV003', N'NV005', N'DV002', 1, N'2026-10-02T08:05:00', N'Đau vùng khớp hàm khi nhai, há miệng còn thực hiện được.', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
+    (N'PKB003', N'HS003', N'LK003', N'PH001', N'NV003', N'NV005', N'DV003', 1, N'2026-10-03T08:05:00', N'Ngứa và sưng nhẹ môi sau tiếp xúc mỹ phẩm.', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
+    (N'PKB004', N'HS004', N'LK004', N'PH001', N'NV003', N'NV005', N'DV004', 1, N'2026-10-04T08:05:00', N'Đau rát do loét nhỏ niêm mạc miệng, ăn uống giảm.', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
+    (N'PKB005', N'HS005', N'LK005', N'PH001', N'NV003', N'NV005', N'DV005', 1, N'2026-10-05T08:05:00', N'Vết thương má sau khâu còn đỏ và đau quanh mép.', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
+    (N'PKB006', N'HS006', NULL, N'PH001', N'NV003', N'NV005', N'DV006', 2, N'2026-10-01T09:05:00', N'Đau vùng hàm sau va chạm, sưng nhẹ.', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
+    (N'PKB007', N'HS007', NULL, N'PH001', N'NV003', N'NV005', N'DV007', 2, N'2026-10-02T09:05:00', N'Vết trầy vùng má sau ngã, còn đau khi chạm vùng gò má.', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
+    (N'PKB008', N'HS008', NULL, N'PH001', N'NV003', N'NV005', N'DV008', 2, N'2026-10-03T09:05:00', N'Ngứa da vùng mặt sau tiếp xúc chất tẩy rửa.', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
+    (N'PKB009', N'HS009', NULL, N'PH001', N'NV003', N'NV005', N'DV009', 2, N'2026-10-04T09:05:00', N'Đến thay băng vùng cằm sau xử trí vết thương.', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
+    (N'PKB010', N'HS010', NULL, N'PH001', N'NV003', N'NV005', N'DV010', 2, N'2026-10-05T09:05:00', N'Còn hạn chế há miệng nhẹ sau đợt điều trị.', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu');
 
 -- LICH_SU_KHAM_BENH: 10 dòng
 INSERT INTO [dbo].[LICH_SU_KHAM_BENH] ([MaLS], [MaPhieu], [MaBS], [MaPhong], [ThoiGianKham], [TrieuChung], [ChanDoan], [KeHoachXuLy], [TrangThai], [NgayXacNhan], [GhiChu])
 VALUES
-    (N'LS001', N'PKB001', N'NV003', N'PH001', N'2026-10-01T08:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 01', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
-    (N'LS002', N'PKB002', N'NV003', N'PH001', N'2026-10-02T08:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 02', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
-    (N'LS003', N'PKB003', N'NV003', N'PH001', N'2026-10-03T08:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 03', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
-    (N'LS004', N'PKB004', N'NV003', N'PH001', N'2026-10-04T08:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 04', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
-    (N'LS005', N'PKB005', N'NV003', N'PH001', N'2026-10-05T08:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 05', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
-    (N'LS006', N'PKB006', N'NV003', N'PH001', N'2026-10-01T09:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 06', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
-    (N'LS007', N'PKB007', N'NV003', N'PH001', N'2026-10-02T09:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 07', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
-    (N'LS008', N'PKB008', N'NV003', N'PH001', N'2026-10-03T09:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 08', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
-    (N'LS009', N'PKB009', N'NV003', N'PH001', N'2026-10-04T09:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 09', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án'),
-    (N'LS010', N'PKB010', N'NV003', N'PH001', N'2026-10-05T09:15:00', N'Khó chịu vùng răng hàm mặt, cần đánh giá', N'Nhận định tình trạng mẫu 10', N'Đánh giá, điều trị hỗ trợ và hẹn theo dõi', N'Nháp', NULL, N'Hồ sơ giả định phục vụ đồ án');
+    (N'LS001', N'PKB001', N'NV003', N'PH001', N'2026-10-01T08:15:00', N'Sưng đau trong khoang miệng 2 ngày, khó chịu khi ăn.', N'Viêm mô mềm khoang miệng.', N'Đánh giá mức độ viêm, xử trí hỗ trợ và theo dõi đáp ứng.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
+    (N'LS002', N'PKB002', N'NV003', N'PH001', N'2026-10-02T08:15:00', N'Đau vùng khớp hàm khi nhai, há miệng còn thực hiện được.', N'Đau vùng khớp thái dương hàm.', N'Đánh giá vận động hàm và theo dõi đau trong sinh hoạt.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
+    (N'LS003', N'PKB003', N'NV003', N'PH001', N'2026-10-03T08:15:00', N'Ngứa và sưng nhẹ môi sau tiếp xúc mỹ phẩm.', N'Kích ứng vùng môi liên quan tiếp xúc.', N'Ghi nhận yếu tố tiếp xúc, theo dõi triệu chứng và tư vấn phòng tái phát.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
+    (N'LS004', N'PKB004', N'NV003', N'PH001', N'2026-10-04T08:15:00', N'Đau rát do loét nhỏ niêm mạc miệng, ăn uống giảm.', N'Loét niêm mạc miệng.', N'Theo dõi tổn thương niêm mạc và hướng dẫn chăm sóc tại chỗ.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
+    (N'LS005', N'PKB005', N'NV003', N'PH001', N'2026-10-05T08:15:00', N'Vết thương má sau khâu còn đỏ và đau quanh mép.', N'Theo dõi vết thương phần mềm vùng má sau xử trí.', N'Đánh giá vết thương và theo dõi dấu hiệu nhiễm trùng.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
+    (N'LS006', N'PKB006', N'NV003', N'PH001', N'2026-10-01T09:15:00', N'Đau vùng hàm sau va chạm, sưng nhẹ.', N'Chấn thương phần mềm vùng hàm mặt; cần đánh giá hình ảnh.', N'Chụp X-quang theo chỉ định và hướng dẫn chăm sóc vùng tổn thương.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
+    (N'LS007', N'PKB007', N'NV003', N'PH001', N'2026-10-02T09:15:00', N'Vết trầy vùng má sau ngã, còn đau khi chạm vùng gò má.', N'Chấn thương vùng gò má kèm vết trầy ngoài da.', N'Khảo sát hình ảnh vùng gò má theo chỉ định và đánh giá tổn thương.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
+    (N'LS008', N'PKB008', N'NV003', N'PH001', N'2026-10-03T09:15:00', N'Ngứa da vùng mặt sau tiếp xúc chất tẩy rửa.', N'Kích ứng da vùng mặt do tiếp xúc.', N'Làm sạch vùng tổn thương, theo dõi triệu chứng và tư vấn tránh tiếp xúc.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
+    (N'LS009', N'PKB009', N'NV003', N'PH001', N'2026-10-04T09:15:00', N'Đến thay băng vùng cằm sau xử trí vết thương.', N'Vết thương vùng cằm đang liền.', N'Thay băng và đánh giá tiến triển liền thương.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
+    (N'LS010', N'PKB010', N'NV003', N'PH001', N'2026-10-05T09:15:00', N'Còn hạn chế há miệng nhẹ sau đợt điều trị.', N'Theo dõi phục hồi vận động hàm.', N'Đánh giá chức năng hàm và tư vấn kế hoạch theo dõi.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.');
 UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận', NgayXacNhan=DATEADD(MINUTE,30,ThoiGianKham);
 
 -- TINH_TRANG_BENH: 10 dòng
 INSERT INTO [dbo].[TINH_TRANG_BENH] ([MaTTB], [MaLS], [LoaiTinhTrang], [MoTaTinhTrang], [MucDo], [GhiChu])
 VALUES
-    (N'TTB001', N'LS001', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 01', N'Nhẹ', N'Không phân tách theo từng răng'),
-    (N'TTB002', N'LS002', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 02', N'Trung bình', N'Không phân tách theo từng răng'),
-    (N'TTB003', N'LS003', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 03', N'Nhẹ', N'Không phân tách theo từng răng'),
-    (N'TTB004', N'LS004', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 04', N'Trung bình', N'Không phân tách theo từng răng'),
-    (N'TTB005', N'LS005', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 05', N'Nhẹ', N'Không phân tách theo từng răng'),
-    (N'TTB006', N'LS006', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 06', N'Trung bình', N'Không phân tách theo từng răng'),
-    (N'TTB007', N'LS007', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 07', N'Nhẹ', N'Không phân tách theo từng răng'),
-    (N'TTB008', N'LS008', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 08', N'Trung bình', N'Không phân tách theo từng răng'),
-    (N'TTB009', N'LS009', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 09', N'Nhẹ', N'Không phân tách theo từng răng'),
-    (N'TTB010', N'LS010', N'Đánh giá ban đầu', N'Tình trạng mẫu của lần khám 10', N'Trung bình', N'Không phân tách theo từng răng');
+    (N'TTB001', N'LS001', N'Đánh giá lâm sàng', N'Chưa ghi nhận sốt, người bệnh tỉnh, tổn thương khu trú.', N'Trung bình', N'Ghi nhận cho lần khám LS001.'),
+    (N'TTB002', N'LS002', N'Đánh giá lâm sàng', N'Đau khi vận động, chưa ghi nhận khóa khớp.', N'Nhẹ', N'Ghi nhận cho lần khám LS002.'),
+    (N'TTB003', N'LS003', N'Đánh giá lâm sàng', N'Sưng nhẹ khu trú vùng môi, chưa ghi nhận khó thở.', N'Nhẹ', N'Ghi nhận cho lần khám LS003.'),
+    (N'TTB004', N'LS004', N'Đánh giá lâm sàng', N'Tổn thương loét nhỏ, chưa ghi nhận dấu hiệu nhiễm trùng lan rộng.', N'Nhẹ', N'Ghi nhận cho lần khám LS004.'),
+    (N'TTB005', N'LS005', N'Đánh giá lâm sàng', N'Vết thương còn đỏ nhẹ, cần theo dõi diễn tiến.', N'Trung bình', N'Ghi nhận cho lần khám LS005.'),
+    (N'TTB006', N'LS006', N'Đánh giá lâm sàng', N'Sưng nhẹ, chưa ghi nhận biến dạng mặt trên thăm khám.', N'Nhẹ', N'Ghi nhận cho lần khám LS006.'),
+    (N'TTB007', N'LS007', N'Đánh giá lâm sàng', N'Vết thương khô, còn đau nhẹ khi chạm.', N'Nhẹ', N'Ghi nhận cho lần khám LS007.'),
+    (N'TTB008', N'LS008', N'Đánh giá lâm sàng', N'Kích ứng da nhẹ, chưa ghi nhận tổn thương sâu.', N'Nhẹ', N'Ghi nhận cho lần khám LS008.'),
+    (N'TTB009', N'LS009', N'Đánh giá lâm sàng', N'Vết thương khô, không ghi nhận dịch mủ.', N'Nhẹ', N'Ghi nhận cho lần khám LS009.'),
+    (N'TTB010', N'LS010', N'Đánh giá lâm sàng', N'Vận động hàm cải thiện so với ghi nhận trước.', N'Nhẹ', N'Ghi nhận cho lần khám LS010.');
 
 -- KE_HOACH_DIEU_TRI: 10 dòng
 INSERT INTO [dbo].[KE_HOACH_DIEU_TRI] ([MaKHDT], [MaLS], [MaBS], [NgayLap], [NgayBatDau], [NgayDuKienKetThuc], [TongTienDuKien], [TrangThai], [GhiChu])
 VALUES
-    (N'KHDT001', N'LS001', N'NV003', N'2026-10-01T08:25:00', N'2026-10-01', N'2026-10-08', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
-    (N'KHDT002', N'LS002', N'NV003', N'2026-10-02T08:25:00', N'2026-10-02', N'2026-10-09', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
-    (N'KHDT003', N'LS003', N'NV003', N'2026-10-03T08:25:00', N'2026-10-03', N'2026-10-10', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
-    (N'KHDT004', N'LS004', N'NV003', N'2026-10-04T08:25:00', N'2026-10-04', N'2026-10-11', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
-    (N'KHDT005', N'LS005', N'NV003', N'2026-10-05T08:25:00', N'2026-10-05', N'2026-10-12', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
-    (N'KHDT006', N'LS006', N'NV003', N'2026-10-01T09:25:00', N'2026-10-01', N'2026-10-08', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
-    (N'KHDT007', N'LS007', N'NV003', N'2026-10-02T09:25:00', N'2026-10-02', N'2026-10-09', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
-    (N'KHDT008', N'LS008', N'NV003', N'2026-10-03T09:25:00', N'2026-10-03', N'2026-10-10', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
-    (N'KHDT009', N'LS009', N'NV003', N'2026-10-04T09:25:00', N'2026-10-04', N'2026-10-11', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ'),
-    (N'KHDT010', N'LS010', N'NV003', N'2026-10-05T09:25:00', N'2026-10-05', N'2026-10-12', 0, N'Đã hoàn thành', N'Kế hoạch mẫu có một dịch vụ');
+    (N'KHDT001', N'LS001', N'NV003', N'2026-10-01T08:25:00', N'2026-10-01', N'2026-10-01', 0, N'Đã hoàn thành', N'Đánh giá mức độ viêm, xử trí hỗ trợ và theo dõi đáp ứng. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
+    (N'KHDT002', N'LS002', N'NV003', N'2026-10-02T08:25:00', N'2026-10-02', N'2026-10-02', 0, N'Đã hoàn thành', N'Đánh giá vận động hàm và theo dõi đau trong sinh hoạt. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
+    (N'KHDT003', N'LS003', N'NV003', N'2026-10-03T08:25:00', N'2026-10-03', N'2026-10-03', 0, N'Đã hoàn thành', N'Ghi nhận yếu tố tiếp xúc, theo dõi triệu chứng và tư vấn phòng tái phát. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
+    (N'KHDT004', N'LS004', N'NV003', N'2026-10-04T08:25:00', N'2026-10-04', N'2026-10-04', 0, N'Đã hoàn thành', N'Theo dõi tổn thương niêm mạc và hướng dẫn chăm sóc tại chỗ. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
+    (N'KHDT005', N'LS005', N'NV003', N'2026-10-05T08:25:00', N'2026-10-05', N'2026-10-05', 0, N'Đã hoàn thành', N'Đánh giá vết thương và theo dõi dấu hiệu nhiễm trùng. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
+    (N'KHDT006', N'LS006', N'NV003', N'2026-10-01T09:25:00', N'2026-10-01', N'2026-10-01', 0, N'Đã hoàn thành', N'Chụp X-quang theo chỉ định và hướng dẫn chăm sóc vùng tổn thương. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
+    (N'KHDT007', N'LS007', N'NV003', N'2026-10-02T09:25:00', N'2026-10-02', N'2026-10-02', 0, N'Đã hoàn thành', N'Khảo sát hình ảnh vùng gò má theo chỉ định và đánh giá tổn thương. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
+    (N'KHDT008', N'LS008', N'NV003', N'2026-10-03T09:25:00', N'2026-10-03', N'2026-10-03', 0, N'Đã hoàn thành', N'Làm sạch vùng tổn thương, theo dõi triệu chứng và tư vấn tránh tiếp xúc. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
+    (N'KHDT009', N'LS009', N'NV003', N'2026-10-04T09:25:00', N'2026-10-04', N'2026-10-04', 0, N'Đã hoàn thành', N'Thay băng và đánh giá tiến triển liền thương. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
+    (N'KHDT010', N'LS010', N'NV003', N'2026-10-05T09:25:00', N'2026-10-05', N'2026-10-05', 0, N'Đã hoàn thành', N'Đánh giá chức năng hàm và tư vấn kế hoạch theo dõi. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.');
 
 -- CHI_TIET_KE_HOACH: 10 dòng
 INSERT INTO [dbo].[CHI_TIET_KE_HOACH] ([MaCTKH], [MaKHDT], [MaDV], [LanThu], [SoLuongDuKien], [DonGiaDuKien], [TrangThai], [GhiChu])
 VALUES
-    (N'CTKH001', N'KHDT001', N'DV001', 1, 1, 100000, N'Đã hoàn thành', NULL),
-    (N'CTKH002', N'KHDT002', N'DV002', 1, 1, 120000, N'Đã hoàn thành', NULL),
-    (N'CTKH003', N'KHDT003', N'DV003', 1, 1, 80000, N'Đã hoàn thành', NULL),
-    (N'CTKH004', N'KHDT004', N'DV004', 1, 1, 100000, N'Đã hoàn thành', NULL),
-    (N'CTKH005', N'KHDT005', N'DV005', 1, 1, 150000, N'Đã hoàn thành', NULL),
-    (N'CTKH006', N'KHDT006', N'DV006', 1, 1, 200000, N'Đã hoàn thành', NULL),
-    (N'CTKH007', N'KHDT007', N'DV007', 1, 1, 180000, N'Đã hoàn thành', NULL),
-    (N'CTKH008', N'KHDT008', N'DV008', 1, 1, 160000, N'Đã hoàn thành', NULL),
-    (N'CTKH009', N'KHDT009', N'DV009', 1, 1, 90000, N'Đã hoàn thành', NULL),
-    (N'CTKH010', N'KHDT010', N'DV010', 1, 1, 250000, N'Đã hoàn thành', NULL);
+    (N'CTKH001', N'KHDT001', N'DV001', 1, 1, 100000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
+    (N'CTKH002', N'KHDT002', N'DV002', 1, 1, 120000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
+    (N'CTKH003', N'KHDT003', N'DV003', 1, 1, 80000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
+    (N'CTKH004', N'KHDT004', N'DV004', 1, 1, 100000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
+    (N'CTKH005', N'KHDT005', N'DV005', 1, 1, 150000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
+    (N'CTKH006', N'KHDT006', N'DV006', 1, 1, 200000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
+    (N'CTKH007', N'KHDT007', N'DV007', 1, 1, 180000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
+    (N'CTKH008', N'KHDT008', N'DV008', 1, 1, 160000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
+    (N'CTKH009', N'KHDT009', N'DV009', 1, 1, 90000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
+    (N'CTKH010', N'KHDT010', N'DV010', 1, 1, 250000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.');
 
 -- DICH_VU_THUC_HIEN: 10 dòng
 INSERT INTO [dbo].[DICH_VU_THUC_HIEN] ([MaDVThucHien], [MaLS], [MaCTKH], [MaDV], [MaNVThucHien], [ThoiGianThucHien], [SoLuong], [DonGia], [KetQua], [TrangThai])
 VALUES
-    (N'DVTH001', N'LS001', N'CTKH001', N'DV001', N'NV003', N'2026-10-01T08:30:00', 1, 100000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
-    (N'DVTH002', N'LS002', N'CTKH002', N'DV002', N'NV003', N'2026-10-02T08:30:00', 1, 120000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
-    (N'DVTH003', N'LS003', N'CTKH003', N'DV003', N'NV003', N'2026-10-03T08:30:00', 1, 80000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
-    (N'DVTH004', N'LS004', N'CTKH004', N'DV004', N'NV003', N'2026-10-04T08:30:00', 1, 100000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
-    (N'DVTH005', N'LS005', N'CTKH005', N'DV005', N'NV003', N'2026-10-05T08:30:00', 1, 150000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
-    (N'DVTH006', N'LS006', N'CTKH006', N'DV006', N'NV009', N'2026-10-01T09:30:00', 1, 200000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
-    (N'DVTH007', N'LS007', N'CTKH007', N'DV007', N'NV009', N'2026-10-02T09:30:00', 1, 180000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
-    (N'DVTH008', N'LS008', N'CTKH008', N'DV008', N'NV004', N'2026-10-03T09:30:00', 1, 160000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
-    (N'DVTH009', N'LS009', N'CTKH009', N'DV009', N'NV004', N'2026-10-04T09:30:00', 1, 90000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp'),
-    (N'DVTH010', N'LS010', N'CTKH010', N'DV010', N'NV003', N'2026-10-05T09:30:00', 1, 250000, N'Hoàn thành dịch vụ trong ca khám mẫu', N'Nháp');
+    (N'DVTH001', N'LS001', N'CTKH001', N'DV001', N'NV003', N'2026-10-01T08:30:00', 1, 100000, N'Đã hoàn tất đánh giá tình trạng khoang miệng và ghi nhận hướng theo dõi.', N'Nháp'),
+    (N'DVTH002', N'LS002', N'CTKH002', N'DV002', N'NV003', N'2026-10-02T08:30:00', 1, 120000, N'Đã đánh giá vận động khớp hàm, ghi nhận khả năng há miệng.', N'Nháp'),
+    (N'DVTH003', N'LS003', N'CTKH003', N'DV003', N'NV003', N'2026-10-03T08:30:00', 1, 80000, N'Đã ghi nhận tổn thương vùng môi và yếu tố tiếp xúc.', N'Nháp'),
+    (N'DVTH004', N'LS004', N'CTKH004', N'DV004', N'NV003', N'2026-10-04T08:30:00', 1, 100000, N'Đã đánh giá tổn thương loét niêm mạc và hướng dẫn chăm sóc.', N'Nháp'),
+    (N'DVTH005', N'LS005', N'CTKH005', N'DV005', N'NV003', N'2026-10-05T08:30:00', 1, 150000, N'Đã kiểm tra mép vết thương, ghi nhận dấu hiệu cần theo dõi.', N'Nháp'),
+    (N'DVTH006', N'LS006', N'CTKH006', N'DV006', N'NV009', N'2026-10-01T09:30:00', 1, 200000, N'Đã lưu hình ảnh khảo sát hàm mặt vào hồ sơ lần khám.', N'Nháp'),
+    (N'DVTH007', N'LS007', N'CTKH007', N'DV007', N'NV009', N'2026-10-02T09:30:00', 1, 180000, N'Đã hoàn thành hình ảnh bổ sung và chuyển bác sĩ đánh giá.', N'Nháp'),
+    (N'DVTH008', N'LS008', N'CTKH008', N'DV008', N'NV004', N'2026-10-03T09:30:00', 1, 160000, N'Đã làm sạch vùng da tổn thương theo chỉ định.', N'Nháp'),
+    (N'DVTH009', N'LS009', N'CTKH009', N'DV009', N'NV004', N'2026-10-04T09:30:00', 1, 90000, N'Đã thay băng, vết thương khô và không có dịch mủ.', N'Nháp'),
+    (N'DVTH010', N'LS010', N'CTKH010', N'DV010', N'NV003', N'2026-10-05T09:30:00', 1, 250000, N'Đã ghi nhận mức vận động hàm và tư vấn lịch theo dõi.', N'Nháp');
 UPDATE dbo.DICH_VU_THUC_HIEN SET TrangThai=N'Đã xác nhận';
 
 -- DON_THUOC: 10 dòng
 INSERT INTO [dbo].[DON_THUOC] ([MaDT], [MaLS], [MaBS], [NgayKe], [LyDoThayThe], [TrangThai], [GhiChu])
 VALUES
-    (N'DT001', N'LS001', N'NV003', N'2026-10-01T08:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
-    (N'DT002', N'LS002', N'NV003', N'2026-10-02T08:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
-    (N'DT003', N'LS003', N'NV003', N'2026-10-03T08:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
-    (N'DT004', N'LS004', N'NV003', N'2026-10-04T08:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
-    (N'DT005', N'LS005', N'NV003', N'2026-10-05T08:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
-    (N'DT006', N'LS006', N'NV003', N'2026-10-01T09:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
-    (N'DT007', N'LS007', N'NV003', N'2026-10-02T09:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
-    (N'DT008', N'LS008', N'NV003', N'2026-10-03T09:40:00', NULL, N'Nháp', N'Đơn thuốc giả định, dùng kiểm thử'),
-    (N'DT009', N'LS009', N'NV003', N'2026-10-04T09:40:00', NULL, N'Nháp', N'Đơn nháp chưa có dòng thuốc; chưa xác nhận'),
-    (N'DT010', N'LS010', N'NV003', N'2026-10-05T09:40:00', NULL, N'Nháp', N'Đơn nháp chưa có dòng thuốc; chưa xác nhận');
+    (N'DT001', N'LS001', N'NV003', N'2026-10-01T08:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
+    (N'DT002', N'LS002', N'NV003', N'2026-10-02T08:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
+    (N'DT003', N'LS003', N'NV003', N'2026-10-03T08:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
+    (N'DT004', N'LS004', N'NV003', N'2026-10-04T08:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
+    (N'DT005', N'LS005', N'NV003', N'2026-10-05T08:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
+    (N'DT006', N'LS006', N'NV003', N'2026-10-01T09:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
+    (N'DT007', N'LS007', N'NV003', N'2026-10-02T09:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
+    (N'DT008', N'LS008', N'NV003', N'2026-10-03T09:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
+    (N'DT009', N'LS009', N'NV003', N'2026-10-04T09:40:00', NULL, N'Hủy', N'Không có chỉ định thuốc tại lần khám này; hủy đơn nháp chưa xác nhận.'),
+    (N'DT010', N'LS010', N'NV003', N'2026-10-05T09:40:00', NULL, N'Hủy', N'Không có chỉ định thuốc tại lần khám này; hủy đơn nháp chưa xác nhận.');
 
 -- CHI_TIET_DON_THUOC: 10 dòng
 INSERT INTO [dbo].[CHI_TIET_DON_THUOC] ([MaCTDT], [MaDT], [MaThuoc], [LieuDung], [SoLuong], [SoNgayDung], [HuongDan])
 VALUES
-    (N'CTDT001', N'DT001', N'TH001', N'Theo chỉ định trong hồ sơ mô phỏng', 20, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
-    (N'CTDT002', N'DT001', N'TH002', N'Theo chỉ định trong hồ sơ mô phỏng', 10, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
-    (N'CTDT003', N'DT001', N'TH003', N'Theo chỉ định trong hồ sơ mô phỏng', 1, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
-    (N'CTDT004', N'DT002', N'TH004', N'Theo chỉ định trong hồ sơ mô phỏng', 15, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
-    (N'CTDT005', N'DT003', N'TH005', N'Theo chỉ định trong hồ sơ mô phỏng', 10, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
-    (N'CTDT006', N'DT004', N'TH006', N'Theo chỉ định trong hồ sơ mô phỏng', 1, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
-    (N'CTDT007', N'DT005', N'TH007', N'Theo chỉ định trong hồ sơ mô phỏng', 20, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
-    (N'CTDT008', N'DT006', N'TH008', N'Theo chỉ định trong hồ sơ mô phỏng', 1, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
-    (N'CTDT009', N'DT007', N'TH009', N'Theo chỉ định trong hồ sơ mô phỏng', 1, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị'),
-    (N'CTDT010', N'DT008', N'TH010', N'Theo chỉ định trong hồ sơ mô phỏng', 12, 5, N'Dòng thuốc giả định để kiểm thử nghiệp vụ, không phải chỉ định điều trị');
+    (N'CTDT001', N'DT001', N'TH001', N'Đường uống; liều theo chỉ định đã xác nhận trong hồ sơ.', 10, 3, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
+    (N'CTDT002', N'DT001', N'TH002', N'Đường uống; liều theo chỉ định đã xác nhận trong hồ sơ.', 15, 5, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
+    (N'CTDT003', N'DT001', N'TH003', N'Súc miệng theo chỉ định; không nuốt dung dịch.', 1, 5, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
+    (N'CTDT004', N'DT002', N'TH004', N'Đường uống; liều theo chỉ định đã xác nhận trong hồ sơ.', 12, 3, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
+    (N'CTDT005', N'DT003', N'TH005', N'Đường uống; liều theo chỉ định đã xác nhận trong hồ sơ.', 5, 5, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
+    (N'CTDT006', N'DT004', N'TH006', N'Dùng tại chỗ theo chỉ định tại vùng niêm mạc.', 1, 5, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
+    (N'CTDT007', N'DT005', N'TH007', N'Đường uống; liều theo chỉ định đã xác nhận trong hồ sơ.', 15, 5, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
+    (N'CTDT008', N'DT006', N'TH008', N'Dung dịch rửa dùng ngoài theo chỉ định.', 1, 3, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
+    (N'CTDT009', N'DT007', N'TH009', N'Sát khuẩn ngoài da theo chỉ định; không dùng để uống.', 1, 3, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
+    (N'CTDT010', N'DT008', N'TH010', N'Đường uống; liều theo chỉ định đã xác nhận trong hồ sơ.', 5, 5, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.');
 UPDATE dbo.DON_THUOC SET TrangThai=N'Đã xác nhận' WHERE MaDT IN (N'DT001', N'DT002', N'DT003', N'DT004', N'DT005', N'DT006', N'DT007', N'DT008');
 
 -- LO_HANG_HOA: 10 dòng
 INSERT INTO [dbo].[LO_HANG_HOA] ([MaLo], [MaHH], [MaNCC], [MaKho], [SoLo], [NgayNhap], [HanSuDung], [TrangThai])
 VALUES
-    (N'LO001', N'HH001', N'NCC001', N'KHO001', N'LO-THUOC-MAU-001', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
-    (N'LO002', N'HH002', N'NCC002', N'KHO001', N'LO-THUOC-MAU-002', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
-    (N'LO003', N'HH003', N'NCC003', N'KHO001', N'LO-THUOC-MAU-003', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
-    (N'LO004', N'HH004', N'NCC004', N'KHO001', N'LO-THUOC-MAU-004', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
-    (N'LO005', N'HH005', N'NCC005', N'KHO001', N'LO-THUOC-MAU-005', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
-    (N'LO006', N'HH006', N'NCC006', N'KHO001', N'LO-THUOC-MAU-006', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
-    (N'LO007', N'HH007', N'NCC007', N'KHO001', N'LO-THUOC-MAU-007', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
-    (N'LO008', N'HH008', N'NCC008', N'KHO001', N'LO-THUOC-MAU-008', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
-    (N'LO009', N'HH009', N'NCC009', N'KHO001', N'LO-THUOC-MAU-009', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng'),
-    (N'LO010', N'HH010', N'NCC010', N'KHO001', N'LO-THUOC-MAU-010', N'2026-09-15T08:00:00', N'2028-09-15', N'Còn sử dụng');
+    (N'LO001', N'HH001', N'NCC001', N'KHO001', N'PCM260601', N'2026-09-15T08:00:00', N'2028-06-28', N'Còn sử dụng'),
+    (N'LO002', N'HH002', N'NCC002', N'KHO001', N'AMX260615', N'2026-09-15T08:00:00', N'2028-07-28', N'Còn sử dụng'),
+    (N'LO003', N'HH003', N'NCC003', N'KHO001', N'CHX260701', N'2026-09-16T08:00:00', N'2028-08-28', N'Còn sử dụng'),
+    (N'LO004', N'HH004', N'NCC004', N'KHO001', N'IBU260610', N'2026-09-16T08:00:00', N'2028-09-28', N'Còn sử dụng'),
+    (N'LO005', N'HH005', N'NCC005', N'KHO001', N'CET260705', N'2026-09-17T08:00:00', N'2028-10-28', N'Còn sử dụng'),
+    (N'LO006', N'HH006', N'NCC006', N'KHO001', N'TRI260720', N'2026-09-17T08:00:00', N'2028-11-28', N'Còn sử dụng'),
+    (N'LO007', N'HH007', N'NCC007', N'KHO001', N'CEF260625', N'2026-09-18T08:00:00', N'2028-06-28', N'Còn sử dụng'),
+    (N'LO008', N'HH008', N'NCC008', N'KHO001', N'NAC260801', N'2026-09-18T08:00:00', N'2028-07-28', N'Còn sử dụng'),
+    (N'LO009', N'HH009', N'NCC009', N'KHO001', N'PVI260715', N'2026-09-19T08:00:00', N'2028-08-28', N'Còn sử dụng'),
+    (N'LO010', N'HH010', N'NCC010', N'KHO001', N'LOR260730', N'2026-09-19T08:00:00', N'2028-09-28', N'Còn sử dụng');
 
 -- HOA_DON_NHAP: 10 dòng
 INSERT INTO [dbo].[HOA_DON_NHAP] ([MaHDN], [SoHoaDonNCC], [MaNCC], [MaNV], [NgayHoaDon], [TongTien], [TrangThai], [GhiChu])
 VALUES
-    (N'HDN001', N'NCC-01-20260915', N'NCC001', N'NV007', N'2026-09-15T07:30:00', 240000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
-    (N'HDN002', N'NCC-02-20260915', N'NCC002', N'NV007', N'2026-09-15T07:30:00', 360000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
-    (N'HDN003', N'NCC-03-20260915', N'NCC003', N'NV007', N'2026-09-15T07:30:00', 3000000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
-    (N'HDN004', N'NCC-04-20260915', N'NCC004', N'NV007', N'2026-09-15T07:30:00', 600000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
-    (N'HDN005', N'NCC-05-20260915', N'NCC005', N'NV007', N'2026-09-15T07:30:00', 420000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
-    (N'HDN006', N'NCC-06-20260915', N'NCC006', N'NV007', N'2026-09-15T07:30:00', 4800000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
-    (N'HDN007', N'NCC-07-20260915', N'NCC007', N'NV007', N'2026-09-15T07:30:00', 180000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
-    (N'HDN008', N'NCC-08-20260915', N'NCC008', N'NV007', N'2026-09-15T07:30:00', 3600000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
-    (N'HDN009', N'NCC-09-20260915', N'NCC009', N'NV007', N'2026-09-15T07:30:00', 5400000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng'),
-    (N'HDN010', N'NCC-10-20260915', N'NCC010', N'NV007', N'2026-09-15T07:30:00', 300000.00, N'Đã xác nhận', N'Hóa đơn mẫu đã nhận đủ một mặt hàng');
+    (N'HDN001', N'HD-ANPHUC-260901', N'NCC001', N'NV007', N'2026-09-15T07:30:00', 1200000.00, N'Đã xác nhận', N'Hóa đơn mua Paracetamol 500 mg; đã đối chiếu đủ phiếu nhập PN001.'),
+    (N'HDN002', N'HD-MINHHOA-260902', N'NCC002', N'NV007', N'2026-09-15T07:30:00', 1620000.00, N'Đã xác nhận', N'Hóa đơn mua Amoxicillin 500 mg; đã đối chiếu đủ phiếu nhập PN002.'),
+    (N'HDN003', N'HD-HAIAN-260903', N'NCC003', N'NV007', N'2026-09-16T07:30:00', 960000.00, N'Đã xác nhận', N'Hóa đơn mua Chlorhexidine 0,12% - chai 100 ml; đã đối chiếu đủ phiếu nhập PN003.'),
+    (N'HDN004', N'HD-NAMTHANH-260904', N'NCC004', N'NV007', N'2026-09-16T07:30:00', 1800000.00, N'Đã xác nhận', N'Hóa đơn mua Ibuprofen 200 mg; đã đối chiếu đủ phiếu nhập PN004.'),
+    (N'HDN005', N'HD-TAMVIET-260905', N'NCC005', N'NV007', N'2026-09-17T07:30:00', 630000.00, N'Đã xác nhận', N'Hóa đơn mua Cetirizine 10 mg; đã đối chiếu đủ phiếu nhập PN005.'),
+    (N'HDN006', N'HD-BINHMINH-260906', N'NCC006', N'NV007', N'2026-09-17T07:30:00', 540000.00, N'Đã xác nhận', N'Hóa đơn mua Triamcinolone acetonide 0,1% - tuýp 5 g; đã đối chiếu đủ phiếu nhập PN006.'),
+    (N'HDN007', N'HD-DONGAN-260907', N'NCC007', N'NV007', N'2026-09-18T07:30:00', 2160000.00, N'Đã xác nhận', N'Hóa đơn mua Cefalexin 500 mg; đã đối chiếu đủ phiếu nhập PN007.'),
+    (N'HDN008', N'HD-GIAKHANG-260908', N'NCC008', N'NV007', N'2026-09-18T07:30:00', 432000.00, N'Đã xác nhận', N'Hóa đơn mua Natri clorid 0,9% - chai 500 ml; đã đối chiếu đủ phiếu nhập PN008.'),
+    (N'HDN009', N'HD-HONGPHUC-260909', N'NCC009', N'NV007', N'2026-09-19T07:30:00', 750000.00, N'Đã xác nhận', N'Hóa đơn mua Povidone iodine 10% - chai 100 ml; đã đối chiếu đủ phiếu nhập PN009.'),
+    (N'HDN010', N'HD-PHUONGNAM-260910', N'NCC010', N'NV007', N'2026-09-19T07:30:00', 450000.00, N'Đã xác nhận', N'Hóa đơn mua Loratadine 10 mg; đã đối chiếu đủ phiếu nhập PN010.');
 
 -- PHIEU_NHAP: 10 dòng
 INSERT INTO [dbo].[PHIEU_NHAP] ([MaPN], [MaHDN], [MaKho], [MaNV], [NgayNhap], [TongTien], [TrangThai], [LyDo], [GhiChu])
 VALUES
-    (N'PN001', N'HDN001', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
-    (N'PN002', N'HDN002', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
-    (N'PN003', N'HDN003', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
-    (N'PN004', N'HDN004', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
-    (N'PN005', N'HDN005', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
-    (N'PN006', N'HDN006', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
-    (N'PN007', N'HDN007', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
-    (N'PN008', N'HDN008', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
-    (N'PN009', N'HDN009', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL),
-    (N'PN010', N'HDN010', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập thuốc theo hóa đơn nhà cung cấp', NULL);
+    (N'PN001', N'HDN001', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập Paracetamol 500 mg vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
+    (N'PN002', N'HDN002', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập Amoxicillin 500 mg vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
+    (N'PN003', N'HDN003', N'KHO001', N'NV007', N'2026-09-16T08:00:00', 0, N'Nháp', N'Nhập Chlorhexidine 0,12% - chai 100 ml vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
+    (N'PN004', N'HDN004', N'KHO001', N'NV007', N'2026-09-16T08:00:00', 0, N'Nháp', N'Nhập Ibuprofen 200 mg vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
+    (N'PN005', N'HDN005', N'KHO001', N'NV007', N'2026-09-17T08:00:00', 0, N'Nháp', N'Nhập Cetirizine 10 mg vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
+    (N'PN006', N'HDN006', N'KHO001', N'NV007', N'2026-09-17T08:00:00', 0, N'Nháp', N'Nhập Triamcinolone acetonide 0,1% - tuýp 5 g vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
+    (N'PN007', N'HDN007', N'KHO001', N'NV007', N'2026-09-18T08:00:00', 0, N'Nháp', N'Nhập Cefalexin 500 mg vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
+    (N'PN008', N'HDN008', N'KHO001', N'NV007', N'2026-09-18T08:00:00', 0, N'Nháp', N'Nhập Natri clorid 0,9% - chai 500 ml vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
+    (N'PN009', N'HDN009', N'KHO001', N'NV007', N'2026-09-19T08:00:00', 0, N'Nháp', N'Nhập Povidone iodine 10% - chai 100 ml vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
+    (N'PN010', N'HDN010', N'KHO001', N'NV007', N'2026-09-19T08:00:00', 0, N'Nháp', N'Nhập Loratadine 10 mg vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.');
 
 -- CHI_TIET_PHIEU_NHAP: 10 dòng
 INSERT INTO [dbo].[CHI_TIET_PHIEU_NHAP] ([MaCTPN], [MaPN], [MaHH], [MaLo], [SoLuong], [DonGia], [GhiChu])
 VALUES
-    (N'CTPN001', N'PN001', N'HH001', N'LO001', 200, 1200.0, N'Giá nhập khác giá bán'),
-    (N'CTPN002', N'PN002', N'HH002', N'LO002', 200, 1800.0, N'Giá nhập khác giá bán'),
-    (N'CTPN003', N'PN003', N'HH003', N'LO003', 200, 15000.0, N'Giá nhập khác giá bán'),
-    (N'CTPN004', N'PN004', N'HH004', N'LO004', 200, 3000.0, N'Giá nhập khác giá bán'),
-    (N'CTPN005', N'PN005', N'HH005', N'LO005', 200, 2100.0, N'Giá nhập khác giá bán'),
-    (N'CTPN006', N'PN006', N'HH006', N'LO006', 200, 24000.0, N'Giá nhập khác giá bán'),
-    (N'CTPN007', N'PN007', N'HH007', N'LO007', 200, 900.0, N'Giá nhập khác giá bán'),
-    (N'CTPN008', N'PN008', N'HH008', N'LO008', 200, 18000.0, N'Giá nhập khác giá bán'),
-    (N'CTPN009', N'PN009', N'HH009', N'LO009', 200, 27000.0, N'Giá nhập khác giá bán'),
-    (N'CTPN010', N'PN010', N'HH010', N'LO010', 200, 1500.0, N'Giá nhập khác giá bán');
+    (N'CTPN001', N'PN001', N'HH001', N'LO001', 1000, 1200.00, N'Kiểm đếm 1000 viên; đúng số lô và bao bì nguyên vẹn.'),
+    (N'CTPN002', N'PN002', N'HH002', N'LO002', 900, 1800.00, N'Kiểm đếm 900 viên; đúng số lô và bao bì nguyên vẹn.'),
+    (N'CTPN003', N'PN003', N'HH003', N'LO003', 40, 24000.00, N'Kiểm đếm 40 chai; đúng số lô và bao bì nguyên vẹn.'),
+    (N'CTPN004', N'PN004', N'HH004', N'LO004', 600, 3000.00, N'Kiểm đếm 600 viên; đúng số lô và bao bì nguyên vẹn.'),
+    (N'CTPN005', N'PN005', N'HH005', N'LO005', 300, 2100.00, N'Kiểm đếm 300 viên; đúng số lô và bao bì nguyên vẹn.'),
+    (N'CTPN006', N'PN006', N'HH006', N'LO006', 30, 18000.00, N'Kiểm đếm 30 tuýp; đúng số lô và bao bì nguyên vẹn.'),
+    (N'CTPN007', N'PN007', N'HH007', N'LO007', 800, 2700.00, N'Kiểm đếm 800 viên; đúng số lô và bao bì nguyên vẹn.'),
+    (N'CTPN008', N'PN008', N'HH008', N'LO008', 60, 7200.00, N'Kiểm đếm 60 chai; đúng số lô và bao bì nguyên vẹn.'),
+    (N'CTPN009', N'PN009', N'HH009', N'LO009', 50, 15000.00, N'Kiểm đếm 50 chai; đúng số lô và bao bì nguyên vẹn.'),
+    (N'CTPN010', N'PN010', N'HH010', N'LO010', 300, 1500.00, N'Kiểm đếm 300 viên; đúng số lô và bao bì nguyên vẹn.');
 UPDATE dbo.PHIEU_NHAP SET TrangThai=N'Đã ghi sổ';
 
 -- PHIEU_XUAT: 10 dòng
 INSERT INTO [dbo].[PHIEU_XUAT] ([MaPX], [MaKho], [MaNV], [MaKhoa], [MaPhong], [MaLS], [NgayXuat], [LyDo], [TrangThai], [GhiChu])
 VALUES
-    (N'PX001', N'KHO001', N'NV006', NULL, NULL, N'LS001', N'2026-10-01T08:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
-    (N'PX002', N'KHO001', N'NV006', NULL, NULL, N'LS002', N'2026-10-02T08:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
-    (N'PX003', N'KHO001', N'NV006', NULL, NULL, N'LS003', N'2026-10-03T08:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
-    (N'PX004', N'KHO001', N'NV006', NULL, NULL, N'LS004', N'2026-10-04T08:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
-    (N'PX005', N'KHO001', N'NV006', NULL, NULL, N'LS005', N'2026-10-05T08:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
-    (N'PX006', N'KHO001', N'NV006', NULL, NULL, N'LS006', N'2026-10-01T09:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
-    (N'PX007', N'KHO001', N'NV006', NULL, NULL, N'LS007', N'2026-10-02T09:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
-    (N'PX008', N'KHO001', N'NV006', NULL, NULL, N'LS008', N'2026-10-03T09:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Cấp toàn bộ đơn trong một lần xác nhận'),
-    (N'PX009', N'KHO001', N'NV006', NULL, NULL, N'LS009', N'2026-10-04T09:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Chưa cấp: đơn thuốc còn nháp'),
-    (N'PX010', N'KHO001', N'NV006', NULL, NULL, N'LS010', N'2026-10-05T09:50:00', N'Cấp thuốc đủ đơn tại bệnh viện', N'Nháp', N'Chưa cấp: đơn thuốc còn nháp');
+    (N'PX001', N'KHO001', N'NV006', NULL, NULL, N'LS001', N'2026-10-01T08:50:00', N'Cấp thuốc theo đơn DT001', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
+    (N'PX002', N'KHO001', N'NV006', NULL, NULL, N'LS002', N'2026-10-02T08:50:00', N'Cấp thuốc theo đơn DT002', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
+    (N'PX003', N'KHO001', N'NV006', NULL, NULL, N'LS003', N'2026-10-03T08:50:00', N'Cấp thuốc theo đơn DT003', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
+    (N'PX004', N'KHO001', N'NV006', NULL, NULL, N'LS004', N'2026-10-04T08:50:00', N'Cấp thuốc theo đơn DT004', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
+    (N'PX005', N'KHO001', N'NV006', NULL, NULL, N'LS005', N'2026-10-05T08:50:00', N'Cấp thuốc theo đơn DT005', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
+    (N'PX006', N'KHO001', N'NV006', NULL, NULL, N'LS006', N'2026-10-01T09:50:00', N'Cấp thuốc theo đơn DT006', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
+    (N'PX007', N'KHO001', N'NV006', NULL, NULL, N'LS007', N'2026-10-02T09:50:00', N'Cấp thuốc theo đơn DT007', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
+    (N'PX008', N'KHO001', N'NV006', NULL, NULL, N'LS008', N'2026-10-03T09:50:00', N'Cấp thuốc theo đơn DT008', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
+    (N'PX009', N'KHO001', N'NV006', NULL, NULL, N'LS009', N'2026-10-04T09:50:00', N'Hủy phiếu cấp phát chưa phát sinh chỉ định thuốc', N'Hủy', N'Đơn DT009 đã hủy; chưa có chi tiết, không giảm tồn kho.'),
+    (N'PX010', N'KHO001', N'NV006', NULL, NULL, N'LS010', N'2026-10-05T09:50:00', N'Hủy phiếu cấp phát chưa phát sinh chỉ định thuốc', N'Hủy', N'Đơn DT010 đã hủy; chưa có chi tiết, không giảm tồn kho.');
 
 -- CHI_TIET_PHIEU_XUAT: 10 dòng
 INSERT INTO [dbo].[CHI_TIET_PHIEU_XUAT] ([MaCTPX], [MaPX], [MaHH], [MaLo], [MaCTDT], [SoLuong], [GhiChu])
 VALUES
-    (N'CTPX001', N'PX001', N'HH001', N'LO001', N'CTDT001', 20, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
-    (N'CTPX002', N'PX001', N'HH002', N'LO002', N'CTDT002', 10, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
-    (N'CTPX003', N'PX001', N'HH003', N'LO003', N'CTDT003', 1, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
-    (N'CTPX004', N'PX002', N'HH004', N'LO004', N'CTDT004', 15, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
-    (N'CTPX005', N'PX003', N'HH005', N'LO005', N'CTDT005', 10, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
-    (N'CTPX006', N'PX004', N'HH006', N'LO006', N'CTDT006', 1, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
-    (N'CTPX007', N'PX005', N'HH007', N'LO007', N'CTDT007', 20, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
-    (N'CTPX008', N'PX006', N'HH008', N'LO008', N'CTDT008', 1, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
-    (N'CTPX009', N'PX007', N'HH009', N'LO009', N'CTDT009', 1, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng'),
-    (N'CTPX010', N'PX008', N'HH010', N'LO010', N'CTDT010', 12, N'Lượng cấp bằng lượng kê, không nhân thêm số ngày dùng');
+    (N'CTPX001', N'PX001', N'HH001', N'LO001', N'CTDT001', 10, N'Đã đối chiếu CTDT001; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
+    (N'CTPX002', N'PX001', N'HH002', N'LO002', N'CTDT002', 15, N'Đã đối chiếu CTDT002; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
+    (N'CTPX003', N'PX001', N'HH003', N'LO003', N'CTDT003', 1, N'Đã đối chiếu CTDT003; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
+    (N'CTPX004', N'PX002', N'HH004', N'LO004', N'CTDT004', 12, N'Đã đối chiếu CTDT004; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
+    (N'CTPX005', N'PX003', N'HH005', N'LO005', N'CTDT005', 5, N'Đã đối chiếu CTDT005; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
+    (N'CTPX006', N'PX004', N'HH006', N'LO006', N'CTDT006', 1, N'Đã đối chiếu CTDT006; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
+    (N'CTPX007', N'PX005', N'HH007', N'LO007', N'CTDT007', 15, N'Đã đối chiếu CTDT007; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
+    (N'CTPX008', N'PX006', N'HH008', N'LO008', N'CTDT008', 1, N'Đã đối chiếu CTDT008; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
+    (N'CTPX009', N'PX007', N'HH009', N'LO009', N'CTDT009', 1, N'Đã đối chiếu CTDT009; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
+    (N'CTPX010', N'PX008', N'HH010', N'LO010', N'CTDT010', 5, N'Đã đối chiếu CTDT010; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.');
 UPDATE dbo.PHIEU_XUAT SET TrangThai=N'Đã ghi sổ' WHERE MaPX IN (N'PX001', N'PX002', N'PX003', N'PX004', N'PX005', N'PX006', N'PX007', N'PX008');
 
 -- HOA_DON: 10 dòng
@@ -1651,73 +1677,73 @@ VALUES
 INSERT INTO [dbo].[CHI_TIET_HOA_DON] ([MaCTHD], [MaHD], [MaDVThucHien], [MaCTPX], [NoiDung], [DonGia], [ThanhTien])
 VALUES
     (N'CTHD001', N'HD001', N'DVTH001', NULL, N'Khám răng hàm mặt tổng quát', NULL, 0),
-    (N'CTHD002', N'HD002', N'DVTH002', NULL, N'Tái khám và đánh giá', NULL, 0),
-    (N'CTHD003', N'HD003', N'DVTH003', NULL, N'Tư vấn kế hoạch điều trị', NULL, 0),
-    (N'CTHD004', N'HD004', N'DVTH004', NULL, N'Theo dõi sau điều trị', NULL, 0),
-    (N'CTHD005', N'HD005', N'DVTH005', NULL, N'Đánh giá phục hồi chức năng', NULL, 0),
-    (N'CTHD006', N'HD001', NULL, N'CTPX001', N'Thuốc mẫu A', 2000, 0),
-    (N'CTHD007', N'HD001', NULL, N'CTPX002', N'Thuốc mẫu B', 3000, 0),
-    (N'CTHD008', N'HD001', NULL, N'CTPX003', N'Thuốc mẫu C', 25000, 0),
-    (N'CTHD009', N'HD002', NULL, N'CTPX004', N'Thuốc mẫu D', 5000, 0),
-    (N'CTHD010', N'HD003', NULL, N'CTPX005', N'Thuốc mẫu E', 3500, 0);
+    (N'CTHD002', N'HD002', N'DVTH002', NULL, N'Khám khớp thái dương hàm', NULL, 0),
+    (N'CTHD003', N'HD003', N'DVTH003', NULL, N'Khám bệnh lý niêm mạc và vùng môi', NULL, 0),
+    (N'CTHD004', N'HD004', N'DVTH004', NULL, N'Khám theo dõi loét niêm mạc miệng', NULL, 0),
+    (N'CTHD005', N'HD005', N'DVTH005', NULL, N'Khám theo dõi vết thương hàm mặt', NULL, 0),
+    (N'CTHD006', N'HD001', NULL, N'CTPX001', N'Paracetamol 500 mg', 2000, 0),
+    (N'CTHD007', N'HD001', NULL, N'CTPX002', N'Amoxicillin 500 mg', 3000, 0),
+    (N'CTHD008', N'HD001', NULL, N'CTPX003', N'Chlorhexidine 0,12% - chai 100 ml', 40000, 0),
+    (N'CTHD009', N'HD002', NULL, N'CTPX004', N'Ibuprofen 200 mg', 5000, 0),
+    (N'CTHD010', N'HD003', NULL, N'CTPX005', N'Cetirizine 10 mg', 3500, 0);
 UPDATE dbo.HOA_DON SET GiamGia=15000 WHERE MaHD=N'HD001';
-UPDATE dbo.HOA_DON SET TrangThai=N'Đã xác nhận', NgayXacNhan=DATEADD(MINUTE,5,NgayLap) WHERE MaHD IN (N'HD001', N'HD002', N'HD003', N'HD004', N'HD005');
+UPDATE dbo.HOA_DON SET TrangThai=N'Đã xác nhận', NgayXacNhan=DATEADD(MINUTE,5,NgayLap) WHERE MaHD IN (N'HD001', N'HD002', N'HD003');
 
 -- THANH_TOAN: 10 dòng
 INSERT INTO [dbo].[THANH_TOAN] ([MaTT], [MaHD], [MaNV], [NgayThanhToan], [SoTien], [LoaiGiaoDich], [PhuongThuc], [LyDo], [TrangThai])
 VALUES
     (N'TT001', N'HD001', N'NV008', N'2026-10-01T09:11:00', 100000, N'Thu', N'Tiền mặt', NULL, N'Đã xác nhận'),
-    (N'TT002', N'HD001', N'NV008', N'2026-10-01T09:12:00', 80000, N'Thu', N'Chuyển khoản', NULL, N'Đã xác nhận'),
-    (N'TT003', N'HD001', N'NV008', N'2026-10-01T09:13:00', 20000, N'Hoàn', N'Tiền mặt', N'Đảo khoản thu nhầm trong mẫu', N'Đã xác nhận'),
-    (N'TT004', N'HD001', N'NV008', N'2026-10-01T09:14:00', 20000, N'Thu', N'Tiền mặt', N'Thu lại sau đối chiếu', N'Đã xác nhận'),
-    (N'TT005', N'HD002', N'NV008', N'2026-10-02T09:15:00', 195000, N'Thu', N'Chuyển khoản', NULL, N'Đã xác nhận'),
-    (N'TT006', N'HD003', N'NV008', N'2026-10-03T09:16:00', 50000, N'Thu', N'Tiền mặt', NULL, N'Đã xác nhận'),
-    (N'TT007', N'HD004', N'NV008', N'2026-10-04T09:17:00', 100000, N'Thu', N'Tiền mặt', NULL, N'Đã xác nhận'),
-    (N'TT008', N'HD005', N'NV008', N'2026-10-05T09:18:00', 70000, N'Thu', N'Chuyển khoản', NULL, N'Đã xác nhận'),
-    (N'TT009', N'HD003', N'NV008', N'2026-10-03T09:19:00', 65000, N'Thu', N'Chuyển khoản', N'Giao dịch đang đối soát', N'Nháp'),
-    (N'TT010', N'HD005', N'NV008', N'2026-10-05T09:20:00', 80000, N'Thu', N'Tiền mặt', N'Giao dịch nháp bị hủy', N'Hủy');
+    (N'TT002', N'HD001', N'NV008', N'2026-10-01T09:12:00', 90000, N'Thu', N'Chuyển khoản', NULL, N'Đã xác nhận'),
+    (N'TT003', N'HD001', N'NV008', N'2026-10-01T09:13:00', 20000, N'Hoàn', N'Tiền mặt', N'Hoàn phần ghi nhận nhầm phương thức thu, sau đó thu lại đúng thông tin.', N'Đã xác nhận'),
+    (N'TT004', N'HD001', N'NV008', N'2026-10-01T09:14:00', 20000, N'Thu', N'Tiền mặt', N'Thu lại sau khi đã hoàn và đối chiếu thông tin thanh toán.', N'Đã xác nhận'),
+    (N'TT005', N'HD002', N'NV008', N'2026-10-02T09:15:00', 100000, N'Thu', N'Tiền mặt', NULL, N'Đã xác nhận'),
+    (N'TT006', N'HD002', N'NV008', N'2026-10-02T09:16:00', 80000, N'Thu', N'Chuyển khoản', NULL, N'Đã xác nhận'),
+    (N'TT007', N'HD003', N'NV008', N'2026-10-03T09:17:00', 50000, N'Thu', N'Tiền mặt', NULL, N'Đã xác nhận'),
+    (N'TT008', N'HD003', N'NV008', N'2026-10-03T09:18:00', 47500, N'Thu', N'Chuyển khoản', NULL, N'Đã xác nhận'),
+    (N'TT009', N'HD002', N'NV008', N'2026-10-02T09:19:00', 1000, N'Thu', N'Chuyển khoản', N'Giao dịch chờ đối soát; chưa xác nhận nên chưa tính vào số dư.', N'Nháp'),
+    (N'TT010', N'HD001', N'NV008', N'2026-10-01T09:20:00', 20000, N'Thu', N'Tiền mặt', N'Hủy giao dịch nhập trùng trước khi xác nhận.', N'Hủy');
 
 -- CHINH_SACH_LUONG: 10 dòng
 INSERT INTO [dbo].[CHINH_SACH_LUONG] ([MaCSL], [MaChucVu], [TenChinhSach], [PhienBan], [NgayHieuLuc], [NgayHetHieuLuc], [LuongCoBan], [SoCaDinhMuc], [CoSoHoaHong], [TyLeHoaHong], [MaNVDuyet], [NgayDuyet], [TrangThai])
 VALUES
-    (N'CSL001', N'CV001', N'Chính sách lương chức vụ 01', 1, N'2026-01-01', NULL, 6500000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL002', N'CV002', N'Chính sách lương chức vụ 02', 1, N'2026-01-01', NULL, 7000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0.05, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL003', N'CV003', N'Chính sách lương chức vụ 03', 1, N'2026-01-01', NULL, 7500000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL004', N'CV004', N'Chính sách lương chức vụ 04', 1, N'2026-01-01', NULL, 8000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL005', N'CV005', N'Chính sách lương chức vụ 05', 1, N'2026-01-01', NULL, 8500000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL006', N'CV006', N'Chính sách lương chức vụ 06', 1, N'2026-01-01', NULL, 9000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL007', N'CV007', N'Chính sách lương chức vụ 07', 1, N'2026-01-01', NULL, 9500000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL008', N'CV008', N'Chính sách lương chức vụ 08', 1, N'2026-01-01', NULL, 10000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL009', N'CV009', N'Chính sách lương chức vụ 09', 1, N'2026-01-01', NULL, 10500000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL010', N'CV010', N'Chính sách lương chức vụ 10', 1, N'2026-01-01', NULL, 11000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt');
+    (N'CSL001', N'CV001', N'Lương quản trị hệ thống - năm 2026', 1, N'2026-01-01', NULL, 15000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL002', N'CV002', N'Lương bác sĩ răng hàm mặt - năm 2026', 1, N'2026-01-01', NULL, 22000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0.05, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL003', N'CV003', N'Lương điều dưỡng - năm 2026', 1, N'2026-01-01', NULL, 9500000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL004', N'CV004', N'Lương nhân viên tiếp nhận - năm 2026', 1, N'2026-01-01', NULL, 8000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL005', N'CV005', N'Lương dược sĩ - năm 2026', 1, N'2026-01-01', NULL, 12000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL006', N'CV006', N'Lương thủ kho - năm 2026', 1, N'2026-01-01', NULL, 9000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL007', N'CV007', N'Lương nhân viên thu ngân - năm 2026', 1, N'2026-01-01', NULL, 8500000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL008', N'CV008', N'Lương kỹ thuật viên y học - năm 2026', 1, N'2026-01-01', NULL, 11000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL009', N'CV009', N'Lương nhân viên nhân sự - năm 2026', 1, N'2026-01-01', NULL, 10000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
+    (N'CSL010', N'CV010', N'Lương trưởng phòng hành chính - năm 2026', 1, N'2026-01-01', NULL, 18000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt');
 
 -- BANG_LUONG: 10 dòng
 INSERT INTO [dbo].[BANG_LUONG] ([MaBL], [MaNV], [MaCSL], [TuNgay], [DenNgay], [SoCaTinh], [LuongCoBan], [SoCaDinhMuc], [TienHoaHong], [TrangThai], [NgayChot], [GhiChu])
 VALUES
-    (N'BL001', N'NV001', N'CSL001', N'2026-10-01', N'2026-10-10', 0, 6500000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
-    (N'BL002', N'NV002', N'CSL002', N'2026-10-01', N'2026-10-10', 0, 7000000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
-    (N'BL003', N'NV003', N'CSL002', N'2026-10-01', N'2026-10-10', 5, 7000000, 26, 40000.00, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
-    (N'BL004', N'NV004', N'CSL003', N'2026-10-01', N'2026-10-10', 0, 7500000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
-    (N'BL005', N'NV005', N'CSL004', N'2026-10-01', N'2026-10-10', 0, 8000000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
-    (N'BL006', N'NV006', N'CSL005', N'2026-10-01', N'2026-10-10', 0, 8500000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
-    (N'BL007', N'NV007', N'CSL006', N'2026-10-01', N'2026-10-10', 0, 9000000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
-    (N'BL008', N'NV008', N'CSL007', N'2026-10-01', N'2026-10-10', 0, 9500000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
-    (N'BL009', N'NV009', N'CSL008', N'2026-10-01', N'2026-10-10', 0, 10000000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận'),
-    (N'BL010', N'NV010', N'CSL009', N'2026-10-01', N'2026-10-10', 0, 10500000, 26, 0, N'Đã chốt', N'2026-10-11T08:00:00', N'Kỳ mẫu chỉ có ca hiện diện của NV003; các nhân viên khác chưa có ca được xác nhận');
+    (N'BL001', N'NV001', N'CSL001', N'2026-10-01', N'2026-10-10', 0, 15000000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
+    (N'BL002', N'NV002', N'CSL002', N'2026-10-01', N'2026-10-10', 0, 22000000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
+    (N'BL003', N'NV003', N'CSL002', N'2026-10-01', N'2026-10-10', 5, 22000000, 26, 40000.00, N'Đã chốt', N'2026-10-11T08:00:00', N'Đã chốt theo 5 ca sáng có mặt và dịch vụ thực hiện trong kỳ 01-10/10; chưa bao gồm phần còn lại của tháng.'),
+    (N'BL004', N'NV004', N'CSL003', N'2026-10-01', N'2026-10-10', 0, 9500000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
+    (N'BL005', N'NV005', N'CSL004', N'2026-10-01', N'2026-10-10', 0, 8000000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
+    (N'BL006', N'NV006', N'CSL005', N'2026-10-01', N'2026-10-10', 0, 12000000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
+    (N'BL007', N'NV007', N'CSL006', N'2026-10-01', N'2026-10-10', 0, 9000000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
+    (N'BL008', N'NV008', N'CSL007', N'2026-10-01', N'2026-10-10', 0, 8500000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
+    (N'BL009', N'NV009', N'CSL008', N'2026-10-01', N'2026-10-10', 0, 11000000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
+    (N'BL010', N'NV010', N'CSL009', N'2026-10-01', N'2026-10-10', 0, 10000000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.');
 
 -- NHAT_KY_THAO_TAC: 10 dòng
 INSERT INTO [dbo].[NHAT_KY_THAO_TAC] ([MaNK], [MaTK], [ThoiGian], [HanhDong], [LoaiDoiTuong], [MaDoiTuong], [KetQua], [DuLieuTruoc], [DuLieuSau])
 VALUES
-    (N'NK001', N'TK008', N'2026-10-01T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD001', N'Thành công', NULL, N'{"MaHD": "HD001", "TrangThai": "Đã xác nhận"}'),
-    (N'NK002', N'TK008', N'2026-10-02T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD002', N'Thành công', NULL, N'{"MaHD": "HD002", "TrangThai": "Đã xác nhận"}'),
-    (N'NK003', N'TK008', N'2026-10-03T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD003', N'Thành công', NULL, N'{"MaHD": "HD003", "TrangThai": "Đã xác nhận"}'),
-    (N'NK004', N'TK008', N'2026-10-04T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD004', N'Thành công', NULL, N'{"MaHD": "HD004", "TrangThai": "Đã xác nhận"}'),
-    (N'NK005', N'TK008', N'2026-10-05T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD005', N'Thành công', NULL, N'{"MaHD": "HD005", "TrangThai": "Đã xác nhận"}'),
-    (N'NK006', N'TK008', N'2026-10-01T09:05:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD006', N'Thành công', NULL, N'{"MaHD": "HD006", "TrangThai": "Nháp"}'),
-    (N'NK007', N'TK008', N'2026-10-02T09:05:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD007', N'Thành công', NULL, N'{"MaHD": "HD007", "TrangThai": "Nháp"}'),
-    (N'NK008', N'TK008', N'2026-10-03T09:05:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD008', N'Thành công', NULL, N'{"MaHD": "HD008", "TrangThai": "Nháp"}'),
-    (N'NK009', N'TK008', N'2026-10-04T09:05:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD009', N'Thành công', NULL, N'{"MaHD": "HD009", "TrangThai": "Nháp"}'),
-    (N'NK010', N'TK008', N'2026-10-05T09:05:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD010', N'Thành công', NULL, N'{"MaHD": "HD010", "TrangThai": "Nháp"}');
+    (N'NK001', N'TK008', N'2026-10-01T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD001', N'Thành công', N'{"MaHD": "HD001", "TrangThai": "Nháp"}', N'{"MaHD": "HD001", "TrangThai": "Đã xác nhận"}'),
+    (N'NK002', N'TK008', N'2026-10-02T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD002', N'Thành công', N'{"MaHD": "HD002", "TrangThai": "Nháp"}', N'{"MaHD": "HD002", "TrangThai": "Đã xác nhận"}'),
+    (N'NK003', N'TK008', N'2026-10-03T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD003', N'Thành công', N'{"MaHD": "HD003", "TrangThai": "Nháp"}', N'{"MaHD": "HD003", "TrangThai": "Đã xác nhận"}'),
+    (N'NK004', N'TK008', N'2026-10-04T09:00:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD004', N'Thành công', NULL, N'{"MaHD": "HD004", "TrangThai": "Nháp"}'),
+    (N'NK005', N'TK008', N'2026-10-05T09:00:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD005', N'Thành công', NULL, N'{"MaHD": "HD005", "TrangThai": "Nháp"}'),
+    (N'NK006', N'TK008', N'2026-10-01T10:00:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD006', N'Thành công', NULL, N'{"MaHD": "HD006", "TrangThai": "Nháp"}'),
+    (N'NK007', N'TK008', N'2026-10-02T10:00:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD007', N'Thành công', NULL, N'{"MaHD": "HD007", "TrangThai": "Nháp"}'),
+    (N'NK008', N'TK008', N'2026-10-03T10:00:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD008', N'Thành công', NULL, N'{"MaHD": "HD008", "TrangThai": "Nháp"}'),
+    (N'NK009', N'TK008', N'2026-10-04T10:00:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD009', N'Thành công', NULL, N'{"MaHD": "HD009", "TrangThai": "Nháp"}'),
+    (N'NK010', N'TK008', N'2026-10-05T10:00:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD010', N'Thành công', NULL, N'{"MaHD": "HD010", "TrangThai": "Nháp"}');
 -- Nếu bất kỳ kiểm tra nào không đạt, rollback toàn bộ cài đặt.
 DECLARE @Table SYSNAME,@Expected INT,@Actual BIGINT,@Query NVARCHAR(MAX),@Total BIGINT=0;
 DECLARE CountTables CURSOR LOCAL FAST_FORWARD FOR SELECT name FROM sys.tables WHERE is_ms_shipped=0 ORDER BY name;
@@ -1725,17 +1751,17 @@ OPEN CountTables;
 FETCH NEXT FROM CountTables INTO @Table;
 WHILE @@FETCH_STATUS=0
 BEGIN
- SET @Expected=CASE WHEN @Table=N'HANG_HOA' THEN 30 ELSE 10 END;
+ SET @Expected=CASE WHEN @Table=N'VAI_TRO' THEN 2 WHEN @Table=N'HANG_HOA' THEN 30 ELSE 10 END;
  SET @Query=N'SELECT @n=COUNT_BIG(*) FROM dbo.'+QUOTENAME(@Table);
  EXEC sys.sp_executesql @Query,N'@n BIGINT OUTPUT',@n=@Actual OUTPUT;
- IF @Actual<>@Expected THROW 51101,N'Số dòng mẫu không đúng 10/bảng hoặc HANG_HOA=30.',1;
+ IF @Actual<>@Expected THROW 51101,N'Số dòng không đúng: VAI_TRO=2, HANG_HOA=30, các bảng còn lại=10.',1;
  SET @Total+=@Actual;
  FETCH NEXT FROM CountTables INTO @Table;
 END;
 CLOSE CountTables;
 DEALLOCATE CountTables;
-IF @Total<>460 OR (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0)<>44
- THROW 51102,N'Phải có 44 bảng và 460 dòng.',1;
+IF @Total<>452 OR (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0)<>44
+ THROW 51102,N'Phải có 44 bảng và 452 dòng.',1;
 IF EXISTS(SELECT 1 FROM dbo.HOA_DON h WHERE h.TongTien<>COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0))
  THROW 51103,N'Tổng hóa đơn lệch chi tiết.',1;
 IF EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
@@ -1743,13 +1769,14 @@ IF EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c LEFT JOIN dbo.DICH_VU_THUC_HIEN s
  THROW 51104,N'Thành tiền hóa đơn sai công thức nguồn.',1;
 IF EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c WHERE c.SoLuong<>COALESCE((SELECT SUM(x.SoLuong) FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX WHERE x.MaCTDT=c.MaCTDT AND p.TrangThai=N'Đã ghi sổ'),0))
  THROW 51105,N'Dữ liệu mẫu phải cấp đủ mỗi dòng của 8 đơn xác nhận.',1;
-IF (SELECT TongTien FROM dbo.HOA_DON WHERE MaHD=N'HD001')<>195000 OR (SELECT SoTienPhaiThu FROM dbo.HOA_DON WHERE MaHD=N'HD001')<>180000
- THROW 51106,N'Ví dụ hóa đơn 1 phải có dịch vụ 100.000 + thuốc 95.000 - giảm 15.000.',1;
+IF (SELECT TongTien FROM dbo.HOA_DON WHERE MaHD=N'HD001')<>205000 OR (SELECT SoTienPhaiThu FROM dbo.HOA_DON WHERE MaHD=N'HD001')<>190000
+ THROW 51106,N'Hóa đơn HD001 phải có dịch vụ 100.000 + thuốc 105.000 - giảm 15.000.',1;
 IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG b WHERE b.SoCaTinh<>(SELECT COUNT(*) FROM dbo.LICH_LAM_VIEC l WHERE l.MaNV=b.MaNV AND l.NgayLam BETWEEN b.TuNgay AND b.DenNgay AND l.TrangThai=N'Đã xác nhận' AND l.TrangThaiHienDien=N'Có mặt'))
  THROW 51107,N'Số ca tính lương không khớp hiện diện.',1;
 IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG b JOIN dbo.CHINH_SACH_LUONG cs ON cs.MaCSL=b.MaCSL WHERE b.TienHoaHong<>CAST(ROUND(COALESCE((SELECT SUM(s.ThanhTien) FROM dbo.DICH_VU_THUC_HIEN s WHERE s.MaNVThucHien=b.MaNV AND CAST(s.ThoiGianThucHien AS DATE) BETWEEN b.TuNgay AND b.DenNgay AND s.TrangThai=N'Đã xác nhận'),0)*cs.TyLeHoaHong,2) AS DECIMAL(18,2)))
  THROW 51108,N'Hoa hồng không khớp dịch vụ thực hiện.',1;
 DBCC CHECKCONSTRAINTS WITH ALL_CONSTRAINTS;
+-- AI hỗ trợ chú thích VW_CHI_TIET_HOA_DON: Ghép chi tiết hóa đơn với dịch vụ hoặc dòng xuất thuốc để hiển thị khoản thu, số lượng, giá chốt và thành tiền.
 EXEC sys.sp_executesql N'-- Các VIEW chỉ truy vấn, không tạo thêm bảng hoặc lặp tổng thanh toán.
 CREATE VIEW dbo.VW_CHI_TIET_HOA_DON AS
 SELECT c.MaCTHD,c.MaHD,c.MaDVThucHien,c.MaCTPX,c.NoiDung,
@@ -1762,6 +1789,7 @@ FROM dbo.CHI_TIET_HOA_DON c
 LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
 LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
 LEFT JOIN dbo.HANG_HOA hh ON hh.MaHH=x.MaHH;';
+-- AI hỗ trợ chú thích VW_HOA_DON_THANH_TOAN: Tổng hợp hóa đơn cùng tiền Thu trừ Hoàn đã xác nhận, số còn phải thu và trạng thái thanh toán để tra cứu.
 EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_HOA_DON_THANH_TOAN AS
 SELECT h.MaHD,h.MaLS,b.MaBN,b.HoTenBN,h.NgayLap,h.NgayXacNhan,h.TrangThai,
  h.TongTien,h.GiamGia,h.SoTienPhaiThu,COALESCE(t.DaThuRong,0) AS DaThuRong,
@@ -1774,6 +1802,7 @@ JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN hs ON h
 JOIN dbo.BENH_NHAN b ON b.MaBN=hs.MaBN
 LEFT JOIN(SELECT MaHD,SUM(CASE WHEN LoaiGiaoDich=N''Thu'' THEN SoTien ELSE -SoTien END) AS DaThuRong
  FROM dbo.THANH_TOAN WHERE TrangThai=N''Đã xác nhận'' GROUP BY MaHD) t ON t.MaHD=h.MaHD;';
+-- AI hỗ trợ chú thích VW_TIEN_THUOC_THEO_DON: Cộng tiền các dòng xuất thuốc của đơn đã nằm trên hóa đơn xác nhận; đơn chưa có khoản thuốc trên hóa đơn xác nhận có tổng NULL.
 EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_TIEN_THUOC_THEO_DON AS
 SELECT d.MaDT,d.MaLS,d.TrangThai,a.TongTienThuocDaChot
 FROM dbo.DON_THUOC d LEFT JOIN
@@ -1782,6 +1811,7 @@ FROM dbo.DON_THUOC d LEFT JOIN
  JOIN dbo.CHI_TIET_HOA_DON hdct ON hdct.MaCTPX=x.MaCTPX
  JOIN dbo.HOA_DON h ON h.MaHD=hdct.MaHD AND h.TrangThai=N''Đã xác nhận''
  GROUP BY ct.MaDT) a ON a.MaDT=d.MaDT;';
+-- AI hỗ trợ chú thích VW_TON_KHO: Tính tồn theo kho/hàng/lô bằng nhập ghi sổ trừ xuất ghi sổ; không cộng chứng từ nháp.
 EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_TON_KHO AS
 SELECT z.MaKho,z.MaHH,hh.TenHH,z.MaLo,hh.DonViTinh,
  SUM(z.Nhap) AS TongNhap,SUM(z.Xuat) AS TongXuat,SUM(z.Nhap-z.Xuat) AS SoLuongTon
@@ -1793,6 +1823,7 @@ FROM(
  UNION ALL SELECT MaKho,MaHH,MaLo,CAST(0 AS DECIMAL(18,3)),CAST(0 AS DECIMAL(18,3)) FROM dbo.LO_HANG_HOA
 ) z JOIN dbo.HANG_HOA hh ON hh.MaHH=z.MaHH
 GROUP BY z.MaKho,z.MaHH,hh.TenHH,z.MaLo,hh.DonViTinh;';
+-- AI hỗ trợ chú thích VW_LICH_SU_KHAM_BENH_NHAN: Ghép lần khám với phiếu, bệnh án và bệnh nhân để tra cứu lịch sử khám đúng hồ sơ.
 EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_LICH_SU_KHAM_BENH_NHAN AS
 SELECT b.MaBN,b.HoTenBN,hs.MaHS,p.MaPhieu,p.MaLich,
  CASE WHEN p.MaLich IS NULL THEN N''Đến trực tiếp'' ELSE N''Có lịch hẹn'' END AS HinhThucTiepNhan,
@@ -1804,6 +1835,7 @@ SELECT b.MaBN,b.HoTenBN,hs.MaHS,p.MaPhieu,p.MaLich,
 FROM dbo.LICH_SU_KHAM_BENH l JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
 JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS JOIN dbo.BENH_NHAN b ON b.MaBN=hs.MaBN
 JOIN dbo.NHAN_VIEN nv ON nv.MaNV=l.MaBS JOIN dbo.PHONG ph ON ph.MaPhong=l.MaPhong;';
+-- AI hỗ trợ chú thích VW_THONG_KE_SO_DONG: Đếm số dòng của các bảng để tra cứu/kiểm tra sau khi cài database.
 EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_THONG_KE_SO_DONG AS
 SELECT N''BENH_NHAN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[BENH_NHAN]
 UNION ALL
@@ -1894,7 +1926,7 @@ UNION ALL
 SELECT N''NHAT_KY_THAO_TAC'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[NHAT_KY_THAO_TAC];';
 
 COMMIT TRANSACTION;
-PRINT N'Hoàn tất: 44 bảng, 460 dòng mẫu; HANG_HOA=30, mỗi bảng còn lại=10.';
+PRINT N'Hoàn tất: 44 bảng, 452 dòng; VAI_TRO=2, HANG_HOA=30, các bảng còn lại=10.';
 END TRY
 BEGIN CATCH
  IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
@@ -1903,7 +1935,7 @@ END CATCH;
 GO
 
 -- KẾT QUẢ KIỂM TRA / TRA CỨU SAU CÀI ĐẶT
-SELECT N'44 bảng, 460 dòng' AS KetQua, COUNT(*) AS SoBang FROM sys.tables WHERE is_ms_shipped=0;
+SELECT N'44 bảng, 452 dòng' AS KetQua, COUNT(*) AS SoBang FROM sys.tables WHERE is_ms_shipped=0;
 SELECT * FROM dbo.VW_THONG_KE_SO_DONG ORDER BY TenBang;
 SELECT * FROM dbo.VW_HOA_DON_THANH_TOAN ORDER BY MaHD;
 SELECT * FROM dbo.VW_TIEN_THUOC_THEO_DON ORDER BY MaDT;

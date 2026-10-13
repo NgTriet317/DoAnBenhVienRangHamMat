@@ -1,10 +1,12 @@
+// AI hỗ trợ: bổ sung chú thích tiếng Việt cho file này ngày 13/10/2026.
+// Nhãn này ghi nhận phần hỗ trợ/chú thích;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Dapper.Contrib.Extensions;
 using ET;
 
-// The SQL schema is the persistence contract: wrong column names/types/nullability or
-// writable derived amounts can corrupt writes even when a POCO builds successfully.
+// Schema SQL là hợp đồng lưu dữ liệu: tên/kiểu/nullable cột sai hoặc
+// cho ghi cột tiền tính toán có thể làm sai dữ liệu dù lớp ET vẫn biên dịch được.
 string[] tables =
 [
     "BENH_NHAN", "HO_SO_BENH_AN", "PHIEU_KHAM_BENH", "LICH_SU_KHAM_BENH",
@@ -14,12 +16,18 @@ string[] tables =
     "THANH_TOAN", "LICH_KHAM", "NHAN_VIEN", "PHONG", "CA_LAM",
     "HANG_HOA", "KHO", "LO_HANG_HOA"
 ];
-string[] triggerAmounts = ["KE_HOACH_DIEU_TRI.TongTienDuKien", "HOA_DON.TongTien", "CHI_TIET_HOA_DON.ThanhTien"];
+string[] triggerAmounts = ["KE_HOACH_DIEU_TRI.TongTienDuKien", "HOA_DON.TongTien", "CHI_TIET_HOA_DON.ThanhTien", "PHIEU_NHAP.TongTien"];
 var sql = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "QLBenhVienRangHamMat.sql"));
 var errors = new List<string>();
 var nullability = new NullabilityInfoContext();
 var columnCount = 0;
 
+var entityTypes = typeof(ET_BENHNHAN).Assembly.GetTypes().Where(type => type.Name.StartsWith("ET_")).ToArray();
+tables = Regex.Matches(sql, @"CREATE TABLE \[dbo\]\.\[(\w+)\]")
+    .Select(match => match.Groups[1].Value)
+    .Where(table => entityTypes.Any(type => type.Name == "ET_" + table.Replace("_", "") || table == "VAI_TRO" && type.Name == "ET_MAVAITRO"))
+    .ToArray();
+if (tables.Length != entityTypes.Length) errors.Add("Each ET must map to exactly one SQL table.");
 foreach (var table in tables)
 {
     var definition = Regex.Match(sql, @"CREATE TABLE \[dbo\]\.\[" + table + @"\] \((.*?)\r?\n\);", RegexOptions.Singleline);
@@ -27,7 +35,7 @@ foreach (var table in tables)
     var columns = Regex.Matches(definition.Groups[1].Value, @"^\s*\[(\w+)\]\s+(INT|NVARCHAR|DATE|DATETIME2|TIME|DECIMAL|AS)\b([^\r\n]*)", RegexOptions.Multiline);
     if (columns.Count == 0) throw new InvalidOperationException($"SQL columns for {table} missing.");
     columnCount += columns.Count;
-    var type = typeof(ET_BENHNHAN).Assembly.GetType("ET.ET_" + table.Replace("_", ""));
+    var type = typeof(ET_BENHNHAN).Assembly.GetType("ET.ET_" + (table == "VAI_TRO" ? "MAVAITRO" : table.Replace("_", "")));
     if (type is null) { errors.Add($"ET for {table} missing."); continue; }
     if (type.GetCustomAttribute<TableAttribute>()?.Name != table) errors.Add($"{type.Name}: [Table(\"{table}\")] missing.");
     if (type.GetConstructor(Type.EmptyTypes) is null) errors.Add($"{type.Name}: parameterless constructor missing.");

@@ -1,3 +1,5 @@
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của CuaSoTaiKhoan.xaml; các vùng liên quan: Tài khoản, Vai trò. -->
+<!-- AI hỗ trợ: bổ sung chú thích cho biểu mẫu tài khoản. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.CuaSoTaiKhoan">
   <Grid>
     <Grid.RowDefinitions>
@@ -10,6 +12,7 @@
       <TextBlock Text="Điền lần lượt từng nhóm thông tin. Dấu * là trường bắt buộc." Style="{StaticResource Subtitle}" />
     </StackPanel>
     <TabControl x:Name="EditorTabs" Grid.Row="1">
+      <!-- Nhóm Tài khoản: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
       <TabItem Header="Tài khoản" Tag="Table:TAI_KHOAN" Visibility="Collapsed">
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
           <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
@@ -19,18 +22,22 @@
                 <WrapPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Tên đăng nhập *" Margin="0,0,0,6" />
+                    <!-- Trường Tên đăng nhập tài khoản (TAI_KHOAN.TenDangNhap): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <TextBox Tag="DB:TAI_KHOAN.TenDangNhap" AutomationProperties.Name="Tên đăng nhập" MaxLength="100" />
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Mật khẩu mới *" Margin="0,0,0,6" />
+                    <!-- Trường MatKhau (TAI_KHOAN.MatKhau): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <PasswordBox Tag="DB:TAI_KHOAN.MatKhau" AutomationProperties.Name="Mật khẩu mới" />
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn vai trò">
                     <TextBlock Text="Vai trò *" Margin="0,0,0,6" />
+                    <!-- Trường Mã vai trò (TAI_KHOAN.MaVaiTro): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <ComboBox Tag="DB:TAI_KHOAN.MaVaiTro" AutomationProperties.Name="Vai trò" />
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn nhân viên">
                     <TextBlock Text="Nhân viên *" Margin="0,0,0,6" />
+                    <!-- Trường Mã nhân viên (TAI_KHOAN.MaNV): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <ComboBox Tag="DB:TAI_KHOAN.MaNV" AutomationProperties.Name="Nhân viên" />
                   </StackPanel>
                 </WrapPanel>
@@ -42,10 +49,12 @@
                 <WrapPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
                     <TextBlock Text="Mã tài khoản" Margin="0,0,0,6" />
+                    <!-- Trường Mã tài khoản (TAI_KHOAN.MaTK): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. Ô chỉ đọc, không cho nhập lại mã/giá trị nguồn. -->
                     <TextBox Tag="DB:TAI_KHOAN.MaTK" AutomationProperties.Name="Mã tài khoản" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
+                    <!-- Trường Trạng thái nghiệp vụ của bản ghi (TAI_KHOAN.TrangThai): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <TextBox Tag="DB:TAI_KHOAN.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
                   </StackPanel>
                 </WrapPanel>
@@ -54,6 +63,7 @@
           </StackPanel>
         </ScrollViewer>
       </TabItem>
+      <!-- Nhóm Vai trò: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
       <TabItem Header="Vai trò" Tag="Table:VAI_TRO" Visibility="Collapsed">
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
           <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
@@ -63,6 +73,7 @@
                 <WrapPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Tên vai trò *" Margin="0,0,0,6" />
+                    <!-- Trường Tên vai trò (VAI_TRO.TenVaiTro): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <TextBox Tag="DB:VAI_TRO.TenVaiTro" AutomationProperties.Name="Tên vai trò" MaxLength="255" />
                   </StackPanel>
                 </WrapPanel>
@@ -74,6 +85,7 @@
                 <WrapPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Mô tả" Margin="0,0,0,6" />
+                    <!-- Trường Mô tả thông tin danh mục (VAI_TRO.MoTa): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                     <TextBox Tag="DB:VAI_TRO.MoTa" AutomationProperties.Name="Mô tả" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
                   </StackPanel>
                 </WrapPanel>
@@ -85,6 +97,7 @@
                 <WrapPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
                     <TextBlock Text="Mã vai trò" Margin="0,0,0,6" />
+                    <!-- Trường Mã vai trò (VAI_TRO.MaVaiTro): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. Ô chỉ đọc, không cho nhập lại mã/giá trị nguồn. -->
                     <TextBox Tag="DB:VAI_TRO.MaVaiTro" AutomationProperties.Name="Mã vai trò" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
                   </StackPanel>
                 </WrapPanel>
@@ -96,8 +109,10 @@
     </TabControl>
     <Border Grid.Row="2" Padding="0,18,0,0">
       <WrapPanel>
+        <!-- Nút điều hướng DongCuaSo: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
         <Button Content="Quay lại danh sách" Tag="DongCuaSo" />
         <Button Content="Lưu thông tin" IsEnabled="False" Style="{StaticResource Primary}" ToolTip="Bản giao diện chưa kết nối lưu dữ liệu" />
+        <!-- Nút điều hướng VeTrangChu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
         <Button Content="Về màn hình chính" Tag="VeTrangChu" />
         <TextBlock Text="Bản giao diện • Chưa lưu dữ liệu" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="12,0,0,0" />
       </WrapPanel>

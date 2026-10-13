@@ -1,18 +1,15 @@
-<Window x:Class="RangHamMat.Views.XemTruocHoaDon" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Xem trước hóa đơn" Width="900" Height="780" MinWidth="700" MinHeight="500" WindowStartupLocation="CenterOwner" Background="#E2E8F0">
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã cập nhật bố cục xem trước để chứa InvoiceDocument khai báo bằng XAML và các nút in/đóng; dữ liệu được đưa vào bằng binding thay cho việc dựng bảng trong C#. -->
+<!-- AI hỗ trợ: xem trước/in giữ bố cục khai báo XAML; InvoiceDocument khai báo toàn bộ đầu, dòng và tổng tiền. -->
+<Window x:Class="RangHamMat.Views.XemTruocHoaDon" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:RangHamMat.Views" Title="Xem trước hóa đơn" Width="900" Height="780" MinWidth="700" MinHeight="500" WindowStartupLocation="CenterOwner" Background="#E2E8F0">
  <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-  <DockPanel Margin="16,12"><Button DockPanel.Dock="Right" Content="In / Xuất PDF…" Click="Print_Click" Padding="18,7"/><TextBlock Text="Hóa đơn bệnh viện" FontWeight="SemiBold" FontSize="16" VerticalAlignment="Center"/></DockPanel>
-  <FlowDocumentReader Grid.Row="1" ViewingMode="Scroll" IsFindEnabled="False" IsTwoPageViewEnabled="False" Margin="14,0">
-   <FlowDocument x:Name="InvoiceDocument" PageWidth="780" PagePadding="34" ColumnWidth="1000" FontFamily="Segoe UI" FontSize="13" Background="White">
-    <Paragraph TextAlignment="Center" FontWeight="Bold" FontSize="16">BỆNH VIỆN RĂNG HÀM MẶT</Paragraph>
-    <Paragraph TextAlignment="Center" FontWeight="Bold" FontSize="22">HÓA ĐƠN THANH TOÁN</Paragraph>
-    <Paragraph TextAlignment="Center"><Run Text="{Binding Code, Mode=OneWay}"/> · <Run Text="{Binding Status, Mode=OneWay}"/></Paragraph>
-    <Paragraph><Bold>Người bệnh: </Bold><Run Text="{Binding Patient, Mode=OneWay}"/><LineBreak/><Bold>Lần khám: </Bold><Run Text="{Binding Visit, Mode=OneWay}"/><LineBreak/><Bold>Ngày lập: </Bold><Run Text="{Binding Date, Mode=OneWay}"/><LineBreak/><Bold>Nhân viên lập: </Bold><Run Text="{Binding Employee, Mode=OneWay}"/></Paragraph>
-    <Table x:Name="InvoiceLines" CellSpacing="0"><Table.Columns><TableColumn Width="350"/><TableColumn Width="60"/><TableColumn Width="130"/><TableColumn Width="130"/></Table.Columns><TableRowGroup><TableRow Background="#EAF2FF"><TableCell Padding="8"><Paragraph FontWeight="Bold">Nội dung</Paragraph></TableCell><TableCell Padding="8"><Paragraph FontWeight="Bold">SL</Paragraph></TableCell><TableCell Padding="8"><Paragraph FontWeight="Bold">Đơn giá</Paragraph></TableCell><TableCell Padding="8"><Paragraph FontWeight="Bold">Thành tiền</Paragraph></TableCell></TableRow></TableRowGroup></Table>
-    <Paragraph TextAlignment="Right"><Bold>Tổng tiền: </Bold><Run Text="{Binding Total, Mode=OneWay}"/><LineBreak/><Bold>Giảm giá: </Bold><Run Text="{Binding Discount, Mode=OneWay}"/><LineBreak/><Bold>Phải thu: </Bold><Run Text="{Binding Due, Mode=OneWay}"/><LineBreak/><Bold>Đã thu ròng: </Bold><Run Text="{Binding Collected, Mode=OneWay}"/><LineBreak/><Bold>Còn phải trả: </Bold><Run Text="{Binding Remaining, Mode=OneWay}"/></Paragraph>
-    <Paragraph FontSize="11" Foreground="#586B82">Khoản thuốc dựa trên thuốc đã cấp; đơn giá chốt khi lập hóa đơn. Số đã thu là tiền thu trừ các khoản hoàn đã xác nhận.</Paragraph>
-    <Paragraph TextAlignment="Right" FontWeight="SemiBold" Margin="0,24,0,0">NHÂN VIÊN THU TIỀN</Paragraph>
-   </FlowDocument>
-  </FlowDocumentReader>
+  <DockPanel Margin="16,12"><!-- Thao tác In / Xuất PDF…: gọi Print_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
+  <Button DockPanel.Dock="Right" Content="In / Xuất PDF…" Click="Print_Click" Padding="18,7"/><TextBlock Text="Hóa đơn bệnh viện" FontWeight="SemiBold" FontSize="16" VerticalAlignment="Center"/></DockPanel>
+  <!-- Bản xem trước không ảo hóa dòng để toàn bộ nội dung nằm trong visual được phân trang khi in. -->
+  <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="14,0">
+   <Border Background="White" Padding="34" Margin="0,0,0,14" HorizontalAlignment="Center">
+    <local:InvoiceDocument x:Name="InvoiceDocument" Width="712"/>
+   </Border>
+  </ScrollViewer>
   <TextBlock x:Name="PrintStatus" Grid.Row="2" Text="Chọn máy in hoặc Microsoft Print to PDF. Hóa đơn nhiều dòng tự chia trang." TextWrapping="Wrap" Margin="16,10" FontSize="12"/>
  </Grid>
 </Window>

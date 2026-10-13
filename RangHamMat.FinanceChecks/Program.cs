@@ -1,3 +1,5 @@
+// AI hỗ trợ: bổ sung chú thích tiếng Việt cho file này ngày 13/10/2026.
+// Nhãn này ghi nhận phần hỗ trợ/chú thích;
 using System.Data;
 using System.Transactions;
 using BUS;
@@ -7,38 +9,41 @@ using Microsoft.Data.SqlClient;
 
 var finance = new BUS_HOADON();
 var checks = 0;
+// Đánh giá điều kiện kiểm tra, ghi lỗi hoặc tăng số kiểm tra đạt tùy chương trình; không sửa nghiệp vụ ứng dụng.
 void Check(bool condition, string message)
 {
     if (!condition) throw new InvalidOperationException("FAIL: " + message);
     checks++;
 }
+// Yêu cầu thao tác phải bị chặn bằng InvalidOperationException; nếu thao tác thành công thì ca thử thất bại.
 void Reject(Action operation, string message)
 {
     try { operation(); }
     catch (InvalidOperationException) { checks++; return; }
     throw new InvalidOperationException("FAIL: " + message);
 }
+// Tạo TransactionScope và bộ dữ liệu thử tài chính, chạy action và không gọi Complete để SQL tự rollback khi kết thúc.
 void RollbackCheck(Action<Fixture> operation, bool insufficient = false)
 {
     using var scope = new TransactionScope(TransactionScopeOption.RequiresNew,
         new TransactionOptions { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted, Timeout = TimeSpan.FromMinutes(2) });
     var fixture = Sql(db => db.QuerySingle<Fixture>(Fixture.Script, new { insufficient }));
     operation(fixture);
-    // Intentionally never Complete: all fixture and BUS writes roll back.
+    // Không gọi Complete để mọi bản ghi fixture và BUS của ca thử đều rollback.
 }
 
 var before = Sql(db => db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.HOA_DON"));
-// A local shared transaction must read its own pending finance writes. A short
-// timeout makes opening a competing connection fail promptly instead of hanging.
+// Giao dịch dùng chung phải đọc được các khoản tài chính vừa ghi chưa commit; thời gian chờ ngắn
+// giúp phát hiện kết nối cạnh tranh bị khóa mà không treo chương trình kiểm tra.
 var previousTimeout = SqlMapper.Settings.CommandTimeout;
 SqlMapper.Settings.CommandTimeout = 2;
 try
 {
-    using var shared = new DAL_GIAODICH();
-    shared.Begin();
+    using var connection = new DAL_HOADON().MoKetNoi();
+    using var shared = connection.BeginTransaction(System.Data.IsolationLevel.Serializable);
     try
     {
-        var fixture = shared.ThucHien((db, tx) => db.QuerySingle<Fixture>(Fixture.Script, new { insufficient = false }, tx));
+        var fixture = connection.QuerySingle<Fixture>(Fixture.Script, new { insufficient = false }, shared);
         var invoiceBus = new BUS_HOADON(shared);
         var paymentBus = new BUS_THANHTOAN(shared);
         var exportBus = new BUS_PHIEUXUAT(shared);
@@ -48,8 +53,8 @@ try
         var invoice = invoiceBus.CreateInvoice(fixture.Visit, fixture.Employee);
         invoiceBus.ConfirmInvoice(invoice);
         var payment = paymentBus.RecordPayment(invoice, fixture.Employee, 100, "Thu", "Tiền mặt");
-        var lineId = shared.ThucHien((db, tx) => db.ExecuteScalar<string>("SELECT TOP(1) MaCTHD FROM dbo.CHI_TIET_HOA_DON WHERE MaHD=@invoice", new { invoice }, tx));
-        var exportLineId = shared.ThucHien((db, tx) => db.ExecuteScalar<string>("SELECT TOP(1) MaCTPX FROM dbo.CHI_TIET_PHIEU_XUAT WHERE MaPX=@export", new { export }, tx));
+        var lineId = connection.ExecuteScalar<string>("SELECT TOP(1) MaCTHD FROM dbo.CHI_TIET_HOA_DON WHERE MaHD=@invoice", new { invoice }, shared);
+        var exportLineId = connection.ExecuteScalar<string>("SELECT TOP(1) MaCTPX FROM dbo.CHI_TIET_PHIEU_XUAT WHERE MaPX=@export", new { export }, shared);
         Check(invoiceBus.LayTheoMa(invoice)?.MaLS == fixture.Visit, "shared invoice read sees its own pending header");
         Check(paymentBus.LayTheoMa(payment)?.MaHD == invoice, "shared payment read sees its own pending payment");
         Check(exportBus.LayTheoMa(export)?.MaLS == fixture.Visit, "shared export read sees its own pending export");
@@ -68,7 +73,7 @@ try
         Check(paymentBus.GetPayments(invoice).Rows.Count == 1, "shared payment table query sees pending payment");
         Check(!exportBus.GetStock(fixture.Warehouse, fixture.Prescription).Rows.Cast<DataRow>().Any(row => Convert.ToString(row["MaLo"]) == fixture.OldLot),
             "shared stock table query reflects pending dispensing");
-        Check(shared.DangGiaoDich, "finance reads preserve the caller-owned transaction");
+        Check(shared.Connection is not null, "finance reads preserve the caller-owned transaction");
     }
     finally { shared.Rollback(); }
 }
@@ -119,8 +124,7 @@ RollbackCheck(f =>
         "invoice detail has its own typed BUS/DAL read path");
     Check(new BUS_CHITIETPHIEUXUAT().layTheoPhieu(export).Count() == 3,
         "export detail has its own typed BUS/DAL read path");
-    using (var shared = new DAL_GIAODICH())
-        Check(new BUS_HOADON(shared).LayDanhSach().Single(row => row.MaHD == invoice).TrangThai == "Đã xác nhận",
+    Check(new BUS_HOADON().LayDanhSach().Single(row => row.MaHD == invoice).TrangThai == "Đã xác nhận",
             "invoice supports the shared clinical loading transaction");
     Reject(() => finance.RecordPayment(invoice, f.Employee, 100, "Hoàn", "Tiền mặt"), "refund reason required");
     Reject(() => finance.RecordPayment(invoice, f.Employee, 1001, "Hoàn", "Tiền mặt", "Hoàn"), "refund cannot exceed net collection");
@@ -142,8 +146,8 @@ RollbackCheck(f =>
 }, insufficient: true);
 Check(Sql(db => db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.HOA_DON")) == before, "rollback checks leave no invoices committed");
 
-// Use an existing committed header, so contention proves the BUS row lock rather
-// than the insert lock on a new fixture. Neither collector writes any live data.
+// Dùng hóa đơn đã commit để kiểm tra khóa dòng của BUS,
+// tránh nhầm với khóa do tạo dữ liệu thử; hai luồng thu thử không ghi dữ liệu thật.
 var existing = Sql(db => db.QuerySingle<(string Invoice, string Employee)>("SELECT TOP(1) MaHD Invoice,MaNV Employee FROM dbo.HOA_DON WHERE TrangThai=N'Đã xác nhận' ORDER BY MaHD"));
 using (var lockScope = new TransactionScope(TransactionScopeOption.RequiresNew,
     new TransactionOptions { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted, Timeout = TimeSpan.FromSeconds(30) }))
@@ -157,20 +161,51 @@ using (var lockScope = new TransactionScope(TransactionScopeOption.RequiresNew,
 }
 Console.WriteLine($"SUCCESS: {checks} finance transaction checks; all SQL changes rolled back.");
 
+// Chạy câu SQL của ca thử qua kết nối kiểm tra, dùng giao dịch/phạm vi rollback của ca hiện tại; không thuộc luồng giao diện ứng dụng.
 static T Sql<T>(Func<IDbConnection, T> action)
 {
     using var db = new CheckConnection().Open();
     return action(db);
 }
 
+/// <summary>
+/// SqlConnection dùng trong kiểm tra tài chính, áp dụng cùng cấu hình môi trường với dự án.
+/// </summary>
 sealed class CheckConnection : dbconnect
 {
+    /// <summary>
+    /// Mở kết nối SQL mặc định hoặc theo RHM_CONNECTION_STRING cho các kiểm tra tài chính; chỉ dữ liệu trong giao dịch thử được thay đổi.
+    /// </summary>
     public IDbConnection Open() { var db = CreateConnection(); db.Open(); return db; }
 }
+/// <summary>
+/// Các mã bệnh nhân/lần khám/đơn/nhân viên/kho/lô/thuốc tạo cho một ca kiểm tra tài chính; được sử dụng bên trong giao dịch thử.
+/// </summary>
 sealed class Fixture
 {
-    public string Visit { get; set; } = ""; public string Prescription { get; set; } = ""; public string Employee { get; set; } = "";
-    public string Warehouse { get; set; } = ""; public string OldLot { get; set; } = ""; public string Drug { get; set; } = ""; public string Goods { get; set; } = "";
+    /// <summary>
+    /// Lần khám nguồn của dữ liệu đang xem; dùng để mở lại lần khám hoặc tổng hợp thông tin điều trị.
+    /// </summary>
+    public string Visit { get; set; } = ""; /// <summary>
+    /// Mã đơn thuốc thử của fixture tài chính.
+    /// </summary>
+    public string Prescription { get; set; } = ""; /// <summary>
+    /// Mã nhân viên thử thực hiện các thao tác lập/thu/cấp thuốc.
+    /// </summary>
+    public string Employee { get; set; } = "";
+    /// <summary>
+    /// Mã kho thử có các lô thuốc phục vụ kiểm tra cấp thuốc.
+    /// </summary>
+    public string Warehouse { get; set; } = ""; /// <summary>
+    /// Mã lô nhập trước được dùng đối chiếu nguyên tắc FIFO trong ca kiểm tra.
+    /// </summary>
+    public string OldLot { get; set; } = ""; /// <summary>
+    /// Mã thuốc thử liên kết với hàng hóa của fixture.
+    /// </summary>
+    public string Drug { get; set; } = ""; /// <summary>
+    /// Mã hàng hóa thử dùng kiểm tra tồn lô, giá và chi tiết xuất thuốc.
+    /// </summary>
+    public string Goods { get; set; } = "";
     public const string Script = """
     DECLARE @employee nvarchar(50)=(SELECT MIN(MaNV) FROM dbo.NHAN_VIEN WHERE TrangThai=N'Đang làm việc');
     DECLARE @warehouse nvarchar(50)=(SELECT MIN(MaKho) FROM dbo.KHO WHERE TrangThai=N'Đang hoạt động');

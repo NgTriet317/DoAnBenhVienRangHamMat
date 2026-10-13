@@ -1,0 +1,47 @@
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã tạo bố cục XAML hiện hữu cho biểu đồ: trục/lưới, template cột/điểm, đường và trạng thái rỗng; binding tọa độ từ ChartView.xaml.cs. -->
+<!-- AI hỗ trợ chuyển biểu đồ sang XAML: toàn bộ trục, nhãn, cột, đường và điểm có template hiện hữu; C# chỉ tính số liệu/tọa độ. -->
+<UserControl x:Class="RangHamMat.Controls.ChartView"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:ui="clr-namespace:RangHamMat.Controls">
+ <UserControl.Resources><BooleanToVisibilityConverter x:Key="VisibleWhenTrue"/></UserControl.Resources>
+ <Grid DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type ui:ChartView}}}">
+  <Grid.RowDefinitions><RowDefinition Height="28"/><RowDefinition Height="*"/><RowDefinition Height="60"/></Grid.RowDefinitions>
+  <Grid.ColumnDefinitions><ColumnDefinition Width="78"/><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/></Grid.ColumnDefinitions>
+  <!-- Chú giải đọc nhãn do màn hình báo cáo truyền vào; không tự tạo hay tổng hợp nguồn doanh thu. -->
+  <WrapPanel Grid.Column="1"><TextBlock Text="{Binding PrimaryLabel}" Foreground="{DynamicResource Accent}" FontSize="12"/><TextBlock Text="{Binding SecondaryLabel}" Margin="24,0,0,0" Foreground="{DynamicResource AccentDark}" FontSize="12"/></WrapPanel>
+  <ItemsControl Grid.Row="1" ItemsSource="{Binding Ticks}">
+   <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+   <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Top" Value="{Binding Top}"/></Style></ItemsControl.ItemContainerStyle>
+   <ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding Label}" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,-8,0,0"/></DataTemplate></ItemsControl.ItemTemplate>
+  </ItemsControl>
+  <!-- Vùng plot chỉ nhận tọa độ và kích thước tính từ dữ liệu, template XAML tạo các hình khi binding ItemsSource. -->
+  <Grid x:Name="PlotArea" Grid.Row="1" Grid.Column="1" ClipToBounds="True" SizeChanged="Plot_SizeChanged">
+   <ItemsControl ItemsSource="{Binding Ticks}">
+    <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+    <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Top" Value="{Binding Top}"/></Style></ItemsControl.ItemContainerStyle>
+    <ItemsControl.ItemTemplate><DataTemplate><Rectangle Height="1" Width="{Binding PlotWidth, RelativeSource={RelativeSource AncestorType={x:Type ui:ChartView}}}" Fill="{DynamicResource Line}"/></DataTemplate></ItemsControl.ItemTemplate>
+   </ItemsControl>
+   <Polyline Points="{Binding LinePoints}" Stroke="{DynamicResource Accent}" StrokeThickness="2" Visibility="{Binding ShowLine, Converter={StaticResource VisibleWhenTrue}}" IsHitTestVisible="False"/>
+   <ItemsControl ItemsSource="{Binding PlotPoints}">
+    <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+    <ItemsControl.ItemTemplate><DataTemplate>
+     <Canvas>
+      <Rectangle Canvas.Left="{Binding PrimaryLeft}" Canvas.Top="{Binding PrimaryTop}" Width="{Binding BarWidth}" Height="{Binding PrimaryHeight}" Fill="{DynamicResource Accent}" ToolTip="{Binding PrimaryTip}" Visibility="{Binding ShowBars, Converter={StaticResource VisibleWhenTrue}}"/>
+      <Rectangle Canvas.Left="{Binding SecondaryLeft}" Canvas.Top="{Binding SecondaryTop}" Width="{Binding BarWidth}" Height="{Binding SecondaryHeight}" Fill="{DynamicResource AccentDark}" ToolTip="{Binding SecondaryTip}" Visibility="{Binding ShowBars, Converter={StaticResource VisibleWhenTrue}}"/>
+      <Ellipse Canvas.Left="{Binding DotLeft}" Canvas.Top="{Binding DotTop}" Width="7" Height="7" Fill="{DynamicResource Accent}" ToolTip="{Binding PrimaryTip}" Visibility="{Binding ShowDot, Converter={StaticResource VisibleWhenTrue}}"/>
+     </Canvas>
+    </DataTemplate></ItemsControl.ItemTemplate>
+   </ItemsControl>
+   <TextBlock x:Name="EmptyText" Text="Chưa có dữ liệu để vẽ đồ thị" Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12">
+    <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding HasData}" Value="False"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+   </TextBlock>
+  </Grid>
+  <ItemsControl Grid.Row="2" Grid.Column="1" ItemsSource="{Binding PlotPoints}">
+   <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+   <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Left" Value="{Binding LabelLeft}"/></Style></ItemsControl.ItemContainerStyle>
+   <ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding Label}" Width="{Binding LabelWidth}" Margin="0,12,0,0" TextAlignment="Center" FontSize="12" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Label}"/></DataTemplate></ItemsControl.ItemTemplate>
+  </ItemsControl>
+  <TextBlock Grid.Row="2" Grid.Column="1" Text="Kỳ báo cáo" FontSize="12" Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" Margin="0,18,0,0"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding HasData}" Value="False"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+ </Grid>
+</UserControl>

@@ -1,3 +1,5 @@
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của BangLuong.xaml; các vùng liên quan: BangLuongGrid. -->
+<!-- AI hỗ trợ: bổ sung chú thích cho bảng lương. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
 <UserControl
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -98,11 +100,13 @@
                         VerticalAlignment="Bottom"
                         Margin="0,0,8,12" />
 
+                <!-- Nút điều hướng MoTrang:CaLamViec: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                 <Button Content="Ca làm việc"
                         Tag="MoTrang:CaLamViec"
                         VerticalAlignment="Bottom"
                         Margin="0,0,8,12" />
 
+                <!-- Nút điều hướng MoTrang:NhanSu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                 <Button Content="Nhân sự"
                         Tag="MoTrang:NhanSu"
                         VerticalAlignment="Bottom"
@@ -136,6 +140,7 @@
                 </Border>
 
                 <Grid Grid.Row="1">
+                    <!-- Bảng BangLuongGrid: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. -->
                     <DataGrid
                         x:Name="BangLuongGrid"
                         ItemsSource="{Binding BangLuongTheoCa}"
@@ -212,6 +217,7 @@
                                     StringFormat={}{0:N0}}"
                                 Width="180">
                                 <DataGridTextColumn.ElementStyle>
+                                    <!-- Style mặc định cho TextBlock: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
                                     <Style TargetType="TextBlock">
                                         <Setter Property="FontWeight"
                                                 Value="SemiBold" />
@@ -242,6 +248,7 @@
                         Margin="24,60,24,24">
 
                         <StackPanel.Style>
+                            <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
                             <Style TargetType="StackPanel">
                                 <Setter Property="Visibility"
                                         Value="Collapsed" />

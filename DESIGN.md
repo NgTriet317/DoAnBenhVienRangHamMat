@@ -24,9 +24,9 @@ Tokens và style dùng `Themes/HospitalStyles.xaml`, các style form/điều tr�
 
 ## Dữ liệu và trạng thái
 
-Nguồn giao diện trong phiên chạy, ban đầu trống. Nạp dữ liệu minh họa là thao tác rõ ràng. Khóa và quan hệ được kiểm tra khi lưu, bản xác nhận không sửa nội dung, dòng thuốc/tình trạng bệnh theo quyền sửa bản cha. Thực hiện hoàn thành cộng số lượng để hiển thị tiến độ bước. Lưu mục con cập nhật dữ liệu liên quan và giữ bản nháp phần khám chung.
+Nguồn giao diện đọc từ SQL Server qua ET/DAL/BUS và lưu trong cache trình bày; không còn nút nạp dữ liệu minh họa. Khóa và quan hệ được kiểm tra khi lưu, bản xác nhận không sửa nội dung, dòng thuốc/tình trạng bệnh theo quyền sửa bản cha. Thực hiện hoàn thành cộng số lượng để hiển thị tiến độ bước. Lưu mục con cập nhật dữ liệu liên quan và giữ bản nháp phần khám chung.
 
-SQL gốc và các module ngoài phạm vi giữ nguyên. Không coi schema giao diện là migration SQL. Không khẳng định render/build WPF đã kiểm tra: môi trường sửa không có .NET/Windows; cần nghiệm thu kích thước/DPI và bản in trên Windows.
+Schema hiện tại là v8. Build và kiểm tra render WPF đã chạy trên Windows trong workspace; dữ liệu thử SQL được rollback. Bố cục ứng dụng, biểu đồ, lịch tuần, chi tiết chung và bản in đều có XAML hiện hữu; C# chỉ chuẩn bị dữ liệu, geometry và xử lý sự kiện. Kết quả mới nằm trong KET_QUA_TOAN_BO_CODE_XAML.md.
 
 ## Tinh chỉnh sau ảnh giao diện thực tế
 

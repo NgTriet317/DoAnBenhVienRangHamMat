@@ -8,7 +8,7 @@
 
 | Yêu cầu | Thực hiện |
 |---|---|
-| Bỏ nạp dữ liệu mẫu, dùng database thật và 3 lớp | Xóa ClinicalDemo và nút nạp mẫu; Tải lại đọc SQL. Mỗi ET liên quan có DAL/BUS riêng; BUS_LAMSANG điều phối các BUS, DAL_GIAODICH chia sẻ giao dịch. WPF dùng ET và dữ liệu SQL. |
+| Bỏ nạp dữ liệu mẫu, dùng database thật và 3 lớp | Tải lại đọc SQL. Bản sửa 13/10/2026 có đủ 39 bộ ET/DAL/BUS riêng, gọi các lớp thực thể liên quan và chia sẻ IDbTransaction. WPF dùng ET và dữ liệu SQL; xem CAP_NHAT_DAL_BUS_ET.md để tra kết quả mới nhất. |
 | Hồ sơ, khám điều trị, đơn thuốc lưu hoàn chỉnh | Lưu/thêm/sửa/xóa theo ràng buộc; đơn/kế hoạch/dịch vụ nhiều dòng dùng transaction. Xác nhận lần khám lưu ngày và trạng thái đồng thời. |
 | Dịch vụ liên kết hồ sơ, khám và đơn | Lọc theo bệnh nhân/lần khám; thêm/sửa/xác nhận; điều hướng hồ sơ, lần khám, đơn, hóa đơn giữ đúng khóa nguồn. |
 | Form bệnh nhân hợp database | Bổ sung BHYT; điện thoại chuỗi, không mất số 0 đầu; giới tính/ngày sinh nullable; chỉ bắt buộc tên và trạng thái như SQL; độ dài trường theo v8; bố cục xanh, nhóm thông tin/sức khỏe giữ luồng tạo bệnh án. |

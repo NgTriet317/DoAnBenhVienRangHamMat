@@ -1,10 +1,18 @@
 # Đồ án Bệnh viện Răng Hàm Mặt
 
+Đọc [giải thích code bằng tiếng Việt](GIAI_THICH_CODE_TIENG_VIET.md) để tra chức năng từng file, cách giao diện gọi xử lý/lưu dữ liệu và phạm vi hỗ trợ AI. Chú thích chi tiết nằm ngay trên các lớp, hàm, thuộc tính C# và các vùng XAML liên quan.
+
+Đọc [phần AI đã thực hiện trong giao diện](PHAN_AI_THUC_HIEN_GIAO_DIEN.md) để biết AI đã tạo, chỉnh sửa hoặc bổ sung chú thích gì trong từng file XAML/C# của giao diện.
+
+Đọc [kiểm tra nhập liệu](KIEM_TRA_NHAP_LIEU.md) để xem các trường hợp đã chặn, thông báo lỗi, kết quả kiểm thử và phạm vi các form mẫu chưa nối lưu SQL.
+
+Bản chú thích mở rộng đã bao gồm toàn bộ BUS/DAL. Biểu đồ, lịch tuần, chi tiết chung và bản in hóa đơn có file XAML hiện hữu; code-behind chỉ xử lý dữ liệu/sự kiện và phân trang bản in. Xem [kết quả rà toàn bộ code và XAML](KET_QUA_TOAN_BO_CODE_XAML.md).
+
 Bản cập nhật 11/10/2026 thực hiện yêu cầu trong `RangHamMat.Wpf/KeHoach.txt`. Hồ sơ bệnh nhân, lịch khám/tiếp nhận, khám điều trị, đơn thuốc, dịch vụ thực hiện, hóa đơn và thanh toán đọc/lưu SQL Server qua ET → DAL → BUS → WPF. Đã bỏ chức năng nạp dữ liệu minh họa. Các thao tác lưu tiếp tục tồn tại khi đóng và mở lại ứng dụng.
 
 Schema hiện tại là **v8**: `Database/DB_Nhom4_v8.docx` và `Database/QLBenhVienRangHamMat.sql`. SQL trong workspace khớp database đang dùng; các tài liệu/JSON mang tên v7 chỉ còn mô tả bản giao diện trước.
 
-Đã viết lại 24 ET liên quan theo mẫu private field, constructor rỗng/đầy đủ và property get/set; mỗi ET có DAL và BUS riêng. Khóa chính/khóa ngoại là chuỗi theo file SQL hiện tại. Mã mới tự cấp theo chữ đầu tên bảng và số tối thiểu hai chữ số: BN01, BN02…, HSBA01, LSKB01; tiếp tục số lớn nhất đang có và giữ các mã cũ. Xem [báo cáo sửa DAL/BUS/ET](CAP_NHAT_DAL_BUS_ET.md) để tra từng lớp và tên view đã đổi.
+Bản sửa 13/10/2026 có đủ 39 bộ ET–DAL–BUS cùng hậu tố, khớp 303 cột SQL. Xử lý liên kết nằm trong các DAL/BUS của từng thực thể; giao dịch nhiều dòng dùng chung IDbTransaction. Giao diện tiếp nhận và chi tiết đổi thành TiepNhanKham và ChiTietHoSo. Khóa chính/khóa ngoại là chuỗi theo SQL hiện tại. Mã tự cấp theo chữ đầu tên bảng và số tối thiểu hai chữ số: BN01, HSBA01, LSKB01; tiếp tục số lớn nhất đang có và giữ mã cũ. Xem [báo cáo sửa DAL/BUS/ET](CAP_NHAT_DAL_BUS_ET.md) để tra cấu trúc và kết quả kiểm tra mới nhất.
 
 ## Chạy ứng dụng
 
