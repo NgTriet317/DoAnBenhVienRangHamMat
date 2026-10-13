@@ -42,7 +42,7 @@ namespace DAL
             string? chuoiKetNoi = Environment.GetEnvironmentVariable("RHM_CONNECTION_STRING");
             if (chuoiKetNoi is null)
             {
-                chuoiKetNoi = @"Data Source=DESKTOP-C9VCE8A;Initial Catalog=QLBenhVienRangHamMat;Integrated Security=True;TrustServerCertificate=True;";
+                chuoiKetNoi = @"Data Source=MSI;Initial Catalog=QLBenhVienRangHamMat;Integrated Security=True;TrustServerCertificate=True;";
             }
 
             return new SqlConnection(chuoiKetNoi);
@@ -245,7 +245,7 @@ namespace DAL
                 tienTo.Append(tu[0]);
             }
 
-            return tienTo.ToString() + number.ToString("D2", CultureInfo.InvariantCulture);
+            return tienTo.ToString() + number.ToString("D3", CultureInfo.InvariantCulture);
         }
 
         /// <summary>

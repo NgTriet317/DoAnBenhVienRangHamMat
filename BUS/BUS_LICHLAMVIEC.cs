@@ -57,5 +57,26 @@ namespace BUS
         /// <param name="banGoc">Bản ET đọc trước khi sửa/xóa để DAL phát hiện thay đổi đồng thời; null bỏ đối chiếu bản dự kiến.</param>
         public bool xoaLichLamViec(string ma, ET_LICHLAMVIEC? banGoc = null) => XuLyLoi.ThucHien(() => data.xoaLichLamViec(ma, banGoc));
 
+        // Nghiệp vụ phân ca từ giao diện lịch tuần.
+        public List<ET_LICHLAMVIEC> layLichTheoTuan(DateTime dauTuan)
+            => data.layLichTheoTuan(dauTuan);
+
+        public bool dangKyCa(ET_LICHLAMVIEC lich)
+        {
+            if (string.IsNullOrWhiteSpace(lich.MaNV) || string.IsNullOrWhiteSpace(lich.MaCa)
+                || lich.NgayLam.Date < DateTime.Today) return false;
+            return data.dangKyCa(lich);
+        }
+
+        public bool duyetCa(string maLLV, string maPhong)
+            => !string.IsNullOrWhiteSpace(maLLV) && !string.IsNullOrWhiteSpace(maPhong)
+                && data.duyetCa(maLLV, maPhong);
+
+        public bool tuChoiCa(string maLLV, string lyDo)
+            => !string.IsNullOrWhiteSpace(lyDo) && data.tuChoiCa(maLLV, lyDo);
+
+        public bool huyDangKy(string maLLV, string maNV)
+            => !string.IsNullOrWhiteSpace(maNV) && data.huyDangKy(maLLV, maNV);
+
     }
 }

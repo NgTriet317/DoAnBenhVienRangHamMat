@@ -24,29 +24,10 @@ public partial class MainWindow : Window
     };
 
     private static readonly Dictionary<string, HashSet<string>> RolePermissions = new(StringComparer.Ordinal)
-    // Bộ quyền này phục vụ việc chọn vai trò/xem phân hệ trong giao diện hiện tại; không xác thực người dùng với TAI_KHOAN.
     {
-        ["Quản trị hệ thống"] = AllPages,
-        ["Ban quản lý / Kế toán"] = new(StringComparer.Ordinal)
-        {
-            "TongQuan", "BenhNhan", "LichKham", "NhanSu", "ChungChiNhanVien", "CaLamViec", "VatTu", "DanhMucHangHoa", "NhapXuatVatTu",
-            "NhapKho", "XuatKho", "ThietBi", "BaoTri", "NhaCungCap", "DichVu", "DichVuThucHien", "HoaDon", "BangLuong", "ChinhSachLuong", "BaoCao"
-        },
-        ["Người hướng dẫn bệnh nhân"] = new(StringComparer.Ordinal)
-        {
-            "TongQuan", "BenhNhan", "LichKham", "CaLamViec", "HoaDon", "DichVu", "PhieuHuongDan"
-        },
-        ["Bác sĩ"] = new(StringComparer.Ordinal)
-        {
-            "TongQuan", "BenhNhan", "LichKham", "CaLamViec", "KhamDieuTri", "DichVuThucHien", "DonThuoc", "DichVu",
-            "PhieuHuongDan"
-        },
-        ["Nhân viên kho / thiết bị"] = new(StringComparer.Ordinal)
-        {
-            "TongQuan", "VatTu", "DanhMucHangHoa", "NhapXuatVatTu", "NhapKho", "XuatKho", "ThietBi", "BaoTri", "NhaCungCap"
-        }
+        ["Admin"] = AllPages,
+        ["User"] = new(StringComparer.Ordinal) { "TongQuan", "CaLamViec" }
     };
-
 
     /// <summary>
     /// Khởi tạo MainWindow từ XAML.
@@ -54,7 +35,10 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        RolePicker.Items.Clear();
+        RolePicker.Items.Add(new ComboBoxItem { Content = PhienDangNhap.IsAdmin ? "Admin" : "User" });
         RolePicker.SelectedIndex = 0;
+        RolePicker.IsEnabled = false;
         KeyDown += (_, e) =>
         {
             if (e.Key == Key.Escape && AppHost.Content is AppWorkspace workspace && workspace.ReturnToPage())
@@ -63,12 +47,12 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Tên vai trò được chọn trong RolePicker; chưa chọn thì dùng Quản trị hệ thống để xem giao diện.
+    /// Vai trò đã xác thực tại đăng nhập, không cho đổi bằng bộ chọn trên trang chủ.
     /// </summary>
-    private string CurrentRole => (RolePicker.SelectedItem as ComboBoxItem)?.Content as string ?? "Quản trị hệ thống";
+    private string CurrentRole => PhienDangNhap.IsAdmin ? "Admin" : "User";
 
     /// <summary>
-    /// Tra danh sách màn hình được phép của vai trò đang chọn. Đây là quyền hiển thị giao diện theo RolePicker, không phải xác thực tài khoản tại SQL.
+    /// Tra danh sách phân hệ được mở theo tài khoản đã đăng nhập.
     /// </summary>
     internal bool CanOpen(string module) => RolePermissions[CurrentRole].Contains(module);
 
@@ -88,8 +72,8 @@ public partial class MainWindow : Window
     {
         if (!RolePermissions[CurrentRole].Contains(tag))
         {
-            MessageBox.Show("Vai trò đang xem không có ứng dụng này. Bạn có thể đổi vai trò tại màn hình chính.",
-                "Xem trước vai trò", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Tài khoản hiện tại không có quyền mở phân hệ này.",
+                "Quyền truy cập", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -109,7 +93,7 @@ public partial class MainWindow : Window
             "PhieuHuongDan" => new PhieuHuongDan(),
             "NhanSu" => new NhanSu(),
             "ChungChiNhanVien" => new ChungChiNhanVien(),
-            "CaLamViec" => new CaLamViec(),
+            "CaLamViec" => new CaLamViec(PhienDangNhap.MaNV, PhienDangNhap.IsAdmin),
             "ThietBi" => new ThietBi(),
             "BaoTri" => new BaoTri(),
             "VatTu" => new VatTu(),
@@ -156,6 +140,7 @@ public partial class MainWindow : Window
     internal void OpenModuleWindow(string tag, AppWorkspace workspace, string? table = null, CreationContext? context = null)
     {
         if (!RolePermissions[CurrentRole].Contains(tag)) return;
+        if (tag == "CaLamViec" && !PhienDangNhap.IsAdmin) return;
         UserControl? form = tag switch
         {
             "BenhNhan" => new CuaSoBenhNhan(),

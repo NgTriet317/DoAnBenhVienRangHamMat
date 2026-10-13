@@ -123,5 +123,62 @@ namespace DAL
                 return true;
             });
         }
+        // Các hàm phục vụ đăng ký, duyệt ca và phân phòng theo tuần.
+        public List<ET_LICHLAMVIEC> layLichTheoTuan(DateTime dauTuan)
+        {
+            return ThucHien((connection, transaction) => connection.Query<ET_LICHLAMVIEC>(
+                "SELECT * FROM dbo.LICH_LAM_VIEC WHERE NgayLam >= @TuNgay AND NgayLam < @DenNgay",
+                new { TuNgay = dauTuan.Date, DenNgay = dauTuan.Date.AddDays(7) }, transaction).ToList());
+        }
+
+        public bool dangKyCa(ET_LICHLAMVIEC lich)
+        {
+            return ThucHien((connection, transaction) =>
+            {
+                lich.MaLLV = TaoMa(connection, transaction, "LICH_LAM_VIEC", "MaLLV");
+                return connection.Execute(@"INSERT INTO dbo.LICH_LAM_VIEC
+                    (MaLLV, MaNV, MaCa, NgayLam, MaPhong, TrangThai, TrangThaiHienDien, GioVao, GioRa, GhiChu)
+                    SELECT @MaLLV, @MaNV, @MaCa, @NgayLam, NULL, N'Chờ xác nhận', @TrangThaiHienDien, NULL, NULL, @GhiChu
+                    WHERE EXISTS (SELECT 1 FROM dbo.CA_THEO_NGAY WHERE NgayLam=@NgayLam AND MaCa=@MaCa)
+                      AND NOT EXISTS (SELECT 1 FROM dbo.LICH_LAM_VIEC WITH(UPDLOCK,HOLDLOCK)
+                                      WHERE MaNV=@MaNV AND MaCa=@MaCa AND NgayLam=@NgayLam
+                                        AND TrangThai<>N'Từ chối')", lich, transaction) > 0;
+            });
+        }
+
+        public bool duyetCa(string maLLV, string maPhong)
+        {
+            return ThucHien((connection, transaction) => connection.Execute(@"
+                UPDATE lich
+                SET lich.TrangThai=N'Đã xác nhận', lich.MaPhong=@MaPhong
+                FROM dbo.LICH_LAM_VIEC lich
+                JOIN dbo.CA_LAM ca ON ca.MaCa=lich.MaCa
+                WHERE lich.MaLLV=@MaLLV AND lich.TrangThai=N'Chờ xác nhận'
+                AND EXISTS (SELECT 1 FROM dbo.PHONG WHERE MaPhong=@MaPhong AND TrangThai=N'Đang hoạt động')
+                AND NOT EXISTS (
+                    SELECT 1 FROM dbo.LICH_LAM_VIEC x WITH(UPDLOCK,HOLDLOCK)
+                    JOIN dbo.CA_LAM caKhac ON caKhac.MaCa=x.MaCa
+                    WHERE x.NgayLam=lich.NgayLam AND x.MaLLV<>lich.MaLLV
+                      AND x.TrangThai=N'Đã xác nhận'
+                      AND x.MaNV=lich.MaNV
+                      AND caKhac.GioBatDau < ca.GioKetThuc
+                      AND ca.GioBatDau < caKhac.GioKetThuc
+                )", new { MaLLV=maLLV, MaPhong=maPhong }, transaction) > 0);
+        }
+
+        public bool tuChoiCa(string maLLV, string lyDo)
+        {
+            return ThucHien((connection, transaction) => connection.Execute(
+                "UPDATE dbo.LICH_LAM_VIEC SET TrangThai=N'Từ chối', GhiChu=@LyDo WHERE MaLLV=@MaLLV AND TrangThai=N'Chờ xác nhận'",
+                new { MaLLV=maLLV, LyDo=lyDo }, transaction) > 0);
+        }
+
+        public bool huyDangKy(string maLLV, string maNV)
+        {
+            return ThucHien((connection, transaction) => connection.Execute(
+                "DELETE FROM dbo.LICH_LAM_VIEC WHERE MaLLV=@MaLLV AND MaNV=@MaNV AND TrangThai=N'Chờ xác nhận'",
+                new { MaLLV=maLLV, MaNV=maNV }, transaction) > 0);
+        }
+
     }
 }

@@ -1,37 +1,163 @@
-// AI bổ sung kiểm tra nhập liệu: tạo TryReadEmployee/TryReadPosition, chặn thông tin sai trước khi gọi BUS và phân biệt lỗi lưu với lỗi tải lại.
-// PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung chú thích cho các chức năng nhân sự hiện có: nạp danh sách qua BUS, thêm nhân viên/chức vụ, kiểm tra nhập liệu, đọc dòng được chọn và mở ChiTietNhanSu. Giao diện này chưa có thao tác sửa/xóa nhân viên.
-// AI hỗ trợ: bổ sung chú thích tiếng Việt cho file này ngày 13/10/2026.
-// Nhãn này ghi nhận phần hỗ trợ/chú thích;
 using BUS;
 using ET;
-using RangHamMat.Controls;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace RangHamMat.Views
 {
-    /// <summary>
-    /// Màn hình quản lý nhân viên/chức vụ: phần bố cục/binding nằm trong XAML, code-behind xử lý khởi tạo và các sự kiện của màn hình.
-    /// </summary>
-    public partial class NhanSu
-    {        
-        /// <summary>
-        /// Khởi tạo quản lý nhân viên/chức vụ từ XAML. Đọc danh sách nhân viên, chức vụ và chuyên khoa qua BUS rồi gán cho bảng/ComboBox.
-        /// </summary>
+    public partial class NhanSu : UserControl
+    {
+        private BUS_NHANVIEN busNhanVien = new();
+        private BUS_CHUCVU busChucVu = new();
+        private BUS_CHUYENKHOA busChuyenKhoa = new();
+
+        private List<ET_NHANVIEN> danhSachNhanVien = new();
+
         public NhanSu()
         {
             InitializeComponent();
-            dpNgaySinh.DisplayDateEnd=DateTime.Today;
 
-            dgvNhanVien.ItemsSource = new BUS_NHANVIEN().layToanBoNhanVien();
-            dgvChucVu.ItemsSource = new BUS_CHUCVU().layToanBoChucVu();
-            cboChuyenKhoa.ItemsSource = new BUS_CHUYENKHOA().layToanBoChuyenKhoa();
-            cboChucVu.ItemsSource = new BUS_CHUCVU().layToanBoChucVu();
+            LoadDuLieuNhanVien();
+            LoadDuLieuChucVu();
+            LoadDuLieuChuyenKhoa();
+            DangKySuKienXoaBaoDo();
         }
 
-        /// <summary>
-        /// Đọc ET_NHANVIEN của dòng được chọn và mở cửa sổ ChiTietNhanSu với Owner là cửa sổ chính; không có dòng hợp lệ thì bỏ qua.
-        /// </summary>
+        private void LoadDuLieuNhanVien()
+        {
+            try
+            {
+                IEnumerable<ET_NHANVIEN> duLieu = busNhanVien.layToanBoNhanVien();
+                if (duLieu == null)
+                    danhSachNhanVien = new List<ET_NHANVIEN>();
+                else
+                    danhSachNhanVien = duLieu.ToList();
+
+                ApDungBoLocNhanVien();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi tải danh sách nhân viên: " + ex.Message, "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void LoadDuLieuChucVu()
+        {
+            var chucVuList = busChucVu.layToanBoChucVu().ToList();
+            dgvChucVu.ItemsSource = chucVuList;
+            cboChucVu.ItemsSource = chucVuList;
+        }
+
+        private void LoadDuLieuChuyenKhoa()
+        {
+            cboChuyenKhoa.ItemsSource = busChuyenKhoa.layToanBoChuyenKhoa();
+        }
+
+        private void XoaThongBaoLoi(object? sender, EventArgs e)
+        {
+            if (sender is Control control)
+            {
+                XoaBaoDo(control);
+            }
+        }
+
+        private void DangKySuKienXoaBaoDo()
+        {
+            txtHoTen.TextChanged += XoaThongBaoLoi;
+            txtSDT.TextChanged += XoaThongBaoLoi;
+            dpNgaySinh.SelectedDateChanged += XoaThongBaoLoi;
+            dpNgayVaoLam.SelectedDateChanged += XoaThongBaoLoi;
+            cboChucVu.SelectionChanged += XoaThongBaoLoi;
+
+            txtMaChucVu.TextChanged += XoaThongBaoLoi;
+            txtTenChucVu.TextChanged += XoaThongBaoLoi;
+        }
+
+        private void DatBaoDo(Control control)
+        {
+            control.BorderBrush = Brushes.Red;
+            control.BorderThickness = new Thickness(1.5);
+        }
+
+        private void XoaBaoDo(Control control)
+        {
+            control.ClearValue(BorderBrushProperty);
+            control.ClearValue(BorderThicknessProperty);
+        }
+
+        private void XoaToanBoBaoDoNhanVien()
+        {
+            XoaBaoDo(txtHoTen);
+            XoaBaoDo(txtSDT);
+            XoaBaoDo(dpNgaySinh);
+            XoaBaoDo(dpNgayVaoLam);
+            XoaBaoDo(cboChucVu);
+        }
+
+        private void XoaToanBoBaoDoChucVu()
+        {
+            XoaBaoDo(txtMaChucVu);
+            XoaBaoDo(txtTenChucVu);
+        }
+
+        private void ApDungBoLocNhanVien()
+        {
+            if (dgvNhanVien == null || danhSachNhanVien == null)
+                return;
+
+            string tuKhoa = "";
+            if (txtTimNhanVien != null)
+                tuKhoa = txtTimNhanVien.Text.Trim();
+
+            string trangThaiLoc = "Tất cả";
+            if (cboLocTrangThaiNhanVien != null)
+            {
+                ComboBoxItem mucDaChon = cboLocTrangThaiNhanVien.SelectedItem as ComboBoxItem;
+                if (mucDaChon != null && mucDaChon.Content != null)
+                    trangThaiLoc = mucDaChon.Content.ToString();
+            }
+
+            List<ET_NHANVIEN> ketQua = new List<ET_NHANVIEN>();
+            foreach (ET_NHANVIEN nhanVien in danhSachNhanVien)
+            {
+                bool khopTuKhoa = string.IsNullOrWhiteSpace(tuKhoa);
+                if (!khopTuKhoa)
+                {
+                    if (nhanVien.MaNV != null && nhanVien.MaNV.IndexOf(tuKhoa, StringComparison.OrdinalIgnoreCase) >= 0)
+                        khopTuKhoa = true;
+                    if (nhanVien.HoTen != null && nhanVien.HoTen.IndexOf(tuKhoa, StringComparison.OrdinalIgnoreCase) >= 0)
+                        khopTuKhoa = true;
+                    if (nhanVien.SDT != null && nhanVien.SDT.Contains(tuKhoa))
+                        khopTuKhoa = true;
+                }
+
+                bool khopTrangThai = trangThaiLoc == "Tất cả";
+                if (!khopTrangThai && nhanVien.TrangThai != null)
+                    khopTrangThai = string.Equals(nhanVien.TrangThai.Trim(), trangThaiLoc, StringComparison.OrdinalIgnoreCase);
+
+                if (khopTuKhoa && khopTrangThai)
+                    ketQua.Add(nhanVien);
+            }
+
+            dgvNhanVien.ItemsSource = ketQua;
+        }
+
+        private void txtTimNhanVien_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ApDungBoLocNhanVien();
+        }
+
+        private void cboLocTrangThaiNhanVien_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ApDungBoLocNhanVien();
+        }
+
         private void dgvNhanVien_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (dgvNhanVien.SelectedItem is not ET_NHANVIEN nhanVien)
@@ -39,108 +165,230 @@ namespace RangHamMat.Views
 
             var frm = new ChiTietNhanSu(nhanVien)
             {
-                Owner = System.Windows.Application.Current?.MainWindow
+                Owner = Application.Current?.MainWindow
             };
+
             frm.ShowDialog();
-        }
 
-        /// <summary>
-        /// Tạo ET_CHUCVU từ các ô nhập, gọi BUS thêm chức vụ, thông báo kết quả và tải lại bảng chức vụ.
-        /// </summary>
-        private void btnThemChucVu_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            if (!TryReadPosition(out var position, out var error)) return;
-            try
+            // Nếu người dùng đã sửa thông tin hoặc cho nhân sự nghỉ việc, tải lại danh sách
+            if (frm.DaThayDoi)
             {
-                var bus=new BUS_CHUCVU();
-                if (!bus.themChucVu(position!)) { FormError.Text="Không thể thêm chức vụ. Nội dung nhập được giữ để thử lại."; return; }
-                FormError.Text="Đã thêm chức vụ thành công.";
-                try { dgvChucVu.ItemsSource=bus.layToanBoChucVu(); cboChucVu.ItemsSource=bus.layToanBoChucVu(); }
-                catch(Exception ex) { FormError.Text="Chức vụ đã được lưu; chưa tải lại được danh sách: "+ex.Message; }
+                LoadDuLieuNhanVien();
             }
-            catch(Exception ex) { FormError.Text="Không thể thêm chức vụ: "+ex.Message; }
         }
-        /// <summary>AI tạo: đọc và kiểm tra tên/mô tả chức vụ trước khi gọi BUS; mã chức vụ được tầng lưu tự cấp.</summary>
-        public bool TryReadPosition(out ET_CHUCVU? position,out string error)
+
+
+        //kiem tra du lieu nhan vien
+        private bool KiemTraDuLieuThemNhanVien(out string thongBaoLoi)
         {
-            position=null;
-            if(!KiemTraNhapLieu.PrepareSave(this,out error)) return false;
-            try
+            thongBaoLoi = string.Empty;
+            bool hopLe = true;
+            XoaToanBoBaoDoNhanVien();
+
+            // Họ tên không đc để trống
+            if (string.IsNullOrWhiteSpace(txtHoTen.Text))
             {
-                var values=new Dictionary<string,object?> { ["TenChucVu"]=txtTenChucVu.Text.Trim(), ["MoTa"]=txtMoTaChucVu.Text.Trim() };
-                KiemTraNhapLieu.ValidateValues("CHUC_VU",values);
-                position=new ET_CHUCVU("",txtTenChucVu.Text.Trim(),txtMoTaChucVu.Text.Trim());
-                FormError.Text=""; return true;
+                DatBaoDo(txtHoTen);
+                thongBaoLoi = "Họ và tên không được để trống.";
+                hopLe = false;
             }
-            catch(LoiNhapLieu ex) { KiemTraNhapLieu.MarkError(this,ex); error=ex.Message; return false; }
-        }
-        /// <summary>
-        /// Xóa ba ô mã, tên và mô tả chức vụ để nhập một chức vụ mới.
-        /// </summary>
-        public void clearTextBoxes()
-        {
-            txtMaChucVu.Text = string.Empty;
-            txtTenChucVu.Text = string.Empty;
-            txtMoTaChucVu.Text = string.Empty;
+            // họ tên không đc chứa số và kí tự đặc biệt
+            else if (!txtHoTen.Text.Trim().All(c => char.IsLetter(c) || char.IsWhiteSpace(c)))
+            {
+                DatBaoDo(txtHoTen);
+                thongBaoLoi = "Họ và tên không được chứa số và kí tự đặc biệt.";
+                hopLe = false;
+            }
+
+            // Số điện thoại (10 chữ số, bắt đầu bằng 0)
+            string sdt = txtSDT.Text;
+            if (string.IsNullOrWhiteSpace(sdt))
+            {
+                DatBaoDo(txtSDT);
+                if (string.IsNullOrEmpty(thongBaoLoi))
+                    thongBaoLoi = "Số điện thoại không được để trống.";
+                hopLe = false;
+            }
+            else if (sdt.Length != 10 || !sdt.StartsWith("0") || !long.TryParse(sdt, out _))
+            {
+                DatBaoDo(txtSDT);
+                thongBaoLoi = "Số điện thoại không hợp lệ (phải gồm 10 chữ số và bắt đầu bằng số 0).";
+                hopLe = false;
+            }
+
+
+            // Ngày sinh
+            if (!dpNgaySinh.SelectedDate.HasValue) //nếu ko có chọn ngày
+            {
+                DatBaoDo(dpNgaySinh);
+                if (string.IsNullOrEmpty(thongBaoLoi))
+                    thongBaoLoi = "Vui lòng chọn ngày sinh.";
+                hopLe = false;
+            }
+            else //nếu có chọn ngày
+            {
+                DateTime ngaySinh = dpNgaySinh.SelectedDate.Value;
+                if (ngaySinh > DateTime.Today)
+                {
+                    DatBaoDo(dpNgaySinh);
+                    if (string.IsNullOrEmpty(thongBaoLoi))
+                        thongBaoLoi = "Ngày sinh không được lớn hơn ngày hiện tại.";
+                    hopLe = false;
+                }
+                else if (DateTime.Today.Year - ngaySinh.Year < 18 ||
+                         (DateTime.Today.Year - ngaySinh.Year == 18 && DateTime.Today < ngaySinh.AddYears(18)))
+                {
+                    DatBaoDo(dpNgaySinh);
+                    if (string.IsNullOrEmpty(thongBaoLoi))
+                        thongBaoLoi = "Nhân viên phải từ đủ 18 tuổi trở lên.";
+                    hopLe = false;
+                }
+            }
+
+            // Chức vụ
+            if (cboChucVu.SelectedValue == null)
+            {
+                DatBaoDo(cboChucVu);
+                if (string.IsNullOrEmpty(thongBaoLoi))
+                    thongBaoLoi = "Vui lòng chọn chức vụ cho nhân viên.";
+                hopLe = false;
+            }
+
+            // Ngày vào làm
+            if (!dpNgayVaoLam.SelectedDate.HasValue)
+            {
+                DatBaoDo(dpNgayVaoLam);
+                if (string.IsNullOrEmpty(thongBaoLoi))
+                    thongBaoLoi = "Vui lòng chọn ngày vào làm.";
+                hopLe = false;
+            }
+            else if (dpNgaySinh.SelectedDate.HasValue && dpNgayVaoLam.SelectedDate.Value <= dpNgaySinh.SelectedDate.Value)
+            {
+                DatBaoDo(dpNgayVaoLam);
+                if (string.IsNullOrEmpty(thongBaoLoi))
+                    thongBaoLoi = "Ngày vào làm phải sau ngày sinh.";
+                hopLe = false;
+            }
+
+            return hopLe;
         }
 
-        /// <summary>
-        /// Xóa nội dung form chức vụ và nạp lại bảng chức vụ từ BUS.
-        /// </summary>
-        private void btnLamMoiChucVu_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            clearTextBoxes();
-            dgvChucVu.ItemsSource = new BUS_CHUCVU().layToanBoChucVu();
-        }
-
-        /// <summary>
-        /// Kiểm tra chức vụ/ngày vào làm, tạo ET_NHANVIEN từ form rồi gọi BUS thêm với mã trống để tự cấp mã; tải lại bảng nhân viên khi thành công, báo lỗi nếu có.
-        /// </summary>
         private void btnThemNhanVien_Click(object sender, RoutedEventArgs e)
         {
-            if(!TryReadEmployee(out var employee,out _)) return;
+            if (!KiemTraDuLieuThemNhanVien(out string thongBaoLoi))
+            {
+                MessageBox.Show(thongBaoLoi, "Kiểm tra dữ liệu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             try
             {
-                BUS_NHANVIEN busNhanVien = new BUS_NHANVIEN();
-                if (busNhanVien.themNhanVien(employee!))
+                string maNV = ""; // DAL của gitclone tự tạo mã nhân viên
+                string gioiTinh = cboGioiTinh.Text;
+                string trangThai = cboTrangThai.Text;
+                string maChucVu = cboChucVu.SelectedValue.ToString() ?? "";
+                string maCK = cboChuyenKhoa.SelectedValue?.ToString() ?? "";
+
+                var nhanVienMoi = new ET_NHANVIEN(
+                    maNV,
+                    txtHoTen.Text.Trim(),
+                    gioiTinh,
+                    dpNgaySinh.SelectedDate!.Value,
+                    txtSDT.Text.Trim(),
+                    txtDiaChi.Text.Trim(),
+                    maChucVu,
+                    string.IsNullOrEmpty(maCK) ? null! : maCK,
+                    txtBangCap.Text.Trim(),
+                    dpNgayVaoLam.SelectedDate.Value,
+                    trangThai
+                );
+
+                if (busNhanVien.themNhanVien(nhanVienMoi))
                 {
-                    FormError.Text="Đã thêm nhân viên thành công.";
-                    try { dgvNhanVien.ItemsSource = busNhanVien.layToanBoNhanVien(); }
-                    catch(Exception ex) { FormError.Text="Nhân viên đã được lưu; chưa tải lại được danh sách: "+ex.Message; }
+                    MessageBox.Show("Thêm nhân viên thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                    btnLamMoiNhanVien_Click(sender, e);
+                    LoadDuLieuNhanVien();
                 }
                 else
                 {
-                    FormError.Text="Không thể thêm nhân viên. Nội dung nhập được giữ để thử lại.";
+                    MessageBox.Show("Thêm nhân viên thất bại. Có thể mã nhân viên đã tồn tại hoặc dữ liệu không hợp lệ!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
-                FormError.Text="Không thể thêm nhân viên: "+ex.Message;
+                MessageBox.Show("Lỗi khi thêm nhân viên: " + ex.Message, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        /// <summary>AI tạo: chặn tên trống, điện thoại/ngày sai, chuỗi quá dài và thiếu chức vụ/trạng thái; giữ nguyên form khi lỗi.</summary>
-        public bool TryReadEmployee(out ET_NHANVIEN? employee,out string error)
+
+        private void btnLamMoiNhanVien_Click(object sender, RoutedEventArgs e)
         {
-            employee=null;
-            if(!KiemTraNhapLieu.PrepareSave(this,out error)) return false;
-            try
+            txtHoTen.Text = string.Empty;
+            txtSDT.Text = string.Empty;
+            txtDiaChi.Text = string.Empty;
+            txtBangCap.Text = string.Empty;
+            cboGioiTinh.SelectedIndex = 0;
+            cboTrangThai.SelectedIndex = 0;
+            cboChucVu.SelectedIndex = -1;
+            cboChuyenKhoa.SelectedIndex = -1;
+            dpNgaySinh.SelectedDate = null;
+            dpNgayVaoLam.SelectedDate = DateTime.Today;
+
+            XoaToanBoBaoDoNhanVien();
+        }
+
+        private void btnThemChucVu_Click(object sender, RoutedEventArgs e)
+        {
+            XoaToanBoBaoDoChucVu();
+
+            if (string.IsNullOrWhiteSpace(txtTenChucVu.Text))
             {
-                var born=KiemTraNhapLieu.ReadDate(dpNgaySinh);
-                var joined=KiemTraNhapLieu.ReadDate(dpNgayVaoLam);
-                var values=new Dictionary<string,object?>
-                {
-                    ["HoTen"]=txtHoTen.Text.Trim(), ["GioiTinh"]=cboGioiTinh.Text,
-                    ["NgaySinh"]=born, ["SDT"]=txtSDT.Text.Trim(), ["DiaChi"]=txtDiaChi.Text.Trim(),
-                    ["MaChucVu"]=cboChucVu.SelectedValue, ["MaCK"]=cboChuyenKhoa.SelectedValue,
-                    ["BangCap"]=txtBangCap.Text.Trim(), ["NgayVaoLam"]=joined, ["TrangThai"]=cboTrangThai.Text
-                };
-                KiemTraNhapLieu.ValidateValues("NHAN_VIEN",values);
-                employee=new ET_NHANVIEN("",txtHoTen.Text.Trim(),cboGioiTinh.Text,born,txtSDT.Text.Trim(),
-                    txtDiaChi.Text.Trim(),cboChucVu.SelectedValue!.ToString()!,cboChuyenKhoa.SelectedValue?.ToString(),
-                    txtBangCap.Text.Trim(),joined!.Value,cboTrangThai.Text);
-                FormError.Text=""; return true;
+                DatBaoDo(txtTenChucVu);
+                MessageBox.Show("Tên chức vụ không được để trống.", "Kiểm tra dữ liệu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
-            catch(LoiNhapLieu ex) { KiemTraNhapLieu.MarkError(this,ex); error=ex.Message; return false; }
+
+            var chucVuMoi = new ET_CHUCVU("", txtTenChucVu.Text.Trim(), txtMoTaChucVu.Text.Trim());
+
+            if (busChucVu.themChucVu(chucVuMoi))
+            {
+                MessageBox.Show("Thêm chức vụ thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                clearTextBoxesChucVu();
+                LoadDuLieuChucVu();
+            }
+            else
+            {
+                MessageBox.Show("Thêm chức vụ thất bại!.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        public void clearTextBoxesChucVu()
+        {
+            txtMaChucVu.Text = string.Empty;
+            txtTenChucVu.Text = string.Empty;
+            txtMoTaChucVu.Text = string.Empty;
+            XoaToanBoBaoDoChucVu();
+        }
+
+        private void btnLamMoiChucVu_Click(object sender, RoutedEventArgs e)
+        {
+            clearTextBoxesChucVu();
+            LoadDuLieuChucVu();
+        }
+
+        private void txtHoTen_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // Họ tên không đc để trống
+            if (string.IsNullOrWhiteSpace(txtHoTen.Text))
+            {
+                DatBaoDo(txtHoTen);
+                return;
+            }
+            // họ tên không đc chứa số và kí tự đặc biệt
+            else if (!txtHoTen.Text.Trim().All(c => char.IsLetter(c) || char.IsWhiteSpace(c)))
+            {
+                DatBaoDo(txtHoTen);
+                return;
+            }
         }
     }
 }

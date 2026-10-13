@@ -33,7 +33,7 @@
         <Button Content="Vào không gian làm việc" Click="DangNhap_Click" Style="{StaticResource Primary}" Margin="0,0,0,12" />
         <!-- Thao tác Thoát: gọi Thoat_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
         <Button Content="Thoát" Click="Thoat_Click" Style="{StaticResource Quiet}" Margin="0" />
-        <TextBlock Text="Bản giao diện mẫu, chưa xác thực tài khoản." FontSize="12" Foreground="{StaticResource Muted}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,26,0,0" />
+        <TextBlock Text="Đăng nhập bằng tài khoản được cấp trong hệ thống." FontSize="12" Foreground="{StaticResource Muted}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,26,0,0" />
       </StackPanel>
     </Grid>
   </Viewbox>
