@@ -17,10 +17,7 @@ public partial class ChiTietNhanSu : Window
     public ChiTietNhanSu(ET_NHANVIEN ttNhanVien)
     {
         InitializeComponent();
-        nhanVien = new ET_NHANVIEN(ttNhanVien.MaNV, ttNhanVien.HoTen,
-            ttNhanVien.GioiTinh, ttNhanVien.NgaySinh, ttNhanVien.SDT,
-            ttNhanVien.DiaChi, ttNhanVien.MaChucVu, ttNhanVien.MaCK,
-            ttNhanVien.BangCap, ttNhanVien.NgayVaoLam, ttNhanVien.TrangThai);
+        nhanVien = ttNhanVien;
         DataContext = nhanVien;
 
         LoadDanhSachChucVuVaChuyenKhoa();
@@ -231,14 +228,12 @@ public partial class ChiTietNhanSu : Window
         nhanVien.SDT = txtSDT.Text.Trim();
         nhanVien.DiaChi = txtDiaChi.Text.Trim();
         nhanVien.MaChucVu = cboChucVu.SelectedValue?.ToString() ?? "";
-        nhanVien.MaCK = cboChuyenKhoa.SelectedValue?.ToString();
+        nhanVien.MaCK = cboChuyenKhoa.SelectedValue?.ToString() ?? "";
         nhanVien.BangCap = txtBangCap.Text.Trim();
         nhanVien.NgayVaoLam = dpNgayVaoLam.SelectedDate!.Value;
         //nhanVien.TrangThai = cboTrangThai.Text;
 
-        try
-        {
-        if (busNhanVien.suaNhanVien(nhanVien))
+        if (busNhanVien.capNhatNhanVien(nhanVien))
         {
             DaThayDoi = true;
             CapNhatHeader();
@@ -248,57 +243,76 @@ public partial class ChiTietNhanSu : Window
         {
             MessageBox.Show("Cập nhật thông tin nhân viên thất bại. Vui lòng kiểm tra lại!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show("Lỗi cập nhật nhân viên: " + ex.Message);
-        }
     }
 
     private void btnKhoiPhuc_Click(object sender, RoutedEventArgs e)
     {
-        if (nhanVien.TrangThai != "Đã nghỉ")
+        if (!string.Equals(nhanVien.TrangThai, "Đã nghỉ", StringComparison.OrdinalIgnoreCase))
         {
-            MessageBox.Show("Chỉ khôi phục nhân viên đã nghỉ.");
+            MessageBox.Show("Chỉ có thể khôi phục nhân viên đang ở trạng thái 'Đã nghỉ'.",
+                "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        DoiTrangThai("Đang làm việc");
+        var confirm = MessageBox.Show(
+            $"Bạn có muốn khôi phục nhân sự '{nhanVien.HoTen}' về trạng thái 'Đang làm việc'?",
+            "Xác nhận khôi phục", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (confirm != MessageBoxResult.Yes) return;
+
+        if (busNhanVien.khoiPhucNhanVien(nhanVien.MaNV))
+        {
+            nhanVien.TrangThai = "Đang làm việc";
+            DaThayDoi = true;
+            CapNhatHeader();
+            MessageBox.Show("Khôi phục nhân sự thành công!", "Thông báo",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        else
+        {
+            MessageBox.Show("Không thể khôi phục nhân sự. Vui lòng kiểm tra kết nối hoặc trạng thái hiện tại trong cơ sở dữ liệu.",
+                "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void btnNghiViec_Click(object sender, RoutedEventArgs e)
     {
-        if (nhanVien.TrangThai == "Đã nghỉ") return;
-        if (MessageBox.Show("Xác nhận cho nhân viên nghỉ việc?", "Xác nhận",
-                MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+        var confirm = MessageBox.Show(
+            $"Bạn có chắc chắn muốn chuyển trạng thái nhân sự '{nhanVien.HoTen}' sang 'Đã nghỉ'?",
+            "Xác nhận nghỉ việc",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
 
-        DoiTrangThai("Đã nghỉ");
-    }
-
-    private void DoiTrangThai(string trangThai)
-    {
-        try
+        if (confirm != MessageBoxResult.Yes)
+            return;
+        else
         {
-            ET_NHANVIEN? nv = busNhanVien.layNhanVienTheoMa(nhanVien.MaNV);
-            if (nv == null)
-            {
-                MessageBox.Show("Không tìm thấy nhân viên.");
-                return;
-            }
+            busNhanVien.nghiViecNhanVien(nhanVien.MaNV);
+            MessageBox.Show("Thao tác thành công");
+            DaThayDoi = true; CapNhatHeader();
+            
+        }
 
-            nv.TrangThai = trangThai;
-            if (busNhanVien.suaNhanVien(nv, chiDoiTrangThai: true))
-            {
-                nhanVien.TrangThai = trangThai;
-                DaThayDoi = true;
-                CapNhatHeader();
-                MessageBox.Show("Đã cập nhật trạng thái nhân viên.");
-            }
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show("Lỗi cập nhật trạng thái: " + ex.Message);
-        }
+
+
+        //if (busNhanVien.nghiViecNhanVien(nhanVien.MaNV))
+        //{
+        //    nhanVien.TrangThai = "Đã nghỉ";
+        //    foreach (ComboBoxItem item in cboTrangThai.Items)
+        //    {
+        //        if (string.Equals(item.Content?.ToString(), "Đã nghỉ", StringComparison.OrdinalIgnoreCase))
+        //        {
+        //            cboTrangThai.SelectedItem = item;
+        //            break;
+        //        }
+        //    }
+        //    DaThayDoi = true;
+        //    CapNhatHeader();
+        //    MessageBox.Show("Đã chuyển trạng thái nhân sự sang 'Đã nghỉ' thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+        //}
+        //else
+        //{
+        //    MessageBox.Show("Thao tác nghỉ việc thất bại. Vui lòng thử lại!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
+        //}
     }
 
     private void btnDong_Click(object sender, RoutedEventArgs e)

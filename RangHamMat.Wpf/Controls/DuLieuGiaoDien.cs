@@ -176,7 +176,7 @@ public static class DuLieuGiaoDien
             ["DICH_VU_THUC_HIEN"] = new BUS_DICHVUTHUCHIEN(transaction).layToanBoDichVuThucHien().Cast<object>().ToArray(),
             ["DON_THUOC"] = new BUS_DONTHUOC(transaction).layToanBoDonThuoc().Cast<object>().ToArray(),
             ["CHI_TIET_DON_THUOC"] = new BUS_CHITIETDONTHUOC(transaction).layToanBoChiTietDonThuoc().Cast<object>().ToArray(),
-            ["NHAN_VIEN"] = new BUS_NHANVIEN(transaction).layToanBoNhanVien().Cast<object>().ToArray(),
+            ["NHAN_VIEN"] = new BUS_NHANVIEN().layToanBoNhanVien().Cast<object>().ToArray(),
             ["PHONG"] = new BUS_PHONG(transaction).layToanBoPhong().Cast<object>().ToArray(),
             ["CA_LAM"] = new BUS_CALAM(transaction).layToanBoCaLam().Cast<object>().ToArray(),
             ["DICH_VU"] = new BUS_DICHVU(transaction).layToanBoDichVu().Cast<object>().ToArray(),

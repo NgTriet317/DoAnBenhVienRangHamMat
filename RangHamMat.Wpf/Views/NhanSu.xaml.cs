@@ -178,6 +178,13 @@ namespace RangHamMat.Views
         }
 
 
+        public string taoMaTuDong(string sdt, string chucVu)
+        {
+            string[] catchuoi = chucVu.Split(' ');
+            string ma = catchuoi[0].Substring(0, 1).ToUpper() + catchuoi[1].Substring(0, 1).ToUpper() + sdt;
+            return ma;
+        }
+
         //kiem tra du lieu nhan vien
         private bool KiemTraDuLieuThemNhanVien(out string thongBaoLoi)
         {
@@ -283,11 +290,17 @@ namespace RangHamMat.Views
 
             try
             {
-                string maNV = ""; // DAL của gitclone tự tạo mã nhân viên
+                string tenChucVu = "";
+                if (cboChucVu.SelectedItem is ET_CHUCVU cv)
+                    tenChucVu = cv.TenChucVu;
+                else
+                    tenChucVu = cboChucVu.Text;
+
+                string maNV = taoMaTuDong(txtSDT.Text.Trim(), tenChucVu);
                 string gioiTinh = cboGioiTinh.Text;
                 string trangThai = cboTrangThai.Text;
                 string maChucVu = cboChucVu.SelectedValue.ToString() ?? "";
-                string maCK = cboChuyenKhoa.SelectedValue?.ToString() ?? "";
+                string maCK = cboChuyenKhoa.SelectedValue.ToString() ?? "";
 
                 var nhanVienMoi = new ET_NHANVIEN(
                     maNV,
@@ -340,6 +353,13 @@ namespace RangHamMat.Views
         {
             XoaToanBoBaoDoChucVu();
 
+            if (string.IsNullOrWhiteSpace(txtMaChucVu.Text))
+            {
+                DatBaoDo(txtMaChucVu);
+                MessageBox.Show("Mã chức vụ không được để trống.", "Kiểm tra dữ liệu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(txtTenChucVu.Text))
             {
                 DatBaoDo(txtTenChucVu);
@@ -347,7 +367,7 @@ namespace RangHamMat.Views
                 return;
             }
 
-            var chucVuMoi = new ET_CHUCVU("", txtTenChucVu.Text.Trim(), txtMoTaChucVu.Text.Trim());
+            var chucVuMoi = new ET_CHUCVU(txtMaChucVu.Text.Trim(), txtTenChucVu.Text.Trim(), txtMoTaChucVu.Text.Trim());
 
             if (busChucVu.themChucVu(chucVuMoi))
             {
