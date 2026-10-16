@@ -43,16 +43,16 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel>
-                <TextBlock Text="Chi tiết nhân viên" FontSize="27" FontWeight="Bold"/>
-                <TextBlock Text="{Binding HoTen}" FontSize="14"
+                <TextBlock Text="Chi tiết nhân viên" FontSize="26" FontWeight="Bold"/>
+                <TextBlock x:Name="lblHeaderHoTen" Text="{Binding HoTen}" FontSize="14"
                            Foreground="{StaticResource Muted}" Margin="0,5,0,0"/>
             </StackPanel>
 
             <Border Grid.Column="1" Style="{StaticResource Card}" Padding="14,8"
                     VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="●" FontSize="9" Margin="0,0,7,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding TrangThai}" FontWeight="SemiBold"/>
+                    <TextBlock Text="●" FontSize="9" Margin="0,0,7,0" VerticalAlignment="Center" Foreground="#10B981"/>
+                    <TextBlock x:Name="lblHeaderTrangThai" Text="{Binding TrangThai}" FontWeight="SemiBold"/>
                 </StackPanel>
             </Border>
         </Grid>
@@ -82,28 +82,31 @@
 
                             <StackPanel>
                                 <TextBlock Text="Mã nhân viên" Style="{StaticResource DetailLabel}"/>
-                                <TextBox Text="{Binding MaNV}" Style="{StaticResource DetailTextBox}"/>
+                                <TextBox x:Name="txtMaNV" Text="{Binding MaNV}" IsReadOnly="True" Background="#F8FAFC" Style="{StaticResource DetailTextBox}"/>
                             </StackPanel>
 
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Giới tính" Style="{StaticResource DetailLabel}"/>
-                                <TextBox Text="{Binding GioiTinh}" Style="{StaticResource DetailTextBox}"/>
+                                <ComboBox x:Name="cboGioiTinh" Height="40" Margin="0,0,0,14">
+                                    <ComboBoxItem Content="Nam"/>
+                                    <ComboBoxItem Content="Nữ"/>
+                                    <ComboBoxItem Content="Khác"/>
+                                </ComboBox>
                             </StackPanel>
                         </Grid>
 
-                        <TextBlock Text="Họ và tên" Style="{StaticResource DetailLabel}"/>
-                        <TextBox Text="{Binding HoTen}" Style="{DynamicResource DetailTextBox}"/>
+                        <TextBlock Text="Họ và tên *" Style="{StaticResource DetailLabel}"/>
+                        <TextBox x:Name="txtHoTen"  Text="{Binding HoTen}" Style="{StaticResource DetailTextBox}"/>
 
-                        <TextBlock Text="Ngày sinh" Style="{StaticResource DetailLabel}"/>
-                        <TextBox Text="{Binding NgaySinh, StringFormat=dd/MM/yyyy}"
-                                 Style="{StaticResource DetailTextBox}"/>
+                        <TextBlock Text="Ngày sinh *" Style="{StaticResource DetailLabel}"/>
+                        <DatePicker x:Name="dpNgaySinh" Height="40" Margin="0,0,0,14"/>
 
-                        <TextBlock Text="Số điện thoại" Style="{StaticResource DetailLabel}"/>
-                        <TextBox Text="{Binding SDT}" Style="{StaticResource DetailTextBox}"/>
+                        <TextBlock Text="Số điện thoại *" Style="{StaticResource DetailLabel}"/>
+                        <TextBox x:Name="txtSDT" Text="{Binding SDT}" Style="{StaticResource DetailTextBox}"/>
 
                         <TextBlock Text="Địa chỉ" Style="{StaticResource DetailLabel}"/>
-                        <TextBox Text="{Binding DiaChi}" IsReadOnly="True" MinHeight="75"
-                                 Padding="10" TextWrapping="Wrap" AcceptsReturn="True"/>
+                        <TextBox x:Name="txtDiaChi" Text="{Binding DiaChi}" MinHeight="75"
+                                 Padding="10" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,14"/>
                     </StackPanel>
                 </Border>
 
@@ -114,80 +117,19 @@
                     <StackPanel>
                         <TextBlock Text="Thông tin công việc" Style="{StaticResource SectionHeader}"/>
 
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="12"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
+                        <TextBlock Text="Chức vụ *" Style="{StaticResource DetailLabel}"/>
+                        <ComboBox x:Name="cboChucVu" DisplayMemberPath="TenChucVu" SelectedValuePath="MaChucVu"
+                                  Height="40" Margin="0,0,0,14"/>
 
-                            <StackPanel>
-                                <TextBlock Text="Chức vụ" Style="{StaticResource DetailLabel}"/>
-                                <TextBox Text="{Binding MaChucVu}" Style="{StaticResource DetailTextBox}"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Chuyên khoa" Style="{StaticResource DetailLabel}"/>
-                                <TextBox Text="{Binding MaCK}" Style="{StaticResource DetailTextBox}"/>
-                            </StackPanel>
-                        </Grid>
+                        <TextBlock Text="Chuyên khoa" Style="{StaticResource DetailLabel}"/>
+                        <ComboBox x:Name="cboChuyenKhoa" DisplayMemberPath="TenCK" SelectedValuePath="MaCK"
+                                  Height="40" Margin="0,0,0,14"/>
 
                         <TextBlock Text="Bằng cấp" Style="{StaticResource DetailLabel}"/>
-                        <TextBox Text="{Binding BangCap}" Style="{StaticResource DetailTextBox}"/>
+                        <TextBox x:Name="txtBangCap" Text="{Binding BangCap}" Style="{StaticResource DetailTextBox}"/>
 
-                        <TextBlock Text="Ngày vào làm" Style="{StaticResource DetailLabel}"/>
-                        <TextBox Text="{Binding NgayVaoLam, StringFormat=dd/MM/yyyy}"
-                                 Style="{StaticResource DetailTextBox}"/>
-
-                        <TextBlock Text="Trạng thái" Style="{StaticResource DetailLabel}"/>
-                        <TextBox Text="{Binding TrangThai}" Style="{StaticResource DetailTextBox}"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- ======================== -->
-                <!-- CHỨNG CHỈ -->
-                <!-- ======================== -->
-                <Border Grid.ColumnSpan="3" Style="{StaticResource Card}" Padding="22"
-                        Margin="0,430,0,0">
-                    <StackPanel>
-                        <TextBlock Text="Thông tin chứng chỉ hành nghề"
-                                   Style="{StaticResource SectionHeader}"/>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="2*"/>
-                                <ColumnDefinition Width="12"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="12"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel>
-                                <TextBlock Text="Chứng chỉ hành nghề"
-                                           Style="{StaticResource DetailLabel}"/>
-                                <TextBox Text="{Binding ChungChiHanhNghe}"
-                                         Style="{StaticResource DetailTextBox}"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Ngày cấp"
-                                           Style="{StaticResource DetailLabel}"/>
-                                <TextBox Text="{Binding NgayCapChungChi, StringFormat=dd/MM/yyyy}"
-                                         Style="{StaticResource DetailTextBox}"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="4">
-                                <TextBlock Text="Hạn chứng chỉ"
-                                           Style="{StaticResource DetailLabel}"/>
-                                <TextBox Text="{Binding HanChungChi, StringFormat=dd/MM/yyyy}"
-                                         Style="{StaticResource DetailTextBox}"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <TextBlock Text="Nơi cấp chứng chỉ"
-                                   Style="{StaticResource DetailLabel}"/>
-                        <TextBox Text="{Binding NoiCapChungChi}"
-                                 Style="{StaticResource DetailTextBox}"/>
+                        <TextBlock Text="Ngày vào làm *" Style="{StaticResource DetailLabel}"/>
+                        <DatePicker x:Name="dpNgayVaoLam" Height="40" Margin="0,0,0,14"/>
                     </StackPanel>
                 </Border>
             </Grid>
@@ -200,18 +142,32 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="10"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Text="Thông tin được lấy từ hồ sơ nhân viên."
-                       Foreground="{StaticResource Muted}" FontSize="11"
+            <TextBlock Text="Chức năng hệ thống ==>>."
+                       Foreground="{StaticResource Muted}" FontSize="12"
                        VerticalAlignment="Center"/>
 
-            <Button Grid.Column="1" x:Name="btnDong"
-                    Content="Đóng" Width="100" Height="40"/>
+            <Button Grid.Column="1" x:Name="btnKhoiPhuc"
+                    Content="Khôi phục" Width="110" Height="40"
+                    Background="#99FFCC" Foreground="#009900" BorderBrush="#33FF99"
+                    FontWeight="SemiBold" Click="btnKhoiPhuc_Click"/>
+            
+            <Button Grid.Column="3" x:Name="btnNghiViec"
+                    Content="Nghỉ việc" Width="110" Height="40"
+                    Background="#FEE2E2" Foreground="#DC2626" BorderBrush="#FCA5A5"
+                    FontWeight="SemiBold" Click="btnNghiViec_Click"/>
 
-            <Button Grid.Column="3" x:Name="btnChinhSua"
-                    Content="Chỉnh sửa" Width="120" Height="40"
-                    Style="{StaticResource Primary}"/>
+            <Button Grid.Column="5" x:Name="btnDong"
+                    Content="Đóng" Width="95" Height="40" Click="btnDong_Click"/>
+
+            <Button Grid.Column="7" x:Name="btnChinhSua"
+                    Content="Lưu thay đổi" Width="130" Height="40"
+                    Style="{StaticResource Primary}" Click="btnChinhSua_Click"/>
         </Grid>
     </Grid>
 </Window>

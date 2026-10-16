@@ -1,0 +1,119 @@
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của TiepNhanKham.xaml. -->
+<!-- AI hỗ trợ: bổ sung chú thích cho tiếp nhận bệnh nhân. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.TiepNhanKham" Loaded="Form_Loaded" FontFamily="Segoe UI" Language="vi-VN" UseLayoutRounding="True" SnapsToDevicePixels="True">
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <!-- Nạp tài nguyên /RangHamMat.Wpf;component/Themes/HospitalStyles.xaml để các control dùng cùng màu, font, template và trạng thái của ứng dụng. -->
+        <ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/HospitalStyles.xaml"/>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <StackPanel Margin="0,0,0,16">
+      <TextBlock Text="Tiếp nhận bệnh nhân" Style="{StaticResource HospitalHeading}"/>
+      <TextBlock x:Name="ArrivalKind" Foreground="{StaticResource AccentDark}" FontWeight="SemiBold"/>
+      <TextBlock Text="Ghi nhận lượt đến bệnh viện và phân phòng trước khi bắt đầu khám." Style="{StaticResource HospitalMuted}" Margin="0,6,0,0"/>
+    </StackPanel>
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+      <ItemsControl>
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <UniformGrid Columns="2"/>
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <StackPanel Margin="0,0,16,16">
+          <TextBlock Text="Mã lượt tiếp nhận" Style="{StaticResource FieldLabel}"/>
+          <!-- Trường Mã phiếu tiếp nhận khám bệnh (PHIEU_KHAM_BENH.MaPhieu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. Ô chỉ đọc, không cho nhập lại mã/giá trị nguồn. -->
+          <TextBox Tag="DB:PHIEU_KHAM_BENH.MaPhieu" IsReadOnly="True" ToolTip="Tự sinh khi lưu"/>
+        </StackPanel>
+        <StackPanel Margin="0,0,16,16">
+          <TextBlock Text="Hồ sơ bệnh án" Style="{StaticResource FieldLabel}"/>
+          <!-- Trường Mã hồ sơ bệnh án (PHIEU_KHAM_BENH.MaHS): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+          <ComboBox Tag="DB:PHIEU_KHAM_BENH.MaHS" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+        </StackPanel>
+        <StackPanel x:Name="AppointmentBlock" Margin="0,0,16,16">
+          <TextBlock Text="Lịch hẹn" Style="{StaticResource FieldLabel}"/>
+          <!-- Trường Mã lịch hẹn khám (PHIEU_KHAM_BENH.MaLich): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+          <ComboBox Tag="DB:PHIEU_KHAM_BENH.MaLich" x:Name="AppointmentPicker" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+        </StackPanel>
+        <StackPanel Margin="0,0,16,16">
+          <TextBlock Text="Phòng khám" Style="{StaticResource FieldLabel}"/>
+          <!-- Trường Mã phòng (PHIEU_KHAM_BENH.MaPhong): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+          <ComboBox Tag="DB:PHIEU_KHAM_BENH.MaPhong" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+        </StackPanel>
+        <StackPanel Margin="0,0,16,16">
+          <TextBlock Text="Bác sĩ dự kiến (không bắt buộc)" Style="{StaticResource FieldLabel}"/>
+          <!-- Trường Mã bác sĩ, liên kết danh mục nhân viên (PHIEU_KHAM_BENH.MaBS): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+          <ComboBox Tag="DB:PHIEU_KHAM_BENH.MaBS" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+        </StackPanel>
+        <StackPanel Margin="0,0,16,16">
+          <TextBlock Text="Nhân viên tiếp nhận" Style="{StaticResource FieldLabel}"/>
+          <!-- Trường Mã nhân viên tiếp nhận bệnh nhân (PHIEU_KHAM_BENH.MaNVTiepNhan): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+          <ComboBox Tag="DB:PHIEU_KHAM_BENH.MaNVTiepNhan" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+        </StackPanel>
+        <StackPanel Margin="0,0,16,16">
+          <TextBlock Text="Dịch vụ dự kiến (không bắt buộc)" Style="{StaticResource FieldLabel}"/>
+          <!-- Trường Mã dịch vụ (PHIEU_KHAM_BENH.MaDV): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+          <ComboBox Tag="DB:PHIEU_KHAM_BENH.MaDV" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+        </StackPanel>
+        <StackPanel Margin="0,0,16,16">
+          <TextBlock Text="Số thứ tự" Style="{StaticResource FieldLabel}"/>
+          <!-- Trường Số thứ tự tiếp nhận khám (PHIEU_KHAM_BENH.SoThuTu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+          <TextBox Tag="DB:PHIEU_KHAM_BENH.SoThuTu" x:Name="QueueNumber"/>
+        </StackPanel>
+        <StackPanel Margin="0,0,16,16">
+          <TextBlock Text="Thời gian tiếp nhận" Style="{StaticResource FieldLabel}"/>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="85"/>
+            </Grid.ColumnDefinitions>
+            <!-- Trường Thời điểm tiếp nhận tại bệnh viện (PHIEU_KHAM_BENH.ThoiGianTiepNhan): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+            <DatePicker Tag="DB:PHIEU_KHAM_BENH.ThoiGianTiepNhan"/>
+            <!-- Ô giờ PHIEU_KHAM_BENH.ThoiGianTiepNhan: nhập HH:mm, ghép với ngày của trường DB cùng tên trong BieuMauHoSo.Read trước khi lưu. -->
+            <TextBox Tag="Time:PHIEU_KHAM_BENH.ThoiGianTiepNhan" Grid.Column="1" Margin="8,0,0,0"/>
+          </Grid>
+        </StackPanel>
+        <StackPanel Margin="0,0,16,16">
+          <TextBlock Text="Lý do đến khám" Style="{StaticResource FieldLabel}"/>
+          <!-- Trường Lý do đến khám (PHIEU_KHAM_BENH.LyDoKham): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+          <TextBox Tag="DB:PHIEU_KHAM_BENH.LyDoKham" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"/>
+        </StackPanel>
+        <StackPanel Margin="0,0,16,16">
+          <TextBlock Text="Trạng thái" Style="{StaticResource FieldLabel}"/>
+          <!-- Trường Trạng thái nghiệp vụ của bản ghi (PHIEU_KHAM_BENH.TrangThai): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. Ô chỉ đọc, không cho nhập lại mã/giá trị nguồn. -->
+          <TextBox Tag="DB:PHIEU_KHAM_BENH.TrangThai" Text="Chờ khám" IsReadOnly="True"/>
+        </StackPanel>
+        <StackPanel Margin="0,0,16,16">
+          <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}"/>
+          <!-- Trường Ghi chú bổ sung (PHIEU_KHAM_BENH.GhiChu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+          <TextBox Tag="DB:PHIEU_KHAM_BENH.GhiChu" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"/>
+        </StackPanel>
+      </ItemsControl>
+    </ScrollViewer>
+    <Border Grid.Row="2" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <CheckBox x:Name="OpenVisitAfterSave" Content="Mở nhập lần khám sau khi tiếp nhận" IsChecked="True" Margin="0,0,0,12"/>
+        <DockPanel Grid.Row="1">
+          <WrapPanel DockPanel.Dock="Right">
+            <!-- Nút điều hướng DongCuaSo: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
+            <Button Content="Hủy" Tag="DongCuaSo"/>
+            <!-- Nút điều hướng HoSoSave: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
+            <Button Content="Lưu lượt tiếp nhận" Tag="HoSoSave" Style="{StaticResource HospitalPrimary}"/>
+          </WrapPanel>
+          <TextBlock x:Name="FormError" Foreground="#B42318" TextWrapping="Wrap"/>
+        </DockPanel>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

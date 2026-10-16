@@ -1,41 +1,69 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+// AI hỗ trợ: bổ sung chú thích tiếng Việt cho file này ngày 13/10/2026.
+// Nhãn này ghi nhận phần hỗ trợ/chú thích;
+using Dapper.Contrib.Extensions;
 
 namespace ET
 {
+    /// <summary>
+    /// Thực thể ánh xạ bảng NHA_CUNG_CAP qua Dapper.Contrib; chứa các cột đúng kiểu SQL để truyền giữa DAL/BUS và giao diện, không tự mở kết nối hoặc xử lý nghiệp vụ.
+    /// </summary>
+    [Table("NHA_CUNG_CAP")]
     public class ET_NHACUNGCAP
     {
-        private string maNCC;
-        private string tenNCC;
-        private int sdt;
-        private string email;
-        private string diaChi;
-        private string nguoiLienHe;
-        private string trangThai;
+        private string maNCC = string.Empty;
+        private string tenNCC = string.Empty;
+        private string? sdt;
+        private string email = string.Empty;
+        private string? diaChi;
+        private string nguoiLienHe = string.Empty;
+        private string trangThai = string.Empty;
 
-        public ET_NHACUNGCAP(string maNCC, string tenNCC, int sdt, string email, string diaChi, string nguoiLienHe, string trangThai)
+        /// <summary>
+        /// Khởi tạo thực thể rỗng để Dapper hoặc cơ chế chuyển dictionary điền các cột; các giá trị mặc định chưa phải một bản ghi đã lưu.
+        /// </summary>
+        public ET_NHACUNGCAP() { }
+        /// <summary>
+        /// Nhận các giá trị cột qua tham số và gán cho thực thể; việc gọi constructor không ghi dữ liệu xuống SQL.
+        /// </summary>
+        public ET_NHACUNGCAP(string maNCC, string tenNCC, string? sdt, string email, string? diaChi, string nguoiLienHe, string trangThai)
         {
-            this.MaNCC = maNCC;
-            this.TenNCC = tenNCC;
-            this.Sdt = sdt;
-            this.Email = email;
-            this.DiaChi = diaChi;
-            this.NguoiLienHe = nguoiLienHe;
-            this.TrangThai = trangThai;
+            this.maNCC = maNCC;
+            this.tenNCC = tenNCC;
+            this.sdt = sdt;
+            this.email = email;
+            this.diaChi = diaChi;
+            this.nguoiLienHe = nguoiLienHe;
+            this.trangThai = trangThai;
         }
 
-        public ET_NHACUNGCAP()
-        {
-        }
+        /// <summary>
+        /// Mã nhà cung cấp; ánh xạ cột MaNCC của bảng trong TableAttribute. Khóa chính dạng mã chuỗi; thao tác tạo mới cấp mã trong tầng lưu.
+        /// </summary>
+        [ExplicitKey]
         public string MaNCC { get => maNCC; set => maNCC = value; }
+        /// <summary>
+        /// Tên nhà cung cấp; ánh xạ cột TenNCC của bảng trong TableAttribute.
+        /// </summary>
         public string TenNCC { get => tenNCC; set => tenNCC = value; }
-        public int Sdt { get => sdt; set => sdt = value; }
+        /// <summary>
+        /// Số điện thoại dạng chuỗi để giữ số 0 đầu; ánh xạ cột SDT của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
+        /// </summary>
+        public string? SDT { get => sdt; set => sdt = value; }
+        /// <summary>
+        /// Địa chỉ email liên hệ; ánh xạ cột Email của bảng trong TableAttribute.
+        /// </summary>
         public string Email { get => email; set => email = value; }
-        public string DiaChi { get => diaChi; set => diaChi = value; }
+        /// <summary>
+        /// Địa chỉ liên hệ; ánh xạ cột DiaChi của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
+        /// </summary>
+        public string? DiaChi { get => diaChi; set => diaChi = value; }
+        /// <summary>
+        /// Tên người liên hệ nhà cung cấp; ánh xạ cột NguoiLienHe của bảng trong TableAttribute.
+        /// </summary>
         public string NguoiLienHe { get => nguoiLienHe; set => nguoiLienHe = value; }
+        /// <summary>
+        /// Trạng thái nghiệp vụ của bản ghi; ánh xạ cột TrangThai của bảng trong TableAttribute.
+        /// </summary>
         public string TrangThai { get => trangThai; set => trangThai = value; }
     }
 }

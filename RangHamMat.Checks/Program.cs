@@ -1,8 +1,12 @@
+// AI hỗ trợ: bổ sung chú thích tiếng Việt cho file này ngày 13/10/2026.
+// Nhãn này ghi nhận phần hỗ trợ/chú thích;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using System.Text.Json;
 
-var root = args.Length > 0 ? Path.GetFullPath(args[0]) : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../"));
+var root = args.FirstOrDefault(arg => !arg.StartsWith("--")) is string suppliedRoot ? Path.GetFullPath(suppliedRoot) : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../"));
+// Mặc định kiểm tra bản cập nhật hiện tại; tham số --legacy chạy bộ kiểm tra cho giao diện/schema cũ.
+if (!args.Contains("--legacy")) { KiemTraGiaoDien.Run(root); return; }
 var wpfRoot = Path.Combine(root, "RangHamMat.Wpf");
 var errors = new List<string>();
 var sql = File.ReadAllText(Path.Combine(root, "Database", "QLBenhVienRangHamMat.sql"));

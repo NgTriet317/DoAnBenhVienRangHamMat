@@ -1,0 +1,112 @@
+// AI hỗ trợ: bổ sung chú thích tiếng Việt;
+using System.Data;
+using Dapper;
+using ET;
+
+namespace DAL
+{
+    /// <summary>
+    /// Tầng truy cập SQL cho khoa trong bảng KHOA. Lưu tên, liên hệ và trạng thái khoa để tổ chức phòng, chuyên khoa và phạm vi tài khoản. Dapper ánh xạ dòng SQL sang ET; ThucHien dùng giao dịch được truyền vào hoặc tự quản lý giao dịch cục bộ.
+    /// </summary>
+    public class DAL_KHOA : dbconnect
+    {
+        /// <summary>
+        /// Tạo DAL quản lý khoa, chuyển giao dịch tùy chọn cho dbconnect để nhiều thao tác có thể dùng chung kết nối và phạm vi lưu.
+        /// </summary>
+        /// <param name = "transaction">Giao dịch của nơi gọi; null để hạ tầng tham gia giao dịch môi trường hoặc tự mở giao dịch cục bộ. Nếu truyền vào, nơi gọi quản lý commit/rollback.</param>
+        public DAL_KHOA(IDbTransaction? transaction = null) : base(transaction)
+        {
+        }
+
+        /// <summary>
+        /// Đọc toàn bộ khoa từ dbo.KHOA, Dapper ánh xạ từng dòng sang ET, sắp theo mã; ToArray nạp hết dữ liệu trước khi hạ tầng kết thúc phạm vi kết nối/giao dịch.
+        /// </summary>
+        /// <returns>Danh sách ET đã vật hóa; không có bản ghi thì trả danh sách rỗng.</returns>
+        public IEnumerable<ET_KHOA> layToanBoKhoa()
+        {
+            return ThucHien((connection, transaction) =>
+            {
+                return connection.Query<ET_KHOA>("SELECT * FROM dbo.[KHOA] ORDER BY [MaKhoa]", transaction: transaction).ToArray();
+            });
+        }
+
+        /// <summary>
+        /// Tìm khoa theo khóa trong dbo.KHOA; mã được truyền bằng tham số SQL và QuerySingleOrDefault ánh xạ tối đa một bản ghi sang ET.
+        /// </summary>
+        /// <param name = "ma">Mã khóa chính của bản ghi cần đọc, sửa hoặc xóa; truyền bằng tham số SQL.</param>
+        /// <returns>ET của bản ghi tìm thấy, hoặc null nếu mã không tồn tại.</returns>
+        public ET_KHOA? layKhoaTheoMa(string ma)
+        {
+            return ThucHien((connection, transaction) =>
+            {
+                return connection.QuerySingleOrDefault<ET_KHOA>("SELECT * FROM dbo.[KHOA] WHERE [MaKhoa]=@Ma", new { Ma = ma }, transaction);
+            });
+        }
+
+        /// <summary>
+        /// Thêm khoa: cấp mã có khóa ngay vào duLieu, chuẩn hóa và kiểm tra ET theo metadata SQL rồi INSERT có tham số vào dbo.KHOA trong cùng giao dịch.
+        /// </summary>
+        /// <param name = "duLieu">ET chứa dữ liệu cần lưu; thêm mới sẽ được gán mã, và kiểm tra metadata có thể chuẩn hóa lại các giá trị ngay trên đối tượng.</param>
+        /// <returns>true sau khi INSERT thành công; lỗi dữ liệu/SQL được phát ra bằng ngoại lệ. Giao dịch ngoài chỉ commit khi nơi gọi quyết định.</returns>
+        public bool themKhoa(ET_KHOA duLieu)
+        {
+            return ThucHien((connection, transaction) =>
+            {
+                duLieu.MaKhoa = TaoMa(connection, transaction, "KHOA", "MaKhoa");
+                KiemTra<ET_KHOA>(connection, transaction, "KHOA", duLieu, null, null);
+                connection.Execute("INSERT INTO dbo.[KHOA] ([MaKhoa],[TenKhoa],[DienThoai],[MoTa],[TrangThai]) VALUES (@MaKhoa,@TenKhoa,@DienThoai,@MoTa,@TrangThai)", duLieu, transaction);
+                return true;
+            });
+        }
+
+        /// <summary>
+        /// Sửa khoa: đọc và giữ khóa UPDLOCK/HOLDLOCK, báo lỗi nếu bản không còn, chuẩn hóa ET và đối chiếu banGoc để phát hiện sửa đồng thời. Khi chỉ đổi trạng thái, chặn thay đổi các trường ngoài TrangThai/NgayXacNhan/NgayCapNhat/LyDoThayDoi, sau đó UPDATE có tham số trong cùng giao dịch.
+        /// </summary>
+        /// <param name = "duLieu">ET chứa dữ liệu cần lưu; thêm mới sẽ được gán mã, và kiểm tra metadata có thể chuẩn hóa lại các giá trị ngay trên đối tượng.</param>
+        /// <param name = "banGoc">Bản ET đã đọc trước khi thao tác; có giá trị để so với SQL và chặn ghi đè/xóa khi bản đã thay đổi, null để bỏ đối chiếu bản gốc.</param>
+        /// <param name = "chiDoiTrangThai">true để cấm thay đổi trường nội dung ngoài nhóm trường trạng thái cho phép; không tự đảm bảo mọi chuyển trạng thái đều hợp lệ.</param>
+        /// <returns>true khi UPDATE chạy thành công; bản bị mất/thay đổi hoặc dữ liệu sai gây ngoại lệ. Không trả false để biểu thị lỗi.</returns>
+        public bool suaKhoa(ET_KHOA duLieu, ET_KHOA? banGoc = null, bool chiDoiTrangThai = false)
+        {
+            return ThucHien((connection, transaction) =>
+            {
+                var hienTai = connection.QuerySingleOrDefault<ET_KHOA>("SELECT * FROM dbo.[KHOA] WITH(UPDLOCK,HOLDLOCK) WHERE [MaKhoa]=@Ma", new { Ma = duLieu.MaKhoa }, transaction);
+                if (hienTai is null)
+                {
+                    throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
+                }
+
+                KiemTra(connection, transaction, "KHOA", duLieu, hienTai, banGoc);
+                if (chiDoiTrangThai)
+                {
+                    KiemTraChiDoiTrangThai(duLieu, hienTai);
+                }
+
+                connection.Execute("UPDATE dbo.[KHOA] SET [TenKhoa]=@TenKhoa,[DienThoai]=@DienThoai,[MoTa]=@MoTa,[TrangThai]=@TrangThai WHERE [MaKhoa]=@MaKhoa", duLieu, transaction);
+                return true;
+            });
+        }
+
+        /// <summary>
+        /// Xóa khoa: đọc bản hiện tại với UPDLOCK/HOLDLOCK, báo lỗi nếu đã mất, so banGoc khi có rồi DELETE theo mã trong dbo.KHOA; toàn bộ thao tác giữ cùng giao dịch và lỗi ràng buộc SQL được phát ra.
+        /// </summary>
+        /// <param name = "ma">Mã khóa chính của bản ghi cần đọc, sửa hoặc xóa; truyền bằng tham số SQL.</param>
+        /// <param name = "banGoc">Bản ET đã đọc trước khi thao tác; có giá trị để so với SQL và chặn ghi đè/xóa khi bản đã thay đổi, null để bỏ đối chiếu bản gốc.</param>
+        /// <returns>true khi DELETE chạy thành công; không tồn tại, xung đột hoặc vi phạm SQL gây ngoại lệ.</returns>
+        public bool xoaKhoa(string ma, ET_KHOA? banGoc = null)
+        {
+            return ThucHien((connection, transaction) =>
+            {
+                var hienTai = connection.QuerySingleOrDefault<ET_KHOA>("SELECT * FROM dbo.[KHOA] WITH(UPDLOCK,HOLDLOCK) WHERE [MaKhoa]=@Ma", new { Ma = ma }, transaction);
+                if (hienTai is null)
+                {
+                    throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
+                }
+
+                KiemTra(connection, transaction, "KHOA", hienTai, hienTai, banGoc);
+                connection.Execute("DELETE FROM dbo.[KHOA] WHERE [MaKhoa]=@Ma", new { Ma = ma }, transaction);
+                return true;
+            });
+        }
+    }
+}

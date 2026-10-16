@@ -1,3 +1,5 @@
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của TongQuan.xaml. -->
+<!-- AI hỗ trợ: bổ sung chú thích cho tổng quan. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
 <UserControl x:Class="RangHamMat.Views.TongQuan"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
@@ -65,12 +67,14 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <DockPanel Margin="20,16,20,0">
+                            <!-- Nút điều hướng MoTrang:LichKham: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                             <Button DockPanel.Dock="Right" Content="Mở lịch khám" Tag="MoTrang:LichKham"/>
                             <StackPanel>
                                 <TextBlock Text="Lịch trong ngày" FontSize="17" FontWeight="SemiBold"/>
                                 <TextBlock Text="Theo dõi thời gian, người bệnh và trạng thái cuộc hẹn" Style="{StaticResource Subtitle}" Margin="0,3,0,0"/>
                             </StackPanel>
                         </DockPanel>
+                        <!-- Bảng chi tiết: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. -->
                         <DataGrid Grid.Row="1" Margin="0,14,0,0" MinHeight="300" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Thời gian" Width="105"/>
@@ -122,9 +126,13 @@
                         <StackPanel>
                             <TextBlock Text="Truy cập nhanh" FontSize="17" FontWeight="SemiBold"/>
                             <TextBlock Text="Mở các phân hệ thường dùng" Style="{StaticResource Subtitle}" Margin="0,3,0,12"/>
+                            <!-- Nút điều hướng MoTrang:LichKham: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                             <Button Content="Điều phối lịch khám" Tag="MoTrang:LichKham" HorizontalContentAlignment="Left" Margin="0,0,0,8"/>
+                            <!-- Nút điều hướng MoTrang:BenhNhan: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                             <Button Content="Hồ sơ bệnh nhân" Tag="MoTrang:BenhNhan" HorizontalContentAlignment="Left" Margin="0,0,0,8"/>
+                            <!-- Nút điều hướng MoTrang:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                             <Button Content="Vật tư và tồn kho" Tag="MoTrang:VatTu" HorizontalContentAlignment="Left" Margin="0,0,0,8"/>
+                            <!-- Nút điều hướng MoTrang:ThietBi: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                             <Button Content="Trang thiết bị" Tag="MoTrang:ThietBi" HorizontalContentAlignment="Left" Margin="0"/>
                         </StackPanel>
                     </Border>

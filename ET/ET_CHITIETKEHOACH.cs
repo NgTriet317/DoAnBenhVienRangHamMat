@@ -1,26 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+// AI hỗ trợ: bổ sung chú thích tiếng Việt cho file này ngày 13/10/2026.
+// Nhãn này ghi nhận phần hỗ trợ/chú thích;
+using Dapper.Contrib.Extensions;
+using System;
 
 namespace ET
 {
+    /// <summary>
+    /// Thực thể ánh xạ bảng CHI_TIET_KE_HOACH qua Dapper.Contrib; chứa các cột đúng kiểu SQL để truyền giữa DAL/BUS và giao diện, không tự mở kết nối hoặc xử lý nghiệp vụ.
+    /// </summary>
+    [Table("CHI_TIET_KE_HOACH")]
     public class ET_CHITIETKEHOACH
     {
-        private string maCTKH;
-        private string maKHDT;
-        private string maDV;
+        private string maCTKH = string.Empty;
+        private string maKHDT = string.Empty;
+        private string maDV = string.Empty;
         private int lanThu;
-        private int soLuongDuKien;
+        private decimal soLuongDuKien;
         private decimal donGiaDuKien;
         private decimal thanhTienDuKien;
-        private string trangThai;
-        private string ghiChu;
+        private string trangThai = string.Empty;
+        private string? ghiChu;
 
+        /// <summary>
+        /// Khởi tạo thực thể rỗng để Dapper hoặc cơ chế chuyển dictionary điền các cột; các giá trị mặc định chưa phải một bản ghi đã lưu.
+        /// </summary>
         public ET_CHITIETKEHOACH() { }
 
-        public ET_CHITIETKEHOACH(string maCTKH, string maKHDT, string maDV, int lanThu, int soLuongDuKien, decimal donGiaDuKien, decimal thanhTienDuKien, string trangThai, string ghiChu)
+        /// <summary>
+        /// Nhận các giá trị cột qua tham số và gán cho thực thể; việc gọi constructor không ghi dữ liệu xuống SQL.
+        /// </summary>
+        public ET_CHITIETKEHOACH(string maCTKH, string maKHDT, string maDV, int lanThu, decimal soLuongDuKien, decimal donGiaDuKien, decimal thanhTienDuKien, string trangThai, string? ghiChu)
         {
             this.maCTKH = maCTKH;
             this.maKHDT = maKHDT;
@@ -33,14 +42,43 @@ namespace ET
             this.ghiChu = ghiChu;
         }
 
+        /// <summary>
+        /// Mã bước chi tiết kế hoạch; ánh xạ cột MaCTKH của bảng trong TableAttribute. Khóa chính dạng mã chuỗi; thao tác tạo mới cấp mã trong tầng lưu.
+        /// </summary>
+        [ExplicitKey]
         public string MaCTKH { get => maCTKH; set => maCTKH = value; }
+        /// <summary>
+        /// Mã kế hoạch điều trị; ánh xạ cột MaKHDT của bảng trong TableAttribute.
+        /// </summary>
         public string MaKHDT { get => maKHDT; set => maKHDT = value; }
+        /// <summary>
+        /// Mã dịch vụ; ánh xạ cột MaDV của bảng trong TableAttribute.
+        /// </summary>
         public string MaDV { get => maDV; set => maDV = value; }
+        /// <summary>
+        /// Số thứ tự lần/bước điều trị; ánh xạ cột LanThu của bảng trong TableAttribute.
+        /// </summary>
         public int LanThu { get => lanThu; set => lanThu = value; }
-        public int SoLuongDuKien { get => soLuongDuKien; set => soLuongDuKien = value; }
+        /// <summary>
+        /// Số lượng dự kiến của bước điều trị; ánh xạ cột SoLuongDuKien của bảng trong TableAttribute.
+        /// </summary>
+        public decimal SoLuongDuKien { get => soLuongDuKien; set => soLuongDuKien = value; }
+        /// <summary>
+        /// Đơn giá dự kiến của bước kế hoạch; ánh xạ cột DonGiaDuKien của bảng trong TableAttribute.
+        /// </summary>
         public decimal DonGiaDuKien { get => donGiaDuKien; set => donGiaDuKien = value; }
+        /// <summary>
+        /// Thành tiền dự kiến của bước do SQL tính; ánh xạ cột ThanhTienDuKien của bảng trong TableAttribute. Chỉ đọc kết quả SQL, Dapper.Contrib không đưa cột này vào INSERT/UPDATE.
+        /// </summary>
+        [Write(false)]
         public decimal ThanhTienDuKien { get => thanhTienDuKien; set => thanhTienDuKien = value; }
+        /// <summary>
+        /// Trạng thái nghiệp vụ của bản ghi; ánh xạ cột TrangThai của bảng trong TableAttribute.
+        /// </summary>
         public string TrangThai { get => trangThai; set => trangThai = value; }
-        public string GhiChu { get => ghiChu; set => ghiChu = value; }
+        /// <summary>
+        /// Ghi chú bổ sung; ánh xạ cột GhiChu của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
+        /// </summary>
+        public string? GhiChu { get => ghiChu; set => ghiChu = value; }
     }
 }

@@ -1,214 +1,170 @@
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.CuaSoBenhNhan">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-        <StackPanel>
-            <TextBlock Text="Hồ sơ bệnh nhân · Thêm mới" Style="{StaticResource Title}" />
-            <TextBlock Text="Điền lần lượt từng nhóm thông tin. Dấu * là trường bắt buộc." Style="{StaticResource Subtitle}" />
-        </StackPanel>
-        <TabControl x:Name="EditorTabs" Grid.Row="1">
-            <TabItem Header="Bệnh nhân" Tag="Table:BENH_NHAN" Visibility="Collapsed">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-                            <StackPanel>
-                                <TextBlock Text="Thông tin cá nhân" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                                <WrapPanel>
-                                    <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                                        <TextBlock Text="Họ tên bệnh nhân *" Margin="0,0,0,6" />
-                                        <TextBox Tag="DB:BENH_NHAN.HoTenBN" AutomationProperties.Name="Họ tên bệnh nhân" MaxLength="255" />
-                                    </StackPanel>
-                                    <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                                        <TextBlock Text="Giới tính" Margin="0,0,0,6" />
-                                        <TextBox Tag="DB:BENH_NHAN.GioiTinh" AutomationProperties.Name="Giới tính" MaxLength="50" />
-                                    </StackPanel>
-                                    <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                                        <TextBlock Text="Ngày sinh" Margin="0,0,0,6" />
-                                        <DatePicker Tag="DB:BENH_NHAN.NgaySinh" AutomationProperties.Name="Ngày sinh" />
-                                    </StackPanel>
-                                    <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                                        <TextBlock Text="Số điện thoại" Margin="0,0,0,6" />
-                                        <TextBox Tag="DB:BENH_NHAN.SDT" AutomationProperties.Name="Số điện thoại" MaxLength="50" />
-                                    </StackPanel>
-                                    <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                                        <TextBlock Text="Địa chỉ" Margin="0,0,0,6" />
-                                        <TextBox Tag="DB:BENH_NHAN.DiaChi" AutomationProperties.Name="Địa chỉ" MaxLength="255" />
-                                    </StackPanel>
-                                </WrapPanel>
-                            </StackPanel>
-                        </Border>
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-                            <StackPanel>
-                                <TextBlock Text="Thông tin sức khỏe" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                                <WrapPanel>
-                                    <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                                        <TextBlock Text="Mã bảo hiểm y tế" Margin="0,0,0,6" />
-                                        <TextBox Tag="DB:BENH_NHAN.MaBHYT" AutomationProperties.Name="Mã bảo hiểm y tế" MaxLength="50" />
-                                    </StackPanel>
-                                    <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                                        <TextBlock Text="Nhóm máu" Margin="0,0,0,6" />
-                                        <TextBox Tag="DB:BENH_NHAN.NhomMau" AutomationProperties.Name="Nhóm máu" MaxLength="50" />
-                                    </StackPanel>
-                                    <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                                        <TextBlock Text="Tiền sử bệnh" Margin="0,0,0,6" />
-                                        <TextBox Tag="DB:BENH_NHAN.TienSuBenh" AutomationProperties.Name="Tiền sử bệnh" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
-                                    </StackPanel>
-                                    <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                                        <TextBlock Text="Dị ứng" Margin="0,0,0,6" />
-                                        <TextBox Tag="DB:BENH_NHAN.DiUng" AutomationProperties.Name="Dị ứng" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
-                                    </StackPanel>
-                                </WrapPanel>
-                            </StackPanel>
-                        </Border>
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-                            <StackPanel>
-                                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                                <WrapPanel>
-                                    <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
-                                        <TextBlock Text="Mã bệnh nhân" Margin="0,0,0,6" />
-                                        <TextBox Tag="DB:BENH_NHAN.MaBN" AutomationProperties.Name="Mã bệnh nhân" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
-                                    </StackPanel>
-                                    <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                                        <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
-                                        <TextBox Tag="DB:BENH_NHAN.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
-                                    </StackPanel>
-                                </WrapPanel>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
-            <TabItem Header="Thêm hồ sơ bệnh án"
-         Tag="Table:HO_SO_BENH_AN">
-
-                <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  HorizontalScrollBarVisibility="Disabled">
-
-                    <StackPanel Margin="0,20,12,0">
-
-                        <Border Style="{StaticResource Card}">
-                            <StackPanel>
-                                <TextBlock Text="Thông tin hồ sơ bệnh án"
-                               Style="{StaticResource SectionTitle}"
-                               Margin="0,0,0,8" />
-
-                                <TextBlock
-                        Text="Chọn bệnh nhân đã có trong hệ thống để lập hồ sơ bệnh án."
-                        Foreground="{StaticResource Muted}"
-                        TextWrapping="Wrap"
-                        Margin="0,0,0,24" />
-
-                                <WrapPanel>
-                                    <!-- Mã hồ sơ tự sinh -->
-                                    <StackPanel Width="270"
-                                    Margin="0,0,20,20">
-                                        <TextBlock Text="Mã hồ sơ bệnh án"
-                                       Margin="0,0,0,8" />
-
-                                        <TextBox Height="0"
-                                Tag="DB:HO_SO_BENH_AN.MaHS"
-                                Text="Tự sinh"
-                                IsReadOnly="True"
-                                Background="{StaticResource Canvas}"
-                                AutomationProperties.Name="Mã hồ sơ bệnh án"
-                                ToolTip="Mã được cấp khi lưu hồ sơ." />
-                                    </StackPanel>
-
-                                    <!-- Bệnh nhân -->
-                                    <StackPanel Width="270"
-                                    Margin="0,0,20,20">
-                                        <TextBlock Text="Bệnh nhân *"
-                                       Margin="0,0,0,8" />
-
-                                        <ComboBox 
-                                Tag="DB:HO_SO_BENH_AN.MaBN"
-                                AutomationProperties.Name="Bệnh nhân của hồ sơ bệnh án"
-                                ToolTip="Chọn bệnh nhân đã được tạo." />
-                                    </StackPanel>
-
-                                    <!-- Ngày và giờ lập -->
-                                    <StackPanel Width="270"
-                                    Margin="0,0,20,20">
-                                        <TextBlock Text="Ngày giờ lập"
-                                       Margin="0,0,0,8" />
-
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="90" />
-                                            </Grid.ColumnDefinitions>
-
-                                            <DatePicker Height="0"
-                                    Tag="DB:HO_SO_BENH_AN.NgayLap"
-                                    AutomationProperties.Name="Ngày lập hồ sơ bệnh án" />
-
-                                            <TextBox Height="0"
-                                    Grid.Column="1"
-                                    Tag="Time:HO_SO_BENH_AN.NgayLap"
-                                    Margin="8,0,0,0"
-                                    MaxLength="8"
-                                    ToolTip="Nhập giờ theo định dạng HH:mm:ss"
-                                    AutomationProperties.Name="Giờ lập hồ sơ bệnh án" />
-                                        </Grid>
-                                    </StackPanel>
-
-                                    <!-- Trạng thái -->
-                                    <StackPanel Width="270"
-                                    Margin="0,0,20,20">
-                                        <TextBlock Text="Trạng thái *"
-                                       Margin="0,0,0,8" />
-
-                                        <TextBox Height="0"
-                                Tag="DB:HO_SO_BENH_AN.TrangThai"
-                                MaxLength="50"
-                                AutomationProperties.Name="Trạng thái hồ sơ bệnh án" />
-                                    </StackPanel>
-                                </WrapPanel>
-
-                                <TextBlock Text="Lý do khám ban đầu"
-                               Margin="0,4,0,8" />
-
-                                <TextBox
-                        Tag="DB:HO_SO_BENH_AN.LyDoKhamBanDau"
-                        MinHeight="100"
-                        AcceptsReturn="True"
-                        TextWrapping="Wrap"
-                        VerticalScrollBarVisibility="Auto"
-                        AutomationProperties.Name="Lý do khám ban đầu"
-                        Margin="0,0,0,20" />
-
-                                <TextBlock Text="Ghi chú"
-                               Margin="0,0,0,8" />
-
-                                <TextBox
-                        Tag="DB:HO_SO_BENH_AN.GhiChu"
-                        MinHeight="100"
-                        AcceptsReturn="True"
-                        TextWrapping="Wrap"
-                        VerticalScrollBarVisibility="Auto"
-                        AutomationProperties.Name="Ghi chú hồ sơ bệnh án" />
-                            </StackPanel>
-                        </Border>
-
-                        <TextBlock
-                Text="Mỗi bệnh nhân có tối đa một hồ sơ bệnh án theo cấu trúc database hiện tại."
-                Foreground="{StaticResource Muted}"
-                TextWrapping="Wrap"
-                Margin="0,16,0,0" />
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của CuaSoBenhNhan.xaml; các vùng liên quan: Bệnh nhân, Thông tin cơ bản, Thông tin sức khỏe, Hồ sơ bệnh án. -->
+<!-- AI hỗ trợ: bổ sung chú thích cho biểu mẫu bệnh nhân/bệnh án. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:ui="clr-namespace:RangHamMat.Controls" xmlns:views="clr-namespace:RangHamMat.Views" x:Class="RangHamMat.Views.CuaSoBenhNhan" FontFamily="Segoe UI" Language="vi-VN" UseLayoutRounding="True" SnapsToDevicePixels="True">
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <!-- Nạp tài nguyên /RangHamMat.Wpf;component/Themes/HospitalStyles.xaml để các control dùng cùng màu, font, template và trạng thái của ứng dụng. -->
+        <ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/HospitalStyles.xaml"/>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <TextBlock x:Name="EditorTitle" Text="Thông tin bệnh nhân" FontWeight="SemiBold" Margin="0,0,0,16" Style="{StaticResource HospitalHeading}"/>
+    <TabControl x:Name="EditorTabs" Grid.Row="1" Style="{StaticResource HospitalEditorTabs}">
+      <!-- Nhóm Bệnh nhân: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
+      <TabItem Tag="Table:BENH_NHAN" Header="Bệnh nhân">
+        <TabControl>
+          <!-- Nhóm Thông tin cơ bản: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
+          <TabItem Header="Thông tin cơ bản">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+              <StackPanel Margin="16">
+                <TextBlock Text="Thông tin nhận diện" Style="{StaticResource HospitalSection}" Margin="0,0,0,8"/>
+                <TextBlock Text="Họ tên và trạng thái là bắt buộc. Các thông tin còn lại có thể bổ sung sau." Style="{StaticResource HospitalMuted}" Margin="0,0,0,16"/>
+              <ItemsControl>
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <UniformGrid Columns="2"/>
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <StackPanel Margin="0,0,18,16">
+                  <TextBlock Text="Mã bệnh nhân" Style="{StaticResource FieldLabel}"/>
+                  <!-- Trường Mã bệnh nhân (BENH_NHAN.MaBN): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. Ô chỉ đọc, không cho nhập lại mã/giá trị nguồn. -->
+                  <TextBox Tag="DB:BENH_NHAN.MaBN" IsReadOnly="True" ToolTip="Tự sinh khi lưu" AutomationProperties.Name="Mã bệnh nhân"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,18,16">
+                  <TextBlock Text="Họ tên bệnh nhân *" Style="{StaticResource FieldLabel}"/>
+                  <!-- Trường Họ tên bệnh nhân (BENH_NHAN.HoTenBN): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+                  <TextBox Tag="DB:BENH_NHAN.HoTenBN" MaxLength="255" AutomationProperties.Name="Họ tên bệnh nhân bắt buộc"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,18,16">
+                  <TextBlock Text="Giới tính" Style="{StaticResource FieldLabel}"/>
+                  <!-- Trường Giới tính được cung cấp (BENH_NHAN.GioiTinh): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+                  <ComboBox Tag="DB:BENH_NHAN.GioiTinh" AutomationProperties.Name="Giới tính">
+                    <ComboBoxItem Content="Nam"/>
+                    <ComboBoxItem Content="Nữ"/>
+                    <ComboBoxItem Content="Khác"/>
+                  </ComboBox>
+                </StackPanel>
+                <StackPanel Margin="0,0,18,16">
+                  <TextBlock Text="Ngày sinh" Style="{StaticResource FieldLabel}"/>
+                  <!-- Trường Ngày sinh được cung cấp (BENH_NHAN.NgaySinh): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+                  <DatePicker x:Name="BirthDate" Tag="DB:BENH_NHAN.NgaySinh" AutomationProperties.Name="Ngày sinh" ToolTip="Có thể để trống khi chưa biết ngày sinh"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,18,16">
+                  <TextBlock Text="Số điện thoại" Style="{StaticResource FieldLabel}"/>
+                  <!-- Trường Số điện thoại dạng chuỗi để giữ số 0 đầu (BENH_NHAN.SDT): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+                  <TextBox Tag="DB:BENH_NHAN.SDT" MaxLength="50" AutomationProperties.Name="Số điện thoại" ToolTip="Giữ nguyên số 0 đầu và mã vùng, ví dụ 0901234567 hoặc +84..."/>
+                </StackPanel>
+                <StackPanel Margin="0,0,18,16">
+                  <TextBlock Text="Mã bảo hiểm y tế" Style="{StaticResource FieldLabel}"/>
+                  <!-- Trường Mã bảo hiểm y tế của bệnh nhân (BENH_NHAN.MaBHYT): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+                  <TextBox Tag="DB:BENH_NHAN.MaBHYT" MaxLength="50" AutomationProperties.Name="Mã bảo hiểm y tế"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,18,16">
+                  <TextBlock Text="Trạng thái *" Style="{StaticResource FieldLabel}"/>
+                  <!-- Trường Trạng thái nghiệp vụ của bản ghi (BENH_NHAN.TrangThai): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+                  <ComboBox Tag="DB:BENH_NHAN.TrangThai" SelectedIndex="0" AutomationProperties.Name="Trạng thái bệnh nhân">
+                    <ComboBoxItem Content="Đang theo dõi"/>
+                    <ComboBoxItem Content="Ngừng theo dõi"/>
+                  </ComboBox>
+                </StackPanel>
+              </ItemsControl>
+                <StackPanel Margin="0,0,18,16">
+                  <TextBlock Text="Địa chỉ" Style="{StaticResource FieldLabel}"/>
+                  <!-- Trường Địa chỉ liên hệ (BENH_NHAN.DiaChi): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+                  <TextBox Tag="DB:BENH_NHAN.DiaChi" MaxLength="255" MinHeight="72" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Địa chỉ"/>
+                </StackPanel>
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+          <!-- Nhóm Thông tin sức khỏe: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
+          <TabItem Header="Thông tin sức khỏe">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+              <StackPanel Margin="16">
+                <TextBlock Text="Sức khỏe ban đầu" Style="{StaticResource HospitalSection}" Margin="0,0,0,8"/>
+                <TextBlock Text="Ghi nhận thông tin do bệnh nhân cung cấp. Để trống nếu chưa xác định; ghi rõ khi không có dị ứng." Style="{StaticResource HospitalMuted}" Margin="0,0,0,16"/>
+                <StackPanel Margin="0,0,18,16">
+                  <TextBlock Text="Nhóm máu" Style="{StaticResource FieldLabel}"/>
+                  <!-- Trường Nhóm máu bệnh nhân (BENH_NHAN.NhomMau): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+                  <TextBox Tag="DB:BENH_NHAN.NhomMau" MaxLength="50" MaxWidth="300" HorizontalAlignment="Left" MinWidth="210" AutomationProperties.Name="Nhóm máu" ToolTip="Ví dụ A+, O−; để trống nếu chưa xác định"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,18,16">
+                  <TextBlock Text="Tiền sử bệnh" Style="{StaticResource FieldLabel}"/>
+                  <!-- Trường Tiền sử bệnh của bệnh nhân (BENH_NHAN.TienSuBenh): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+                  <TextBox Tag="DB:BENH_NHAN.TienSuBenh" MinHeight="110" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Tiền sử bệnh"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,18,16">
+                  <TextBlock Text="Dị ứng" Style="{StaticResource FieldLabel}"/>
+                  <!-- Trường Thông tin dị ứng của bệnh nhân (BENH_NHAN.DiUng): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+                  <TextBox Tag="DB:BENH_NHAN.DiUng" MinHeight="110" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Dị ứng"/>
+                </StackPanel>
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
         </TabControl>
-        <Border Grid.Row="2" Padding="0,18,0,0">
-            <WrapPanel>
-                <Button Content="Quay lại danh sách" Tag="DongCuaSo" />
-                <Button Content="Lưu thông tin" IsEnabled="False" Style="{StaticResource Primary}" ToolTip="Bản giao diện chưa kết nối lưu dữ liệu" />
-                <Button Content="Về màn hình chính" Tag="VeTrangChu" />
-                <TextBlock Text="Bản giao diện • Chưa lưu dữ liệu" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="12,0,0,0" />
-            </WrapPanel>
-        </Border>
-    </Grid>
+      </TabItem>
+      <!-- Nhóm Hồ sơ bệnh án: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
+      <TabItem Tag="Table:HO_SO_BENH_AN" Header="Hồ sơ bệnh án">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <ItemsControl Margin="16">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <UniformGrid Columns="2"/>
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <StackPanel Margin="0,0,18,16">
+              <TextBlock Text="Mã hồ sơ" Style="{StaticResource FieldLabel}"/>
+              <!-- Trường Mã hồ sơ bệnh án (HO_SO_BENH_AN.MaHS): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. Ô chỉ đọc, không cho nhập lại mã/giá trị nguồn. -->
+              <TextBox Tag="DB:HO_SO_BENH_AN.MaHS" IsReadOnly="True" ToolTip="Tự sinh khi lưu"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,18,16">
+              <TextBlock Text="Bệnh nhân" Style="{StaticResource FieldLabel}"/>
+              <!-- Trường Mã bệnh nhân (HO_SO_BENH_AN.MaBN): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+              <ComboBox Tag="DB:HO_SO_BENH_AN.MaBN" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,18,16">
+              <TextBlock Text="Ngày lập" Style="{StaticResource FieldLabel}"/>
+              <!-- Trường Thời điểm lập bản ghi (HO_SO_BENH_AN.NgayLap): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+              <DatePicker Tag="DB:HO_SO_BENH_AN.NgayLap"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,18,16">
+              <TextBlock Text="Lý do khám ban đầu" Style="{StaticResource FieldLabel}"/>
+              <!-- Trường Lý do khám ban đầu trên bệnh án (HO_SO_BENH_AN.LyDoKhamBanDau): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+              <TextBox Tag="DB:HO_SO_BENH_AN.LyDoKhamBanDau" MinHeight="72" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,18,16">
+              <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}"/>
+              <!-- Trường Ghi chú bổ sung (HO_SO_BENH_AN.GhiChu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+              <TextBox Tag="DB:HO_SO_BENH_AN.GhiChu" MinHeight="72" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,18,16">
+              <TextBlock Text="Trạng thái" Style="{StaticResource FieldLabel}"/>
+              <!-- Trường Trạng thái nghiệp vụ của bản ghi (HO_SO_BENH_AN.TrangThai): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
+              <ComboBox Tag="DB:HO_SO_BENH_AN.TrangThai" SelectedIndex="0">
+                <ComboBoxItem Content="Đang theo dõi"/>
+                <ComboBoxItem Content="Ngừng theo dõi"/>
+              </ComboBox>
+            </StackPanel>
+          </ItemsControl>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+    <Border Grid.Row="2" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
+      <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><CheckBox x:Name="CreateMedical" Content="Lập hồ sơ bệnh án sau khi lưu" IsChecked="True" Margin="0,0,0,10" VerticalAlignment="Center"/>
+        <DockPanel Grid.Row="1"><WrapPanel DockPanel.Dock="Right">
+          <!-- Nút điều hướng DongCuaSo: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
+          <Button Content="Hủy" Tag="DongCuaSo"/>
+          <!-- Nút điều hướng HoSoSave: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
+          <Button Content="Lưu" Tag="HoSoSave" Style="{StaticResource HospitalPrimary}"/>
+        </WrapPanel>
+        <TextBlock x:Name="FormError" Foreground="#B42318" TextWrapping="Wrap" VerticalAlignment="Center"/>
+      </DockPanel>
+    </Grid></Border>
+  </Grid>
 </UserControl>

@@ -1,0 +1,66 @@
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã tạo bố cục XAML hiện hữu cho chi tiết hồ sơ: trường dữ liệu, bảng liên quan và template ô dùng converter; thay phần dựng control bằng C#. -->
+<!-- AI hỗ trợ: toàn bộ bố cục chi tiết, trường và nhóm liên quan khai báo trong XAML; dữ liệu do code-behind chuẩn bị. -->
+<UserControl x:Class="RangHamMat.Controls.RecordDetails"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:local="clr-namespace:RangHamMat.Controls">
+ <UserControl.Resources>
+  <local:RelatedFieldsConverter x:Key="RelatedFields"/>
+  <!-- Nhãn và giá trị dùng chung cho chi tiết cha và từng dòng con; Wrap giữ nguyên nội dung dài. -->
+  <DataTemplate x:Key="DetailFieldTemplate">
+   <StackPanel Width="270" Margin="0,0,20,22">
+    <TextBlock Text="{Binding Label}" Foreground="{DynamicResource Muted}" Margin="0,0,0,7" TextWrapping="Wrap"/>
+    <TextBlock Text="{Binding Value}" FontSize="15" TextWrapping="Wrap"/>
+   </StackPanel>
+  </DataTemplate>
+ </UserControl.Resources>
+ <Grid>
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <TextBlock Text="Thông tin chi tiết" Style="{StaticResource Title}"/>
+  <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+   <StackPanel Margin="0,12,12,0">
+    <Border Style="{StaticResource Card}" Margin="0,0,0,22">
+     <ItemsControl x:Name="FieldsList" ItemsSource="{Binding Fields}" ItemTemplate="{StaticResource DetailFieldTemplate}">
+      <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+     </ItemsControl>
+    </Border>
+    <ItemsControl x:Name="RelatedGroups" ItemsSource="{Binding Relations}">
+     <ItemsControl.ItemTemplate><DataTemplate>
+      <StackPanel>
+       <DockPanel Margin="0,0,0,12">
+        <!-- Giữ Tag/CreationContext để routed handler mở đúng form và khóa liên kết cha. -->
+        <Button DockPanel.Dock="Right" Content="{Binding AddLabel}" Tag="{Binding AddTag}" CommandParameter="{Binding Creation}" Margin="16,0,0,0">
+         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource BaseButton}">
+          <Style.Triggers><DataTrigger Binding="{Binding Creation}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers>
+         </Style></Button.Style>
+        </Button>
+        <TextBlock Text="{Binding Title}" Style="{StaticResource SectionTitle}" VerticalAlignment="Center"/>
+       </DockPanel>
+       <!-- Một cột mẫu cố định chứa các trường theo cột nguồn; ItemsSource giữ bản ghi gốc cho nhấp đúp. -->
+       <DataGrid Tag="{Binding SourceTag}" ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+        SelectionMode="Single" SelectionUnit="FullRow" MaxHeight="320" MinHeight="100" RowHeight="NaN" Margin="0,0,0,10" ToolTip="Nhấp đúp vào dòng để xem chi tiết.">
+        <DataGrid.Columns><DataGridTemplateColumn Header="Thông tin liên quan" Width="*">
+         <DataGridTemplateColumn.CellTemplate><DataTemplate>
+          <ItemsControl ItemTemplate="{StaticResource DetailFieldTemplate}" Margin="8,12,0,0">
+           <ItemsControl.ItemsSource><MultiBinding Converter="{StaticResource RelatedFields}"><Binding/><Binding Path="DataContext.Columns" RelativeSource="{RelativeSource AncestorType=DataGrid}"/></MultiBinding></ItemsControl.ItemsSource>
+           <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          </ItemsControl>
+         </DataTemplate></DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn></DataGrid.Columns>
+       </DataGrid>
+       <TextBlock Text="Chưa có thông tin liên quan đến bản ghi này." Foreground="{DynamicResource Muted}" Margin="0,0,0,20">
+        <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/>
+         <Style.Triggers><DataTrigger Binding="{Binding Rows.Length}" Value="0"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
+        </Style></TextBlock.Style>
+       </TextBlock>
+      </StackPanel>
+     </DataTemplate></ItemsControl.ItemTemplate>
+    </ItemsControl>
+   </StackPanel>
+  </ScrollViewer>
+  <WrapPanel Grid.Row="2" Margin="0,18,0,0">
+   <Button Content="Quay lại" Tag="DongCuaSo"/><Button Content="Về màn hình chính" Tag="VeTrangChu"/>
+   <TextBlock Text="Chế độ xem chi tiết" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+  </WrapPanel>
+ </Grid>
+</UserControl>

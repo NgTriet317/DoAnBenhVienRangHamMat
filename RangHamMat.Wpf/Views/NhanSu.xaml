@@ -92,10 +92,10 @@
                                 </Grid.ColumnDefinitions>
 
                                 <TextBox x:Name="txtTimNhanVien" Height="40" Padding="10,0"
-                                         VerticalContentAlignment="Center"/>
+                                         VerticalContentAlignment="Center" TextChanged="txtTimNhanVien_TextChanged"/>
 
                                 <ComboBox x:Name="cboLocTrangThaiNhanVien" Grid.Column="2"
-                                          Height="40" SelectedIndex="0">
+                                          Height="40" SelectedIndex="0" SelectionChanged="cboLocTrangThaiNhanVien_SelectionChanged">
                                     <ComboBoxItem Content="Tất cả"/>
                                     <ComboBoxItem Content="Đang làm việc"/>
                                     <ComboBoxItem Content="Tạm nghỉ"/>
@@ -151,8 +151,8 @@
 
                             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                                 <StackPanel Margin="20,3,20,18">
-                                    <TextBlock Text="Họ và tên *" Style="{StaticResource FormLabel}"/>
-                                    <TextBox x:Name="txtHoTen" Style="{StaticResource FormTextBox}"/>
+                                    <TextBlock x:Name="lblHoTen" Text="Họ và tên *" Style="{StaticResource FormLabel}"/>
+                                    <TextBox x:Name="txtHoTen" Style="{StaticResource FormTextBox}" TextChanged="txtHoTen_TextChanged"/>
 
                                     <TextBlock Text="Giới tính" Style="{StaticResource FormLabel}"/>
                                     <ComboBox x:Name="cboGioiTinh" Height="40" Margin="0,0,0,14">
@@ -161,7 +161,7 @@
                                         <ComboBoxItem Content="Khác"/>
                                     </ComboBox>
 
-                                    <TextBlock Text="Ngày sinh" Style="{StaticResource FormLabel}"/>
+                                    <TextBlock Text="Ngày sinh *" Style="{StaticResource FormLabel}"/>
                                     <DatePicker x:Name="dpNgaySinh" Height="40" Margin="0,0,0,14"/>
 
                                     <TextBlock Text="Số điện thoại *" Style="{StaticResource FormLabel}"/>
@@ -176,7 +176,7 @@
                                     <TextBlock Text="Bằng cấp" Style="{StaticResource FormLabel}"/>
                                     <TextBox x:Name="txtBangCap" Style="{StaticResource FormTextBox}"/>
 
-                                    <TextBlock Text="Ngày vào làm" Style="{StaticResource FormLabel}"/>
+                                    <TextBlock Text="Ngày vào làm *" Style="{StaticResource FormLabel}"/>
                                     <DatePicker x:Name="dpNgayVaoLam" Height="40" Margin="0,0,0,14"/>
 
                                     <TextBlock Text="Trạng thái" Style="{StaticResource FormLabel}"/>
@@ -199,7 +199,7 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Button x:Name="btnLamMoiNhanVien" Content="Làm mới" Height="42"/>
+                                <Button x:Name="btnLamMoiNhanVien" Content="Làm mới" Height="42" Click="btnLamMoiNhanVien_Click"/>
                                 <Button x:Name="btnThemNhanVien" Grid.Column="2" Content="Thêm nhân viên"
                                         Style="{StaticResource Primary}" Height="42" Click="btnThemNhanVien_Click"/>
                             </Grid>
@@ -245,8 +245,8 @@
                         <StackPanel>
                             <TextBlock Text="Thêm chức vụ" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,18"/>
 
-                            <TextBlock Text="Mã chức vụ *" Style="{StaticResource FormLabel}"/>
-                            <TextBox x:Name="txtMaChucVu" Style="{StaticResource FormTextBox}"/>
+                            <TextBlock Text="Mã chức vụ (tự sinh)" Style="{StaticResource FormLabel}"/>
+                            <TextBox x:Name="txtMaChucVu" Style="{StaticResource FormTextBox}" IsReadOnly="True" Text="Tự động"/>
 
                             <TextBlock Text="Tên chức vụ *" Style="{StaticResource FormLabel}"/>
                             <TextBox x:Name="txtTenChucVu" Style="{StaticResource FormTextBox}"/>
@@ -262,7 +262,7 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Button x:Name="btnLamMoiChucVu" Content="Làm mới" Height="42"/>
+                                <Button x:Name="btnLamMoiChucVu" Content="Làm mới" Height="42" Click="btnLamMoiChucVu_Click"/>
                                 <Button x:Name="btnThemChucVu" Grid.Column="2" Content="Thêm chức vụ"
                                         Style="{StaticResource Primary}" Height="42" Click="btnThemChucVu_Click"/>
                             </Grid>

@@ -1,3 +1,5 @@
+> Tài liệu từ phiên bản trước. Với bốn giao diện cập nhật 08/10/2026, đọc README.md, HUONG_DAN_GIAO_DIEN_BENH_VIEN.md và DOI_CHIEU_GIAO_DIEN_DBV7.md. Nội dung dưới đây chỉ còn làm tài liệu lịch sử cho bản gốc/các phần ngoài phạm vi.
+
 # Các điểm nối nguồn dữ liệu giao diện
 
 Đây là tài liệu dành cho bước nối dữ liệu sau này, không bổ sung lưu, xóa, xác thực, tính doanh thu hoặc thay đổi SQL.

@@ -1,3 +1,5 @@
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của MainWindow.xaml. -->
+<!-- AI hỗ trợ: bổ sung chú thích cho Cửa sổ chính quản lý các ô ứng dụng, bộ lọc vai trò/nhóm/từ khóa và chuyển phân hệ cùng ngữ cảnh hồ sơ.. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.MainWindow" Style="{StaticResource WindowBase}" Title="RHM · Không gian làm việc" WindowStyle="None" ResizeMode="NoResize" WindowState="Maximized" StateChanged="Window_StateChanged" Background="{StaticResource Canvas}">
   <Grid>
     <Grid x:Name="HomeSurface">
@@ -49,14 +51,21 @@
             </StackPanel>
           </Grid>
           <WrapPanel x:Name="CategoryFilters" Margin="0,0,0,20">
+            <!-- Thao tác Tất cả: gọi Category_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Content="Tất cả" Click="Category_Click" CommandParameter="Tất cả" Margin="0,0,8,8" Style="{StaticResource Primary}" />
+            <!-- Thao tác Khám chữa bệnh: gọi Category_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Content="Khám chữa bệnh" Click="Category_Click" CommandParameter="Khám chữa bệnh" Margin="0,0,8,8" Style="{StaticResource Quiet}" />
+            <!-- Thao tác Nhân sự: gọi Category_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Content="Nhân sự" Click="Category_Click" CommandParameter="Nhân sự" Margin="0,0,8,8" Style="{StaticResource Quiet}" />
+            <!-- Thao tác Kho và thiết bị: gọi Category_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Content="Kho và thiết bị" Click="Category_Click" CommandParameter="Kho và thiết bị" Margin="0,0,8,8" Style="{StaticResource Quiet}" />
+            <!-- Thao tác Tài chính: gọi Category_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Content="Tài chính" Click="Category_Click" CommandParameter="Tài chính" Margin="0,0,8,8" Style="{StaticResource Quiet}" />
+            <!-- Thao tác Hệ thống: gọi Category_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Content="Hệ thống" Click="Category_Click" CommandParameter="Hệ thống" Margin="0,0,8,8" Style="{StaticResource Quiet}" />
           </WrapPanel>
           <WrapPanel x:Name="AppGrid" Margin="-8,0,-8,0">
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="TongQuan" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Tổng quan" ToolTip="Mở tổng quan" CommandParameter="Hệ thống">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -66,6 +75,7 @@
                 <TextBlock Text="Hệ thống" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="BenhNhan" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Hồ sơ bệnh nhân" ToolTip="Mở hồ sơ bệnh nhân" CommandParameter="Khám chữa bệnh">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -75,6 +85,7 @@
                 <TextBlock Text="Khám chữa bệnh" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="LichKham" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Điều phối lịch khám" ToolTip="Mở điều phối lịch khám" CommandParameter="Khám chữa bệnh">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -84,6 +95,7 @@
                 <TextBlock Text="Khám chữa bệnh" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="KhamDieuTri" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Khám điều trị" ToolTip="Mở khám điều trị" CommandParameter="Khám chữa bệnh">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -93,6 +105,7 @@
                 <TextBlock Text="Khám chữa bệnh" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="DichVuThucHien" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Dịch vụ thực hiện" ToolTip="Mở dịch vụ thực hiện" CommandParameter="Khám chữa bệnh">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="#E7F8F3" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -102,6 +115,7 @@
                 <TextBlock Text="Khám chữa bệnh" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="DonThuoc" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Đơn thuốc" ToolTip="Mở đơn thuốc" CommandParameter="Khám chữa bệnh">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -111,6 +125,7 @@
                 <TextBlock Text="Khám chữa bệnh" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="PhieuHuongDan" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Phiếu hướng dẫn" ToolTip="Mở phiếu hướng dẫn" CommandParameter="Khám chữa bệnh">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -120,6 +135,7 @@
                 <TextBlock Text="Khám chữa bệnh" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="NhanSu" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Bác sĩ và nhân sự" ToolTip="Mở bác sĩ và nhân sự" CommandParameter="Nhân sự">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -129,6 +145,7 @@
                 <TextBlock Text="Nhân sự" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="ChungChiNhanVien" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Chứng chỉ nhân viên" ToolTip="Mở chứng chỉ nhân viên" CommandParameter="Nhân sự">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="#F4EEFF" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -138,6 +155,7 @@
                 <TextBlock Text="Nhân sự" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="CaLamViec" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Ca làm việc" ToolTip="Mở ca làm việc" CommandParameter="Nhân sự">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -147,6 +165,7 @@
                 <TextBlock Text="Nhân sự" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="ThietBi" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Trang thiết bị" ToolTip="Mở trang thiết bị" CommandParameter="Kho và thiết bị">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -156,6 +175,7 @@
                 <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="BaoTri" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Lịch sử bảo trì" ToolTip="Mở lịch sử bảo trì" CommandParameter="Kho và thiết bị">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -165,6 +185,7 @@
                 <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="VatTu" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Vật tư và tồn kho" ToolTip="Mở vật tư và tồn kho" CommandParameter="Kho và thiết bị">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -174,6 +195,7 @@
                 <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="DanhMucHangHoa" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Danh mục hàng hóa" ToolTip="Mở danh mục hàng hóa" CommandParameter="Kho và thiết bị">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="#EEF7FF" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -183,6 +205,7 @@
                 <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="NhaCungCap" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Nhà cung cấp" ToolTip="Mở nhà cung cấp" CommandParameter="Kho và thiết bị">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -192,6 +215,7 @@
                 <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="NhapXuatVatTu" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Nhập xuất vật tư" ToolTip="Mở nhập xuất vật tư" CommandParameter="Kho và thiết bị">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -201,6 +225,7 @@
                 <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="NhapKho" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Nhập kho theo chứng từ" ToolTip="Mở nhập kho" CommandParameter="Kho và thiết bị">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="#E0F2FE" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -210,6 +235,7 @@
                 <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="XuatKho" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Xuất kho" ToolTip="Mở xuất kho" CommandParameter="Kho và thiết bị">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="#FFF7ED" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -219,6 +245,7 @@
                 <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="HoaDon" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Hóa đơn và thanh toán" ToolTip="Mở hóa đơn và thanh toán" CommandParameter="Tài chính">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -228,6 +255,7 @@
                 <TextBlock Text="Tài chính" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="BangLuong" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Lương và hoa hồng" ToolTip="Mở lương và hoa hồng" CommandParameter="Tài chính">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -237,6 +265,7 @@
                 <TextBlock Text="Tài chính" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="ChinhSachLuong" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Chính sách lương" ToolTip="Mở chính sách lương" CommandParameter="Tài chính">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="#EEF2FF" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -246,6 +275,7 @@
                 <TextBlock Text="Tài chính" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="BaoCao" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Báo cáo và thống kê" ToolTip="Mở báo cáo và thống kê" CommandParameter="Tài chính">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -255,6 +285,7 @@
                 <TextBlock Text="Tài chính" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="DichVu" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Danh mục dịch vụ" ToolTip="Mở danh mục dịch vụ" CommandParameter="Hệ thống">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -264,6 +295,7 @@
                 <TextBlock Text="Hệ thống" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="TaiKhoan" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Tài khoản và vai trò" ToolTip="Mở tài khoản và vai trò" CommandParameter="Hệ thống">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -273,6 +305,7 @@
                 <TextBlock Text="Hệ thống" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="NhatKy" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Nhật ký thao tác" ToolTip="Mở nhật ký thao tác" CommandParameter="Hệ thống">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -288,14 +321,16 @@
       </ScrollViewer>
       <Border Grid.Row="2" Padding="40,14" Background="White" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0">
         <DockPanel>
+          <!-- Thao tác Thoát ứng dụng: gọi Exit_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
           <Button Content="Thoát ứng dụng" Click="Exit_Click" DockPanel.Dock="Right" />
           <StackPanel VerticalAlignment="Center">
             <TextBlock x:Name="AppCount" Foreground="{StaticResource Muted}" />
-            <TextBlock Text="Bản giao diện • Chưa kết nối dữ liệu" FontSize="12" Foreground="{StaticResource Muted}" Margin="0,4,0,0" />
+            <TextBlock Text="Hồ sơ • Điều trị • Hóa đơn" FontSize="12" Foreground="{StaticResource Muted}" Margin="0,4,0,0" />
           </StackPanel>
         </DockPanel>
       </Border>
     </Grid>
+    <!-- Vùng AppHost: hiển thị nội dung/danh sách được code-behind hoặc Binding cung cấp; DataTemplate quyết định cách trình bày mỗi đối tượng. -->
     <ContentControl x:Name="AppHost" Visibility="Collapsed" />
   </Grid>
 </Window>

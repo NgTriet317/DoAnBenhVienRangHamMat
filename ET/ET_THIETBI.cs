@@ -1,32 +1,39 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+// AI hỗ trợ: bổ sung chú thích tiếng Việt cho file này ngày 13/10/2026.
+// Nhãn này ghi nhận phần hỗ trợ/chú thích;
+using Dapper.Contrib.Extensions;
 
 namespace ET
 {
+    /// <summary>
+    /// Thực thể ánh xạ bảng THIET_BI qua Dapper.Contrib; chứa các cột đúng kiểu SQL để truyền giữa DAL/BUS và giao diện, không tự mở kết nối hoặc xử lý nghiệp vụ.
+    /// </summary>
+    [Table("THIET_BI")]
     public class ET_THIETBI
     {
-        private string maTB;
-        private string maHH;
-        private string tenTB;
-        private string serial;
-        private string maNCC;
-        private string maPhong;
-        private string tinhTrang;
-        private string hanBaoHanh;
-        private string trangThai;
-        private string ghiChu;
+        private string maTB = string.Empty;
+        private string maHH = string.Empty;
+        private string soSerial = string.Empty;
+        private DateTime? ngayMua;
+        private string? maNCC;
+        private string? maPhong;
+        private string tinhTrang = string.Empty;
+        private DateTime? hanBaoHanh;
+        private string trangThai = string.Empty;
+        private string? ghiChu;
 
+        /// <summary>
+        /// Khởi tạo thực thể rỗng để Dapper hoặc cơ chế chuyển dictionary điền các cột; các giá trị mặc định chưa phải một bản ghi đã lưu.
+        /// </summary>
         public ET_THIETBI() { }
-
-        public ET_THIETBI(string maTB, string maHH, string tenTB, string serial, string maNCC, string maPhong, string tinhTrang, string hanBaoHanh, string trangThai, string ghiChu)
+        /// <summary>
+        /// Nhận các giá trị cột qua tham số và gán cho thực thể; việc gọi constructor không ghi dữ liệu xuống SQL.
+        /// </summary>
+        public ET_THIETBI(string maTB, string maHH, string soSerial, DateTime? ngayMua, string? maNCC, string? maPhong, string tinhTrang, DateTime? hanBaoHanh, string trangThai, string? ghiChu)
         {
             this.maTB = maTB;
             this.maHH = maHH;
-            this.tenTB = tenTB;
-            this.serial = serial;
+            this.soSerial = soSerial;
+            this.ngayMua = ngayMua;
             this.maNCC = maNCC;
             this.maPhong = maPhong;
             this.tinhTrang = tinhTrang;
@@ -35,15 +42,46 @@ namespace ET
             this.ghiChu = ghiChu;
         }
 
+        /// <summary>
+        /// Mã thiết bị; ánh xạ cột MaTB của bảng trong TableAttribute. Khóa chính dạng mã chuỗi; thao tác tạo mới cấp mã trong tầng lưu.
+        /// </summary>
+        [ExplicitKey]
         public string MaTB { get => maTB; set => maTB = value; }
+        /// <summary>
+        /// Mã hàng hóa; ánh xạ cột MaHH của bảng trong TableAttribute.
+        /// </summary>
         public string MaHH { get => maHH; set => maHH = value; }
-        public string TenTB { get => tenTB; set => tenTB = value; }
-        public string Serial { get => serial; set => serial = value; }
-        public string MaNCC { get => maNCC; set => maNCC = value; }
-        public string MaPhong { get => maPhong; set => maPhong = value; }
+        /// <summary>
+        /// Số serial thiết bị; ánh xạ cột SoSerial của bảng trong TableAttribute.
+        /// </summary>
+        public string SoSerial { get => soSerial; set => soSerial = value; }
+        /// <summary>
+        /// Ngày mua thiết bị; ánh xạ cột NgayMua của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
+        /// </summary>
+        public DateTime? NgayMua { get => ngayMua; set => ngayMua = value; }
+        /// <summary>
+        /// Mã nhà cung cấp; ánh xạ cột MaNCC của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
+        /// </summary>
+        public string? MaNCC { get => maNCC; set => maNCC = value; }
+        /// <summary>
+        /// Mã phòng; ánh xạ cột MaPhong của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
+        /// </summary>
+        public string? MaPhong { get => maPhong; set => maPhong = value; }
+        /// <summary>
+        /// Tình trạng sử dụng phòng/thiết bị; ánh xạ cột TinhTrang của bảng trong TableAttribute.
+        /// </summary>
         public string TinhTrang { get => tinhTrang; set => tinhTrang = value; }
-        public string HanBaoHanh { get => hanBaoHanh; set => hanBaoHanh = value; }
+        /// <summary>
+        /// Hạn bảo hành thiết bị; ánh xạ cột HanBaoHanh của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
+        /// </summary>
+        public DateTime? HanBaoHanh { get => hanBaoHanh; set => hanBaoHanh = value; }
+        /// <summary>
+        /// Trạng thái nghiệp vụ của bản ghi; ánh xạ cột TrangThai của bảng trong TableAttribute.
+        /// </summary>
         public string TrangThai { get => trangThai; set => trangThai = value; }
-        public string GhiChu { get => ghiChu; set => ghiChu = value; }
+        /// <summary>
+        /// Ghi chú bổ sung; ánh xạ cột GhiChu của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
+        /// </summary>
+        public string? GhiChu { get => ghiChu; set => ghiChu = value; }
     }
 }

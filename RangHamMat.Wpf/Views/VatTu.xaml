@@ -1,3 +1,5 @@
+<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của VatTu.xaml; các vùng liên quan: Vật tư, Grid_VAT_TU, Thuốc, Grid_VAT_TU_Thuoc, Loại vật tư, Grid_LOAI_VAT_TU, Lô vật tư, Grid_LO_VAT_TU. -->
+<!-- AI hỗ trợ: bổ sung chú thích cho vật tư. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.VatTu">
     <Grid>
         <Grid.RowDefinitions>
@@ -12,6 +14,7 @@
             <TextBlock Text="Nhấp đúp vào một dòng để xem chi tiết. Chọn Thêm để tạo mới." Style="{StaticResource Subtitle}" />
         </StackPanel>
         <WrapPanel Grid.Row="1" Margin="0,0,0,20">
+            <!-- Nút điều hướng MoTrang:NhapXuatVatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
             <Button Content="Nhập xuất" Tag="MoTrang:NhapXuatVatTu" />
         </WrapPanel>
         <UniformGrid Grid.Row="2" Columns="4" Margin="0,0,0,18">
@@ -60,6 +63,7 @@
             </Border>
         </Grid>
         <TabControl Grid.Row="4">
+            <!-- Nhóm Vật tư: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
             <TabItem Header="Vật tư">
                 <Grid Margin="0,20,0,0">
                     <Grid.RowDefinitions>
@@ -68,12 +72,14 @@
                     </Grid.RowDefinitions>
                     <DockPanel Margin="0,0,0,18">
                         <WrapPanel DockPanel.Dock="Right">
+                            <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                             <Button Content="Thêm vật tư" Tag="MoCuaSo:VatTu" CommandParameter="VAT_TU" Style="{StaticResource Primary}" />
                         </WrapPanel>
                         <TextBlock Text="Vật tư" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
                     </DockPanel>
                     <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
                         <Grid>
+                            <!-- Bảng Grid_VAT_TU: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:VAT_TU cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
                             <DataGrid Tag="Table:VAT_TU" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_VAT_TU" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Mã vật tư" SortMemberPath="MaVT" Width="155" Binding="{Binding MaVT}" />
@@ -86,6 +92,7 @@
                             </DataGrid>
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
                                 <StackPanel.Style>
+                                    <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
                                     <Style TargetType="StackPanel">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                         <Style.Triggers>
@@ -97,12 +104,14 @@
                                 </StackPanel.Style>
                                 <TextBlock Text="Chưa có vật tư" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
                                 <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                                <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                                 <Button Content="Thêm mới" Tag="MoCuaSo:VatTu" CommandParameter="VAT_TU" HorizontalAlignment="Center" />
                             </StackPanel>
                         </Grid>
                     </Border>
                 </Grid>
             </TabItem>
+            <!-- Nhóm Thuốc: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
             <TabItem Header="Thuốc">
                 <Grid Margin="0,20,0,0">
                     <Grid.RowDefinitions>
@@ -111,12 +120,14 @@
                     </Grid.RowDefinitions>
                     <DockPanel Margin="0,0,0,18">
                         <WrapPanel DockPanel.Dock="Right">
+                            <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                             <Button Content="Thêm thuốc" Tag="MoCuaSo:VatTu" CommandParameter="VAT_TU|Thuoc" Style="{StaticResource Primary}" />
                         </WrapPanel>
                         <TextBlock Text="Thuốc" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
                     </DockPanel>
                     <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
                         <Grid>
+                            <!-- Bảng Grid_VAT_TU_Thuoc: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:VAT_TU cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
                             <DataGrid Tag="Table:VAT_TU" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_VAT_TU_Thuoc" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Mã vật tư" SortMemberPath="MaVT" Width="155" Binding="{Binding MaVT}" />
@@ -129,6 +140,7 @@
                             </DataGrid>
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
                                 <StackPanel.Style>
+                                    <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
                                     <Style TargetType="StackPanel">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                         <Style.Triggers>
@@ -140,12 +152,14 @@
                                 </StackPanel.Style>
                                 <TextBlock Text="Chưa có thuốc" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
                                 <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                                <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                                 <Button Content="Thêm thuốc" Tag="MoCuaSo:VatTu" CommandParameter="VAT_TU|Thuoc" HorizontalAlignment="Center" />
                             </StackPanel>
                         </Grid>
                     </Border>
                 </Grid>
             </TabItem>
+            <!-- Nhóm Loại vật tư: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
             <TabItem Header="Loại vật tư">
                 <Grid Margin="0,20,0,0">
                     <Grid.RowDefinitions>
@@ -154,12 +168,14 @@
                     </Grid.RowDefinitions>
                     <DockPanel Margin="0,0,0,18">
                         <WrapPanel DockPanel.Dock="Right">
+                            <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                             <Button Content="Thêm loại vật tư" Tag="MoCuaSo:VatTu" CommandParameter="LOAI_VAT_TU" Style="{StaticResource Primary}" />
                         </WrapPanel>
                         <TextBlock Text="Loại vật tư" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
                     </DockPanel>
                     <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
                         <Grid>
+                            <!-- Bảng Grid_LOAI_VAT_TU: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:LOAI_VAT_TU cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
                             <DataGrid Tag="Table:LOAI_VAT_TU" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_LOAI_VAT_TU" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Mã loại vật tư" SortMemberPath="MaLVT" Width="155" Binding="{Binding MaLVT}" />
@@ -169,6 +185,7 @@
                             </DataGrid>
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
                                 <StackPanel.Style>
+                                    <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
                                     <Style TargetType="StackPanel">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                         <Style.Triggers>
@@ -180,12 +197,14 @@
                                 </StackPanel.Style>
                                 <TextBlock Text="Chưa có loại vật tư" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
                                 <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                                <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                                 <Button Content="Thêm mới" Tag="MoCuaSo:VatTu" CommandParameter="LOAI_VAT_TU" HorizontalAlignment="Center" />
                             </StackPanel>
                         </Grid>
                     </Border>
                 </Grid>
             </TabItem>
+            <!-- Nhóm Lô vật tư: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
             <TabItem Header="Lô vật tư">
                 <Grid Margin="0,20,0,0">
                     <Grid.RowDefinitions>
@@ -194,13 +213,16 @@
                     </Grid.RowDefinitions>
                     <DockPanel Margin="0,0,0,18">
                         <WrapPanel DockPanel.Dock="Right">
+                            <!-- Nút điều hướng ToggleColumns: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                             <Button Content="Hiện đủ cột" Tag="ToggleColumns" CommandParameter="LO_VAT_TU" />
+                            <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                             <Button Content="Thêm lô vật tư" Tag="MoCuaSo:VatTu" CommandParameter="LO_VAT_TU" Style="{StaticResource Primary}" />
                         </WrapPanel>
                         <TextBlock Text="Lô vật tư" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
                     </DockPanel>
                     <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
                         <Grid>
+                            <!-- Bảng Grid_LO_VAT_TU: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:LO_VAT_TU cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
                             <DataGrid Tag="Table:LO_VAT_TU" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_LO_VAT_TU" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Mã lô vật tư" SortMemberPath="MaLo" Width="155" Binding="{Binding MaLo}" />
@@ -215,6 +237,7 @@
                             </DataGrid>
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
                                 <StackPanel.Style>
+                                    <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
                                     <Style TargetType="StackPanel">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                         <Style.Triggers>
@@ -226,12 +249,14 @@
                                 </StackPanel.Style>
                                 <TextBlock Text="Chưa có lô vật tư" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
                                 <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                                <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                                 <Button Content="Thêm mới" Tag="MoCuaSo:VatTu" CommandParameter="LO_VAT_TU" HorizontalAlignment="Center" />
                             </StackPanel>
                         </Grid>
                     </Border>
                 </Grid>
             </TabItem>
+            <!-- Nhóm Kho: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
             <TabItem Header="Kho">
                 <Grid Margin="0,20,0,0">
                     <Grid.RowDefinitions>
@@ -240,12 +265,14 @@
                     </Grid.RowDefinitions>
                     <DockPanel Margin="0,0,0,18">
                         <WrapPanel DockPanel.Dock="Right">
+                            <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                             <Button Content="Thêm kho" Tag="MoCuaSo:VatTu" CommandParameter="KHO" Style="{StaticResource Primary}" />
                         </WrapPanel>
                         <TextBlock Text="Kho" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
                     </DockPanel>
                     <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
                         <Grid>
+                            <!-- Bảng Grid_KHO: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:KHO cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
                             <DataGrid Tag="Table:KHO" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_KHO" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Mã kho" SortMemberPath="MaKho" Width="155" Binding="{Binding MaKho}" />
@@ -257,6 +284,7 @@
                             </DataGrid>
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
                                 <StackPanel.Style>
+                                    <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
                                     <Style TargetType="StackPanel">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                         <Style.Triggers>
@@ -268,6 +296,7 @@
                                 </StackPanel.Style>
                                 <TextBlock Text="Chưa có kho" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
                                 <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
+                                <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
                                 <Button Content="Thêm mới" Tag="MoCuaSo:VatTu" CommandParameter="KHO" HorizontalAlignment="Center" />
                             </StackPanel>
                         </Grid>

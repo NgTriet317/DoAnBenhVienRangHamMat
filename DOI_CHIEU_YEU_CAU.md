@@ -1,3 +1,5 @@
+> Tài liệu từ phiên bản trước. Với bốn giao diện cập nhật 08/10/2026, đọc README.md, HUONG_DAN_GIAO_DIEN_BENH_VIEN.md và DOI_CHIEU_GIAO_DIEN_DBV7.md. Nội dung dưới đây chỉ còn làm tài liệu lịch sử cho bản gốc/các phần ngoài phạm vi.
+
 > Tài liệu yêu cầu gốc để tham khảo; không phải danh sách chức năng đã triển khai. Bản hiện tại chỉ có giao diện và điều hướng. Phạm vi trường dữ liệu xem DOI_CHIEU_DATABASE.md; cách dùng xem README.md.
 
 > Cập nhật 28/09/2026: bản hiện hành dùng một cửa sổ toàn màn hình và trường dữ liệu theo SQL 34 bảng. Xem `README.md` và `DOI_CHIEU_DATABASE.md` để biết cấu trúc hiện tại. Các đối chiếu frontend bên dưới là lịch sử tham khảo.
