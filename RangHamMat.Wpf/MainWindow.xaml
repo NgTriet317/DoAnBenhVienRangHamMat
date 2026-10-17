@@ -13,6 +13,7 @@
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="290" />
+            <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
           <StackPanel Orientation="Horizontal">
             <Border Background="{StaticResource Accent}" Width="44" Height="44" CornerRadius="12" Margin="0,0,14,0">
@@ -33,6 +34,9 @@
               <ComboBoxItem Content="Nhân viên kho / thiết bị" />
             </ComboBox>
           </StackPanel>
+          <Button Grid.Column="2" Content="Xin nghỉ việc" Style="{StaticResource Primary}"
+                  Click="XinNghiViec_Click" Margin="24,0,0,0" Padding="20,10"
+                  VerticalAlignment="Center" AutomationProperties.Name="Mở đơn xin nghỉ phép hoặc nghỉ việc"/>
         </Grid>
       </Border>
       <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">

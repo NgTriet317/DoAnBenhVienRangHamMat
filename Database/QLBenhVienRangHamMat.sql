@@ -559,6 +559,27 @@ CREATE TABLE [dbo].[LICH_KHAM] (
     CONSTRAINT [CK_LICH_KHAM_1] CHECK ([ThoiLuongDuKien] > 0)
 );
 
+-- Xác nhận riêng từng lịch khám khi nhân viên xin nghỉ
+CREATE TABLE [dbo].[XAC_NHAN_DOI_LICH_KHAM] (
+    [MaDonNghi] NVARCHAR(50) NOT NULL,
+    [MaLich] NVARCHAR(50) NOT NULL,
+    [MaBSCu] NVARCHAR(50) NOT NULL,
+    [MaPhongCu] NVARCHAR(50) NOT NULL,
+    [MaBSMoi] NVARCHAR(50) NOT NULL,
+    [MaPhongMoi] NVARCHAR(50) NOT NULL,
+    [MaLLVThayThe] NVARCHAR(50) NOT NULL,
+    [MaCa] NVARCHAR(50) NOT NULL,
+    [NgayGioKham] DATETIME2(0) NOT NULL,
+    [ThoiLuongDuKien] INT NOT NULL,
+    [MaNVXacNhan] NVARCHAR(50) NOT NULL,
+    [NgayXacNhan] DATETIME2(0) NOT NULL,
+    [TrangThai] NVARCHAR(30) NOT NULL,
+    CONSTRAINT [PK_XAC_NHAN_DOI_LICH_KHAM] PRIMARY KEY ([MaDonNghi],[MaLich]),
+    CONSTRAINT [FK_XNDLK_Don] FOREIGN KEY ([MaDonNghi]) REFERENCES dbo.DON_XIN_NGHI([MaDonNghi]),
+    CONSTRAINT [FK_XNDLK_NhanVien] FOREIGN KEY ([MaNVXacNhan]) REFERENCES dbo.NHAN_VIEN([MaNV]),
+    CONSTRAINT [CK_XNDLK_TrangThai] CHECK ([TrangThai] IN (N'Đã xác nhận',N'Đã hủy'))
+);
+
 -- 39. HOA_DON
 CREATE TABLE [dbo].[HOA_DON] (
     [MaHD] NVARCHAR(50) NOT NULL CONSTRAINT [PK_HOA_DON] PRIMARY KEY,

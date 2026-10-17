@@ -59,17 +59,17 @@
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="Bệnh nhân" Style="{StaticResource ChiTietNhan}"/>
-                                <TextBlock Text="{Binding MaBN}" Style="{StaticResource ChiTietGiaTri}"/>
+                                <TextBlock Text="{Binding TenBenhNhan}" Style="{StaticResource ChiTietGiaTri}"/>
                                 <TextBlock Text="Bác sĩ phụ trách" Style="{StaticResource ChiTietNhan}"/>
-                                <TextBlock Text="{Binding MaBS}" Style="{StaticResource ChiTietGiaTri}"/>
+                                <TextBlock Text="{Binding TenBacSi}" Style="{StaticResource ChiTietGiaTri}"/>
                                 <TextBlock Text="Dịch vụ" Style="{StaticResource ChiTietNhan}"/>
-                                <TextBlock Text="{Binding MaDV, TargetNullValue=Không chỉ định}" Style="{StaticResource ChiTietGiaTri}"/>
+                                <TextBlock Text="{Binding TenDichVu}" Style="{StaticResource ChiTietGiaTri}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1">
                                 <TextBlock Text="Phòng khám" Style="{StaticResource ChiTietNhan}"/>
-                                <TextBlock Text="{Binding MaPhong}" Style="{StaticResource ChiTietGiaTri}"/>
+                                <TextBlock Text="{Binding TenPhong}" Style="{StaticResource ChiTietGiaTri}"/>
                                 <TextBlock Text="Ca khám" Style="{StaticResource ChiTietNhan}"/>
-                                <TextBlock Text="{Binding MaCa}" Style="{StaticResource ChiTietGiaTri}"/>
+                                <TextBlock Text="{Binding TenCa}" Style="{StaticResource ChiTietGiaTri}"/>
                                 <TextBlock Text="Thời lượng" Style="{StaticResource ChiTietNhan}"/>
                                 <TextBlock Text="{Binding ThoiLuongDuKien, StringFormat={}{0} phút}" Style="{StaticResource ChiTietGiaTri}"/>
                             </StackPanel>

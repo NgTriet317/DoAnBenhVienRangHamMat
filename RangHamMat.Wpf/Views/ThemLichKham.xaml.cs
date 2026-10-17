@@ -9,6 +9,14 @@ using System.Windows.Media;
 
 namespace RangHamMat.Views
 {
+    public class CaHienThi
+    {
+        public string MaCa { get; set; } = "";
+        public string TenCa { get; set; } = "";
+        public TimeSpan GioBatDau { get; set; }
+        public TimeSpan GioKetThuc { get; set; }
+    }
+
     public partial class ThemLichKham : UserControl
     {
         BUS_LICHKHAM busLichKham = new BUS_LICHKHAM();
@@ -77,7 +85,19 @@ namespace RangHamMat.Views
             cboBenhNhan.ItemsSource = new BUS_BENHNHAN().layToanBoBenhNhan().ToList();
             cboBacSi.ItemsSource = LichKham.LayBacSi();
             cboPhong.ItemsSource = new BUS_PHONG().layToanBoPhong().ToList();
-            cboCa.ItemsSource = new BUS_CALAM().layToanBoCaLam().ToList();
+            var dsCa = new System.Collections.Generic.List<CaHienThi>();
+            foreach (ET_CALAM ca in new BUS_CALAM().layToanBoCaLam())
+            {
+                CaHienThi item = new CaHienThi();
+                item.MaCa = ca.MaCa;
+                item.TenCa = ca.GhiChu;
+                if (string.IsNullOrWhiteSpace(item.TenCa))
+                    item.TenCa = ca.GioBatDau.ToString(@"hh\:mm") + " – " + ca.GioKetThuc.ToString(@"hh\:mm");
+                item.GioBatDau = ca.GioBatDau;
+                item.GioKetThuc = ca.GioKetThuc;
+                dsCa.Add(item);
+            }
+            cboCa.ItemsSource = dsCa;
             cboDichVu.ItemsSource = new BUS_DICHVU().layToanBoDichVu().ToList();
         }
 
@@ -87,7 +107,7 @@ namespace RangHamMat.Views
         {
             if (txtGioKham == null) return;
 
-            ET_CALAM ca = cboCa.SelectedItem as ET_CALAM;
+            CaHienThi ca = cboCa.SelectedItem as CaHienThi;
             if (ca == null)
             {
                 txtGioKham.Clear();
@@ -272,11 +292,18 @@ namespace RangHamMat.Views
                 BaoLoi(txtThoiLuong, "Thời lượng từ 5 đến 480 phút.");
                 return false;
             }
-            ET_CALAM? caChon = cboCa.SelectedItem as ET_CALAM;
+            CaHienThi? caChon = cboCa.SelectedItem as CaHienThi;
             if (caChon == null || gioNhap.TimeOfDay < caChon.GioBatDau ||
                 gioNhap.TimeOfDay.Add(TimeSpan.FromMinutes(thoiLuong)) > caChon.GioKetThuc)
             {
                 BaoLoi(txtGioKham, "Giờ khám và thời lượng phải nằm trong khung giờ của ca.");
+                return false;
+            }
+            // Báo sớm tại giao diện; DAL vẫn kiểm tra lại khi lưu để tránh dữ liệu thay đổi.
+            BUS_DON_XIN_NGHI busNghi = new BUS_DON_XIN_NGHI();
+            if (busNghi.daDuocDuyetNghi(lichMoi.MaBS, lichMoi.NgayGioKham.Date))
+            {
+                BaoLoi(cboBacSi, "Bác sĩ này đã được duyệt nghỉ trong ngày khám.");
                 return false;
             }
             // Kiểm tra xung đột với lịch chưa hủy/hoàn tất đang có.

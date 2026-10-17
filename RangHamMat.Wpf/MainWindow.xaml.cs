@@ -20,13 +20,13 @@ public partial class MainWindow : Window
         "TongQuan", "BenhNhan", "KhamDieuTri", "DichVuThucHien", "DonThuoc", "NhanSu", "ChungChiNhanVien", "CaLamViec",
         "ThietBi", "BaoTri", "VatTu", "DanhMucHangHoa", "NhaCungCap", "NhapXuatVatTu", "NhapKho", "XuatKho", "LichKham",
         "DichVu", "HoaDon", "BangLuong", "ChinhSachLuong", "TaiKhoan", "BaoCao", "PhieuHuongDan",
-        "NhatKy"
+        "NhatKy", "XinNghiViec"
     };
 
     private static readonly Dictionary<string, HashSet<string>> RolePermissions = new(StringComparer.Ordinal)
     {
         ["Admin"] = AllPages,
-        ["User"] = new(StringComparer.Ordinal) { "TongQuan", "CaLamViec" }
+        ["User"] = new(StringComparer.Ordinal) { "TongQuan", "CaLamViec", "XinNghiViec" }
     };
 
     /// <summary>
@@ -63,6 +63,12 @@ public partial class MainWindow : Window
     {
         if (sender is Button { Tag: string tag })
             OpenApp(tag);
+    }
+
+    // Mở khu vực làm đơn xin nghỉ phép / nghỉ việc từ trang chủ.
+    private void XinNghiViec_Click(object sender, RoutedEventArgs e)
+    {
+        OpenApp("XinNghiViec");
     }
 
     /// <summary>
@@ -109,12 +115,18 @@ public partial class MainWindow : Window
             "DichVu" => new DichVu(),
             "TaiKhoan" => new TaiKhoan(),
             "NhatKy" => new NhatKy(),
+            "XinNghiViec" => new XinNghiViec(),
             _ => null
         };
         if (page is null) return;
 
-        var tile = AppGrid.Children.OfType<Button>().First(button => (string)button.Tag == tag);
-        AppHost.Content = new AppWorkspace(this, AutomationProperties.GetName(tile), CurrentRole, page);
+        string tenTrang = "Đơn xin nghỉ phép / nghỉ việc";
+        if (tag != "XinNghiViec")
+        {
+            var tile = AppGrid.Children.OfType<Button>().First(button => (string)button.Tag == tag);
+            tenTrang = AutomationProperties.GetName(tile);
+        }
+        AppHost.Content = new AppWorkspace(this, tenTrang, CurrentRole, page);
         HomeSurface.Visibility = Visibility.Collapsed;
         AppHost.Visibility = Visibility.Visible;
     }

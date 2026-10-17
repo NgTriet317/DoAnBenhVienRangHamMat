@@ -34,11 +34,22 @@ public partial class AppWorkspace : UserControl
         AppTitle.Text = title;
         RoleLabel.Text = role;
         Workspace.Content = page;
+        if (page is XinNghiViec)
+        {
+            btnXinNghiViec.Visibility = Visibility.Collapsed;
+            btnTaiLaiDuLieu.Visibility = Visibility.Collapsed;
+        }
         if(page is BenhNhan patients) patients.ConfigureAccess(home.CanOpen);
         if(page is KhamDieuTri visits) visits.ConfigureAccess(home.CanOpen);
         PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape && ModalLayer.Visibility == Visibility.Visible) { ReturnToPage(); e.Handled = true; } };
         AddHandler(Button.ClickEvent, new RoutedEventHandler(Navigate));
         AddHandler(Mouse.PreviewMouseDownEvent, new MouseButtonEventHandler(OpenDetails), true);
+    }
+
+    // Mở giao diện đơn xin nghỉ phép / nghỉ việc từ bất kỳ phân hệ nào.
+    private void XinNghiViec_Click(object sender, RoutedEventArgs e)
+    {
+        home.OpenApp("XinNghiViec");
     }
 
     /// <summary>

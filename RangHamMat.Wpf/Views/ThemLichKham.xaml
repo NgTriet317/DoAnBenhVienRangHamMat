@@ -176,7 +176,7 @@
                                     </Grid>
                                     <TextBlock Text="Ca khám *" Style="{StaticResource LKLabel}" Margin="0,16,0,7"/>
                                     <ComboBox x:Name="cboCa" Tag="DB:LICH_KHAM.MaCa"
-                                              DisplayMemberPath="GhiChu" SelectedValuePath="MaCa"
+                                              DisplayMemberPath="TenCa" SelectedValuePath="MaCa"
                                               SelectionChanged="cboCa_SelectionChanged"
                                               Style="{StaticResource LKComboBox}"/>
                                 </StackPanel>
@@ -303,13 +303,13 @@
                                     <TextBlock Text="Xem trước thông tin" FontSize="18" FontWeight="SemiBold"
                                                Foreground="#173A61" Margin="0,0,0,18"/>
                                     <TextBlock Text="Bệnh nhân" Style="{StaticResource LKLabel}"/>
-                                    <TextBlock Text="{Binding SelectedValue, ElementName=cboBenhNhan, TargetNullValue=Chưa chọn}"
+                                    <TextBlock Text="{Binding SelectedItem.HoTenBN, ElementName=cboBenhNhan, TargetNullValue=Chưa chọn}"
                                                Style="{StaticResource LKValue}"/>
                                     <TextBlock Text="Bác sĩ" Style="{StaticResource LKLabel}"/>
-                                    <TextBlock Text="{Binding SelectedValue, ElementName=cboBacSi, TargetNullValue=Chưa chọn}"
+                                    <TextBlock Text="{Binding SelectedItem.HoTen, ElementName=cboBacSi, TargetNullValue=Chưa chọn}"
                                                Style="{StaticResource LKValue}"/>
                                     <TextBlock Text="Phòng khám" Style="{StaticResource LKLabel}"/>
-                                    <TextBlock Text="{Binding SelectedValue, ElementName=cboPhong, TargetNullValue=Chưa chọn}"
+                                    <TextBlock Text="{Binding SelectedItem.TenPhong, ElementName=cboPhong, TargetNullValue=Chưa chọn}"
                                                Style="{StaticResource LKValue}"/>
                                     <TextBlock Text="Ca khám" Style="{StaticResource LKLabel}"/>
                                     <TextBlock Text="{Binding SelectedItem.TenCa, ElementName=cboCa, TargetNullValue=Chưa chọn}"

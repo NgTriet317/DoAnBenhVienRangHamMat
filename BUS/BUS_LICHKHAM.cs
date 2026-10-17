@@ -44,6 +44,16 @@ namespace BUS
             return XuLyLoi.ThucHien(() => dalLichKham.layLichKhamTheoMa(ma));
         }
 
+        public IEnumerable<ET_LICHKHAM_HIENTHI> layLichKhamHienThi()
+        {
+            return XuLyLoi.ThucHien(() => dalLichKham.layLichKhamHienThi());
+        }
+
+        public ET_LICHKHAM_HIENTHI? layLichKhamHienThiTheoMa(string ma)
+        {
+            return XuLyLoi.ThucHien(() => dalLichKham.layLichKhamHienThiTheoMa(ma));
+        }
+
         /// <summary>
         /// Thêm lịch khám từ duLieu qua DAL_LICHKHAM.themLichKham; DAL cấp mã mới vào ET, chuẩn hóa/kiểm tra dữ liệu rồi INSERT
         /// trong giao dịch. Trả true khi hoàn tất; lỗi được phát lên thay vì trả false. Kiểm tra dữ liệu bắt buộc tại BUS trước
@@ -81,6 +91,11 @@ namespace BUS
         {
             return XuLyLoi.ThucHien(() => dalLichKham.xoaLichKham(ma, banGoc));
         }
+        public int dongBoLichKhamVaoCaLam()
+        {
+            return dalLichKham.dongBoLichKhamVaoCaLam();
+        }
+
         /// <summary>
         /// Yêu cầu mã bệnh nhân, bác sĩ, phòng và ca khám. Sai điều kiện sẽ ném InvalidOperationException ngay, ngăn thao tác
         /// thêm/sửa gọi DAL; không ghi dữ liệu.

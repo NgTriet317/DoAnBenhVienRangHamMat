@@ -43,6 +43,35 @@ namespace DAL
             });
         }
 
+        // Truy vấn riêng để hiển thị tên; các mã gốc vẫn dùng khi lưu.
+        private const string sqlHienThi = @"SELECT l.*,
+            ISNULL(bn.HoTenBN,N'Chưa có thông tin') TenBenhNhan,
+            ISNULL(nv.HoTen,N'Chưa có thông tin') TenBacSi,
+            ISNULL(p.TenPhong,N'Chưa phân phòng') TenPhong,
+            ISNULL(dv.TenDV,N'Chưa chọn dịch vụ') TenDichVu,
+            COALESCE(NULLIF(LTRIM(RTRIM(ca.GhiChu)),N''),
+                CONVERT(nvarchar(5),ca.GioBatDau,108)+N' – '+CONVERT(nvarchar(5),ca.GioKetThuc,108)) TenCa
+            FROM dbo.LICH_KHAM l
+            LEFT JOIN dbo.BENH_NHAN bn ON bn.MaBN=l.MaBN
+            LEFT JOIN dbo.NHAN_VIEN nv ON nv.MaNV=l.MaBS
+            LEFT JOIN dbo.PHONG p ON p.MaPhong=l.MaPhong
+            LEFT JOIN dbo.DICH_VU dv ON dv.MaDV=l.MaDV
+            LEFT JOIN dbo.CA_LAM ca ON ca.MaCa=l.MaCa";
+
+        public IEnumerable<ET_LICHKHAM_HIENTHI> layLichKhamHienThi()
+        {
+            return ThucHien((connection, transaction) =>
+                connection.Query<ET_LICHKHAM_HIENTHI>(sqlHienThi + " ORDER BY l.NgayGioKham,l.MaLich",
+                    transaction: transaction).ToArray());
+        }
+
+        public ET_LICHKHAM_HIENTHI? layLichKhamHienThiTheoMa(string ma)
+        {
+            return ThucHien((connection, transaction) =>
+                connection.QuerySingleOrDefault<ET_LICHKHAM_HIENTHI>(
+                    sqlHienThi + " WHERE l.MaLich=@Ma", new { Ma=ma },transaction));
+        }
+
         /// <summary>
         /// Thêm lịch khám: cấp mã có khóa ngay vào duLieu, kiểm tra nghiệp vụ, chuẩn hóa và kiểm tra ET theo metadata SQL rồi INSERT có tham số vào dbo.LICH_KHAM trong cùng giao dịch.
         /// </summary>
@@ -52,9 +81,11 @@ namespace DAL
         {
             return ThucHien((connection, transaction) =>
             {
+                KhoaPhanCong(connection, transaction);
                 duLieu.MaLich = TaoMa(connection, transaction, "LICH_KHAM", "MaLich");
                 KiemTraNghiepVu(duLieu, null);
                 KiemTra<ET_LICHKHAM>(connection, transaction, "LICH_KHAM", duLieu, null, null);
+                KiemTraNghiVaDongBoCa(connection, transaction, duLieu);
                 connection.Execute("""
                     INSERT INTO dbo.[LICH_KHAM] ([MaLich],[MaBN],[MaBS],
                         [MaCa],[MaPhong],[MaDV],
@@ -83,6 +114,7 @@ namespace DAL
         {
             return ThucHien((connection, transaction) =>
             {
+                KhoaPhanCong(connection, transaction);
                 var hienTai = connection.QuerySingleOrDefault<ET_LICHKHAM>("SELECT * FROM dbo.[LICH_KHAM] WITH(UPDLOCK,HOLDLOCK) WHERE [MaLich]=@Ma", new { Ma = duLieu.MaLich }, transaction);
                 if (hienTai is null)
                 {
@@ -95,6 +127,7 @@ namespace DAL
                 {
                     KiemTraChiDoiTrangThai(duLieu, hienTai);
                 }
+                KiemTraNghiVaDongBoCa(connection, transaction, duLieu);
 
                 connection.Execute("""
                     UPDATE dbo.[LICH_KHAM]
@@ -130,6 +163,121 @@ namespace DAL
                 connection.Execute("DELETE FROM dbo.[LICH_KHAM] WHERE [MaLich]=@Ma", new { Ma = ma }, transaction);
                 return true;
             });
+        }
+
+
+        // Dùng chung khóa nghiệp vụ với duyệt nghỉ và phân người thay thế.
+        private void KhoaPhanCong(IDbConnection connection, IDbTransaction? transaction)
+        {
+            int ketQua = connection.ExecuteScalar<int>(@"DECLARE @k int;
+                EXEC @k=sys.sp_getapplock @Resource=N'RHM:PhanCong',@LockMode='Exclusive',
+                    @LockOwner='Transaction',@LockTimeout=10000; SELECT @k",transaction:transaction);
+            if (ketQua<0) throw new InvalidOperationException("Lịch đang được thay đổi bởi người khác. Vui lòng thử lại.");
+        }
+
+        private void KiemTraNghiVaDongBoCa(IDbConnection connection, IDbTransaction? transaction, ET_LICHKHAM lich)
+        {
+            // Lịch đã hủy/hoàn thành không tự tạo ca làm mới.
+            if (lich.TrangThai=="Hủy" || lich.TrangThai=="Đã hủy" || lich.TrangThai=="Đã đổi" ||
+                lich.TrangThai=="Hoàn thành" || lich.TrangThai=="Đã khám") return;
+
+            int nhanVien = connection.ExecuteScalar<int>(
+                "SELECT COUNT(*) FROM dbo.NHAN_VIEN WHERE MaNV=@MaNV AND TrangThai=N'Đang làm việc'",
+                new { MaNV=lich.MaBS },transaction);
+            if (nhanVien==0) throw new InvalidOperationException("Bác sĩ không còn ở trạng thái đang làm việc.");
+            int nghi = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.DON_XIN_NGHI WITH(UPDLOCK,HOLDLOCK)
+                WHERE MaNV=@MaNV AND TrangThaiDuyet=N'Đã duyệt' AND TuNgay<=@Ngay
+                  AND (DenNgay>=@Ngay OR GhiChu LIKE N'%Loại đơn: Nghỉ việc%')",
+                new { MaNV=lich.MaBS,Ngay=lich.NgayGioKham.Date },transaction);
+            if (nghi>0) throw new InvalidOperationException("Bác sĩ đã được duyệt nghỉ trong ngày này, không thể phân lịch khám.");
+
+            ET_CALAM? ca = connection.QuerySingleOrDefault<ET_CALAM>(
+                "SELECT * FROM dbo.CA_LAM WHERE MaCa=@MaCa", new { lich.MaCa },transaction);
+            if (ca==null) throw new InvalidOperationException("Ca khám không tồn tại.");
+            TimeSpan batDau = lich.NgayGioKham.TimeOfDay;
+            TimeSpan ketThuc = batDau.Add(TimeSpan.FromMinutes(lich.ThoiLuongDuKien));
+            if (batDau<ca.GioBatDau || ketThuc>ca.GioKetThuc)
+                throw new InvalidOperationException("Giờ khám nằm ngoài thời gian của ca làm.");
+
+            // Luôn kiểm tra xung đột ở DAL, không chỉ kiểm tra trong giao diện.
+            int trung = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.LICH_KHAM WITH(UPDLOCK,HOLDLOCK)
+                WHERE MaLich<>@MaLich AND TrangThai NOT IN (N'Hủy',N'Đã hủy',N'Đã đổi',N'Hoàn thành',N'Đã khám')
+                  AND NgayGioKham<DATEADD(minute,@ThoiLuong,@Ngay)
+                  AND DATEADD(minute,ThoiLuongDuKien,NgayGioKham)>@Ngay
+                  AND (MaBS=@MaBS OR MaPhong=@MaPhong OR MaBN=@MaBN)",
+                new { lich.MaLich,Ngay=lich.NgayGioKham,ThoiLuong=lich.ThoiLuongDuKien,
+                    lich.MaBS,lich.MaPhong,lich.MaBN },transaction);
+            if (trung>0) throw new InvalidOperationException("Bác sĩ, bệnh nhân hoặc phòng có lịch khám trùng giờ.");
+
+            // Khi phân lịch khám trong tương lai, đồng bộ nhân viên vào Ca làm.
+            if (lich.NgayGioKham.Date<DateTime.Today) return;
+            var cacCa = connection.Query<ET_LICHLAMVIEC>(@"SELECT * FROM dbo.LICH_LAM_VIEC WITH(UPDLOCK,HOLDLOCK)
+                WHERE MaNV=@MaNV AND NgayLam=@Ngay AND MaCa=@MaCa
+                  AND TrangThai NOT IN (N'Từ chối',N'Hủy',N'Nghỉ phép',N'Nghỉ việc')",
+                new { MaNV=lich.MaBS,Ngay=lich.NgayGioKham.Date,lich.MaCa },transaction).ToList();
+            bool daCoCa = false;
+            foreach (ET_LICHLAMVIEC llv in cacCa)
+            {
+                if (llv.TrangThai!="Đã xác nhận")
+                    throw new InvalidOperationException("Bác sĩ có ca đang chờ xác nhận/thay thế. Quản lý cần xử lý trong Ca làm trước.");
+                if (llv.MaPhong!=lich.MaPhong)
+                    throw new InvalidOperationException("Bác sĩ đã được phân ca ở phòng khác. Hãy chọn đúng phòng hoặc điều chỉnh Ca làm.");
+                daCoCa = true;
+            }
+            if (daCoCa) return;
+            // Bác sĩ không được có hai ca khác nhau trùng khung giờ.
+            int trungCa = connection.ExecuteScalar<int>(@"SELECT COUNT(*)
+                FROM dbo.LICH_LAM_VIEC l WITH(UPDLOCK,HOLDLOCK)
+                JOIN dbo.CA_LAM caKhac ON caKhac.MaCa=l.MaCa
+                WHERE l.MaNV=@MaNV AND l.NgayLam=@Ngay
+                  AND l.TrangThai IN (N'Đã xác nhận',N'Chờ xác nhận',N'Dự kiến thay thế')
+                  AND caKhac.GioBatDau<@GioKetThuc AND @GioBatDau<caKhac.GioKetThuc",
+                new { MaNV=lich.MaBS,Ngay=lich.NgayGioKham.Date,
+                    GioBatDau=ca.GioBatDau,GioKetThuc=ca.GioKetThuc },transaction);
+            if (trungCa>0) throw new InvalidOperationException("Bác sĩ có một ca làm khác trùng giờ.");
+            connection.Execute(@"IF NOT EXISTS (SELECT 1 FROM dbo.CA_THEO_NGAY WITH(UPDLOCK,HOLDLOCK)
+                    WHERE NgayLam=@Ngay AND MaCa=@MaCa)
+                INSERT INTO dbo.CA_THEO_NGAY (NgayLam,MaCa) VALUES (@Ngay,@MaCa)",
+                new { Ngay=lich.NgayGioKham.Date,lich.MaCa },transaction);
+            string maLLV = TaoMa(connection,transaction,"LICH_LAM_VIEC","MaLLV");
+            connection.Execute(@"INSERT INTO dbo.LICH_LAM_VIEC
+                (MaLLV,MaNV,MaCa,NgayLam,MaPhong,TrangThai,TrangThaiHienDien,GioVao,GioRa,GhiChu)
+                VALUES (@MaLLV,@MaNV,@MaCa,@Ngay,@MaPhong,N'Đã xác nhận',N'Chưa vào ca',NULL,NULL,
+                    N'Tạo tự động từ phân công lịch khám')",
+                new { MaLLV=maLLV,MaNV=lich.MaBS,lich.MaCa,Ngay=lich.NgayGioKham.Date,lich.MaPhong },transaction);
+        }
+
+        // Đồng bộ dữ liệu lịch khám cũ trước khi xử lý các đơn nghỉ đã có lịch.
+        public int dongBoLichKhamVaoCaLam()
+        {
+            using var connection = MoKetNoi();
+            using var transaction = connection.BeginTransaction(IsolationLevel.Serializable);
+            try
+            {
+                KhoaPhanCong(connection,transaction);
+                var lich = connection.Query<ET_LICHKHAM>(@"SELECT * FROM dbo.LICH_KHAM
+                    WHERE CONVERT(date,NgayGioKham)>=CONVERT(date,GETDATE())
+                    AND TrangThai NOT IN (N'Hủy',N'Đã hủy',N'Đã đổi',N'Hoàn thành',N'Đã khám')
+                    ORDER BY NgayGioKham",transaction:transaction).ToList();
+                int dem = 0;
+                foreach (ET_LICHKHAM item in lich)
+                {
+                    int daCo = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.LICH_LAM_VIEC
+                        WHERE MaNV=@MaNV AND MaCa=@MaCa AND NgayLam=@Ngay AND TrangThai=N'Đã xác nhận'
+                          AND MaPhong=@MaPhong",
+                        new { MaNV=item.MaBS,item.MaCa,Ngay=item.NgayGioKham.Date,item.MaPhong },transaction);
+                    if (daCo>0) continue;
+                    KiemTraNghiVaDongBoCa(connection,transaction,item);
+                    dem++;
+                }
+                transaction.Commit();
+                return dem;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
         /// <summary>

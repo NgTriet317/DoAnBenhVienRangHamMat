@@ -13,7 +13,7 @@ namespace RangHamMat.Views
     public partial class LichKham : UserControl, IPatientScoped
     {
         BUS_LICHKHAM lichkham = new BUS_LICHKHAM();
-        List<ET_LICHKHAM> danhSach = new List<ET_LICHKHAM>();
+        List<ET_LICHKHAM_HIENTHI> danhSach = new List<ET_LICHKHAM_HIENTHI>();
         public string? PatientId { get; private set; }
 
         public void SetPatient(string? maBenhNhan)
@@ -44,7 +44,7 @@ namespace RangHamMat.Views
         {
             try
             {
-                danhSach = lichkham.layToanBoLichKham().ToList();
+                danhSach = lichkham.layLichKhamHienThi().ToList();
                 ApDungBoLoc();
             }
             catch (Exception ex)
@@ -83,8 +83,8 @@ namespace RangHamMat.Views
                 maPhong = cboPhong.SelectedValue.ToString();
 
             //thực thi lọc ds theo những lựa chọn trên
-            List<ET_LICHKHAM> ketQua = new List<ET_LICHKHAM>();
-            foreach (ET_LICHKHAM lich in danhSach)
+            List<ET_LICHKHAM_HIENTHI> ketQua = new List<ET_LICHKHAM_HIENTHI>();
+            foreach (ET_LICHKHAM_HIENTHI lich in danhSach)
             {
                 if (!string.IsNullOrEmpty(PatientId) && lich.MaBN != PatientId) continue;
 
@@ -118,7 +118,7 @@ namespace RangHamMat.Views
                 int daXacNhan = 0;
                 int choXuLy = 0;
                 int daHuy = 0;
-                foreach (ET_LICHKHAM lich in ketQua)
+                foreach (ET_LICHKHAM_HIENTHI lich in ketQua)
                 {
                     if (lich.TrangThai == "Đã xác nhận") daXacNhan++;
                     if (lich.TrangThai == "Nháp" || lich.TrangThai == "Chờ xác nhận") choXuLy++;
@@ -180,13 +180,13 @@ namespace RangHamMat.Views
 
             ListBoxItem dong = ItemsControl.ContainerFromElement(lstLichKham, viTriNhan) as ListBoxItem;
             if (dong == null) return;
-            ET_LICHKHAM lichDuocChon = dong.DataContext as ET_LICHKHAM;
+            ET_LICHKHAM_HIENTHI lichDuocChon = dong.DataContext as ET_LICHKHAM_HIENTHI;
             if (lichDuocChon == null) return;
 
             // Lấy bản mới nhất trước khi xem để tránh dữ liệu cũ.
             try
             {
-                ET_LICHKHAM? lich = lichkham.layLichKhamTheoMa(lichDuocChon.MaLich);
+                ET_LICHKHAM_HIENTHI? lich = lichkham.layLichKhamHienThiTheoMa(lichDuocChon.MaLich);
                 if (lich == null) return;
                 ChiTietLichKham chiTiet = new ChiTietLichKham(lich);
                 Window cuaSoCha = Window.GetWindow(this);

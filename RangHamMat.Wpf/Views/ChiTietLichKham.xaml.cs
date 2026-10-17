@@ -12,7 +12,13 @@ namespace RangHamMat.Views
         {
             InitializeComponent();
             lichHienTai = lich;
-            DataContext = lich;
+            ET_LICHKHAM lichHienThi = lich;
+            if (lich is not ET_LICHKHAM_HIENTHI)
+            {
+                ET_LICHKHAM_HIENTHI? tenHienThi = new BUS.BUS_LICHKHAM().layLichKhamHienThiTheoMa(lich.MaLich);
+                if (tenHienThi != null) lichHienThi = tenHienThi;
+            }
+            DataContext = lichHienThi;
 
             if (lich.TrangThai is not ("Nháp" or "Chờ xác nhận" or "Chưa xác nhận"))
             {

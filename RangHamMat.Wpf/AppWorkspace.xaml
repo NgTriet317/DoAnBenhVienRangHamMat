@@ -31,8 +31,10 @@
         <TextBlock x:Name="AppTitle" Grid.Column="1" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
         <WrapPanel Grid.Column="2">
           <!-- Thao tác Tải lại dữ liệu: gọi Reload_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
-          <Button Content="Tải lại dữ liệu" Click="Reload_Click" ToolTip="Đọc lại dữ liệu từ SQL Server"/>
-          <TextBlock x:Name="RoleLabel" Grid.Column="2" Foreground="{StaticResource Muted}" VerticalAlignment="Center" FontSize="12" Margin="20,0,0,0"/>
+          <Button x:Name="btnTaiLaiDuLieu" Content="Tải lại dữ liệu" Click="Reload_Click" ToolTip="Đọc lại dữ liệu từ SQL Server"/>
+          <TextBlock x:Name="RoleLabel" Grid.Column="2" Foreground="{StaticResource Muted}" VerticalAlignment="Center" FontSize="12" Margin="20,0,16,0"/>
+          <Button x:Name="btnXinNghiViec" Content="Xin nghỉ việc" Style="{StaticResource Primary}" Click="XinNghiViec_Click"
+                  AutomationProperties.Name="Mở đơn xin nghỉ phép hoặc nghỉ việc" Margin="0,0,0,0"/>
         </WrapPanel>
       </Grid>
     </Border>

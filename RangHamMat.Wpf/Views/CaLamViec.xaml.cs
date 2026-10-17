@@ -20,6 +20,7 @@ public partial class CaLamViec : UserControl
     private BUS_CA_THEO_NGAY busCaiDatCa = new();
     private BUS_PHONG busPhong = new();
     private List<ET_PHONG> danhSachPhong = new();
+    private List<ET_NHANVIEN> danhSachNhanVien = new();
 
     private List<ET_CALAM> danhSachCa = new();
     private List<ET_LICHLAMVIEC> danhSachLich = new();
@@ -54,6 +55,9 @@ public partial class CaLamViec : UserControl
         btnCreate.Visibility = IsManager ? Visibility.Visible : Visibility.Collapsed;
         btnMyRequests.Visibility = IsEmployee ? Visibility.Visible : Visibility.Collapsed;
         btnExport.Visibility = IsManager ? Visibility.Visible : Visibility.Collapsed;
+        btnDongBoLichKham.Visibility = IsManager ? Visibility.Visible : Visibility.Collapsed;
+        btnThongBaoDonXinNghi.Visibility = IsManager ? Visibility.Visible : Visibility.Collapsed;
+        if (IsManager) HangTieuDeCa.Height = new GridLength(168);
 
 
         EmployeePicker.Visibility = Visibility.Collapsed;
@@ -63,6 +67,59 @@ public partial class CaLamViec : UserControl
 
         daKhoiTao = true;
         LoadDuLieu();
+        if (IsManager) CapNhatThongBaoDonXinNghi();
+    }
+
+    // Hộp thông báo chỉ xuất hiện với tài khoản quản lý.
+    private void CapNhatThongBaoDonXinNghi()
+    {
+        if (!IsManager) return;
+        try
+        {
+            BUS_DON_XIN_NGHI bus = new BUS_DON_XIN_NGHI();
+            int soDon = bus.demDonChoDuyet();
+            txtThongBaoDonXinNghi.Text = soDon + " đơn đang chờ quản lý xét duyệt · Nhấn để xem đơn và lịch sử";
+        }
+        catch (Exception ex)
+        {
+            txtThongBaoDonXinNghi.Text = "Không tải được số đơn mới · Nhấn để thử mở danh sách";
+            btnThongBaoDonXinNghi.ToolTip = ex.Message;
+        }
+    }
+
+    private void btnThongBaoDonXinNghi_Click(object sender, RoutedEventArgs e)
+    {
+        if (!IsManager) return;
+        DonXinNghiQuanLy view = new DonXinNghiQuanLy();
+        view.QuayLai += DonXinNghi_QuayLai;
+        NoiDungDonXinNghi.Content = view;
+        DonXinNghiOverlay.Visibility = Visibility.Visible;
+    }
+
+    private void DonXinNghi_QuayLai(object? sender, EventArgs e)
+    {
+        DonXinNghiOverlay.Visibility = Visibility.Collapsed;
+        NoiDungDonXinNghi.Content = null;
+        CapNhatThongBaoDonXinNghi();
+        LoadDuLieu();
+    }
+
+    private void btnDongBoLichKham_Click(object sender, RoutedEventArgs e)
+    {
+        if (!IsManager) return;
+        if (MessageBox.Show("Bổ sung các lịch khám tương lai còn thiếu phân công Ca làm?",
+            "Đồng bộ lịch khám", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        try
+        {
+            BUS_LICHKHAM bus = new BUS_LICHKHAM();
+            int soCa = bus.dongBoLichKhamVaoCaLam();
+            LoadDuLieu();
+            MessageBox.Show("Đã thêm " + soCa + " lịch làm việc từ các lịch khám chưa đồng bộ.");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Không thể đồng bộ: " + ex.Message + ". Hãy kiểm tra các ca/phòng chưa khớp.");
+        }
     }
 
     //Hàm lấy ngày đầu tuần bằng cách đưa vào ngày hiện tại
@@ -79,6 +136,14 @@ public partial class CaLamViec : UserControl
         try
         {
             danhSachCa = busCaLam.layToanBoCaLam().ToList();
+            try
+            {
+                danhSachNhanVien = new BUS_NHANVIEN().layToanBoNhanVien().ToList();
+            }
+            catch
+            {
+                danhSachNhanVien = new();
+            }
             danhSachLich = busLichLamViec.layLichTheoTuan(dauTuan);
             danhSachCaiDat = busCaiDatCa.layCaTheoTuan(dauTuan);
             try
@@ -150,7 +215,8 @@ public partial class CaLamViec : UserControl
         {
             MaCa = ca.MaCa,
             Date = ngay,
-            Name = string.IsNullOrWhiteSpace(ca.GhiChu) ? "Ca " + ca.MaCa : ca.GhiChu,
+            Name = string.IsNullOrWhiteSpace(ca.GhiChu)
+                ? ca.GioBatDau.ToString(@"hh\:mm") + " – " + ca.GioKetThuc.ToString(@"hh\:mm") : ca.GhiChu,
             TimeRange = ca.GioBatDau.ToString(@"hh\:mm") + " - " + ca.GioKetThuc.ToString(@"hh\:mm"),
             Type = "Mẫu ca",
             Note = ca.GhiChu ?? "",
@@ -166,11 +232,13 @@ public partial class CaLamViec : UserControl
 
             //tạo thông tin hiển thị nhân viên (để lấy tt từ lịch và hiện lên giao diện)
             ET_PHONG? phong = danhSachPhong.FirstOrDefault(x => x.MaPhong == lich.MaPhong);
-            string tenPhong = phong == null ? lich.MaPhong ?? "" : phong.TenPhong;
+            string tenPhong = phong == null ? "Chưa phân phòng" : phong.TenPhong;
+            ET_NHANVIEN? nhanVien = danhSachNhanVien.FirstOrDefault(x => x.MaNV == lich.MaNV);
+            string hoTen = nhanVien == null ? "Chưa có thông tin nhân viên" : nhanVien.HoTen;
 
             NhanVienCa nv = new()
             {
-                Name = lich.MaNV,
+                Name = hoTen,
                 Code = lich.MaNV,
                 Department = string.IsNullOrWhiteSpace(tenPhong) ? "Chưa phân phòng" : "Phòng: " + tenPhong
             };
@@ -559,7 +627,7 @@ public partial class CaLamViec : UserControl
             if (daCaiDat) continue;
 
             danhSachCaChon.Add(ca);
-            string ten = string.IsNullOrWhiteSpace(ca.GhiChu) ? "Ca " + ca.MaCa : ca.GhiChu;
+            string ten = string.IsNullOrWhiteSpace(ca.GhiChu) ? ca.GioBatDau.ToString(@"hh\:mm") + " – " + ca.GioKetThuc.ToString(@"hh\:mm") : ca.GhiChu;
             tenCa.Add(ten + " (" + ca.GioBatDau.ToString(@"hh\:mm") + " - " + ca.GioKetThuc.ToString(@"hh\:mm") + ")");
         }
 

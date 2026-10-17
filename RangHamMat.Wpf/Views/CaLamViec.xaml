@@ -225,9 +225,9 @@
                 
 
         <!-- Main content -->
-        <Grid Grid.Row="1" Margin="40,30,40,16">
+        <Grid x:Name="MainCaContent" Grid.Row="1" Margin="40,20,40,16">
             <Grid.RowDefinitions>
-                <RowDefinition Height="104"/>
+                <RowDefinition x:Name="HangTieuDeCa" Height="104"/>
                 <RowDefinition Height="68"/>
                 <RowDefinition Height="78"/>
                 <RowDefinition Height="62"/>
@@ -249,11 +249,31 @@
                     <Button x:Name="btnMyRequests" Style="{StaticResource PrimaryButton}"
                             Content="✉  Đăng ký của tôi" Click="btnXemDangKy_Click"
                             Margin="0,15,10,0" Visibility="Collapsed"/>
+                    <Button x:Name="btnDongBoLichKham" Style="{StaticResource BaseButton}"
+                            Content="↻  Đồng bộ lịch khám" Click="btnDongBoLichKham_Click"
+                            Margin="0,15,10,0" Visibility="Collapsed"/>
                     <Button x:Name="btnExport" Style="{StaticResource BaseButton}" Content="♧  Xuất lịch"
                             Click="btnXuatLich_Click" Margin="0,15,10,0"/>
                     <Button x:Name="btnCreate" Style="{StaticResource PrimaryButton}" Content="＋  Tạo mẫu ca"
                             Margin="0,15,0,0" Click="btnMoTaoCa_Click"/>
                 </StackPanel>
+                <!-- Quản lý nhận thông báo nghỉ phép / nghỉ việc tại phần đầu màn hình. -->
+                <Button x:Name="btnThongBaoDonXinNghi" Height="64" VerticalAlignment="Top" Margin="0,88,0,0"
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="18,0"
+                        Background="#EAF3FF" BorderBrush="#BED7F4" BorderThickness="1"
+                        Cursor="Hand" Visibility="Collapsed" Click="btnThongBaoDonXinNghi_Click">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="🔔  THÔNG BÁO ĐƠN XIN NGHỈ" Foreground="#22569F"
+                                       FontWeight="Bold" FontSize="13"/>
+                            <TextBlock x:Name="txtThongBaoDonXinNghi" Text="Đang tải đơn chờ duyệt..."
+                                       Foreground="#364C70" FontSize="12" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="Xem danh sách đơn  ›" FontWeight="SemiBold"
+                                   FontSize="13" Foreground="#185BB4" VerticalAlignment="Center"/>
+                    </Grid>
+                </Button>
             </Grid>
 
             <!-- Statistics: 4 tiles in one rectangle -->
@@ -511,8 +531,7 @@
                                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="7,0,0,0">
                                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12"/>
                                                     <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="{Binding Code}" Style="{StaticResource MutedText}" FontSize="10"/>
-                                                        <TextBlock Text=" · " Style="{StaticResource MutedText}"/>
+                                                        
                                                         <TextBlock Text="{Binding Department}" Style="{StaticResource MutedText}" FontSize="10"/>
                                                     </StackPanel>
                                                 </StackPanel>
@@ -829,6 +848,11 @@
                     </StackPanel>
                 </StackPanel>
             </Border>
+        </Grid>
+
+        <!-- View danh sách duyệt/lịch sử đơn nghỉ được mở bên trong Ca làm. -->
+        <Grid x:Name="DonXinNghiOverlay" Grid.RowSpan="2" Panel.ZIndex="100" Background="#F6F8FC" Visibility="Collapsed">
+            <ContentControl x:Name="NoiDungDonXinNghi"/>
         </Grid>
     </Grid>
 </UserControl>

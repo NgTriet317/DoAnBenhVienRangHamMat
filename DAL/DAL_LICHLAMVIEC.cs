@@ -52,6 +52,8 @@ namespace DAL
         {
             return ThucHien((connection, transaction) =>
             {
+                KhoaPhanCong(connection, transaction);
+                KiemTraKhongDangNghi(connection, transaction, duLieu.MaNV, duLieu.NgayLam);
                 duLieu.MaLLV = TaoMa(connection, transaction, "LICH_LAM_VIEC", "MaLLV");
                 KiemTra<ET_LICHLAMVIEC>(connection, transaction, "LICH_LAM_VIEC", duLieu, null, null);
                 connection.Execute("""
@@ -85,6 +87,10 @@ namespace DAL
                     throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
                 }
 
+                KhoaPhanCong(connection, transaction);
+                if (duLieu.TrangThai != "Hủy" && duLieu.TrangThai != "Từ chối" &&
+                    duLieu.TrangThai != "Nghỉ phép" && duLieu.TrangThai != "Nghỉ việc")
+                    KiemTraKhongDangNghi(connection, transaction, duLieu.MaNV, duLieu.NgayLam);
                 KiemTra(connection, transaction, "LICH_LAM_VIEC", duLieu, hienTai, banGoc);
                 if (chiDoiTrangThai)
                 {
@@ -112,6 +118,7 @@ namespace DAL
         {
             return ThucHien((connection, transaction) =>
             {
+                KhoaPhanCong(connection, transaction);
                 var hienTai = connection.QuerySingleOrDefault<ET_LICHLAMVIEC>("SELECT * FROM dbo.[LICH_LAM_VIEC] WITH(UPDLOCK,HOLDLOCK) WHERE [MaLLV]=@Ma", new { Ma = ma }, transaction);
                 if (hienTai is null)
                 {
@@ -123,6 +130,25 @@ namespace DAL
                 return true;
             });
         }
+        private void KhoaPhanCong(IDbConnection connection, IDbTransaction? transaction)
+        {
+            int k = connection.ExecuteScalar<int>(@"DECLARE @r int;
+                EXEC @r=sys.sp_getapplock @Resource=N'RHM:PhanCong',@LockMode='Exclusive',
+                @LockOwner='Transaction',@LockTimeout=10000; SELECT @r",transaction:transaction);
+            if (k<0) throw new InvalidOperationException("Lịch đang được cập nhật. Hãy thử lại.");
+        }
+
+        private void KiemTraKhongDangNghi(IDbConnection connection, IDbTransaction? transaction,
+            string maNV, DateTime ngayLam)
+        {
+            int soDon = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.DON_XIN_NGHI WITH(UPDLOCK,HOLDLOCK)
+                WHERE MaNV=@MaNV AND TrangThaiDuyet=N'Đã duyệt' AND TuNgay<=@Ngay
+                    AND (DenNgay>=@Ngay OR GhiChu LIKE N'%Loại đơn: Nghỉ việc%')",
+                new { MaNV=maNV, Ngay=ngayLam.Date }, transaction);
+            if (soDon>0)
+                throw new InvalidOperationException("Nhân viên đang trong thời gian nghỉ được duyệt, không thể phân công ca làm.");
+        }
+
         // Các hàm phục vụ đăng ký, duyệt ca và phân phòng theo tuần.
         public List<ET_LICHLAMVIEC> layLichTheoTuan(DateTime dauTuan)
         {
@@ -135,6 +161,8 @@ namespace DAL
         {
             return ThucHien((connection, transaction) =>
             {
+                KhoaPhanCong(connection, transaction);
+                KiemTraKhongDangNghi(connection, transaction, lich.MaNV, lich.NgayLam);
                 lich.MaLLV = TaoMa(connection, transaction, "LICH_LAM_VIEC", "MaLLV");
                 return connection.Execute(@"INSERT INTO dbo.LICH_LAM_VIEC
                     (MaLLV, MaNV, MaCa, NgayLam, MaPhong, TrangThai, TrangThaiHienDien, GioVao, GioRa, GhiChu)
@@ -148,12 +176,19 @@ namespace DAL
 
         public bool duyetCa(string maLLV, string maPhong)
         {
-            return ThucHien((connection, transaction) => connection.Execute(@"
+            return ThucHien((connection, transaction) =>
+            {
+                KhoaPhanCong(connection, transaction);
+                return connection.Execute(@"
                 UPDATE lich
                 SET lich.TrangThai=N'Đã xác nhận', lich.MaPhong=@MaPhong
                 FROM dbo.LICH_LAM_VIEC lich
                 JOIN dbo.CA_LAM ca ON ca.MaCa=lich.MaCa
                 WHERE lich.MaLLV=@MaLLV AND lich.TrangThai=N'Chờ xác nhận'
+                AND NOT EXISTS (SELECT 1 FROM dbo.DON_XIN_NGHI don WITH(UPDLOCK,HOLDLOCK)
+                    WHERE don.MaNV=lich.MaNV AND don.TrangThaiDuyet=N'Đã duyệt'
+                      AND don.TuNgay<=lich.NgayLam
+                      AND (don.DenNgay>=lich.NgayLam OR don.GhiChu LIKE N'%Loại đơn: Nghỉ việc%'))
                 AND EXISTS (SELECT 1 FROM dbo.PHONG WHERE MaPhong=@MaPhong AND TrangThai=N'Đang hoạt động')
                 AND NOT EXISTS (
                     SELECT 1 FROM dbo.LICH_LAM_VIEC x WITH(UPDLOCK,HOLDLOCK)
@@ -163,7 +198,8 @@ namespace DAL
                       AND x.MaNV=lich.MaNV
                       AND caKhac.GioBatDau < ca.GioKetThuc
                       AND ca.GioBatDau < caKhac.GioKetThuc
-                )", new { MaLLV=maLLV, MaPhong=maPhong }, transaction) > 0);
+                )", new { MaLLV=maLLV, MaPhong=maPhong }, transaction) > 0;
+            });
         }
 
         public bool tuChoiCa(string maLLV, string lyDo)
