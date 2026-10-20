@@ -1,5 +1,6 @@
 // AI hỗ trợ: bổ sung chú thích tiếng Việt;
 using System.Data;
+using System.Text.RegularExpressions;
 using Dapper;
 using ET;
 
@@ -54,6 +55,7 @@ namespace DAL
             {
                 duLieu.MaNCC = TaoMa(connection, transaction, "NHA_CUNG_CAP", "MaNCC");
                 KiemTra<ET_NHACUNGCAP>(connection, transaction, "NHA_CUNG_CAP", duLieu, null, null);
+                KiemTraNghiepVu(duLieu);
                 connection.Execute("""
                 INSERT INTO dbo.[NHA_CUNG_CAP] ([MaNCC],[TenNCC],[SDT],
                     [Email],[DiaChi],[NguoiLienHe],
@@ -84,6 +86,7 @@ namespace DAL
                 }
 
                 KiemTra(connection, transaction, "NHA_CUNG_CAP", duLieu, hienTai, banGoc);
+                KiemTraNghiepVu(duLieu);
                 if (chiDoiTrangThai)
                 {
                     KiemTraChiDoiTrangThai(duLieu, hienTai);
@@ -116,9 +119,35 @@ namespace DAL
                 }
 
                 KiemTra(connection, transaction, "NHA_CUNG_CAP", hienTai, hienTai, banGoc);
+                // Kiểm tra đủ cả ba bảng liên kết, kể cả dữ liệu chưa được giao diện tải lại.
+                bool daSuDung = connection.ExecuteScalar<bool>("""
+                    SELECT CASE WHEN EXISTS (SELECT 1 FROM dbo.THIET_BI WHERE MaNCC=@Ma)
+                        OR EXISTS (SELECT 1 FROM dbo.LO_HANG_HOA WHERE MaNCC=@Ma)
+                        OR EXISTS (SELECT 1 FROM dbo.HOA_DON_NHAP WHERE MaNCC=@Ma)
+                        THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END
+                    """, new { Ma = ma }, transaction);
+                if (daSuDung)
+                    throw new InvalidOperationException("Nhà cung cấp đã có thiết bị, lô hàng hoặc hóa đơn nhập. Hãy chuyển sang Ngừng hoạt động để giữ lịch sử.");
                 connection.Execute("DELETE FROM dbo.[NHA_CUNG_CAP] WHERE [MaNCC]=@Ma", new { Ma = ma }, transaction);
                 return true;
             });
+        }
+
+        /// <summary>Áp dụng cùng quy tắc cho thêm/sửa từ mọi nơi gọi BUS, sau khi chuẩn hóa theo schema.</summary>
+        private static void KiemTraNghiepVu(ET_NHACUNGCAP duLieu)
+        {
+            if (string.IsNullOrWhiteSpace(duLieu.TenNCC) || string.IsNullOrWhiteSpace(duLieu.NguoiLienHe))
+                throw new InvalidOperationException("Vui lòng nhập tên nhà cung cấp và người liên hệ.");
+            if (!Regex.IsMatch(duLieu.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                throw new InvalidOperationException("Email không đúng định dạng, ví dụ ten@example.com.");
+            if (duLieu.SDT is not null)
+            {
+                int soChuSo = duLieu.SDT.Count(char.IsAsciiDigit);
+                if (!Regex.IsMatch(duLieu.SDT, @"^\+?[0-9 ()\-.]+$") || soChuSo is < 8 or > 15)
+                    throw new InvalidOperationException("Số điện thoại cần 8–15 chữ số; chỉ dùng số, dấu + ở đầu, khoảng trắng, dấu ngoặc, chấm hoặc gạch nối.");
+            }
+            if (duLieu.TrangThai is not "Đang hoạt động" and not "Ngừng hoạt động")
+                throw new InvalidOperationException("Vui lòng chọn Đang hoạt động hoặc Ngừng hoạt động.");
         }
     }
 }

@@ -4,7 +4,8 @@ Dữ liệu mô phỏng sát nghiệp vụ, cập nhật ngày 13/10/2026.
 Tên người, doanh nghiệp, liên hệ, số chứng nhận và bệnh án đều hư cấu;
 không phải hồ sơ thật hay dữ liệu của doanh nghiệp/bệnh viện có thật.
 Giá dịch vụ, thuốc và lương là giá nội bộ minh họa, không phải giá thị trường.
-44 bảng: VAI_TRO=2, HANG_HOA=30, 42 bảng còn lại=10; tổng cộng 452 dòng.
+46 bảng: 44 bảng gốc (VAI_TRO=2, HANG_HOA=30, 42 bảng còn lại=10),
+2 bảng bổ sung (CA_THEO_NGAY=5, XAC_NHAN_DOI_LICH_KHAM=0); tổng 457 dòng.
 Giữ nguyên cấu trúc, mã NVARCHAR(50), khóa ngoại, trigger và view.
 
 TÀI KHOẢN: TK001/admin001/Admin; TK002..TK010/user002..user010/User.
@@ -559,27 +560,6 @@ CREATE TABLE [dbo].[LICH_KHAM] (
     CONSTRAINT [CK_LICH_KHAM_1] CHECK ([ThoiLuongDuKien] > 0)
 );
 
--- Xác nhận riêng từng lịch khám khi nhân viên xin nghỉ
-CREATE TABLE [dbo].[XAC_NHAN_DOI_LICH_KHAM] (
-    [MaDonNghi] NVARCHAR(50) NOT NULL,
-    [MaLich] NVARCHAR(50) NOT NULL,
-    [MaBSCu] NVARCHAR(50) NOT NULL,
-    [MaPhongCu] NVARCHAR(50) NOT NULL,
-    [MaBSMoi] NVARCHAR(50) NOT NULL,
-    [MaPhongMoi] NVARCHAR(50) NOT NULL,
-    [MaLLVThayThe] NVARCHAR(50) NOT NULL,
-    [MaCa] NVARCHAR(50) NOT NULL,
-    [NgayGioKham] DATETIME2(0) NOT NULL,
-    [ThoiLuongDuKien] INT NOT NULL,
-    [MaNVXacNhan] NVARCHAR(50) NOT NULL,
-    [NgayXacNhan] DATETIME2(0) NOT NULL,
-    [TrangThai] NVARCHAR(30) NOT NULL,
-    CONSTRAINT [PK_XAC_NHAN_DOI_LICH_KHAM] PRIMARY KEY ([MaDonNghi],[MaLich]),
-    CONSTRAINT [FK_XNDLK_Don] FOREIGN KEY ([MaDonNghi]) REFERENCES dbo.DON_XIN_NGHI([MaDonNghi]),
-    CONSTRAINT [FK_XNDLK_NhanVien] FOREIGN KEY ([MaNVXacNhan]) REFERENCES dbo.NHAN_VIEN([MaNV]),
-    CONSTRAINT [CK_XNDLK_TrangThai] CHECK ([TrangThai] IN (N'Đã xác nhận',N'Đã hủy'))
-);
-
 -- 39. HOA_DON
 CREATE TABLE [dbo].[HOA_DON] (
     [MaHD] NVARCHAR(50) NOT NULL CONSTRAINT [PK_HOA_DON] PRIMARY KEY,
@@ -683,24 +663,37 @@ CREATE TABLE [dbo].[NHAT_KY_THAO_TAC] (
     [DuLieuSau] NVARCHAR(MAX) NULL
 );
 
--- Chạy một lần trên database hiện có.
--- MaCa cần cùng kiểu dữ liệu với CA_LAM.MaCa (điều chỉnh NVARCHAR(30) nếu cần).
-CREATE TABLE CA_THEO_NGAY
-(
-    NgayLam DATE NOT NULL,
-    MaCa NVARCHAR(30) NOT NULL,
-    CONSTRAINT PK_CA_THEO_NGAY PRIMARY KEY (NgayLam, MaCa)
+
+-- Bảng bổ sung: lưu xác nhận từng lịch khám khi xử lý đơn xin nghỉ.
+-- Nằm trong cùng giao dịch khởi tạo, không tách batch bằng GO.
+CREATE TABLE [dbo].[XAC_NHAN_DOI_LICH_KHAM] (
+    [MaDonNghi] NVARCHAR(50) NOT NULL,
+    [MaLich] NVARCHAR(50) NOT NULL,
+    [MaBSCu] NVARCHAR(50) NOT NULL,
+    [MaPhongCu] NVARCHAR(50) NOT NULL,
+    [MaBSMoi] NVARCHAR(50) NOT NULL,
+    [MaPhongMoi] NVARCHAR(50) NOT NULL,
+    [MaLLVThayThe] NVARCHAR(50) NOT NULL,
+    [MaCa] NVARCHAR(50) NOT NULL,
+    [NgayGioKham] DATETIME2(0) NOT NULL,
+    [ThoiLuongDuKien] INT NOT NULL,
+    [MaNVXacNhan] NVARCHAR(50) NOT NULL,
+    [NgayXacNhan] DATETIME2(0) NOT NULL,
+    [TrangThai] NVARCHAR(30) NOT NULL,
+    CONSTRAINT [PK_XAC_NHAN_DOI_LICH_KHAM] PRIMARY KEY ([MaDonNghi],[MaLich]),
+    CONSTRAINT [FK_XNDLK_Don] FOREIGN KEY ([MaDonNghi]) REFERENCES dbo.DON_XIN_NGHI([MaDonNghi]),
+    CONSTRAINT [FK_XNDLK_NhanVien] FOREIGN KEY ([MaNVXacNhan]) REFERENCES dbo.NHAN_VIEN([MaNV]),
+    CONSTRAINT [CK_XNDLK_TrangThai] CHECK ([TrangThai] IN (N'Đã xác nhận',N'Đã hủy'))
+    );
+
+-- Bảng bổ sung: danh sách ca được mở theo từng ngày.
+-- Mã ca phải đồng kiểu NVARCHAR(50) với bảng CA_LAM.
+CREATE TABLE [dbo].[CA_THEO_NGAY] (
+    [NgayLam] DATE NOT NULL,
+    [MaCa] NVARCHAR(50) NOT NULL,
+    CONSTRAINT [PK_CA_THEO_NGAY] PRIMARY KEY ([NgayLam], [MaCa]),
+    CONSTRAINT [FK_CA_THEO_NGAY_CA_LAM] FOREIGN KEY ([MaCa]) REFERENCES [dbo].[CA_LAM]([MaCa])
 );
-
--- Nếu CA_LAM.MaCa cũng là NVARCHAR tương thích, có thể bật khóa ngoại:
--- ALTER TABLE CA_THEO_NGAY ADD CONSTRAINT FK_CA_THEO_NGAY_CA_LAM
---     FOREIGN KEY (MaCa) REFERENCES CA_LAM(MaCa);
-
--- Đưa các ca đã có lịch nhân viên vào danh sách được mở để giữ dữ liệu cũ.
-INSERT INTO CA_THEO_NGAY (NgayLam, MaCa)
-SELECT DISTINCT CAST(l.NgayLam AS DATE), l.MaCa
-FROM LICH_LAM_VIEC l
-INNER JOIN CA_LAM c ON c.MaCa = l.MaCa;
 
 ALTER TABLE [dbo].[HO_SO_BENH_AN] WITH CHECK ADD CONSTRAINT [FK_HO_SO_BENH_AN_MaBN] FOREIGN KEY ([MaBN]) REFERENCES [dbo].[BENH_NHAN] ([MaBN]);
 ALTER TABLE [dbo].[PHIEU_KHAM_BENH] WITH CHECK ADD CONSTRAINT [FK_PHIEU_KHAM_BENH_MaHS] FOREIGN KEY ([MaHS]) REFERENCES [dbo].[HO_SO_BENH_AN] ([MaHS]);
@@ -1436,6 +1429,13 @@ VALUES
     (N'LLV009', N'NV003', N'CA001', N'2026-10-04', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-04T08:00:00', N'2026-10-04T12:00:00', N'Bác sĩ Lê Thu Hà thay ca tại phòng khám 101; đã đối chiếu giờ vào/ra.'),
     (N'LLV010', N'NV003', N'CA001', N'2026-10-05', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-05T08:00:00', N'2026-10-05T12:00:00', N'Bác sĩ Lê Thu Hà thay ca tại phòng khám 101; đã đối chiếu giờ vào/ra.');
 
+-- CA_THEO_NGAY: 5 ca theo ngày khác nhau trong 10 lịch làm việc mẫu.
+-- Nạp sau LICH_LAM_VIEC để không tạo bảng trống vì chạy quá sớm.
+INSERT INTO [dbo].[CA_THEO_NGAY] ([NgayLam], [MaCa])
+SELECT DISTINCT l.NgayLam, l.MaCa
+FROM [dbo].[LICH_LAM_VIEC] AS l
+INNER JOIN [dbo].[CA_LAM] AS c ON c.MaCa = l.MaCa;
+
 -- DON_XIN_NGHI: 10 dòng
 INSERT INTO [dbo].[DON_XIN_NGHI] ([MaDonNghi], [MaNV], [TuNgay], [DenNgay], [LyDo], [NgayGui], [TrangThaiDuyet], [MaNVDuyet], [NgayDuyet], [GhiChu])
 VALUES
@@ -1771,17 +1771,17 @@ OPEN CountTables;
 FETCH NEXT FROM CountTables INTO @Table;
 WHILE @@FETCH_STATUS=0
 BEGIN
- SET @Expected=CASE WHEN @Table=N'VAI_TRO' THEN 2 WHEN @Table=N'HANG_HOA' THEN 30 ELSE 10 END;
+ SET @Expected=CASE WHEN @Table=N'VAI_TRO' THEN 2 WHEN @Table=N'HANG_HOA' THEN 30 WHEN @Table=N'CA_THEO_NGAY' THEN 5 WHEN @Table=N'XAC_NHAN_DOI_LICH_KHAM' THEN 0 ELSE 10 END;
  SET @Query=N'SELECT @n=COUNT_BIG(*) FROM dbo.'+QUOTENAME(@Table);
  EXEC sys.sp_executesql @Query,N'@n BIGINT OUTPUT',@n=@Actual OUTPUT;
- IF @Actual<>@Expected THROW 51101,N'Số dòng không đúng: VAI_TRO=2, HANG_HOA=30, các bảng còn lại=10.',1;
+ IF @Actual<>@Expected THROW 51101,N'Số dòng dữ liệu mẫu không đúng: 44 bảng gốc 452 dòng, CA_THEO_NGAY 5, XAC_NHAN_DOI_LICH_KHAM 0.',1;
  SET @Total+=@Actual;
  FETCH NEXT FROM CountTables INTO @Table;
 END;
 CLOSE CountTables;
 DEALLOCATE CountTables;
-IF @Total<>452 OR (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0)<>44
- THROW 51102,N'Phải có 44 bảng và 452 dòng.',1;
+IF @Total<>457 OR (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0)<>46
+ THROW 51102,N'Phải có 46 bảng và 457 dòng dữ liệu mẫu.',1;
 IF EXISTS(SELECT 1 FROM dbo.HOA_DON h WHERE h.TongTien<>COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0))
  THROW 51103,N'Tổng hóa đơn lệch chi tiết.',1;
 IF EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
@@ -1937,10 +1937,14 @@ SELECT N''CHINH_SACH_LUONG'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHINH_S
 UNION ALL
 SELECT N''BANG_LUONG'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[BANG_LUONG]
 UNION ALL
-SELECT N''NHAT_KY_THAO_TAC'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[NHAT_KY_THAO_TAC];';
+SELECT N''NHAT_KY_THAO_TAC'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[NHAT_KY_THAO_TAC]
+UNION ALL
+SELECT N''CA_THEO_NGAY'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CA_THEO_NGAY]
+UNION ALL
+SELECT N''XAC_NHAN_DOI_LICH_KHAM'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[XAC_NHAN_DOI_LICH_KHAM];';
 
 COMMIT TRANSACTION;
-PRINT N'Hoàn tất: 44 bảng, 452 dòng; VAI_TRO=2, HANG_HOA=30, các bảng còn lại=10.';
+PRINT N'Hoàn tất: 46 bảng, 457 dòng; 44 bảng gốc giữ nguyên dữ liệu, 2 bảng bổ sung đã được tạo.';
 END TRY
 BEGIN CATCH
  IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
@@ -1949,7 +1953,7 @@ END CATCH;
 GO
 
 -- KẾT QUẢ KIỂM TRA / TRA CỨU SAU CÀI ĐẶT
-SELECT N'44 bảng, 452 dòng' AS KetQua, COUNT(*) AS SoBang FROM sys.tables WHERE is_ms_shipped=0;
+SELECT N'46 bảng, 457 dòng' AS KetQua, COUNT(*) AS SoBang FROM sys.tables WHERE is_ms_shipped=0;
 SELECT * FROM dbo.VW_THONG_KE_SO_DONG ORDER BY TenBang;
 SELECT * FROM dbo.VW_HOA_DON_THANH_TOAN ORDER BY MaHD;
 SELECT * FROM dbo.VW_TIEN_THUOC_THEO_DON ORDER BY MaDT;

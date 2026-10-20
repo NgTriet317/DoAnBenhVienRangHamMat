@@ -108,6 +108,12 @@ public partial class AppWorkspace : UserControl
     /// </summary>
     internal void ShowForm(UserControl form, string? table = null, CreationContext? context = null)
     {
+        if (form is CuaSoBaoTri or CuaSoNhaCungCap)
+        {
+            BieuMauHoSo.Configure(form, form is CuaSoBaoTri ? "BAO_TRI_THIET_BI" : "NHA_CUNG_CAP", context: context);
+            ShowModal(form);
+            return;
+        }
         if (context is { Table: "CHI_TIET_DON_THUOC", ParentField: "MaDT" })
         {
             var prescription = DuLieuGiaoDien.Find("DON_THUOC", context.ParentValue);
@@ -182,7 +188,7 @@ public partial class AppWorkspace : UserControl
         if (ModalLayer.Visibility == Visibility.Visible && ModalContent.Content is object previous) modalHistory.Push(previous);
         if (ModalLayer.Visibility != Visibility.Visible) previousFocus=Keyboard.FocusedElement;
         Workspace.IsEnabled=false; ShellBar.IsEnabled=false;
-        ModalFrame.MaxWidth = control is CuaSoBenhNhan or TiepNhanKham ? 850 : 1160;
+        ModalFrame.MaxWidth = control is CuaSoBenhNhan or TiepNhanKham or CuaSoNhaCungCap ? 850 : 1160;
         ModalContent.Content = control; ModalLayer.Visibility = Visibility.Visible;
         Dispatcher.BeginInvoke(new Action(() => control.MoveFocus(new TraversalRequest(FocusNavigationDirection.First))));
     }
@@ -309,8 +315,7 @@ public partial class AppWorkspace : UserControl
             // AI bổ sung: chặn binding/ngày sai trước khi mở giao dịch và giữ nguyên modal để sửa.
             if (!KiemTraNhapLieu.PrepareSave(editor, out error))
             {
-                if (editor.FindName("FormError") is TextBlock inputError) inputError.Text = error;
-                else MessageBox.Show(error, "Kiểm tra thông tin", MessageBoxButton.OK, MessageBoxImage.Warning);
+                if (!KiemTraNhapLieu.ShowError(editor, error)) MessageBox.Show(error, "Kiểm tra thông tin", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             try
@@ -346,8 +351,7 @@ public partial class AppWorkspace : UserControl
                     home.AppHostWorkspace()?.MoBieuMauHoSo("KhamDieuTri","LICH_SU_KHAM_BENH", new Dictionary<string,object?> { ["MaPhieu"]=UiRecord.Get(record,"MaPhieu"), ["MaBS"]=UiRecord.Get(record,"MaBS"), ["MaPhong"]=UiRecord.Get(record,"MaPhong") }, new CreationContext("LICH_SU_KHAM_BENH","MaPhieu",UiRecord.Get(record,"MaPhieu")!), id);
                 }
             }
-            else if (editor.FindName("FormError") is TextBlock label) label.Text = error;
-            else MessageBox.Show(error, "Kiểm tra thông tin", MessageBoxButton.OK, MessageBoxImage.Information);
+            else if (!KiemTraNhapLieu.ShowError(editor, error)) MessageBox.Show(error, "Kiểm tra thông tin", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         else if (tag == "HoSoDetails")
         {

@@ -1,0 +1,6 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+ <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/HospitalStyles.xaml"/></ResourceDictionary.MergedDictionaries>
+ <!-- Dùng chung cho danh mục và bảo trì, giữ validation của ô nhập hiện có. -->
+ <Style TargetType="TextBox" BasedOn="{StaticResource HospitalTextInput}"><Setter Property="Padding" Value="5,4"/><Style.Triggers><Trigger Property="AcceptsReturn" Value="True"><Setter Property="VerticalContentAlignment" Value="Top"/></Trigger></Style.Triggers></Style>
+
+</ResourceDictionary>

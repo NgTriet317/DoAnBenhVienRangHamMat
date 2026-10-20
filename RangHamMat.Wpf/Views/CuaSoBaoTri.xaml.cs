@@ -1,17 +1,18 @@
-// PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung chú thích tiếng Việt cho CuaSoBaoTri.xaml.cs: Màn hình biểu mẫu bảo trì thiết bị: phần bố cục/binding nằm trong XAML, code-behind xử lý khởi tạo và các sự kiện của màn hình. File hiện chỉ khởi tạo giao diện, chưa có thao tác lưu SQL riêng. Giải thích được đặt cạnh khai báo/hàm tương ứng.
-// AI hỗ trợ: bổ sung chú thích tiếng Việt cho file này ngày 13/10/2026.
-// Nhãn này ghi nhận phần hỗ trợ/chú thích;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
+using RangHamMat.Controls;
 
 namespace RangHamMat.Views;
 
-/// <summary>
-/// Màn hình biểu mẫu bảo trì thiết bị: phần bố cục/binding nằm trong XAML, code-behind xử lý khởi tạo và các sự kiện của màn hình. File hiện chỉ khởi tạo giao diện, chưa có thao tác lưu SQL riêng.
-/// </summary>
+/// <summary>Form dùng Tag DB để đọc/điền dữ liệu và lưu theo XAML → BUS → DAL → SQL.</summary>
 public partial class CuaSoBaoTri : UserControl
 {
-    /// <summary>
-    /// Khởi tạo biểu mẫu bảo trì thiết bị từ XAML. Chưa có xử lý đọc/lưu SQL riêng trong constructor.
-    /// </summary>
-    public CuaSoBaoTri() => InitializeComponent();
+    public CuaSoBaoTri()
+    {
+        InitializeComponent();
+        dpBatDau.SelectedDate = DateTime.Today;
+        Loaded += (_, _) =>
+        {
+            txtTieuDe.Text = BieuMauHoSo.GetRecord(this) is null ? "Thêm lần bảo trì" : "Cập nhật lần bảo trì";
+        };
+    }
 }

@@ -37,17 +37,23 @@
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Lượt tiếp nhận" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mã phiếu tiếp nhận khám bệnh (LICH_SU_KHAM_BENH.MaPhieu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <ComboBox Tag="DB:LICH_SU_KHAM_BENH.MaPhieu" AutomationProperties.Name="Lượt tiếp nhận" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <ComboBox Tag="DB:LICH_SU_KHAM_BENH.MaPhieu" AutomationProperties.Name="Lượt tiếp nhận" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Bác sĩ khám" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mã bác sĩ, liên kết danh mục nhân viên (LICH_SU_KHAM_BENH.MaBS): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <ComboBox Tag="DB:LICH_SU_KHAM_BENH.MaBS" AutomationProperties.Name="Bác sĩ khám" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <ComboBox Tag="DB:LICH_SU_KHAM_BENH.MaBS" AutomationProperties.Name="Bác sĩ khám" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Phòng khám" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mã phòng (LICH_SU_KHAM_BENH.MaPhong): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <ComboBox Tag="DB:LICH_SU_KHAM_BENH.MaPhong" AutomationProperties.Name="Phòng khám" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <ComboBox Tag="DB:LICH_SU_KHAM_BENH.MaPhong" AutomationProperties.Name="Phòng khám" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Thời gian khám" Style="{StaticResource FieldLabel}"/>
@@ -57,9 +63,13 @@
                       <ColumnDefinition Width="90"/>
                     </Grid.ColumnDefinitions>
                     <!-- Trường Thời điểm thực tế khám (LICH_SU_KHAM_BENH.ThoiGianKham): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <DatePicker Tag="DB:LICH_SU_KHAM_BENH.ThoiGianKham" AutomationProperties.Name="Thời gian khám"/>
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <DatePicker Tag="DB:LICH_SU_KHAM_BENH.ThoiGianKham" AutomationProperties.Name="Thời gian khám"/>
+                    </ContentControl>
                     <!-- Ô giờ LICH_SU_KHAM_BENH.ThoiGianKham: nhập HH:mm, ghép với ngày của trường DB cùng tên trong BieuMauHoSo.Read trước khi lưu. -->
-                    <TextBox Grid.Column="1" Tag="Time:LICH_SU_KHAM_BENH.ThoiGianKham" ToolTip="Giờ theo định dạng HH:mm" MaxLength="5" Margin="8,0,0,0"/>
+                    <ContentControl Style="{StaticResource TruongNhapLieu}" Margin="8,0,0,0" Grid.Column="1">
+                     <TextBox Tag="Time:LICH_SU_KHAM_BENH.ThoiGianKham" ToolTip="Giờ theo định dạng HH:mm" MaxLength="5"/>
+                    </ContentControl>
                   </Grid>
                 </StackPanel>
               </ItemsControl>
@@ -74,12 +84,16 @@
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Triệu chứng" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Triệu chứng được ghi khi khám (LICH_SU_KHAM_BENH.TrieuChung): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:LICH_SU_KHAM_BENH.TrieuChung" AutomationProperties.Name="Triệu chứng" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:LICH_SU_KHAM_BENH.TrieuChung" AutomationProperties.Name="Triệu chứng" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Chẩn đoán" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Chẩn đoán của lần khám (LICH_SU_KHAM_BENH.ChanDoan): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:LICH_SU_KHAM_BENH.ChanDoan" AutomationProperties.Name="Chẩn đoán" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:LICH_SU_KHAM_BENH.ChanDoan" AutomationProperties.Name="Chẩn đoán" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  </ContentControl>
                 </StackPanel>
               </ItemsControl>
             </Expander>
@@ -93,12 +107,16 @@
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Kế hoạch xử lý" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Hướng xử lý sau khi khám (LICH_SU_KHAM_BENH.KeHoachXuLy): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:LICH_SU_KHAM_BENH.KeHoachXuLy" AutomationProperties.Name="Kế hoạch xử lý" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:LICH_SU_KHAM_BENH.KeHoachXuLy" AutomationProperties.Name="Kế hoạch xử lý" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Ghi chú bổ sung (LICH_SU_KHAM_BENH.GhiChu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:LICH_SU_KHAM_BENH.GhiChu" AutomationProperties.Name="Ghi chú" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:LICH_SU_KHAM_BENH.GhiChu" AutomationProperties.Name="Ghi chú" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  </ContentControl>
                 </StackPanel>
               </ItemsControl>
             </Expander>
@@ -122,7 +140,9 @@
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Ngày xác nhận" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Thời điểm xác nhận chứng từ (LICH_SU_KHAM_BENH.NgayXacNhan): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <DatePicker Tag="DB:LICH_SU_KHAM_BENH.NgayXacNhan" AutomationProperties.Name="Ngày xác nhận" IsEnabled="False"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <DatePicker Tag="DB:LICH_SU_KHAM_BENH.NgayXacNhan" AutomationProperties.Name="Ngày xác nhận" IsEnabled="False"/>
+                  </ContentControl>
                 </StackPanel>
               </ItemsControl>
             </Expander>
@@ -143,27 +163,37 @@
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Lần khám" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mã lần khám trong lịch sử khám bệnh (TINH_TRANG_BENH.MaLS): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <ComboBox Tag="DB:TINH_TRANG_BENH.MaLS" AutomationProperties.Name="Lần khám" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <ComboBox Tag="DB:TINH_TRANG_BENH.MaLS" AutomationProperties.Name="Lần khám" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Loại tình trạng" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Loại tình trạng bệnh (TINH_TRANG_BENH.LoaiTinhTrang): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:TINH_TRANG_BENH.LoaiTinhTrang" AutomationProperties.Name="Loại tình trạng"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:TINH_TRANG_BENH.LoaiTinhTrang" AutomationProperties.Name="Loại tình trạng"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Mô tả tình trạng" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mô tả tình trạng bệnh ghi nhận khi khám (TINH_TRANG_BENH.MoTaTinhTrang): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:TINH_TRANG_BENH.MoTaTinhTrang" AutomationProperties.Name="Mô tả tình trạng" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:TINH_TRANG_BENH.MoTaTinhTrang" AutomationProperties.Name="Mô tả tình trạng" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Mức độ" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mức độ tình trạng bệnh (TINH_TRANG_BENH.MucDo): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:TINH_TRANG_BENH.MucDo" AutomationProperties.Name="Mức độ"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:TINH_TRANG_BENH.MucDo" AutomationProperties.Name="Mức độ"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Ghi chú bổ sung (TINH_TRANG_BENH.GhiChu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:TINH_TRANG_BENH.GhiChu" AutomationProperties.Name="Ghi chú" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:TINH_TRANG_BENH.GhiChu" AutomationProperties.Name="Ghi chú" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  </ContentControl>
                 </StackPanel>
               </ItemsControl>
             </Expander>
@@ -198,32 +228,44 @@
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Lần khám khởi tạo" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mã lần khám trong lịch sử khám bệnh (KE_HOACH_DIEU_TRI.MaLS): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <ComboBox Tag="DB:KE_HOACH_DIEU_TRI.MaLS" AutomationProperties.Name="Lần khám khởi tạo" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <ComboBox Tag="DB:KE_HOACH_DIEU_TRI.MaLS" AutomationProperties.Name="Lần khám khởi tạo" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Bác sĩ lập" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mã bác sĩ, liên kết danh mục nhân viên (KE_HOACH_DIEU_TRI.MaBS): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <ComboBox Tag="DB:KE_HOACH_DIEU_TRI.MaBS" AutomationProperties.Name="Bác sĩ lập" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <ComboBox Tag="DB:KE_HOACH_DIEU_TRI.MaBS" AutomationProperties.Name="Bác sĩ lập" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Ngày lập" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Thời điểm lập bản ghi (KE_HOACH_DIEU_TRI.NgayLap): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <DatePicker Tag="DB:KE_HOACH_DIEU_TRI.NgayLap" AutomationProperties.Name="Ngày lập"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <DatePicker Tag="DB:KE_HOACH_DIEU_TRI.NgayLap" AutomationProperties.Name="Ngày lập"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Ngày bắt đầu" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Ngày bắt đầu kế hoạch (KE_HOACH_DIEU_TRI.NgayBatDau): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <DatePicker Tag="DB:KE_HOACH_DIEU_TRI.NgayBatDau" AutomationProperties.Name="Ngày bắt đầu"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <DatePicker Tag="DB:KE_HOACH_DIEU_TRI.NgayBatDau" AutomationProperties.Name="Ngày bắt đầu"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Ngày dự kiến kết thúc" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Ngày dự kiến kết thúc kế hoạch (KE_HOACH_DIEU_TRI.NgayDuKienKetThuc): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <DatePicker Tag="DB:KE_HOACH_DIEU_TRI.NgayDuKienKetThuc" AutomationProperties.Name="Ngày dự kiến kết thúc"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <DatePicker Tag="DB:KE_HOACH_DIEU_TRI.NgayDuKienKetThuc" AutomationProperties.Name="Ngày dự kiến kết thúc"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Ghi chú bổ sung (KE_HOACH_DIEU_TRI.GhiChu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:KE_HOACH_DIEU_TRI.GhiChu" AutomationProperties.Name="Ghi chú" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:KE_HOACH_DIEU_TRI.GhiChu" AutomationProperties.Name="Ghi chú" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  </ContentControl>
                 </StackPanel>
               </ItemsControl>
             </Expander>
@@ -255,13 +297,13 @@
               <!-- Bảng PlanDrafts: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. -->
               <DataGrid x:Name="PlanDrafts" IsReadOnly="False" MinHeight="130" MaxHeight="300" CellEditEnding="DraftCellEditEnding">
                 <DataGrid.Columns>
-                  <DataGridTextColumn Header="Dịch vụ" Binding="{Binding Label}" IsReadOnly="True" Width="2*"/>
-                  <DataGridTextColumn Header="Lần" Binding="{Binding LanThu,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True}" Width="48" Visibility="Visible"/>
-                  <!-- AI tạo: kiểm tra chuỗi số trước khi cập nhật model, giữ ô đang sửa và hiện lỗi khi sai. --><DataGridTextColumn Header="S.L" Width="60"><DataGridTextColumn.Binding><Binding Path="Quantity" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource NhapSo}" ConverterParameter="Quantity" ValidatesOnExceptions="True"><Binding.ValidationRules><input:SoNhapValidationRule Field="Quantity"/></Binding.ValidationRules></Binding></DataGridTextColumn.Binding></DataGridTextColumn>
-                  <!-- AI tạo: kiểm tra chuỗi số trước khi cập nhật model, giữ ô đang sửa và hiện lỗi khi sai. --><DataGridTextColumn Header="Đơn giá" Width="105"><DataGridTextColumn.Binding><Binding Path="Price" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource NhapSo}" ConverterParameter="Price" ValidatesOnExceptions="True"><Binding.ValidationRules><input:SoNhapValidationRule Field="Price"/></Binding.ValidationRules></Binding></DataGridTextColumn.Binding></DataGridTextColumn>
-                  <DataGridTextColumn Header="Thành tiền" Binding="{Binding Total}" IsReadOnly="True" Width="115"/>
-                  <DataGridTextColumn Header="Ghi chú" Binding="{Binding Note,UpdateSourceTrigger=PropertyChanged}" Width="2*"/>
-                  <DataGridTemplateColumn Header="Thao tác" Width="65">
+                  <DataGridTextColumn Header="Dịch vụ" Binding="{Binding Label}" IsReadOnly="True" Width="2*" ElementStyle="{StaticResource HospitalCellText}" MinWidth="180"/>
+                  <DataGridTextColumn Header="Lần" Binding="{Binding LanThu,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True}" Width="48" Visibility="Visible" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}" MinWidth="90"/>
+                  <!-- AI tạo: kiểm tra chuỗi số trước khi cập nhật model, giữ ô đang sửa và hiện lỗi khi sai. --><DataGridTextColumn Header="Số lượng" Width="60" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}" MinWidth="90"><DataGridTextColumn.Binding><Binding Path="Quantity" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource NhapSo}" ConverterParameter="Quantity" ValidatesOnExceptions="True"><Binding.ValidationRules><input:SoNhapValidationRule Field="Quantity"/></Binding.ValidationRules></Binding></DataGridTextColumn.Binding></DataGridTextColumn>
+                  <!-- AI tạo: kiểm tra chuỗi số trước khi cập nhật model, giữ ô đang sửa và hiện lỗi khi sai. --><DataGridTextColumn Header="Đơn giá" Width="105" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}" MinWidth="105"><DataGridTextColumn.Binding><Binding Path="Price" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource NhapSo}" ConverterParameter="Price" ValidatesOnExceptions="True"><Binding.ValidationRules><input:SoNhapValidationRule Field="Price"/></Binding.ValidationRules></Binding></DataGridTextColumn.Binding></DataGridTextColumn>
+                  <DataGridTextColumn Header="Thành tiền" Binding="{Binding Total}" IsReadOnly="True" Width="115" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}" MinWidth="115"/>
+                  <DataGridTextColumn Header="Ghi chú" Binding="{Binding Note,UpdateSourceTrigger=PropertyChanged}" Width="2*" ElementStyle="{StaticResource HospitalCellText}" MinWidth="180"/>
+                  <DataGridTemplateColumn Header="Thao tác" Width="65" MinWidth="90">
                     <DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <!-- Thao tác Xóa: gọi RemoveDraft_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
@@ -293,32 +335,44 @@
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Kế hoạch điều trị" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mã kế hoạch điều trị (CHI_TIET_KE_HOACH.MaKHDT): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <ComboBox Tag="DB:CHI_TIET_KE_HOACH.MaKHDT" AutomationProperties.Name="Kế hoạch điều trị" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <ComboBox Tag="DB:CHI_TIET_KE_HOACH.MaKHDT" AutomationProperties.Name="Kế hoạch điều trị" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Dịch vụ" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mã dịch vụ (CHI_TIET_KE_HOACH.MaDV): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <ComboBox Tag="DB:CHI_TIET_KE_HOACH.MaDV" AutomationProperties.Name="Dịch vụ" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <ComboBox Tag="DB:CHI_TIET_KE_HOACH.MaDV" AutomationProperties.Name="Dịch vụ" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Lần thứ" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Số thứ tự lần/bước điều trị (CHI_TIET_KE_HOACH.LanThu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:CHI_TIET_KE_HOACH.LanThu" AutomationProperties.Name="Lần thứ"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:CHI_TIET_KE_HOACH.LanThu" AutomationProperties.Name="Lần thứ"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Số lượng dự kiến" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Số lượng dự kiến của bước điều trị (CHI_TIET_KE_HOACH.SoLuongDuKien): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:CHI_TIET_KE_HOACH.SoLuongDuKien" AutomationProperties.Name="Số lượng dự kiến"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:CHI_TIET_KE_HOACH.SoLuongDuKien" AutomationProperties.Name="Số lượng dự kiến"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Đơn giá dự kiến" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Đơn giá dự kiến của bước kế hoạch (CHI_TIET_KE_HOACH.DonGiaDuKien): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:CHI_TIET_KE_HOACH.DonGiaDuKien" AutomationProperties.Name="Đơn giá dự kiến"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:CHI_TIET_KE_HOACH.DonGiaDuKien" AutomationProperties.Name="Đơn giá dự kiến"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Ghi chú bổ sung (CHI_TIET_KE_HOACH.GhiChu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:CHI_TIET_KE_HOACH.GhiChu" AutomationProperties.Name="Ghi chú" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:CHI_TIET_KE_HOACH.GhiChu" AutomationProperties.Name="Ghi chú" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  </ContentControl>
                 </StackPanel>
               </ItemsControl>
             </Expander>
@@ -358,22 +412,30 @@
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Lần khám" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mã lần khám trong lịch sử khám bệnh (DICH_VU_THUC_HIEN.MaLS): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <ComboBox Tag="DB:DICH_VU_THUC_HIEN.MaLS" AutomationProperties.Name="Lần khám" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <ComboBox Tag="DB:DICH_VU_THUC_HIEN.MaLS" AutomationProperties.Name="Lần khám" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210" Visibility="Collapsed">
                   <TextBlock Text="Bước kế hoạch (nếu có)" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mã bước chi tiết kế hoạch (DICH_VU_THUC_HIEN.MaCTKH): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <ComboBox Tag="DB:DICH_VU_THUC_HIEN.MaCTKH" AutomationProperties.Name="Bước kế hoạch (nếu có)" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <ComboBox Tag="DB:DICH_VU_THUC_HIEN.MaCTKH" AutomationProperties.Name="Bước kế hoạch (nếu có)" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210" Visibility="Collapsed">
                   <TextBlock Text="Dịch vụ" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mã dịch vụ (DICH_VU_THUC_HIEN.MaDV): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <ComboBox Tag="DB:DICH_VU_THUC_HIEN.MaDV" AutomationProperties.Name="Dịch vụ" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <ComboBox Tag="DB:DICH_VU_THUC_HIEN.MaDV" AutomationProperties.Name="Dịch vụ" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210" Visibility="Collapsed">
                   <TextBlock Text="Người thực hiện" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mã nhân viên thực hiện dịch vụ (DICH_VU_THUC_HIEN.MaNVThucHien): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <ComboBox Tag="DB:DICH_VU_THUC_HIEN.MaNVThucHien" AutomationProperties.Name="Người thực hiện" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <ComboBox Tag="DB:DICH_VU_THUC_HIEN.MaNVThucHien" AutomationProperties.Name="Người thực hiện" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Thời gian thực hiện" Style="{StaticResource FieldLabel}"/>
@@ -383,9 +445,13 @@
                       <ColumnDefinition Width="90"/>
                     </Grid.ColumnDefinitions>
                     <!-- Trường Thời điểm thực hiện dịch vụ (DICH_VU_THUC_HIEN.ThoiGianThucHien): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <DatePicker Tag="DB:DICH_VU_THUC_HIEN.ThoiGianThucHien" AutomationProperties.Name="Thời gian thực hiện"/>
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <DatePicker Tag="DB:DICH_VU_THUC_HIEN.ThoiGianThucHien" AutomationProperties.Name="Thời gian thực hiện"/>
+                    </ContentControl>
                     <!-- Ô giờ DICH_VU_THUC_HIEN.ThoiGianThucHien: nhập HH:mm, ghép với ngày của trường DB cùng tên trong BieuMauHoSo.Read trước khi lưu. -->
-                    <TextBox Grid.Column="1" Tag="Time:DICH_VU_THUC_HIEN.ThoiGianThucHien" ToolTip="Giờ theo định dạng HH:mm" MaxLength="5" Margin="8,0,0,0"/>
+                    <ContentControl Style="{StaticResource TruongNhapLieu}" Margin="8,0,0,0" Grid.Column="1">
+                     <TextBox Tag="Time:DICH_VU_THUC_HIEN.ThoiGianThucHien" ToolTip="Giờ theo định dạng HH:mm" MaxLength="5"/>
+                    </ContentControl>
                   </Grid>
                 </StackPanel>
               </ItemsControl>
@@ -400,17 +466,23 @@
                 <StackPanel Margin="0,0,14,10" MinWidth="210" Visibility="Collapsed">
                   <TextBlock Text="Số lượng" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Số lượng thuốc/hàng hóa/dịch vụ (DICH_VU_THUC_HIEN.SoLuong): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:DICH_VU_THUC_HIEN.SoLuong" AutomationProperties.Name="Số lượng"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:DICH_VU_THUC_HIEN.SoLuong" AutomationProperties.Name="Số lượng"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210" Visibility="Collapsed">
                   <TextBlock Text="Đơn giá thực hiện" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Đơn giá (DICH_VU_THUC_HIEN.DonGia): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:DICH_VU_THUC_HIEN.DonGia" AutomationProperties.Name="Đơn giá thực hiện"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:DICH_VU_THUC_HIEN.DonGia" AutomationProperties.Name="Đơn giá thực hiện"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,14,10" MinWidth="210" Visibility="Collapsed">
                   <TextBlock Text="Kết quả" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Kết quả thực hiện dịch vụ (DICH_VU_THUC_HIEN.KetQua): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:DICH_VU_THUC_HIEN.KetQua" AutomationProperties.Name="Kết quả" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:DICH_VU_THUC_HIEN.KetQua" AutomationProperties.Name="Kết quả" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                  </ContentControl>
                 </StackPanel>
               </ItemsControl>
             </Expander>
@@ -442,27 +514,27 @@
               <!-- Bảng ProgressDrafts: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. -->
               <DataGrid x:Name="ProgressDrafts" IsReadOnly="False" MinHeight="130" MaxHeight="300" CellEditEnding="DraftCellEditEnding">
                 <DataGrid.Columns>
-                  <DataGridTextColumn Header="Dịch vụ" Binding="{Binding Label}" IsReadOnly="True" Width="2*"/>
-                  <DataGridTemplateColumn Header="Người thực hiện" Width="155">
+                  <DataGridTextColumn Header="Dịch vụ" Binding="{Binding Label}" IsReadOnly="True" Width="2*" ElementStyle="{StaticResource HospitalCellText}" MinWidth="180"/>
+                  <DataGridTemplateColumn Header="Người thực hiện" Width="155" MinWidth="155">
                     <DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <ComboBox ItemsSource="{Binding Staff}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding MaNVThucHien,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
                       </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                   </DataGridTemplateColumn>
-                  <DataGridTextColumn Header="Lần" Binding="{Binding LanThu,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True}" Width="48" Visibility="Collapsed"/>
-                  <!-- AI tạo: kiểm tra chuỗi số trước khi cập nhật model, giữ ô đang sửa và hiện lỗi khi sai. --><DataGridTextColumn Header="S.L" Width="60"><DataGridTextColumn.Binding><Binding Path="Quantity" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource NhapSo}" ConverterParameter="Quantity" ValidatesOnExceptions="True"><Binding.ValidationRules><input:SoNhapValidationRule Field="Quantity"/></Binding.ValidationRules></Binding></DataGridTextColumn.Binding></DataGridTextColumn>
-                  <!-- AI tạo: kiểm tra chuỗi số trước khi cập nhật model, giữ ô đang sửa và hiện lỗi khi sai. --><DataGridTextColumn Header="Đơn giá" Width="105"><DataGridTextColumn.Binding><Binding Path="Price" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource NhapSo}" ConverterParameter="Price" ValidatesOnExceptions="True"><Binding.ValidationRules><input:SoNhapValidationRule Field="Price"/></Binding.ValidationRules></Binding></DataGridTextColumn.Binding></DataGridTextColumn>
-                  <DataGridTextColumn Header="Thành tiền" Binding="{Binding Total}" IsReadOnly="True" Width="115"/>
-                  <DataGridTextColumn Header="Nội dung / kết quả" Binding="{Binding Note,UpdateSourceTrigger=PropertyChanged}" Width="2*"/>
-                  <DataGridTemplateColumn Header="Tình trạng" Width="110">
+                  <DataGridTextColumn Header="Lần" Binding="{Binding LanThu,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True}" Width="48" Visibility="Collapsed" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}" MinWidth="90"/>
+                  <!-- AI tạo: kiểm tra chuỗi số trước khi cập nhật model, giữ ô đang sửa và hiện lỗi khi sai. --><DataGridTextColumn Header="Số lượng" Width="60" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}" MinWidth="90"><DataGridTextColumn.Binding><Binding Path="Quantity" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource NhapSo}" ConverterParameter="Quantity" ValidatesOnExceptions="True"><Binding.ValidationRules><input:SoNhapValidationRule Field="Quantity"/></Binding.ValidationRules></Binding></DataGridTextColumn.Binding></DataGridTextColumn>
+                  <!-- AI tạo: kiểm tra chuỗi số trước khi cập nhật model, giữ ô đang sửa và hiện lỗi khi sai. --><DataGridTextColumn Header="Đơn giá" Width="105" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}" MinWidth="105"><DataGridTextColumn.Binding><Binding Path="Price" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource NhapSo}" ConverterParameter="Price" ValidatesOnExceptions="True"><Binding.ValidationRules><input:SoNhapValidationRule Field="Price"/></Binding.ValidationRules></Binding></DataGridTextColumn.Binding></DataGridTextColumn>
+                  <DataGridTextColumn Header="Thành tiền" Binding="{Binding Total}" IsReadOnly="True" Width="115" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}" MinWidth="115"/>
+                  <DataGridTextColumn Header="Nội dung / kết quả" Binding="{Binding Note,UpdateSourceTrigger=PropertyChanged}" Width="2*" ElementStyle="{StaticResource HospitalCellText}" MinWidth="180"/>
+                  <DataGridTemplateColumn Header="Tình trạng" Width="110" MinWidth="110">
                     <DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <ComboBox ItemsSource="{Binding States}" SelectedItem="{Binding Status,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
                       </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                   </DataGridTemplateColumn>
-                  <DataGridTemplateColumn Header="Thao tác" Width="65">
+                  <DataGridTemplateColumn Header="Thao tác" Width="65" MinWidth="90">
                     <DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <!-- Thao tác Xóa: gọi RemoveDraft_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
@@ -516,10 +588,10 @@
             <!-- Bảng ServiceCatalog: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. -->
             <DataGrid Grid.Column="2" x:Name="ServiceCatalog" IsReadOnly="False" MinHeight="200">
               <DataGrid.Columns>
-                <DataGridCheckBoxColumn Header="Chọn" Binding="{Binding Selected,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" Width="50"/>
-                <DataGridTextColumn Header="Dịch vụ" Binding="{Binding Label}" IsReadOnly="True" Width="2*"/>
-                <DataGridTextColumn Header="Đơn giá" Binding="{Binding Price}" IsReadOnly="True" Width="100"/>
-                <DataGridTextColumn Header="Mô tả" Binding="{Binding Description}" IsReadOnly="True" Width="2*"/>
+                <DataGridCheckBoxColumn Header="Chọn" Binding="{Binding Selected,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" Width="50" MinWidth="90"/>
+                <DataGridTextColumn Header="Dịch vụ" Binding="{Binding Label}" IsReadOnly="True" Width="2*" ElementStyle="{StaticResource HospitalCellText}" MinWidth="180"/>
+                <DataGridTextColumn Header="Đơn giá" Binding="{Binding Price}" IsReadOnly="True" Width="100" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}" MinWidth="100"/>
+                <DataGridTextColumn Header="Mô tả" Binding="{Binding Description}" IsReadOnly="True" Width="2*" ElementStyle="{StaticResource HospitalCellText}" MinWidth="180"/>
               </DataGrid.Columns>
             </DataGrid>
           </Grid>

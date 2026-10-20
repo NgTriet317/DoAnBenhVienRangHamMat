@@ -1,5 +1,19 @@
 # Rà soát và bổ sung kiểm tra nhập liệu
 
+## Cập nhật hiển thị lỗi tại trường nhập
+
+Lỗi nhập liệu hiện ngay dưới ô sai bằng style XAML `TruongNhapLieu`, tự xuống dòng và giãn bố cục; không lặp lại ở cuối form. Áp dụng cho 221 ô trên 18 màn hình dùng cơ chế chung, bao gồm các ô đăng nhập. Khi lưu sai, cuộn tới cả ô và thông báo; sửa đúng rồi rời ô sẽ xóa lỗi. Ô ngày/giờ được phân biệt để chỉ đúng trường. Lỗi hệ thống vẫn dùng vùng thông báo chung.
+
+Kiểm tra riêng, không cần SQL:
+
+```powershell
+dotnet run --project RangHamMat.SupplierChecks -c Release -- --inline-validation
+```
+
+Đã kiểm tra TextBox/ComboBox/DatePicker/PasswordBox, nhiều lỗi cùng lúc, lỗi dài, cửa sổ hẹp, không đè trường kế tiếp, ngày gõ không tồn tại, ngày/giờ đúng ô, cuộn và xóa lỗi. Hai bộ kiểm thử nhà cung cấp và bảo trì vẫn kiểm tra thao tác lưu SQL với rollback.
+
+[Ảnh thông báo dưới ô nhập](XemTruoc/loi-nhap-lieu/loi-duoi-truong-nha-cung-cap.png).
+
 Ngày thực hiện: 13/10/2026. AI đã rà XAML/code-behind, điểm lưu từ giao diện, kiểm tra BUS/DAL và ràng buộc SQL. Phần kiểm tra mới có chú thích tiếng Việt ngay trong code.
 
 Trước khi sửa, ca thử trên form bệnh nhân thật xác nhận số điện thoại `abc123` vẫn lưu được. Nhiều luồng đã kiểm tra bắt buộc/liên kết/nghiệp vụ, nhưng chưa thống nhất kiểm tra định dạng, độ dài, thông báo và lỗi binding.

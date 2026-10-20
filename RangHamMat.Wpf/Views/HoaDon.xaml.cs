@@ -137,7 +137,7 @@ public partial class HoaDon : UserControl, IPatientScoped
     private void Execute(Action operation, string success)
     {
         try { operation(); }
-        catch (Exception ex) { if(ex is LoiNhapLieu inputError) KiemTraNhapLieu.MarkError(this,inputError); PageStatus.Text = "Không thể thực hiện: " + ex.Message; return; }
+        catch (Exception ex) { if(ex is LoiNhapLieu inputError) KiemTraNhapLieu.MarkError(this,inputError); else PageStatus.Text = "Không thể thực hiện: " + ex.Message; return; }
         try { DuLieuGiaoDien.RefreshFromDatabase(); Refresh(); PageStatus.Text = success; }
         catch (Exception ex) { PageStatus.Text = success + " Chưa tải lại được danh sách; bấm Tải lại để cập nhật: " + ex.Message; }
     }

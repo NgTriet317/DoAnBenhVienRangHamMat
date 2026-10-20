@@ -29,6 +29,10 @@ public static class DuLieuGiaoDien
     private static readonly Dictionary<string, string> keys = new()
     {
         ["BENH_NHAN"] = "MaBN",
+        ["BAO_TRI_THIET_BI"] = "MaBT",
+        ["THIET_BI"] = "MaTB",
+        ["NHA_CUNG_CAP"] = "MaNCC",
+        ["HOA_DON_NHAP"] = "MaHDN",
         ["HO_SO_BENH_AN"] = "MaHS",
         ["PHIEU_KHAM_BENH"] = "MaPhieu",
         ["LICH_KHAM"] = "MaLich",
@@ -56,6 +60,8 @@ public static class DuLieuGiaoDien
     public static readonly Dictionary<string, string> ForeignTables = new()
     {
         ["MaBN"] = "BENH_NHAN",
+        ["MaTB"] = "THIET_BI",
+        ["MaNCC"] = "NHA_CUNG_CAP",
         ["MaHS"] = "HO_SO_BENH_AN",
         ["MaPhieu"] = "PHIEU_KHAM_BENH",
         ["MaLich"] = "LICH_KHAM",
@@ -166,6 +172,10 @@ public static class DuLieuGiaoDien
         return new Dictionary<string, object[]>
         {
             ["BENH_NHAN"] = new BUS_BENHNHAN(transaction).layToanBoBenhNhan().Cast<object>().ToArray(),
+            ["BAO_TRI_THIET_BI"] = new BUS_BAOTRITHIETBI(transaction).layToanBoBaoTriThietBi().Cast<object>().ToArray(),
+            ["THIET_BI"] = new BUS_THIETBI(transaction).layToanBoThietBi().Cast<object>().ToArray(),
+            ["NHA_CUNG_CAP"] = new BUS_NHACUNGCAP(transaction).layToanBoNhaCungCap().Cast<object>().ToArray(),
+            ["HOA_DON_NHAP"] = new BUS_HOADONNHAP(transaction).layToanBoHoaDonNhap().Cast<object>().ToArray(),
             ["HO_SO_BENH_AN"] = new BUS_HOSOBENHAN(transaction).layToanBoHoSoBenhAn().Cast<object>().ToArray(),
             ["PHIEU_KHAM_BENH"] = new BUS_PHIEUKHAMBENH(transaction).layToanBoPhieuKhamBenh().Cast<object>().ToArray(),
             ["LICH_KHAM"] = new BUS_LICHKHAM(transaction).layToanBoLichKham().Cast<object>().ToArray(),
@@ -199,6 +209,20 @@ public static class DuLieuGiaoDien
         Dictionary<string, object?> saved;
         switch (table)
         {
+            case "NHA_CUNG_CAP":
+                {
+                    var bus = new BUS_NHACUNGCAP(transaction);
+                    saved = SaveEntity<ET_NHACUNGCAP>("MaNCC", values, id, expected, statusOnly,
+                        bus.themNhaCungCap, bus.suaNhaCungCap, bus.layNhaCungCapTheoMa);
+                    break;
+                }
+            case "BAO_TRI_THIET_BI":
+                {
+                    var bus = new BUS_BAOTRITHIETBI(transaction);
+                    saved = SaveEntity<ET_BAOTRITHIETBI>("MaBT", values, id, expected, statusOnly,
+                        bus.themBaoTriThietBi, bus.suaBaoTriThietBi, bus.layBaoTriThietBiTheoMa);
+                    break;
+                }
             case "BENH_NHAN":
                 {
                     var bus = new BUS_BENHNHAN(transaction);
@@ -308,6 +332,10 @@ public static class DuLieuGiaoDien
     {
         switch (table)
         {
+            case "NHA_CUNG_CAP":
+                new BUS_NHACUNGCAP(transaction).xoaNhaCungCap(id, expected is null ? null : UiRecord.ChuyenDoi<ET_NHACUNGCAP>(expected)); break;
+            case "BAO_TRI_THIET_BI":
+                new BUS_BAOTRITHIETBI(transaction).xoaBaoTriThietBi(id, expected is null ? null : UiRecord.ChuyenDoi<ET_BAOTRITHIETBI>(expected)); break;
             case "BENH_NHAN":
                 new BUS_BENHNHAN(transaction).xoaBenhNhan(id, expected is null ? null : UiRecord.ChuyenDoi<ET_BENHNHAN>(expected)); break;
             case "HO_SO_BENH_AN":
@@ -394,7 +422,8 @@ public static class DuLieuGiaoDien
     /// </summary>
     public static bool CanEdit(string table, object row)
     {
-        if (table is "BENH_NHAN" or "HO_SO_BENH_AN") return true;
+        if (table == "BAO_TRI_THIET_BI") return UiRecord.Text(row, "TrangThai") is "Nháp" or "Đang thực hiện";
+        if (table is "BENH_NHAN" or "HO_SO_BENH_AN" or "NHA_CUNG_CAP") return true;
         if (table == "CHI_TIET_KE_HOACH" && Children("DICH_VU_THUC_HIEN", "MaCTKH", UiRecord.Get(row, "MaCTKH")).Any(r => UiRecord.Text(r, "TrangThai") == "Đã xác nhận")) return false;
         var parentLink = table switch { "CHI_TIET_DON_THUOC" => ("DON_THUOC", "MaDT"), "CHI_TIET_KE_HOACH" => ("KE_HOACH_DIEU_TRI", "MaKHDT"), "TINH_TRANG_BENH" => ("LICH_SU_KHAM_BENH", "MaLS"), _ => ("", "") };
         if (parentLink.Item1.Length > 0)
@@ -540,18 +569,24 @@ public static class DuLieuGiaoDien
             "PHONG" => "TenPhong",
             "DICH_VU" => "TenDV",
             "HANG_HOA" => "TenHH",
+            "NHA_CUNG_CAP" => "TenNCC",
             "KHO" => "TenKho",
             _ => ""
         };
         var key = keys.GetValueOrDefault(table, "");
         var label = UiRecord.Text(row, name);
+        if (table == "THIET_BI")
+        {
+            var hangHoa = Find("HANG_HOA", UiRecord.Get(row, "MaHH"));
+            label = (hangHoa is null ? "" : UiRecord.Text(hangHoa, "TenHH")) + " · " + UiRecord.Text(row, "SoSerial");
+        }
         if (table == "THUOC")
         {
             var goods = Find("HANG_HOA", UiRecord.Get(row, "MaHH"));
             label = (goods is null ? "" : UiRecord.Text(goods, "TenHH")) + " " + UiRecord.Text(row, "HamLuong");
         }
         if (table == "CA_LAM") label = UiRecord.Text(row, "GioBatDau") + " – " + UiRecord.Text(row, "GioKetThuc");
-        if (name.Length == 0 && table is not "THUOC" and not "CA_LAM")
+        if (name.Length == 0 && table is not "THUOC" and not "CA_LAM" and not "THIET_BI")
         {
             var patient = Find("BENH_NHAN", PatientId(table, row));
             label = patient is null ? "" : UiRecord.Text(patient, "HoTenBN");

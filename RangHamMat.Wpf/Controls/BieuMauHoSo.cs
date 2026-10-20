@@ -123,7 +123,7 @@ public static class BieuMauHoSo
             if (time.Tag is string tag && tag.StartsWith("Time:" + table + "."))
             {
                 var field = tag.Split('.')[1];
-                if (!TimeSpan.TryParseExact(time.Text.Trim(), new[] { @"h\:mm", @"hh\:mm" }, CultureInfo.InvariantCulture, out var clock) || clock >= TimeSpan.FromDays(1)) throw new InvalidOperationException("Giờ phải có dạng HH:mm, từ 00:00 đến 23:59.");
+                if (!TimeSpan.TryParseExact(time.Text.Trim(), new[] { @"h\:mm", @"hh\:mm" }, CultureInfo.InvariantCulture, out var clock) || clock >= TimeSpan.FromDays(1)) throw new LoiNhapLieu(tag,"Giờ phải có dạng HH:mm, từ 00:00 đến 23:59.");
                 if (values.GetValueOrDefault(field) is DateTime day) values[field] = day.Date + clock;
             }
         // AI bổ sung: kiểm tra nội dung nhập ngay khi đọc, trước khi mở luồng ghi dữ liệu.
@@ -152,7 +152,7 @@ public static class BieuMauHoSo
                 "DON_THUOC" => new[] { "MaLS", "MaBS", "NgayKe" },
                 _ => Array.Empty<string>()
             };
-            foreach (var field in required) if (!values.TryGetValue(field, out var value) || string.IsNullOrWhiteSpace(Convert.ToString(value))) throw new InvalidOperationException("Vui lòng nhập/chọn " + TruongDuLieu.Label(table, field) + ".");
+            foreach (var field in required) if (!values.TryGetValue(field, out var value) || string.IsNullOrWhiteSpace(Convert.ToString(value))) throw new LoiNhapLieu(field,"Vui lòng nhập/chọn " + TruongDuLieu.Label(table, field) + ".");
             foreach (var pair in values)
                 if (DuLieuGiaoDien.ForeignTables.TryGetValue(pair.Key, out var target) && pair.Key != DuLieuGiaoDien.Key(table) && !string.IsNullOrWhiteSpace(Convert.ToString(pair.Value)) && DuLieuGiaoDien.Find(target, pair.Value) is null) throw new LoiNhapLieu(pair.Key,TruongDuLieu.Label(table,pair.Key)+" không còn trong danh mục. Hãy chọn lại.");
             if (GetRecord(form) is null || DuLieuGiaoDien.Find(table, UiRecord.Get(GetRecord(form)!, DuLieuGiaoDien.Key(table))) is null)

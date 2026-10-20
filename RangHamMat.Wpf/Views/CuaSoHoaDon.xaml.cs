@@ -87,7 +87,7 @@ public partial class CuaSoHoaDon : UserControl, IBieuMauLuu, IPatientScoped
     {
         if (NetTotal is null) return;
         var valid=TryDiscount(out var discount,out var error);
-        NetTotal.Text=valid?TreatmentMoney.Format(total-discount):error;
+        NetTotal.Text=valid?TreatmentMoney.Format(total-discount):"—";
         KiemTraNhapLieu.SetError(DiscountBox,valid?"":error);
     }
     /// <summary>AI tạo: kiểm tra giảm giá theo decimal(18,2), không âm và không vượt tổng ngay tại giao diện.</summary>
@@ -126,7 +126,7 @@ public partial class CuaSoHoaDon : UserControl, IBieuMauLuu, IPatientScoped
             catch (Exception ex) { Feedback.Text = $"Hóa đơn #{SavedInvoiceId} đã được lưu. Tải lại danh sách để xem: {ex.Message}"; }
             return true;
         }
-        catch (Exception ex) { error = ex.Message; Feedback.Text = "Không thể lưu hóa đơn: " + error; return false; }
+        catch (Exception ex) { error = ex.Message; KiemTraNhapLieu.ShowError(this,error); return false; }
     }
     /// <summary>
     /// Đổi bệnh nhân nguồn, nạp lại danh sách lần khám đã xác nhận và tính các khoản thu mới; bỏ qua sự kiện khi đang đổ dữ liệu.
