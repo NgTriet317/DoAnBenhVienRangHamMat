@@ -24,6 +24,21 @@ namespace BUS
             return dal.guiDon(don);
         }
 
+        public string taoDonKhanCap(ET_DON_XIN_NGHI don, string maQuanLy)
+        {
+            if (string.IsNullOrWhiteSpace(maQuanLy) || string.IsNullOrWhiteSpace(don.MaNV))
+                throw new ArgumentException("Phải chọn nhân viên và người quản lý.");
+            if (don.MaNV==maQuanLy) throw new ArgumentException("Quản lý không được tự lập đơn khẩn cấp đã duyệt cho chính mình.");
+            if (string.IsNullOrWhiteSpace(don.LyDo)) throw new ArgumentException("Phải nêu lý do nghỉ khẩn cấp.");
+            if (don.TuNgay.Date<DateTime.Today || don.DenNgay.Date<don.TuNgay.Date)
+                throw new ArgumentException("Ngày nghỉ khẩn cấp phải từ hôm nay, ngày kết thúc không được trước ngày bắt đầu.");
+            // Ngoại lệ 7 ngày CHỈ áp dụng cho đơn khẩn cấp do quản lý tạo.
+            don.TuNgay=don.TuNgay.Date;
+            don.DenNgay=don.DenNgay.Date;
+            don.GhiChu="Loại đơn: Nghỉ phép\nĐơn khẩn cấp do quản lý tạo.\n"+don.GhiChu;
+            return dal.taoDonKhanCap(don,maQuanLy);
+        }
+
         public bool daDuocDuyetNghi(string maNV, DateTime ngay)
         {
             return dal.daDuocDuyetNghi(maNV, ngay);

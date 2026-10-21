@@ -200,6 +200,16 @@
               </StackPanel>
             </Button>
             <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
+            <Button Tag="Kho" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Kho vật tư" ToolTip="Xem tồn vật tư theo kho" CommandParameter="Kho và thiết bị">
+              <StackPanel>
+                <Border Width="52" Height="52" CornerRadius="14" Background="#EAF3FF" HorizontalAlignment="Center" Margin="0,0,0,10">
+                  <Path Data="M3,8 H21 V20 H3 Z M7,8 V20 M14,8 V20 M3,13 H21 M9,4 H15" Style="{StaticResource AppIcon}" />
+                </Border>
+                <TextBlock Text="Kho vật tư" TextAlignment="Center" TextWrapping="Wrap" FontWeight="SemiBold" Height="38" VerticalAlignment="Center" FontSize="14" />
+                <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
+              </StackPanel>
+            </Button>
+            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="DanhMucHangHoa" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Danh mục hàng hóa" ToolTip="Mở danh mục hàng hóa" CommandParameter="Kho và thiết bị">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="#EEF7FF" HorizontalAlignment="Center" Margin="0,0,0,10">
@@ -230,25 +240,6 @@
               </StackPanel>
             </Button>
             <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
-            <Button Tag="NhapKho" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Nhập kho theo chứng từ" ToolTip="Mở nhập kho" CommandParameter="Kho và thiết bị">
-              <StackPanel>
-                <Border Width="52" Height="52" CornerRadius="14" Background="#E0F2FE" HorizontalAlignment="Center" Margin="0,0,0,10">
-                  <Path Data="M3,8 H21 V20 H3 Z M7,4 H17 V8 M12,10 V17 M8,14 L12,18 L16,14" Style="{StaticResource AppIcon}" />
-                </Border>
-                <TextBlock Text="Nhập kho" TextAlignment="Center" TextWrapping="Wrap" FontWeight="SemiBold" Height="38" VerticalAlignment="Center" FontSize="14" />
-                <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
-              </StackPanel>
-            </Button>
-            <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
-            <Button Tag="XuatKho" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Xuất kho" ToolTip="Mở xuất kho" CommandParameter="Kho và thiết bị">
-              <StackPanel>
-                <Border Width="52" Height="52" CornerRadius="14" Background="#FFF7ED" HorizontalAlignment="Center" Margin="0,0,0,10">
-                  <Path Data="M3,8 H21 V20 H3 Z M7,4 H17 V8 M12,18 V11 M8,15 L12,11 L16,15" Style="{StaticResource AppIcon}" />
-                </Border>
-                <TextBlock Text="Xuất kho" TextAlignment="Center" TextWrapping="Wrap" FontWeight="SemiBold" Height="38" VerticalAlignment="Center" FontSize="14" />
-                <TextBlock Text="Kho và thiết bị" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
-              </StackPanel>
-            </Button>
             <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
             <Button Tag="HoaDon" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Hóa đơn và thanh toán" ToolTip="Mở hóa đơn và thanh toán" CommandParameter="Tài chính">
               <StackPanel>

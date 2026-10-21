@@ -43,6 +43,84 @@ namespace DAL
             catch { transaction.Rollback(); throw; }
         }
 
+        // Nếu lịch khám cũ chưa được đồng bộ thành ca làm, tạo ca gốc ở trạng thái nghỉ
+        // để quản lý vẫn có thể tìm và bố trí người thay sau khi duyệt.
+        private void TaoCaNghiThieu(IDbConnection connection, IDbTransaction tx, ET_DON_XIN_NGHI don, string trangThaiCa)
+        {
+            var lichKham = connection.Query<ET_LICHKHAM>(@"SELECT l.* FROM dbo.LICH_KHAM l
+                WHERE l.MaBS=@MaNV AND l.NgayGioKham>=SYSDATETIME()
+                  AND CONVERT(date,l.NgayGioKham)>=@TuNgay
+                  AND (CONVERT(date,l.NgayGioKham)<=@DenNgay OR @NghiViec=1)
+                  AND l.TrangThai NOT IN (N'Hủy',N'Đã hủy',N'Đã đổi',N'Hoàn thành',N'Đã khám')
+                ORDER BY l.NgayGioKham",
+                new { don.MaNV,don.TuNgay,don.DenNgay,NghiViec=LaDonNghiViec(don.GhiChu) },tx).ToList();
+            foreach (ET_LICHKHAM lich in lichKham)
+            {
+                int dem = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.LICH_LAM_VIEC
+                    WHERE MaNV=@MaNV AND NgayLam=@Ngay AND MaCa=@MaCa
+                      AND TrangThai IN (N'Nghỉ phép',N'Nghỉ việc',N'Đã xác nhận',N'Chờ xác nhận')",
+                    new { MaNV=don.MaNV,Ngay=lich.NgayGioKham.Date,lich.MaCa },tx);
+                if (dem>0) continue;
+                connection.Execute(@"IF NOT EXISTS (SELECT 1 FROM dbo.CA_THEO_NGAY
+                    WHERE NgayLam=@Ngay AND MaCa=@MaCa)
+                    INSERT INTO dbo.CA_THEO_NGAY (NgayLam,MaCa) VALUES (@Ngay,@MaCa)",
+                    new { Ngay=lich.NgayGioKham.Date,lich.MaCa },tx);
+                string maLLV = TaoMa(connection,tx,"LICH_LAM_VIEC","MaLLV");
+                connection.Execute(@"INSERT INTO dbo.LICH_LAM_VIEC
+                    (MaLLV,MaNV,MaCa,NgayLam,MaPhong,TrangThai,TrangThaiHienDien,GioVao,GioRa,GhiChu)
+                    VALUES (@MaLLV,@MaNV,@MaCa,@Ngay,@MaPhong,@TrangThai,N'Chưa vào ca',NULL,NULL,@GhiChu)",
+                    new { MaLLV=maLLV,MaNV=don.MaNV,lich.MaCa,Ngay=lich.NgayGioKham.Date,
+                        lich.MaPhong,TrangThai=trangThaiCa,GhiChu="Ca nghỉ từ lịch khám theo đơn "+don.MaDonNghi },tx);
+            }
+        }
+
+        // Chỉ gọi từ màn hình quản lý. Tạo và duyệt trong cùng giao dịch.
+        public string taoDonKhanCap(ET_DON_XIN_NGHI don, string maQuanLy)
+        {
+            using var connection = MoKetNoi();
+            using var tx = connection.BeginTransaction(IsolationLevel.Serializable);
+            try
+            {
+                if (don.TuNgay.Date<DateTime.Today || don.DenNgay.Date<don.TuNgay.Date)
+                    throw new InvalidOperationException("Thời gian nghỉ khẩn cấp không hợp lệ.");
+                int khoa = connection.ExecuteScalar<int>(@"DECLARE @k int;
+                    EXEC @k=sys.sp_getapplock @Resource=N'RHM:PhanCong',@LockMode='Exclusive',
+                        @LockOwner='Transaction',@LockTimeout=10000; SELECT @k",transaction:tx);
+                if (khoa<0) throw new InvalidOperationException("Đang có người phân công lịch. Hãy thử lại.");
+                if (don.MaNV==maQuanLy) throw new InvalidOperationException("Không thể tự duyệt đơn khẩn cấp của mình.");
+                int nguoi = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.NHAN_VIEN
+                    WHERE MaNV=@MaNV AND TrangThai=N'Đang làm việc'",new { don.MaNV },tx);
+                if (nguoi!=1) throw new InvalidOperationException("Nhân viên không còn đang làm việc.");
+                int quanLy = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.NHAN_VIEN
+                    WHERE MaNV=@MaNV AND TrangThai=N'Đang làm việc'",new { MaNV=maQuanLy },tx);
+                if (quanLy!=1) throw new InvalidOperationException("Không tìm thấy nhân viên quản lý hợp lệ.");
+                int trung = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.DON_XIN_NGHI WITH(UPDLOCK,HOLDLOCK)
+                    WHERE MaNV=@MaNV AND TrangThaiDuyet IN (N'Chờ duyệt',N'Đã duyệt')
+                      AND (TuNgay<=@DenNgay OR @NghiViec=1)
+                      AND (DenNgay>=@TuNgay OR GhiChu LIKE N'%Loại đơn: Nghỉ việc%')",
+                    new { don.MaNV,don.TuNgay,don.DenNgay,NghiViec=LaDonNghiViec(don.GhiChu) },tx);
+                if (trung>0) throw new InvalidOperationException("Nhân viên đã có đơn trùng kỳ nghỉ.");
+                don.MaDonNghi = TaoMa(connection,tx,"DON_XIN_NGHI","MaDonNghi");
+                don.NgayGui=DateTime.Now;
+                don.TrangThaiDuyet="Đã duyệt";
+                don.MaNVDuyet=maQuanLy;
+                don.NgayDuyet=DateTime.Now;
+                connection.Execute(@"INSERT INTO dbo.DON_XIN_NGHI
+                    (MaDonNghi,MaNV,TuNgay,DenNgay,LyDo,NgayGui,TrangThaiDuyet,MaNVDuyet,NgayDuyet,GhiChu)
+                    VALUES (@MaDonNghi,@MaNV,@TuNgay,@DenNgay,@LyDo,@NgayGui,@TrangThaiDuyet,@MaNVDuyet,@NgayDuyet,@GhiChu)",don,tx);
+                connection.Execute(@"UPDATE dbo.LICH_LAM_VIEC SET TrangThai=N'Nghỉ phép',
+                    GhiChu=CONCAT(ISNULL(GhiChu,N''),N' | Nghỉ khẩn cấp theo đơn ',@MaDon)
+                    WHERE MaNV=@MaNV AND NgayLam>=@TuNgay AND NgayLam<=@DenNgay
+                      AND TrangThai IN (N'Chờ xác nhận',N'Đã xác nhận')",
+                    new { don.MaNV,don.TuNgay,don.DenNgay,MaDon=don.MaDonNghi },tx);
+                TaoCaNghiThieu(connection,tx,don,"Nghỉ phép");
+                // Không đụng vào LICH_KHAM: mỗi lịch phải được chuyển thủ công.
+                tx.Commit();
+                return don.MaDonNghi;
+            }
+            catch { tx.Rollback(); throw; }
+        }
+
         public bool daDuocDuyetNghi(string maNV, DateTime ngay)
         {
             using var connection = MoKetNoi();
@@ -118,6 +196,7 @@ namespace DAL
             ISNULL(thay.MaNV,N'') MaBSMoi,ISNULL(n.HoTen,N'') TenBSMoi,
             ISNULL(thay.MaPhong,N'') MaPhongMoi,ISNULL(pmoi.TenPhong,N'Chưa phân phòng') TenPhongMoi,
             ISNULL(thay.MaLLV,N'') MaLLVThayThe,
+            l.MaBSDuBi,ISNULL(duBi.HoTen,N'Chưa có dự bị') TenBSDuBi,
             CAST(CASE WHEN xn.TrangThai=N'Đã xác nhận' AND xn.MaBSCu=l.MaBS
                 AND xn.MaPhongCu=l.MaPhong AND xn.MaBSMoi=thay.MaNV
                 AND xn.MaPhongMoi=thay.MaPhong AND xn.MaLLVThayThe=thay.MaLLV
@@ -132,23 +211,25 @@ namespace DAL
                 AND l.TrangThai NOT IN (N'Hủy',N'Đã hủy',N'Đã đổi',N'Hoàn thành',N'Đã khám')
             LEFT JOIN dbo.BENH_NHAN bn ON bn.MaBN=l.MaBN
             LEFT JOIN dbo.NHAN_VIEN bscu ON bscu.MaNV=l.MaBS
+            LEFT JOIN dbo.NHAN_VIEN duBi ON duBi.MaNV=l.MaBSDuBi
             LEFT JOIN dbo.PHONG pcu ON pcu.MaPhong=l.MaPhong
             OUTER APPLY (SELECT TOP 1 t.MaLLV,t.MaNV,t.MaPhong
                 FROM dbo.LICH_LAM_VIEC goc
                 JOIN dbo.PHAN_CONG_THAY_THE p ON p.MaDonNghi=d.MaDonNghi
-                    AND p.GhiChu=N'Thay ca '+goc.MaLLV AND p.TrangThai=N'Chờ duyệt'
+                    AND p.GhiChu=N'Thay ca '+goc.MaLLV AND p.TrangThai=N'Đã xác nhận'
                 JOIN dbo.LICH_LAM_VIEC t ON t.MaLLV=p.MaLLVThayThe
                     AND t.MaCa=goc.MaCa AND t.NgayLam=goc.NgayLam
                     AND t.TrangThai IN (N'Dự kiến thay thế',N'Đã xác nhận')
                 WHERE goc.MaNV=d.MaNV AND goc.MaCa=l.MaCa
+                    AND goc.MaPhong=l.MaPhong
                     AND goc.NgayLam=CONVERT(date,l.NgayGioKham)
-                    AND goc.TrangThai IN (N'Đã xác nhận',N'Chờ xác nhận')
+                    AND goc.TrangThai IN (N'Nghỉ phép',N'Nghỉ việc')
                 ORDER BY p.NgayXuLy DESC) thay
             LEFT JOIN dbo.NHAN_VIEN n ON n.MaNV=thay.MaNV
             LEFT JOIN dbo.PHONG pmoi ON pmoi.MaPhong=thay.MaPhong
             LEFT JOIN dbo.XAC_NHAN_DOI_LICH_KHAM xn ON xn.MaDonNghi=d.MaDonNghi AND xn.MaLich=l.MaLich
             LEFT JOIN dbo.NHAN_VIEN xacnhan ON xacnhan.MaNV=xn.MaNVXacNhan
-            WHERE d.MaDonNghi=@MaDon AND d.TrangThaiDuyet=N'Chờ duyệt'";
+            WHERE d.MaDonNghi=@MaDon AND d.TrangThaiDuyet=N'Đã duyệt'";
 
         public List<ET_LICH_KHAM_CAN_XAC_NHAN> layLichKhamCanXacNhan(string maDon)
         {
@@ -156,18 +237,20 @@ namespace DAL
             string? trangThai = connection.QuerySingleOrDefault<string>(
                 "SELECT TrangThaiDuyet FROM dbo.DON_XIN_NGHI WHERE MaDonNghi=@MaDon",
                 new { MaDon=maDon });
-            if (trangThai=="Chờ duyệt")
-                return connection.Query<ET_LICH_KHAM_CAN_XAC_NHAN>(
+            List<ET_LICH_KHAM_CAN_XAC_NHAN> dangCho = new List<ET_LICH_KHAM_CAN_XAC_NHAN>();
+            if (trangThai=="Đã duyệt")
+                dangCho = connection.Query<ET_LICH_KHAM_CAN_XAC_NHAN>(
                     sqlLichChoXacNhan + " ORDER BY l.NgayGioKham,l.MaLich",
                     new { MaDon=maDon }).ToList();
-            // Giữ lịch sử xác nhận cả sau khi đã chuyển bác sĩ/phòng trên lịch khám.
-            return connection.Query<ET_LICH_KHAM_CAN_XAC_NHAN>(@"SELECT xn.MaLich,
+            // Các lịch đã chuyển không còn trong danh sách đang chờ, nên gộp lịch sử vào.
+            List<ET_LICH_KHAM_CAN_XAC_NHAN> daChuyen = connection.Query<ET_LICH_KHAM_CAN_XAC_NHAN>(@"SELECT xn.MaLich,
                 ISNULL(bn.HoTenBN,N'') TenBenhNhan,xn.NgayGioKham,xn.ThoiLuongDuKien,xn.MaCa,
                 xn.MaBSCu,ISNULL(bscu.HoTen,N'Chưa có thông tin') TenBSCu,
                 xn.MaPhongCu,ISNULL(pcu.TenPhong,N'Chưa phân phòng') TenPhongCu,
                 xn.MaBSMoi,ISNULL(n.HoTen,N'') TenBSMoi,
                 xn.MaPhongMoi,ISNULL(pmoi.TenPhong,N'Chưa phân phòng') TenPhongMoi,
-                xn.MaLLVThayThe,xn.MaNVXacNhan,ISNULL(xacnhan.HoTen,N'') TenNguoiXacNhan,xn.NgayXacNhan,
+                xn.MaLLVThayThe,l.MaBSDuBi,ISNULL(duBi.HoTen,N'Chưa có dự bị') TenBSDuBi,
+                xn.MaNVXacNhan,ISNULL(xacnhan.HoTen,N'') TenNguoiXacNhan,xn.NgayXacNhan,
                 CAST(CASE WHEN xn.TrangThai=N'Đã xác nhận' THEN 1 ELSE 0 END AS bit) DaXacNhan,
                 CASE WHEN d.TrangThaiDuyet=N'Đã duyệt' THEN N'Đã chuyển'
                     ELSE N'Đã hủy' END TrangThaiLuu
@@ -177,12 +260,23 @@ namespace DAL
                 LEFT JOIN dbo.BENH_NHAN bn ON bn.MaBN=l.MaBN
                 LEFT JOIN dbo.NHAN_VIEN n ON n.MaNV=xn.MaBSMoi
                 LEFT JOIN dbo.NHAN_VIEN bscu ON bscu.MaNV=xn.MaBSCu
+                LEFT JOIN dbo.NHAN_VIEN duBi ON duBi.MaNV=l.MaBSDuBi
                 LEFT JOIN dbo.NHAN_VIEN xacnhan ON xacnhan.MaNV=xn.MaNVXacNhan
                 LEFT JOIN dbo.PHONG pcu ON pcu.MaPhong=xn.MaPhongCu
                 LEFT JOIN dbo.PHONG pmoi ON pmoi.MaPhong=xn.MaPhongMoi
-                WHERE xn.MaDonNghi=@MaDon
+                WHERE xn.MaDonNghi=@MaDon AND xn.TrangThai=N'Đã xác nhận'
                 ORDER BY xn.NgayGioKham,xn.MaLich",
                 new { MaDon=maDon }).ToList();
+            foreach (ET_LICH_KHAM_CAN_XAC_NHAN da in daChuyen)
+            {
+                bool daCo = false;
+                foreach (ET_LICH_KHAM_CAN_XAC_NHAN cho in dangCho)
+                {
+                    if (cho.MaLich==da.MaLich) { daCo=true; break; }
+                }
+                if (!daCo) dangCho.Add(da);
+            }
+            return dangCho;
         }
 
         public bool xacNhanTungLichKham(string maDon, string maLich, string maNguoiXacNhan)
@@ -197,10 +291,10 @@ namespace DAL
                 if (khoa<0) throw new InvalidOperationException("Có người đang sửa lịch. Hãy thử lại.");
                 string? maNVDangNghi = connection.QuerySingleOrDefault<string>(@"SELECT MaNV
                     FROM dbo.DON_XIN_NGHI WITH(UPDLOCK,HOLDLOCK)
-                    WHERE MaDonNghi=@MaDon AND TrangThaiDuyet=N'Chờ duyệt'",
+                    WHERE MaDonNghi=@MaDon AND TrangThaiDuyet=N'Đã duyệt'",
                     new { MaDon=maDon },tx);
                 if (string.IsNullOrWhiteSpace(maNVDangNghi))
-                    throw new InvalidOperationException("Đơn không còn ở trạng thái chờ duyệt.");
+                    throw new InvalidOperationException("Đơn chưa được duyệt hoặc không còn hợp lệ.");
                 if (maNVDangNghi==maNguoiXacNhan)
                     throw new InvalidOperationException("Không thể tự xác nhận lịch khám của mình.");
                 ET_LICH_KHAM_CAN_XAC_NHAN? lich = null;
@@ -219,7 +313,7 @@ namespace DAL
                 int trung = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.LICH_KHAM WITH(UPDLOCK,HOLDLOCK)
                     WHERE MaLich<>@MaLich
                       AND TrangThai NOT IN (N'Hủy',N'Đã hủy',N'Đã đổi',N'Hoàn thành',N'Đã khám')
-                      AND (MaBS=@MaBS OR MaPhong=@MaPhong)
+                      AND (MaBS=@MaBS OR MaBSDuBi=@MaBS OR MaPhong=@MaPhong)
                       AND NgayGioKham<DATEADD(minute,@ThoiLuong,@Ngay)
                       AND DATEADD(minute,ThoiLuongDuKien,NgayGioKham)>@Ngay",
                     new { lich.MaLich,MaBS=lich.MaBSMoi,MaPhong=lich.MaPhongMoi,
@@ -247,6 +341,17 @@ namespace DAL
                     new { MaDon=maDon,MaLich=maLich,lich.MaBSCu,lich.MaPhongCu,lich.MaBSMoi,
                         lich.MaPhongMoi,lich.MaLLVThayThe,lich.MaCa,lich.NgayGioKham,
                         lich.ThoiLuongDuKien,MaNVXacNhan=maNguoiXacNhan },tx);
+                // Chỉ lúc quản lý xác nhận riêng lịch mới chuyển bác sĩ/phòng.
+                int doi = connection.Execute(@"UPDATE dbo.LICH_KHAM
+                    SET MaBS=@MaBSMoi, MaPhong=@MaPhongMoi,
+                        MaBSDuBi=CASE WHEN MaBSDuBi=@MaBSMoi THEN NULL ELSE MaBSDuBi END,
+                        LyDoThayDoi=CONCAT(ISNULL(LyDoThayDoi,N''),N' | Chuyển theo đơn ',@MaDon),
+                        NgayCapNhat=SYSDATETIME()
+                    WHERE MaLich=@MaLich AND MaBS=@MaBSCu AND MaPhong=@MaPhongCu
+                      AND NgayGioKham=@NgayGioKham AND ThoiLuongDuKien=@ThoiLuongDuKien",
+                    new { lich.MaLich,lich.MaBSCu,lich.MaPhongCu,lich.MaBSMoi,lich.MaPhongMoi,
+                        lich.NgayGioKham,lich.ThoiLuongDuKien,MaDon=maDon },tx);
+                if (doi!=1) throw new InvalidOperationException("Lịch vừa thay đổi. Hãy tải lại và xác nhận lại.");
                 tx.Commit();
                 return true;
             }
@@ -267,11 +372,11 @@ namespace DAL
                     SELECT l.MaLLV,l.MaCa,ISNULL(l.MaPhong,N'') MaPhong,l.NgayLam,l.TrangThai
                     FROM dbo.LICH_LAM_VIEC l WITH(UPDLOCK,HOLDLOCK)
                     JOIN dbo.DON_XIN_NGHI d ON d.MaNV=l.MaNV
-                    WHERE d.MaDonNghi=@MaDon AND d.TrangThaiDuyet=N'Chờ duyệt'
+                    WHERE d.MaDonNghi=@MaDon AND d.TrangThaiDuyet=N'Đã duyệt'
                         AND l.MaLLV=@MaLLV AND l.NgayLam>=d.TuNgay
                         AND (l.NgayLam<=d.DenNgay OR d.GhiChu LIKE N'%Loại đơn: Nghỉ việc%')
                         AND l.NgayLam>=CONVERT(date,GETDATE())
-                        AND l.TrangThai IN (N'Đã xác nhận',N'Chờ xác nhận')",
+                        AND l.TrangThai IN (N'Nghỉ phép',N'Nghỉ việc')",
                     new { MaDon = maDon, MaLLV = maLLVGoc }, tx);
                 if (ca == null) throw new InvalidOperationException("Ca không hợp lệ hoặc đơn đã xử lý.");
                 int duDieuKien = connection.ExecuteScalar<int>(@"SELECT COUNT(*)
@@ -290,7 +395,7 @@ namespace DAL
                     new { MaNV=maNVThay, Ngay=ca.NgayLam }, tx);
                 if (nghi>0) throw new InvalidOperationException("Người thay thế đang có lịch nghỉ đã duyệt.");
                 int daThay = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.PHAN_CONG_THAY_THE
-                    WHERE MaDonNghi=@MaDon AND GhiChu=@GhiChu AND TrangThai=N'Chờ duyệt'",
+                    WHERE MaDonNghi=@MaDon AND GhiChu=@GhiChu AND TrangThai=N'Đã xác nhận'",
                     new { MaDon=maDon, GhiChu="Thay ca "+maLLVGoc }, tx);
                 if (daThay>0) throw new InvalidOperationException("Ca đã được chọn người thay. Hãy tải lại danh sách.");
                 // Nếu người thay đã được phân đúng ca/phòng, có thể dùng lịch đó,
@@ -320,7 +425,7 @@ namespace DAL
                       AND goc.MaCa=@MaCa AND CONVERT(date,goc.NgayGioKham)=@Ngay
                       AND goc.TrangThai NOT IN (N'Hủy',N'Đã hủy',N'Đã đổi',N'Hoàn thành',N'Đã khám')
                       AND khac.TrangThai NOT IN (N'Hủy',N'Đã hủy',N'Đã đổi',N'Hoàn thành',N'Đã khám')
-                      AND (khac.MaBS=@MaNV OR khac.MaPhong=@MaPhong)
+                      AND (khac.MaBS=@MaNV OR khac.MaBSDuBi=@MaNV OR khac.MaPhong=@MaPhong)
                       AND goc.NgayGioKham<DATEADD(minute,khac.ThoiLuongDuKien,khac.NgayGioKham)
                       AND khac.NgayGioKham<DATEADD(minute,goc.ThoiLuongDuKien,goc.NgayGioKham)",
                     new { MaLLV=maLLVGoc, MaCa=ca.MaCa,Ngay=ca.NgayLam,MaNV=maNVThay,MaPhong=maPhong },tx);
@@ -331,14 +436,14 @@ namespace DAL
                     maLLV = TaoMa(connection,tx,"LICH_LAM_VIEC","MaLLV");
                     connection.Execute(@"INSERT INTO dbo.LICH_LAM_VIEC
                         (MaLLV,MaNV,MaCa,NgayLam,MaPhong,TrangThai,TrangThaiHienDien,GioVao,GioRa,GhiChu)
-                        VALUES (@MaLLV,@MaNV,@MaCa,@Ngay,@MaPhong,N'Dự kiến thay thế',N'Chưa vào ca',NULL,NULL,@GhiChu)",
+                        VALUES (@MaLLV,@MaNV,@MaCa,@Ngay,@MaPhong,N'Đã xác nhận',N'Chưa vào ca',NULL,NULL,@GhiChu)",
                         new { MaLLV=maLLV,MaNV=maNVThay,MaCa=ca.MaCa,Ngay=ca.NgayLam,
                             MaPhong=maPhong,GhiChu="Thay ca "+maLLVGoc+" theo đơn "+maDon },tx);
                 }
                 string maPCTT = TaoMa(connection,tx,"PHAN_CONG_THAY_THE","MaPCTT");
                 connection.Execute(@"INSERT INTO dbo.PHAN_CONG_THAY_THE
                     (MaPCTT,MaDonNghi,MaLLVThayThe,NgayXuLy,TrangThai,GhiChu)
-                    VALUES (@MaPCTT,@MaDon,@MaLLV,SYSDATETIME(),N'Chờ duyệt',@GhiChu)",
+                    VALUES (@MaPCTT,@MaDon,@MaLLV,SYSDATETIME(),N'Đã xác nhận',@GhiChu)",
                     new { MaPCTT=maPCTT, MaDon=maDon, MaLLV=maLLV, GhiChu="Thay ca "+maLLVGoc },tx);
                 tx.Commit();
                 return true;
@@ -360,9 +465,13 @@ namespace DAL
                     FROM dbo.PHAN_CONG_THAY_THE tt WITH(UPDLOCK,HOLDLOCK)
                     JOIN dbo.DON_XIN_NGHI d ON d.MaDonNghi=tt.MaDonNghi
                     WHERE tt.MaDonNghi=@MaDon AND tt.GhiChu=@GhiChu
-                      AND d.TrangThaiDuyet=N'Chờ duyệt' AND tt.TrangThai=N'Chờ duyệt'",
+                      AND d.TrangThaiDuyet=N'Đã duyệt' AND tt.TrangThai=N'Đã xác nhận'",
                     new { MaDon=maDon,GhiChu="Thay ca "+maLLVGoc },tx);
                 if (string.IsNullOrWhiteSpace(ma)) return false;
+                int daChuyen = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.XAC_NHAN_DOI_LICH_KHAM
+                    WHERE MaDonNghi=@MaDon AND MaLLVThayThe=@MaLLV AND TrangThai=N'Đã xác nhận'",
+                    new { MaDon=maDon,MaLLV=ma },tx);
+                if (daChuyen>0) throw new InvalidOperationException("Ca có lịch khám đã chuyển; không thể hủy người thay.");
                 // Đổi người thay ca buộc xác nhận lại từng lịch khám của ca đó.
                 connection.Execute(@"UPDATE xn SET TrangThai=N'Đã hủy'
                     FROM dbo.XAC_NHAN_DOI_LICH_KHAM xn
@@ -372,11 +481,14 @@ namespace DAL
                     WHERE xn.MaDonNghi=@MaDon AND xn.TrangThai=N'Đã xác nhận'
                       AND l.MaCa=goc.MaCa AND CONVERT(date,l.NgayGioKham)=goc.NgayLam",
                     new { MaDon=maDon,MaLLVGoc=maLLVGoc },tx);
+                // Chỉ hủy ca do chính phương án thay thế này tạo, không hủy ca sẵn có.
                 connection.Execute(@"UPDATE dbo.LICH_LAM_VIEC SET TrangThai=N'Hủy'
-                    WHERE MaLLV=@MaLLV AND TrangThai=N'Dự kiến thay thế'",new { MaLLV=ma },tx);
+                    WHERE MaLLV=@MaLLV AND TrangThai=N'Đã xác nhận'
+                      AND GhiChu LIKE N'%theo đơn '+@MaDon+'%'",
+                    new { MaLLV=ma,MaDon=maDon },tx);
                 connection.Execute(@"UPDATE dbo.PHAN_CONG_THAY_THE
                     SET TrangThai=N'Hủy',NgayXuLy=SYSDATETIME()
-                    WHERE MaDonNghi=@MaDon AND MaLLVThayThe=@MaLLV AND TrangThai=N'Chờ duyệt'",
+                    WHERE MaDonNghi=@MaDon AND MaLLVThayThe=@MaLLV AND TrangThai=N'Đã xác nhận'",
                     new { MaDon=maDon,MaLLV=ma },tx);
                 tx.Commit();
                 return true;
@@ -402,120 +514,38 @@ namespace DAL
 
                 if (duyet)
                 {
-                    // Chặn hai đơn đã duyệt trùng kỳ nghỉ của cùng nhân viên.
+                    // Duyệt trước, phân người thay và xác nhận từng lịch SAU.
                     int trung = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.DON_XIN_NGHI WITH(UPDLOCK,HOLDLOCK)
                         WHERE MaDonNghi<>@MaDon AND MaNV=@MaNV AND TrangThaiDuyet=N'Đã duyệt'
                             AND (TuNgay<=@DenNgay OR @NghiViec=1)
                             AND (DenNgay>=@TuNgay OR GhiChu LIKE N'%Loại đơn: Nghỉ việc%')",
                         new { MaDon=maDon, don.MaNV, don.TuNgay, don.DenNgay,
                             NghiViec=LaDonNghiViec(don.GhiChu) },tx);
-                    if (trung>0) throw new InvalidOperationException("Đã có đơn nghỉ khác được duyệt trùng thời gian.");
-                    var caGoc = connection.Query<ET_CA_CAN_THAY_THE>(@"SELECT MaLLV,MaCa,NgayLam,ISNULL(MaPhong,N'') MaPhong,TrangThai
-                        FROM dbo.LICH_LAM_VIEC WITH(UPDLOCK,HOLDLOCK)
-                        WHERE MaNV=@MaNV AND NgayLam>=@TuNgay AND NgayLam>=CONVERT(date,GETDATE())
+                    if (trung>0) throw new InvalidOperationException("Có đơn đã duyệt trùng kỳ nghỉ.");
+                    // Không cập nhật bác sĩ/phòng của LICH_KHAM ở bước duyệt.
+                    string trangThaiCa = "Nghỉ phép";
+                    if (LaDonNghiViec(don.GhiChu)) trangThaiCa = "Nghỉ việc";
+                    connection.Execute(@"UPDATE dbo.LICH_LAM_VIEC SET TrangThai=@TrangThai,
+                            GhiChu=CONCAT(ISNULL(GhiChu,N''),N' | Nghỉ theo đơn ',@MaDon)
+                        WHERE MaNV=@MaNV AND NgayLam>=@TuNgay
                           AND (NgayLam<=@DenNgay OR @NghiViec=1)
-                          AND TrangThai IN (N'Đã xác nhận',N'Chờ xác nhận')",
-                        new { don.MaNV,don.TuNgay,don.DenNgay,NghiViec=LaDonNghiViec(don.GhiChu) },tx).ToList();
-                    foreach (ET_CA_CAN_THAY_THE ca in caGoc)
-                    {
-                        string ghiChu = "Thay ca " + ca.MaLLV;
-                        string maLLVThay = connection.QuerySingleOrDefault<string>(@"
-                            SELECT TOP 1 tt.MaLLVThayThe FROM dbo.PHAN_CONG_THAY_THE tt WITH(UPDLOCK,HOLDLOCK)
-                            JOIN dbo.LICH_LAM_VIEC thay ON thay.MaLLV=tt.MaLLVThayThe
-                            WHERE tt.MaDonNghi=@MaDon AND tt.GhiChu=@GhiChu
-                              AND tt.TrangThai=N'Chờ duyệt' AND thay.TrangThai IN (N'Dự kiến thay thế',N'Đã xác nhận')
-                              AND thay.NgayLam=@Ngay AND thay.MaCa=@MaCa AND thay.MaNV<>@MaNV",
-                            new { MaDon=maDon,GhiChu=ghiChu,Ngay=ca.NgayLam,MaCa=ca.MaCa,don.MaNV },tx);
-                        if (string.IsNullOrWhiteSpace(maLLVThay))
-                            throw new InvalidOperationException("Chưa phân công người thay cho ca "+ca.MaLLV+" ngày "+ca.NgayLam.ToString("dd/MM/yyyy")+". Vào Ca làm để phân người thay trước khi duyệt.");
-                    }
-                    // Hủy các phương án thay cho ca gốc đã xóa/hủy trước khi duyệt.
-                    connection.Execute(@"UPDATE llv SET llv.TrangThai=N'Hủy'
+                          AND TrangThai IN (N'Chờ xác nhận',N'Đã xác nhận')",
+                        new { MaNV=don.MaNV,MaDon=maDon,don.TuNgay,don.DenNgay,
+                            NghiViec=LaDonNghiViec(don.GhiChu),TrangThai=trangThaiCa },tx);
+                    TaoCaNghiThieu(connection,tx,don,trangThaiCa);
+                    // Hủy phương án cũ chưa được thực hiện, tránh tự động đổi lịch.
+                    connection.Execute(@"UPDATE llv SET TrangThai=N'Hủy'
                         FROM dbo.LICH_LAM_VIEC llv
                         JOIN dbo.PHAN_CONG_THAY_THE p ON p.MaLLVThayThe=llv.MaLLV
                         WHERE p.MaDonNghi=@MaDon AND p.TrangThai=N'Chờ duyệt'
-                          AND NOT EXISTS (SELECT 1 FROM dbo.LICH_LAM_VIEC goc
-                              WHERE p.GhiChu=N'Thay ca '+goc.MaLLV
-                                AND goc.TrangThai IN (N'Đã xác nhận',N'Chờ xác nhận'))",
+                          AND llv.TrangThai=N'Dự kiến thay thế'",
                         new { MaDon=maDon },tx);
-                    connection.Execute(@"UPDATE p SET p.TrangThai=N'Hủy'
-                        FROM dbo.PHAN_CONG_THAY_THE p
-                        WHERE p.MaDonNghi=@MaDon AND p.TrangThai=N'Chờ duyệt'
-                          AND NOT EXISTS (SELECT 1 FROM dbo.LICH_LAM_VIEC goc
-                              WHERE p.GhiChu=N'Thay ca '+goc.MaLLV
-                                AND goc.TrangThai IN (N'Đã xác nhận',N'Chờ xác nhận'))",
+                    connection.Execute(@"UPDATE dbo.PHAN_CONG_THAY_THE SET TrangThai=N'Hủy'
+                        WHERE MaDonNghi=@MaDon AND TrangThai=N'Chờ duyệt'",
                         new { MaDon=maDon },tx);
-                    // Lịch khám còn hiệu lực phải có ca gốc và phương án thay thế.
-                    var lichKham = connection.Query<ET_LICHKHAM>(@"SELECT * FROM dbo.LICH_KHAM WITH(UPDLOCK,HOLDLOCK)
-                        WHERE MaBS=@MaNV AND CONVERT(date,NgayGioKham)>=@TuNgay
-                          AND NgayGioKham>=SYSDATETIME()
-                          AND (CONVERT(date,NgayGioKham)<=@DenNgay OR @NghiViec=1)
-                          AND TrangThai NOT IN (N'Hủy',N'Đã hủy',N'Đã đổi',N'Hoàn thành',N'Đã khám')",
-                        new { MaNV=don.MaNV,don.TuNgay,don.DenNgay,NghiViec=LaDonNghiViec(don.GhiChu) },tx).ToList();
-                    foreach (ET_LICHKHAM lich in lichKham)
-                    {
-                        string maLLVThay = connection.QuerySingleOrDefault<string>(@"SELECT TOP 1 tt.MaLLVThayThe
-                            FROM dbo.LICH_LAM_VIEC goc JOIN dbo.PHAN_CONG_THAY_THE tt
-                              ON tt.MaDonNghi=@MaDon AND tt.GhiChu=N'Thay ca '+goc.MaLLV AND tt.TrangThai=N'Chờ duyệt'
-                            JOIN dbo.LICH_LAM_VIEC thay ON thay.MaLLV=tt.MaLLVThayThe
-                            WHERE goc.MaNV=@MaNV AND goc.MaCa=@MaCa AND goc.NgayLam=@Ngay
-                              AND goc.TrangThai IN (N'Đã xác nhận',N'Chờ xác nhận')
-                              AND thay.MaCa=goc.MaCa AND thay.NgayLam=goc.NgayLam
-                            ORDER BY tt.NgayXuLy DESC",
-                            new { MaDon=maDon,MaNV=don.MaNV,MaCa=lich.MaCa,Ngay=lich.NgayGioKham.Date },tx);
-                        if (string.IsNullOrWhiteSpace(maLLVThay))
-                            throw new InvalidOperationException("Lịch khám "+lich.MaLich+" chưa có nhân viên thay thế. Hãy đồng bộ lịch khám vào Ca làm, rồi phân người thay.");
-                        var thay = connection.QuerySingle<ET_LICHLAMVIEC>(
-                            "SELECT * FROM dbo.LICH_LAM_VIEC WHERE MaLLV=@MaLLV",new { MaLLV=maLLVThay },tx);
-                        // Xác nhận phải là của chính lịch này, lưu trên SQL (không dùng checkbox tạm).
-                        // Nếu lịch/ca/phòng đổi sau khi xác nhận, không cho duyệt.
-                        int daXacNhan = connection.ExecuteScalar<int>(@"SELECT COUNT(*)
-                            FROM dbo.XAC_NHAN_DOI_LICH_KHAM WITH(UPDLOCK,HOLDLOCK)
-                            WHERE MaDonNghi=@MaDon AND MaLich=@MaLich AND TrangThai=N'Đã xác nhận'
-                              AND MaBSCu=@MaBSCu AND MaPhongCu=@MaPhongCu
-                              AND MaBSMoi=@MaBSMoi AND MaPhongMoi=@MaPhongMoi
-                              AND MaLLVThayThe=@MaLLVThayThe AND MaCa=@MaCa
-                              AND NgayGioKham=@NgayGioKham AND ThoiLuongDuKien=@ThoiLuongDuKien",
-                            new { MaDon=maDon,lich.MaLich,MaBSCu=lich.MaBS,
-                                MaPhongCu=lich.MaPhong,MaBSMoi=thay.MaNV,MaPhongMoi=thay.MaPhong,
-                                MaLLVThayThe=maLLVThay,lich.MaCa,lich.NgayGioKham,
-                                lich.ThoiLuongDuKien },tx);
-                        if (daXacNhan!=1)
-                            throw new InvalidOperationException("Lịch khám " + lich.MaLich +
-                                " chưa được quản lý xác nhận riêng hoặc đã thay đổi sau lần xác nhận. Hãy xác nhận lại từng lịch khám.");
-                        int trungLichThay = connection.ExecuteScalar<int>(@"SELECT COUNT(*)
-                            FROM dbo.LICH_KHAM WITH(UPDLOCK,HOLDLOCK)
-                            WHERE MaLich<>@MaLich
-                              AND TrangThai NOT IN (N'Hủy',N'Đã hủy',N'Đã đổi',N'Hoàn thành',N'Đã khám')
-                              AND (MaBS=@MaBS OR MaPhong=@MaPhong)
-                              AND NgayGioKham<DATEADD(minute,@ThoiLuong,@Ngay)
-                              AND DATEADD(minute,ThoiLuongDuKien,NgayGioKham)>@Ngay",
-                            new { lich.MaLich,MaBS=thay.MaNV,MaPhong=thay.MaPhong,
-                                Ngay=lich.NgayGioKham,ThoiLuong=lich.ThoiLuongDuKien },tx);
-                        if (trungLichThay>0)
-                            throw new InvalidOperationException("Bác sĩ/phòng thay thế có lịch trùng với lịch " +
-                                lich.MaLich + ". Vui lòng điều chỉnh trước khi duyệt đơn.");
-                        // Đổi nhân sự/phòng có ghi lại nguyên nhân để quản lý kiểm tra.
-                        connection.Execute(@"UPDATE dbo.LICH_KHAM SET MaBS=@MaBS,MaPhong=@MaPhong,
-                            LyDoThayDoi=CONCAT(ISNULL(LyDoThayDoi,N''),N' | Thay bác sĩ theo đơn nghỉ ',@MaDon),
-                            NgayCapNhat=SYSDATETIME() WHERE MaLich=@MaLich",
-                            new { MaBS=thay.MaNV,MaPhong=thay.MaPhong,MaDon=maDon,lich.MaLich },tx);
-                    }
-                    foreach (ET_CA_CAN_THAY_THE ca in caGoc)
-                    {
-                        string trangThaiCa = "Nghỉ phép";
-                        if (LaDonNghiViec(don.GhiChu)) trangThaiCa = "Nghỉ việc";
-                        connection.Execute(@"UPDATE dbo.LICH_LAM_VIEC SET TrangThai=@TrangThai,
-                            GhiChu=CONCAT(ISNULL(GhiChu,N''),N' | Nghỉ theo đơn ',@MaDon)
-                            WHERE MaLLV=@MaLLV",
-                            new { MaLLV=ca.MaLLV,MaDon=maDon,TrangThai=trangThaiCa },tx);
-                    }
-                    connection.Execute(@"UPDATE l SET l.TrangThai=N'Đã xác nhận'
-                        FROM dbo.LICH_LAM_VIEC l JOIN dbo.PHAN_CONG_THAY_THE tt ON tt.MaLLVThayThe=l.MaLLV
-                        WHERE tt.MaDonNghi=@MaDon AND tt.TrangThai=N'Chờ duyệt' AND l.TrangThai=N'Dự kiến thay thế'",
+                    connection.Execute(@"UPDATE dbo.XAC_NHAN_DOI_LICH_KHAM SET TrangThai=N'Đã hủy'
+                        WHERE MaDonNghi=@MaDon AND TrangThai=N'Đã xác nhận'",
                         new { MaDon=maDon },tx);
-                    connection.Execute(@"UPDATE dbo.PHAN_CONG_THAY_THE SET TrangThai=N'Đã xác nhận',NgayXuLy=SYSDATETIME()
-                        WHERE MaDonNghi=@MaDon AND TrangThai=N'Chờ duyệt'",new { MaDon=maDon },tx);
                 }
                 else
                 {

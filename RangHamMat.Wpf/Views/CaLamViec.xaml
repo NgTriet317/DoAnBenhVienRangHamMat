@@ -218,12 +218,6 @@
     </UserControl.Resources>
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="66"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-                
-
         <!-- Main content -->
         <Grid x:Name="MainCaContent" Grid.Row="1" Margin="40,20,40,16">
             <Grid.RowDefinitions>

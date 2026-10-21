@@ -40,13 +40,15 @@
         </Grid.RowDefinitions>
 
         <Grid Grid.Row="0" Margin="0,0,0,20">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <StackPanel>
                 <TextBlock Text="Quản lý đơn xin nghỉ" FontSize="25" FontWeight="Bold"/>
                 <TextBlock Text="Danh sách đơn xin nghỉ phép, nghỉ việc và lịch sử xét duyệt" Foreground="#71809B" Margin="0,6,0,0"/>
             </StackPanel>
-            <Button Grid.Column="1" Style="{StaticResource NutPhu}" Content="↻  Tải lại" Margin="0,0,10,0" Click="TaiLai_Click"/>
-            <Button Grid.Column="2" Style="{StaticResource NutPhu}" Content="←  Về Ca làm" Click="QuayLai_Click"/>
+            <Button Grid.Column="1" Style="{StaticResource NutChinh}" Content="+  Thêm đơn khẩn cấp"
+                    Margin="0,0,10,0" Click="ThemDonKhanCap_Click"/>
+            <Button Grid.Column="2" Style="{StaticResource NutPhu}" Content="↻  Tải lại" Margin="0,0,10,0" Click="TaiLai_Click"/>
+            <Button Grid.Column="3" Style="{StaticResource NutPhu}" Content="←  Về Ca làm" Click="QuayLai_Click"/>
         </Grid>
 
         <Border Grid.Row="1" CornerRadius="12" Background="White" BorderBrush="#E1E7F0" BorderThickness="1" Padding="18" Margin="0,0,0,16">
@@ -157,7 +159,7 @@
                             <Border x:Name="KhuPhanCongThayThe" Background="#F0F6FF" BorderBrush="#CCDDF8"
                                     BorderThickness="1" Padding="12" CornerRadius="10" Margin="0,0,0,18">
                                 <StackPanel>
-                                    <TextBlock Text="Phân công nhân viên thay thế" FontSize="15" FontWeight="SemiBold"
+                                    <TextBlock Text="Phân công thay thế sau khi duyệt" FontSize="15" FontWeight="SemiBold"
                                                Foreground="#23529A" Margin="0,0,0,5"/>
                                     <TextBlock x:Name="txtThongTinCaThay" Text="Các ca làm bị ảnh hưởng bởi đơn xin nghỉ"
                                                TextWrapping="Wrap" Foreground="#596B83" Margin="0,0,0,9"/>
@@ -193,7 +195,7 @@
                                         <Button x:Name="btnPhanCongThayThe" Content="Phân công người thay cho ca đã chọn"
                                                 Style="{StaticResource NutPhu}" Click="PhanCongThayThe_Click"/>
                                     </StackPanel>
-                                    <TextBlock Text="Chỉ hiển thị các ca đã xác nhận hoặc chờ xác nhận thuộc thời gian xin nghỉ. Các ca tiếp theo xem bằng thanh cuộn trong bảng."
+                                    <TextBlock Text="Đơn phải được duyệt trước. Các ca bị ảnh hưởng sẽ được bố trí người thay thế sau khi duyệt."
                                                Foreground="#596B83" FontSize="12" TextWrapping="Wrap" Margin="0,9,0,0"/>
                                 </StackPanel>
                             </Border>
@@ -201,7 +203,7 @@
                             <Border Background="#FFFDF4" BorderBrush="#EADBA6" BorderThickness="1"
                                     CornerRadius="10" Padding="12" Margin="0,0,0,18">
                                 <StackPanel>
-                                    <TextBlock Text="Xác nhận chuyển từng lịch khám" FontSize="15" FontWeight="SemiBold"
+                                    <TextBlock Text="Xác nhận từng lịch khám sau khi duyệt" FontSize="15" FontWeight="SemiBold"
                                                Foreground="#80601B" Margin="0,0,0,5"/>
                                     <TextBlock x:Name="txtThongTinXacNhanLich" Foreground="#695B3F"
                                                TextWrapping="Wrap" Margin="0,0,0,9"/>
@@ -212,6 +214,7 @@
                                             <DataGridTextColumn Header="Mã lịch" Binding="{Binding MaLich}" Width="95"/>
                                             <DataGridTextColumn Header="Bệnh nhân" Binding="{Binding TenBenhNhan}" Width="*"/>
                                             <DataGridTextColumn Header="Ngày khám" Binding="{Binding NgayGioKham, StringFormat=dd/MM HH:mm}" Width="112"/>
+                                            <DataGridTextColumn Header="Dự bị" Binding="{Binding TenBSDuBi}" Width="*"/>
                                             <DataGridTextColumn Header="BS thay" Binding="{Binding TenBSMoi}" Width="*"/>
                                             <DataGridTextColumn Header="Xác nhận" Binding="{Binding TrangThaiXacNhan}" Width="105"/>
                                         </DataGrid.Columns>
@@ -221,7 +224,7 @@
                                     <Button x:Name="btnXacNhanLichKham" Content="Xác nhận riêng lịch khám đã chọn"
                                             Style="{StaticResource NutChinh}" HorizontalAlignment="Right"
                                             Click="XacNhanLichKham_Click"/>
-                                    <TextBlock Text="Cần bấm xác nhận từng lịch. Nếu lịch hoặc ca thay thế thay đổi, phải xác nhận lại."
+                                    <TextBlock Text="Chỉ chuyển bác sĩ/phòng khi xác nhận RIÊNG lịch khám. Lịch chưa xác nhận được giữ nguyên, hiển thị đỏ trong Điều phối lịch khám."
                                                FontSize="11" Foreground="#695B3F" TextWrapping="Wrap" Margin="0,8,0,0"/>
                                 </StackPanel>
                             </Border>
@@ -268,6 +271,50 @@
                         </Grid>
                     </Border>
                 </Grid>
+            </Border>
+        </Grid>
+        <!-- Form tạo đơn nghỉ khẩn cấp cho quản lý: tạo xong là Đã duyệt -->
+        <Grid x:Name="KhanCapOverlay" Grid.RowSpan="4" Panel.ZIndex="30" Visibility="Collapsed"
+              Margin="-28,-20,-28,-22" Background="#990F172A">
+            <Border Background="White" Width="620" MaxHeight="760" Padding="24" CornerRadius="15"
+                    VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Thêm đơn xin nghỉ khẩn cấp" FontSize="22" FontWeight="Bold" Foreground="#173A61"/>
+                        <TextBlock Text="Quản lý tạo thay nhân viên. Đơn được DUYỆT NGAY, không cần báo trước 7 ngày."
+                                   Margin="0,8,0,18" TextWrapping="Wrap" Foreground="#B45309"/>
+                        <TextBlock Style="{StaticResource Nhan}" Text="Nhân viên nghỉ *"/>
+                        <ComboBox x:Name="cboNhanVienKhanCap" Style="{StaticResource OChon}" DisplayMemberPath="HoTen"
+                                  SelectedValuePath="MaNV"/>
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Từ ngày *" Style="{StaticResource Nhan}"/>
+                                <DatePicker x:Name="dpKhanCapTuNgay" Height="40" SelectedDateChanged="KhanCapNgay_Changed"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Đến ngày *" Style="{StaticResource Nhan}"/>
+                                <DatePicker x:Name="dpKhanCapDenNgay" Height="40"/>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Text="Lý do nghỉ khẩn cấp *" Style="{StaticResource Nhan}" Margin="0,14,0,0"/>
+                        <TextBox x:Name="txtLyDoKhanCap" MinHeight="95" MaxLength="1000" TextWrapping="Wrap"
+                                 AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Padding="10"/>
+                        <TextBlock Text="Thông tin bàn giao / ghi chú" Style="{StaticResource Nhan}" Margin="0,14,0,0"/>
+                        <TextBox x:Name="txtGhiChuKhanCap" MinHeight="65" MaxLength="700" TextWrapping="Wrap"
+                                 AcceptsReturn="True" Padding="10"/>
+                        <Border Background="#FEF3C7" CornerRadius="8" Padding="12" Margin="0,16,0,12">
+                            <TextBlock TextWrapping="Wrap" Foreground="#92400E"
+                                       Text="Sau khi tạo, các lịch khám của nhân viên trong kỳ nghỉ sẽ được giữ nguyên và đánh dấu Cần phân công lại; quản lý phải thay ca và xác nhận riêng từng lịch."/>
+                        </Border>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Đóng" Style="{StaticResource NutPhu}" Margin="0,0,10,0"
+                                    Click="DongKhanCap_Click"/>
+                            <Button Content="Tạo và duyệt ngay" Style="{StaticResource NutChinh}"
+                                    Click="LuuKhanCap_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
             </Border>
         </Grid>
     </Grid>

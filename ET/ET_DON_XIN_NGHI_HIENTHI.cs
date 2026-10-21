@@ -17,6 +17,8 @@ namespace ET
                 {
                     if (GhiChu.Contains("Loại đơn: Nghỉ việc", StringComparison.OrdinalIgnoreCase))
                         return "Nghỉ việc";
+                    if (GhiChu.Contains("Đơn khẩn cấp", StringComparison.OrdinalIgnoreCase))
+                        return "Nghỉ phép khẩn cấp";
                     if (GhiChu.Contains("Loại đơn: Nghỉ phép", StringComparison.OrdinalIgnoreCase))
                         return "Nghỉ phép";
                 }

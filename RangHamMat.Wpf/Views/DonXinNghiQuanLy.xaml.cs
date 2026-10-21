@@ -143,7 +143,8 @@ public partial class DonXinNghiQuanLy : UserControl
         CacNutXuLy.Visibility = Visibility.Collapsed;
         if (don.TrangThaiDuyet == "Chờ duyệt")
             CacNutXuLy.Visibility = Visibility.Visible;
-        KhuPhanCongThayThe.Visibility = Visibility.Visible;
+        KhuPhanCongThayThe.Visibility = Visibility.Collapsed;
+        if (don.TrangThaiDuyet == "Đã duyệt") KhuPhanCongThayThe.Visibility = Visibility.Visible;
         btnPhanCongThayThe.IsEnabled = false;
         btnHuyPhanCongThayThe.IsEnabled = false;
         TaiCaCanThayThe();
@@ -177,9 +178,9 @@ public partial class DonXinNghiQuanLy : UserControl
                 dgvCaCanThay.SelectedIndex = 0;
                 ET_CA_CAN_THAY_THE caDau = ca[0];
                 cboPhongThay.SelectedValue = caDau.MaPhong;
-                btnPhanCongThayThe.IsEnabled = donDangXem.TrangThaiDuyet == "Chờ duyệt" &&
+                btnPhanCongThayThe.IsEnabled = donDangXem.TrangThaiDuyet == "Đã duyệt" &&
                     string.IsNullOrWhiteSpace(caDau.MaLLVThayThe);
-                btnHuyPhanCongThayThe.IsEnabled = donDangXem.TrangThaiDuyet == "Chờ duyệt" &&
+                btnHuyPhanCongThayThe.IsEnabled = donDangXem.TrangThaiDuyet == "Đã duyệt" &&
                     !string.IsNullOrWhiteSpace(caDau.MaLLVThayThe);
             }
         }
@@ -197,10 +198,10 @@ public partial class DonXinNghiQuanLy : UserControl
         {
             cboPhongThay.SelectedValue = ca.MaPhong;
             btnPhanCongThayThe.IsEnabled = donDangXem != null &&
-                donDangXem.TrangThaiDuyet == "Chờ duyệt" &&
+                donDangXem.TrangThaiDuyet == "Đã duyệt" &&
                 string.IsNullOrWhiteSpace(ca.MaLLVThayThe);
             btnHuyPhanCongThayThe.IsEnabled = donDangXem != null &&
-                donDangXem.TrangThaiDuyet == "Chờ duyệt" &&
+                donDangXem.TrangThaiDuyet == "Đã duyệt" &&
                 !string.IsNullOrWhiteSpace(ca.MaLLVThayThe);
         }
     }
@@ -221,7 +222,7 @@ public partial class DonXinNghiQuanLy : UserControl
             bus.phanCongThayThe(donDangXem.MaDonNghi, ca.MaLLV, maNV, maPhong);
             TaiCaCanThayThe();
             TaiLichKhamCanXacNhan();
-            MessageBox.Show("Đã ghi nhận phương án thay ca. Ca sẽ được xác nhận khi đơn nghỉ được duyệt.");
+            MessageBox.Show("Đã phân công ca thay thế. Tiếp tục xác nhận riêng từng lịch khám bị ảnh hưởng.");
         }
         catch (Exception ex)
         {
@@ -267,11 +268,11 @@ public partial class DonXinNghiQuanLy : UserControl
             {
                 if (!item.DaXacNhan) chuaXacNhan++;
             }
-            if (donDangXem.TrangThaiDuyet == "Chờ duyệt")
+            if (donDangXem.TrangThaiDuyet == "Đã duyệt")
                 txtThongTinXacNhanLich.Text = "Có " + lich.Count + " lịch khám bị ảnh hưởng; " +
                     chuaXacNhan + " lịch chưa được xác nhận riêng.";
             else
-                txtThongTinXacNhanLich.Text = "Lịch sử " + lich.Count + " xác nhận lịch khám của đơn đã xử lý.";
+                txtThongTinXacNhanLich.Text = "Chỉ thực hiện thay ca và chuyển lịch khám cho đơn đã duyệt.";
             if (lich.Count > 0) dgvLichKhamXacNhan.SelectedIndex = 0;
         }
         catch (Exception ex)
@@ -291,12 +292,13 @@ public partial class DonXinNghiQuanLy : UserControl
             txtChiTietLichXacNhan.Text = "Mã lịch: " + lich.MaLich +
                 " | Ngày: " + lich.NgayGioKham.ToString("dd/MM/yyyy HH:mm") +
                 " | Bác sĩ hiện tại: " + lich.TenBSCu + " / " + lich.TenPhongCu +
+                "\nBác sĩ dự bị đã chọn: " + lich.TenBSDuBi +
                 "\nNgười thay thế: " + lich.TenBSMoi + " / " + lich.TenPhongMoi;
             if (lich.DaXacNhan && lich.NgayXacNhan.HasValue)
                 txtChiTietLichXacNhan.Text += "\nNgười xác nhận: " + lich.TenNguoiXacNhan +
                     " lúc " + lich.NgayXacNhan.Value.ToString("dd/MM/yyyy HH:mm");
             btnXacNhanLichKham.IsEnabled = donDangXem != null &&
-                donDangXem.TrangThaiDuyet == "Chờ duyệt" && !lich.DaXacNhan &&
+                donDangXem.TrangThaiDuyet == "Đã duyệt" && !lich.DaXacNhan &&
                 !string.IsNullOrWhiteSpace(lich.MaLLVThayThe);
         }
     }
@@ -338,29 +340,9 @@ public partial class DonXinNghiQuanLy : UserControl
     private void DuyetDon_Click(object sender, RoutedEventArgs e)
     {
         if (donDangXem == null) return;
-        try
-        {
-            List<ET_LICH_KHAM_CAN_XAC_NHAN> lichCanXacNhan = bus.layLichKhamCanXacNhan(donDangXem.MaDonNghi);
-            foreach (ET_LICH_KHAM_CAN_XAC_NHAN lich in lichCanXacNhan)
-            {
-                if (!lich.DaXacNhan)
-                {
-                    MessageBox.Show("Lịch khám " + lich.MaLich +
-                        " chưa được xác nhận riêng hoặc đã bị thay đổi. Hãy xác nhận từng lịch trước khi duyệt.",
-                        "Chưa xác nhận đủ lịch", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show("Không kiểm tra được lịch khám: " + ex.Message,
-                "Không thể duyệt", MessageBoxButton.OK, MessageBoxImage.Error);
-            return;
-        }
-        if (MessageBox.Show("Duyệt đơn " + donDangXem.MaDonNghi + " của " + donDangXem.HoTen +
-            "? Tất cả lịch khám bị ảnh hưởng đã được xác nhận riêng và sẽ được chuyển theo phương án thay ca.",
-            "Xác nhận duyệt", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+        if (MessageBox.Show("Duyệt đơn cho " + donDangXem.HoTen +
+            "? Lịch khám cũ sẽ được giữ nguyên và báo Cần phân công lại cho đến khi quản lý bố trí người thay và xác nhận riêng từng lịch.",
+            "Duyệt đơn trước", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
         LuuXuLyDon(true, "");
     }
@@ -432,4 +414,77 @@ public partial class DonXinNghiQuanLy : UserControl
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
+    private void ThemDonKhanCap_Click(object sender, RoutedEventArgs e)
+    {
+        if (!PhienDangNhap.IsAdmin) return;
+        try
+        {
+            cboNhanVienKhanCap.ItemsSource = new BUS_NHANVIEN().layToanBoNhanVien();
+            cboNhanVienKhanCap.SelectedIndex = -1;
+            dpKhanCapTuNgay.DisplayDateStart = DateTime.Today;
+            dpKhanCapDenNgay.DisplayDateStart = DateTime.Today;
+            dpKhanCapTuNgay.SelectedDate = DateTime.Today;
+            dpKhanCapDenNgay.SelectedDate = DateTime.Today;
+            txtLyDoKhanCap.Clear();
+            txtGhiChuKhanCap.Clear();
+            KhanCapOverlay.Visibility = Visibility.Visible;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Không thể tải danh sách nhân viên: " + ex.Message);
+        }
+    }
+
+    private void KhanCapNgay_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (dpKhanCapDenNgay == null || dpKhanCapTuNgay.SelectedDate == null) return;
+        dpKhanCapDenNgay.DisplayDateStart = dpKhanCapTuNgay.SelectedDate;
+        if (dpKhanCapDenNgay.SelectedDate < dpKhanCapTuNgay.SelectedDate)
+            dpKhanCapDenNgay.SelectedDate = dpKhanCapTuNgay.SelectedDate;
+    }
+
+    private void DongKhanCap_Click(object sender, RoutedEventArgs e)
+    {
+        KhanCapOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    private void LuuKhanCap_Click(object sender, RoutedEventArgs e)
+    {
+        if (!PhienDangNhap.IsAdmin) return;
+        if (cboNhanVienKhanCap.SelectedValue == null || !dpKhanCapTuNgay.SelectedDate.HasValue ||
+            !dpKhanCapDenNgay.SelectedDate.HasValue || string.IsNullOrWhiteSpace(txtLyDoKhanCap.Text))
+        {
+            MessageBox.Show("Chọn nhân viên, thời gian và nhập lý do nghỉ khẩn cấp.");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(PhienDangNhap.MaNV))
+        {
+            MessageBox.Show("Tài khoản quản lý chưa liên kết nhân viên.");
+            return;
+        }
+        if (MessageBox.Show("Tạo đơn khẩn cấp cho nhân viên đã chọn và DUYỆT NGAY?\n" +
+            "Lịch khám bị ảnh hưởng sẽ chờ phân công lại, không tự chuyển bác sĩ.",
+            "Xác nhận tạo đơn", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        ET_DON_XIN_NGHI don = new ET_DON_XIN_NGHI();
+        don.MaNV = cboNhanVienKhanCap.SelectedValue.ToString()!;
+        don.TuNgay = dpKhanCapTuNgay.SelectedDate.Value.Date;
+        don.DenNgay = dpKhanCapDenNgay.SelectedDate.Value.Date;
+        don.LyDo = txtLyDoKhanCap.Text.Trim();
+        don.GhiChu = txtGhiChuKhanCap.Text.Trim();
+        try
+        {
+            string maDon = bus.taoDonKhanCap(don,PhienDangNhap.MaNV);
+            KhanCapOverlay.Visibility = Visibility.Collapsed;
+            cboTrangThaiDon.SelectedIndex = 0;
+            TaiDuLieu();
+            MessageBox.Show("Đã tạo và duyệt đơn " + maDon + ". Hãy phân ca thay thế và xác nhận từng lịch khám.",
+                "Thành công",MessageBoxButton.OK,MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Không thể tạo đơn khẩn cấp: " + ex.Message,
+                "Lỗi",MessageBoxButton.OK,MessageBoxImage.Error);
+        }
+    }
+
 }

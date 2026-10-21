@@ -1,0 +1,146 @@
+<UserControl x:Class="RangHamMat.Views.Kho"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Background="#F4F7FB">
+    <UserControl.Resources>
+        <Style x:Key="KhoVien" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#DAE5F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+        </Style>
+        <Style x:Key="KhoBang" TargetType="DataGrid">
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="RowHeight" Value="43"/>
+            <Setter Property="ColumnHeaderHeight" Value="40"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="AlternatingRowBackground" Value="#F6FAFE"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="20,16,20,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Kho chỉ tra cứu vật tư: không có nghiệp vụ nhập / xuất trên màn hình này. -->
+        <Grid Grid.Row="0" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Kho vật tư" FontSize="25" FontWeight="Bold" Foreground="#173550"/>
+                <TextBlock Text="Chọn kho để xem mặt hàng đang có, số lượng tồn và lô hàng." Margin="0,5,0,0" FontSize="13" Foreground="#71859B"/>
+            </StackPanel>
+            <Button Grid.Column="1" Content="↻ Làm mới" Click="TaiLai_Click" Padding="15,9" VerticalAlignment="Center"/>
+        </Grid>
+
+        <Border Grid.Row="1" Style="{StaticResource KhoVien}" Padding="17,15" Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="250"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="170"/>
+                    <ColumnDefinition Width="18"/>
+                    <ColumnDefinition Width="170"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="Chọn kho" Foreground="#71859B" FontSize="12" Margin="0,0,0,6"/>
+                    <ComboBox x:Name="cboKho" Height="39" DisplayMemberPath="Ten" SelectedValuePath="Ma" SelectionChanged="Kho_SelectionChanged"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Tìm vật tư / thuốc" Foreground="#71859B" FontSize="12" Margin="0,0,0,6"/>
+                    <TextBox x:Name="txtTimKiem" Height="39" Padding="10,7" TextChanged="BoLoc_Changed" ToolTip="Tìm tên mặt hàng hoặc loại hàng"/>
+                </StackPanel>
+                <StackPanel Grid.Column="4">
+                    <TextBlock Text="Mặt hàng đang còn" Foreground="#71859B" FontSize="12"/>
+                    <TextBlock x:Name="lblTongMatHang" Text="0" Foreground="#145FAF" FontSize="27" FontWeight="Bold" Margin="0,3,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="6">
+                    <TextBlock Text="Dưới mức tối thiểu" Foreground="#71859B" FontSize="12"/>
+                    <TextBlock x:Name="lblCanBoSung" Text="0" Foreground="#D08318" FontSize="27" FontWeight="Bold" Margin="0,3,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.65*" MinWidth="400"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="1*" MinWidth="320"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource KhoVien}" Padding="16">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Grid Margin="0,0,0,13">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="165"/></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock x:Name="lblTenKho" Text="Danh sách tồn kho" Foreground="#173550" FontSize="18" FontWeight="Bold"/>
+                            <TextBlock x:Name="lblMoTaKho" Text="Chọn kho để xem vật tư" Foreground="#71859B" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <ComboBox x:Name="cboTrangThai" Grid.Column="1" Height="36" SelectedIndex="0" VerticalAlignment="Center" SelectionChanged="BoLoc_Changed">
+                            <ComboBoxItem Content="Tất cả tình trạng"/>
+                            <ComboBoxItem Content="Còn hàng"/>
+                            <ComboBoxItem Content="Sắp hết"/>
+                            <ComboBoxItem Content="Hết hàng"/>
+                        </ComboBox>
+                    </Grid>
+                    <DataGrid Grid.Row="1" x:Name="gridTonKho" Style="{StaticResource KhoBang}" SelectionChanged="TonKho_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Tên vật tư / thuốc" Binding="{Binding TenHang}" Width="2.1*" MinWidth="155"/>
+                            <DataGridTextColumn Header="Loại" Binding="{Binding LoaiHang}" Width="1.1*" MinWidth="95"/>
+                            <DataGridTextColumn Header="ĐVT" Binding="{Binding DonViTinh}" Width="0.65*" MinWidth="55"/>
+                            <DataGridTextColumn Header="Số tồn" Binding="{Binding SoLuongHienThi}" Width="0.8*" MinWidth="75"/>
+                            <DataGridTextColumn Header="Tình trạng" Binding="{Binding TrangThaiTon}" Width="0.95*" MinWidth="100"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource KhoVien}" Padding="17">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Margin="0,0,0,15">
+                        <TextBlock Text="CHI TIẾT VẬT TƯ" FontSize="11" Foreground="#72869B" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="lblTenHang" Text="Chưa chọn mặt hàng" Foreground="#173550" FontSize="20" FontWeight="Bold" Margin="0,6,0,4" TextWrapping="Wrap"/>
+                        <TextBlock Text="Chọn một dòng bên trái để xem tồn và lô tương ứng." Foreground="#72869B" FontSize="12" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <Border Grid.Row="1" Background="#EDF5FE" CornerRadius="12" Padding="15,12" Margin="0,0,0,15">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Số lượng tồn" Foreground="#58748D" FontSize="12"/>
+                                <TextBlock x:Name="lblSoLuong" Text="—" FontSize="24" FontWeight="Bold" Foreground="#145FAF" Margin="0,5,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Mức tồn tối thiểu" Foreground="#58748D" FontSize="12"/>
+                                <TextBlock x:Name="lblMucToiThieu" Text="—" FontSize="24" FontWeight="Bold" Foreground="#173550" Margin="0,5,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Grid Grid.Row="2">
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                        <TextBlock Text="Các lô hàng trong kho" FontSize="15" FontWeight="SemiBold" Foreground="#173550" Margin="0,0,0,10"/>
+                        <DataGrid Grid.Row="1" x:Name="gridLoHang" Style="{StaticResource KhoBang}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Số lô" Binding="{Binding SoLo}" Width="1.2*"/>
+                                <DataGridTextColumn Header="Tồn lô" Binding="{Binding SoLuongHienThi}" Width="0.75*"/>
+                                <DataGridTextColumn Header="Hạn dùng" Binding="{Binding HanDungHienThi}" Width="1.1*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

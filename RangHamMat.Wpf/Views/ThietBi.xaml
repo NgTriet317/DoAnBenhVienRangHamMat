@@ -1,76 +1,259 @@
-<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của ThietBi.xaml; các vùng liên quan: Thiết bị, Grid_THIET_BI. -->
-<!-- AI hỗ trợ: bổ sung chú thích cho thiết bị. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.ThietBi">
-  <Grid>
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="*" />
-    </Grid.RowDefinitions>
-    <StackPanel>
-      <TextBlock Text="Trang thiết bị" Style="{StaticResource Title}" />
-      <TextBlock Text="Nhấp đúp vào một dòng để xem chi tiết. Chọn Thêm để tạo mới." Style="{StaticResource Subtitle}" />
-    </StackPanel>
-    <WrapPanel Grid.Row="1" Margin="0,0,0,20">
-      <!-- Nút điều hướng MoTrang:BaoTri: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-      <Button Content="Bảo trì" Tag="MoTrang:BaoTri" />
-    </WrapPanel>
-    <TabControl Grid.Row="2">
-      <!-- Nhóm Thiết bị: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
-      <TabItem Header="Thiết bị">
-        <Grid Margin="0,20,0,0">
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-          </Grid.RowDefinitions>
-          <DockPanel Margin="0,0,0,18">
-            <WrapPanel DockPanel.Dock="Right">
-              <!-- Nút điều hướng ToggleColumns: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-              <Button Content="Hiện đủ cột" Tag="ToggleColumns" CommandParameter="THIET_BI" />
-              <!-- Nút điều hướng MoCuaSo:ThietBi: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-              <Button Content="Thêm thiết bị" Tag="MoCuaSo:ThietBi" CommandParameter="THIET_BI" Style="{StaticResource Primary}" />
-            </WrapPanel>
-            <TextBlock Text="Thiết bị" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-          </DockPanel>
-          <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
-            <Grid>
-              <!-- Bảng Grid_THIET_BI: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:THIET_BI cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
-              <DataGrid Tag="Table:THIET_BI" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_THIET_BI" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
-                <DataGrid.Columns>
-                  <DataGridTextColumn Header="Mã thiết bị" SortMemberPath="MaTB" Width="155" Binding="{Binding MaTB}" />
-                  <DataGridTextColumn Header="Tên thiết bị" SortMemberPath="TenTB" Width="155" Binding="{Binding TenTB}" />
-                  <DataGridTextColumn Header="Loại thiết bị" SortMemberPath="LoaiTB" Width="155" Binding="{Binding LoaiTB}" />
-                  <DataGridTextColumn Header="Số serial" SortMemberPath="SoSerial" Width="155" Binding="{Binding SoSerial}" />
-                  <DataGridTextColumn Header="Ngày mua" SortMemberPath="NgayMua" Width="155" Binding="{Binding NgayMua}" />
-                  <DataGridTextColumn Header="Nhà cung cấp" SortMemberPath="MaNCC" Width="155" Binding="{Binding MaNCC}" />
-                  <DataGridTextColumn Header="Phòng sử dụng" SortMemberPath="PhongSuDung" Width="155" Visibility="Collapsed" Binding="{Binding PhongSuDung}" />
-                  <DataGridTextColumn Header="Số lượng" SortMemberPath="SoLuong" Width="155" Visibility="Collapsed" Binding="{Binding SoLuong}" />
-                  <DataGridTextColumn Header="Tình trạng" SortMemberPath="TinhTrang" Width="155" Visibility="Collapsed" Binding="{Binding TinhTrang}" />
-                  <DataGridTextColumn Header="Ngày bảo hành" SortMemberPath="NgayBaoHanh" Width="155" Visibility="Collapsed" Binding="{Binding NgayBaoHanh}" />
-                  <DataGridTextColumn Header="Ghi chú" SortMemberPath="GhiChu" Width="155" Visibility="Collapsed" Binding="{Binding GhiChu}" />
-                </DataGrid.Columns>
-              </DataGrid>
-              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
-                <StackPanel.Style>
-                  <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
-                  <Style TargetType="StackPanel">
-                    <Setter Property="Visibility" Value="Collapsed" />
-                    <Style.Triggers>
-                      <DataTrigger Binding="{Binding HasItems, ElementName=Grid_THIET_BI}" Value="False">
-                        <Setter Property="Visibility" Value="Visible" />
-                      </DataTrigger>
-                    </Style.Triggers>
-                  </Style>
-                </StackPanel.Style>
-                <TextBlock Text="Chưa có thiết bị" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
-                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
-                <!-- Nút điều hướng MoCuaSo:ThietBi: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                <Button Content="Thêm mới" Tag="MoCuaSo:ThietBi" CommandParameter="THIET_BI" HorizontalAlignment="Center" />
-              </StackPanel>
-            </Grid>
-          </Border>
+<UserControl x:Class="RangHamMat.Views.ThietBi"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F5F8FC">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="EquipInk" Color="#18324F"/>
+        <SolidColorBrush x:Key="EquipSubtle" Color="#69809A"/>
+        <SolidColorBrush x:Key="EquipBorder" Color="#DEE8F3"/>
+        <SolidColorBrush x:Key="EquipBlue" Color="#2369D2"/>
+        <Style x:Key="EquipCard" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource EquipBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="16"/>
+        </Style>
+        <Style x:Key="EquipLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource EquipSubtle}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+        <Style x:Key="EquipNumber" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource EquipInk}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="28"/>
+        </Style>
+        <Style x:Key="EquipField" TargetType="StackPanel">
+            <Setter Property="Margin" Value="0,0,0,14"/>
+        </Style>
+        <Style x:Key="EquipGridRow" TargetType="DataGridRow">
+            <Setter Property="Height" Value="62"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="BorderBrush" Value="#EDF2F7"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#F1F7FF"/></Trigger>
+                <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#E7F0FF"/><Setter Property="Foreground" Value="{StaticResource EquipInk}"/></Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+    <Grid Margin="20,14,20,18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <!-- Thanh tiêu đề và thao tác chính -->
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="QUẢN LÝ TÀI SẢN Y TẾ" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource EquipBlue}"/>
+                <TextBlock Text="Trang thiết bị" FontSize="27" FontWeight="Bold" Foreground="{StaticResource EquipInk}" Margin="0,4,0,3"/>
+                <TextBlock Text="Theo dõi tình trạng, phòng sử dụng và bảo hành trên cùng một màn hình." Foreground="{StaticResource EquipSubtle}" FontSize="13"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="↻  Làm mới" Click="TaiLai_Click" Margin="0,0,8,0"/>
+                <Button Content="Lịch sử bảo trì ↗" Tag="MoTrang:BaoTri" Margin="0,0,8,0"/>
+                <Button Content="＋  Thêm thiết bị" Style="{StaticResource Primary}" Click="ThemMoi_Click" Margin="0"/>
+            </StackPanel>
         </Grid>
-      </TabItem>
-    </TabControl>
-  </Grid>
+        <!-- KPI tính từ dữ liệu thật, không dùng số liệu mẫu -->
+        <Grid Grid.Row="1" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource EquipCard}" Padding="18,14">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="TỔNG THIẾT BỊ" Style="{StaticResource EquipLabel}" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="lblTong" Text="0" Style="{StaticResource EquipNumber}"/>
+                        <TextBlock Text="Hồ sơ đang quản lý" FontSize="12" Foreground="{StaticResource EquipSubtle}"/>
+                    </StackPanel>
+                    <Border Grid.Column="1" Background="#EDF4FF" CornerRadius="12" Width="45" Height="45" VerticalAlignment="Top">
+                        <TextBlock Text="▦" Foreground="#2369D2" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </Grid>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource EquipCard}" Padding="18,14">
+                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="CẦN THEO DÕI" Style="{StaticResource EquipLabel}" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="lblCanTheoDoi" Text="0" Style="{StaticResource EquipNumber}" Foreground="#B45309"/>
+                        <TextBlock Text="Tình trạng hoặc bảo hành" FontSize="12" Foreground="{StaticResource EquipSubtle}"/>
+                    </StackPanel>
+                    <Border Grid.Column="1" Background="#FFF4E5" CornerRadius="12" Width="45" Height="45" VerticalAlignment="Top">
+                        <TextBlock Text="!" Foreground="#B45309" FontSize="27" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </Grid>
+            </Border>
+            <Border Grid.Column="4" Style="{StaticResource EquipCard}" Padding="18,14">
+                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="BẢO HÀNH SẮP HẾT" Style="{StaticResource EquipLabel}" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="lblSapHetBaoHanh" Text="0" Style="{StaticResource EquipNumber}" Foreground="#0C7A70"/>
+                        <TextBlock Text="Trong 30 ngày tới" FontSize="12" Foreground="{StaticResource EquipSubtle}"/>
+                    </StackPanel>
+                    <Border Grid.Column="1" Background="#E5F7F3" CornerRadius="12" Width="45" Height="45" VerticalAlignment="Top">
+                        <TextBlock Text="◷" Foreground="#087F73" FontSize="27" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+        <!-- Bộ lọc luôn nằm trên danh sách -->
+        <Border Grid.Row="2" Style="{StaticResource EquipCard}" Padding="16,12" Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="1.1*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="1.1*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="Tìm kiếm thiết bị" Style="{StaticResource EquipLabel}"/>
+                    <TextBox x:Name="txtTimKiem" TextChanged="BoLoc_Changed" ToolTip="Tìm theo tên, số serial, phòng hoặc nhà cung cấp"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Trạng thái" Style="{StaticResource EquipLabel}"/>
+                    <ComboBox x:Name="cboTrangThaiLoc" SelectionChanged="BoLoc_Changed"/>
+                </StackPanel>
+                <StackPanel Grid.Column="4">
+                    <TextBlock Text="Phòng sử dụng" Style="{StaticResource EquipLabel}"/>
+                    <ComboBox x:Name="cboPhongLoc" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="BoLoc_Changed"/>
+                </StackPanel>
+                <Button Grid.Column="5" Content="Xóa lọc" Click="XoaLoc_Click" VerticalAlignment="Bottom" Margin="12,0,0,0"/>
+            </Grid>
+        </Border>
+        <!-- Danh sách 62%, hồ sơ + form 38% -->
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="1.65*" MinWidth="430"/><ColumnDefinition Width="14"/><ColumnDefinition Width="1*" MinWidth="325"/></Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource EquipCard}" Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <Grid Margin="20,17,20,13">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Danh mục thiết bị" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource EquipInk}"/>
+                            <TextBlock Text="Chọn một thiết bị để xem hoặc sửa thông tin bên phải." Foreground="{StaticResource EquipSubtle}" FontSize="12" Margin="0,3,0,0"/>
+                        </StackPanel>
+                        <Border Grid.Column="1" Background="#EEF4FC" CornerRadius="8" Padding="10,6" VerticalAlignment="Center">
+                            <TextBlock x:Name="lblDangHien" Text="0 thiết bị" FontSize="12" Foreground="{StaticResource EquipBlue}" FontWeight="SemiBold"/>
+                        </Border>
+                    </Grid>
+                    <DataGrid Grid.Row="1" x:Name="Grid_THIET_BI" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                              HeadersVisibility="Column" GridLinesVisibility="None" RowStyle="{StaticResource EquipGridRow}" SelectionUnit="FullRow" SelectionMode="Single"
+                              SelectionChanged="DanhSach_SelectionChanged" BorderThickness="0" RowHeaderWidth="0" ColumnHeaderHeight="42"
+                              Background="White" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="THIẾT BỊ" Width="2*" MinWidth="160">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel VerticalAlignment="Center" Margin="8,0">
+                                            <TextBlock Text="{Binding TenThietBi}" FontSize="13" FontWeight="SemiBold" Foreground="#18324F" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding SoSerialHienThi}" Foreground="#71849A" FontSize="11" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="PHÒNG SỬ DỤNG" Binding="{Binding TenPhong}" Width="1.3*" MinWidth="120"/>
+                            <DataGridTemplateColumn Header="TÌNH TRẠNG" Width="1.2*" MinWidth="124">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="7" Padding="8,5" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#E9F7F0"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding CanChuY}" Value="True"><Setter Property="Background" Value="#FFF0DC"/></DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="{Binding TinhTrang}" FontSize="11" FontWeight="SemiBold">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#156B4C"/>
+                                                        <Style.Triggers><DataTrigger Binding="{Binding CanChuY}" Value="True"><Setter Property="Foreground" Value="#A95B0E"/></DataTrigger></Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="BẢO HÀNH" Binding="{Binding BaoHanhHienThi}" Width="1*" MinWidth="110"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock x:Name="lblTrong" Grid.Row="1" Text="Không có thiết bị phù hợp bộ lọc." FontSize="13" Foreground="{StaticResource EquipSubtle}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" IsHitTestVisible="False"/>
+                    <TextBlock Grid.Row="2" Text="Mẹo: nhập tên thiết bị, serial hoặc tên phòng để tìm nhanh." Foreground="{StaticResource EquipSubtle}" FontSize="11" Margin="20,12"/>
+                </Grid>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource EquipCard}" Padding="0" ClipToBounds="True">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <Border Background="#EAF2FF" Padding="20,18" BorderBrush="#D9E8FB" BorderThickness="0,0,0,1">
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock x:Name="lblCheDo" Text="HỒ SƠ THIẾT BỊ" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource EquipBlue}"/>
+                                <TextBlock x:Name="lblTieuDeChiTiet" Text="Chọn một thiết bị" TextWrapping="Wrap" FontSize="19" FontWeight="Bold" Foreground="{StaticResource EquipInk}" Margin="0,7,0,4"/>
+                                <TextBlock x:Name="lblMaThietBi" Text="Thông tin sẽ hiển thị tại đây" Foreground="#647B95" FontSize="12"/>
+                            </StackPanel>
+                            <Border Grid.Column="1" Background="White" CornerRadius="12" Width="48" Height="48" VerticalAlignment="Top">
+                                <TextBlock Text="⚙" Foreground="{StaticResource EquipBlue}" FontSize="27" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="20,18,20,4">
+                            <TextBlock Text="Thông tin nhận diện" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource EquipInk}" Margin="0,0,0,13"/>
+                            <StackPanel Style="{StaticResource EquipField}">
+                                <TextBlock Text="Tên thiết bị *" Style="{StaticResource EquipLabel}"/>
+                                <ComboBox x:Name="cboHangHoa" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EquipField}">
+                                <TextBlock Text="Số serial *" Style="{StaticResource EquipLabel}"/>
+                                <TextBox x:Name="txtSerial" MaxLength="50"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EquipField}">
+                                <TextBlock Text="Nhà cung cấp" Style="{StaticResource EquipLabel}"/>
+                                <ComboBox x:Name="cboNhaCungCap" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EquipField}">
+                                <TextBlock Text="Phòng sử dụng" Style="{StaticResource EquipLabel}"/>
+                                <ComboBox x:Name="cboPhong" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                            </StackPanel>
+                            <Border Height="1" Background="#E8EEF7" Margin="0,0,0,16"/>
+                            <TextBlock Text="Tình trạng &amp; bảo hành" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource EquipInk}" Margin="0,0,0,13"/>
+                            <StackPanel Style="{StaticResource EquipField}">
+                                <TextBlock Text="Tình trạng thiết bị *" Style="{StaticResource EquipLabel}"/>
+                                <ComboBox x:Name="cboTinhTrang" IsEditable="True" IsTextSearchEnabled="True"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EquipField}">
+                                <TextBlock Text="Trạng thái quản lý *" Style="{StaticResource EquipLabel}"/>
+                                <ComboBox x:Name="cboTrangThai" IsEditable="True" IsTextSearchEnabled="True"/>
+                            </StackPanel>
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Ngày mua" Style="{StaticResource EquipLabel}"/>
+                                    <DatePicker x:Name="dpNgayMua"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Hạn bảo hành" Style="{StaticResource EquipLabel}"/>
+                                    <DatePicker x:Name="dpHanBaoHanh"/>
+                                </StackPanel>
+                            </Grid>
+                            <StackPanel Style="{StaticResource EquipField}">
+                                <TextBlock Text="Ghi chú" Style="{StaticResource EquipLabel}"/>
+                                <TextBox x:Name="txtGhiChu" MinHeight="78" Height="88" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" MaxLength="2000"/>
+                            </StackPanel>
+                            <TextBlock x:Name="lblThongBao" TextWrapping="Wrap" Foreground="#AD4418" FontSize="12" Margin="0,3,0,8"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                    <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="#E5ECF4" Padding="14">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button x:Name="btnHuy" Content="Hủy" Click="Huy_Click" Visibility="Collapsed"/>
+                            <Button x:Name="btnSua" Content="Chỉnh sửa" Click="Sua_Click"/>
+                            <Button x:Name="btnLuu" Content="Lưu thiết bị" Style="{StaticResource Primary}" Click="Luu_Click" Visibility="Collapsed" Margin="0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
 </UserControl>
