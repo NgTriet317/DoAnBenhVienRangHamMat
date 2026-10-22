@@ -91,6 +91,11 @@ namespace ET
         /// Mức ưu tiên lịch hẹn; ánh xạ cột UuTien của bảng trong TableAttribute.
         /// </summary>
         public string UuTien { get => uuTien; set => uuTien = value; }
+        // Khác mức ưu tiên: mức nghiêm trọng của ca bệnh.
+        public string MucDoNghiemTrong { get; set; } = "Thấp";
+        // Nhân sự dự bị đã chọn lúc tạo lịch; được điều phối thủ công khi bác sĩ chính nghỉ.
+        public string? MaBSDuBi { get; set; }
+
         /// <summary>
         /// Lý do đến khám; ánh xạ cột LyDoKham của bảng trong TableAttribute.
         /// </summary>

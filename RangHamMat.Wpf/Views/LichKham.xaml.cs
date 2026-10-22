@@ -6,7 +6,6 @@ using System.Linq;
 using RangHamMat.Controls;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace RangHamMat.Views
 {
@@ -20,6 +19,7 @@ namespace RangHamMat.Views
         {
             PatientId = maBenhNhan;
             ApDungBoLoc();
+            HienFormThem();
         }
 
         // Chỉ lấy nhân viên có chức vụ bác sĩ.
@@ -35,8 +35,9 @@ namespace RangHamMat.Views
         public LichKham()
         {
             InitializeComponent();
-            TaiDuLieu();
             NapBoLoc();
+            TaiDuLieu();
+            HienFormThem();
             HoTroGiaoDien.Observe(this, TaiDuLieu);
         }
 
@@ -44,8 +45,12 @@ namespace RangHamMat.Views
         {
             try
             {
+                string maDangChon = "";
+                if (lstLichKham.SelectedItem is ET_LICHKHAM_HIENTHI lichDangChon)
+                    maDangChon = lichDangChon.MaLich;
                 danhSach = lichkham.layLichKhamHienThi().ToList();
                 ApDungBoLoc();
+                if (!string.IsNullOrWhiteSpace(maDangChon)) ChonLichTrongDanhSach(maDangChon);
             }
             catch (Exception ex)
             {
@@ -99,7 +104,7 @@ namespace RangHamMat.Views
                 if (!dungTuKhoa) continue;
 
                 //lọc theo cbo
-                if (trangThai != "Tất cả" && lich.TrangThai != trangThai) continue;
+                if (trangThai != "Tất cả" && lich.TinhTrangDieuPhoi != trangThai) continue;
                 if (maBacSi.Length > 0 && lich.MaBS != maBacSi) continue;
                 if (maPhong.Length > 0 && lich.MaPhong != maPhong) continue;
 
@@ -120,8 +125,9 @@ namespace RangHamMat.Views
                 int daHuy = 0;
                 foreach (ET_LICHKHAM_HIENTHI lich in ketQua)
                 {
-                    if (lich.TrangThai == "Đã xác nhận") daXacNhan++;
-                    if (lich.TrangThai == "Nháp" || lich.TrangThai == "Chờ xác nhận") choXuLy++;
+                    if (lich.TinhTrangDieuPhoi == "Đã xác nhận") daXacNhan++;
+                    if (lich.TinhTrangDieuPhoi == "Nháp" || lich.TinhTrangDieuPhoi == "Chờ xác nhận" ||
+                        lich.TinhTrangDieuPhoi == "Cần phân công lại" || lich.TinhTrangDieuPhoi == "Cần bổ sung dự bị") choXuLy++;
                     if (lich.TrangThai == "Đã hủy" || lich.TrangThai == "Hủy") daHuy++;
                 }
                 txtDaXacNhan.Text = daXacNhan.ToString();
@@ -155,60 +161,94 @@ namespace RangHamMat.Views
             ApDungBoLoc();
         }
 
+        // Không dùng popup. Cùng một panel cho thêm, xem chi tiết và chỉnh sửa.
+        private void HienFormThem()
+        {
+            if (pnlBieuMau == null) return;
+            ThemLichKham form = new ThemLichKham(PatientId);
+            form.HienTrongPanel(false);
+            form.LuuThanhCong += Form_LuuThanhCong;
+            form.YeuCauDong += Form_YeuCauDong;
+            pnlBieuMau.Content = form;
+        }
+
+        private void HienChiTiet(ET_LICHKHAM_HIENTHI lichChon)
+        {
+            try
+            {
+                // Luôn lấy dữ liệu mới nhất trước khi hiển thị / sửa.
+                ET_LICHKHAM? lich = lichkham.layLichKhamTheoMa(lichChon.MaLich);
+                if (lich == null)
+                {
+                    MessageBox.Show("Lịch khám không còn tồn tại. Vui lòng tải lại danh sách.");
+                    TaiDuLieu();
+                    return;
+                }
+                ThemLichKham form = new ThemLichKham(lich);
+                form.HienTrongPanel(true, lichChon.CanPhanCongLai);
+                form.LuuThanhCong += Form_LuuThanhCong;
+                form.YeuCauDong += Form_YeuCauDong;
+                pnlBieuMau.Content = form;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Không tải được chi tiết lịch khám: " + ex.Message,
+                    "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ChonLichTrongDanhSach(string maLich)
+        {
+            foreach (object item in lstLichKham.Items)
+            {
+                ET_LICHKHAM_HIENTHI lich = item as ET_LICHKHAM_HIENTHI;
+                if (lich == null) continue;
+                if (lich.MaLich == maLich)
+                {
+                    lstLichKham.SelectedItem = item;
+                    lstLichKham.ScrollIntoView(item);
+                    return;
+                }
+            }
+        }
+
+        private void Form_LuuThanhCong(object? sender, EventArgs e)
+        {
+            ThemLichKham form = sender as ThemLichKham;
+            string maVuaLuu = "";
+            if (form != null) maVuaLuu = form.MaLichVuaLuu;
+            DuLieuGiaoDien.RefreshFromDatabase();
+            TaiDuLieu();
+            if (!string.IsNullOrWhiteSpace(maVuaLuu))
+            {
+                ChonLichTrongDanhSach(maVuaLuu);
+                if (lstLichKham.SelectedItem == null)
+                {
+                    // Lịch vừa lưu không nằm trong bộ lọc hiện tại.
+                    HienFormThem();
+                }
+            }
+            else HienFormThem();
+        }
+
+        private void Form_YeuCauDong(object? sender, EventArgs e)
+        {
+            lstLichKham.SelectedItem = null;
+            HienFormThem();
+        }
+
         private void btnThemLichKham_Click(object sender, RoutedEventArgs e)
         {
             e.Handled = true;
-            try
-            {
-                if (ThemLichKham.HienCuaSo(null, PatientId))
-                {
-                    DuLieuGiaoDien.RefreshFromDatabase();
-                    TaiDuLieu();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Không mở được form thêm lịch khám: " + ex.Message);
-            }
+            lstLichKham.SelectedItem = null;
+            HienFormThem();
         }
 
-        private void lstLichKham_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        // Chọn một dòng là chi tiết được điền ngay bên phải, không phải nhấp đúp.
+        private void lstLichKham_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            DependencyObject viTriNhan = e.OriginalSource as DependencyObject;
-            if (viTriNhan == null) return;
-
-
-            ListBoxItem dong = ItemsControl.ContainerFromElement(lstLichKham, viTriNhan) as ListBoxItem;
-            if (dong == null) return;
-            ET_LICHKHAM_HIENTHI lichDuocChon = dong.DataContext as ET_LICHKHAM_HIENTHI;
-            if (lichDuocChon == null) return;
-
-            // Lấy bản mới nhất trước khi xem để tránh dữ liệu cũ.
-            try
-            {
-                ET_LICHKHAM_HIENTHI? lich = lichkham.layLichKhamHienThiTheoMa(lichDuocChon.MaLich);
-                if (lich == null) return;
-                ChiTietLichKham chiTiet = new ChiTietLichKham(lich);
-                Window cuaSoCha = Window.GetWindow(this);
-                if (cuaSoCha != null) chiTiet.Owner = cuaSoCha;
-                bool daLuu = chiTiet.ShowDialog() == true;
-                if (daLuu)
-                {
-                    DuLieuGiaoDien.RefreshFromDatabase();
-                    TaiDuLieu();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Không mở được chi tiết lịch khám: " + ex.Message,
-                    "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            e.Handled = true;
-        }
-
-        private void BoLoc_Changed(object sender, SelectionChangedEventArgs e)
-        {
-
+            ET_LICHKHAM_HIENTHI lich = lstLichKham.SelectedItem as ET_LICHKHAM_HIENTHI;
+            if (lich != null) HienChiTiet(lich);
         }
     }
 }

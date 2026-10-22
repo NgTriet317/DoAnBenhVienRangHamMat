@@ -52,9 +52,12 @@ namespace DAL
         {
             return ThucHien((connection, transaction) =>
             {
+                if (duLieu.TrangThai != "Nháp")
+                    throw new InvalidOperationException("Hóa đơn mới phải được lưu ở trạng thái Nháp trước khi xác nhận.");
                 duLieu.MaHDN = TaoMa(connection, transaction, "HOA_DON_NHAP", "MaHDN");
                 KiemTraNghiepVu(null);
                 KiemTra<ET_HOADONNHAP>(connection, transaction, "HOA_DON_NHAP", duLieu, null, null);
+                KiemTraDuLieuHoaDon(connection, transaction, duLieu);
                 connection.Execute("""
                 INSERT INTO dbo.[HOA_DON_NHAP] ([MaHDN],[SoHoaDonNCC],[MaNCC],
                     [MaNV],[NgayHoaDon],[TongTien],
@@ -90,6 +93,15 @@ namespace DAL
                 {
                     KiemTraChiDoiTrangThai(duLieu, hienTai);
                 }
+                else if (duLieu.TrangThai != "Nháp")
+                {
+                    throw new InvalidOperationException("Hãy lưu nháp trước khi xác nhận hoặc hủy hóa đơn.");
+                }
+                if (!chiDoiTrangThai && CoPhieuNhap(connection, transaction, duLieu.MaHDN))
+                    throw new InvalidOperationException("Hóa đơn đã có phiếu nhập liên kết nên không thể chỉnh sửa nội dung.");
+                if (duLieu.TrangThai == "Hủy" && CoPhieuNhap(connection, transaction, duLieu.MaHDN))
+                    throw new InvalidOperationException("Hóa đơn đã có phiếu nhập liên kết nên không thể hủy.");
+                KiemTraDuLieuHoaDon(connection, transaction, duLieu);
 
                 connection.Execute("""
                 UPDATE dbo.[HOA_DON_NHAP]
@@ -123,6 +135,31 @@ namespace DAL
                 connection.Execute("DELETE FROM dbo.[HOA_DON_NHAP] WHERE [MaHDN]=@Ma", new { Ma = ma }, transaction);
                 return true;
             });
+        }
+
+        // Ràng buộc nghiệp vụ được kiểm tra trong cùng transaction với INSERT/UPDATE.
+        private void KiemTraDuLieuHoaDon(IDbConnection connection, IDbTransaction? transaction, ET_HOADONNHAP duLieu)
+        {
+            duLieu.SoHoaDonNCC = duLieu.SoHoaDonNCC.Trim();
+            if (duLieu.SoHoaDonNCC.Length == 0 || duLieu.MaNCC.Length == 0 || duLieu.MaNV.Length == 0)
+                throw new InvalidOperationException("Hóa đơn phải có số hóa đơn, nhà cung cấp và người lập.");
+            if (duLieu.TongTien < 0 || (duLieu.TrangThai == "Đã xác nhận" && duLieu.TongTien <= 0))
+                throw new InvalidOperationException("Tổng tiền không hợp lệ. Hóa đơn xác nhận phải có tổng tiền lớn hơn 0.");
+            if (duLieu.TrangThai != "Nháp" && duLieu.TrangThai != "Đã xác nhận" && duLieu.TrangThai != "Hủy")
+                throw new InvalidOperationException("Trạng thái hóa đơn không hợp lệ.");
+
+            int trung = connection.ExecuteScalar<int>("""
+                SELECT COUNT(*) FROM dbo.HOA_DON_NHAP WITH (UPDLOCK, HOLDLOCK)
+                WHERE MaNCC=@MaNCC AND SoHoaDonNCC=@SoHoaDonNCC AND MaHDN<>@MaHDN
+                """, duLieu, transaction);
+            if (trung > 0) throw new InvalidOperationException("Số hóa đơn đã tồn tại ở nhà cung cấp này.");
+        }
+
+        private bool CoPhieuNhap(IDbConnection connection, IDbTransaction? transaction, string maHDN)
+        {
+            return connection.ExecuteScalar<int>(
+                "SELECT COUNT(*) FROM dbo.PHIEU_NHAP WITH (UPDLOCK,HOLDLOCK) WHERE MaHDN=@MaHDN",
+                new { MaHDN = maHDN }, transaction) > 0;
         }
 
         /// <summary>

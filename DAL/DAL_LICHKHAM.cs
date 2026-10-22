@@ -49,6 +49,15 @@ namespace DAL
             ISNULL(nv.HoTen,N'Chưa có thông tin') TenBacSi,
             ISNULL(p.TenPhong,N'Chưa phân phòng') TenPhong,
             ISNULL(dv.TenDV,N'Chưa chọn dịch vụ') TenDichVu,
+            ISNULL(duBi.HoTen,N'Chưa có dự bị') TenBacSiDuBi,
+            CAST(CASE WHEN l.TrangThai NOT IN (N'Hủy',N'Đã hủy',N'Đã đổi',N'Hoàn thành',N'Đã khám')
+                AND l.NgayGioKham>=SYSDATETIME()
+                AND EXISTS (SELECT 1 FROM dbo.DON_XIN_NGHI d
+                    WHERE d.MaNV=l.MaBS AND d.TrangThaiDuyet=N'Đã duyệt'
+                      AND d.TuNgay<=CONVERT(date,l.NgayGioKham)
+                      AND (d.DenNgay>=CONVERT(date,l.NgayGioKham)
+                        OR d.GhiChu LIKE N'%Loại đơn: Nghỉ việc%'))
+                THEN 1 ELSE 0 END AS bit) CanPhanCongLai,
             COALESCE(NULLIF(LTRIM(RTRIM(ca.GhiChu)),N''),
                 CONVERT(nvarchar(5),ca.GioBatDau,108)+N' – '+CONVERT(nvarchar(5),ca.GioKetThuc,108)) TenCa
             FROM dbo.LICH_KHAM l
@@ -56,7 +65,8 @@ namespace DAL
             LEFT JOIN dbo.NHAN_VIEN nv ON nv.MaNV=l.MaBS
             LEFT JOIN dbo.PHONG p ON p.MaPhong=l.MaPhong
             LEFT JOIN dbo.DICH_VU dv ON dv.MaDV=l.MaDV
-            LEFT JOIN dbo.CA_LAM ca ON ca.MaCa=l.MaCa";
+            LEFT JOIN dbo.CA_LAM ca ON ca.MaCa=l.MaCa
+            LEFT JOIN dbo.NHAN_VIEN duBi ON duBi.MaNV=l.MaBSDuBi";
 
         public IEnumerable<ET_LICHKHAM_HIENTHI> layLichKhamHienThi()
         {
@@ -85,17 +95,18 @@ namespace DAL
                 duLieu.MaLich = TaoMa(connection, transaction, "LICH_KHAM", "MaLich");
                 KiemTraNghiepVu(duLieu, null);
                 KiemTra<ET_LICHKHAM>(connection, transaction, "LICH_KHAM", duLieu, null, null);
+                KiemTraNghiemTrongVaDuBi(connection, transaction, duLieu);
                 KiemTraNghiVaDongBoCa(connection, transaction, duLieu);
                 connection.Execute("""
                     INSERT INTO dbo.[LICH_KHAM] ([MaLich],[MaBN],[MaBS],
                         [MaCa],[MaPhong],[MaDV],
-                        [NgayGioKham],[ThoiLuongDuKien],[UuTien],
+                        [NgayGioKham],[ThoiLuongDuKien],[UuTien],[MucDoNghiemTrong],[MaBSDuBi],
                         [LyDoKham],[LyDoThayDoi],[TrangThai],
                         [GhiChu],[NgayTao],[NgayCapNhat])
                     VALUES (@MaLich,
                         @MaBN,@MaBS,@MaCa,
                         @MaPhong,@MaDV,@NgayGioKham,
-                        @ThoiLuongDuKien,@UuTien,@LyDoKham,
+                        @ThoiLuongDuKien,@UuTien,@MucDoNghiemTrong,@MaBSDuBi,@LyDoKham,
                         @LyDoThayDoi,@TrangThai,@GhiChu,
                         @NgayTao,@NgayCapNhat)
                     """, duLieu, transaction);
@@ -127,13 +138,15 @@ namespace DAL
                 {
                     KiemTraChiDoiTrangThai(duLieu, hienTai);
                 }
+                KiemTraNghiemTrongVaDuBi(connection, transaction, duLieu);
                 KiemTraNghiVaDongBoCa(connection, transaction, duLieu);
 
                 connection.Execute("""
                     UPDATE dbo.[LICH_KHAM]
                     SET [MaBN]=@MaBN,[MaBS]=@MaBS,[MaCa]=@MaCa,
                         [MaPhong]=@MaPhong,[MaDV]=@MaDV,[NgayGioKham]=@NgayGioKham,
-                        [ThoiLuongDuKien]=@ThoiLuongDuKien,[UuTien]=@UuTien,[LyDoKham]=@LyDoKham,
+                        [ThoiLuongDuKien]=@ThoiLuongDuKien,[UuTien]=@UuTien,
+                        [MucDoNghiemTrong]=@MucDoNghiemTrong,[MaBSDuBi]=@MaBSDuBi,[LyDoKham]=@LyDoKham,
                         [LyDoThayDoi]=@LyDoThayDoi,[TrangThai]=@TrangThai,[GhiChu]=@GhiChu,
                         [NgayTao]=@NgayTao,[NgayCapNhat]=@NgayCapNhat
                     WHERE [MaLich]=@MaLich
@@ -175,6 +188,37 @@ namespace DAL
             if (ketQua<0) throw new InvalidOperationException("Lịch đang được thay đổi bởi người khác. Vui lòng thử lại.");
         }
 
+        private void KiemTraNghiemTrongVaDuBi(IDbConnection connection, IDbTransaction? transaction, ET_LICHKHAM lich)
+        {
+            if (lich.MucDoNghiemTrong!="Thấp" && lich.MucDoNghiemTrong!="Trung bình" && lich.MucDoNghiemTrong!="Cao")
+                throw new InvalidOperationException("Mức nghiêm trọng chỉ gồm Thấp, Trung bình, Cao.");
+            if (lich.TrangThai=="Hủy" || lich.TrangThai=="Đã hủy" || lich.TrangThai=="Hoàn thành" ||
+                lich.TrangThai=="Đã khám" || lich.TrangThai=="Đã đổi") return;
+            if (lich.MucDoNghiemTrong=="Cao" && string.IsNullOrWhiteSpace(lich.MaBSDuBi))
+                throw new InvalidOperationException("Lịch khám mức Cao phải chọn bác sĩ dự bị.");
+            if (string.IsNullOrWhiteSpace(lich.MaBSDuBi)) return;
+            if (lich.MaBSDuBi==lich.MaBS)
+                throw new InvalidOperationException("Bác sĩ dự bị phải khác bác sĩ chính.");
+            int hopLe = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.NHAN_VIEN db
+                JOIN dbo.NHAN_VIEN bs ON bs.MaNV=@MaBS
+                WHERE db.MaNV=@MaBSDuBi AND db.TrangThai=N'Đang làm việc'
+                  AND db.MaCK=bs.MaCK AND db.MaChucVu=bs.MaChucVu",
+                new { lich.MaBS,lich.MaBSDuBi },transaction);
+            if (hopLe!=1) throw new InvalidOperationException("Bác sĩ dự bị phải đang làm việc, cùng chuyên khoa và chức vụ.");
+            int nghi = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.DON_XIN_NGHI WITH(UPDLOCK,HOLDLOCK)
+                WHERE MaNV=@MaNV AND TrangThaiDuyet=N'Đã duyệt' AND TuNgay<=@Ngay
+                  AND (DenNgay>=@Ngay OR GhiChu LIKE N'%Loại đơn: Nghỉ việc%')",
+                new { MaNV=lich.MaBSDuBi,Ngay=lich.NgayGioKham.Date },transaction);
+            if (nghi>0) throw new InvalidOperationException("Bác sĩ dự bị đã được duyệt nghỉ trong ngày khám.");
+            int trung = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.LICH_KHAM WITH(UPDLOCK,HOLDLOCK)
+                WHERE MaLich<>@MaLich AND TrangThai NOT IN (N'Hủy',N'Đã hủy',N'Đã đổi',N'Hoàn thành',N'Đã khám')
+                  AND (MaBS=@MaBSDuBi OR MaBSDuBi=@MaBSDuBi)
+                  AND NgayGioKham<DATEADD(minute,@ThoiLuong,@Ngay)
+                  AND DATEADD(minute,ThoiLuongDuKien,NgayGioKham)>@Ngay",
+                new { lich.MaLich,lich.MaBSDuBi,Ngay=lich.NgayGioKham,ThoiLuong=lich.ThoiLuongDuKien },transaction);
+            if (trung>0) throw new InvalidOperationException("Bác sĩ dự bị đã được xếp hoặc giữ dự bị cho lịch trùng giờ.");
+        }
+
         private void KiemTraNghiVaDongBoCa(IDbConnection connection, IDbTransaction? transaction, ET_LICHKHAM lich)
         {
             // Lịch đã hủy/hoàn thành không tự tạo ca làm mới.
@@ -204,7 +248,7 @@ namespace DAL
                 WHERE MaLich<>@MaLich AND TrangThai NOT IN (N'Hủy',N'Đã hủy',N'Đã đổi',N'Hoàn thành',N'Đã khám')
                   AND NgayGioKham<DATEADD(minute,@ThoiLuong,@Ngay)
                   AND DATEADD(minute,ThoiLuongDuKien,NgayGioKham)>@Ngay
-                  AND (MaBS=@MaBS OR MaPhong=@MaPhong OR MaBN=@MaBN)",
+                  AND (MaBS=@MaBS OR MaBSDuBi=@MaBS OR MaPhong=@MaPhong OR MaBN=@MaBN)",
                 new { lich.MaLich,Ngay=lich.NgayGioKham,ThoiLuong=lich.ThoiLuongDuKien,
                     lich.MaBS,lich.MaPhong,lich.MaBN },transaction);
             if (trung>0) throw new InvalidOperationException("Bác sĩ, bệnh nhân hoặc phòng có lịch khám trùng giờ.");

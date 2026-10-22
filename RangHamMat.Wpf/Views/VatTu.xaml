@@ -1,308 +1,245 @@
-<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của VatTu.xaml; các vùng liên quan: Vật tư, Grid_VAT_TU, Thuốc, Grid_VAT_TU_Thuoc, Loại vật tư, Grid_LOAI_VAT_TU, Lô vật tư, Grid_LO_VAT_TU. -->
-<!-- AI hỗ trợ: bổ sung chú thích cho vật tư. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.VatTu">
-    <Grid>
+<UserControl x:Class="RangHamMat.Views.VatTu"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F5F8FC">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="KhoInk" Color="#173550"/>
+        <SolidColorBrush x:Key="KhoMuted" Color="#698198"/>
+        <SolidColorBrush x:Key="KhoAccent" Color="#1665C5"/>
+        <Style x:Key="KhoCard" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#DDE8F3"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+        </Style>
+        <Style x:Key="KhoLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{StaticResource KhoMuted}"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+        <Style x:Key="KhoRow" TargetType="DataGridRow">
+            <Setter Property="Height" Value="60"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E9F0F7"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#F1F7FF"/></Trigger>
+                <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#E6F1FF"/><Setter Property="Foreground" Value="#173550"/></Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="KhoGrid" TargetType="DataGrid">
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="GridLinesVisibility" Value="None"/>
+            <Setter Property="RowHeaderWidth" Value="0"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="ColumnHeaderHeight" Value="42"/>
+            <Setter Property="RowStyle" Value="{StaticResource KhoRow}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+        </Style>
+        <Style x:Key="KhoNumber" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="27"/>
+            <Setter Property="Foreground" Value="{StaticResource KhoInk}"/>
+            <Setter Property="Margin" Value="0,7,0,4"/>
+        </Style>
+    </UserControl.Resources>
+    <Grid Margin="20,14,20,18">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <StackPanel>
-            <TextBlock Text="Vật tư, lô hàng và kho" Style="{StaticResource Title}" />
-            <TextBlock Text="Nhấp đúp vào một dòng để xem chi tiết. Chọn Thêm để tạo mới." Style="{StaticResource Subtitle}" />
-        </StackPanel>
-        <WrapPanel Grid.Row="1" Margin="0,0,0,20">
-            <!-- Nút điều hướng MoTrang:NhapXuatVatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-            <Button Content="Nhập xuất" Tag="MoTrang:NhapXuatVatTu" />
-        </WrapPanel>
-        <UniformGrid Grid.Row="2" Columns="4" Margin="0,0,0,18">
-            <Border Style="{StaticResource Card}" Margin="0,0,12,0">
-                <StackPanel>
-                    <TextBlock Text="Mặt hàng" Foreground="{StaticResource Muted}"/>
-                    <TextBlock Text="128" FontSize="25" Foreground="{StaticResource Accent}" Margin="0,10,0,0"/>
+        <Grid Grid.Row="0" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="TRUNG TÂM QUẢN LÝ KHO" Foreground="{StaticResource KhoAccent}" FontSize="11" FontWeight="SemiBold"/>
+                <TextBlock Text="Vật tư &amp; tồn kho" FontSize="27" FontWeight="Bold" Foreground="{StaticResource KhoInk}" Margin="0,4,0,3"/>
+                <TextBlock Text="Theo dõi lượng tồn, thuốc, lô sắp hết hạn và thông tin từng kho trên một màn hình." FontSize="13" Foreground="{StaticResource KhoMuted}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="↻  Làm mới" Click="TaiLai_Click" Margin="0,0,9,0"/>
+                <Button Content="Nhập / xuất kho ↗" Tag="MoTrang:NhapXuatVatTu" Margin="0,0,9,0"/>
+                <Button Content="＋  Đăng ký mặt hàng" Click="ThemMoi_Click" Style="{StaticResource Primary}" Margin="0"/>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource KhoCard}" Padding="18,13">
+                <StackPanel><TextBlock Text="DANH MỤC QUẢN LÝ" Style="{StaticResource KhoLabel}"/>
+                    <TextBlock x:Name="lblTongDanhMuc" Text="0" Style="{StaticResource KhoNumber}"/>
+                    <TextBlock Text="Vật tư và thuốc" Foreground="{StaticResource KhoMuted}" FontSize="11"/>
                 </StackPanel>
             </Border>
-            <Border Style="{StaticResource Card}" Margin="0,0,12,0">
-                <StackPanel>
-                    <TextBlock Text="Sắp hết" Foreground="{StaticResource Muted}"/>
-                    <TextBlock Text="07" FontSize="25" Foreground="{StaticResource Accent}" Margin="0,10,0,0"/>
+            <Border Grid.Column="2" Style="{StaticResource KhoCard}" Padding="18,13">
+                <StackPanel><TextBlock Text="DƯỚI NGƯỠNG TỒN" Style="{StaticResource KhoLabel}"/>
+                    <TextBlock x:Name="lblDuoiNguong" Text="0" Style="{StaticResource KhoNumber}" Foreground="#BE6B0D"/>
+                    <TextBlock Text="Cần bổ sung hàng" Foreground="{StaticResource KhoMuted}" FontSize="11"/>
                 </StackPanel>
             </Border>
-            <Border Style="{StaticResource Card}" Margin="0,0,12,0">
-                <StackPanel>
-                    <TextBlock Text="Sắp hết hạn" Foreground="{StaticResource Muted}"/>
-                    <TextBlock Text="03" FontSize="25" Foreground="{StaticResource Accent}" Margin="0,10,0,0"/>
+            <Border Grid.Column="4" Style="{StaticResource KhoCard}" Padding="18,13">
+                <StackPanel><TextBlock Text="LÔ CẦN KIỂM TRA" Style="{StaticResource KhoLabel}"/>
+                    <TextBlock x:Name="lblSapHetHan" Text="0" Style="{StaticResource KhoNumber}" Foreground="#BF4E39"/>
+                    <TextBlock Text="Hết hạn hoặc sắp hết hạn" Foreground="{StaticResource KhoMuted}" FontSize="11"/>
                 </StackPanel>
             </Border>
-            <Border Style="{StaticResource Card}">
-                <StackPanel>
-                    <TextBlock Text="Giá trị tồn" Foreground="{StaticResource Muted}"/>
-                    <TextBlock Text="0 VND" FontSize="23" Foreground="{StaticResource Accent}" Margin="0,10,0,0"/>
-                </StackPanel>
-            </Border>
-        </UniformGrid>
-        <Grid Grid.Row="3" Margin="0,0,0,18">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="18"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <Border Style="{StaticResource Card}">
-                <StackPanel>
-                    <TextBlock Text="Cảnh báo tồn kho" FontWeight="SemiBold"/>
-                    <TextBlock Text="07 mặt hàng dưới ngưỡng tối thiểu" Margin="0,10,0,0" Foreground="{StaticResource Muted}"/>
-                </StackPanel>
-            </Border>
-            <Border Grid.Column="2" Style="{StaticResource Card}">
-                <StackPanel>
-                    <TextBlock Text="Cảnh báo hạn dùng" FontWeight="SemiBold"/>
-                    <TextBlock Text="03 lô vật tư cần kiểm tra" Margin="0,10,0,0" Foreground="{StaticResource Muted}"/>
+            <Border Grid.Column="6" Style="{StaticResource KhoCard}" Padding="18,13">
+                <StackPanel><TextBlock Text="KHO ĐANG QUẢN LÝ" Style="{StaticResource KhoLabel}"/>
+                    <TextBlock x:Name="lblTongKho" Text="0" Style="{StaticResource KhoNumber}" Foreground="#087D78"/>
+                    <TextBlock Text="Địa điểm lưu trữ" Foreground="{StaticResource KhoMuted}" FontSize="11"/>
                 </StackPanel>
             </Border>
         </Grid>
-        <TabControl Grid.Row="4">
-            <!-- Nhóm Vật tư: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
-            <TabItem Header="Vật tư">
-                <Grid Margin="0,20,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <DockPanel Margin="0,0,0,18">
-                        <WrapPanel DockPanel.Dock="Right">
-                            <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                            <Button Content="Thêm vật tư" Tag="MoCuaSo:VatTu" CommandParameter="VAT_TU" Style="{StaticResource Primary}" />
-                        </WrapPanel>
-                        <TextBlock Text="Vật tư" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-                    </DockPanel>
-                    <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
-                        <Grid>
-                            <!-- Bảng Grid_VAT_TU: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:VAT_TU cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
-                            <DataGrid Tag="Table:VAT_TU" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_VAT_TU" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Mã vật tư" SortMemberPath="MaVT" Width="155" Binding="{Binding MaVT}" />
-                                    <DataGridTextColumn Header="Tên vật tư" SortMemberPath="TenVT" Width="155" Binding="{Binding TenVT}" />
-                                    <DataGridTextColumn Header="Đơn vị tính" SortMemberPath="DonViTinh" Width="155" Binding="{Binding DonViTinh}" />
-                                    <DataGridTextColumn Header="Loại vật tư" SortMemberPath="MaLVT" Width="155" Binding="{Binding MaLVT}" />
-                                    <DataGridTextColumn Header="Mức tồn tối thiểu" SortMemberPath="MucTonToiThieu" Width="155" Binding="{Binding MucTonToiThieu}" />
-                                    <DataGridTextColumn Header="Trạng thái" SortMemberPath="TrangThai" Width="155" Binding="{Binding TrangThai}" />
-                                </DataGrid.Columns>
-                            </DataGrid>
-                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
-                                <StackPanel.Style>
-                                    <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
-                                    <Style TargetType="StackPanel">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasItems, ElementName=Grid_VAT_TU}" Value="False">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </StackPanel.Style>
-                                <TextBlock Text="Chưa có vật tư" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
-                                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
-                                <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                                <Button Content="Thêm mới" Tag="MoCuaSo:VatTu" CommandParameter="VAT_TU" HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </Grid>
-            </TabItem>
-            <!-- Nhóm Thuốc: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
-            <TabItem Header="Thuốc">
-                <Grid Margin="0,20,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <DockPanel Margin="0,0,0,18">
-                        <WrapPanel DockPanel.Dock="Right">
-                            <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                            <Button Content="Thêm thuốc" Tag="MoCuaSo:VatTu" CommandParameter="VAT_TU|Thuoc" Style="{StaticResource Primary}" />
-                        </WrapPanel>
-                        <TextBlock Text="Thuốc" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-                    </DockPanel>
-                    <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
-                        <Grid>
-                            <!-- Bảng Grid_VAT_TU_Thuoc: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:VAT_TU cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
-                            <DataGrid Tag="Table:VAT_TU" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_VAT_TU_Thuoc" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Mã vật tư" SortMemberPath="MaVT" Width="155" Binding="{Binding MaVT}" />
-                                    <DataGridTextColumn Header="Tên vật tư" SortMemberPath="TenVT" Width="155" Binding="{Binding TenVT}" />
-                                    <DataGridTextColumn Header="Đơn vị tính" SortMemberPath="DonViTinh" Width="155" Binding="{Binding DonViTinh}" />
-                                    <DataGridTextColumn Header="Loại vật tư" SortMemberPath="MaLVT" Width="155" Binding="{Binding MaLVT}" />
-                                    <DataGridTextColumn Header="Mức tồn tối thiểu" SortMemberPath="MucTonToiThieu" Width="155" Binding="{Binding MucTonToiThieu}" />
-                                    <DataGridTextColumn Header="Trạng thái" SortMemberPath="TrangThai" Width="155" Binding="{Binding TrangThai}" />
-                                </DataGrid.Columns>
-                            </DataGrid>
-                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
-                                <StackPanel.Style>
-                                    <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
-                                    <Style TargetType="StackPanel">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasItems, ElementName=Grid_VAT_TU_Thuoc}" Value="False">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </StackPanel.Style>
-                                <TextBlock Text="Chưa có thuốc" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
-                                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
-                                <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                                <Button Content="Thêm thuốc" Tag="MoCuaSo:VatTu" CommandParameter="VAT_TU|Thuoc" HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </Grid>
-            </TabItem>
-            <!-- Nhóm Loại vật tư: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
-            <TabItem Header="Loại vật tư">
-                <Grid Margin="0,20,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <DockPanel Margin="0,0,0,18">
-                        <WrapPanel DockPanel.Dock="Right">
-                            <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                            <Button Content="Thêm loại vật tư" Tag="MoCuaSo:VatTu" CommandParameter="LOAI_VAT_TU" Style="{StaticResource Primary}" />
-                        </WrapPanel>
-                        <TextBlock Text="Loại vật tư" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-                    </DockPanel>
-                    <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
-                        <Grid>
-                            <!-- Bảng Grid_LOAI_VAT_TU: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:LOAI_VAT_TU cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
-                            <DataGrid Tag="Table:LOAI_VAT_TU" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_LOAI_VAT_TU" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Mã loại vật tư" SortMemberPath="MaLVT" Width="155" Binding="{Binding MaLVT}" />
-                                    <DataGridTextColumn Header="Tên loại vật tư" SortMemberPath="TenLVT" Width="155" Binding="{Binding TenLVT}" />
-                                    <DataGridTextColumn Header="Ghi chú" SortMemberPath="GhiChu" Width="155" Binding="{Binding GhiChu}" />
-                                </DataGrid.Columns>
-                            </DataGrid>
-                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
-                                <StackPanel.Style>
-                                    <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
-                                    <Style TargetType="StackPanel">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasItems, ElementName=Grid_LOAI_VAT_TU}" Value="False">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </StackPanel.Style>
-                                <TextBlock Text="Chưa có loại vật tư" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
-                                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
-                                <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                                <Button Content="Thêm mới" Tag="MoCuaSo:VatTu" CommandParameter="LOAI_VAT_TU" HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </Grid>
-            </TabItem>
-            <!-- Nhóm Lô vật tư: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
-            <TabItem Header="Lô vật tư">
-                <Grid Margin="0,20,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <DockPanel Margin="0,0,0,18">
-                        <WrapPanel DockPanel.Dock="Right">
-                            <!-- Nút điều hướng ToggleColumns: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                            <Button Content="Hiện đủ cột" Tag="ToggleColumns" CommandParameter="LO_VAT_TU" />
-                            <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                            <Button Content="Thêm lô vật tư" Tag="MoCuaSo:VatTu" CommandParameter="LO_VAT_TU" Style="{StaticResource Primary}" />
-                        </WrapPanel>
-                        <TextBlock Text="Lô vật tư" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-                    </DockPanel>
-                    <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
-                        <Grid>
-                            <!-- Bảng Grid_LO_VAT_TU: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:LO_VAT_TU cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
-                            <DataGrid Tag="Table:LO_VAT_TU" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_LO_VAT_TU" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Mã lô vật tư" SortMemberPath="MaLo" Width="155" Binding="{Binding MaLo}" />
-                                    <DataGridTextColumn Header="Vật tư" SortMemberPath="MaVT" Width="155" Binding="{Binding MaVT}" />
-                                    <DataGridTextColumn Header="Nhà cung cấp" SortMemberPath="MaNCC" Width="155" Binding="{Binding MaNCC}" />
-                                    <DataGridTextColumn Header="Kho" SortMemberPath="MaKho" Width="155" Binding="{Binding MaKho}" />
-                                    <DataGridTextColumn Header="Ngày nhập" SortMemberPath="NgayNhap" Width="155" Binding="{Binding NgayNhap}" />
-                                    <DataGridTextColumn Header="Hạn sử dụng" SortMemberPath="HanSuDung" Width="155" Binding="{Binding HanSuDung}" />
-                                    <DataGridTextColumn Header="Số lượng nhập" SortMemberPath="SoLuongNhap" Width="155" Visibility="Collapsed" Binding="{Binding SoLuongNhap}" />
-                                    <DataGridTextColumn Header="Đơn giá nhập" SortMemberPath="DonGiaNhap" Width="155" Visibility="Collapsed" Binding="{Binding DonGiaNhap}" />
-                                </DataGrid.Columns>
-                            </DataGrid>
-                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
-                                <StackPanel.Style>
-                                    <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
-                                    <Style TargetType="StackPanel">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasItems, ElementName=Grid_LO_VAT_TU}" Value="False">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </StackPanel.Style>
-                                <TextBlock Text="Chưa có lô vật tư" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
-                                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
-                                <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                                <Button Content="Thêm mới" Tag="MoCuaSo:VatTu" CommandParameter="LO_VAT_TU" HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </Grid>
-            </TabItem>
-            <!-- Nhóm Kho: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
-            <TabItem Header="Kho">
-                <Grid Margin="0,20,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <DockPanel Margin="0,0,0,18">
-                        <WrapPanel DockPanel.Dock="Right">
-                            <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                            <Button Content="Thêm kho" Tag="MoCuaSo:VatTu" CommandParameter="KHO" Style="{StaticResource Primary}" />
-                        </WrapPanel>
-                        <TextBlock Text="Kho" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-                    </DockPanel>
-                    <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
-                        <Grid>
-                            <!-- Bảng Grid_KHO: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:KHO cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
-                            <DataGrid Tag="Table:KHO" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_KHO" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Mã kho" SortMemberPath="MaKho" Width="155" Binding="{Binding MaKho}" />
-                                    <DataGridTextColumn Header="Tên kho" SortMemberPath="TenKho" Width="155" Binding="{Binding TenKho}" />
-                                    <DataGridTextColumn Header="Nhân viên phụ trách" SortMemberPath="MaNV" Width="155" Binding="{Binding MaNV}" />
-                                    <DataGridTextColumn Header="Loại kho" SortMemberPath="LoaiKho" Width="155" Binding="{Binding LoaiKho}" />
-                                    <DataGridTextColumn Header="Trạng thái" SortMemberPath="TrangThai" Width="155" Binding="{Binding TrangThai}" />
-                                </DataGrid.Columns>
-                            </DataGrid>
-                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
-                                <StackPanel.Style>
-                                    <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
-                                    <Style TargetType="StackPanel">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasItems, ElementName=Grid_KHO}" Value="False">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </StackPanel.Style>
-                                <TextBlock Text="Chưa có kho" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
-                                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
-                                <!-- Nút điều hướng MoCuaSo:VatTu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                                <Button Content="Thêm mới" Tag="MoCuaSo:VatTu" CommandParameter="KHO" HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </Grid>
-            </TabItem>
+        <Border Grid.Row="2" Style="{StaticResource KhoCard}" Padding="15,11" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="1.2*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="1.15*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel><TextBlock Text="Tìm kiếm" Style="{StaticResource KhoLabel}"/>
+                    <TextBox x:Name="txtTimKiem" ToolTip="Tìm theo tên hàng, loại hàng, kho hoặc nhà cung cấp" TextChanged="BoLoc_Changed"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2"><TextBlock Text="Tình trạng / cảnh báo" Style="{StaticResource KhoLabel}"/>
+                    <ComboBox x:Name="cboTinhTrangLoc" SelectionChanged="BoLoc_Changed"/>
+                </StackPanel>
+                <StackPanel Grid.Column="4"><TextBlock Text="Kho" Style="{StaticResource KhoLabel}"/>
+                    <ComboBox x:Name="cboKhoLoc" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="BoLoc_Changed"/>
+                </StackPanel>
+                <Button Grid.Column="5" Content="Xóa lọc" VerticalAlignment="Bottom" Margin="10,0,0,0" Click="XoaLoc_Click"/>
+            </Grid>
+        </Border>
+        <TabControl Grid.Row="3" x:Name="tabKho" SelectionChanged="TabKho_SelectionChanged" Margin="0,0,0,12">
+            <TabItem Header="Vật tư &amp; thuốc"/>
+            <TabItem Header="Lô hàng &amp; hạn dùng"/>
+            <TabItem Header="Danh sách kho"/>
         </TabControl>
+        <Grid Grid.Row="4">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="1.6*" MinWidth="400"/><ColumnDefinition Width="13"/><ColumnDefinition Width="1*" MinWidth="325"/></Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource KhoCard}" ClipToBounds="True">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <Grid Margin="18,15,18,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock x:Name="lblTenDanhSach" Text="Danh sách vật tư &amp; thuốc" Foreground="{StaticResource KhoInk}" FontSize="17" FontWeight="SemiBold"/>
+                            <TextBlock Text="Chọn một dòng để xem chi tiết bên phải." Foreground="{StaticResource KhoMuted}" Margin="0,4,0,0" FontSize="12"/>
+                        </StackPanel>
+                        <Border Grid.Column="1" Background="#E8F2FD" CornerRadius="9" Padding="10,6" VerticalAlignment="Center">
+                            <TextBlock x:Name="lblDangHien" Text="0 mặt hàng" Foreground="{StaticResource KhoAccent}" FontSize="12" FontWeight="SemiBold"/>
+                        </Border>
+                    </Grid>
+                    <Grid Grid.Row="1">
+                        <DataGrid x:Name="Grid_VAT_TU" Style="{StaticResource KhoGrid}" SelectionChanged="DanhSachVatTu_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="MẶT HÀNG" Width="2*" MinWidth="160"><DataGridTemplateColumn.CellTemplate><DataTemplate>
+                                    <StackPanel Margin="8,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding TenHang}" Foreground="#193750" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding TenLoai}" Foreground="#73879A" FontSize="11" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                                <DataGridTextColumn Header="LOẠI" Binding="{Binding NhomHang}" Width="0.8*" MinWidth="75"/>
+                                <DataGridTextColumn Header="TỒN" Binding="{Binding TonHienThi}" Width="1*" MinWidth="110"/>
+                                <DataGridTemplateColumn Header="CẢNH BÁO" Width="1.1*" MinWidth="110"><DataGridTemplateColumn.CellTemplate><DataTemplate>
+                                    <Border CornerRadius="7" Padding="9,5" HorizontalAlignment="Left">
+                                        <Border.Style><Style TargetType="Border"><Setter Property="Background" Value="#E9F7F0"/>
+                                            <Style.Triggers><DataTrigger Binding="{Binding CanBoSung}" Value="True"><Setter Property="Background" Value="#FFF0DD"/></DataTrigger></Style.Triggers></Style></Border.Style>
+                                        <TextBlock Text="{Binding CanhBao}" FontSize="11" FontWeight="SemiBold">
+                                            <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="#1C6F55"/>
+                                                <Style.Triggers><DataTrigger Binding="{Binding CanBoSung}" Value="True"><Setter Property="Foreground" Value="#A86010"/></DataTrigger></Style.Triggers>
+                                            </Style></TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <DataGrid x:Name="Grid_LO_HANG_HOA" Visibility="Collapsed" Style="{StaticResource KhoGrid}" SelectionChanged="DanhSachLo_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="TÊN HÀNG" Binding="{Binding TenHang}" Width="2*" MinWidth="150"/>
+                                <DataGridTextColumn Header="KHO" Binding="{Binding TenKho}" Width="1.1*" MinWidth="115"/>
+                                <DataGridTextColumn Header="TỒN LÔ" Binding="{Binding TonHienThi}" Width="1*" MinWidth="95"/>
+                                <DataGridTextColumn Header="HẠN DÙNG" Binding="{Binding HanDungHienThi}" Width="1*" MinWidth="105"/>
+                                <DataGridTextColumn Header="CẢNH BÁO" Binding="{Binding CanhBao}" Width="1.25*" MinWidth="135"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <DataGrid x:Name="Grid_KHO" Visibility="Collapsed" Style="{StaticResource KhoGrid}" SelectionChanged="DanhSachKho_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="TÊN KHO" Binding="{Binding TenKho}" Width="2*" MinWidth="155"/>
+                                <DataGridTextColumn Header="LOẠI KHO" Binding="{Binding LoaiKho}" Width="1.2*" MinWidth="100"/>
+                                <DataGridTextColumn Header="NHÂN VIÊN PHỤ TRÁCH" Binding="{Binding NguoiQuanLy}" Width="1.6*" MinWidth="165"/>
+                                <DataGridTextColumn Header="TRẠNG THÁI" Binding="{Binding TrangThai}" Width="1*" MinWidth="115"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock x:Name="lblTrong" Text="Không có dữ liệu phù hợp bộ lọc." Foreground="{StaticResource KhoMuted}" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" IsHitTestVisible="False"/>
+                    </Grid>
+                    <TextBlock Grid.Row="2" Text="Tồn được tính từ các phiếu nhập và xuất đã ghi sổ; phiếu nháp không làm thay đổi số tồn." Margin="18,11" Foreground="{StaticResource KhoMuted}" FontSize="11" TextWrapping="Wrap"/>
+                </Grid>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource KhoCard}" ClipToBounds="True">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <Border Background="#E9F2FF" BorderBrush="#D7E7FB" BorderThickness="0,0,0,1" Padding="19,15">
+                        <StackPanel>
+                            <TextBlock x:Name="lblCheDo" Text="HỒ SƠ MẶT HÀNG" Foreground="{StaticResource KhoAccent}" FontWeight="SemiBold" FontSize="11"/>
+                            <TextBlock x:Name="lblTieuDe" Text="Chọn một mặt hàng" Foreground="{StaticResource KhoInk}" FontSize="19" FontWeight="Bold" TextWrapping="Wrap" Margin="0,7,0,4"/>
+                            <TextBlock x:Name="lblPhuDe" Text="Thông tin chi tiết sẽ xuất hiện ở đây" FontSize="12" Foreground="{StaticResource KhoMuted}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="19,17,19,10">
+                            <StackPanel x:Name="formVatTu">
+                                <TextBlock Text="Thông tin mặt hàng" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource KhoInk}" Margin="0,0,0,13"/>
+                                <TextBlock Text="Tên mặt hàng" Style="{StaticResource KhoLabel}"/>
+                                <ComboBox x:Name="cboHangHoa" DisplayMemberPath="Label" SelectedValuePath="Value" Margin="0,0,0,12"/>
+                                <TextBlock Text="Phân nhóm" Style="{StaticResource KhoLabel}"/>
+                                <ComboBox x:Name="cboLoaiDangKy" Margin="0,0,0,12" SelectionChanged="LoaiDangKy_Changed">
+                                    <ComboBoxItem Content="Vật tư"/><ComboBoxItem Content="Thuốc"/>
+                                </ComboBox>
+                                <TextBlock Text="Số lượng tồn (đã ghi sổ)" Style="{StaticResource KhoLabel}"/>
+                                <TextBlock x:Name="lblTonChiTiet" Text="0" FontSize="21" FontWeight="Bold" Foreground="{StaticResource KhoInk}" Margin="0,0,0,12"/>
+                                <TextBlock Text="Mức tồn tối thiểu *" Style="{StaticResource KhoLabel}"/>
+                                <TextBox x:Name="txtMucTon" Margin="0,0,0,13" ToolTip="Mức tồn tối thiểu không được âm"/>
+                                <StackPanel x:Name="formThuoc" Visibility="Collapsed">
+                                    <TextBlock Text="Hàm lượng thuốc *" Style="{StaticResource KhoLabel}"/>
+                                    <TextBox x:Name="txtHamLuong" Margin="0,0,0,12"/>
+                                    <TextBlock Text="Đơn giá bán *" Style="{StaticResource KhoLabel}"/>
+                                    <TextBox x:Name="txtGiaBan" Margin="0,0,0,13" ToolTip="Đơn giá không được âm"/>
+                                </StackPanel>
+                                <Border Background="#F3F8FF" CornerRadius="9" Padding="12" Margin="0,3,0,10">
+                                    <StackPanel><TextBlock Text="Nguyên tắc tồn kho" FontWeight="SemiBold" Foreground="{StaticResource KhoInk}"/>
+                                        <TextBlock Text="Chỉ điều chỉnh ngưỡng cảnh báo tại đây. Nhập/xuất phải thực hiện bằng phiếu kho để giữ lịch sử." TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource KhoMuted}" Margin="0,5,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                            <StackPanel x:Name="formLo" Visibility="Collapsed">
+                                <TextBlock Text="Vật tư / thuốc" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblLoHang" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,15" TextWrapping="Wrap"/>
+                                <TextBlock Text="Kho lưu trữ" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblLoKho" FontSize="14" Margin="0,0,0,15" TextWrapping="Wrap"/>
+                                <TextBlock Text="Nhà cung cấp" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblLoNCC" FontSize="14" Margin="0,0,0,15" TextWrapping="Wrap"/>
+                                <TextBlock Text="Hạn sử dụng" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblLoHan" FontSize="14" Margin="0,0,0,15"/>
+                                <TextBlock Text="Tồn của lô" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblLoTon" FontSize="21" FontWeight="Bold" Margin="0,0,0,14"/>
+                                <TextBlock Text="Cảnh báo" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblLoCanhBao" FontWeight="SemiBold" FontSize="14" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <StackPanel x:Name="formKho" Visibility="Collapsed">
+                                <TextBlock Text="Tên kho" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblKhoTen" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,15"/>
+                                <TextBlock Text="Người phụ trách" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblKhoNguoi" FontSize="14" Margin="0,0,0,15"/>
+                                <TextBlock Text="Loại kho" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblKhoLoai" FontSize="14" Margin="0,0,0,15"/>
+                                <TextBlock Text="Trạng thái" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblKhoTrangThai" FontSize="14" Margin="0,0,0,15"/>
+                                <TextBlock Text="Tồn kho" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblKhoTongTon" FontSize="14" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                    <Border Grid.Row="2" Padding="17,11" BorderBrush="#E8EFF6" BorderThickness="0,1,0,0">
+                        <StackPanel>
+                            <TextBlock x:Name="lblThongBao" Foreground="#B45309" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6"/>
+                            <StackPanel x:Name="panelThaoTac" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button x:Name="btnHuy" Content="Hủy" Click="Huy_Click" Visibility="Collapsed" Margin="0,0,8,0"/>
+                                <Button x:Name="btnSua" Content="Sửa thông tin" Click="Sua_Click" Margin="0"/>
+                                <Button x:Name="btnLuu" Content="Lưu thông tin" Style="{StaticResource Primary}" Click="Luu_Click" Visibility="Collapsed" Margin="0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+        <TextBlock Grid.Row="5" Margin="0,10,0,0" Foreground="{StaticResource KhoMuted}" FontSize="11" Text="Mẹo: chọn lô hàng để xem hạn dùng; chọn kho để biết người phụ trách. Thao tác nhập xuất được lưu tại phân hệ Nhập / xuất kho."/>
     </Grid>
 </UserControl>

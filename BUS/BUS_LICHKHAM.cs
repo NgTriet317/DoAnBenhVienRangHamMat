@@ -107,6 +107,11 @@ namespace BUS
             if (string.IsNullOrWhiteSpace(record.MaBS)) throw new InvalidOperationException("Vui lòng nhập/chọn MaBS.");
             if (string.IsNullOrWhiteSpace(record.MaPhong)) throw new InvalidOperationException("Vui lòng nhập/chọn MaPhong.");
             if (string.IsNullOrWhiteSpace(record.MaCa)) throw new InvalidOperationException("Vui lòng nhập/chọn MaCa.");
+            if (record.TrangThai != "Hủy" && record.TrangThai != "Đã hủy" &&
+                record.TrangThai != "Hoàn thành" && record.TrangThai != "Đã khám" &&
+                record.TrangThai != "Đã đổi" && record.MucDoNghiemTrong=="Cao" &&
+                string.IsNullOrWhiteSpace(record.MaBSDuBi))
+                throw new InvalidOperationException("Lịch khám mức Cao bắt buộc có bác sĩ dự bị.");
         }
     }
 }

@@ -18,7 +18,7 @@ public partial class MainWindow : Window
     private static readonly HashSet<string> AllPages = new(StringComparer.Ordinal)
     {
         "TongQuan", "BenhNhan", "KhamDieuTri", "DichVuThucHien", "DonThuoc", "NhanSu", "ChungChiNhanVien", "CaLamViec",
-        "ThietBi", "BaoTri", "VatTu", "DanhMucHangHoa", "NhaCungCap", "NhapXuatVatTu", "NhapKho", "XuatKho", "LichKham",
+        "ThietBi", "BaoTri", "VatTu", "Kho", "DanhMucHangHoa", "NhaCungCap", "NhapXuatVatTu", "LichKham",
         "DichVu", "HoaDon", "BangLuong", "ChinhSachLuong", "TaiKhoan", "BaoCao", "PhieuHuongDan",
         "NhatKy", "XinNghiViec"
     };
@@ -76,6 +76,17 @@ public partial class MainWindow : Window
     /// </summary>
     internal void OpenApp(string tag)
     {
+        string cheDoNhapXuat = "";
+        if (tag == "NhapKho")
+        {
+            tag = "NhapXuatVatTu";
+            cheDoNhapXuat = "Nhap";
+        }
+        else if (tag == "XuatKho")
+        {
+            tag = "NhapXuatVatTu";
+            cheDoNhapXuat = "Xuat";
+        }
         if (!RolePermissions[CurrentRole].Contains(tag))
         {
             MessageBox.Show("Tài khoản hiện tại không có quyền mở phân hệ này.",
@@ -103,11 +114,10 @@ public partial class MainWindow : Window
             "ThietBi" => new ThietBi(),
             "BaoTri" => new BaoTri(),
             "VatTu" => new VatTu(),
+            "Kho" => new Kho(),
             "DanhMucHangHoa" => new DanhMucHangHoa(),
             "NhaCungCap" => new NhaCungCap(),
             "NhapXuatVatTu" => new NhapXuatVatTu(),
-            "NhapKho" => new NhapKho(),
-            "XuatKho" => new XuatKho(),
             "HoaDon" => new HoaDon(),
             "BangLuong" => new BangLuong(),
             "ChinhSachLuong" => new ChinhSachLuong(),
@@ -119,6 +129,8 @@ public partial class MainWindow : Window
             _ => null
         };
         if (page is null) return;
+        if (page is NhapXuatVatTu nhapXuat && cheDoNhapXuat.Length > 0)
+            nhapXuat.ChonCheDo(cheDoNhapXuat);
 
         string tenTrang = "Đơn xin nghỉ phép / nghỉ việc";
         if (tag != "XinNghiViec")

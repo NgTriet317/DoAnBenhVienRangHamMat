@@ -24,6 +24,44 @@ namespace RangHamMat.Views
         bool dangSua;
         string? maBenhNhanKhoa;
         public bool DaLuu { get; private set; }
+        public string MaLichVuaLuu { get; private set; } = "";
+        bool dangNhungTrongLichKham;
+        public event EventHandler? LuuThanhCong;
+        public event EventHandler? YeuCauDong;
+
+        // Sử dụng một biểu mẫu cho Thêm, Xem chi tiết và Sửa ở panel bên phải.
+        public void HienTrongPanel(bool xemChiTiet, bool canPhanCongLai = false)
+        {
+            dangNhungTrongLichKham = true;
+            btnDong.Content = "Quay về thêm";
+            if (!xemChiTiet) return;
+
+            pnlNhapLieu.IsEnabled = false;
+            txtTieuDeForm.Text = "Chi tiết lịch khám";
+            txtMoTaForm.Text = "Thông tin lịch đã chọn. Bấm Chỉnh sửa nếu lịch còn được phép sửa.";
+            btnLuuLich.Visibility = Visibility.Collapsed;
+            btnLamMoi.Visibility = Visibility.Collapsed;
+            btnChinhSua.Visibility = Visibility.Collapsed;
+            if (!canPhanCongLai && (lichCu.TrangThai == "Nháp" ||
+                lichCu.TrangThai == "Chờ xác nhận" || lichCu.TrangThai == "Chưa xác nhận"))
+                btnChinhSua.Visibility = Visibility.Visible;
+            else
+                txtHuongDan.Text = "Lịch đã xác nhận/hoàn tất hoặc đang được điều phối lại. Không sửa trực tiếp; thực hiện đổi phân công theo quy trình quản lý.";
+        }
+
+        private void btnChinhSua_Click(object sender, RoutedEventArgs e)
+        {
+            if (!dangSua) return;
+            pnlNhapLieu.IsEnabled = true;
+            txtMaLich.IsReadOnly = true;
+            pnlLyDoThayDoi.Visibility = Visibility.Visible;
+            txtTieuDeForm.Text = "Chỉnh sửa lịch khám";
+            txtMoTaForm.Text = "Nhập lý do chỉnh sửa, kiểm tra dữ liệu rồi bấm Lưu lịch khám.";
+            btnChinhSua.Visibility = Visibility.Collapsed;
+            btnLamMoi.Visibility = Visibility.Visible;
+            btnLuuLich.Visibility = Visibility.Visible;
+            txtHuongDan.Text = "* Các thay đổi phải hợp lệ với lịch làm việc và lịch nghỉ đã duyệt.";
+        }
 
         public ThemLichKham() : this((string?)null) { }
 
@@ -99,6 +137,7 @@ namespace RangHamMat.Views
             }
             cboCa.ItemsSource = dsCa;
             cboDichVu.ItemsSource = new BUS_DICHVU().layToanBoDichVu().ToList();
+            cboBacSiDuBi.ItemsSource = LichKham.LayBacSi();
         }
 
         // Tự điền giờ khám từ giờ bắt đầu của ca vừa chọn.
@@ -123,6 +162,8 @@ namespace RangHamMat.Views
             cboBenhNhan.SelectedIndex = -1;
             cboDichVu.SelectedIndex = -1;
             cboBacSi.SelectedIndex = -1;
+            cboBacSiDuBi.SelectedIndex = -1;
+            cboMucDo.SelectedIndex = 0;
             cboPhong.SelectedIndex = -1;
             cboCa.SelectedIndex = -1;
             txtLyDoKham.Clear();
@@ -149,6 +190,8 @@ namespace RangHamMat.Views
             txtMaLich.Text = lichCu.MaLich;
             cboBenhNhan.SelectedValue = lichCu.MaBN;
             cboBacSi.SelectedValue = lichCu.MaBS;
+            cboBacSiDuBi.SelectedValue = lichCu.MaBSDuBi;
+            ChonGiaTriCombo(cboMucDo, lichCu.MucDoNghiemTrong);
             cboPhong.SelectedValue = lichCu.MaPhong;
             cboCa.SelectedValue = lichCu.MaCa;
             cboDichVu.SelectedValue = lichCu.MaDV;
@@ -200,7 +243,7 @@ namespace RangHamMat.Views
         private void XoaBaoLoi()
         {
             Control[] danhSach = { txtMaLich, cboBenhNhan, cboBacSi, cboPhong, cboCa,
-                cboDichVu, dpNgayKham, txtGioKham, txtThoiLuong, cboUuTien,
+                cboDichVu, dpNgayKham, txtGioKham, txtThoiLuong, cboUuTien, cboMucDo, cboBacSiDuBi,
                 cboTrangThai, txtLyDoKham, txtLyDoThayDoi, txtGhiChu };
             foreach (Control control in danhSach)
             {
@@ -279,6 +322,19 @@ namespace RangHamMat.Views
             lichMoi.NgayGioKham = dpNgayKham.SelectedDate.Value.Date.Add(gioNhap.TimeOfDay);
             lichMoi.ThoiLuongDuKien = thoiLuong;
             lichMoi.UuTien = NoiDungChon(cboUuTien);
+            lichMoi.MucDoNghiemTrong = NoiDungChon(cboMucDo);
+            lichMoi.MaBSDuBi = GiaTriChon(cboBacSiDuBi);
+            if (string.IsNullOrWhiteSpace(lichMoi.MaBSDuBi)) lichMoi.MaBSDuBi = null;
+            if (lichMoi.MucDoNghiemTrong=="Cao" && lichMoi.MaBSDuBi==null)
+            {
+                BaoLoi(cboBacSiDuBi, "Lịch khám nghiêm trọng mức Cao bắt buộc chọn bác sĩ dự bị.");
+                return false;
+            }
+            if (lichMoi.MaBSDuBi==lichMoi.MaBS)
+            {
+                BaoLoi(cboBacSiDuBi, "Bác sĩ dự bị phải khác bác sĩ chính.");
+                return false;
+            }
             lichMoi.TrangThai = NoiDungChon(cboTrangThai);
             lichMoi.LyDoKham = txtLyDoKham.Text.Trim();
             lichMoi.GhiChu = txtGhiChu.Text.Trim();
@@ -322,6 +378,32 @@ namespace RangHamMat.Views
             return true;
         }
 
+        private void cboBacSi_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (cboBacSiDuBi == null) return;
+            ET_NHANVIEN? bsChinh = cboBacSi.SelectedItem as ET_NHANVIEN;
+            string maDangChon = GiaTriChon(cboBacSiDuBi);
+            System.Collections.Generic.List<ET_NHANVIEN> danhSach = new System.Collections.Generic.List<ET_NHANVIEN>();
+            if (bsChinh != null)
+            {
+                foreach (ET_NHANVIEN nv in LichKham.LayBacSi())
+                {
+                    if (nv.MaNV != bsChinh.MaNV && nv.MaCK == bsChinh.MaCK &&
+                        nv.MaChucVu == bsChinh.MaChucVu && nv.TrangThai == "Đang làm việc")
+                        danhSach.Add(nv);
+                }
+            }
+            cboBacSiDuBi.ItemsSource = danhSach;
+            if (!string.IsNullOrWhiteSpace(maDangChon)) cboBacSiDuBi.SelectedValue = maDangChon;
+        }
+
+        private void cboMucDo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (txtYeuCauDuBi == null) return;
+            txtYeuCauDuBi.Visibility = Visibility.Collapsed;
+            if (NoiDungChon(cboMucDo)=="Cao") txtYeuCauDuBi.Visibility = Visibility.Visible;
+        }
+
         private void btnLuuLich_Click(object sender, RoutedEventArgs e)
         {
             ET_LICHKHAM lichMoi;
@@ -340,12 +422,16 @@ namespace RangHamMat.Views
                     return;
                 }
                 DaLuu = true;
+                MaLichVuaLuu = lichMoi.MaLich;
                 MessageBox.Show("Lưu lịch khám thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
-                Window cuaSo = Window.GetWindow(this);
-                if (cuaSo != null)
+                if (dangNhungTrongLichKham)
                 {
-                    // Báo về màn hình lịch khám để tải lại danh sách sau khi lưu.
-                    cuaSo.DialogResult = true;
+                    if (LuuThanhCong != null) LuuThanhCong(this, EventArgs.Empty);
+                }
+                else
+                {
+                    Window cuaSo = Window.GetWindow(this);
+                    if (cuaSo != null) cuaSo.Close();
                 }
             }
             catch (Exception ex)
@@ -362,6 +448,11 @@ namespace RangHamMat.Views
 
         private void btnDong_Click(object sender, RoutedEventArgs e)
         {
+            if (dangNhungTrongLichKham)
+            {
+                if (YeuCauDong != null) YeuCauDong(this, EventArgs.Empty);
+                return;
+            }
             Window cuaSo = Window.GetWindow(this);
             if (cuaSo != null) cuaSo.Close();
         }

@@ -18,6 +18,8 @@ namespace ET
         public string MaPhongMoi { get; set; } = "";
         public string TenPhongMoi { get; set; } = "";
         public string MaLLVThayThe { get; set; } = "";
+        public string? MaBSDuBi { get; set; }
+        public string TenBSDuBi { get; set; } = "";
         public bool DaXacNhan { get; set; }
         public string MaNVXacNhan { get; set; } = "";
         public string TenNguoiXacNhan { get; set; } = "";
