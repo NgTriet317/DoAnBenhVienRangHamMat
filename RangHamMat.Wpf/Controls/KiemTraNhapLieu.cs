@@ -58,7 +58,7 @@ public static class KiemTraNhapLieu
     /// <summary>AI tạo: kiểm tra một ô theo Tag DB khi người dùng rời ô; lỗi xuất hiện ở viền/tooltip và vùng thông báo có sẵn.</summary>
     private static void FieldLostFocus(object sender,KeyboardFocusChangedEventArgs e)
     {
-        if(sender is not FrameworkElement field || !field.IsEnabled || field is TextBox {IsReadOnly:true} ||
+        if(sender is not FrameworkElement field || !field.IsEnabled || field.IsKeyboardFocusWithin || field is TextBox {IsReadOnly:true} ||
             field.Tag is not string tag || !tag.StartsWith("DB:")) return;
         var parts=tag[3..].Split('.');
         if(parts.Length!=2)return;
@@ -85,7 +85,7 @@ public static class KiemTraNhapLieu
         {
             SetError(field,ex.Message);
             var form=Ancestors(field).OfType<UserControl>().FirstOrDefault();
-            if(form is not null) Feedback(form,ex.Message);
+            if(form is not null) ShowError(form,ex.Message);
         }
     }
 
@@ -94,7 +94,8 @@ public static class KiemTraNhapLieu
     {
         var label=InputLabel(control);
         var text=Convert.ToString(value,CultureInfo.InvariantCulture)?.Trim()??"";
-        var caption=(control.Parent as Panel)?.Children.OfType<TextBlock>().FirstOrDefault()?.Text??label;
+        var group = control.Parent is ContentControl { Tag: "InlineField" } wrapper ? wrapper.Parent : control.Parent;
+        var caption=(group as Panel)?.Children.OfType<TextBlock>().FirstOrDefault()?.Text??label;
         if(text.Length==0)
         {
             if(caption.TrimEnd().EndsWith('*'))throw new LoiNhapLieu(field,"Vui lòng nhập/chọn "+label+".");
@@ -147,7 +148,7 @@ public static class KiemTraNhapLieu
         var message = InputLabel(picker) + ": ngày không hợp lệ. Chọn lại ngày trên lịch hoặc nhập ngày/tháng/năm, ví dụ 25/10/2026.";
         SetError(picker, message);
         var parent = Ancestors(picker).OfType<UserControl>().FirstOrDefault();
-        if (parent is null || !Feedback(parent, message))
+        if (parent is null || !ShowError(parent, message))
             MessageBox.Show(message, "Kiểm tra ngày nhập", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
@@ -222,6 +223,17 @@ public static class KiemTraNhapLieu
         CheckDates(table, values, "NgayMua", "HanBaoHanh");
         CheckDates(table, values, "NgayBatDau", "NgayKetThuc");
         CheckDates(table, values, "GioVao", "GioRa");
+        if (table == "BAO_TRI_THIET_BI")
+        {
+            values.TryGetValue("NgayKetThuc", out var ngayKetThuc); values.TryGetValue("TrangThai", out var trangThai);
+            values.TryGetValue("NgayBatDau", out var ngayBatDau); values.TryGetValue("NgayBaoTriTiepTheo", out var ngayTiepTheo);
+            var ketThuc = ngayKetThuc as DateTime?;
+            if (values.ContainsKey("NgayKetThuc") && (Convert.ToString(trangThai) is "Hoàn thành" or "Đã xác nhận") && ketThuc is null)
+                throw new LoiNhapLieu("NgayKetThuc", "Vui lòng nhập ngày kết thúc khi hoàn thành bảo trì.");
+            var moc = ketThuc ?? ngayBatDau as DateTime?;
+            if (moc is not null && ngayTiepTheo is DateTime tiepTheo && tiepTheo.Date <= moc.Value.Date)
+                throw new LoiNhapLieu("NgayBaoTriTiepTheo", "Ngày bảo trì tiếp theo phải sau ngày kết thúc hoặc ngày bắt đầu.");
+        }
     }
 
     /// <summary>Chặn ngày kết thúc trước ngày bắt đầu khi cả hai được cung cấp; ngày trống vẫn theo nullable của schema.</summary>
@@ -283,20 +295,32 @@ public static class KiemTraNhapLieu
         catch (LoiNhapLieu ex) { error = ex.Message; MarkError(root, ex); return false; }
     }
 
-    /// <summary>Ghi lỗi cạnh form, đánh dấu ô sai và đưa nó vào vùng cuộn để người dùng sửa mà không mất dữ liệu.</summary>
+    /// <summary>Đánh dấu đúng ô sai và cuộn cả ô cùng dòng lỗi vào vùng nhìn thấy.</summary>
     public static void MarkError(DependencyObject root, LoiNhapLieu error)
     {
-        var field = error.Field.Length==0 ? null : Elements(root).OfType<FrameworkElement>().FirstOrDefault(x => FieldName(x) == error.Field && x.IsVisible && x.IsEnabled);
-        if (field is not null) { SetError(field, error.Message); field.BringIntoView(); field.Focus(); }
-        Feedback(root, error.Message);
+        var field = error.Field.Length==0 ? null : Elements(root).OfType<FrameworkElement>()
+            .Where(x => (FieldName(x) == error.Field || Equals(x.Tag, error.Field)) && x.IsVisible && x.IsEnabled)
+            .OrderBy(x => x.Tag is string tag && tag.StartsWith("Time:") ? 1 : 0).FirstOrDefault();
+        if (field is not null)
+        {
+            field.Focus();
+            SetError(field, error.Message);
+            var group = field.Parent is ContentControl { Tag: "InlineField" } wrapper ? wrapper : field;
+            group.UpdateLayout(); group.BringIntoView();
+        }
+        ShowError(root, error.Message);
     }
 
-    /// <summary>Dùng vùng thông báo đã khai báo trong XAML; caller dùng hộp thoại khi form không có vùng đó.</summary>
-    private static bool Feedback(DependencyObject root, string message)
+    /// <summary>Lỗi của một ô chỉ hiện dưới ô đó; vùng chung dành cho lỗi không gắn được với trường nhập.</summary>
+    public static bool ShowError(DependencyObject root, string message)
     {
+        bool inline = message.Length > 0 && Elements(root).OfType<FrameworkElement>().Any(field =>
+            field.Parent is ContentControl { Tag: "InlineField" } && field.IsVisible && GetHasError(field) && GetError(field) == message);
         var label = Elements(root).OfType<TextBlock>().FirstOrDefault(x => x.Name is "FormError" or "Feedback" or "PageStatus");
-        if (label is null) return false;
-        label.Text = message; label.BringIntoView(); return true;
+        if (label is null) return inline;
+        label.Text = inline ? "" : message;
+        if (!inline && message.Length > 0) label.BringIntoView();
+        return true;
     }
 
     /// <summary>Lấy tên cột từ Tag DB/Time, hoặc tên control đối với ô nhập không có Tag.</summary>

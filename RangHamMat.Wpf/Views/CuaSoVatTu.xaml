@@ -23,22 +23,30 @@
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Tên vật tư *" Margin="0,0,0,6" />
                     <!-- Trường TenVT (VAT_TU.TenVT): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:VAT_TU.TenVT" AutomationProperties.Name="Tên vật tư" MaxLength="255" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:VAT_TU.TenVT" AutomationProperties.Name="Tên vật tư" MaxLength="255" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Đơn vị tính *" Margin="0,0,0,6" />
                     <!-- Trường Đơn vị tính của hàng hóa (VAT_TU.DonViTinh): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:VAT_TU.DonViTinh" AutomationProperties.Name="Đơn vị tính" MaxLength="255" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:VAT_TU.DonViTinh" AutomationProperties.Name="Đơn vị tính" MaxLength="255" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn loại vật tư">
                     <TextBlock Text="Loại vật tư *" Margin="0,0,0,6" />
                     <!-- Trường MaLVT (VAT_TU.MaLVT): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <ComboBox Tag="DB:VAT_TU.MaLVT" AutomationProperties.Name="Loại vật tư" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <ComboBox Tag="DB:VAT_TU.MaLVT" AutomationProperties.Name="Loại vật tư" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Số thập phân; tối đa 3 chữ số sau dấu thập phân.">
                     <TextBlock Text="Mức tồn tối thiểu *" Margin="0,0,0,6" />
                     <!-- Trường Mức tồn kho tối thiểu cấu hình cho thuốc/vật tư (VAT_TU.MucTonToiThieu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:VAT_TU.MucTonToiThieu" AutomationProperties.Name="Mức tồn tối thiểu" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:VAT_TU.MucTonToiThieu" AutomationProperties.Name="Mức tồn tối thiểu" />
+                    </ContentControl>
                   </StackPanel>
                 </WrapPanel>
               </StackPanel>
@@ -55,7 +63,9 @@
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
                     <!-- Trường Trạng thái nghiệp vụ của bản ghi (VAT_TU.TrangThai): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:VAT_TU.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:VAT_TU.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
+                    </ContentControl>
                   </StackPanel>
                 </WrapPanel>
               </StackPanel>
@@ -74,7 +84,9 @@
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Tên loại vật tư *" Margin="0,0,0,6" />
                     <!-- Trường TenLVT (LOAI_VAT_TU.TenLVT): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:LOAI_VAT_TU.TenLVT" AutomationProperties.Name="Tên loại vật tư" MaxLength="255" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:LOAI_VAT_TU.TenLVT" AutomationProperties.Name="Tên loại vật tư" MaxLength="255" />
+                    </ContentControl>
                   </StackPanel>
                 </WrapPanel>
               </StackPanel>
@@ -86,7 +98,9 @@
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Ghi chú" Margin="0,0,0,6" />
                     <!-- Trường Ghi chú bổ sung (LOAI_VAT_TU.GhiChu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:LOAI_VAT_TU.GhiChu" AutomationProperties.Name="Ghi chú" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:LOAI_VAT_TU.GhiChu" AutomationProperties.Name="Ghi chú" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                    </ContentControl>
                   </StackPanel>
                 </WrapPanel>
               </StackPanel>
@@ -117,37 +131,51 @@
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn vật tư">
                     <TextBlock Text="Vật tư *" Margin="0,0,0,6" />
                     <!-- Trường Mã vật tư (LO_VAT_TU.MaVT): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <ComboBox Tag="DB:LO_VAT_TU.MaVT" AutomationProperties.Name="Vật tư" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <ComboBox Tag="DB:LO_VAT_TU.MaVT" AutomationProperties.Name="Vật tư" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn nhà cung cấp">
                     <TextBlock Text="Nhà cung cấp *" Margin="0,0,0,6" />
                     <!-- Trường Mã nhà cung cấp (LO_VAT_TU.MaNCC): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <ComboBox Tag="DB:LO_VAT_TU.MaNCC" AutomationProperties.Name="Nhà cung cấp" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <ComboBox Tag="DB:LO_VAT_TU.MaNCC" AutomationProperties.Name="Nhà cung cấp" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn kho">
                     <TextBlock Text="Kho *" Margin="0,0,0,6" />
                     <!-- Trường Mã kho (LO_VAT_TU.MaKho): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <ComboBox Tag="DB:LO_VAT_TU.MaKho" AutomationProperties.Name="Kho" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <ComboBox Tag="DB:LO_VAT_TU.MaKho" AutomationProperties.Name="Kho" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Ngày nhập *" Margin="0,0,0,6" />
                     <!-- Trường Ngày nhập lô/phiếu nhập (LO_VAT_TU.NgayNhap): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <DatePicker Tag="DB:LO_VAT_TU.NgayNhap" AutomationProperties.Name="Ngày nhập" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <DatePicker Tag="DB:LO_VAT_TU.NgayNhap" AutomationProperties.Name="Ngày nhập" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Hạn sử dụng" Margin="0,0,0,6" />
                     <!-- Trường Hạn sử dụng lô hàng (LO_VAT_TU.HanSuDung): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <DatePicker Tag="DB:LO_VAT_TU.HanSuDung" AutomationProperties.Name="Hạn sử dụng" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <DatePicker Tag="DB:LO_VAT_TU.HanSuDung" AutomationProperties.Name="Hạn sử dụng" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Số thập phân; tối đa 3 chữ số sau dấu thập phân.">
                     <TextBlock Text="Số lượng nhập *" Margin="0,0,0,6" />
                     <!-- Trường SoLuongNhap (LO_VAT_TU.SoLuongNhap): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:LO_VAT_TU.SoLuongNhap" AutomationProperties.Name="Số lượng nhập" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:LO_VAT_TU.SoLuongNhap" AutomationProperties.Name="Số lượng nhập" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Số thập phân; tối đa 2 chữ số sau dấu thập phân.">
                     <TextBlock Text="Đơn giá nhập *" Margin="0,0,0,6" />
                     <!-- Trường DonGiaNhap (LO_VAT_TU.DonGiaNhap): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:LO_VAT_TU.DonGiaNhap" AutomationProperties.Name="Đơn giá nhập" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:LO_VAT_TU.DonGiaNhap" AutomationProperties.Name="Đơn giá nhập" />
+                    </ContentControl>
                   </StackPanel>
                 </WrapPanel>
               </StackPanel>
@@ -178,17 +206,23 @@
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Tên kho *" Margin="0,0,0,6" />
                     <!-- Trường Tên kho (KHO.TenKho): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:KHO.TenKho" AutomationProperties.Name="Tên kho" MaxLength="255" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:KHO.TenKho" AutomationProperties.Name="Tên kho" MaxLength="255" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn nhân viên phụ trách">
                     <TextBlock Text="Nhân viên phụ trách *" Margin="0,0,0,6" />
                     <!-- Trường Mã nhân viên (KHO.MaNV): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <ComboBox Tag="DB:KHO.MaNV" AutomationProperties.Name="Nhân viên phụ trách" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <ComboBox Tag="DB:KHO.MaNV" AutomationProperties.Name="Nhân viên phụ trách" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Loại kho" Margin="0,0,0,6" />
                     <!-- Trường Loại kho (KHO.LoaiKho): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:KHO.LoaiKho" AutomationProperties.Name="Loại kho" MaxLength="255" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:KHO.LoaiKho" AutomationProperties.Name="Loại kho" MaxLength="255" />
+                    </ContentControl>
                   </StackPanel>
                 </WrapPanel>
               </StackPanel>
@@ -205,7 +239,9 @@
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
                     <!-- Trường Trạng thái nghiệp vụ của bản ghi (KHO.TrangThai): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:KHO.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:KHO.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
+                    </ContentControl>
                   </StackPanel>
                 </WrapPanel>
               </StackPanel>

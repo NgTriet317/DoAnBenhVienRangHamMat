@@ -80,17 +80,37 @@
 
                                     <StackPanel><StackPanel Grid.Column="0">
                                             <TextBlock Text="Mã lịch khám *" Style="{StaticResource LKLabel}"/>
-                                            <TextBox x:Name="txtMaLich" MaxLength="50" Tag="DB:LICH_KHAM.MaLich" Style="{StaticResource LKTextBox}" ToolTip="Ví dụ: LK011. Mã phải duy nhất."/>
+                                            <ContentControl Style="{StaticResource TruongNhapLieu}">
+                                             <TextBox x:Name="txtMaLich" MaxLength="50" Tag="DB:LICH_KHAM.MaLich"
+                                                     Style="{StaticResource LKTextBox}" ToolTip="Ví dụ: LK011. Mã phải duy nhất."/>
+                                            </ContentControl>
                                         </StackPanel>
                                         <StackPanel Margin="0,12,0,0">
                                             <TextBlock Text="Bệnh nhân *" Style="{StaticResource LKLabel}"/>
-                                            <ComboBox x:Name="cboBenhNhan" Tag="DB:LICH_KHAM.MaBN" Style="{StaticResource LKComboBox}" DisplayMemberPath="HoTenBN" SelectedValuePath="MaBN"/>
+                                            <ContentControl Style="{StaticResource TruongNhapLieu}">
+                                             <ComboBox x:Name="cboBenhNhan" Tag="DB:LICH_KHAM.MaBN"
+                                                      Style="{StaticResource LKComboBox}"
+                                                      DisplayMemberPath="HoTenBN" SelectedValuePath="MaBN"/>
+                                            </ContentControl>
                                         </StackPanel>
-                                    </StackPanel><TextBlock Text="Dịch vụ khám (không bắt buộc)" Style="{StaticResource LKLabel}" Margin="0,16,0,7"/>
-                                    <ComboBox x:Name="cboDichVu" Tag="DB:LICH_KHAM.MaDV" DisplayMemberPath="TenDV" SelectedValuePath="MaDV" Style="{StaticResource LKComboBox}"/>
+                                    </Grid>
+
+                                    <TextBlock Text="Dịch vụ khám (không bắt buộc)"
+                                               Style="{StaticResource LKLabel}" Margin="0,16,0,7"/>
+                                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                                     <ComboBox x:Name="cboDichVu" Tag="DB:LICH_KHAM.MaDV"
+                                              DisplayMemberPath="TenDV" SelectedValuePath="MaDV"
+                                              Style="{StaticResource LKComboBox}"/>
+                                    </ContentControl>
 
                                     <TextBlock Text="Lý do khám *" Style="{StaticResource LKLabel}" Margin="0,16,0,7"/>
-                                    <TextBox x:Name="txtLyDoKham" FontSize="15" MaxLength="1000" Tag="DB:LICH_KHAM.LyDoKham" Height="82" Padding="12,9" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderBrush="#D9E5F1" BorderThickness="1" ToolTip="Ví dụ: Đau răng hàm dưới, cần khám và tư vấn."/>
+                                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                                     <TextBox x:Name="txtLyDoKham" FontSize="15" MaxLength="1000" Tag="DB:LICH_KHAM.LyDoKham"
+                                             Height="82" Padding="12,9" AcceptsReturn="True"
+                                             TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                             BorderBrush="#D9E5F1" BorderThickness="1"
+                                             ToolTip="Ví dụ: Đau răng hàm dưới, cần khám và tư vấn."/>
+                                    </ContentControl>
                                 </StackPanel>
                             </Border>
 
@@ -105,17 +125,28 @@
                                     </StackPanel>
                                     <StackPanel><StackPanel>
                                             <TextBlock Text="Bác sĩ phụ trách *" Style="{StaticResource LKLabel}"/>
-                                            <ComboBox x:Name="cboBacSi" Tag="DB:LICH_KHAM.MaBS" SelectionChanged="cboBacSi_SelectionChanged" DisplayMemberPath="HoTen" SelectedValuePath="MaNV" Style="{StaticResource LKComboBox}"/>
+                                            <ContentControl Style="{StaticResource TruongNhapLieu}">
+                                             <ComboBox x:Name="cboBacSi" Tag="DB:LICH_KHAM.MaBS"
+                                                      DisplayMemberPath="HoTen" SelectedValuePath="MaNV"
+                                                      Style="{StaticResource LKComboBox}"/>
+                                            </ContentControl>
                                         </StackPanel>
                                         <StackPanel Margin="0,12,0,0">
                                             <TextBlock Text="Phòng khám *" Style="{StaticResource LKLabel}"/>
-                                            <ComboBox x:Name="cboPhong" Tag="DB:LICH_KHAM.MaPhong" DisplayMemberPath="TenPhong" SelectedValuePath="MaPhong" Style="{StaticResource LKComboBox}"/>
+                                            <ContentControl Style="{StaticResource TruongNhapLieu}">
+                                             <ComboBox x:Name="cboPhong" Tag="DB:LICH_KHAM.MaPhong"
+                                                      DisplayMemberPath="TenPhong" SelectedValuePath="MaPhong"
+                                                      Style="{StaticResource LKComboBox}"/>
+                                            </ContentControl>
                                         </StackPanel>
-                                    </StackPanel><TextBlock Text="Ca khám *" Style="{StaticResource LKLabel}" Margin="0,16,0,7"/>
-                                    <ComboBox x:Name="cboCa" Tag="DB:LICH_KHAM.MaCa" DisplayMemberPath="TenCa" SelectedValuePath="MaCa" SelectionChanged="cboCa_SelectionChanged" Style="{StaticResource LKComboBox}"/>
-                                    <TextBlock Text="Bác sĩ dự bị (bắt buộc nếu mức độ Cao)" Style="{StaticResource LKLabel}" Margin="0,14,0,7"/>
-                                    <ComboBox x:Name="cboBacSiDuBi" DisplayMemberPath="HoTen" SelectedValuePath="MaNV" Style="{StaticResource LKComboBox}" ToolTip="Chọn bác sĩ khác bác sĩ chính, cùng chuyên khoa. Không để trống khi mức nghiêm trọng Cao."/>
-                                    <TextBlock Text="Bác sĩ dự bị chỉ được điều phối thay sau khi quản lý xác nhận từng lịch." Foreground="#64748B" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                                    </Grid>
+                                    <TextBlock Text="Ca khám *" Style="{StaticResource LKLabel}" Margin="0,16,0,7"/>
+                                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                                     <ComboBox x:Name="cboCa" Tag="DB:LICH_KHAM.MaCa"
+                                              DisplayMemberPath="TenCa" SelectedValuePath="MaCa"
+                                              SelectionChanged="cboCa_SelectionChanged"
+                                              Style="{StaticResource LKComboBox}"/>
+                                    </ContentControl>
                                 </StackPanel>
                             </Border>
 
@@ -130,23 +161,38 @@
                                     </StackPanel>
                                     <StackPanel><StackPanel>
                                             <TextBlock Text="Ngày khám *" Style="{StaticResource LKLabel}"/>
-                                            <DatePicker x:Name="dpNgayKham" Tag="DB:LICH_KHAM.NgayGioKham" Style="{StaticResource LKDatePicker}"/>
+                                            <ContentControl Style="{StaticResource TruongNhapLieu}">
+                                             <DatePicker x:Name="dpNgayKham" Tag="DB:LICH_KHAM.NgayGioKham"
+                                                        Style="{StaticResource LKDatePicker}"/>
+                                            </ContentControl>
                                         </StackPanel>
                                         <StackPanel Margin="0,12,0,0">
                                             <TextBlock Text="Giờ khám * (HH:mm) - mặc định theo giờ bắt đầu ca" Style="{StaticResource LKLabel}"/>
-                                            <TextBox x:Name="txtGioKham" MaxLength="5" Tag="Time:LICH_KHAM.NgayGioKham" ToolTip="Chọn ca khám để tự lấy giờ bắt đầu; có thể sửa giờ trong ca." Style="{StaticResource LKTextBox}"/>
+                                            <ContentControl Style="{StaticResource TruongNhapLieu}">
+                                             <TextBox x:Name="txtGioKham" MaxLength="5"
+                                                     Tag="Time:LICH_KHAM.NgayGioKham"
+                                                     ToolTip="Chọn ca khám để tự lấy giờ bắt đầu; có thể sửa giờ trong ca."
+                                                     Style="{StaticResource LKTextBox}"/>
+                                            </ContentControl>
                                         </StackPanel>
                                     </StackPanel><StackPanel Margin="0,16,0,0"><StackPanel>
                                             <TextBlock Text="Thời lượng (phút) *" Style="{StaticResource LKLabel}"/>
-                                            <TextBox x:Name="txtThoiLuong" MaxLength="3" Text="30" Tag="DB:LICH_KHAM.ThoiLuongDuKien" Style="{StaticResource LKTextBox}"/>
+                                            <ContentControl Style="{StaticResource TruongNhapLieu}">
+                                             <TextBox x:Name="txtThoiLuong" MaxLength="3" Text="30"
+                                                     Tag="DB:LICH_KHAM.ThoiLuongDuKien"
+                                                     Style="{StaticResource LKTextBox}"/>
+                                            </ContentControl>
                                         </StackPanel>
                                         <StackPanel Margin="0,12,0,0">
                                             <TextBlock Text="Mức ưu tiên *" Style="{StaticResource LKLabel}"/>
-                                            <ComboBox x:Name="cboUuTien" Tag="DB:LICH_KHAM.UuTien" SelectedIndex="0" Style="{StaticResource LKComboBox}">
+                                            <ContentControl Style="{StaticResource TruongNhapLieu}">
+                                             <ComboBox x:Name="cboUuTien" Tag="DB:LICH_KHAM.UuTien"
+                                                      SelectedIndex="0" Style="{StaticResource LKComboBox}">
                                                 <ComboBoxItem Content="Bình thường"/>
                                                 <ComboBoxItem Content="Ưu tiên"/>
                                                 <ComboBoxItem Content="Khẩn"/>
                                             </ComboBox>
+                                            </ContentControl>
                                         </StackPanel>
                                     </StackPanel><TextBlock Text="Mức độ nghiêm trọng *" Style="{StaticResource LKLabel}" Margin="0,14,0,7"/>
                                     <ComboBox x:Name="cboMucDo" Style="{StaticResource LKComboBox}" SelectedIndex="0" SelectionChanged="cboMucDo_SelectionChanged">
@@ -168,7 +214,9 @@
                                         <TextBlock Text="Trạng thái và ghi chú" FontSize="18" FontWeight="SemiBold" Foreground="#173A61" VerticalAlignment="Center" Margin="11,0,0,0"/>
                                     </StackPanel>
                                     <TextBlock Text="Trạng thái lịch khám *" Style="{StaticResource LKLabel}"/>
-                                    <ComboBox x:Name="cboTrangThai" Tag="DB:LICH_KHAM.TrangThai" SelectedIndex="0" Style="{StaticResource LKComboBox}">
+                                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                                     <ComboBox x:Name="cboTrangThai" Tag="DB:LICH_KHAM.TrangThai"
+                                              SelectedIndex="0" Style="{StaticResource LKComboBox}">
                                         <ComboBoxItem Content="Nháp"/>
                                         <ComboBoxItem Content="Đã xác nhận"/>
                                         <ComboBoxItem Content="Chờ khám"/>
@@ -178,8 +226,14 @@
                                         <ComboBoxItem Content="Đã đổi"/>
                                         <ComboBoxItem Content="Hoàn thành"/>
                                     </ComboBox>
+                                    </ContentControl>
                                     <TextBlock Text="Ghi chú nội bộ" Style="{StaticResource LKLabel}" Margin="0,16,0,7"/>
-                                    <TextBox x:Name="txtGhiChu" FontSize="15" MaxLength="1000" Tag="DB:LICH_KHAM.GhiChu" Height="74" Padding="12,9" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderBrush="#D9E5F1" BorderThickness="1"/>
+                                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                                     <TextBox x:Name="txtGhiChu" FontSize="15" MaxLength="1000" Tag="DB:LICH_KHAM.GhiChu"
+                                             Height="74" Padding="12,9" AcceptsReturn="True"
+                                             TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                             BorderBrush="#D9E5F1" BorderThickness="1"/>
+                                    </ContentControl>
                                     <StackPanel x:Name="pnlLyDoThayDoi" Visibility="Collapsed" Margin="0,14,0,0">
                                         <TextBlock Text="Lý do chỉnh sửa *" Style="{StaticResource LKLabel}"/>
                                         <TextBox x:Name="txtLyDoThayDoi" FontSize="15" Height="60" MaxLength="500" Padding="12,7" TextWrapping="Wrap" AcceptsReturn="True" BorderBrush="#D9E5F1" BorderThickness="1"/>

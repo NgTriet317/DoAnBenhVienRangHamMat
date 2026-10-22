@@ -54,6 +54,7 @@ namespace DAL
             {
                 duLieu.MaBT = TaoMa(connection, transaction, "BAO_TRI_THIET_BI", "MaBT");
                 KiemTra<ET_BAOTRITHIETBI>(connection, transaction, "BAO_TRI_THIET_BI", duLieu, null, null);
+                KiemTraNghiepVu(duLieu);
                 connection.Execute("""
                 INSERT INTO dbo.[BAO_TRI_THIET_BI] ([MaBT],[MaTB],[MaNV],
                     [NgayBatDau],[NgayKetThuc],[NoiDung],
@@ -86,6 +87,9 @@ namespace DAL
                 }
 
                 KiemTra(connection, transaction, "BAO_TRI_THIET_BI", duLieu, hienTai, banGoc);
+                if (hienTai.TrangThai is not "Nháp" and not "Đang thực hiện")
+                    throw new InvalidOperationException("Lần bảo trì đã kết thúc được giữ nguyên. Hãy tạo lần bảo trì mới.");
+                KiemTraNghiepVu(duLieu);
                 if (chiDoiTrangThai)
                 {
                     KiemTraChiDoiTrangThai(duLieu, hienTai);
@@ -119,9 +123,28 @@ namespace DAL
                 }
 
                 KiemTra(connection, transaction, "BAO_TRI_THIET_BI", hienTai, hienTai, banGoc);
+                if (hienTai.TrangThai != "Nháp")
+                    throw new InvalidOperationException("Chỉ xóa lần bảo trì nháp. Lần đang thực hiện cần chuyển sang Hủy để giữ lịch sử.");
                 connection.Execute("DELETE FROM dbo.[BAO_TRI_THIET_BI] WHERE [MaBT]=@Ma", new { Ma = ma }, transaction);
                 return true;
             });
+        }
+
+        /// <summary>Kiểm tra trước khi ghi, dùng chung cho thêm/sửa và mọi nơi gọi BUS.</summary>
+        private static void KiemTraNghiepVu(ET_BAOTRITHIETBI duLieu)
+        {
+            if (string.IsNullOrWhiteSpace(duLieu.MaTB) || string.IsNullOrWhiteSpace(duLieu.MaNV) || string.IsNullOrWhiteSpace(duLieu.NoiDung))
+                throw new InvalidOperationException("Vui lòng chọn thiết bị, nhân viên phụ trách và nhập nội dung bảo trì.");
+            if (duLieu.TrangThai is not "Nháp" and not "Đang thực hiện" and not "Hoàn thành" and not "Đã xác nhận" and not "Hủy")
+                throw new InvalidOperationException("Trạng thái bảo trì không hợp lệ.");
+            if (duLieu.ChiPhi < 0)
+                throw new InvalidOperationException("Chi phí bảo trì không được âm.");
+            if (duLieu.NgayKetThuc < duLieu.NgayBatDau)
+                throw new InvalidOperationException("Ngày kết thúc không được trước ngày bắt đầu.");
+            if (duLieu.NgayBaoTriTiepTheo.HasValue && duLieu.NgayBaoTriTiepTheo.Value.Date <= (duLieu.NgayKetThuc ?? duLieu.NgayBatDau).Date)
+                throw new InvalidOperationException("Ngày bảo trì tiếp theo phải sau ngày kết thúc hoặc ngày bắt đầu.");
+            if ((duLieu.TrangThai is "Hoàn thành" or "Đã xác nhận") && duLieu.NgayKetThuc is null)
+                throw new InvalidOperationException("Vui lòng nhập ngày kết thúc khi hoàn thành bảo trì.");
         }
     }
 }

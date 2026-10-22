@@ -9,20 +9,34 @@
   <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
    <Border x:Name="HeaderFields" Background="#F4F7FB" BorderBrush="#DCE5F0" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,14"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <StackPanel><TextBlock Text="Lần khám *" Style="{StaticResource RxLabel}"/><!-- Trường Mã lần khám trong lịch sử khám bệnh (DON_THUOC.MaLS): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-    <ComboBox x:Name="VisitBox" Tag="DB:DON_THUOC.MaLS" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Visit_Changed" AutomationProperties.Name="Lần khám"/></StackPanel>
+    <ContentControl Style="{StaticResource TruongNhapLieu}">
+     <ComboBox x:Name="VisitBox" Tag="DB:DON_THUOC.MaLS" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Visit_Changed" AutomationProperties.Name="Lần khám"/>
+    </ContentControl></StackPanel>
     <StackPanel Grid.Column="2"><TextBlock Text="Bác sĩ kê đơn *" Style="{StaticResource RxLabel}"/><!-- Trường Mã bác sĩ, liên kết danh mục nhân viên (DON_THUOC.MaBS): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-    <ComboBox x:Name="DoctorBox" Tag="DB:DON_THUOC.MaBS" DisplayMemberPath="Label" SelectedValuePath="Value" AutomationProperties.Name="Bác sĩ kê đơn"/></StackPanel>
+    <ContentControl Style="{StaticResource TruongNhapLieu}">
+     <ComboBox x:Name="DoctorBox" Tag="DB:DON_THUOC.MaBS" DisplayMemberPath="Label" SelectedValuePath="Value" AutomationProperties.Name="Bác sĩ kê đơn"/>
+    </ContentControl></StackPanel>
     <StackPanel Grid.Column="4"><TextBlock Text="Ngày kê *" Style="{StaticResource RxLabel}"/><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="65"/></Grid.ColumnDefinitions><!-- Trường Ngày/giờ kê đơn thuốc (DON_THUOC.NgayKe): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-    <DatePicker x:Name="DateBox" Tag="DB:DON_THUOC.NgayKe"/><!-- Ô giờ DON_THUOC.NgayKe: nhập HH:mm, ghép với ngày của trường DB cùng tên trong BieuMauHoSo.Read trước khi lưu. -->
-    <TextBox Grid.Column="1" Tag="Time:DON_THUOC.NgayKe" MaxLength="5" Margin="6,0,0,0" ToolTip="HH:mm"/></Grid></StackPanel>
+    <ContentControl Style="{StaticResource TruongNhapLieu}">
+     <DatePicker x:Name="DateBox" Tag="DB:DON_THUOC.NgayKe"/>
+    </ContentControl><!-- Ô giờ DON_THUOC.NgayKe: nhập HH:mm, ghép với ngày của trường DB cùng tên trong BieuMauHoSo.Read trước khi lưu. -->
+    <ContentControl Style="{StaticResource TruongNhapLieu}" Margin="6,0,0,0" Grid.Column="1">
+     <TextBox Tag="Time:DON_THUOC.NgayKe" MaxLength="5" ToolTip="HH:mm"/>
+    </ContentControl></Grid></StackPanel>
     <StackPanel Grid.Row="1" Grid.ColumnSpan="5" Margin="0,12,0,0"><TextBlock Text="Chẩn đoán của lần khám" Style="{StaticResource RxLabel}"/><TextBlock x:Name="DiagnosisText" Text="Chọn lần khám để xem chẩn đoán" FontSize="12" TextWrapping="Wrap"/></StackPanel>
     <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Margin="0,12,0,0"><TextBlock Text="Ghi chú" Style="{StaticResource RxLabel}"/><!-- Trường Ghi chú bổ sung (DON_THUOC.GhiChu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-    <TextBox Tag="DB:DON_THUOC.GhiChu" MinHeight="58" AcceptsReturn="True" TextWrapping="Wrap"/></StackPanel>
+    <ContentControl Style="{StaticResource TruongNhapLieu}">
+     <TextBox Tag="DB:DON_THUOC.GhiChu" MinHeight="58" AcceptsReturn="True" TextWrapping="Wrap"/>
+    </ContentControl></StackPanel>
     <StackPanel Grid.Row="2" Grid.Column="4" Margin="0,12,0,0"><TextBlock Text="Lý do thay đổi chỉ định (đơn mới)" Style="{StaticResource RxLabel}"/><!-- Trường Lý do thay đổi chỉ định đơn thuốc (DON_THUOC.LyDoThayThe): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-    <TextBox Tag="DB:DON_THUOC.LyDoThayThe" MinHeight="58" AcceptsReturn="True" TextWrapping="Wrap"/></StackPanel>
+    <ContentControl Style="{StaticResource TruongNhapLieu}">
+     <TextBox Tag="DB:DON_THUOC.LyDoThayThe" MinHeight="58" AcceptsReturn="True" TextWrapping="Wrap"/>
+    </ContentControl></StackPanel>
    </Grid></Border>
    <StackPanel x:Name="LineParentFields" Visibility="Collapsed" Margin="0,0,0,12"><TextBlock Text="Đơn nháp *" Style="{StaticResource RxLabel}"/><!-- Trường Mã đơn thuốc (CHI_TIET_DON_THUOC.MaDT): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-   <ComboBox x:Name="ParentBox" Tag="DB:CHI_TIET_DON_THUOC.MaDT" DisplayMemberPath="Label" SelectedValuePath="Value"/></StackPanel>
+   <ContentControl Style="{StaticResource TruongNhapLieu}">
+    <ComboBox x:Name="ParentBox" Tag="DB:CHI_TIET_DON_THUOC.MaDT" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+   </ContentControl></StackPanel>
    <DockPanel Margin="0,0,0,9"><!-- Thao tác + Thêm thuốc: gọi AddMedicine_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
    <Button Style="{StaticResource HospitalSecondary}" x:Name="AddButton" DockPanel.Dock="Right" Content="+ Thêm thuốc" Click="AddMedicine_Click"/><StackPanel><TextBlock Text="Thuốc kê" FontWeight="Bold" FontSize="13"/><TextBlock Text="Chọn thuốc trong danh mục và nhập đầy đủ hướng dẫn cho người bệnh." FontSize="12" Foreground="#61748B" Margin="0,4,0,0"/></StackPanel></DockPanel>
    <!-- Vùng MedicineRows: hiển thị nội dung/danh sách được code-behind hoặc Binding cung cấp; DataTemplate quyết định cách trình bày mỗi đối tượng. -->

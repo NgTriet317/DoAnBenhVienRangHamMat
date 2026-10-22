@@ -23,47 +23,65 @@
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Tên thiết bị *" Margin="0,0,0,6" />
                     <!-- Trường TenTB (THIET_BI.TenTB): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:THIET_BI.TenTB" AutomationProperties.Name="Tên thiết bị" MaxLength="255" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:THIET_BI.TenTB" AutomationProperties.Name="Tên thiết bị" MaxLength="255" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Loại thiết bị" Margin="0,0,0,6" />
                     <!-- Trường LoaiTB (THIET_BI.LoaiTB): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:THIET_BI.LoaiTB" AutomationProperties.Name="Loại thiết bị" MaxLength="255" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:THIET_BI.LoaiTB" AutomationProperties.Name="Loại thiết bị" MaxLength="255" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Số serial" Margin="0,0,0,6" />
                     <!-- Trường Số serial thiết bị (THIET_BI.SoSerial): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:THIET_BI.SoSerial" AutomationProperties.Name="Số serial" MaxLength="50" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:THIET_BI.SoSerial" AutomationProperties.Name="Số serial" MaxLength="50" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Ngày mua" Margin="0,0,0,6" />
                     <!-- Trường Ngày mua thiết bị (THIET_BI.NgayMua): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <DatePicker Tag="DB:THIET_BI.NgayMua" AutomationProperties.Name="Ngày mua" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <DatePicker Tag="DB:THIET_BI.NgayMua" AutomationProperties.Name="Ngày mua" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn nhà cung cấp">
                     <TextBlock Text="Nhà cung cấp" Margin="0,0,0,6" />
                     <!-- Trường Mã nhà cung cấp (THIET_BI.MaNCC): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <ComboBox Tag="DB:THIET_BI.MaNCC" AutomationProperties.Name="Nhà cung cấp" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <ComboBox Tag="DB:THIET_BI.MaNCC" AutomationProperties.Name="Nhà cung cấp" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Phòng sử dụng" Margin="0,0,0,6" />
                     <!-- Trường PhongSuDung (THIET_BI.PhongSuDung): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:THIET_BI.PhongSuDung" AutomationProperties.Name="Phòng sử dụng" MaxLength="255" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:THIET_BI.PhongSuDung" AutomationProperties.Name="Phòng sử dụng" MaxLength="255" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Số thập phân; tối đa 3 chữ số sau dấu thập phân.">
                     <TextBlock Text="Số lượng *" Margin="0,0,0,6" />
                     <!-- Trường Số lượng thuốc/hàng hóa/dịch vụ (THIET_BI.SoLuong): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:THIET_BI.SoLuong" AutomationProperties.Name="Số lượng" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:THIET_BI.SoLuong" AutomationProperties.Name="Số lượng" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Tình trạng *" Margin="0,0,0,6" />
                     <!-- Trường Tình trạng sử dụng phòng/thiết bị (THIET_BI.TinhTrang): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:THIET_BI.TinhTrang" AutomationProperties.Name="Tình trạng" MaxLength="255" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:THIET_BI.TinhTrang" AutomationProperties.Name="Tình trạng" MaxLength="255" />
+                    </ContentControl>
                   </StackPanel>
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Ngày bảo hành" Margin="0,0,0,6" />
                     <!-- Trường NgayBaoHanh (THIET_BI.NgayBaoHanh): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <DatePicker Tag="DB:THIET_BI.NgayBaoHanh" AutomationProperties.Name="Ngày bảo hành" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <DatePicker Tag="DB:THIET_BI.NgayBaoHanh" AutomationProperties.Name="Ngày bảo hành" />
+                    </ContentControl>
                   </StackPanel>
                 </WrapPanel>
               </StackPanel>
@@ -75,7 +93,9 @@
                   <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
                     <TextBlock Text="Ghi chú" Margin="0,0,0,6" />
                     <!-- Trường Ghi chú bổ sung (THIET_BI.GhiChu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <TextBox Tag="DB:THIET_BI.GhiChu" AutomationProperties.Name="Ghi chú" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                    <ContentControl Style="{StaticResource TruongNhapLieu}">
+                     <TextBox Tag="DB:THIET_BI.GhiChu" AutomationProperties.Name="Ghi chú" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                    </ContentControl>
                   </StackPanel>
                 </WrapPanel>
               </StackPanel>

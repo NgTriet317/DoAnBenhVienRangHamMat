@@ -9,7 +9,7 @@ using System.Windows.Media;
 namespace RangHamMat.Controls;
 
 /// <summary>Một điểm báo cáo: Label là kỳ, Primary/Secondary là hai số liệu do màn hình cha cung cấp.</summary>
-public sealed record ChartPoint(string Label, double Primary, double Secondary = 0);
+public sealed record ChartPoint(string Label, double Primary, double Secondary = 0, string? PeriodDescription = null);
 
 /// <summary>Nhãn trục tung và tọa độ Top đã tính; XAML dùng cùng dữ liệu để hiện nhãn và đường lưới.</summary>
 public sealed record ChartTick(string Label, double Top);
@@ -33,6 +33,9 @@ public sealed partial class ChartView : UserControl, INotifyPropertyChanged
     public static readonly DependencyProperty SecondaryLabelProperty = DependencyProperty.Register(nameof(SecondaryLabel), typeof(string), typeof(ChartView), new PropertyMetadata("", OnPresentationChanged));
     /// <summary>Chọn biểu đồ đường hoặc cột; dùng dependency property để thay chế độ sau Loaded vẫn cập nhật.</summary>
     public static readonly DependencyProperty IsLineProperty = DependencyProperty.Register(nameof(IsLine), typeof(bool), typeof(ChartView), new PropertyMetadata(false, OnPresentationChanged));
+    public static readonly DependencyProperty UnitProperty = DependencyProperty.Register(nameof(Unit), typeof(string), typeof(ChartView), new PropertyMetadata("VNĐ", OnPresentationChanged));
+    /// <summary>Đơn vị tooltip do chuyên đề cung cấp; chuỗi rỗng cho dữ liệu đếm có tên chỉ tiêu rõ ràng.</summary>
+    public string Unit { get => (string)GetValue(UnitProperty); set => SetValue(UnitProperty, value); }
     private INotifyCollectionChanged? observed;
     /// <summary>Nguồn điểm báo cáo; control không tự lấy hoặc tính tổng tiền từ SQL.</summary>
     public IEnumerable<ChartPoint>? Points { get => (IEnumerable<ChartPoint>?)GetValue(PointsProperty); set => SetValue(PointsProperty, value); }
@@ -97,7 +100,7 @@ public sealed partial class ChartView : UserControl, INotifyPropertyChanged
         PlotWidth = Math.Max(0, PlotArea.ActualWidth);
         var height = Math.Max(0, PlotArea.ActualHeight);
         var data = (Points ?? Array.Empty<ChartPoint>()).Where(p => double.IsFinite(p.Primary) && double.IsFinite(p.Secondary) && p.Primary >= 0 && p.Secondary >= 0).ToArray();
-        var max = data.Length == 0 ? 1 : Math.Max(1, data.Max(p => Math.Max(p.Primary, p.Secondary)));
+        var max = data.Length == 0 ? 1 : Math.Ceiling(Math.Max(4, data.Max(p => Math.Max(p.Primary, p.Secondary))) / 4) * 4;
         Ticks = Enumerable.Range(0, 5).Select(i => new ChartTick(data.Length == 0 ? "" : (max * (4 - i) / 4).ToString("N0"), height * i / 4)).ToArray();
         var step = data.Length == 0 ? 0 : PlotWidth / data.Length;
         var bar = Math.Max(1, Math.Min(30, step * .3));
@@ -107,7 +110,8 @@ public sealed partial class ChartView : UserControl, INotifyPropertyChanged
             var center = (i + .5) * step; var primaryHeight = p.Primary / max * height; var secondaryHeight = p.Secondary / max * height;
             return new ChartPlotPoint(p.Label, i * step, step, center - bar - 2, center + 2, bar,
                 height - primaryHeight, height - secondaryHeight, primaryHeight, secondaryHeight, center - 3.5, height - primaryHeight - 3.5,
-                $"{p.Label} · {PrimaryLabel}: {p.Primary:N0} VNĐ", $"{p.Label} · {SecondaryLabel}: {p.Secondary:N0} VNĐ", !IsLine, IsLine);
+                $"{p.PeriodDescription ?? p.Label} · {PrimaryLabel}: {p.Primary.ToString(Unit == "VNĐ" ? "N2" : "N0")} {Unit}".TrimEnd(),
+                $"{p.PeriodDescription ?? p.Label} · {SecondaryLabel}: {p.Secondary.ToString(Unit == "VNĐ" ? "N2" : "N0")} {Unit}".TrimEnd(), !IsLine, IsLine);
         }).ToArray();
         foreach (var name in new[] { nameof(Ticks), nameof(PlotPoints), nameof(LinePoints), nameof(PlotWidth), nameof(HasData), nameof(ShowLine) }) PropertyChanged?.Invoke(this, new(name));
     }
