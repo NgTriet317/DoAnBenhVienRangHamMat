@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using RangHamMat.Controls;
 using RangHamMat.Views;
+using RangHamMat.Controls.ClinicalWorkflow;
 
 namespace RangHamMat;
 
@@ -61,6 +62,8 @@ public partial class AppWorkspace : UserControl
     /// </summary>
     public void FocusHoSo(string? patientId, string? visitId = null, string? prescriptionId = null)
     {
+        try { QuyenNghiepVu.KiemTraLienKet(patientId, visitId, prescriptionId); }
+        catch (InvalidOperationException ex) { MessageBox.Show(ex.Message, "Quyền truy cập"); return; }
         if (page is BenhNhan patients) patients.FocusContext(patientId,visitId,prescriptionId);
         else if (page is KhamDieuTri visits) visits.FocusContext(patientId,visitId,prescriptionId);
         else if (page is DonThuoc orders) orders.FocusContext(patientId,visitId,prescriptionId);
@@ -175,6 +178,7 @@ public partial class AppWorkspace : UserControl
     {
         var permission = module == "TiepNhanKham" ? "BenhNhan" : module;
         if (!home.CanOpen(permission)) { MessageBox.Show("Vai trò hiện tại không được thực hiện thao tác này."); return; }
+        if (existing is null && !QuyenNghiepVu.DuocTao(table)) { MessageBox.Show("Tài khoản chỉ được tra cứu nội dung này."); return; }
         if (existing is not null && DuLieuGiaoDien.Find(table,UiRecord.Get(existing,DuLieuGiaoDien.Key(table))) is object actual && !DuLieuGiaoDien.CanEdit(table,actual) && table != "LICH_KHAM") { MessageBox.Show("Bản ghi đã xác nhận được giữ nguyên. Hãy lập bản mới nếu cần thay đổi."); return; }
         UserControl form = module switch { "BenhNhan" => new CuaSoBenhNhan(), "LichKham" => new CuaSoLichKham(), "DonThuoc" => new CuaSoDonThuoc(), "TiepNhanKham" => new TiepNhanKham(), _ => new CuaSoKhamDieuTri() };
         BieuMauHoSo.Configure(form, table, existing, context, patient ?? (Workspace.Content as IPatientScoped)?.PatientId);
@@ -220,6 +224,12 @@ public partial class AppWorkspace : UserControl
     /// </summary>
     public bool ShowHoSoDetails(string table, object record)
     {
+        try
+        {
+            if (table is "BENH_NHAN" or "HO_SO_BENH_AN" or "LICH_SU_KHAM_BENH" or "DON_THUOC" or "DICH_VU_THUC_HIEN")
+                QuyenNghiepVu.KiemTraLienKet(DuLieuGiaoDien.PatientId(table, record), table == "LICH_SU_KHAM_BENH" ? UiRecord.Text(record, "MaLS") : table is "DON_THUOC" or "DICH_VU_THUC_HIEN" ? UiRecord.Text(record, "MaLS") : null, table == "DON_THUOC" ? UiRecord.Text(record, "MaDT") : null);
+        }
+        catch (InvalidOperationException ex) { MessageBox.Show(ex.Message, "Quyền truy cập"); return true; }
         if (table == "BENH_NHAN")
         {
             if (page is BenhNhan patients) { patients.OpenProfile(record, home.CanOpen); Workspace.Content = page; return true; }

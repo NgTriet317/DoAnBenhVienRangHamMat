@@ -5,10 +5,12 @@ Nguồn yêu cầu: hai file `KeHoach_CaiTo_QuyTrinhKham_6ChucNang.docx` và `.m
 - Baseline Git: `7470bf1`, nhánh ban đầu `tan`; nhánh thực hiện `cai-to-quy-trinh-kham-6-chuc-nang`.
 - WPF .NET 8, ET–BUS–DAL, SQL Server/Dapper giữ nguyên.
 - P01: khảo sát, bản sao SQL, tiền kiểm, kết quả kiểm tra ban đầu.
-- P02 đang triển khai: hợp đồng ngữ cảnh, quyền theo chức vụ, truy vấn bác sĩ có phạm vi và project ClinicalChecks. Chỉ đánh dấu từng đầu việc có bằng chứng.
+- P02 đã tích hợp: ngữ cảnh/quyền theo chức vụ, snapshot SQL có phạm vi và giới hạn nội dung theo công việc, guard ghi chung transaction, cache xóa khi đổi phiên, quyền module/nút/điều hướng và ClinicalChecks/ClinicalUiChecks.
 - Điểm tích hợp thêm sau rà soát: một dòng ở `Views/DangNhap.xaml.cs` để chốt principal sau khi xác thực đã thành công, cùng helper ở `PhienDangNhap.cs`; không đổi thuật toán đăng nhập hoặc quyền module khác.
 - P03–P12 chưa được nghiệm thu. Không coi các endpoint nền là sáu màn hình đã cải tổ hoàn chỉnh.
 - Không sửa nhân sự, kho, lịch làm việc, lịch hẹn hoặc báo cáo để làm xanh lỗi baseline.
 - Không áp migration lên `QLBenhVienRangHamMat`. Kiểm tra ghi chỉ dùng bản khôi phục `RHM_ClinicalWorkflow_Test_20261025` và fixture rollback.
 
-Không bật quyền mở các màn hình cũ cho các vai trò mới trước khi chuyển nguồn đọc và mọi đường ghi của màn hình sang hợp đồng có quyền. Điều này tránh mở giao diện đang tải toàn bệnh viện hoặc thu từng phần trong khi P02/P09 chưa xong.
+Đã bật quyền mở năm module lâm sàng theo chức vụ sau khi chuyển nguồn đọc/guard ghi của chúng. Module ngoài phạm vi giữ quyền Admin/User. Luồng ghi tài chính cũ bị khóa trong chế độ lâm sàng; hóa đơn lịch sử chỉ đối chiếu/in lại, chờ P09/P10.
+
+Điểm tích hợp lịch hẹn có giới hạn: `Views/LichKham.xaml/.cs` dùng snapshot đã có quyền khi nhúng trong hồ sơ, ngăn việc đọc toàn viện trước khi lọc. Đường chạy độc lập giữ nguồn và hành vi cũ, được kiểm chứng riêng. Không đổi thuật toán lịch hoặc phân quyền module LichKham.

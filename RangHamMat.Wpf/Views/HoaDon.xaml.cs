@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using BUS;
 using RangHamMat.Controls;
+using RangHamMat.Controls.ClinicalWorkflow;
 
 namespace RangHamMat.Views;
 
@@ -69,11 +70,12 @@ public partial class HoaDon : UserControl, IPatientScoped
             PrescriptionFilter.ItemsSource = DuLieuGiaoDien.Rows("DON_THUOC").Where(r => UiRecord.Text(r, "TrangThai") == "Đã xác nhận"
                 && !string.IsNullOrEmpty(visitId) && UiRecord.Text(r, "MaLS") == visitId)
                 .Select(r => new LuaChonDanhMuc(UiRecord.Text(r, "MaDT"), $"Đơn #{UiRecord.Text(r, "MaDT")} · {UiRecord.Date(r, "NgayKe"):dd/MM/yyyy HH:mm}")).ToArray(); PrescriptionFilter.SelectedValue = prescriptionId;
-            var table = finance.GetInvoices(string.IsNullOrEmpty(visitId) ? null : visitId);
+            var table = DuLieuGiaoDien.PhamViLamSang ? QuyenNghiepVu.DocDanhSachHoaDon(visitId) : finance.GetInvoices(string.IsNullOrEmpty(visitId) ? null : visitId);
             table.DefaultView.RowFilter = string.IsNullOrEmpty(PatientId) ? "" : $"MaBN='{PatientId.Replace("'", "''")}'";
             InvoiceList.ItemsSource = table.DefaultView;
             InvoiceList.SelectedItem = table.DefaultView.Cast<DataRowView>().FirstOrDefault(r => Convert.ToString(r["MaHD"]) == invoiceId);
             InvoiceCount.Text = $"{table.DefaultView.Count} hóa đơn"; CreateButton.IsEnabled = HasVisit() && HasEmployee(); ShowInvoice(); ShowStock();
+            if (DuLieuGiaoDien.PhamViLamSang) { CreateButton.IsEnabled = false; EmployeeFilter.SelectedValue = PhienDangNhap.MaNV; EmployeeFilter.IsEnabled = false; DispenseTab.Visibility = Visibility.Collapsed; PageStatus.Text = "Đối chiếu và in lại chứng từ lịch sử; giữ nguyên các khoản đã thu và đã cấp thuốc."; }
         }
         catch (Exception ex) { PageStatus.Text = "Không thể tải hóa đơn: " + ex.Message; }
         finally { updating = false; }
@@ -89,16 +91,19 @@ public partial class HoaDon : UserControl, IPatientScoped
         invoiceId = Convert.ToString(row["MaHD"]) ?? throw new InvalidOperationException("Hóa đơn thiếu mã.");
         InvoiceTitle.Text = $"Hóa đơn #{invoiceId} · {row["TrangThai"]}";
         InvoiceInfo.Text = $"{row["HoTenBN"]} · Lần khám #{row["MaLS"]} · {Convert.ToDateTime(row["NgayLap"]):dd/MM/yyyy HH:mm} · Lập bởi {row["NguoiLap"]}";
-        DetailGrid.ItemsSource = finance.GetInvoiceDetails(invoiceId).DefaultView; PaymentGrid.ItemsSource = finance.GetPayments(invoiceId).DefaultView;
+        DetailGrid.ItemsSource = (DuLieuGiaoDien.PhamViLamSang ? QuyenNghiepVu.DocChiTietHoaDon(invoiceId) : finance.GetInvoiceDetails(invoiceId)).DefaultView;
+        PaymentGrid.ItemsSource = (DuLieuGiaoDien.PhamViLamSang ? QuyenNghiepVu.DocChiTietHoaDon(invoiceId, true) : finance.GetPayments(invoiceId)).DefaultView;
         TotalsText.Text = $"Tổng {Money(row["TongTien"])}  ·  Giảm {Money(row["GiamGia"])}  ·  Phải thu {Money(row["SoTienPhaiThu"])}\nĐã thu ròng {Money(row["DaThu"])}  ·  Còn phải trả {Money(row["ConPhaiThu"])}";
         ConfirmButton.IsEnabled = CancelButton.IsEnabled = Convert.ToString(row["TrangThai"]) == "Nháp";
         PaymentForm.IsEnabled = Convert.ToString(row["TrangThai"]) == "Đã xác nhận" && HasEmployee();
+        if (DuLieuGiaoDien.PhamViLamSang) { ConfirmButton.IsEnabled = CancelButton.IsEnabled = false; PaymentForm.IsEnabled = false; }
     }
     /// <summary>
     /// Hiện dòng thuốc và lô tồn của kho đang chọn, kiểm tra đơn đã được xuất ghi sổ chưa và bật/tắt nút cấp thuốc theo đơn, kho, nhân viên.
     /// </summary>
     private void ShowStock()
     {
+        if (DuLieuGiaoDien.PhamViLamSang) { DispenseButton.IsEnabled = false; StockGrid.ItemsSource = null; return; }
         prescriptionId = HoTroGiaoDien.Selected(PrescriptionFilter); var rx = DuLieuGiaoDien.Find("DON_THUOC", prescriptionId);
         var lines = DuLieuGiaoDien.Children("CHI_TIET_DON_THUOC", "MaDT", prescriptionId);
         PrescriptionGrid.ItemsSource = rx is null ? null : lines.Select(r => new { Thuoc = DuLieuGiaoDien.Lookup("MaThuoc", UiRecord.Get(r, "MaThuoc")), SoLuong = UiRecord.Get(r, "SoLuong"), LieuDung = UiRecord.Text(r, "LieuDung"), HuongDan = UiRecord.Text(r, "HuongDan") }).ToArray();
@@ -136,6 +141,7 @@ public partial class HoaDon : UserControl, IPatientScoped
     /// </summary>
     private void Execute(Action operation, string success)
     {
+        if (DuLieuGiaoDien.PhamViLamSang) { PageStatus.Text = "Chứng từ lịch sử chỉ được đối chiếu và in lại."; return; }
         try { operation(); }
         catch (Exception ex) { if(ex is LoiNhapLieu inputError) KiemTraNhapLieu.MarkError(this,inputError); else PageStatus.Text = "Không thể thực hiện: " + ex.Message; return; }
         try { DuLieuGiaoDien.RefreshFromDatabase(); Refresh(); PageStatus.Text = success; }
@@ -160,7 +166,7 @@ public partial class HoaDon : UserControl, IPatientScoped
     /// Khi đổi nhân viên thực hiện, cập nhật khả năng lập hóa đơn/thanh toán/cấp thuốc theo lựa chọn hiện tại.
     /// </summary>
     private void Employee_Changed(object sender, SelectionChangedEventArgs e)
-    { if (updating) return; try { CreateButton.IsEnabled = HasVisit() && HasEmployee(); ShowInvoice(); ShowStock(); } catch (Exception ex) { PageStatus.Text = ex.Message; } }
+    { if (updating) return; try { CreateButton.IsEnabled = !DuLieuGiaoDien.PhamViLamSang && HasVisit() && HasEmployee(); ShowInvoice(); ShowStock(); } catch (Exception ex) { PageStatus.Text = ex.Message; } }
     /// <summary>
     /// Đọc và hiển thị chi tiết hóa đơn vừa chọn; bỏ qua sự kiện phát sinh trong lúc đổ danh sách.
     /// </summary>
@@ -176,6 +182,7 @@ public partial class HoaDon : UserControl, IPatientScoped
     /// </summary>
     private void Create_Click(object sender, RoutedEventArgs e)
     {
+        if (DuLieuGiaoDien.PhamViLamSang) { PageStatus.Text = "Chứng từ lịch sử chỉ được đối chiếu và in lại."; return; }
         var editor = new CuaSoHoaDon(); editor.ConfigureContext(PatientId, visitId, HoTroGiaoDien.Selected(EmployeeFilter));
         editor.CreationCompleted += id => { invoiceId = id; CloseEditor(); Refresh(); PageStatus.Text = $"Đã lập hóa đơn nháp #{id}. Kiểm tra khoản thu rồi xác nhận để thanh toán."; };
         editor.CloseRequested += CloseEditor; EditorHost.Content = editor; EditorHost.Visibility = Visibility.Visible; InvoiceContent.Visibility = Visibility.Collapsed; DetailTabs.SelectedIndex = 0;
@@ -235,7 +242,7 @@ public partial class HoaDon : UserControl, IPatientScoped
     /// Đọc lại đầu và chi tiết hóa đơn từ BUS, mở cửa sổ xem trước/in; thông báo lỗi nếu không đọc được chứng từ.
     /// </summary>
     private void Print_Click(object sender, RoutedEventArgs e)
-    { try { if (invoiceId is null) return; var header = finance.GetInvoices().Rows.Cast<DataRow>().Single(r => Convert.ToString(r["MaHD"]) == invoiceId); new XemTruocHoaDon(header, finance.GetInvoiceDetails(invoiceId)) { Owner = Window.GetWindow(this) }.ShowDialog(); } catch (Exception ex) { PageStatus.Text = "Không thể xem trước hóa đơn: " + ex.Message; } }
+    { try { if (invoiceId is null) return; var header = (DuLieuGiaoDien.PhamViLamSang ? QuyenNghiepVu.DocDanhSachHoaDon() : finance.GetInvoices()).Rows.Cast<DataRow>().Single(r => Convert.ToString(r["MaHD"]) == invoiceId); var details = DuLieuGiaoDien.PhamViLamSang ? QuyenNghiepVu.DocChiTietHoaDon(invoiceId) : finance.GetInvoiceDetails(invoiceId); new XemTruocHoaDon(header, details) { Owner = Window.GetWindow(this) }.ShowDialog(); } catch (Exception ex) { PageStatus.Text = "Không thể xem trước hóa đơn: " + ex.Message; } }
 }
 
 /// <summary>

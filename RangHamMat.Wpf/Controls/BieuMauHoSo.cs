@@ -88,6 +88,13 @@ public static class BieuMauHoSo
             if (element.Tag is not string tag || !(tag.StartsWith("DB:" + table + ".") || tag.StartsWith("Time:" + table + "."))) continue;
             var field = tag.Split('.')[1]; object? value = existing is null ? null : UiRecord.Get(existing, field);
             if (context is not null && context.ParentField == field) value = context.ParentValue;
+            if (DuLieuGiaoDien.PhamViLamSang && ((field == "MaBS" && table is "LICH_SU_KHAM_BENH" or "KE_HOACH_DIEU_TRI" or "DON_THUOC") || (field == "MaNVTiepNhan" && table == "PHIEU_KHAM_BENH")))
+            {
+                value = existing is null ? PhienDangNhap.MaNV : value;
+                element.IsEnabled = false;
+            }
+            if (DuLieuGiaoDien.PhamViLamSang && table == "DICH_VU_THUC_HIEN" &&
+                !DuLieuGiaoDien.NguoiDungLamSang.CoQuyen(QuyenLamViec.Kham) && field is not ("KetQua" or "ThoiGianThucHien")) element.IsEnabled = false;
             if (value is not null)
             {
                 if (element is TextBox text) text.Text = tag.StartsWith("Time:") && value is DateTime date ? date.ToString("HH:mm") : Convert.ToString(value, CultureInfo.CurrentCulture) ?? "";

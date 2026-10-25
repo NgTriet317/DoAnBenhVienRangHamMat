@@ -32,6 +32,6 @@ public partial class TiepNhanKham : UserControl
             var order=DuLieuGiaoDien.Rows("PHIEU_KHAM_BENH").Where(r=>UiRecord.Date(r,"ThoiGianTiepNhan")?.Date==DateTime.Today).Select(r=>int.TryParse(UiRecord.Text(r,"SoThuTu"),out var value)?value:0).DefaultIfEmpty().Max()+1;
             QueueNumber.Text=order.ToString();
         }
-        if(HoTroGiaoDien.Workspace(this)?.CanOpen("KhamDieuTri")!=true) { OpenVisitAfterSave.IsChecked=false; OpenVisitAfterSave.IsEnabled=false; }
+        if(DuLieuGiaoDien.PhamViLamSang || HoTroGiaoDien.Workspace(this)?.CanOpen("KhamDieuTri")!=true) { OpenVisitAfterSave.IsChecked=false; OpenVisitAfterSave.IsEnabled=false; }
     }
 }

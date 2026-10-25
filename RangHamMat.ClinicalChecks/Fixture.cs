@@ -77,8 +77,9 @@ internal sealed class Fixture : IDisposable
         SELECT @prefix+'TK'+suffix,@prefix+suffix,N'FIXTURE-NOT-A-LOGIN',
             CASE WHEN suffix='X' THEN @adminRole ELSE @userRole END,@prefix+suffix,N'Đang hoạt động'
         FROM (VALUES ('A'),('B'),('R'),('N'),('C'),('P'),('X')) users(suffix);
-        INSERT dbo.BENH_NHAN(MaBN,HoTenBN,TrangThai)
-        VALUES (@prefix+'BN1',N'FIXTURE CÙNG TÊN',N'Đang theo dõi'),(@prefix+'BN2',N'FIXTURE CÙNG TÊN',N'Đang theo dõi');
+        INSERT dbo.BENH_NHAN(MaBN,HoTenBN,TrangThai,NhomMau,TienSuBenh,DiUng)
+        VALUES (@prefix+'BN1',N'FIXTURE CÙNG TÊN',N'Đang theo dõi',N'A+',N'FIXTURE RIÊNG',N'FIXTURE DỊ ỨNG'),
+               (@prefix+'BN2',N'FIXTURE CÙNG TÊN',N'Đang theo dõi',N'B+',N'FIXTURE RIÊNG',N'FIXTURE DỊ ỨNG');
         INSERT dbo.HO_SO_BENH_AN(MaHS,MaBN,NgayLap,LyDoKhamBanDau,TrangThai)
         VALUES (@prefix+'HS1',@prefix+'BN1',DATEADD(day,-1,@now),N'FIXTURE',N'Đang theo dõi'),
                (@prefix+'HS2',@prefix+'BN2',DATEADD(day,-1,@now),N'FIXTURE',N'Đang theo dõi');
@@ -91,8 +92,8 @@ internal sealed class Fixture : IDisposable
             CASE WHEN suffix IN ('H','U') THEN N'Đã xác nhận' ELSE N'Nháp' END,
             CASE WHEN suffix IN ('H','U') THEN DATEADD(minute,2,@now) ELSE NULL END
         FROM (VALUES ('A','A'),('B','B'),('H','B'),('U','B')) visits(suffix,doctor);
-        INSERT dbo.DON_THUOC(MaDT,MaLS,MaBS,NgayKe,TrangThai)
-        SELECT @prefix+'DT'+suffix,@prefix+'LS'+suffix,@prefix+doctor,DATEADD(minute,3,@now),N'Nháp'
+        INSERT dbo.DON_THUOC(MaDT,MaLS,MaBS,NgayKe,TrangThai,GhiChu)
+        SELECT @prefix+'DT'+suffix,@prefix+'LS'+suffix,@prefix+doctor,DATEADD(minute,3,@now),N'Nháp',N'FIXTURE NỘI DUNG RIÊNG'
         FROM (VALUES ('A','A'),('B','B'),('H','B'),('U','B')) orders(suffix,doctor);
         INSERT dbo.CHI_TIET_DON_THUOC(MaCTDT,MaDT,MaThuoc,LieuDung,SoLuong,SoNgayDung,HuongDan)
         SELECT @prefix+'CT'+suffix,@prefix+'DT'+suffix,@drug,N'FIXTURE KHÔNG DÙNG THẬT',1,1,N'FIXTURE KHÔNG DÙNG THẬT'

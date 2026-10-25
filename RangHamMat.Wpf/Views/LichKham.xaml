@@ -110,7 +110,7 @@
 
                 <WrapPanel Grid.Column="1" VerticalAlignment="Center">
                     <Button Content="Phiếu hướng dẫn" Tag="MoTrang:PhieuHuongDan" Style="{StaticResource SecondaryAction}"/>
-                    <Button Content="Thêm lịch khám" Click="btnThemLichKham_Click" Style="{StaticResource PrimaryAction}"/>
+                            <Button Content="Thêm lịch khám" Click="btnThemLichKham_Click" Style="{StaticResource PrimaryAction}" IsEnabled="{Binding IsEnabled,ElementName=AddAppointmentButton}"/>
                 </WrapPanel>
             </Grid>
         </Border>
@@ -305,7 +305,7 @@
 
                                 <TextBlock Text="Hãy thêm lịch khám mới hoặc điều chỉnh bộ lọc để xem dữ liệu." Margin="0,10,0,18" Foreground="#71808E" TextAlignment="Center"/>
 
-                                <Button Content="Thêm lịch khám" Click="btnThemLichKham_Click" Style="{StaticResource PrimaryAction}" Width="180"/>
+                                <Button x:Name="AddAppointmentButton" Content="Thêm lịch khám" Click="btnThemLichKham_Click" Style="{StaticResource PrimaryAction}" Width="180"/>
                             </StackPanel>
                         </Grid>
                     </Grid>

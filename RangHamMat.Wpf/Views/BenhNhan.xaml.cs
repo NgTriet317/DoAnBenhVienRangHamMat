@@ -41,7 +41,7 @@ public partial class BenhNhan : UserControl, IPatientScoped
     public void ConfigureAccess(Func<string, bool> allowed)
     {
         access = allowed;
-        AddPatientButton.IsEnabled = allowed("BenhNhan");
+        AddPatientButton.IsEnabled = allowed("BenhNhan") && Controls.ClinicalWorkflow.QuyenNghiepVu.DuocTao("BENH_NHAN");
         profile?.ConfigureAccess(allowed);
     }
 

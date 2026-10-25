@@ -12,5 +12,9 @@ public static class DieuHuongHoSo
     /// Tìm workspace từ control nguồn và yêu cầu điều hướng cùng bệnh nhân/lần khám/đơn thuốc; workspace kiểm tra lại các liên kết trước khi chuyển.
     /// </summary>
     public static void Open(DependencyObject origin, string module, string patientId, string? visitId = null, string? prescriptionId = null)
-        => HoTroGiaoDien.Workspace(origin)?.DieuHuongHoSo(module, patientId, visitId, prescriptionId);
+    {
+        try { ClinicalWorkflow.QuyenNghiepVu.KiemTraLienKet(patientId, visitId, prescriptionId); }
+        catch (InvalidOperationException ex) { MessageBox.Show(ex.Message, "Quyền truy cập"); return; }
+        HoTroGiaoDien.Workspace(origin)?.DieuHuongHoSo(module, patientId, visitId, prescriptionId);
+    }
 }

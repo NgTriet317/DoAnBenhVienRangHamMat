@@ -1,4 +1,6 @@
-# Kiểm chứng đợt nền đầu tiên — 25/10/2026
+# Kiểm chứng triển khai — 25/10/2026
+
+**Kết quả mới nhất P02:** build đạt; **35 ca SQL và 8 ca WPF đạt**. Chi tiết đợt tích hợp nằm cuối tài liệu. Phần đợt nền dưới đây được giữ làm bằng chứng lịch sử.
 
 Phạm vi: P01 và nền backend quyền P02, chưa phải nghiệm thu sáu chức năng/P12. Kết quả trước sửa tại [BASELINE.md](BASELINE.md); việc còn lại tại [TIEN_DO.md](TIEN_DO.md).
 
@@ -45,6 +47,37 @@ Truy vấn chỉ đọc sau vòng cuối cho kết quả giống nhau giữa b�
 
 Không còn BN/tài khoản mang tiền tố fixture `CW` trong bản thử. Đối chiếu trên là kiểm tra tổng hợp và cleanup, không thay thế ma trận bảo toàn toàn bộ dữ liệu khi làm migration P03. P01 chỉ backup/restore và đọc database gốc; các ca ghi chạy ở bản thử.
 
-## Giới hạn còn mở
+## Giới hạn tại thời điểm kết thúc đợt nền
 
 P02 chưa tích hợp đầy đủ cache theo phiên, quyền điều hướng, các màn hình và mọi đường ghi. Chưa có P03 migration/cài mới/rollback, P04–P11 UI và quy trình mới, hay P12 nghiệm thu AT01–AT34. Bốn suite lỗi sẵn cần được xử lý/đối chiếu trước khi có thể tuyên bố nghiệm thu toàn bộ; không thay fixture cũ hoặc bỏ assertion để làm xanh kết quả.
+
+## Đợt tiếp theo: hoàn tất P02
+
+Đã nối nguồn đọc SQL có phạm vi vào năm module lâm sàng, giới hạn nội dung từng vai trò, bảo vệ nguồn cha khi lưu/xóa/xác nhận, kiểm tra lại tài khoản và chức vụ trong cùng transaction. Đã tách quyền mở khỏi quyền sửa, xóa cache khi đổi phiên, kiểm tra lại liên kết khi điều hướng và giữ lịch sử chỉ đọc đúng phạm vi.
+
+Các lệnh vòng cuối dùng `RHM_CONNECTION_STRING` của bản thử, `-c Debug --no-restore -p:NuGetAudit=false` (ClinicalUiChecks cũng đã chạy có build/restore khi thêm project):
+
+| Kiểm tra | Kết quả P02 |
+| --- | --- |
+| Build solution | Exit 0, 0 lỗi |
+| ClinicalChecks | Exit 0, **35 PASS / 0 FAIL**, fixture rollback |
+| ClinicalUiChecks | Exit 0, **8 PASS / 0 FAIL**, không để lại BN/chứng từ thử |
+| FinanceChecks | Exit 0, **54** kiểm tra transaction |
+| SupplierChecks / MaintenanceChecks / ReportChecks | Exit 0, giữ kết quả baseline |
+| Checks | Vẫn trùng MaCa, mã kết thúc -532462766 |
+| SchemaChecks | Vẫn 39 bảng / 303 cột / 1 lỗi nhận diện ET/bảng |
+| PersistenceChecks | Vẫn CS1729 BUS_NHANVIEN constructor |
+| WpfSmoke | Vẫn CS1061 NhanSu.TryReadPosition/TryReadEmployee |
+
+Log vòng cuối: `obj/ClinicalWorkflowP02/`. Lịch độc lập có một ca WPF riêng xác nhận đủ số lịch từ SQL và nút cũ vẫn hoạt động; chỉ nguồn lịch nhúng đổi theo phạm vi hồ sơ.
+
+Rà soát độc lập P02 đã được xử lý trong một lượt sửa:
+
+- Form điều dưỡng có số dạng chuỗi/parent nullable: chuẩn hóa để đối chiếu với giá trị SQL, vẫn chặn đổi lượng/giá/người làm/dịch vụ/trạng thái.
+- Dòng giao điều dưỡng chỉ kèm định danh lượt; loại nội dung nháp khỏi projection, hàng đợi và lịch sử không mở các lượt nháp đó.
+- Dữ liệu quầy thu giữ lượng/giá nhưng loại kết quả dịch vụ, ghi chú, hướng dẫn chuyên môn và nhóm máu/tiền sử/dị ứng không cần thu. Fixture có giá trị thật ở các trường thử để tránh ca kiểm tra đạt vì nguồn vốn null.
+- Control lịch nhúng dùng nguồn có quyền trước khi lọc, thay cho reader toàn viện; lịch độc lập giữ nguyên đường chạy cũ.
+
+Đã quan sát RED rồi GREEN cho cả bốn phát hiện: SQL từ 32 PASS/3 FAIL lên 35/35; WPF từ 6 PASS/1 FAIL lên 7/7; sau đó thêm ca lịch độc lập đạt 8/8. Gọi trực tiếp Upsert/SetValue qua cache ngoài quyền vẫn bị DAL từ chối và không đổi dữ liệu.
+
+Phạm vi nghiệm thu ở đây là P02. Hóa đơn trong chế độ lâm sàng chỉ xem/in lại, chờ P09 cho thu đủ; migration P03, luồng tiếp nhận mới, khám, kế hoạch, kê đơn, bàn giao và nghiệm thu toàn bộ vẫn ở các tác vụ sau. Bốn suite lỗi sẵn chưa được coi là đạt.

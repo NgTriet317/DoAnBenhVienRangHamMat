@@ -7,6 +7,7 @@ using System.Windows.Automation;
 using System.Windows.Input;
 using RangHamMat.Views;
 using RangHamMat.Controls;
+using RangHamMat.Controls.ClinicalWorkflow;
 
 namespace RangHamMat;
 
@@ -54,7 +55,12 @@ public partial class MainWindow : Window
     /// <summary>
     /// Tra danh sách phân hệ được mở theo tài khoản đã đăng nhập.
     /// </summary>
-    internal bool CanOpen(string module) => RolePermissions[CurrentRole].Contains(module);
+    internal bool CanOpen(string module)
+    {
+        if (!QuyenNghiepVu.LaPhanHe(module)) return RolePermissions[CurrentRole].Contains(module);
+        try { return QuyenNghiepVu.CoTheMo(module, QuyenNghiepVu.LayNguCanh()); }
+        catch (InvalidOperationException) { return false; }
+    }
 
     /// <summary>
     /// Lấy tên phân hệ từ Tag của nút ứng dụng rồi chuyển cho OpenApp để kiểm tra quyền và mở màn hình.
@@ -76,13 +82,15 @@ public partial class MainWindow : Window
     /// </summary>
     internal void OpenApp(string tag)
     {
-        if (!RolePermissions[CurrentRole].Contains(tag))
+        if (!CanOpen(tag))
         {
             MessageBox.Show("Tài khoản hiện tại không có quyền mở phân hệ này.",
                 "Quyền truy cập", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
+        try { DuLieuGiaoDien.ChonPhamViLamSang(QuyenNghiepVu.LaPhanHe(tag)); }
+        catch (InvalidOperationException ex) { MessageBox.Show(ex.Message, "Dữ liệu theo quyền", MessageBoxButton.OK, MessageBoxImage.Error); return; }
         if (tag is "BenhNhan" or "LichKham" or "KhamDieuTri" or "DichVuThucHien" or "DonThuoc" or "HoaDon" or "BaoTri" or "NhaCungCap")
         {
             try {DuLieuGiaoDien.EnsureLoaded();}
@@ -142,6 +150,8 @@ public partial class MainWindow : Window
     internal void OpenHoSoApp(string module, string? patientId, string? visitId = null, string? prescriptionId = null)
     {
         if (!CanOpen(module)) { MessageBox.Show("Vai trò hiện tại không được mở chức năng này.", "Quyền truy cập"); return; }
+        try { if (QuyenNghiepVu.LaPhanHe(module)) new BUS.BUS_KHAMDIEUTRI().KiemTraLienKet(patientId, visitId, prescriptionId, QuyenNghiepVu.LayNguCanh()); }
+        catch (InvalidOperationException ex) { MessageBox.Show(ex.Message, "Quyền truy cập"); return; }
         OpenApp(module);
         if (AppHost.Content is AppWorkspace workspace) workspace.FocusHoSo(patientId, visitId, prescriptionId);
     }
@@ -151,7 +161,9 @@ public partial class MainWindow : Window
     /// </summary>
     internal void OpenModuleWindow(string tag, AppWorkspace workspace, string? table = null, CreationContext? context = null)
     {
-        if (!RolePermissions[CurrentRole].Contains(tag)) return;
+        if (!CanOpen(tag)) return;
+        var clinicalTable = table ?? tag switch { "BenhNhan" => "BENH_NHAN", "KhamDieuTri" => "LICH_SU_KHAM_BENH", "DonThuoc" => "DON_THUOC", "HoaDon" => "HOA_DON", _ => "" };
+        if (QuyenNghiepVu.LaPhanHe(tag) && !QuyenNghiepVu.DuocTao(clinicalTable)) return;
         if (tag == "CaLamViec" && !PhienDangNhap.IsAdmin) return;
         UserControl? form = tag switch
         {
@@ -234,12 +246,11 @@ public partial class MainWindow : Window
     {
         // TextChanged có thể chạy khi InitializeComponent chưa dựng xong các control trang chủ.
         if (AppGrid is null || AppCount is null || NoApps is null) return;
-        var allowed = RolePermissions[CurrentRole];
         var query = AppSearch?.Text.Trim() ?? "";
         var count = 0;
         foreach (var tile in AppGrid.Children.OfType<Button>())
         {
-            var visible = allowed.Contains((string)tile.Tag)
+            var visible = CanOpen((string)tile.Tag)
                 && (selectedCategory == "Tất cả" || (string)tile.CommandParameter == selectedCategory)
                 && AutomationProperties.GetName(tile).Contains(query, StringComparison.CurrentCultureIgnoreCase);
             tile.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;

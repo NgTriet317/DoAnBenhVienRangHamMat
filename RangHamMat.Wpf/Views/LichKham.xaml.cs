@@ -35,6 +35,7 @@ namespace RangHamMat.Views
         public LichKham()
         {
             InitializeComponent();
+            AddAppointmentButton.IsEnabled = !DuLieuGiaoDien.PhamViLamSang;
             TaiDuLieu();
             NapBoLoc();
             HoTroGiaoDien.Observe(this, TaiDuLieu);
@@ -44,7 +45,20 @@ namespace RangHamMat.Views
         {
             try
             {
-                danhSach = lichkham.layLichKhamHienThi().ToList();
+                if (DuLieuGiaoDien.PhamViLamSang)
+                {
+                    danhSach = DuLieuGiaoDien.Rows("LICH_KHAM").Select(row =>
+                    {
+                        var item=UiRecord.ChuyenDoi<ET_LICHKHAM_HIENTHI>(DuLieuGiaoDien.Values(row));
+                        item.TenBenhNhan=DuLieuGiaoDien.Lookup("MaBN",item.MaBN);
+                        item.TenBacSi=DuLieuGiaoDien.Lookup("MaBS",item.MaBS);
+                        item.TenPhong=DuLieuGiaoDien.Lookup("MaPhong",item.MaPhong);
+                        item.TenDichVu=DuLieuGiaoDien.Lookup("MaDV",item.MaDV);
+                        item.TenCa=DuLieuGiaoDien.Lookup("MaCa",item.MaCa);
+                        return item;
+                    }).ToList();
+                }
+                else danhSach = lichkham.layLichKhamHienThi().ToList();
                 ApDungBoLoc();
             }
             catch (Exception ex)
@@ -158,6 +172,7 @@ namespace RangHamMat.Views
         private void btnThemLichKham_Click(object sender, RoutedEventArgs e)
         {
             e.Handled = true;
+            if (DuLieuGiaoDien.PhamViLamSang) return;
             try
             {
                 if (ThemLichKham.HienCuaSo(null, PatientId))
@@ -182,6 +197,12 @@ namespace RangHamMat.Views
             if (dong == null) return;
             ET_LICHKHAM_HIENTHI lichDuocChon = dong.DataContext as ET_LICHKHAM_HIENTHI;
             if (lichDuocChon == null) return;
+            if (DuLieuGiaoDien.PhamViLamSang)
+            {
+                var record=DuLieuGiaoDien.Find("LICH_KHAM",lichDuocChon.MaLich);
+                if(record is not null) HoTroGiaoDien.Workspace(this)?.ShowHoSoDetails("LICH_KHAM",record);
+                return;
+            }
 
             // Lấy bản mới nhất trước khi xem để tránh dữ liệu cũ.
             try

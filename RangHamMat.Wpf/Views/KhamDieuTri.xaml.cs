@@ -25,6 +25,11 @@ public partial class KhamDieuTri : UserControl, IPatientScoped
     public KhamDieuTri()
     {
         InitializeComponent();
+        if (DuLieuGiaoDien.PhamViLamSang)
+        {
+            updating = true; FromDate.SelectedDate = ToDate.SelectedDate = DateTime.Today; updating = false;
+            AddVisitButton.IsEnabled = Controls.ClinicalWorkflow.QuyenNghiepVu.DuocTao("LICH_SU_KHAM_BENH");
+        }
         HoTroGiaoDien.Observe(this, Refresh);
         Refresh();
     }
@@ -72,6 +77,8 @@ public partial class KhamDieuTri : UserControl, IPatientScoped
             if (!string.IsNullOrEmpty(PatientId) && DuLieuGiaoDien.Find("BENH_NHAN", PatientId) is null) patients.Add(new(PatientId, "Không tìm thấy bệnh nhân · " + PatientId));
             PatientFilter.ItemsSource = patients; PatientFilter.SelectedValue = PatientId ?? "";
             var rows = DuLieuGiaoDien.Rows("LICH_SU_KHAM_BENH").Where(row => HoTroGiaoDien.Matches("LICH_SU_KHAM_BENH", row, SearchBox.Text, HoTroGiaoDien.Choice(StatusFilter), PatientId))
+                .Where(Controls.ClinicalWorkflow.QuyenNghiepVu.DuocXemNoiDungKham)
+                .Where(row => !DuLieuGiaoDien.PhamViLamSang || !DuLieuGiaoDien.NguoiDungLamSang.CoQuyen(ET.QuyenLamViec.Kham) || UiRecord.Text(row,"MaBS") == PhienDangNhap.MaNV || (explicitVisitId == UiRecord.Text(row,"MaLS") && UiRecord.Text(row,"TrangThai") == "Đã xác nhận"))
                 .Where(row => FromDate.SelectedDate is null || UiRecord.Date(row, "ThoiGianKham")?.Date >= FromDate.SelectedDate)
                 .Where(row => ToDate.SelectedDate is null || UiRecord.Date(row, "ThoiGianKham")?.Date <= ToDate.SelectedDate)
                 .OrderByDescending(row => UiRecord.Date(row, "ThoiGianKham")).Select(row => new MucDanhSachLanKham(row)).ToArray();
@@ -97,7 +104,9 @@ public partial class KhamDieuTri : UserControl, IPatientScoped
         selectedVisitId = visit.Code;
         if (DetailHost.Content is not ChiTietKhamDieuTri current || UiRecord.Text((current.DataContext as TongHopLanKham)?.Record!, "MaLS") != visit.Code)
         {
-            var detail = new ChiTietKhamDieuTri(visit.Record); detail.ConfigureAccess(allowed);
+            ChiTietKhamDieuTri detail;
+            try { detail = new ChiTietKhamDieuTri(visit.Record); detail.ConfigureAccess(allowed); }
+            catch (InvalidOperationException ex) { DetailHost.Content = null; DetailEmpty.Visibility = Visibility.Visible; ContextNote.Text = ex.Message; return; }
             detail.BackRequested += () => { explicitVisitId = null; selectedVisitId = null; VisitList.SelectedItem = null; DetailHost.Content = null; DetailEmpty.Visibility = Visibility.Visible; };
             DetailHost.Content = detail;
         }

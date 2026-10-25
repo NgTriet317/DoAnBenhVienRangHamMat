@@ -5,7 +5,7 @@ using ET;
 namespace DAL;
 
 /// <summary>Nguồn đọc có phạm vi SQL cho quy trình khám; không lấy cache toàn viện rồi lọc quyền trong UI.</summary>
-public sealed class DAL_KHAMDIEUTRI : dbconnect
+public sealed partial class DAL_KHAMDIEUTRI : dbconnect
 {
     public DAL_KHAMDIEUTRI(IDbTransaction? transaction = null) : base(transaction) { }
 

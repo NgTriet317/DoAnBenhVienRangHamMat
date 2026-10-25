@@ -4,7 +4,7 @@ try
 {
     var passed = 0;
     var failed = 0;
-    foreach (var (name, run) in QuyenVaTiepNhanChecks.Cases())
+    foreach (var (name, run) in QuyenVaTiepNhanChecks.Cases().Concat(PhamViGiaoDienChecks.Cases()))
     {
         try
         {

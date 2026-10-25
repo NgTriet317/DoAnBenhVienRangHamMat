@@ -13,6 +13,7 @@ using System.Windows.Data;
 using BUS;
 using ET;
 using System.Data;
+using RangHamMat.Controls.ClinicalWorkflow;
 
 namespace RangHamMat.Controls;
 
@@ -22,6 +23,21 @@ namespace RangHamMat.Controls;
 /// </summary>
 public static class DuLieuGiaoDien
 {
+    public static bool PhamViLamSang { get; private set; }
+    public static void ChonPhamViLamSang(bool enabled)
+    {
+        if (PhamViLamSang != enabled) { XoaCachePhien(); PhamViLamSang = enabled; }
+        if (enabled) RefreshFromDatabase();
+    }
+    private static NguCanhNghiepVu? clinicalUser;
+    public static NguCanhNghiepVu NguoiDungLamSang { get { EnsureLoaded(); return clinicalUser ?? throw new TuChoiQuyenNghiepVuException(); } }
+    static DuLieuGiaoDien() => PhienDangNhap.DinhDanhThayDoi += XoaCachePhien;
+    private static void XoaCachePhien()
+    {
+        if (batching) throw new InvalidOperationException("Không đổi phiên khi đang lưu chứng từ.");
+        foreach (var rows in tables.Values) rows.Clear();
+        tables.Clear(); loaded = false; clinicalUser = null;
+    }
     private static readonly Dictionary<string, ObservableCollection<object>> tables = new();
     private static IDbTransaction? transaction;
     private static bool loaded;
@@ -108,7 +124,11 @@ public static class DuLieuGiaoDien
     /// <summary>
     /// Nạp cache từ SQL ở lần sử dụng đầu tiên; các lần sau dùng dữ liệu hiện tại đến khi có yêu cầu tải lại.
     /// </summary>
-    public static void EnsureLoaded() { if (!loaded) RefreshFromDatabase(); }
+    public static void EnsureLoaded()
+    {
+        if (PhamViLamSang && clinicalUser is not null && clinicalUser.MaNV != PhienDangNhap.MaNV) XoaCachePhien();
+        if (!loaded) RefreshFromDatabase();
+    }
     /// <summary>
     /// Dùng chung IDbTransaction cho các thao tác lồng nhau; chụp cache, commit khi action trả true, rollback SQL và khôi phục cache khi false hoặc có lỗi; luôn giải phóng kết nối.
     /// </summary>
@@ -169,7 +189,14 @@ public static class DuLieuGiaoDien
         using var pending = new BUS_DONTHUOC().BatDauGiaoDich();
         using var connection = pending.Connection!;
         var transaction = pending;
-        return new Dictionary<string, object[]>
+        var scoped = PhamViLamSang ? new BUS_KHAMDIEUTRI(transaction).LayDuLieuHoSo(new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(PhienDangNhap.MaNV)) : null;
+        clinicalUser = scoped?.NguoiDung;
+        if (scoped is not null)
+        {
+            pending.Commit();
+            return scoped.CacBang.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        }
+        var snapshot = new Dictionary<string, object[]>
         {
             ["BENH_NHAN"] = new BUS_BENHNHAN(transaction).layToanBoBenhNhan().Cast<object>().ToArray(),
             ["BAO_TRI_THIET_BI"] = new BUS_BAOTRITHIETBI(transaction).layToanBoBaoTriThietBi().Cast<object>().ToArray(),
@@ -200,12 +227,19 @@ public static class DuLieuGiaoDien
             ["PHIEU_XUAT"] = new BUS_PHIEUXUAT(transaction).LayDanhSach().Cast<object>().ToArray(),
             ["CHI_TIET_PHIEU_XUAT"] = new BUS_CHITIETPHIEUXUAT(transaction).LayDanhSach().Cast<object>().ToArray(),
         };
+        pending.Commit();
+        return snapshot;
     }
     /// <summary>
     /// Chọn BUS đúng bảng, truyền transaction và gọi SaveEntity với các hàm thêm/sửa/đọc của thực thể; chứng từ ngoài luồng chung phải đi qua BUS chuyên dụng.
     /// </summary>
     private static Dictionary<string, object?> Save(string table, IDictionary<string, object?> values, string? id = null, IDictionary<string, object?>? expected = null, bool statusOnly = false)
     {
+        if (PhamViLamSang && table is not ("NHA_CUNG_CAP" or "BAO_TRI_THIET_BI"))
+        {
+            if (table == "LICH_KHAM") { if (!NguoiDungLamSang.LaAdmin) throw new TuChoiQuyenNghiepVuException(); }
+            else new BUS_QUYENNGHIEPVU(transaction).KiemTraGhiHoSo(table, values, id, false, NguoiDungLamSang);
+        }
         Dictionary<string, object?> saved;
         switch (table)
         {
@@ -330,6 +364,11 @@ public static class DuLieuGiaoDien
     /// </summary>
     private static void DeleteRecord(string table, string id, IDictionary<string, object?>? expected = null)
     {
+        if (PhamViLamSang && table is not ("NHA_CUNG_CAP" or "BAO_TRI_THIET_BI"))
+        {
+            if (table == "LICH_KHAM") { if (!NguoiDungLamSang.LaAdmin) throw new TuChoiQuyenNghiepVuException(); }
+            else new BUS_QUYENNGHIEPVU(transaction).KiemTraGhiHoSo(table, expected ?? new Dictionary<string, object?>(), id, true, NguoiDungLamSang);
+        }
         switch (table)
         {
             case "NHA_CUNG_CAP":
@@ -422,6 +461,7 @@ public static class DuLieuGiaoDien
     /// </summary>
     public static bool CanEdit(string table, object row)
     {
+        if (PhamViLamSang && !QuyenNghiepVu.DuocGhi(table, row)) return false;
         if (table == "BAO_TRI_THIET_BI") return UiRecord.Text(row, "TrangThai") is "Nháp" or "Đang thực hiện";
         if (table is "BENH_NHAN" or "HO_SO_BENH_AN" or "NHA_CUNG_CAP") return true;
         if (table == "CHI_TIET_KE_HOACH" && Children("DICH_VU_THUC_HIEN", "MaCTKH", UiRecord.Get(row, "MaCTKH")).Any(r => UiRecord.Text(r, "TrangThai") == "Đã xác nhận")) return false;

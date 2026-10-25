@@ -93,7 +93,7 @@ public partial class DichVuThucHien : UserControl, IPatientScoped
             Grid_DICH_VU_THUC_HIEN.SelectedItem = rows.FirstOrDefault(row => row.Code == selectedId);
             RecordCount.Text = $"{rows.Length} dịch vụ · {rows.Count(row => row.Status == "Đã xác nhận")} đã xác nhận";
             ListEmpty.Visibility = rows.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
-            AddButton.IsEnabled = (HoTroGiaoDien.Workspace(this)?.CanOpen("KhamDieuTri") ?? true) &&
+            AddButton.IsEnabled = Controls.ClinicalWorkflow.QuyenNghiepVu.DuocTao("DICH_VU_THUC_HIEN") && (HoTroGiaoDien.Workspace(this)?.CanOpen("KhamDieuTri") ?? true) &&
                 DuLieuGiaoDien.Rows("LICH_SU_KHAM_BENH").Any(row =>
                     (string.IsNullOrEmpty(PatientId) || DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH", row) == PatientId) &&
                     (string.IsNullOrEmpty(visitId) || UiRecord.Text(row, "MaLS") == visitId));
@@ -112,7 +112,8 @@ public partial class DichVuThucHien : UserControl, IPatientScoped
         if (Selected is not DongChiTietLanKham row) return;
         selectedId = row.Code;
         PatientContext.Text = $"{DuLieuGiaoDien.Lookup("MaBN", row.PatientId)} · Lần khám {row.VisitId} · {row.When}";
-        EditButton.IsEnabled = ConfirmButton.IsEnabled = row.CanEdit && (HoTroGiaoDien.Workspace(this)?.CanOpen("KhamDieuTri") ?? true);
+        EditButton.IsEnabled = row.CanEdit && (HoTroGiaoDien.Workspace(this)?.CanOpen("KhamDieuTri") ?? true);
+        ConfirmButton.IsEnabled = EditButton.IsEnabled && Controls.ClinicalWorkflow.QuyenNghiepVu.DuocTao("DICH_VU_THUC_HIEN");
         var billed = DuLieuGiaoDien.Rows("CHI_TIET_HOA_DON").Any(line => UiRecord.Text(line, "MaDVThucHien") == row.Code &&
             DuLieuGiaoDien.Find("HOA_DON", UiRecord.Get(line, "MaHD")) is object invoice && UiRecord.Text(invoice, "TrangThai") != "Hủy");
         BillingNote.Text = billed ? "Dịch vụ đã được đưa vào hóa đơn. Mở Hóa đơn / thanh toán để xem khoản thu." :

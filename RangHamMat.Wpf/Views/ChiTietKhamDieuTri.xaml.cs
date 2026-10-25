@@ -25,6 +25,7 @@ public partial class ChiTietKhamDieuTri : UserControl, IPatientScoped
     public ChiTietKhamDieuTri(object visit)
     {
         visitId = UiRecord.Text(visit, "MaLS");
+        if (DuLieuGiaoDien.PhamViLamSang) new BUS.BUS_KHAMDIEUTRI().LayChiTiet(visitId, Controls.ClinicalWorkflow.QuyenNghiepVu.LayNguCanh());
         InitializeComponent();
         HoTroGiaoDien.Observe(this, Refresh);
         Refresh();

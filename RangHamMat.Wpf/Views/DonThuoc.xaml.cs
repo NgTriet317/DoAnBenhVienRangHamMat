@@ -78,7 +78,9 @@ public partial class DonThuoc : UserControl, IPatientScoped
             requestedId = null;
             if (DetailHost.Content is not ChiTietDonThuoc detail || detail.OrderId != card.Code)
             {
-                var view = new ChiTietDonThuoc(card.Record);
+                ChiTietDonThuoc view;
+                try { view = new ChiTietDonThuoc(card.Record); }
+                catch (InvalidOperationException ex) { DetailHost.Content = null; DetailEmpty.Visibility = Visibility.Visible; DetailEmptyText.Text = ex.Message; return; }
                 view.BackRequested += () => { PrescriptionList.SelectedItem = null; };
                 DetailHost.Content = view;
             }

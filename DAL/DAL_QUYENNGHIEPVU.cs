@@ -7,7 +7,7 @@ using ET;
 namespace DAL;
 
 /// <summary>Đọc lại định danh/quyền từ SQL trong transaction của thao tác, không tin cờ quyền từ UI.</summary>
-public sealed class DAL_QUYENNGHIEPVU : dbconnect
+public sealed partial class DAL_QUYENNGHIEPVU : dbconnect
 {
     private readonly IDbTransaction? callerTransaction;
     private static readonly Lazy<IReadOnlyDictionary<string, QuyenLamViec>> Mapping = new(ReadMapping);

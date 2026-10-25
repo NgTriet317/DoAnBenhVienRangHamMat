@@ -45,6 +45,9 @@ public partial class CuaSoKhamDieuTri : UserControl, IBieuMauLuu
     /// </summary>
     private void InitializeDrafts()
     {
+        if (DuLieuGiaoDien.PhamViLamSang && Table == "DICH_VU_THUC_HIEN" && !DuLieuGiaoDien.NguoiDungLamSang.CoQuyen(ET.QuyenLamViec.Kham))
+            foreach (var column in ProgressDrafts.Columns)
+                column.IsReadOnly = column is not DataGridBoundColumn { Binding: System.Windows.Data.Binding { Path.Path: "Note" } };
         EditorTitle.Text=Table switch {"LICH_SU_KHAM_BENH"=>"Thông tin lần khám","TINH_TRANG_BENH"=>"Ghi nhận tình trạng bệnh","KE_HOACH_DIEU_TRI"=>"Kế hoạch điều trị","CHI_TIET_KE_HOACH"=>"Dịch vụ dự kiến",_=>"Dịch vụ thực hiện"};
         if(initializedTable==Table)return;initializedTable=Table;
         if(Table!="DICH_VU_THUC_HIEN")return;

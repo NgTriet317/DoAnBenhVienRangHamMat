@@ -64,6 +64,7 @@ public partial class HoSoBenhNhan : UserControl, IPatientScoped
         ApplyAccess();
         refreshing = true;
         var visits = DuLieuGiaoDien.Rows("LICH_SU_KHAM_BENH")
+            .Where(Controls.ClinicalWorkflow.QuyenNghiepVu.DuocXemNoiDungKham)
             .Where(row => patient is not null && !string.IsNullOrWhiteSpace(PatientId) && DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH", row) == PatientId)
             .OrderByDescending(row => UiRecord.Date(row, "ThoiGianKham"))
             .Select(row => new PatientVisitRow(row)).ToArray();
@@ -95,10 +96,11 @@ public partial class HoSoBenhNhan : UserControl, IPatientScoped
     private void ApplyAccess()
     {
         var patientExists = Patient is not null;
-        EditPatientButton.IsEnabled = patientExists && allowed("BenhNhan");
-        CreateMedicalButton.IsEnabled = patientExists && allowed("BenhNhan");
-        EditMedicalButton.IsEnabled = patientExists && allowed("BenhNhan");
-        ReceptionButton.IsEnabled = patientExists && allowed("BenhNhan");
+        var reception = Controls.ClinicalWorkflow.QuyenNghiepVu.DuocTao("BENH_NHAN");
+        EditPatientButton.IsEnabled = patientExists && allowed("BenhNhan") && reception;
+        CreateMedicalButton.IsEnabled = patientExists && allowed("BenhNhan") && reception;
+        EditMedicalButton.IsEnabled = patientExists && allowed("BenhNhan") && reception;
+        ReceptionButton.IsEnabled = patientExists && allowed("BenhNhan") && reception;
         PhoneButton.IsEnabled = patientExists && allowed("LichKham");
         ServicesButton.IsEnabled = patientExists && allowed("DichVuThucHien");
         InvoiceButton.IsEnabled = patientExists && allowed("HoaDon");
@@ -127,7 +129,8 @@ public partial class HoSoBenhNhan : UserControl, IPatientScoped
         if (visit is null || DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH", visit) != PatientId)
         { ReturnToHistory(); MessageBox.Show("Lần khám không tồn tại hoặc không thuộc bệnh nhân này.", "Hồ sơ bệnh nhân"); return; }
         openedVisitId = id;
-        visitDetails = new ChiTietKhamDieuTri(visit);
+        try { visitDetails = new ChiTietKhamDieuTri(visit); }
+        catch (InvalidOperationException ex) { ReturnToHistory(); HistoryCount.Text = ex.Message; return; }
         visitDetails.ConfigureAccess(allowed);
         visitDetails.BackRequested += ReturnToHistory;
         VisitHost.Content = visitDetails;

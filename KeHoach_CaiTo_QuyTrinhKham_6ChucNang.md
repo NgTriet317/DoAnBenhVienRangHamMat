@@ -1,6 +1,6 @@
 # Quy trình khám và thanh toán ngoại trú Implementation Plan
 
-> **Tiến độ 25/10/2026:** P01 đã ghi baseline và bản sao SQL; P02 đã có nền quyền/nguồn đọc SQL, đang tiếp tục tích hợp UI và ghi. P03–P12 chưa triển khai. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
+> **Tiến độ 25/10/2026:** P01 đã ghi baseline và bản sao SQL; P02 đã hoàn tất quyền, nguồn đọc/guard ghi và tích hợp UI: 35 ca SQL + 8 ca WPF đạt. P03–P12 chưa triển khai. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
 
 > **For agentic workers:** Triển khai từng tác vụ và đánh dấu `- [ ]` khi hoàn thành. Nếu môi trường có Superpowers, dùng `superpowers:executing-plans`; không phụ thuộc vào việc cài thêm kỹ năng để đọc hoặc thực hiện tài liệu này. Người dùng yêu cầu giao kế hoạch cho Codex terminal trong Visual Studio 2022, chưa yêu cầu triển khai trong phiên lập kế hoạch.
 
@@ -449,11 +449,11 @@ Không bắt đầu bằng thay toàn bộ XAML. Khóa hợp đồng dữ liệu
 
 **Interfaces:** Cung cấp `LayNguCanh`; các API nghiệp vụ sau nhận `NguCanhNghiepVu` và tự xác minh lại. `CanOpen` giữ chữ ký, thêm kiểm tra hành động riêng thay vì dùng quyền mở để cho phép sửa.
 
-- [ ] Viết `QuyenVaTiepNhanChecks.cs`: bác sĩ A không đọc chi tiết/sửa mã của B; tài khoản tiếp nhận mở hồ sơ/thu; Admin không có chức vụ bác sĩ không ký; module ngoài phạm vi giữ quyền baseline.
+- [x] Viết `QuyenVaTiepNhanChecks.cs`: bác sĩ A không đọc chi tiết/sửa mã của B; tài khoản tiếp nhận mở hồ sơ/thu; Admin không có chức vụ bác sĩ không ký; module ngoài phạm vi giữ quyền baseline.
 - [x] Chạy để thấy ca mới thất bại trước khi bổ sung quyền, rồi triển khai ánh xạ chức vụ và nguồn đọc theo SQL.
-- [ ] Chặn mọi đường mở trực tiếp bằng MaLS/MaDT, kể cả sau khi xóa bộ lọc; với bệnh nhân được phân cho A vẫn cho đọc lịch sử đã xác nhận của B.
-- [ ] Kiểm tra quyền lại tại mutation; từ chối tài khoản đã khóa/chuyển chức vụ sau lúc mở form. Xóa cache có phạm vi khi đổi phiên đăng nhập.
-- [ ] Chạy lại các ca quyền và điều hướng; lưu thay đổi khi toàn bộ ca thuộc tác vụ đạt.
+- [x] Chặn mọi đường mở trực tiếp bằng MaLS/MaDT, kể cả sau khi xóa bộ lọc; với bệnh nhân được phân cho A vẫn cho đọc lịch sử đã xác nhận của B.
+- [x] Kiểm tra quyền lại tại mutation; từ chối tài khoản đã khóa/chuyển chức vụ sau lúc mở form. Xóa cache có phạm vi khi đổi phiên đăng nhập.
+- [x] Chạy lại các ca quyền và điều hướng; lưu thay đổi khi toàn bộ ca thuộc tác vụ đạt.
 
 ### P03 Migration và ánh xạ dữ liệu
 

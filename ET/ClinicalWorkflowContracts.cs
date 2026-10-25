@@ -71,3 +71,5 @@ public sealed class HangDoiKhamItem
 public sealed record LanKhamChiTiet(ET_LICHSUKHAMBENH LanKham, string MaBN, string MaHS, bool DuocSua);
 
 public sealed record DonThuocChiTiet(ET_DONTHUOC DonThuoc, IReadOnlyList<ET_CHITIETDONTHUOC> CacDong, string MaBN, bool DuocSua);
+
+public sealed record DuLieuHoSoTheoQuyen(NguCanhNghiepVu NguoiDung, IReadOnlyDictionary<string, object[]> CacBang);

@@ -1,6 +1,6 @@
 # Chạy phần nền đã triển khai
 
-Đây là hướng dẫn P01 và nền quyền P02. Chưa có quy trình khám/thanh toán mới đầy đủ để sử dụng qua giao diện.
+Đây là hướng dẫn P01/P02 đã triển khai. Năm module lâm sàng đã dùng quyền theo chức vụ; quy trình khám/thanh toán mới đầy đủ ở P03–P12 chưa hoàn tất.
 
 1. Dùng Windows, .NET 8 SDK và SQL Server. Tạo backup COPY_ONLY CHECKSUM của database đã xác nhận, kiểm tra backup rồi restore sang tên thử riêng; không dùng script cài mới trên dữ liệu đang có.
 2. Đặt biến môi trường trong đúng terminal chạy kiểm tra. Ví dụ với xác thực Windows (không có mật khẩu):
@@ -9,6 +9,7 @@
 $env:RHM_CONNECTION_STRING = 'Data Source=.;Initial Catalog=RHM_ClinicalWorkflow_Test_20261025;Integrated Security=True;TrustServerCertificate=True;'
 dotnet build .\BenhVienRangHamMat.sln -c Debug -p:NuGetAudit=false
 dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -p:NuGetAudit=false
+dotnet run --project .\RangHamMat.ClinicalUiChecks -c Debug -p:NuGetAudit=false
 ```
 
 ClinicalChecks chỉ nhận database có tên `RHM_ClinicalWorkflow_Test_*`. Không có cấu hình, sai tên hoặc không kết nối được đều trả FAIL; không báo PASS/skip thay cho kiểm tra SQL. Dữ liệu mẫu gắn nhãn FIXTURE và rollback trong từng ca, không dùng làm mẫu chuyên môn thật.
@@ -28,6 +29,10 @@ sqlcmd -S . -d RHM_ClinicalWorkflow_Test_20261025 -E -C -b -f 65001 -i .\Databas
 - `BUS_KHAMDIEUTRI.LayHangDoi` lấy phiếu theo bác sĩ phiên, mặc định hôm nay, trang tối đa 100. Bộ lọc không nhận bác sĩ khác.
 - `LayChiTiet(maLS, nguoiDung)` và `BUS_DONTHUOC.LayChiTietCoQuyen` kiểm tra phạm vi ngay trong truy vấn. Bác sĩ chỉ đọc nháp mình, có thể đọc lịch sử đã xác nhận của BN mình được phân; Admin tra cứu có nhật ký mã nguồn.
 - `KiemTraQuyenGhiLanKham` là guard cho lượt nháp thuộc chính bác sĩ; bắt buộc nhận transaction của bên lưu hoặc transaction môi trường. Guard **không phải API lưu**; khi tích hợp phải giữ cùng transaction đến khi lệnh ghi kết thúc để tránh đổi quyền/phân công giữa kiểm tra và lưu.
-- Cấu hình ánh xạ ở `DAL/ClinicalWorkflowPermissions.json`, được nhúng khi build. CV004 có quyền thu, CV003 mặc định không thu. Đây là cấu hình nền, chưa cấp quyền mở các màn hình cũ hoặc hiện thực giao dịch thu đủ P09.
+- Cấu hình ánh xạ ở `DAL/ClinicalWorkflowPermissions.json`, được nhúng khi build. CV004 có quyền thu, CV003 mặc định không thu. MainWindow đọc quyền này cho năm module lâm sàng; quyền module khác giữ nguyên. Quyền thu ở đây chưa phải giao dịch thu đủ P09.
 
-Các BUS/DAL cũ còn phục vụ màn hình và hồi quy cũ. Không dùng chúng để tuyên bố đã có kiểm soát phạm vi mới. Việc thay nguồn đọc/ghi, cache theo phiên, điều hướng và trạng thái nút sẽ hoàn tất tiếp trong P02/P04–P11.
+Trong chế độ lâm sàng, `DuLieuGiaoDien` nạp snapshot đã lọc tại SQL; lưu/xóa gọi guard DAL cùng transaction với BUS/DAL thực hiện ghi. Đổi định danh xóa các collection cũ. Form bác sĩ và tiếp nhận điền người thực hiện từ phiên; điều dưỡng chỉ sửa kết quả/thời gian dòng được giao.
+
+Hóa đơn lịch sử chỉ cho đối chiếu/in lại; các lệnh thu/hoàn/cấp thuốc cũ bị khóa trong chế độ này. BUS/DAL tài chính cũ vẫn giữ cho hồi quy và tích hợp ngoài luồng mới. Chưa có giao dịch thu đủ P09 hoặc bàn giao P10.
+
+`ClinicalUiChecks` chạy control WPF thật trên bản thử, gồm quyền module, cache đổi phiên, nút chỉ đọc, gọi ghi trực tiếp bị từ chối, lịch nhúng và lịch độc lập. Kết quả 8 ca không thay thế thử DPI/kích thước/nội dung dài toàn bộ ở P11/P12.

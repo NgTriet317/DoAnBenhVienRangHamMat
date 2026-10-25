@@ -32,6 +32,12 @@ public partial class ChiTietDonThuoc : UserControl, IPatientScoped
     {
         OrderId = UiRecord.Text(order, "MaDT");
         InitializeComponent();
+        if (DuLieuGiaoDien.PhamViLamSang)
+        {
+            var user = Controls.ClinicalWorkflow.QuyenNghiepVu.LayNguCanh();
+            new BUS.BUS_DONTHUOC().LayChiTietCoQuyen(OrderId, user);
+            order = DuLieuGiaoDien.Find("DON_THUOC", OrderId) ?? throw new ET.TuChoiQuyenNghiepVuException();
+        }
         DataContext = new RxCard(order);
         HoTroGiaoDien.Observe(this, Refresh);
     }
@@ -48,7 +54,7 @@ public partial class ChiTietDonThuoc : UserControl, IPatientScoped
     /// </summary>
     private void UpdateAccess()
     {
-        var allowed = canOpen("DonThuoc") && (HoTroGiaoDien.Workspace(this)?.CanOpen("DonThuoc") ?? true);
+        var allowed = canOpen("DonThuoc") && (HoTroGiaoDien.Workspace(this)?.CanOpen("DonThuoc") ?? true) && Controls.ClinicalWorkflow.QuyenNghiepVu.DuocTao("DON_THUOC");
         EditButton.IsEnabled = ConfirmButton.IsEnabled = CancelButton.IsEnabled = allowed && Card?.IsDraft == true;
         NewButton.IsEnabled = allowed && Card is not null;
         ServicesButton.IsEnabled=canOpen("DichVuThucHien");
@@ -59,7 +65,7 @@ public partial class ChiTietDonThuoc : UserControl, IPatientScoped
     /// </summary>
     private bool CanModify()
     {
-        if (canOpen("DonThuoc") && (HoTroGiaoDien.Workspace(this)?.CanOpen("DonThuoc") ?? true)) return true;
+        if (canOpen("DonThuoc") && (HoTroGiaoDien.Workspace(this)?.CanOpen("DonThuoc") ?? true) && Controls.ClinicalWorkflow.QuyenNghiepVu.DuocTao("DON_THUOC")) return true;
         Feedback.Text = "Vai trò hiện tại không được thay đổi đơn thuốc.";
         return false;
     }
