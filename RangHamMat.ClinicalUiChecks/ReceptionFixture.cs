@@ -11,11 +11,14 @@ internal sealed class ReceptionFixture : IDisposable
     private readonly string prefix="CWUI"+Guid.NewGuid().ToString("N");
     public string Patient=>prefix+"BN";
     public string Doctor=>prefix+"A";
+    public string Account=>prefix+"TK";
+    public string Room {get;}
     public string Service { get; }
     public ReceptionFixture()
     {
         var info=db.QuerySingle<(string Service,string Specialty,string Room)>("SELECT TOP(1) d.MaDV,d.MaCK,p.MaPhong FROM dbo.DICH_VU d JOIN dbo.CHUYEN_KHOA c ON c.MaCK=d.MaCK JOIN dbo.PHONG p ON p.MaKhoa=c.MaKhoa WHERE d.TrangThai=N'Đang hoạt động' AND p.TrangThai=N'Đang hoạt động' AND p.LoaiPhong LIKE N'Phòng khám%' ORDER BY d.MaDV,p.MaPhong");
         Service=info.Service;
+        Room=info.Room;
         try
         {
             using var tx=db.BeginTransaction();
@@ -38,7 +41,12 @@ internal sealed class ReceptionFixture : IDisposable
         {
             using var tx=db.BeginTransaction();
             db.Execute("""
+                DECLARE @visits TABLE(MaLS nvarchar(50));
+                INSERT @visits SELECT l.MaLS FROM dbo.LICH_SU_KHAM_BENH l JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN h ON h.MaHS=p.MaHS WHERE h.MaBN=@patient;
+                DELETE dbo.NHAT_KY_THAO_TAC WHERE MaTK=@prefix+'TK';
                 DELETE n FROM dbo.NHAT_KY_THAO_TAC n WHERE n.LoaiDoiTuong=N'PHIEU_KHAM_BENH' AND n.MaDoiTuong IN(SELECT p.MaPhieu FROM dbo.PHIEU_KHAM_BENH p JOIN dbo.HO_SO_BENH_AN h ON h.MaHS=p.MaHS WHERE h.MaBN=@patient);
+                DELETE dbo.TINH_TRANG_BENH WHERE MaLS IN(SELECT MaLS FROM @visits);
+                DELETE dbo.LICH_SU_KHAM_BENH WHERE MaLS IN(SELECT MaLS FROM @visits);
                 DELETE p FROM dbo.PHIEU_KHAM_BENH p JOIN dbo.HO_SO_BENH_AN h ON h.MaHS=p.MaHS WHERE h.MaBN=@patient;
                 DELETE dbo.HO_SO_BENH_AN WHERE MaBN=@patient;
                 DELETE dbo.BENH_NHAN WHERE MaBN=@patient;

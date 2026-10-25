@@ -15,7 +15,7 @@ public sealed partial class DAL_KHAMDIEUTRI : dbconnect
             var user = DAL_QUYENNGHIEPVU.XacThuc(db, tx, nguoiDung);
             if (!user.CoQuyen(QuyenLamViec.Kham)) throw DAL_QUYENNGHIEPVU.TuChoi();
             if (boLoc is null || boLoc.Trang < 1 || boLoc.KichThuocTrang is < 1 or > 100 ||
-                boLoc.TuKhoa?.Length > 255 || boLoc.TrangThai?.Length > 50)
+                boLoc.TuKhoa?.Length > 255 || boLoc.TrangThai?.Length > 50 || boLoc.MaBN?.Length>50)
                 throw new InvalidOperationException("Bộ lọc hàng đợi không hợp lệ; mỗi trang từ 1 đến 100 dòng.");
             var from = (boLoc.TuNgay ?? DateTime.Today).Date;
             var until = (boLoc.DenNgay ?? boLoc.TuNgay ?? DateTime.Today).Date;
@@ -31,6 +31,7 @@ public sealed partial class DAL_KHAMDIEUTRI : dbconnect
                 JOIN dbo.BENH_NHAN b ON b.MaBN=hs.MaBN
                 LEFT JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaPhieu=p.MaPhieu
                 WHERE p.MaBS=@MaNV AND (l.MaLS IS NULL OR l.MaBS=@MaNV)
+                  AND (@patient IS NULL OR b.MaBN=@patient)
                   AND p.ThoiGianTiepNhan>=@from AND p.ThoiGianTiepNhan<@end
                   AND (@status IS NULL OR p.TrangThai=@status)
                   AND (@term=N'' OR p.MaPhieu LIKE @search ESCAPE N'~' OR b.MaBN LIKE @search ESCAPE N'~'
@@ -38,7 +39,7 @@ public sealed partial class DAL_KHAMDIEUTRI : dbconnect
                 ORDER BY p.ThoiGianTiepNhan,p.SoThuTu,p.MaPhieu
                 OFFSET @offset ROWS FETCH NEXT @size ROWS ONLY
                 """, new { user.MaNV, from, end = until.AddDays(1), status = string.IsNullOrWhiteSpace(boLoc.TrangThai) ? null : boLoc.TrangThai,
-                    term, search, offset, size = boLoc.KichThuocTrang }, tx).ToArray();
+                    patient=string.IsNullOrWhiteSpace(boLoc.MaBN)?null:boLoc.MaBN,term, search, offset, size = boLoc.KichThuocTrang }, tx).ToArray();
         });
 
     public LanKhamChiTiet LayChiTiet(string maLS, NguCanhNghiepVu nguoiDung)

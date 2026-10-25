@@ -133,7 +133,7 @@ public partial class HoSoBenhNhan : UserControl, IPatientScoped
         if (visit is null || DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH", visit) != PatientId)
         { ReturnToHistory(); MessageBox.Show("Lần khám không tồn tại hoặc không thuộc bệnh nhân này.", "Hồ sơ bệnh nhân"); return; }
         openedVisitId = id;
-        try { visitDetails = new ChiTietKhamDieuTri(visit); }
+        try { visitDetails = new ChiTietKhamDieuTri(visit,historyReadOnly:true); }
         catch (InvalidOperationException ex) { ReturnToHistory(); HistoryCount.Text = ex.Message; return; }
         visitDetails.ConfigureAccess(allowed);
         visitDetails.BackRequested += ReturnToHistory;

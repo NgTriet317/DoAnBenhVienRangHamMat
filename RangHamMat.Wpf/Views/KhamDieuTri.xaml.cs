@@ -15,6 +15,7 @@ public partial class KhamDieuTri : UserControl, IPatientScoped
     private string? selectedVisitId;
     private string? explicitVisitId;
     private Func<string, bool> allowed = _ => true;
+    private bool configurationOpen;
     /// <summary>
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.
     /// </summary>
@@ -25,6 +26,7 @@ public partial class KhamDieuTri : UserControl, IPatientScoped
     public KhamDieuTri()
     {
         InitializeComponent();
+        TemplateConfigButton.Visibility=DuLieuGiaoDien.PhamViLamSang && (DuLieuGiaoDien.NguoiDungLamSang.LaAdmin || DuLieuGiaoDien.NguoiDungLamSang.CoQuyen(ET.QuyenLamViec.Kham|ET.QuyenLamViec.CauHinhHoTro))?Visibility.Visible:Visibility.Collapsed;
         if (DuLieuGiaoDien.PhamViLamSang)
         {
             updating = true; FromDate.SelectedDate = ToDate.SelectedDate = DateTime.Today; updating = false;
@@ -50,6 +52,8 @@ public partial class KhamDieuTri : UserControl, IPatientScoped
     /// </summary>
     public void FocusContext(string? patientId, string? visitId = null, string? prescriptionId = null)
     {
+        if((visitId!=selectedVisitId||patientId!=PatientId)&&!CanLeaveEditor())return;
+        configurationOpen=false;
         if (!string.IsNullOrEmpty(prescriptionId))
         {
             var order = DuLieuGiaoDien.Find("DON_THUOC", prescriptionId);
@@ -69,7 +73,7 @@ public partial class KhamDieuTri : UserControl, IPatientScoped
     /// </summary>
     private void Refresh()
     {
-        if (VisitList is null || updating) return;
+        if (VisitList is null || updating || configurationOpen || EditorDirty) return;
         updating = true;
         try
         {
@@ -101,6 +105,8 @@ public partial class KhamDieuTri : UserControl, IPatientScoped
     private void ShowVisit(MucDanhSachLanKham visit)
     {
         if (!string.IsNullOrEmpty(PatientId) && visit.PatientId != PatientId) return;
+        if(visit.Code!=selectedVisitId&&!CanLeaveEditor()){updating=true;VisitList.SelectedItem=VisitList.Items.OfType<MucDanhSachLanKham>().FirstOrDefault(v=>v.Code==selectedVisitId);updating=false;return;}
+        configurationOpen=false;
         selectedVisitId = visit.Code;
         if (DetailHost.Content is not ChiTietKhamDieuTri current || UiRecord.Text((current.DataContext as TongHopLanKham)?.Record!, "MaLS") != visit.Code)
         {
@@ -122,13 +128,18 @@ public partial class KhamDieuTri : UserControl, IPatientScoped
     /// <summary>
     /// Lọc và hiển thị lại danh sách theo nội dung tìm kiếm/trạng thái/ngày đang chọn; chưa thay đổi dữ liệu SQL.
     /// </summary>
-    private void Filter_Changed(object sender, RoutedEventArgs e) { if (VisitList is not null && !updating) Refresh(); }
+    private void Filter_Changed(object sender, RoutedEventArgs e) { if (VisitList is not null && !updating && CanLeaveEditor()) Refresh(); }
     /// <summary>
     /// Áp dụng mã bệnh nhân vừa chọn, bỏ lựa chọn lần khám cũ và tải lại danh sách đúng phạm vi.
     /// </summary>
     private void PatientFilter_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (updating || VisitList is null) return;
+        if (!CanLeaveEditor())
+        {
+            updating = true; PatientFilter.SelectedValue = PatientId ?? ""; updating = false;
+            return;
+        }
         PatientId = string.IsNullOrEmpty(HoTroGiaoDien.Selected(PatientFilter)) ? null : HoTroGiaoDien.Selected(PatientFilter);
         selectedVisitId = null; explicitVisitId = null; NewVisitPanel.Visibility = Visibility.Collapsed; Refresh();
     }
@@ -137,6 +148,7 @@ public partial class KhamDieuTri : UserControl, IPatientScoped
     /// </summary>
     private void ClearFilters_Click(object sender, RoutedEventArgs e)
     {
+        if (!CanLeaveEditor()) return;
         updating = true; SearchBox.Clear(); StatusFilter.SelectedIndex = 0; FromDate.SelectedDate = null; ToDate.SelectedDate = null; PatientId = null; explicitVisitId = null; updating = false; Refresh();
     }
     /// <summary>
@@ -144,7 +156,19 @@ public partial class KhamDieuTri : UserControl, IPatientScoped
     /// </summary>
     private void AddVisit_Click(object sender, RoutedEventArgs e)
     {
-        if (!allowed("KhamDieuTri")) return;
+        if (!allowed("KhamDieuTri") || !CanLeaveEditor()) return;
+        configurationOpen=false;
+        if(DuLieuGiaoDien.PhamViLamSang)
+        {
+            try
+            {
+                var rows=new BUS.BUS_KHAMDIEUTRI().LayHangDoi(new(){MaBN=PatientId,TuNgay=FromDate.SelectedDate,DenNgay=ToDate.SelectedDate,TrangThai="Chờ khám",KichThuocTrang=100},Controls.ClinicalWorkflow.QuyenNghiepVu.LayNguCanh())
+                    .Where(r=>string.IsNullOrEmpty(PatientId)||r.MaBN==PatientId).Select(r=>new LuaChonDanhMuc(r.MaPhieu,$"Số {r.SoThuTu} · {r.HoTenBN} ({r.MaBN}) · {r.MaPhieu}")).ToArray();
+                ReceiptChoice.ItemsSource=rows;ReceiptChoice.SelectedIndex=rows.Length==1?0:-1;CreateVisitButton.IsEnabled=rows.Length>0;ReceiptNote.Text=rows.Length==0?"Không có phiếu chờ khám của bác sĩ trong khoảng ngày này.":"Chọn đúng người bệnh. Bắt đầu lại phiếu đã mở sẽ dùng cùng MaLS.";NewVisitPanel.Visibility=Visibility.Visible;
+            }
+            catch(InvalidOperationException ex){ContextNote.Text=ex.Message;}
+            return;
+        }
         var unused = DuLieuGiaoDien.Options("PHIEU_KHAM_BENH", patient: PatientId).Where(option => !DuLieuGiaoDien.Children("LICH_SU_KHAM_BENH", "MaPhieu", option.Value).Any()).ToArray();
         ReceiptChoice.ItemsSource = unused; ReceiptChoice.SelectedIndex = unused.Length == 1 ? 0 : -1;
         CreateVisitButton.IsEnabled = unused.Length > 0;
@@ -160,8 +184,15 @@ public partial class KhamDieuTri : UserControl, IPatientScoped
         var receipt = DuLieuGiaoDien.Find("PHIEU_KHAM_BENH", receiptId);
         if (receipt is null) { ReceiptNote.Text = "Chọn một lượt tiếp nhận để tiếp tục."; return; }
         var patientId = DuLieuGiaoDien.PatientId("PHIEU_KHAM_BENH", receipt);
-        if (string.IsNullOrEmpty(patientId) || (!string.IsNullOrEmpty(PatientId) && patientId != PatientId) || DuLieuGiaoDien.Children("LICH_SU_KHAM_BENH", "MaPhieu", receiptId).Any())
+        if (string.IsNullOrEmpty(patientId) || (!string.IsNullOrEmpty(PatientId) && patientId != PatientId) || !DuLieuGiaoDien.PhamViLamSang && DuLieuGiaoDien.Children("LICH_SU_KHAM_BENH", "MaPhieu", receiptId).Any())
         { ReceiptNote.Text = "Lượt tiếp nhận không còn hợp lệ. Chọn lại lượt tiếp nhận."; return; }
+        if(DuLieuGiaoDien.PhamViLamSang)
+        {
+            string? started=null;
+            try{started=new BUS.BUS_KHAMDIEUTRI().BatDauKham(receiptId,Controls.ClinicalWorkflow.QuyenNghiepVu.LayNguCanh());DuLieuGiaoDien.RefreshFromDatabase();NewVisitPanel.Visibility=Visibility.Collapsed;FocusContext(patientId,started);}
+            catch(InvalidOperationException ex){ReceiptNote.Text=started is null?ex.Message:$"Đã bắt đầu {started}; tải lại để mở tiếp. {ex.Message}";}
+            return;
+        }
         HoTroGiaoDien.Workspace(this)?.MoBieuMauHoSo("KhamDieuTri", "LICH_SU_KHAM_BENH", context: new("LICH_SU_KHAM_BENH", "MaPhieu", receiptId), patient: patientId);
     }
     /// <summary>
@@ -172,4 +203,22 @@ public partial class KhamDieuTri : UserControl, IPatientScoped
     /// Ẩn vùng tạo lần khám mới và giữ nguyên danh sách/chi tiết đang xem.
     /// </summary>
     private void CancelNewVisit_Click(object sender, RoutedEventArgs e) => NewVisitPanel.Visibility = Visibility.Collapsed;
+    private void TemplateConfig_Click(object sender,RoutedEventArgs e)
+    {
+        if(configurationOpen||!CanLeaveEditor())return;
+        try
+        {
+            var editor=new MauDieuTriEditor();editor.BackRequested+=()=>{configurationOpen=false;DetailHost.Content=null;Refresh();};configurationOpen=true;DetailHost.Content=editor;DetailEmpty.Visibility=Visibility.Collapsed;NewVisitPanel.Visibility=Visibility.Collapsed;
+        }
+        catch(InvalidOperationException ex){ContextNote.Text=ex.Message;}
+    }
+    private bool EditorDirty => DetailHost?.Content is ChiTietKhamDieuTri d && d.CoThayDoiChuaLuu
+        || DetailHost?.Content is MauDieuTriEditor m && m.CoThayDoiChuaLuu;
+
+    private bool CanLeaveEditor()
+    {
+        var pending=EditorDirty;
+        if(pending)ContextNote.Text="Có thay đổi chưa lưu. Lưu nháp hoặc tải lại để bỏ thay đổi trước khi chuyển ngữ cảnh.";
+        return !pending;
+    }
 }

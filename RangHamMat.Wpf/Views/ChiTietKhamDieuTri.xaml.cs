@@ -14,6 +14,8 @@ public partial class ChiTietKhamDieuTri : UserControl, IPatientScoped
     private readonly string visitId;
     private TongHopLanKham? summary;
     private Func<string, bool> allowed = _ => true;
+    private KhamLamSang? clinicalEditor;
+    public bool CoThayDoiChuaLuu=>clinicalEditor?.CoThayDoiChuaLuu==true;
     public event Action? BackRequested;
     /// <summary>
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.
@@ -22,13 +24,17 @@ public partial class ChiTietKhamDieuTri : UserControl, IPatientScoped
     /// <summary>
     /// Khởi tạo chi tiết lần khám và điều trị từ XAML. Theo dõi cache khi Loaded và làm mới nội dung khi dữ liệu thay đổi; gỡ theo dõi khi Unloaded.
     /// </summary>
-    public ChiTietKhamDieuTri(object visit)
+    public ChiTietKhamDieuTri(object visit,bool historyReadOnly=false)
     {
         visitId = UiRecord.Text(visit, "MaLS");
         if (DuLieuGiaoDien.PhamViLamSang) new BUS.BUS_KHAMDIEUTRI().LayChiTiet(visitId, Controls.ClinicalWorkflow.QuyenNghiepVu.LayNguCanh());
         InitializeComponent();
         HoTroGiaoDien.Observe(this, Refresh);
         Refresh();
+        if(DuLieuGiaoDien.PhamViLamSang && UiRecord.Text(visit,"MaBS")==PhienDangNhap.MaNV && Controls.ClinicalWorkflow.QuyenNghiepVu.LayNguCanh().CoQuyen(ET.QuyenLamViec.Kham))
+        {
+            clinicalEditor=new KhamLamSang(visitId);if(historyReadOnly)clinicalEditor.RestrictToHistory();clinicalEditor.BackRequested+=()=>BackRequested?.Invoke();Content=clinicalEditor;
+        }
     }
     /// <summary>
     /// Nhận hàm kiểm tra quyền phân hệ từ màn hình cha, lưu lại và áp dụng cho các tab/nút liên quan trong control hiện tại.
@@ -36,6 +42,7 @@ public partial class ChiTietKhamDieuTri : UserControl, IPatientScoped
     public void ConfigureAccess(Func<string, bool> canAccess)
     {
         allowed = canAccess;
+        clinicalEditor?.ConfigureAccess(canAccess);
         PrescriptionTab.Visibility = allowed("DonThuoc") ? Visibility.Visible : Visibility.Collapsed;
         ServicesButton.IsEnabled=allowed("DichVuThucHien");
         InvoiceButton.IsEnabled=allowed("HoaDon");

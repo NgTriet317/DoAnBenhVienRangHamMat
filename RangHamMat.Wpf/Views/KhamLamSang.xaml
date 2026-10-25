@@ -1,0 +1,60 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.KhamLamSang" Background="#F3F6FA" FontFamily="Segoe UI" FontSize="14" Language="vi-VN">
+  <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/HospitalStyles.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
+  <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Border Style="{StaticResource HospitalPanel}" Margin="0,0,0,12"><StackPanel>
+      <DockPanel><Button Content="← Quay lại" Click="Back_Click" DockPanel.Dock="Right"/><TextBlock x:Name="PatientHeader" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap"/></DockPanel>
+      <TextBlock x:Name="ClinicalIdentity" Margin="0,6,0,0" TextWrapping="Wrap"/>
+      <TextBlock x:Name="SafetyHeader" Margin="0,6,0,0" Foreground="#9A3412" TextWrapping="Wrap"/>
+    </StackPanel></Border>
+    <TabControl x:Name="ClinicalTabs" Grid.Row="1">
+      <TabItem Header="Khám và chẩn đoán"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="ClinicalInputPanel" Margin="12">
+        <TextBlock Text="Triệu chứng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="SymptomsEditor" MinHeight="65" AcceptsReturn="True" TextWrapping="Wrap" TextChanged="Clinical_Changed"/>
+        <TextBlock Text="Chẩn đoán do bác sĩ ghi nhận" Style="{StaticResource FieldLabel}" Margin="0,12,0,0"/><TextBox x:Name="DiagnosisEditor" MinHeight="65" AcceptsReturn="True" TextWrapping="Wrap" TextChanged="Clinical_Changed"/>
+        <TextBlock Text="Xử trí / định hướng điều trị" Style="{StaticResource FieldLabel}" Margin="0,12,0,0"/><TextBox x:Name="TreatmentEditor" MinHeight="65" AcceptsReturn="True" TextWrapping="Wrap" TextChanged="Clinical_Changed"/>
+        <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}" Margin="0,12,0,0"/><TextBox x:Name="ClinicalNote" MinHeight="45" AcceptsReturn="True" TextWrapping="Wrap" TextChanged="Clinical_Changed"/>
+      </StackPanel></ScrollViewer></TabItem>
+      <TabItem Header="Tình trạng bệnh"><Grid Margin="12"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
+        <TextBlock Text="Chọn mã danh mục hoặc mô tả thủ công; bác sĩ tự ghi mức độ và vị trí. Lưu nháp trước khi yêu cầu gợi ý." TextWrapping="Wrap" Margin="0,0,0,10"/>
+        <DataGrid x:Name="ConditionGrid" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="True" CellEditEnding="Condition_Edit" MinRowHeight="36"><DataGrid.Columns>
+          <DataGridComboBoxColumn x:Name="ConditionCategoryColumn" Header="Danh mục" SelectedValueBinding="{Binding MaDMTT}" SelectedValuePath="Value" DisplayMemberPath="Label" Width="170"/>
+          <DataGridTextColumn Header="Loại" Binding="{Binding LoaiTinhTrang}" Width="100"/><DataGridTextColumn Header="Mô tả" Binding="{Binding MoTaTinhTrang}" Width="200"/>
+          <DataGridTextColumn Header="Mức độ" Binding="{Binding MucDo}" Width="110"/><DataGridTextColumn Header="Vị trí răng" Binding="{Binding ViTriRang}" Width="110"/><DataGridTextColumn Header="Ghi chú" Binding="{Binding GhiChu}" Width="150"/>
+        </DataGrid.Columns></DataGrid>
+      </Grid></TabItem>
+      <TabItem Header="Kế hoạch điều trị"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="12">
+        <TextBlock Text="Gợi ý từ tình trạng đã lưu" FontWeight="SemiBold" FontSize="16"/>
+        <TextBlock Text="Chỉ mẫu đã duyệt, theo mã và mức độ. Chọn từng mẫu để kiểm tra; hệ thống không tự gộp hoặc tự xác nhận điều trị." TextWrapping="Wrap" Margin="0,6,0,10"/>
+        <WrapPanel><Button x:Name="SuggestButton" Content="Gợi ý kế hoạch" Click="Suggest_Click"/><Button x:Name="ApplyTemplateButton" Content="Áp dụng mẫu đã chọn" Click="Apply_Click"/></WrapPanel>
+        <ComboBox x:Name="SuggestionPicker" DisplayMemberPath="Nhan" SelectionChanged="Suggestion_Changed" MinHeight="36" Margin="0,8,0,0"/>
+        <TextBlock x:Name="SuggestionPreview" TextWrapping="Wrap" Margin="0,8,0,12"/>
+        <WrapPanel><Button x:Name="NewPlanButton" Content="Kế hoạch thủ công mới" Click="NewPlan_Click"/><Button Content="Tải lại (bỏ thay đổi chưa lưu)" Click="Reload_Click"/></WrapPanel>
+        <ComboBox x:Name="PlanPicker" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Plan_Changed" MinHeight="36" Margin="0,10,0,0"/>
+        <TextBlock x:Name="PlanIdentity" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,8,0,8"/>
+        <StackPanel x:Name="PlanFields">
+          <TextBlock Text="Tình trạng nguồn (tùy chọn với kế hoạch thủ công)" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="PlanSourcePicker" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Plan_FieldChanged" MinHeight="34"/>
+          <WrapPanel Margin="0,10,0,0"><StackPanel Margin="0,0,12,0"><TextBlock Text="Bắt đầu dự kiến"/><DatePicker x:Name="PlanStart" SelectedDateChanged="Plan_FieldChanged"/></StackPanel><StackPanel><TextBlock Text="Kết thúc dự kiến"/><DatePicker x:Name="PlanEnd" SelectedDateChanged="Plan_FieldChanged"/></StackPanel></WrapPanel>
+          <TextBlock Text="Ghi chú kế hoạch" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/><TextBox x:Name="PlanNote" TextChanged="Plan_TextChanged" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="45"/>
+        </StackPanel>
+        <DataGrid x:Name="PlanSteps" AutoGenerateColumns="False" MinHeight="180" MaxHeight="330" CanUserAddRows="True" CellEditEnding="Plan_Edit" Margin="0,10,0,0"><DataGrid.Columns>
+          <DataGridComboBoxColumn x:Name="PlanServiceColumn" Header="Dịch vụ" SelectedValueBinding="{Binding MaDV}" SelectedValuePath="Value" DisplayMemberPath="Label" Width="200"/>
+          <DataGridTextColumn Header="Buổi" Binding="{Binding LanThu, ValidatesOnExceptions=True}" Width="65"/><DataGridTextColumn Header="Lượng dự kiến" Binding="{Binding SoLuongDuKien, ValidatesOnExceptions=True}" Width="105"/>
+          <DataGridTextColumn Header="Giá dự kiến" Binding="{Binding DonGiaDuKien, ValidatesOnExceptions=True}" Width="110"/><DataGridTextColumn Header="Nội dung bước" Binding="{Binding NoiDungBuoc}" Width="250"/>
+        </DataGrid.Columns></DataGrid>
+        <TextBlock Text="Dự kiến chưa phải dịch vụ đã thực hiện. Duyệt kế hoạch không lập hóa đơn hoặc trừ kho." Foreground="#9A3412" TextWrapping="Wrap" Margin="0,8,0,8"/>
+        <WrapPanel><Button x:Name="CancelPlanButton" Content="Hủy kế hoạch nháp" Click="CancelPlan_Click"/><Button x:Name="SavePlanButton" Content="Lưu nháp kế hoạch" Click="SavePlan_Click"/><Button x:Name="ConfirmPlanButton" Content="Xác nhận kế hoạch" Click="ConfirmPlan_Click"/></WrapPanel>
+      </StackPanel></ScrollViewer></TabItem>
+      <TabItem Header="Tổng kết"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="12">
+        <TextBlock Text="Đối chiếu trước khi hoàn tất chuyên môn" FontSize="17" FontWeight="SemiBold"/>
+        <TextBlock Text="Cần triệu chứng, chẩn đoán, xử trí và tình trạng. Xử lý đơn/dịch vụ/kế hoạch còn nháp; các bước tương lai đã duyệt được để chưa thực hiện." TextWrapping="Wrap" Margin="0,10,0,16"/>
+        <StackPanel x:Name="PrescriptionDecision"><CheckBox x:Name="NoPrescription" Content="Không kê thuốc" Checked="Clinical_Changed" Unchecked="Clinical_Changed"/>
+          <TextBlock Text="Lý do không kê thuốc" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/><TextBox x:Name="NoPrescriptionReason" MaxLength="500" MinHeight="65" AcceptsReturn="True" TextWrapping="Wrap" IsEnabled="{Binding IsChecked,ElementName=NoPrescription}" TextChanged="Clinical_Changed"/>
+        </StackPanel>
+        <WrapPanel Margin="0,16,0,0"><Button x:Name="OpenServicesButton" Content="Mở dịch vụ thực hiện" Click="Services_Click"/><Button x:Name="OpenPrescriptionButton" Content="Mở đơn thuốc" Click="Prescription_Click"/></WrapPanel>
+        <TextBlock Text="Lưu nháp trước khi chuyển chức năng. Hoàn tất sẽ khóa nội dung chuyên môn và chuyển phiếu sang Chờ thanh toán." TextWrapping="Wrap" Margin="0,14,0,0"/>
+      </StackPanel></ScrollViewer></TabItem>
+    </TabControl>
+    <Border Grid.Row="2" Padding="0,10,0,0"><StackPanel><TextBlock x:Name="ClinicalError" Foreground="#B42318" TextWrapping="Wrap"/><TextBlock x:Name="ClinicalStatus" Foreground="#15803D" TextWrapping="Wrap" Margin="0,5,0,8"/>
+      <WrapPanel HorizontalAlignment="Right"><Button Content="Tải lại (bỏ nháp đang nhập)" Click="Reload_Click"/><Button x:Name="SaveClinicalButton" Content="Lưu nháp" Click="Save_Click"/><Button x:Name="CompleteClinicalButton" Content="Hoàn tất chuyên môn" Click="Complete_Click" Style="{StaticResource HospitalPrimary}"/></WrapPanel>
+    </StackPanel></Border>
+  </Grid>
+</UserControl>

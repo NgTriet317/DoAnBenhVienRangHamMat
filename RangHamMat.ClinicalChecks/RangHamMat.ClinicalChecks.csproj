@@ -7,4 +7,5 @@
   </PropertyGroup>
   <ItemGroup><ProjectReference Include="../BUS/BUS.csproj" /></ItemGroup>
   <ItemGroup><Compile Include="../RangHamMat.Wpf/PhienDangNhap.cs" Link="PhienDangNhap.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../RangHamMat.ClinicalUiChecks/ReceptionFixture.cs" Link="ReceptionFixture.cs" /></ItemGroup>
 </Project>

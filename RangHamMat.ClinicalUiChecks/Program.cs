@@ -47,6 +47,124 @@ internal static class Program
         }
         try
         {
+            Check("Kế hoạch cũ vẫn hiện dịch vụ đã ngừng hoạt động",()=>
+            {
+                using var f=new RangHamMat.ClinicalChecks.Fixture();var actor=f.User("A");var serviceId=f.Scalar<string>("SELECT TOP(1) MaDV FROM dbo.DICH_VU WHERE TrangThai=N'Đang hoạt động' ORDER BY MaDV");
+                var serviceName=f.Scalar<string>("SELECT TenDV FROM dbo.DICH_VU WHERE MaDV=@id",new{id=serviceId});
+                var plan=new BUS.BUS_KHAMDIEUTRI(f.Transaction).LuuKeHoach(new(){MaLS=f.Id("LSA"),CacBuoc=[new(){MaDV=serviceId,NoiDungBuoc="FIXTURE"}]},actor);
+                f.Execute("UPDATE dbo.DICH_VU SET TrangThai=N'Ngừng hoạt động' WHERE MaDV=@id",new{id=serviceId});
+                var view=new KhamLamSang(f.Id("LSA"),actor,f.Transaction);Find<TabControl>(view,"ClinicalTabs").SelectedIndex=2;Find<ComboBox>(view,"PlanPicker").SelectedValue=plan.KeHoach.MaKHDT;
+                using var host=new WindowLifetime(new Window {Content=view,Width=1366,Height=900,ShowInTaskbar=false});host.Window.Show();host.Window.UpdateLayout();
+                var grid=Find<DataGrid>(view,"PlanSteps");var cell=grid.Columns[0].GetCellContent(grid.Items[0]) as ComboBox;
+                Require(cell is not null && cell.Text.Contains(serviceName),"Dịch vụ nguồn đã ngừng bị hiện trống.");
+            });
+            foreach(var target in new[]{"ConditionGrid","PlanSteps","PlanStart","TemplateSteps","NewCategoryName"})
+                Check("Bảo vệ nháp đang nhập thật: "+target,()=>
+                {
+                    using var f=new RangHamMat.ClinicalChecks.Fixture();var actor=f.User("A");
+                    var clinical=target is "ConditionGrid" or "PlanSteps" or "PlanStart";
+                    UserControl view=clinical?new KhamLamSang(f.Id("LSA"),actor,f.Transaction):new MauDieuTriEditor(actor,f.Transaction);
+                    if(target=="ConditionGrid")
+                    {
+                        ((System.Collections.IList)Find<DataGrid>(view,target).ItemsSource).Add(new TinhTrangKhamNhap {LoaiTinhTrang="FIXTURE",MoTaTinhTrang="FIXTURE",MucDo="FIXTURE"});
+                        Require(InvokeTry(view,"TrySave"),"Không chuẩn bị được tình trạng đã lưu.");
+                    }
+                    if(target=="PlanSteps")
+                    {
+                        ((System.Collections.IList)Find<DataGrid>(view,target).ItemsSource).Add(new BuocKeHoachNhap {MaDV=f.Scalar<string>("SELECT TOP(1) MaDV FROM dbo.DICH_VU WHERE TrangThai=N'Đang hoạt động' ORDER BY MaDV"),NoiDungBuoc="FIXTURE"});
+                        Require(InvokeTry(view,"TrySavePlan"),"Không chuẩn bị được kế hoạch đã lưu.");
+                    }
+                    if(target=="TemplateSteps")
+                    {
+                        var category=new ET_DMTINHTRANGBENH {TenTinhTrang="FIXTURE",TrangThai="Đang áp dụng"};new BUS.BUS_DMTINHTRANGBENH(f.Transaction).LuuNhap(category,actor);
+                        var template=new BUS.BUS_KHAMDIEUTRI(f.Transaction).LuuMauDieuTri(new(){MaDMTT=category.MaDMTT,TenMau="FIXTURE",CacBuoc=[new(){MaDV=f.Scalar<string>("SELECT TOP(1) MaDV FROM dbo.DICH_VU WHERE TrangThai=N'Đang hoạt động' ORDER BY MaDV"),NoiDungBuoc="FIXTURE"}]},actor);
+                        // Reload picks up the fixture created after editor construction.
+                        typeof(MauDieuTriEditor).GetMethod("Reload_Click",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(view,new object[]{view,new RoutedEventArgs()});
+                        Find<ComboBox>(view,"TemplatePicker").SelectedValue=template.Mau.MaMauKH;
+                    }
+                    if(clinical)Find<TabControl>(view,"ClinicalTabs").SelectedIndex=target=="ConditionGrid"?1:2;
+                    using var host=new WindowLifetime(new Window {Content=view,Width=1366,Height=900,ShowInTaskbar=false});host.Window.Show();host.Window.UpdateLayout();
+                    TextBox? dateEditor=null;
+                    if(target=="PlanStart")
+                    {
+                        var date=Find<DatePicker>(view,target);date.ApplyTemplate();
+                        var text=(TextBox)date.Template.FindName("PART_TextBox",date);dateEditor=text;text.Focus();text.Text="31/";
+                        Require(date.SelectedDate is null,"Ngày chưa commit phải chưa có SelectedDate.");
+                    }
+                    else if(target=="NewCategoryName")Find<TextBox>(view,target).Text="FIXTURE danh mục chưa lưu";
+                    else EditCell(Find<DataGrid>(view,target),target=="ConditionGrid"?2:target=="PlanSteps"?4:3,"FIXTURE ô chưa commit");
+                    try
+                    {
+                        var back=false;
+                        if(view is KhamLamSang c)c.BackRequested+=()=>back=true;else ((MauDieuTriEditor)view).BackRequested+=()=>back=true;
+                        view.GetType().GetMethod("Back_Click",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(view,new object[]{view,new RoutedEventArgs()});
+                        Require(!back,"Quay lại đã bỏ nội dung chưa lưu trong "+target);
+                    }
+                    finally{dateEditor?.Clear();}
+                });
+            Check("Màn khám bắt đầu từ hàng đợi và không làm mất nháp khi đổi bộ lọc",()=>
+            {
+                SignIn("CV004");
+                try
+                {
+                    using var f=new ReceptionFixture();var receiver=new BUS.BUS_QUYENNGHIEPVU().LayNguCanh(PhienDangNhap.MaNV);
+                    var receipt=new BUS.BUS_TIEPNHAN().TiepNhan(new(){MaBN=f.Patient,MaDV=f.Service,MaBS=f.Doctor,MaPhong=f.Room,LyDoKham="FIXTURE P05 giao diện"},receiver);
+                    PhienDangNhap.MaNV=f.Doctor;PhienDangNhap.KhoiTaoDinhDanhNghiepVu(f.Account);DuLieuGiaoDien.ChonPhamViLamSang(true);
+                    var page=new KhamDieuTri();using var host=new WindowLifetime(new Window {Content=page,Width=1366,Height=768,ShowInTaskbar=false});host.Window.Show();host.Window.UpdateLayout();
+                    Find<Button>(page,"AddVisitButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));Find<ComboBox>(page,"ReceiptChoice").SelectedValue=receipt.MaPhieu;
+                    Find<Button>(page,"CreateVisitButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));host.Window.UpdateLayout();
+                    var profile=new HoSoBenhNhan(DuLieuGiaoDien.Find("BENH_NHAN",f.Patient)!);
+                    var source=DuLieuGiaoDien.Rows("LICH_SU_KHAM_BENH").Single(r=>UiRecord.Text(r,"MaPhieu")==receipt.MaPhieu);profile.OpenVisit(UiRecord.Text(source,"MaLS"));
+                    var history=(ChiTietKhamDieuTri)Find<ContentControl>(profile,"VisitHost").Content;
+                    Require(history.Content is KhamLamSang historyView && !Find<Button>(historyView,"SaveClinicalButton").IsEnabled && Find<DataGrid>(historyView,"ConditionGrid").IsReadOnly,"Lịch sử hồ sơ còn mở nội dung nhập có thể mất khi đổi bệnh nhân.");
+                    var detail=Find<ContentControl>(page,"DetailHost").Content as ChiTietKhamDieuTri ?? throw new Exception("Không mở lần khám sau bắt đầu.");
+                    var clinical=detail.Content as UserControl ?? throw new Exception("Không có không gian khám.");Require(clinical.GetType().Name=="KhamLamSang","Chưa nối không gian khám P05.");
+                    Find<TextBox>(clinical,"SymptomsEditor").Text="FIXTURE nháp chưa lưu";
+                    SavePreview(page,"kham-bat-dau.png","obj/ClinicalWorkflowP05");
+                    Find<TextBox>(page,"SearchBox").Text="__không có kết quả__";
+                    Require(ReferenceEquals(Find<ContentControl>(page,"DetailHost").Content,detail) && Find<TextBox>(clinical,"SymptomsEditor").Text=="FIXTURE nháp chưa lưu","Đổi bộ lọc mất nháp đang nhập.");
+                    page.FocusContext("__khác__","__khác__");Require(ReferenceEquals(Find<ContentControl>(page,"DetailHost").Content,detail),"Điều hướng đè nháp chưa lưu.");
+                }
+                finally{SignIn("CV004");DuLieuGiaoDien.RefreshFromDatabase();}
+            });
+            Check("Không gian khám giữ nháp qua tab, ký riêng và khóa sau hoàn tất",()=>
+            {
+                using var f=new RangHamMat.ClinicalChecks.Fixture();f.Execute("DELETE dbo.CHI_TIET_DON_THUOC WHERE MaDT=@id;DELETE dbo.DON_THUOC WHERE MaDT=@id",new{id=f.Id("DTA")});
+                var actor=f.User("A");var type=typeof(KhamDieuTri).Assembly.GetType("RangHamMat.Views.KhamLamSang")??throw new Exception("Chưa có không gian khám P05");
+                var view=(UserControl)Activator.CreateInstance(type,f.Id("LSA"),actor,f.Transaction)!;
+                Find<TextBox>(view,"SymptomsEditor").Text="FIXTURE đổi triệu chứng";
+                ((System.Collections.IList)Find<DataGrid>(view,"ConditionGrid").ItemsSource).Add(new TinhTrangKhamNhap {LoaiTinhTrang="FIXTURE",MoTaTinhTrang="FIXTURE",MucDo="FIXTURE"});
+                var tabs=Find<TabControl>(view,"ClinicalTabs");tabs.SelectedIndex=1;tabs.SelectedIndex=2;tabs.SelectedIndex=0;
+                Require(Find<TextBox>(view,"SymptomsEditor").Text=="FIXTURE đổi triệu chứng","Chuyển tab mất nháp.");
+                Require(!InvokeTry(view,"TryComplete"),"Ký nội dung chưa lưu.");
+                Find<CheckBox>(view,"NoPrescription").IsChecked=true;Find<TextBox>(view,"NoPrescriptionReason").Text="FIXTURE không chỉ định";
+                Require(InvokeTry(view,"TrySave"),Find<TextBlock>(view,"ClinicalError").Text);
+                ((System.Collections.IList)Find<DataGrid>(view,"PlanSteps").ItemsSource).Add(new BuocKeHoachNhap {MaDV=f.Scalar<string>("SELECT TOP(1) MaDV FROM dbo.DICH_VU ORDER BY MaDV"),NoiDungBuoc="FIXTURE buổi tương lai",LanThu=2});
+                Require(InvokeTry(view,"TrySavePlan"),Find<TextBlock>(view,"ClinicalError").Text);
+                Find<TextBox>(view,"PlanNote").Text="FIXTURE sửa kế hoạch thủ công đã lưu";
+                Require(InvokeTry(view,"TrySavePlan"),Find<TextBlock>(view,"ClinicalError").Text);
+                Require(!InvokeTry(view,"TryComplete"),"Hoàn tất khi còn kế hoạch nháp.");
+                Require(InvokeTry(view,"TryConfirmPlan"),Find<TextBlock>(view,"ClinicalError").Text);
+                Require(InvokeTry(view,"TryComplete"),Find<TextBlock>(view,"ClinicalError").Text);
+                Require(!Find<Button>(view,"SaveClinicalButton").IsEnabled && f.Scalar<string>("SELECT TrangThai FROM dbo.PHIEU_KHAM_BENH WHERE MaPhieu=@id",new{id=f.Id("PHA")})=="Chờ thanh toán","Chưa khóa/chuyển quầy sau ký.");
+            });
+            Check("Cấu hình mẫu Admin chỉ soạn, bác sĩ duyệt bằng định danh phiên",()=>
+            {
+                using var f=new RangHamMat.ClinicalChecks.Fixture();var admin=f.User("X");
+                var cat=new ET_DMTINHTRANGBENH {TenTinhTrang="FIXTURE không dùng thật",TrangThai="Đang áp dụng"};new BUS.BUS_DMTINHTRANGBENH(f.Transaction).LuuNhap(cat,admin);
+                var type=typeof(KhamDieuTri).Assembly.GetType("RangHamMat.Views.MauDieuTriEditor")??throw new Exception("Chưa có cấu hình mẫu P05");
+                var view=(UserControl)Activator.CreateInstance(type,admin,f.Transaction)!;
+                Find<ComboBox>(view,"CategoryPicker").SelectedValue=cat.MaDMTT;Find<TextBox>(view,"TemplateName").Text="FIXTURE mẫu không dùng thật";
+                ((System.Collections.IList)Find<DataGrid>(view,"TemplateSteps").ItemsSource).Add(new BuocKeHoachNhap {MaDV=f.Scalar<string>("SELECT TOP(1) MaDV FROM dbo.DICH_VU ORDER BY MaDV"),NoiDungBuoc="FIXTURE không dùng thật"});
+                Require(InvokeTry(view,"TrySaveTemplate"),Find<TextBlock>(view,"TemplateError").Text);
+                var current=(BanNhapMauDieuTri)type.GetProperty("MauDangMo")!.GetValue(view)!;
+                Require(!Find<Button>(view,"ApproveTemplateButton").IsEnabled && !InvokeTry(view,"TryApproveTemplate"),"Admin tự ký được mẫu.");
+                var doctor=f.User("A");var medical=(UserControl)Activator.CreateInstance(type,doctor,f.Transaction)!;
+                Find<ComboBox>(medical,"TemplatePicker").SelectedValue=current.Mau.MaMauKH;
+                Require(InvokeTry(medical,"TryApproveTemplate"),Find<TextBlock>(medical,"TemplateError").Text);
+                var approved=(BanNhapMauDieuTri)type.GetProperty("MauDangMo")!.GetValue(medical)!;
+                Require(approved.Mau.MaBSDuyet==doctor.MaNV && approved.Mau.TrangThai=="Đã duyệt","Không ghi bác sĩ duyệt từ phiên.");
+            });
             Check("Lịch sử lịch hẹn không mở nút sửa, xác nhận hoặc hủy",()=>
             {
                 SignIn("CV004");DuLieuGiaoDien.ChonPhamViLamSang(true);
@@ -240,12 +358,25 @@ internal static class Program
         public Window Window { get; } = window;
         public void Dispose() => Window.Close();
     }
+    private static bool InvokeTry(UserControl view,string method)
+    {
+        var args=new object?[]{null};
+        try{return (bool)view.GetType().GetMethod(method)!.Invoke(view,args)!;}
+        catch(TargetInvocationException ex){throw ex.InnerException??ex;}
+    }
 
-    private static void SavePreview(FrameworkElement view,string name)
+    private static void EditCell(DataGrid grid,int column,string text)
+    {
+        var row=grid.Items[0];grid.SelectedItem=row;grid.ScrollIntoView(row,grid.Columns[column]);grid.UpdateLayout();
+        grid.CurrentCell=new DataGridCellInfo(row,grid.Columns[column]);grid.Focus();Require(grid.BeginEdit(),"Không mở được ô nhập thật.");grid.UpdateLayout();
+        var editor=grid.Columns[column].GetCellContent(row) as TextBox ?? throw new Exception("Không thấy TextBox đang sửa.");editor.Text=text;
+    }
+
+    private static void SavePreview(FrameworkElement view,string name,string folder="obj/ClinicalWorkflowP04")
     {
         var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap((int)Math.Ceiling(view.ActualWidth),(int)Math.Ceiling(view.ActualHeight),96,96,System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(view);var encoder=new System.Windows.Media.Imaging.PngBitmapEncoder();encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
-        System.IO.Directory.CreateDirectory("obj/ClinicalWorkflowP04");
-        using var file=System.IO.File.Create(System.IO.Path.Combine("obj/ClinicalWorkflowP04",name));encoder.Save(file);
+        System.IO.Directory.CreateDirectory(folder);
+        using var file=System.IO.File.Create(System.IO.Path.Combine(folder,name));encoder.Save(file);
     }
 }

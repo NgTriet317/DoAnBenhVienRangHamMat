@@ -44,6 +44,7 @@ public sealed record NguCanhNghiepVu
 
 public sealed record BoLocHangDoi
 {
+    public string? MaBN { get; init; }
     public DateTime? TuNgay { get; init; }
     public DateTime? DenNgay { get; init; }
     public string? TrangThai { get; init; }

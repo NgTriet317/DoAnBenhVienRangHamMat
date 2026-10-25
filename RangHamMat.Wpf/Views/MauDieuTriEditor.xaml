@@ -1,0 +1,38 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.MauDieuTriEditor" FontFamily="Segoe UI" FontSize="14" Background="#F3F6FA" Language="vi-VN">
+  <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/HospitalStyles.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
+  <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <StackPanel Margin="0,0,0,12"><DockPanel><Button Content="← Quay lại khám" DockPanel.Dock="Right" Click="Back_Click"/><TextBlock Text="Cấu hình hỗ trợ điều trị" Style="{StaticResource HospitalHeading}"/></DockPanel>
+      <TextBlock Text="Nội dung cần bác sĩ kiểm tra và duyệt. Mẫu nháp không được gợi ý; không có nội dung điều trị tự duyệt sẵn." TextWrapping="Wrap" Margin="0,8,0,0" Foreground="#9A3412"/>
+    </StackPanel>
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"><StackPanel>
+      <Expander Header="Thêm danh mục tình trạng" Margin="0,0,0,12"><StackPanel Margin="12">
+        <TextBlock Text="Tên tình trạng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="NewCategoryName" MaxLength="255"/>
+        <TextBlock Text="Mô tả danh mục" Style="{StaticResource FieldLabel}" Margin="0,8,0,0"/><TextBox x:Name="NewCategoryDescription" MinHeight="45" AcceptsReturn="True" TextWrapping="Wrap"/>
+        <Button Content="Lưu danh mục" Click="AddCategory_Click" HorizontalAlignment="Right" Margin="0,8,0,0"/>
+      </StackPanel></Expander>
+      <Border Style="{StaticResource HospitalPanel}"><StackPanel>
+        <TextBlock Text="Mẫu đã lưu" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="TemplatePicker" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Template_Changed" MinHeight="36"/>
+        <WrapPanel Margin="0,10,0,8"><Button Content="Mẫu mới" Click="New_Click"/><Button Content="Sao chép sang phiên bản mới" Click="Copy_Click"/><Button Content="Tải lại (bỏ thay đổi chưa lưu)" Click="Reload_Click"/></WrapPanel>
+        <TextBlock x:Name="TemplateIdentity" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,10"/>
+        <StackPanel x:Name="TemplateFields">
+          <TextBlock Text="Danh mục tình trạng" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="CategoryPicker" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Field_Changed" MinHeight="34"/>
+          <TextBlock Text="Tên mẫu" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/><TextBox x:Name="TemplateName" MaxLength="255" TextChanged="Text_Changed"/>
+          <Grid Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="140"/></Grid.ColumnDefinitions>
+            <StackPanel Margin="0,0,12,0"><TextBlock Text="Mức độ (trống là tổng quát)"/><TextBox x:Name="SeverityEditor" MaxLength="255" TextChanged="Text_Changed"/></StackPanel>
+            <StackPanel Grid.Column="1"><TextBlock Text="Phiên bản"/><TextBox x:Name="VersionEditor" Text="1" TextChanged="Text_Changed"/></StackPanel>
+          </Grid>
+        </StackPanel>
+        <DataGrid x:Name="TemplateSteps" AutoGenerateColumns="False" CanUserAddRows="True" MinHeight="230" MaxHeight="400" Margin="0,12,0,0" CellEditEnding="Step_Edit"><DataGrid.Columns>
+          <DataGridComboBoxColumn x:Name="TemplateServiceColumn" Header="Dịch vụ" SelectedValueBinding="{Binding MaDV}" SelectedValuePath="Value" DisplayMemberPath="Label" Width="220"/>
+          <DataGridTextColumn Header="Buổi" Binding="{Binding LanThu,ValidatesOnExceptions=True}" Width="70"/><DataGridTextColumn Header="Lượng dự kiến" Binding="{Binding SoLuongDuKien,ValidatesOnExceptions=True}" Width="120"/>
+          <DataGridTextColumn Header="Nội dung bước do chuyên môn soạn" Binding="{Binding NoiDungBuoc}" Width="*" MinWidth="250"/>
+        </DataGrid.Columns></DataGrid>
+        <TextBlock x:Name="ReviewIdentity" Margin="0,10,0,0" TextWrapping="Wrap"/>
+        <TextBlock Text="Mẫu đã duyệt được giữ nguyên. Cần sửa thì tạo mã/phiên bản mới; bản kế hoạch đã sao chép không tự thay đổi." TextWrapping="Wrap" Foreground="#9A3412" Margin="0,10,0,0"/>
+      </StackPanel></Border>
+    </StackPanel></ScrollViewer>
+    <StackPanel Grid.Row="2" Margin="0,12,0,0"><TextBlock x:Name="TemplateError" Foreground="#B42318" TextWrapping="Wrap"/><TextBlock x:Name="TemplateStatus" Foreground="#15803D" TextWrapping="Wrap" Margin="0,5,0,8"/>
+      <WrapPanel HorizontalAlignment="Right"><Button x:Name="RetireTemplateButton" Content="Ngừng áp dụng mẫu" Click="Retire_Click"/><Button x:Name="SaveTemplateButton" Content="Lưu nháp mẫu" Click="Save_Click"/><Button x:Name="ApproveTemplateButton" Content="Bác sĩ duyệt nội dung" Click="Approve_Click" Style="{StaticResource HospitalPrimary}"/></WrapPanel>
+    </StackPanel>
+  </Grid>
+</UserControl>

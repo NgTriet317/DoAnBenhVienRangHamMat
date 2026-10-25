@@ -1,6 +1,6 @@
 # Chạy phần nền đã triển khai
 
-Đây là hướng dẫn P01–P04 đã triển khai. Năm module lâm sàng dùng quyền theo chức vụ; bản build hiện tại cần schema ClinicalWorkflow v2. Quy trình khám/thanh toán đầy đủ ở P05–P12 chưa hoàn tất. Database gốc chưa được nâng cấp tự động; chạy kiểm tra/ứng dụng với biến môi trường của bản sao đã nâng cấp.
+Đây là hướng dẫn P01–P05 đã triển khai. Năm module lâm sàng dùng quyền theo chức vụ; bản build hiện tại cần schema ClinicalWorkflow v2. Quy trình khám/thanh toán đầy đủ ở P06–P12 chưa hoàn tất. Database gốc chưa được nâng cấp tự động; chạy kiểm tra/ứng dụng với biến môi trường của bản sao đã nâng cấp.
 
 1. Dùng Windows, .NET 8 SDK và SQL Server. Tạo backup COPY_ONLY CHECKSUM của database đã xác nhận, kiểm tra backup rồi restore sang tên thử riêng; không dùng script cài mới trên dữ liệu đang có.
 2. Đặt biến môi trường trong đúng terminal chạy kiểm tra. Ví dụ với xác thực Windows (không có mật khẩu):
@@ -46,9 +46,9 @@ dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --migr
 dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --migration-rollback
 ```
 
-Mode `--migration` chỉ đọc hợp đồng 30 kiểm tra, chạy được sau upgrade/cài mới. Mặc định ClinicalChecks hiện chạy 80 ca có fixture rollback; `--configuration`, `--new-data`, `--reception` chạy riêng từng nhóm.
+Mode `--migration` chỉ đọc hợp đồng 30 kiểm tra, chạy được sau upgrade/cài mới. Mặc định ClinicalChecks hiện chạy 104 ca có fixture rollback; `--configuration`, `--new-data`, `--reception`, `--examination` chạy riêng từng nhóm. Nhóm khám/kế hoạch có 24 ca.
 
-Sáu lớp DAL/BUS mới được nhóm trong `DAL_CAUHINHLAMSANG.cs`/`BUS_CAUHINHLAMSANG.cs`. Năm lớp cấu hình cung cấp `LayDanhSach`, `LuuNhap(entity,nguoiDung,banGoc)`; nhận transaction tùy chọn, xác minh lại phiên/quyền, kiểm tra snapshot và audit cùng transaction. Endpoint nháp không nhận chữ ký client. `BUS_BANGIAOTHUOC.LayTheoDon` đọc theo phạm vi đơn thuốc; chưa có API ghi bàn giao. Phê duyệt và giao diện cấu hình thuộc P05/P07/P10.
+Sáu lớp DAL/BUS mới được nhóm trong `DAL_CAUHINHLAMSANG.cs`/`BUS_CAUHINHLAMSANG.cs`. Năm lớp cấu hình cung cấp `LayDanhSach`, `LuuNhap(entity,nguoiDung,banGoc)`; nhận transaction tùy chọn, xác minh lại phiên/quyền, kiểm tra snapshot và audit cùng transaction. Endpoint nháp không nhận chữ ký client. P05 bổ sung duyệt mẫu điều trị qua aggregate khám bên dưới; cấu hình kê đơn thuộc P07. `BUS_BANGIAOTHUOC.LayTheoDon` đọc theo phạm vi đơn thuốc; chưa có API ghi bàn giao P10.
 
 ## Hợp đồng nền P02
 
@@ -63,7 +63,7 @@ Trong chế độ lâm sàng, `DuLieuGiaoDien` nạp snapshot đã lọc tại S
 
 Hóa đơn lịch sử chỉ cho đối chiếu/in lại; các lệnh thu/hoàn/cấp thuốc cũ bị khóa trong chế độ này. BUS/DAL tài chính cũ vẫn giữ cho hồi quy và tích hợp ngoài luồng mới. Chưa có giao dịch thu đủ P09 hoặc bàn giao P10.
 
-`ClinicalUiChecks` chạy control WPF thật trên bản thử, gồm quyền module, cache đổi phiên, nút chỉ đọc, gọi ghi trực tiếp bị từ chối, lịch nhúng và lịch độc lập. Kết quả 8 ca không thay thế thử DPI/kích thước/nội dung dài toàn bộ ở P11/P12.
+`ClinicalUiChecks` chạy control WPF thật trên bản thử, gồm quyền module, cache đổi phiên, nút chỉ đọc, gọi ghi trực tiếp bị từ chối, lịch nhúng và lịch độc lập. Các ca bổ sung P04/P05 bên dưới không thay thế thử DPI/kích thước/nội dung dài toàn bộ ở P11/P12.
 
 ## Sử dụng tiếp nhận P04
 
@@ -73,9 +73,9 @@ Hóa đơn lịch sử chỉ cho đối chiếu/in lại; các lệnh thu/hoàn/
 4. Có lịch làm việc thì phòng khớp lịch. Thiếu lịch hiển thị rõ; CV004 mặc định có `DieuPhoiNgoaiLich` được nhập lý do điều phối tối đa 500 ký tự, ghi nhật ký. CV003 chưa có quyền này; không vượt lịch xác định nghỉ/vắng, dù có quyền điều phối.
 5. Nhập lý do đến khám, xác nhận. Nhân viên lấy từ phiên, giờ từ SQL và số theo ngày/phòng; không nhập tên đồng nghiệp/số thứ tự. Thành công báo bác sĩ nhận, số và mã phiếu; không tạo MaLS hoặc mở chẩn đoán. Cache chỉ tải lại sau commit. Bấm lại giữ biên nhận; cùng lịch hẹn hoặc cùng lượt trực tiếp đang hiệu lực không sinh phiếu thứ hai.
 
-`BUS_TIEPNHAN.LayBacSi(maDV,nguoiDung)` và `TiepNhan(YeuCauTiepNhan,nguoiDung)` nhận transaction tùy chọn. API đọc lại quyền/tài khoản và giữ khóa nguồn, gồm cả khi transaction ngoài là ReadCommitted. Không truyền nhân viên, giờ, trạng thái hay số thứ tự trong DTO. Kết quả có MaBN/MaHS/MaPhieu/MaBS/SoThuTu/TrangThai; bác sĩ bắt đầu khám bằng P05 sau này.
+`BUS_TIEPNHAN.LayBacSi(maDV,nguoiDung)` và `TiepNhan(YeuCauTiepNhan,nguoiDung)` nhận transaction tùy chọn. API đọc lại quyền/tài khoản và giữ khóa nguồn, gồm cả khi transaction ngoài là ReadCommitted. Không truyền nhân viên, giờ, trạng thái hay số thứ tự trong DTO. Kết quả có MaBN/MaHS/MaPhieu/MaBS/SoThuTu/TrangThai; bác sĩ bắt đầu khám bằng P05 bên dưới.
 
-Kiểm tra đồng thời cần dữ liệu commit để hai kết nối nhìn thấy. Hai mode dưới chạy trên bản thử đã nâng cấp; mode concurrency và fixture WPF **commit dữ liệu giả rồi dọn theo mã GUID trong finally**, khác với 80 ca SQL mặc định rollback. Không chạy trên database thật:
+Kiểm tra đồng thời cần dữ liệu commit để hai kết nối nhìn thấy. Các mode dưới chạy trên bản thử đã nâng cấp; mode concurrency và fixture tiếp nhận WPF **commit dữ liệu giả rồi dọn theo mã GUID trong finally**, khác với 104 ca SQL mặc định rollback. Ca ký khám/mẫu WPF dùng transaction ngoài và rollback. Không chạy trên database thật:
 
 ```powershell
 dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --reception
@@ -83,4 +83,24 @@ dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --rece
 dotnet run --project .\RangHamMat.ClinicalUiChecks -c Debug --no-restore
 ```
 
-ClinicalUiChecks hiện có 14 ca, gồm lưu form thật, tải cache sau commit, lọc dịch vụ/bác sĩ, lịch sử chỉ đọc và phép tính 1.000 BN/10.000 lượt trong bộ nhớ. Ảnh form trước/sau lưu ở `obj/ClinicalWorkflowP04/`; dữ liệu ảnh là FIXTURE. Kiểm tra này không thay thế thử toàn ứng dụng với DPI/SQL lớn ở P11/P12.
+ClinicalUiChecks hiện có 23 ca, gồm các ca tiếp nhận trên và khám bên dưới. Ảnh tiếp nhận trước/sau lưu ở `obj/ClinicalWorkflowP04/`; dữ liệu ảnh là FIXTURE. Kiểm tra này không thay thế thử toàn ứng dụng với DPI/SQL lớn ở P11/P12.
+
+## Sử dụng khám và kế hoạch P05
+
+1. Đăng nhập bác sĩ CV002, mở Khám điều trị → Bắt đầu khám. Chọn phiếu chờ thuộc mình; lọc ngày và bệnh nhân nếu cần. Bắt đầu lại cùng phiếu trả cùng MaLS; không cho bác sĩ khác lấy lượt dù biết mã. Header giữ bệnh nhân, dị ứng/tiền sử, phiếu và bác sĩ nguồn.
+2. Nhập triệu chứng, chẩn đoán và hướng xử trí; tab Tình trạng bệnh cho chọn danh mục hoặc mô tả thủ công, ghi mức độ/vị trí răng. Lưu nháp chưa chuyển chờ thanh toán. Lỗi trường/ô số/ngày được giữ tại form; bản SQL đã đổi báo xung đột, không ghi đè. Tải lại là hành động bỏ thay đổi chưa lưu.
+3. Lưu tình trạng rồi Gợi ý mẫu. Chỉ mẫu đã duyệt có danh mục/mức độ phù hợp được gợi ý, mẫu tổng quát đứng sau. Xem nội dung, nguồn, phiên bản và bác sĩ duyệt trước áp dụng từng mẫu; nhiều tình trạng không tự cộng bước. Không có mẫu thì lập kế hoạch thủ công. Áp lại cùng nguồn/mẫu dùng cùng kế hoạch, bản sao không đổi theo mẫu nguồn.
+4. Lưu kế hoạch, kiểm tra lượng/giá dự kiến, buổi và ngày rồi duyệt; không sinh dịch vụ thực hiện hay khoản thu. Kế hoạch nháp có thể hủy và giữ lịch sử. Tình trạng đã được kế hoạch tham chiếu không xóa/đổi danh mục nguồn. Các bước buổi sau chưa thực hiện không chặn đóng buổi nếu kế hoạch đã duyệt.
+5. Tổng kết: chọn Không kê thuốc và ghi lý do khi phù hợp, hoặc dùng đơn đã xác nhận. Hoàn tất chỉ nhận triệu chứng/chẩn đoán/xử trí và ít nhất một tình trạng, không còn đơn/dịch vụ/kế hoạch nháp. Xác nhận khóa nội dung/tình trạng và chuyển phiếu Chờ thanh toán. Soạn/ký đơn mới và thao tác thực hiện dịch vụ đầy đủ tiếp tục ở P06/P07; thu tiền ở P09.
+6. Cấu hình hỗ trợ: bác sĩ hoặc Admin soạn danh mục/mẫu nháp; chỉ bác sĩ có quyền chuyên môn duyệt. Hệ thống ghi bác sĩ/thời gian từ phiên, audit thay đổi. Mẫu đã duyệt được ngừng áp dụng hoặc sao chép sang mã/phiên bản mới; không sửa nội dung bản đã duyệt. Không có mẫu điều trị tự duyệt sẵn.
+7. Đổi tab giữ nháp. Đổi bộ lọc/bệnh nhân/lần khám, cache refresh hoặc quay lại bị chặn nếu đang nhập, kể cả ô bảng/ngày chưa commit và danh mục mới chưa lưu. Lịch sử lần khám trong hồ sơ chỉ xem; nhập liệu tại Khám điều trị. Guard đóng cửa sổ/chuyển phân hệ toàn ứng dụng thuộc P11.
+
+`BUS_KHAMDIEUTRI` bổ sung `BatDauKham`, `LayKhongGianKham`/`LayBanNhap`, `LuuKham`, `GoiYKeHoach`, `ApDungMau`, `LayKeHoach`, `LuuKeHoach`, `XacNhanKeHoach`, `HuyKeHoach`, `HoanTatKham`; cấu hình có `LuuMauDieuTri`, `LayMauDieuTri`, `DuyetMauDieuTri`, `NgungApDungMau`. Các DTO ghi chỉ nhận trường được phép và dấu vân tay bản gốc. API xác minh lại danh tính, khóa nguồn và kiểm tra snapshot. Khi không truyền transaction, API tự commit/rollback; khi truyền transaction ngoài, nơi gọi chịu trách nhiệm commit/rollback và chỉ tải cache sau commit. Form sản phẩm dùng transaction tự quản lý; transaction ngoài trong WPF phục vụ kiểm tra rollback.
+
+```powershell
+dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --examination
+dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --examination-concurrency
+dotnet run --project .\RangHamMat.ClinicalUiChecks -c Debug --no-restore
+```
+
+Mode đồng thời P05 kiểm tra hai kết nối bắt đầu cùng phiếu và lưu cùng snapshot; dữ liệu giả được commit rồi dọn. Các ca áp mẫu idempotent hiện kiểm tra retry tuần tự và ràng buộc/khóa SQL; chưa tuyên bố kiểm thử tải nhiều bác sĩ hay nghiệm thu toàn bộ AT01–AT34. Ảnh không gian khám với FIXTURE ở `obj/ClinicalWorkflowP05/kham-bat-dau.png`.

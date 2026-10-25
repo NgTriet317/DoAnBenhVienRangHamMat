@@ -8,7 +8,8 @@ Ngày 25/10/2026. Kế hoạch chính: [KeHoach_CaiTo_QuyTrinhKham_6ChucNang.md]
 | P02 | Đã hoàn tất quyền và tích hợp UI | Nguồn SQL có phạm vi, guard ghi chung transaction, cache theo phiên, quyền mở/sửa riêng, điều hướng và dữ liệu quầy thu giới hạn. 35 ca SQL + 8 ca WPF đạt; đã rà soát và sửa các phát hiện |
 | P03 | Hoàn tất migration và hợp đồng dữ liệu | Sáu bảng + cột tám bảng cũ; nâng cấp hai lần, cài mới, rollback trống và chặn khi có dữ liệu. SchemaChecks 45 entity/363 cột đạt; ClinicalChecks tăng lên 65 ca |
 | P04 | Hoàn tất hồ sơ và tiếp nhận | Bốn tab, tìm ngày sinh, lần khám gần nhất; dịch vụ–bác sĩ theo chuyên khoa/lịch; SQL cấp số và kiểm tra quyền; hai quầy không trùng phiếu/số. Tổng 80 ca SQL, 14 ca WPF đạt |
-| P05–P12 | Chưa triển khai | Khám mới, áp dụng/duyệt mẫu, ký đơn snapshot, bảng tính, thu đủ/chống lặp và bàn giao thuốc |
+| P05 | Hoàn tất khám và kế hoạch điều trị | Bắt đầu một MaLS/phiếu; lưu khám/tình trạng có snapshot; gợi ý, sao chép và duyệt mẫu/kế hoạch; hoàn tất và khóa. Tổng 104 ca SQL, 23 ca WPF đạt; đồng thời hai kết nối đạt |
+| P06–P12 | Chưa triển khai | Dịch vụ thực hiện, ký đơn snapshot, bảng tính, thu đủ/chống lặp, bàn giao và nghiệm thu toàn luồng |
 
 ## Quyết định khi thực hiện
 
@@ -27,6 +28,11 @@ Ngày 25/10/2026. Kế hoạch chính: [KeHoach_CaiTo_QuyTrinhKham_6ChucNang.md]
 13. P04 thêm quyền `DieuPhoiNgoaiLich` mặc định cho CV004. Điều dưỡng tiếp nhận được khi có lịch phù hợp; thiếu lịch phải có quyền điều phối, lý do và nhật ký. Chi phí: điều dưỡng không thể tự vượt lịch thiếu; phải cấp quyền có chủ đích nếu thay cấu hình công việc.
 14. Giữ một khóa ứng dụng cho thứ tự ghi tiếp nhận, thêm khóa ngày/phòng khi cấp số. Chi phí: các quầy ghi tuần tự; phù hợp quy mô đồ án, cần đo tải trước khi tối ưu song song. Kiểm tra sẵn sàng có HOLDLOCK để vẫn an toàn với transaction ReadCommitted từ nơi gọi.
 15. Giữ sửa lịch ở chức năng lập lịch, lịch sử trong hồ sơ chỉ đọc. Giữ đường DAL cũ để tương thích; guard giao diện lâm sàng chặn lập phiếu mới bằng form chung. Chi phí: không dùng API cũ làm đầu mối tiếp nhận mới; chưa thay toàn bộ cơ chế phân quyền legacy ngoài phạm vi.
+16. P05 yêu cầu duyệt hoặc hủy mọi kế hoạch nháp trước hoàn tất, tránh kế hoạch bị kẹt sau khi khóa lượt. Kế hoạch đã duyệt có bước buổi sau chưa làm vẫn cho đóng buổi; không tự sinh dịch vụ/phí.
+17. Tình trạng đã là nguồn kế hoạch không được xóa hoặc đổi mã danh mục; muốn đổi chẩn đoán nguồn thì thêm tình trạng mới. Tình trạng cũ thuộc danh mục ngừng áp dụng vẫn sửa ghi chú trước ký, nhưng không chọn danh mục đó cho dòng mới.
+18. API chỉ có mã kế hoạch đọc sơ bộ mã cha để định tuyến, sau đó khóa lần khám và đọc lại kế hoạch trước khi phân quyền/ghi. Chi phí: thêm lượt đọc để giữ thứ tự khóa cha trước con; dữ liệu đọc sơ bộ không cấp quyền.
+19. Nháp được giữ khi đổi tab, bộ lọc, ngữ cảnh và cache; ô đang nhập/ngày chưa commit cũng được tính. Danh mục mới có trạng thái chưa lưu riêng, không bị việc lưu mẫu xóa mất. Lịch sử hồ sơ chỉ xem; muốn nhập thì mở workspace Khám điều trị. Đóng/chuyển phân hệ toàn ứng dụng vẫn là cổng P11.
+20. Giữ nhãn dịch vụ ngừng hoạt động đang được bước kế hoạch/mẫu tham chiếu để xem lịch sử. DAL vẫn từ chối dùng dịch vụ ngừng hoạt động khi lưu/duyệt mới; không tự thay nguồn bằng dịch vụ khác.
 
 ## Rà soát độc lập
 
@@ -42,4 +48,8 @@ Rà soát P04 phát hiện rủi ro khi nơi gọi truyền transaction ReadComm
 
 Không còn phát hiện quan trọng hoặc Minor hoãn lại trong P04. Nghiệm thu hai kết nối thật gồm hai số liên tiếp trong cùng ngày/phòng, hai quầy cùng lịch trả cùng phiếu, ba BN trùng tên giữ riêng mã và hồ sơ, và ReadCommitted chặn thay lịch đến khi kết thúc. Fixture đã dọn sạch.
 
-Bước tiếp theo là P05: bắt đầu khám từ hàng đợi đúng bác sĩ, lưu khám, tình trạng, gợi ý và áp dụng mẫu đã duyệt. P05–P12, phân trang SQL quy mô lớn, giao diện tổng thể và giao dịch thu đủ chưa hoàn tất.
+Rà soát P05 phát hiện hai vấn đề Important: ô/ngày đang nhập chưa commit không được guard nhận biết, và editor nhập liệu trong hồ sơ bị thay khi đổi BN. Phát hiện Minor về danh mục mới được nâng lên Important vì cũng làm mất nháp; Minor còn lại là nhãn dịch vụ ngừng hoạt động bị trống. Tái hiện **16 PASS/7 FAIL** rồi sửa trong cùng lượt: đánh dấu từ BeginningEdit và text ngày đang có focus, bảo vệ danh mục riêng, lịch sử chỉ đọc, giữ nhãn nguồn đã ngừng. Kết quả **23/23 WPF**, SQL **104/104**, build/schema và đồng thời đạt. Không còn phát hiện P05 quan trọng hoặc Minor hoãn lại.
+
+Các hành vi được để đúng tác vụ: thực hiện dịch vụ/liệu trình P06, đơn thuốc P07, bảng phí/thu/giao thuốc P08–P10 và đóng/chuyển màn toàn ứng dụng/DPI P11–P12. Các quyết định chặn nháp, giữ nguồn tình trạng, catalog đã ngừng và đọc sơ bộ mã cha ở trên được giữ có chủ đích. Tài liệu đã cập nhật sau kiểm chứng; Word và ba lỗi baseline giữ nguyên phạm vi.
+
+Bước tiếp theo là P06: dịch vụ thực hiện từ bước kế hoạch, phân công điều dưỡng, kiểm tra lượng còn lại và xác nhận đúng lượt. P06–P12, phân trang SQL quy mô lớn, giao diện tổng thể và giao dịch thu đủ chưa hoàn tất.

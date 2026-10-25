@@ -1,6 +1,6 @@
 # Quy trình khám và thanh toán ngoại trú Implementation Plan
 
-> **Tiến độ 25/10/2026:** P01–P04 đã hoàn tất phần nền, migration, hồ sơ và tiếp nhận. Đã kiểm chứng 80 ca SQL, 14 ca WPF và hai quầy tiếp nhận đồng thời; dữ liệu cũ giữ nguyên. P05–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
+> **Tiến độ 25/10/2026:** P01–P05 đã hoàn tất phần nền, migration, hồ sơ, tiếp nhận, khám và kế hoạch điều trị. Đã kiểm chứng 104 ca SQL, 23 ca WPF, tiếp nhận và khám đồng thời; dữ liệu cũ giữ nguyên. P06–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
 
 > **For agentic workers:** Triển khai từng tác vụ và đánh dấu `- [ ]` khi hoàn thành. Nếu môi trường có Superpowers, dùng `superpowers:executing-plans`; không phụ thuộc vào việc cài thêm kỹ năng để đọc hoặc thực hiện tài liệu này. Người dùng yêu cầu giao kế hoạch cho Codex terminal trong Visual Studio 2022, chưa yêu cầu triển khai trong phiên lập kế hoạch.
 
@@ -485,11 +485,11 @@ Không bắt đầu bằng thay toàn bộ XAML. Khóa hợp đồng dữ liệu
 
 **Interfaces:** Cung cấp `LayHangDoi`, `BatDauKham`, `LayChiTiet`, `LuuKham`, `GoiYKeHoach`, `ApDungMau`, `LuuKeHoach`, `XacNhanKeHoach`, `HoanTatKham`. `BatDauKham` trả MaLS hiện có khi phiếu đã được bắt đầu bởi đúng bác sĩ, không tạo bản thứ hai.
 
-- [ ] Viết ca bắt đầu một phiếu hai lần chỉ tạo một MaLS; bác sĩ khác bị từ chối dù biết mã; chuyên môn lưu nháp không chuyển sang chờ thu.
-- [ ] Làm form khám và tình trạng; lưu theo snapshot dưới khóa, báo xung đột khi hai cửa sổ sửa cùng nguồn.
-- [ ] Làm gợi ý mẫu theo mã và mức độ; kiểm tra mẫu Nháp không được gợi ý, không có mẫu vẫn lập thủ công, nhiều tình trạng không tự cộng bước.
-- [ ] Áp dụng cùng mẫu/nguồn hai lần không tạo kế hoạch trùng; bản đã sao chép giữ nội dung khi mẫu đổi. Duyệt kế hoạch không phát sinh dịch vụ thu phí.
-- [ ] Hoàn tất chỉ khi dữ liệu chuyên môn đủ và không còn đơn/dịch vụ nháp chưa xử lý; cho phép kế hoạch buổi sau chưa thực hiện. Chạy ca xác nhận rồi thử sửa/xóa nội dung và tình trạng, phải bị chặn. Lưu thay đổi.
+- [x] Viết ca bắt đầu một phiếu hai lần chỉ tạo một MaLS; bác sĩ khác bị từ chối dù biết mã; chuyên môn lưu nháp không chuyển sang chờ thu.
+- [x] Làm form khám và tình trạng; lưu theo snapshot dưới khóa, báo xung đột khi hai cửa sổ sửa cùng nguồn.
+- [x] Làm gợi ý mẫu theo mã và mức độ; kiểm tra mẫu Nháp không được gợi ý, không có mẫu vẫn lập thủ công, nhiều tình trạng không tự cộng bước.
+- [x] Áp dụng cùng mẫu/nguồn hai lần không tạo kế hoạch trùng; bản đã sao chép giữ nội dung khi mẫu đổi. Duyệt kế hoạch không phát sinh dịch vụ thu phí.
+- [x] Hoàn tất chỉ khi dữ liệu chuyên môn đủ và không còn đơn/dịch vụ nháp chưa xử lý; cho phép kế hoạch buổi sau chưa thực hiện. Chạy ca xác nhận rồi thử sửa/xóa nội dung và tình trạng, phải bị chặn. Lưu thay đổi.
 
 ### P06 Dịch vụ thực hiện
 

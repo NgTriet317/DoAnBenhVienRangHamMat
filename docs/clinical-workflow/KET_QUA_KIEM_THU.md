@@ -1,8 +1,8 @@
 # Kiểm chứng triển khai — 25/10/2026
 
-**Kết quả mới nhất P02:** build đạt; **35 ca SQL và 8 ca WPF đạt**. Chi tiết đợt tích hợp nằm cuối tài liệu. Phần đợt nền dưới đây được giữ làm bằng chứng lịch sử.
+**Kết quả mới nhất P05:** build/schema đạt; **104 ca SQL và 23 ca WPF đạt**, hai mode đồng thời đạt. Ba lỗi suite baseline còn nguyên. Chi tiết từng đợt nằm cuối tài liệu; phần đợt nền dưới đây được giữ làm bằng chứng lịch sử.
 
-Phạm vi: P01 và nền backend quyền P02, chưa phải nghiệm thu sáu chức năng/P12. Kết quả trước sửa tại [BASELINE.md](BASELINE.md); việc còn lại tại [TIEN_DO.md](TIEN_DO.md).
+Phạm vi đã triển khai: P01–P05, chưa phải nghiệm thu sáu chức năng/P12. Kết quả trước sửa tại [BASELINE.md](BASELINE.md); việc còn lại tại [TIEN_DO.md](TIEN_DO.md).
 
 ## Vòng cuối sau thay đổi
 
@@ -156,3 +156,39 @@ Ca WPF lưu một người bệnh giả chưa có hồ sơ: chọn dịch vụ/b
 Log tại `obj/ClinicalWorkflowP04/`: `results.json`, `Clinical.log`, `Concurrency.log`, `ClinicalUi-final.log`, `data-final.log` và log các suite; ảnh `tiep-nhan-truoc-luu.png` / `tiep-nhan-da-luu.png`. Log RED/đợt đầu tại `obj/ClinicalReceptionP04*.log`, `obj/ClinicalUiP04-*.log`. Ảnh hồi quy Supplier/Maintenance đã trả về Git.
 
 P04 hoàn tất theo phạm vi tiếp nhận. P05–P12 chưa hoàn tất: chưa có đầu mối bắt đầu/lưu/hoàn tất khám mới, áp dụng/duyệt mẫu, ký đơn snapshot, thu đủ/chống lặp, bàn giao và nghiệm thu AT01–AT34 toàn luồng. Các API legacy và việc tải snapshot lớn vẫn có giới hạn đã ghi ở tiến độ; không coi phép đo projection 53 ms là nghiệm thu tải SQL toàn hệ thống.
+
+## Đợt P05: khám và kế hoạch điều trị
+
+Kết quả cuối ngày 25/10/2026, sau rà soát độc lập và một lượt sửa. Không đổi schema v2; các kết quả P01–P04 ở trên là lịch sử tại thời điểm tương ứng.
+
+| Kiểm tra | Kết quả P05 |
+| --- | --- |
+| Build solution Debug | Exit 0, 0 lỗi; lượt build hồi quy có 48 cảnh báo hiện có, lượt cuối incremental 0 cảnh báo |
+| SchemaChecks | Exit 0; 45 entity / 363 cột / 0 lỗi; 52 bảng vật lý |
+| ClinicalChecks | **104 PASS / 0 FAIL**; 80 ca trước + 24 khám/kế hoạch; fixture rollback |
+| Đồng thời tiếp nhận | Các ca P04 hai kết nối, cùng lịch, trùng tên và ReadCommitted tiếp tục đạt |
+| Đồng thời khám | Hai kết nối cùng phiếu trả một MaLS; lưu cùng snapshot chỉ một commit, một xung đột đúng loại; chỉ một tình trạng, cleanup đạt |
+| ClinicalUiChecks | **23 PASS / 0 FAIL**, control WPF thật; 14 ca P04 + 9 ca P05 |
+| FinanceChecks | **54** ca transaction đạt |
+| SupplierChecks / MaintenanceChecks / ReportChecks | Exit 0; báo cáo 18 chuyên đề, render/SQL đọc đối chiếu đạt |
+| Checks | Vẫn lỗi MaCa trùng trong KiemTraGiaoDien, mã -532462766 |
+| PersistenceChecks | Vẫn CS1729 BUS_NHANVIEN thiếu constructor transaction |
+| WpfSmoke | Vẫn CS1061 NhanSu thiếu TryReadPosition/TryReadEmployee |
+
+Đã kiểm tra bác sĩ đúng nguồn, bác sĩ khác/Admin giả quyền bị từ chối; bắt đầu idempotent; lưu nháp không chờ thu; snapshot cũ bị chặn. Lỗi dòng tình trạng thứ hai không lưu dở dòng đầu khi caller truyền transaction. Gợi ý không nhận mẫu nháp, so mức độ theo cùng collation SQL khi áp, tổng quát đứng sau; nhiều tình trạng không tự áp/ghép. Kế hoạch thủ công không cần mẫu; cùng mẫu/nguồn retry giữ một kế hoạch, bản sao giữ nội dung khi mẫu ngừng và có phiên bản mới. Duyệt không sinh dịch vụ/phí.
+
+Hoàn tất chặn thiếu nội dung, đơn/dịch vụ/kế hoạch nháp; chấp nhận không kê thuốc có lý do và kế hoạch tương lai đã duyệt. Kế hoạch nháp rỗng hủy được, lịch sử còn nguyên. Sau hoàn tất, API không cho ghi đè nội dung, SQL chặn sửa/xóa tình trạng đúng lỗi **52111**. Admin soạn nhưng không ký mẫu; bác sĩ duyệt được ghi đúng actor/thời gian, có audit, không tin chữ ký client. Không seed mẫu chuyên môn.
+
+Bằng chứng trước/sau:
+
+- Backend ban đầu **0/13 → 13/13**; mở rộng phát hiện lưu dở tình trạng và lệch so mức độ C#/SQL, **15 PASS/2 FAIL → 17/17**. Các ca hoàn tất, hủy, catalog đã ngừng, kế hoạch cũ và khóa tình trạng bổ sung thành 24/24.
+- WPF thiếu control **14 PASS/2 FAIL → 16/16**. Ca lưu lần hai kế hoạch thủ công từng bị từ chối vì nguồn null thành chuỗi rỗng; đã sửa. Ca hàng đợi/bộ lọc làm mất nháp **16 PASS/1 FAIL → 17/17**.
+- Rà soát phát hiện hai Important: ô bảng/ngày đang nhập chưa commit chưa được nhận biết và editor nhập liệu trong hồ sơ bị thay khi đổi BN. Phát hiện danh mục mới không giữ nháp được nâng từ Minor lên Important theo ảnh hưởng mất dữ liệu; nhãn dịch vụ ngừng hoạt động trống được sửa trong cùng lượt. Tái hiện **16 PASS/7 FAIL → 23 PASS/0 FAIL**: đánh dấu từ BeginningEdit/text ngày có focus, giữ trạng thái danh mục riêng, lịch sử chỉ đọc, giữ nhãn dịch vụ nguồn. Không còn phát hiện P05 quan trọng hoặc Minor hoãn lại.
+
+WPF kiểm tra bắt đầu từ hàng đợi bằng nút thật, mở đúng không gian khám, giữ header/dị ứng, giữ nháp qua tab/bộ lọc/đổi ngữ cảnh, lưu/duyệt/hoàn tất và khóa; thử ô đang sửa của tình trạng, kế hoạch, mẫu, text ngày chưa commit và tên danh mục. Có kiểm tra kế hoạch cũ vẫn hiển thị tên dịch vụ đã ngừng. Đã xem ảnh render `obj/ClinicalWorkflowP05/kham-bat-dau.png` với FIXTURE. Các ca ký dùng transaction ngoài rollback; ca hàng đợi/tiếp nhận và đồng thời commit fixture rồi dọn trong finally. Không chạy các suite ghi song song.
+
+Đối chiếu cuối: **52 bảng; 10 BN, 10 hồ sơ, 10 phiếu tiếp nhận, 10 hóa đơn; tổng 732.500,00; thu ròng 467.500,00; tồn 4.014,000**. Fixture BN/nhân viên/tài khoản/lịch CW đều 0; danh mục tình trạng và mẫu đều rỗng sau kiểm tra. Database gốc không bị thay đổi, Word giữ nguyên. Ảnh hồi quy tự sinh của Supplier/Maintenance/Report đã trả về Git.
+
+Log tại `obj/ClinicalWorkflowP05/`: `results.json`, `final-results.json`, `Clinical-final.log`, `Ui-review-green.log`, `Ui-service-red.log`, `ReceptionConcurrency.log`, `ExaminationConcurrency-final.log`, `data-final.log` và các suite baseline. Log TDD/đợt đầu còn ở `obj/ClinicalExaminationP05*.log`, `obj/ClinicalUiP05*.log`.
+
+P05 hoàn tất trong phạm vi khám/kế hoạch. Retry áp mẫu được thử tuần tự, kèm khóa/ràng buộc SQL; chưa đo tải nhiều bác sĩ hoặc thử mọi tranh chấp cấu hình. P06–P12 vẫn còn: dịch vụ thực hiện, đơn snapshot, bảng tính, thu đủ/chống lặp, giao thuốc, guard điều hướng toàn ứng dụng/DPI và AT01–AT34. Ba suite baseline còn lỗi; chưa tuyên bố toàn dự án đạt.
