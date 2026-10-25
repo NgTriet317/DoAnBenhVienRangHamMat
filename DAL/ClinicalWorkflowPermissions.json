@@ -2,7 +2,7 @@
   "CV001": ["CauHinhHoTro"],
   "CV002": ["XemHoSo", "Kham", "CauHinhHoTro", "DuyetMauDieuTri", "DuyetHuongDanThuoc"],
   "CV003": ["XemHoSo", "TiepNhan", "CapNhatKetQuaDuocGiao"],
-  "CV004": ["XemHoSo", "TiepNhan", "ThuTien"],
+  "CV004": ["XemHoSo", "TiepNhan", "ThuTien", "DieuPhoiNgoaiLich"],
   "CV005": ["GiaoThuoc", "CauHinhHoTro"],
   "CV007": ["ThuTien"]
 }

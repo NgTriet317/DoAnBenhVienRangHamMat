@@ -321,6 +321,11 @@ public partial class AppWorkspace : UserControl
         if (tag == "HoSoSave" && ModalContent.Content is UserControl editor)
         {
             e.Handled = true;
+            if(editor is TiepNhanKham reception)
+            {
+                reception.TryReceive(out _);
+                return;
+            }
             string error=""; bool saved;
             // AI bổ sung: chặn binding/ngày sai trước khi mở giao dịch và giữ nguyên modal để sửa.
             if (!KiemTraNhapLieu.PrepareSave(editor, out error))

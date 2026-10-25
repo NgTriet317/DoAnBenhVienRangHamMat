@@ -54,13 +54,15 @@ public partial class HoSoBenhNhan : UserControl, IPatientScoped
         var medical = Medical;
         DataContext = new { Record = patient, MedicalRecord = medical };
         PatientSummary.Text = patient is null ? "Bệnh nhân không còn trong dữ liệu" : $"Mã BN: {PatientId} · {UiRecord.Text(patient, "GioiTinh")} · {UiRecord.Text(patient, "SDT")}";
+        PatientSafetySummary.Text=patient is null?"":$"Dị ứng: {SafetyValue(patient,"DiUng")} · Tiền sử: {SafetyValue(patient,"TienSuBenh")}";
+        PatientSafetySummary.Visibility=!DuLieuGiaoDien.PhamViLamSang || DuLieuGiaoDien.NguoiDungLamSang.LaAdmin || DuLieuGiaoDien.NguoiDungLamSang.CoQuyen(ET.QuyenLamViec.TiepNhan) || DuLieuGiaoDien.NguoiDungLamSang.CoQuyen(ET.QuyenLamViec.Kham) ? Visibility.Visible:Visibility.Collapsed;
         var hasMedical = medical is not null;
         CreateMedicalButton.Visibility = hasMedical ? Visibility.Collapsed : Visibility.Visible;
         EditMedicalButton.Visibility = hasMedical ? Visibility.Visible : Visibility.Collapsed;
         MedicalEmpty.Visibility = hasMedical ? Visibility.Collapsed : Visibility.Visible;
         MedicalFields.Visibility = hasMedical ? Visibility.Visible : Visibility.Collapsed;
-        ArrivalHint.Text = hasMedical ? "Trực tiếp: tạo lượt tiếp nhận. Qua điện thoại: tạo lịch hẹn, tiếp nhận khi bệnh nhân đến." : "Cần lập hồ sơ bệnh án trước khi tiếp nhận. Có thể đặt lịch qua điện thoại trước.";
-        ReceptionButton.ToolTip = hasMedical ? "Tạo lượt tiếp nhận không liên kết lịch hẹn" : "Lập hồ sơ bệnh án trước khi tiếp nhận";
+        ArrivalHint.Text = hasMedical ? "Tiếp nhận trực tiếp hoặc chọn lịch hẹn của người bệnh khi đến khám." : "Chưa có hồ sơ bệnh án; hệ thống lập một hồ sơ khi tiếp nhận thành công.";
+        ReceptionButton.ToolTip = "Chọn dịch vụ và bác sĩ phù hợp trước khi xác nhận tiếp nhận";
         ApplyAccess();
         refreshing = true;
         var visits = DuLieuGiaoDien.Rows("LICH_SU_KHAM_BENH")
@@ -79,6 +81,8 @@ public partial class HoSoBenhNhan : UserControl, IPatientScoped
             if (visit is null || DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH", visit) != PatientId || !allowed("KhamDieuTri")) ReturnToHistory();
         }
     }
+
+    private static string SafetyValue(object patient,string field)=>string.IsNullOrWhiteSpace(UiRecord.Text(patient,field))?"chưa ghi nhận, cần đối chiếu":UiRecord.Text(patient,field);
 
     /// <summary>
     /// Nhận hàm kiểm tra quyền phân hệ từ màn hình cha, lưu lại và áp dụng cho các tab/nút liên quan trong control hiện tại.
@@ -104,7 +108,7 @@ public partial class HoSoBenhNhan : UserControl, IPatientScoped
         PhoneButton.IsEnabled = patientExists && allowed("LichKham");
         ServicesButton.IsEnabled = patientExists && allowed("DichVuThucHien");
         InvoiceButton.IsEnabled = patientExists && allowed("HoaDon");
-        AppointmentsTab.Visibility = allowed("LichKham") ? Visibility.Visible : Visibility.Collapsed;
+        AppointmentsTab.Visibility = allowed("BenhNhan") ? Visibility.Visible : Visibility.Collapsed;
         HistoryTab.Visibility = allowed("KhamDieuTri") ? Visibility.Visible : Visibility.Collapsed;
         if (ProfileTabs.SelectedItem is TabItem selected && selected.Visibility != Visibility.Visible) ProfileTabs.SelectedItem = InformationTab;
         if (!allowed("KhamDieuTri")) ReturnToHistory();
@@ -179,8 +183,8 @@ public partial class HoSoBenhNhan : UserControl, IPatientScoped
     private void Reception_Click(object sender, RoutedEventArgs e)
     {
         if (Patient is null || !allowed("BenhNhan")) return;
-        if (Medical is not object medical) { ProfileTabs.SelectedItem = MedicalTab; MessageBox.Show("Lập và lưu hồ sơ bệnh án trước khi tiếp nhận bệnh nhân.", "Tiếp nhận trực tiếp"); return; }
-        HoTroGiaoDien.Workspace(this)?.MoBieuMauHoSo("TiepNhanKham", "PHIEU_KHAM_BENH", context: new CreationContext("PHIEU_KHAM_BENH", "MaHS", UiRecord.Get(medical, "MaHS")!), patient: PatientId);
+        var context=Medical is object medical ? new CreationContext("PHIEU_KHAM_BENH","MaHS",UiRecord.Get(medical,"MaHS")!) : null;
+        HoTroGiaoDien.Workspace(this)?.MoBieuMauHoSo("TiepNhanKham", "PHIEU_KHAM_BENH", context:context, patient: PatientId);
     }
     /// <summary>
     /// Mở form đặt lịch khám qua điện thoại với mã bệnh nhân hiện tại làm liên kết nguồn.

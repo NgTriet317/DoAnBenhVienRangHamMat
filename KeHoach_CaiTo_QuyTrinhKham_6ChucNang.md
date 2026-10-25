@@ -1,6 +1,6 @@
 # Quy trình khám và thanh toán ngoại trú Implementation Plan
 
-> **Tiến độ 25/10/2026:** P01–P03 đã hoàn tất phần nền, quyền/UI và migration. Đã kiểm chứng nâng cấp hai lần, cài mới, rollback có guard, 65 ca SQL + 8 ca WPF. P04–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
+> **Tiến độ 25/10/2026:** P01–P04 đã hoàn tất phần nền, migration, hồ sơ và tiếp nhận. Đã kiểm chứng 80 ca SQL, 14 ca WPF và hai quầy tiếp nhận đồng thời; dữ liệu cũ giữ nguyên. P05–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
 
 > **For agentic workers:** Triển khai từng tác vụ và đánh dấu `- [ ]` khi hoàn thành. Nếu môi trường có Superpowers, dùng `superpowers:executing-plans`; không phụ thuộc vào việc cài thêm kỹ năng để đọc hoặc thực hiện tài liệu này. Người dùng yêu cầu giao kế hoạch cho Codex terminal trong Visual Studio 2022, chưa yêu cầu triển khai trong phiên lập kế hoạch.
 
@@ -473,11 +473,11 @@ Không bắt đầu bằng thay toàn bộ XAML. Khóa hợp đồng dữ liệu
 
 **Interfaces:** Cung cấp `LayBacSi`, `TiepNhan`; trả `KetQuaTiepNhan` gồm MaBN, MaHS, MaPhieu, MaBS, SoThuTu, TrangThai. Không tạo MaLS trong thao tác tiếp nhận.
 
-- [ ] Viết ca dịch vụ chuyên khoa X chỉ hiện bác sĩ X; đổi dịch vụ xóa bác sĩ cũ; lịch hẹn giữ đúng liên kết; không có bác sĩ thì từ chối lưu.
-- [ ] Làm bốn tab hồ sơ; tìm người trùng tên vẫn chọn theo mã; chỉ tạo hồ sơ mới khi BN chưa có hồ sơ.
-- [ ] Lưu tiếp nhận trong transaction; đối chiếu chuyên khoa và lịch, nhận nhân viên từ phiên, cấp số thứ tự từ SQL, kiểm tra duplicate lịch tiếp nhận đang hiệu lực dưới khóa.
-- [ ] Chạy hai yêu cầu cùng lúc để chứng minh không trùng số trong cùng ngày/phòng và không tiếp nhận một lịch hai lần; không sửa `LICH_KHAM` ngoài tích hợp có sẵn.
-- [ ] Kiểm tra hàng đợi bác sĩ đích xuất hiện sau tải lại; lịch sử hẹn/khám không trộn BN và không lộ bản nháp ngoài quyền. Lưu thay đổi.
+- [x] Viết ca dịch vụ chuyên khoa X chỉ hiện bác sĩ X; đổi dịch vụ xóa bác sĩ cũ; lịch hẹn giữ đúng liên kết; không có bác sĩ thì từ chối lưu.
+- [x] Làm bốn tab hồ sơ; tìm người trùng tên vẫn chọn theo mã; chỉ tạo hồ sơ mới khi BN chưa có hồ sơ.
+- [x] Lưu tiếp nhận trong transaction; đối chiếu chuyên khoa và lịch, nhận nhân viên từ phiên, cấp số thứ tự từ SQL, kiểm tra duplicate lịch tiếp nhận đang hiệu lực dưới khóa.
+- [x] Chạy hai yêu cầu cùng lúc để chứng minh không trùng số trong cùng ngày/phòng và không tiếp nhận một lịch hai lần; không sửa `LICH_KHAM` ngoài tích hợp có sẵn.
+- [x] Kiểm tra hàng đợi bác sĩ đích xuất hiện sau tải lại; lịch sử hẹn/khám không trộn BN và không lộ bản nháp ngoài quyền. Lưu thay đổi.
 
 ### P05 Khám và kế hoạch điều trị
 

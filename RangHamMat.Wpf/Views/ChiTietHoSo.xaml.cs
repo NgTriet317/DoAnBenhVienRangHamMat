@@ -12,6 +12,7 @@ public partial class ChiTietHoSo : UserControl, IPatientScoped
 {
     private readonly string table;
     private readonly object record;
+    private readonly bool appointmentReadOnly;
     /// <summary>
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.
     /// </summary>
@@ -22,6 +23,7 @@ public partial class ChiTietHoSo : UserControl, IPatientScoped
     public ChiTietHoSo(string table, string title, object record)
     {
         this.table = table; this.record = record;
+        appointmentReadOnly=table=="LICH_KHAM" && DuLieuGiaoDien.PhamViLamSang;
         InitializeComponent();
         EditButton.IsEnabled = DuLieuGiaoDien.CanEdit(table, record) || (table == "LICH_KHAM" && (UiRecord.Text(record, "TrangThai") is "Đã xác nhận" or "Chờ khám"));
         if (table == "LICH_KHAM")
@@ -30,6 +32,11 @@ public partial class ChiTietHoSo : UserControl, IPatientScoped
             ConfirmButton.Visibility = DuLieuGiaoDien.CanEdit(table, record) ? Visibility.Visible : Visibility.Collapsed;
             CancelButton.Visibility = UiRecord.Text(record, "TrangThai") is "Hủy" or "Đã đổi" or "Hoàn thành" ? Visibility.Collapsed : Visibility.Visible;
             ReceptionButton.Visibility = UiRecord.Text(record, "TrangThai") is "Đã xác nhận" or "Chờ khám" ? Visibility.Visible : Visibility.Collapsed;
+            if(appointmentReadOnly)
+            {
+                EditButton.Visibility=ConfirmButton.Visibility=CancelButton.Visibility=Visibility.Collapsed;
+                if(!DuLieuGiaoDien.NguoiDungLamSang.CoQuyen(ET.QuyenLamViec.TiepNhan))ReceptionButton.Visibility=Visibility.Collapsed;
+            }
         }
         PatientId = DuLieuGiaoDien.PatientId(table, record);
         DetailTitle.Text = title;
@@ -61,6 +68,7 @@ public partial class ChiTietHoSo : UserControl, IPatientScoped
     /// </summary>
     private void Edit_Click(object sender, RoutedEventArgs e)
     {
+        if(appointmentReadOnly)return;
         var module = table switch { "BENH_NHAN" or "HO_SO_BENH_AN" => "BenhNhan", "LICH_KHAM" => "LichKham", "DON_THUOC" or "CHI_TIET_DON_THUOC" => "DonThuoc", _ => "KhamDieuTri" };
         HoTroGiaoDien.Workspace(this)?.MoBieuMauHoSo(module, table, record, patient: PatientId);
     }
@@ -69,6 +77,7 @@ public partial class ChiTietHoSo : UserControl, IPatientScoped
     /// </summary>
     private void Confirm_Click(object sender, RoutedEventArgs e)
     {
+        if(appointmentReadOnly)return;
         if (UiRecord.Date(record, "NgayGioKham") is null || DuLieuGiaoDien.Find("BENH_NHAN",UiRecord.Get(record,"MaBN")) is null || DuLieuGiaoDien.Find("NHAN_VIEN",UiRecord.Get(record,"MaBS")) is null) { MessageBox.Show("Kiểm tra ngày giờ, bệnh nhân và bác sĩ trước khi xác nhận."); return; }
         try {DuLieuGiaoDien.SetValue(table, record, "TrangThai", "Đã xác nhận"); HoTroGiaoDien.Workspace(this)?.ReturnToPage();}
         catch(InvalidOperationException ex) {MessageBox.Show(ex.Message,"Xác nhận lịch khám");}
@@ -78,6 +87,7 @@ public partial class ChiTietHoSo : UserControl, IPatientScoped
     /// </summary>
     private void Cancel_Click(object sender, RoutedEventArgs e)
     {
+        if(appointmentReadOnly)return;
         if (MessageBox.Show("Hủy lịch hẹn này?", "Lịch khám", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         try {DuLieuGiaoDien.SetValue(table, record, "TrangThai", "Hủy"); HoTroGiaoDien.Workspace(this)?.ReturnToPage();}
         catch(InvalidOperationException ex) {MessageBox.Show(ex.Message,"Hủy lịch khám");}

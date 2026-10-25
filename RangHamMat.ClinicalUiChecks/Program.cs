@@ -8,6 +8,7 @@ using ET;
 using RangHamMat;
 using RangHamMat.Controls;
 using RangHamMat.Views;
+using RangHamMat.ClinicalUiChecks;
 
 internal static class Program
 {
@@ -46,6 +47,94 @@ internal static class Program
         }
         try
         {
+            Check("Lịch sử lịch hẹn không mở nút sửa, xác nhận hoặc hủy",()=>
+            {
+                SignIn("CV004");DuLieuGiaoDien.ChonPhamViLamSang(true);
+                var appointment=DuLieuGiaoDien.Rows("LICH_KHAM").First(v=>UiRecord.Text(v,"TrangThai") is "Nháp" or "Đã xác nhận" or "Chờ khám");
+                var detail=new ChiTietHoSo("LICH_KHAM","Lịch sử lịch hẹn",appointment);
+                Require(Find<Button>(detail,"EditButton").Visibility!=Visibility.Visible && Find<Button>(detail,"ConfirmButton").Visibility!=Visibility.Visible && Find<Button>(detail,"CancelButton").Visibility!=Visibility.Visible,"Lịch sử chỉ đọc vẫn có nút sửa/hủy.");
+            });
+            Check("Lần khám gần nhất trên 10000 lượt không quét lại từng hồ sơ",()=>
+            {
+                SignIn("CV004");DuLieuGiaoDien.ChonPhamViLamSang(true);
+                try
+                {
+                    DuLieuGiaoDien.Replace("BENH_NHAN",Enumerable.Range(0,1000).Select(i=>(object)new Dictionary<string,object?> {{"MaBN","PERFBN"+i},{"HoTenBN","FIXTURE "+i},{"TrangThai","Đang theo dõi"}}));
+                    DuLieuGiaoDien.Replace("HO_SO_BENH_AN",Enumerable.Range(0,1000).Select(i=>(object)new Dictionary<string,object?> {{"MaHS","PERFHS"+i},{"MaBN","PERFBN"+i}}));
+                    DuLieuGiaoDien.Replace("PHIEU_KHAM_BENH",Enumerable.Range(0,10000).Select(i=>(object)new Dictionary<string,object?> {{"MaPhieu","PERFPH"+i},{"MaHS","PERFHS"+(i%1000)}}));
+                    DuLieuGiaoDien.Replace("LICH_SU_KHAM_BENH",Enumerable.Range(0,10000).Select(i=>(object)new Dictionary<string,object?> {{"MaLS","PERFLS"+i},{"MaPhieu","PERFPH"+i},{"ThoiGianKham",DateTime.Today.AddDays(i)}}));
+                    var timer=System.Diagnostics.Stopwatch.StartNew();var view=new BenhNhan();var grid=Find<DataGrid>(view,"Grid_BENH_NHAN");
+                    foreach(var row in grid.Items.Cast<object>())
+                    {
+                        Require(UiRecord.Text(row,"LanKhamGanNhat").StartsWith("Khám gần nhất:"),"Mất lần khám gần nhất.");
+                        var patientIndex=int.Parse(UiRecord.Text(row,"MaBN")[6..]);
+                        Require(UiRecord.Text(row,"LanKhamGanNhat").EndsWith(DateTime.Today.AddDays(9000+patientIndex).ToString("dd/MM/yyyy")),"Lần khám gần nhất trộn bệnh nhân.");
+                        Require(timer.Elapsed<TimeSpan.FromSeconds(3),"Trang bệnh nhân vượt 3 giây khi tính lịch sử ("+timer.ElapsedMilliseconds+"ms).");
+                    }
+                    Console.WriteLine("PERF: 1000 BN/10000 lượt, trang đầu và tính lần khám gần nhất: "+timer.ElapsedMilliseconds+"ms");
+                }
+                finally {DuLieuGiaoDien.RefreshFromDatabase();}
+            });
+            Check("WPF tiếp nhận lưu hồ sơ/phiếu rồi mới tải cache và báo hàng đợi",()=>
+            {
+                SignIn("CV004");
+                using(var fixture=new ReceptionFixture())
+                {
+                    DuLieuGiaoDien.ChonPhamViLamSang(true);
+                    var view=new TiepNhanKham();BieuMauHoSo.Configure(view,"PHIEU_KHAM_BENH",patient:fixture.Patient);
+                    using var host=new WindowLifetime(new Window {Content=view,Width=850,Height=740,ShowInTaskbar=false});host.Window.Show();host.Window.UpdateLayout();
+                    Find<ComboBox>(view,"ServicePicker").SelectedValue=fixture.Service;
+                    Find<ComboBox>(view,"DoctorPicker").SelectedValue=fixture.Doctor;
+                    Find<TextBox>(view,"ArrivalReason").Text="FIXTURE không dùng thật";
+                    Find<TextBox>(view,"ArrivalReason").BringIntoView();host.Window.UpdateLayout();
+                    SavePreview(view,"tiep-nhan-truoc-luu.png");
+                    Require(view.TryReceive(out var error),error);
+                    var receipt=view.SavedResult ?? throw new Exception("Thiếu kết quả lưu.");
+                    Require(receipt.MaBN==fixture.Patient && receipt.MaBS==fixture.Doctor,"Sai người bệnh/bác sĩ sau lưu.");
+                    Require(DuLieuGiaoDien.Find("PHIEU_KHAM_BENH",receipt.MaPhieu) is not null,"Không tải cache sau commit.");
+                    Require(fixture.CountVisits(receipt.MaPhieu)==0 && view.FindName("OpenVisitAfterSave") is null,"Tiếp nhận mở/tạo chẩn đoán.");
+                    Require(Find<TextBlock>(view,"SavedStatus").Text.Contains("Đã chuyển vào hàng đợi") && !Find<Button>(view,"SaveReceptionButton").IsEnabled,"Thiếu phản hồi hoặc còn cho gửi lặp.");
+                    Require(view.TryReceive(out _) && view.SavedResult==receipt,"Bấm lại không giữ biên nhận.");
+                    host.Window.UpdateLayout();SavePreview(view,"tiep-nhan-da-luu.png");
+                }
+                DuLieuGiaoDien.RefreshFromDatabase();
+            });
+            Check("Danh sách tìm ngày sinh và giữ mã bệnh nhân khi chọn",()=>
+            {
+                SignIn("CV004");DuLieuGiaoDien.ChonPhamViLamSang(true);
+                var patient=DuLieuGiaoDien.Rows("BENH_NHAN").First(v=>UiRecord.Date(v,"NgaySinh") is not null);
+                var view=new BenhNhan();Find<TextBox>(view,"SearchBox").Text=UiRecord.Date(patient,"NgaySinh")!.Value.ToString("dd/MM/yyyy");
+                var list=Find<DataGrid>(view,"Grid_BENH_NHAN");Require(list.Items.Cast<object>().Any(v=>UiRecord.Text(v,"MaBN")==UiRecord.Text(patient,"MaBN")),"Tìm theo ngày sinh không có đúng BN.");
+                view.OpenProfile(patient);Require(view.PatientId==UiRecord.Text(patient,"MaBN"),"Lựa chọn không theo mã BN.");
+            });
+            Check("Tiếp nhận đổi dịch vụ xóa bác sĩ/phòng, không cho nhập nhân viên và số thứ tự", () =>
+            {
+                SignIn("CV004"); DuLieuGiaoDien.ChonPhamViLamSang(true);
+                var patient=DuLieuGiaoDien.Rows("BENH_NHAN").First();
+                var view=new TiepNhanKham();
+                BieuMauHoSo.Configure(view,"PHIEU_KHAM_BENH",patient:UiRecord.Text(patient,"MaBN"));
+                using var host=new WindowLifetime(new Window {Content=view,Width=850,Height=740,ShowInTaskbar=false});host.Window.Show();host.Window.UpdateLayout();
+                var service=Find<ComboBox>(view,"ServicePicker");var doctor=Find<ComboBox>(view,"DoctorPicker");var room=Find<ComboBox>(view,"RoomPicker");
+                foreach(var item in service.Items.Cast<object>().ToArray())
+                {
+                    service.SelectedItem=item;
+                    if(doctor.Items.Count>0) {doctor.SelectedIndex=0;break;}
+                }
+                Require(doctor.SelectedItem is not null,"Baseline cần bác sĩ phù hợp ít nhất một dịch vụ.");
+                service.SelectedIndex=-1;
+                Require(doctor.SelectedItem is null && room.SelectedItem is null,"Đổi dịch vụ còn bác sĩ/phòng cũ.");
+                Require(Find<TextBox>(view,"QueueNumber").IsReadOnly,"Cho nhập số thứ tự từ UI.");
+                Require(Find<ComboBox>(view,"AppointmentPicker").Items.Count>0,"Thiếu nguồn trực tiếp/lịch hẹn.");
+                Require(Find<TextBlock>(view,"SystemInfo").Text.Contains("tự cấp"),"Không giải thích giờ/số do hệ thống cấp.");
+            });
+            Check("Bốn tab hồ sơ cho xem lịch hẹn dù không mở module lập lịch",()=>
+            {
+                SignIn("CV004");DuLieuGiaoDien.ChonPhamViLamSang(true);
+                var view=new HoSoBenhNhan(DuLieuGiaoDien.Rows("BENH_NHAN").First());view.ConfigureAccess(module=>module!="LichKham");
+                Require(Find<TabControl>(view,"ProfileTabs").Items.Count==4,"Không đủ bốn tab hồ sơ.");
+                Require(Find<TabItem>(view,"AppointmentsTab").Visibility==Visibility.Visible,"Lịch sử hẹn bị che theo quyền lập lịch.");
+                Require(!Find<Button>(Find<LichKham>(view,"PatientAppointments"),"AddAppointmentButton").IsEnabled,"Lịch sử hẹn cho sửa ngoài quyền.");
+            });
             Check("Quyền mở năm module lâm sàng tách khỏi quyền module cũ", () =>
             {
                 SignIn("CV002");
@@ -142,7 +231,7 @@ internal static class Program
             });
         }
         finally { app.Shutdown(); }
-        Console.WriteLine($"ClinicalUiChecks: {pass} PASS, {fail} FAIL; không ghi fixture/chứng từ SQL.");
+        Console.WriteLine($"ClinicalUiChecks: {pass} PASS, {fail} FAIL; fixture tiếp nhận đã dọn, không giữ chứng từ SQL.");
         return fail == 0 ? 0 : 1;
     }
 
@@ -150,5 +239,13 @@ internal static class Program
     {
         public Window Window { get; } = window;
         public void Dispose() => Window.Close();
+    }
+
+    private static void SavePreview(FrameworkElement view,string name)
+    {
+        var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap((int)Math.Ceiling(view.ActualWidth),(int)Math.Ceiling(view.ActualHeight),96,96,System.Windows.Media.PixelFormats.Pbgra32);
+        bitmap.Render(view);var encoder=new System.Windows.Media.Imaging.PngBitmapEncoder();encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        System.IO.Directory.CreateDirectory("obj/ClinicalWorkflowP04");
+        using var file=System.IO.File.Create(System.IO.Path.Combine("obj/ClinicalWorkflowP04",name));encoder.Save(file);
     }
 }

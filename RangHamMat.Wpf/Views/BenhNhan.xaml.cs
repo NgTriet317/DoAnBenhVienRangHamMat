@@ -120,13 +120,15 @@ public partial class BenhNhan : UserControl, IPatientScoped
         if (!ready) return;
         var selected = PatientId;
         filtered = DuLieuGiaoDien.Rows("BENH_NHAN").Where(row =>
-            HoTroGiaoDien.Matches("BENH_NHAN", row, SearchBox.Text, HoTroGiaoDien.Choice(StatusFilter)) &&
+            HoTroGiaoDien.Matches("BENH_NHAN", row, "", HoTroGiaoDien.Choice(StatusFilter)) &&
+            (HoTroGiaoDien.Matches("BENH_NHAN",row,SearchBox.Text,"Tất cả") || Controls.ClinicalWorkflow.HoSoViewModel.KhopNgaySinh(row,SearchBox.Text)) &&
             (HoTroGiaoDien.Choice(GenderFilter) == "Tất cả" || UiRecord.Text(row, "GioiTinh") == HoTroGiaoDien.Choice(GenderFilter)))
             .OrderBy(row => UiRecord.Text(row, "HoTenBN"), StringComparer.CurrentCultureIgnoreCase).ToArray();
         var pages = Math.Max(1, (int)Math.Ceiling(filtered.Length / (double)PageSize));
         currentPage = Math.Clamp(currentPage, 1, pages);
         refreshing = true;
-        Grid_BENH_NHAN.ItemsSource = filtered.Skip((currentPage - 1) * PageSize).Take(PageSize).ToArray();
+        var latest=Controls.ClinicalWorkflow.HoSoViewModel.LanKhamGanNhatTheoBenhNhan();
+        Grid_BENH_NHAN.ItemsSource = filtered.Skip((currentPage - 1) * PageSize).Take(PageSize).Select(r=>new Controls.ClinicalWorkflow.BenhNhanDanhSachItem(r,latest.TryGetValue(UiRecord.Text(r,"MaBN"),out var when)?when:null)).ToArray();
         Grid_BENH_NHAN.SelectedItem = Grid_BENH_NHAN.Items.Cast<object>().FirstOrDefault(row => UiRecord.Text(row, "MaBN") == selected);
         refreshing = false;
         RecordCount.Text = $"{filtered.Length} bệnh nhân · chọn để mở hồ sơ";

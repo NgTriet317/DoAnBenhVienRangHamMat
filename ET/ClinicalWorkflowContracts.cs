@@ -26,7 +26,8 @@ public enum QuyenLamViec
     GiaoThuoc = 32,
     CauHinhHoTro = 64,
     DuyetMauDieuTri = 128,
-    DuyetHuongDanThuoc = 256
+    DuyetHuongDanThuoc = 256,
+    DieuPhoiNgoaiLich = 512
 }
 
 /// <summary>Snapshot phục vụ UI. Endpoint phải xác minh lại bằng MaNV/MaTK trong SQL.</summary>
@@ -73,3 +74,37 @@ public sealed record LanKhamChiTiet(ET_LICHSUKHAMBENH LanKham, string MaBN, stri
 public sealed record DonThuocChiTiet(ET_DONTHUOC DonThuoc, IReadOnlyList<ET_CHITIETDONTHUOC> CacDong, string MaBN, bool DuocSua);
 
 public sealed record DuLieuHoSoTheoQuyen(NguCanhNghiepVu NguoiDung, IReadOnlyDictionary<string, object[]> CacBang);
+
+public sealed class LoiTiepNhanException(string truong,string thongBao) : InvalidOperationException(thongBao)
+{
+    public string Truong { get; } = truong;
+}
+
+public sealed record YeuCauTiepNhan
+{
+    public string MaBN { get; init; } = "";
+    public string MaDV { get; init; } = "";
+    public string MaBS { get; init; } = "";
+    public string MaPhong { get; init; } = "";
+    public string? MaLich { get; init; }
+    public string LyDoKham { get; init; } = "";
+    public string? GhiChu { get; init; }
+    public string? LyDoDieuPhoiNgoaiLich { get; init; }
+}
+
+public sealed class BacSiTiepNhan
+{
+    public string MaNV { get; set; } = "";
+    public string HoTen { get; set; } = "";
+    public string MaCK { get; set; } = "";
+    public string MaKhoa { get; set; } = "";
+    public string? MaPhong { get; set; }
+    public string? TenPhong { get; set; }
+    public string? MaCa { get; set; }
+    public int SoDangCho { get; set; }
+    public bool ThieuLich { get; set; }
+    public string TinhTrangLich => ThieuLich ? "Chưa có lịch làm việc để đối chiếu" : "Có lịch làm việc phù hợp";
+    public string Label => $"{HoTen} ({MaNV}) · {TenPhong ?? "chọn phòng"} · {SoDangCho} đang chờ · {TinhTrangLich}";
+}
+
+public sealed record KetQuaTiepNhan(string MaBN,string MaHS,string MaPhieu,string MaBS,int SoThuTu,string TrangThai);

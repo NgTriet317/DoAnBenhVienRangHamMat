@@ -122,3 +122,37 @@ SchemaChecks sửa cách phân biệt entity bảng có `[Table]` trực tiếp 
 Log vòng cuối ở `obj/ClinicalWorkflowP03/`, gồm `final-results.json`, `upgrade.log`, `rollback.log`, `fresh.log`, `FreshClinical.log`, `FreshContract.log`, `review-fixes.log`, `data-final.log`; log chuẩn bị ở `obj/ClinicalP03Generator/`. Ảnh Supplier/Maintenance sinh lại đã trả về Git. Hướng dẫn chạy/các mode thực thi DDL nằm trong [HUONG_DAN_CHAY.md](HUONG_DAN_CHAY.md).
 
 P03 chỉ hoàn tất schema và hợp đồng nền. Cấu hình lưu nháp, không seed nội dung điều trị/liều dùng; phê duyệt/áp dụng mẫu ở P05/P07. Thu đủ/chống lặp, bàn giao, các ca đồng thời và AT01–AT34 toàn luồng thuộc P04–P12, chưa được tuyên bố đạt.
+
+## Đợt P04: hồ sơ và tiếp nhận
+
+Kết quả sau rà soát độc lập và một lượt sửa, ngày 25/10/2026. Không đổi schema v2 hoặc áp SQL lên database gốc.
+
+| Kiểm tra | Kết quả P04 |
+| --- | --- |
+| Build solution Debug | Exit 0; 0 lỗi, 48 cảnh báo hiện có |
+| SchemaChecks | Exit 0; 45 entity / 363 cột / 0 lỗi |
+| ClinicalChecks | **80 PASS / 0 FAIL**; 65 ca trước + 15 ca tiếp nhận, fixture rollback |
+| Tiếp nhận đồng thời | Hai kết nối thật: hai BN cùng ngày/phòng có hai số liên tiếp; cùng lịch hẹn trả cùng MaPhieu; ba BN trùng tên giữ ba mã/ba hồ sơ; ReadCommitted giữ khóa lịch đến kết thúc; cleanup đạt |
+| ClinicalUiChecks | **14 PASS / 0 FAIL**; gồm lưu form thật, cache sau commit và thử 1.000 BN/10.000 lượt trong bộ nhớ |
+| FinanceChecks | **54** ca transaction đạt |
+| SupplierChecks / MaintenanceChecks / ReportChecks | Exit 0; báo cáo 18 chuyên đề |
+| Checks | Lỗi sẵn trùng MaCa, mã -532462766 |
+| PersistenceChecks | Lỗi sẵn CS1729 BUS_NHANVIEN constructor transaction |
+| WpfSmoke | Lỗi sẵn CS1061 NhanSu.TryReadPosition/TryReadEmployee |
+
+Các ca P04 bao gồm bác sĩ đúng/sai chuyên khoa, tài khoản khóa hoặc đổi chức vụ sau mở form, dịch vụ/bác sĩ bắt buộc, lịch vắng, nghỉ đã duyệt, thiếu lịch phải có quyền/lý do điều phối và nhật ký. Đã kiểm tra dùng hồ sơ cũ, lập một hồ sơ khi chưa có, retry trực tiếp, retry cùng lịch, lịch không chuyển sang người trùng tên khác, không sinh MaLS khi tiếp nhận và phiếu đến đúng hàng đợi bác sĩ. Guard form chung từ chối lập phiếu bỏ qua đầu mối mới.
+
+Bằng chứng trước/sau:
+
+- Backend ban đầu **0 PASS/10 FAIL** do API chưa có; triển khai thành **10/10**, mở rộng thành 15 ca P04 và bộ tổng 80/80.
+- WPF ban đầu **8 PASS/2 FAIL**: thiếu chọn bác sĩ theo dịch vụ và lịch sử hẹn bị giấu theo quyền lập lịch; sau tích hợp đạt 10/10. Bổ sung tìm ngày sinh và lưu qua form thật thành 12/12.
+- Rà soát phát hiện giữ khóa kiểm tra phụ thuộc isolation ngoài: ca hai kết nối với ReadCommitted đã cho đổi lịch sau kiểm tra, trước commit (FAIL). Thêm HOLDLOCK cho dịch vụ, chuyên khoa, bác sĩ/tài khoản, ca/lịch, nghỉ và phòng; ca này chuyển PASS.
+- Hai phát hiện Minor được nâng lên Important theo ảnh hưởng: lịch sử chỉ đọc còn nút sửa/hủy và phép tính lần khám gần nhất bị quét lặp. Quan sát **12 PASS/2 FAIL**, 4.357 ms cho bước trang đầu. Sau khóa thao tác lịch sử và gom map theo mã một lần: **14/14**, **53 ms** ở lần cuối với 1.000 BN/10.000 lượt; có kiểm tra ngày gần nhất đúng từng BN. Không còn phát hiện quan trọng hoặc Minor hoãn lại trong P04.
+
+Ca WPF lưu một người bệnh giả chưa có hồ sơ: chọn dịch vụ/bác sĩ có lịch, lưu thành công, thấy MaPhieu trong cache sau commit, không có MaLS và không có nút mở nhập chẩn đoán; bấm lại giữ biên nhận. Form giữ nhận diện BN/bác sĩ ở đầu và hành động ở cuối khi cuộn. Đã xem ảnh render trước/sau lưu với dữ liệu FIXTURE. Thử DPI, bàn phím và kích thước toàn ứng dụng còn thuộc P11/P12.
+
+80 ca SQL mặc định rollback. Kiểm tra đồng thời và WPF dùng fixture commit để nhìn thấy từ nhiều kết nối, rồi dọn theo mã GUID trong finally. Đối chiếu cuối: **52 bảng; 10 BN, 10 hồ sơ, 10 phiếu tiếp nhận, 10 hóa đơn; tổng 732.500,00, thu ròng 467.500,00, tồn 4.014,000**. Không còn BN/nhân viên/tài khoản/lịch làm việc tiền tố CW. Không giữ dữ liệu hiệu năng trong cache sau kiểm tra.
+
+Log tại `obj/ClinicalWorkflowP04/`: `results.json`, `Clinical.log`, `Concurrency.log`, `ClinicalUi-final.log`, `data-final.log` và log các suite; ảnh `tiep-nhan-truoc-luu.png` / `tiep-nhan-da-luu.png`. Log RED/đợt đầu tại `obj/ClinicalReceptionP04*.log`, `obj/ClinicalUiP04-*.log`. Ảnh hồi quy Supplier/Maintenance đã trả về Git.
+
+P04 hoàn tất theo phạm vi tiếp nhận. P05–P12 chưa hoàn tất: chưa có đầu mối bắt đầu/lưu/hoàn tất khám mới, áp dụng/duyệt mẫu, ký đơn snapshot, thu đủ/chống lặp, bàn giao và nghiệm thu AT01–AT34 toàn luồng. Các API legacy và việc tải snapshot lớn vẫn có giới hạn đã ghi ở tiến độ; không coi phép đo projection 53 ms là nghiệm thu tải SQL toàn hệ thống.

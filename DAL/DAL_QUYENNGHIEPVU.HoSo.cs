@@ -39,6 +39,7 @@ public sealed partial class DAL_QUYENNGHIEPVU
                 if (!user.CoQuyen(QuyenLamViec.TiepNhan)) throw TuChoi();
                 if (bang == "PHIEU_KHAM_BENH")
                 {
+                    if(original is null)throw new LoiTiepNhanException("MaPhieu","Lập lượt mới qua đầu mối tiếp nhận để kiểm tra bác sĩ, lịch và cấp số thứ tự.");
                     if (original is not null && db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.LICH_SU_KHAM_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaPhieu=@ma", new { ma }, tx) != 0) throw TuChoi();
                     if (values.TryGetValue("MaNVTiepNhan", out var receiver) && Text(receiver) != user.MaNV) throw TuChoi();
                 }
