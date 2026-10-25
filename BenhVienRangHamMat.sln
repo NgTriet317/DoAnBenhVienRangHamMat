@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DAL", "DAL\DAL.csproj", "{7
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BUS", "BUS\BUS.csproj", "{3492FEC6-C7AF-4433-87D3-09A9765D2097}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RangHamMat.ClinicalChecks", "RangHamMat.ClinicalChecks\RangHamMat.ClinicalChecks.csproj", "{D23CF7B7-677B-40E8-9266-E65B6982A6E6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{3492FEC6-C7AF-4433-87D3-09A9765D2097}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3492FEC6-C7AF-4433-87D3-09A9765D2097}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3492FEC6-C7AF-4433-87D3-09A9765D2097}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D23CF7B7-677B-40E8-9266-E65B6982A6E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D23CF7B7-677B-40E8-9266-E65B6982A6E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D23CF7B7-677B-40E8-9266-E65B6982A6E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D23CF7B7-677B-40E8-9266-E65B6982A6E6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
