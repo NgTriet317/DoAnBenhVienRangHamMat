@@ -6,7 +6,8 @@ Ngày 25/10/2026. Kế hoạch chính: [KeHoach_CaiTo_QuyTrinhKham_6ChucNang.md]
 | --- | --- | --- |
 | P01 | Đã hoàn tất khảo sát baseline | Backup/verify/restore bản thử, build và toàn bộ suite cũ đã chạy; lỗi sẵn và chứng từ cần đối chiếu tại BASELINE.md |
 | P02 | Đã hoàn tất quyền và tích hợp UI | Nguồn SQL có phạm vi, guard ghi chung transaction, cache theo phiên, quyền mở/sửa riêng, điều hướng và dữ liệu quầy thu giới hạn. 35 ca SQL + 8 ca WPF đạt; đã rà soát và sửa các phát hiện |
-| P03–P12 | Chưa triển khai | Chưa có migration nâng/hạ cấp, UI/luồng khám mới, mẫu điều trị, đơn snapshot, bảng tính, thu đủ/chống lặp hoặc bàn giao thuốc |
+| P03 | Hoàn tất migration và hợp đồng dữ liệu | Sáu bảng + cột tám bảng cũ; nâng cấp hai lần, cài mới, rollback trống và chặn khi có dữ liệu. SchemaChecks 45 entity/363 cột đạt; ClinicalChecks tăng lên 65 ca |
+| P04–P12 | Chưa triển khai | Tiếp nhận/luồng khám mới, áp dụng/duyệt mẫu, ký đơn snapshot, bảng tính, thu đủ/chống lặp và bàn giao thuốc |
 
 ## Quyết định khi thực hiện
 
@@ -18,6 +19,10 @@ Ngày 25/10/2026. Kế hoạch chính: [KeHoach_CaiTo_QuyTrinhKham_6ChucNang.md]
 6. Hóa đơn lịch sử trong phạm vi lâm sàng chỉ đối chiếu/in lại; khóa thao tác lập/thu/cấp cũ trước khi có P09. Chi phí: chưa có thao tác thu đủ/giao thuốc mới để sử dụng cho đến khi triển khai P09/P10; không thu lại chứng từ lịch sử.
 7. Sửa tối thiểu `LichKham.xaml/.cs` ở chế độ nhúng trong hồ sơ để dùng nguồn SQL đã giới hạn và mở chi tiết chỉ đọc. Chi phí nếu sai: có thể ảnh hưởng lịch độc lập; đã thêm ca WPF xác minh lịch độc lập giữ nguồn và nút cũ. Thuật toán đặt lịch không đổi.
 8. Thêm `RangHamMat.ClinicalUiChecks` vì WpfSmoke đang không biên dịch do API nhân sự cũ. Chi phí: thêm một project kiểm tra; không thay thế nghiệm thu WpfSmoke/AT30 ở P12.
+9. P03 bổ sung trigger tiền tố `TR_CW_` thay vì thay định nghĩa trigger/view baseline. Chi phí: phải kiểm tra tương tác giữa các trigger; vòng rollback đối chiếu hash định nghĩa cũ và FinanceChecks 54 ca đều đạt.
+10. Cấu hình mới có audit tại SQL, lấy actor từ session context do DAL gắn sau khi xác minh principal/tài khoản; lưu JSON trước/sau trong nhật ký sẵn có. Chi phí: sửa cấu hình trực tiếp qua SQL phải có actor hợp lệ; không thêm nội dung điều trị/liều dùng chưa duyệt.
+11. DAL/BUS cấu hình P03 chỉ lưu nháp và danh mục; duyệt chuyên môn ở P05/P07, ghi bàn giao ở P10. Chi phí: chưa có giao diện/phê duyệt cấu hình hoặc giao thuốc mới để sử dụng trong mốc này.
+12. SchemaChecks nhận entity bằng `[Table]` khai báo trực tiếp, loại DTO hiển thị/kế thừa. Giữ toàn bộ kiểm tra cột/nullable/constructor/tiền derived; thêm đối chiếu 46 định nghĩa bảng cũ và đúng 52 bảng vật lý. Lỗi nhận diện entity baseline đã được xử lý; ba lỗi suite khác còn nguyên.
 
 ## Rà soát độc lập
 
@@ -25,4 +30,8 @@ Ngày 25/10/2026. Kế hoạch chính: [KeHoach_CaiTo_QuyTrinhKham_6ChucNang.md]
 
 Lượt rà soát tích hợp P02 phát hiện lỗi so sánh số dạng chuỗi khi điều dưỡng lưu, nội dung khám nháp đi kèm dòng được giao, ghi chú chuyên môn trong dữ liệu thu và lịch nhúng đọc nguồn toàn viện. Đã tái hiện từng lỗi trước khi sửa: SQL 32 đạt/3 lỗi → 35/35; WPF 6 đạt/1 lỗi → 7/7; bổ sung kiểm tra lịch độc lập thành 8/8. Các view không mở lượt nháp của người khác từ ngữ cảnh tối thiểu; lỗi quyền khi mở chi tiết được hiển thị thay vì thoát ứng dụng.
 
-Không còn phát hiện quan trọng chưa xử lý trong P02. P03 chưa thay đổi schema: bước tiếp theo là migration, hợp đồng ET/DAL và kiểm tra nâng cấp/rollback trên bản sao. P04–P12, phân trang SQL quy mô lớn, giao diện mới và giao dịch thu đủ chưa hoàn tất.
+Rà soát độc lập P03 phát hiện ba lỗ hổng SQL: kế hoạch đã duyệt có thể về nháp, bước đã thực hiện đổi kế hoạch cha, và kế hoạch có sẵn gắn mẫu chưa duyệt. Đã nâng mức phát hiện thiếu phiên bản mẫu từ Minor lên Important vì mất khả năng xác định nguồn. Bốn ca tái hiện từ FAIL chuyển PASS trong cùng lượt sửa; bổ sung ca mẫu ngừng áp dụng vẫn cho cập nhật tiến độ của bản đã sao chép. Bộ SQL cuối đạt 65/65 trên cả bản nâng cấp lẫn cài mới; không còn phát hiện quan trọng chưa xử lý trong P03.
+
+Rà soát không đánh giá P04–P12, API duyệt/giao thuốc chưa triển khai, nội dung chuyên môn không được seed, và chức năng baseline ngoài phạm vi. Kiểm chứng thực thi do bộ kiểm tra SQL/WPF đảm nhiệm; chưa tuyên bố đạt các ca đồng thời thu tiền/tiếp nhận ở tác vụ sau. File Word được giữ nguyên.
+
+Bước tiếp theo là P04: bốn tab hồ sơ, tiếp nhận chọn dịch vụ–bác sĩ và chống trùng lượt/số thứ tự. P04–P12, phân trang quy mô lớn, giao diện mới và giao dịch thu đủ chưa hoàn tất.

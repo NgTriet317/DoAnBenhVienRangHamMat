@@ -11,6 +11,12 @@ namespace ET
     [Table("CHI_TIET_DON_THUOC")]
     public class ET_CHITIETDONTHUOC
     {
+        private string? duongDung;
+        private string? tenThuocChot;
+        private string? hamLuongChot;
+        private string? donViTinhChot;
+        private int? phienBanHuongDan;
+
         private string maCTDT = string.Empty;
         private string maDT = string.Empty;
         private string maThuoc = string.Empty;
@@ -67,5 +73,27 @@ namespace ET
         /// Hướng dẫn sử dụng thuốc; ánh xạ cột HuongDan của bảng trong TableAttribute.
         /// </summary>
         public string HuongDan { get => huongDan; set => huongDan = value; }
+
+        // Cột bổ sung P03; constructor cũ được giữ để tương thích mã gọi hiện có.
+        public string? DuongDung { get => duongDung; set => duongDung = value; }
+        public string? TenThuocChot { get => tenThuocChot; set => tenThuocChot = value; }
+        public string? HamLuongChot { get => hamLuongChot; set => hamLuongChot = value; }
+        public string? DonViTinhChot { get => donViTinhChot; set => donViTinhChot = value; }
+        public int? PhienBanHuongDan { get => phienBanHuongDan; set => phienBanHuongDan = value; }
+        public ET_CHITIETDONTHUOC(string maCTDT, string maDT, string maThuoc, string lieuDung, decimal soLuong, int soNgayDung, string huongDan, string? duongDung, string? tenThuocChot, string? hamLuongChot, string? donViTinhChot, int? phienBanHuongDan)
+        {
+            this.maCTDT = maCTDT;
+            this.maDT = maDT;
+            this.maThuoc = maThuoc;
+            this.lieuDung = lieuDung;
+            this.soLuong = soLuong;
+            this.soNgayDung = soNgayDung;
+            this.huongDan = huongDan;
+            this.duongDung = duongDung;
+            this.tenThuocChot = tenThuocChot;
+            this.hamLuongChot = hamLuongChot;
+            this.donViTinhChot = donViTinhChot;
+            this.phienBanHuongDan = phienBanHuongDan;
+        }
     }
 }

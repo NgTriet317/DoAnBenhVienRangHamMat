@@ -58,10 +58,10 @@ namespace DAL
                 connection.Execute("""
                     INSERT INTO dbo.[CHI_TIET_DON_THUOC] ([MaCTDT],[MaDT],[MaThuoc],
                         [LieuDung],[SoLuong],[SoNgayDung],
-                        [HuongDan])
+                        [HuongDan],[DuongDung],[TenThuocChot],[HamLuongChot],[DonViTinhChot],[PhienBanHuongDan])
                     VALUES (@MaCTDT,@MaDT,@MaThuoc,
                         @LieuDung,@SoLuong,@SoNgayDung,
-                        @HuongDan)
+                        @HuongDan,@DuongDung,@TenThuocChot,@HamLuongChot,@DonViTinhChot,@PhienBanHuongDan)
                     """, duLieu, transaction);
                 return true;
             });
@@ -94,7 +94,7 @@ namespace DAL
                 connection.Execute("""
                     UPDATE dbo.[CHI_TIET_DON_THUOC]
                     SET [MaDT]=@MaDT,[MaThuoc]=@MaThuoc,[LieuDung]=@LieuDung,
-                        [SoLuong]=@SoLuong,[SoNgayDung]=@SoNgayDung,[HuongDan]=@HuongDan
+                        [SoLuong]=@SoLuong,[SoNgayDung]=@SoNgayDung,[HuongDan]=@HuongDan,[DuongDung]=@DuongDung,[TenThuocChot]=@TenThuocChot,[HamLuongChot]=@HamLuongChot,[DonViTinhChot]=@DonViTinhChot,[PhienBanHuongDan]=@PhienBanHuongDan
                     WHERE [MaCTDT]=@MaCTDT
                     """, duLieu, transaction);
                 return true;

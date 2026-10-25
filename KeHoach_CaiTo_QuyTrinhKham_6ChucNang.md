@@ -1,6 +1,6 @@
 # Quy trình khám và thanh toán ngoại trú Implementation Plan
 
-> **Tiến độ 25/10/2026:** P01 đã ghi baseline và bản sao SQL; P02 đã hoàn tất quyền, nguồn đọc/guard ghi và tích hợp UI: 35 ca SQL + 8 ca WPF đạt. P03–P12 chưa triển khai. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
+> **Tiến độ 25/10/2026:** P01–P03 đã hoàn tất phần nền, quyền/UI và migration. Đã kiểm chứng nâng cấp hai lần, cài mới, rollback có guard, 65 ca SQL + 8 ca WPF. P04–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
 
 > **For agentic workers:** Triển khai từng tác vụ và đánh dấu `- [ ]` khi hoàn thành. Nếu môi trường có Superpowers, dùng `superpowers:executing-plans`; không phụ thuộc vào việc cài thêm kỹ năng để đọc hoặc thực hiện tài liệu này. Người dùng yêu cầu giao kế hoạch cho Codex terminal trong Visual Studio 2022, chưa yêu cầu triển khai trong phiên lập kế hoạch.
 
@@ -461,11 +461,11 @@ Không bắt đầu bằng thay toàn bộ XAML. Khóa hợp đồng dữ liệu
 
 **Interfaces:** Sáu bảng/cột tại phần 9 là hợp đồng chuẩn. DTO nghiệp vụ ở file Contracts không giả làm entity bảng; lớp entity phải có kiểu, nullable và `[Write(false)]` đúng cho tiền derived.
 
-- [ ] Viết kiểm tra schema, nullable, FK, nguồn giá và bảo toàn số liệu cũ; kiểm tra nâng cấp hai lần không nhân bản đối tượng.
-- [ ] Tạo script preflight, upgrade, verify và rollback có guard; thử trên hai bản: cài mới trống và restore baseline có dữ liệu.
-- [ ] Cập nhật ET, SQL ghi/đọc, validator và metadata đồng thời; chạy SchemaChecks trên hợp đồng sau migration, không xóa các assertion cũ để qua kiểm tra.
-- [ ] Kiểm tra trigger mới giữ nguyên nguồn hóa đơn/kho và bảo vệ nội dung đã ký; dữ liệu cũ null ở cột tiền đưa/thối không bị thay thành số bịa.
-- [ ] Thử rollback trước khi có dữ liệu mới và kiểm tra script dừng khi có chứng từ mới. Lưu kết quả và điểm thay đổi.
+- [x] Viết kiểm tra schema, nullable, FK, nguồn giá và bảo toàn số liệu cũ; kiểm tra nâng cấp hai lần không nhân bản đối tượng.
+- [x] Tạo script preflight, upgrade, verify và rollback có guard; thử trên hai bản: cài mới trống và restore baseline có dữ liệu.
+- [x] Cập nhật ET, SQL ghi/đọc, validator và metadata đồng thời; chạy SchemaChecks trên hợp đồng sau migration, không xóa các assertion cũ để qua kiểm tra.
+- [x] Kiểm tra trigger mới giữ nguyên nguồn hóa đơn/kho và bảo vệ nội dung đã ký; dữ liệu cũ null ở cột tiền đưa/thối không bị thay thành số bịa.
+- [x] Thử rollback trước khi có dữ liệu mới và kiểm tra script dừng khi có chứng từ mới. Lưu kết quả và điểm thay đổi.
 
 ### P04 Hồ sơ và tiếp nhận
 

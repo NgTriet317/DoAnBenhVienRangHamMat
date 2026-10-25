@@ -8,16 +8,33 @@ using ET;
 // Schema SQL là hợp đồng lưu dữ liệu: tên/kiểu/nullable cột sai hoặc
 // cho ghi cột tiền tính toán có thể làm sai dữ liệu dù lớp ET vẫn biên dịch được.
 string[] triggerAmounts = ["KE_HOACH_DIEU_TRI.TongTienDuKien", "HOA_DON.TongTien", "CHI_TIET_HOA_DON.ThanhTien", "PHIEU_NHAP.TongTien"];
-var sql = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "QLBenhVienRangHamMat.sql"));
+var sql = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "QLBenhVienRangHamMat_ClinicalWorkflow.sql"));
 var errors = new List<string>();
 var nullability = new NullabilityInfoContext();
 var columnCount = 0;
 
-var entityTypes = typeof(ET_BENHNHAN).Assembly.GetTypes().Where(type => type.Name.StartsWith("ET_")).ToArray();
+// Các DTO xem lịch/báo cáo có tiền tố ET_ nhưng không phải entity bảng.
+// Không lấy TableAttribute kế thừa từ entity cha của DTO hiển thị.
+var entityTypes = typeof(ET_BENHNHAN).Assembly.GetTypes().Where(type => type.GetCustomAttribute<TableAttribute>(inherit: false) is not null).ToArray();
 var tables = Regex.Matches(sql, @"CREATE TABLE \[dbo\]\.\[(\w+)\]")
     .Select(match => match.Groups[1].Value)
-    .Where(table => entityTypes.Any(type => type.Name == "ET_" + table.Replace("_", "")))
+    .Where(table => entityTypes.Any(type => type.GetCustomAttribute<TableAttribute>(false)?.Name == table))
     .ToArray();
+var physicalTables = Regex.Matches(sql, @"CREATE TABLE \[dbo\]\.\[(\w+)\]").Select(m => m.Groups[1].Value).ToArray();
+if (physicalTables.Length != 52 || physicalTables.Distinct().Count() != 52) errors.Add("Clinical schema must define exactly 52 distinct physical tables.");
+var baselineSql = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "QLBenhVienRangHamMat.sql"));
+// Giữ đủ 39 entity baseline và từng định nghĩa cột cũ, kể cả các bảng ngoài miền lâm sàng.
+var baselineTables = Regex.Matches(baselineSql, @"CREATE TABLE \[dbo\]\.\[(\w+)\] \((.*?)\r?\n[ \t]*\);", RegexOptions.Singleline);
+if (baselineTables.Count != 46) errors.Add("Baseline must contain 46 tables.");
+if (entityTypes.Length != 45) errors.Add("Expected 39 baseline entities plus six new table entities.");
+foreach (Match oldTable in baselineTables)
+{
+    var name = oldTable.Groups[1].Value;
+    var current = Regex.Match(sql, @"CREATE TABLE \[dbo\]\.\[" + name + @"\] \((.*?)\r?\n[ \t]*\);", RegexOptions.Singleline);
+    foreach (var line in oldTable.Groups[2].Value.Split('\n').Select(l => l.Trim().TrimEnd(',')))
+        if (!string.IsNullOrEmpty(line) && !current.Groups[1].Value.Split('\n').Select(l => l.Trim().TrimEnd(',')).Contains(line))
+            errors.Add($"Baseline definition changed: {name}: {line}");
+}
 if (tables.Length != entityTypes.Length) errors.Add("Each ET must map to exactly one SQL table.");
 foreach (var table in tables)
 {
@@ -26,7 +43,7 @@ foreach (var table in tables)
     var columns = Regex.Matches(definition.Groups[1].Value, @"^\s*\[(\w+)\]\s+(INT|NVARCHAR|DATE|DATETIME2|TIME|DECIMAL|AS)\b([^\r\n]*)", RegexOptions.Multiline);
     if (columns.Count == 0) throw new InvalidOperationException($"SQL columns for {table} missing.");
     columnCount += columns.Count;
-    var type = typeof(ET_BENHNHAN).Assembly.GetType("ET.ET_" + table.Replace("_", ""));
+    var type = entityTypes.SingleOrDefault(type => type.GetCustomAttribute<TableAttribute>(false)?.Name == table);
     if (type is null) { errors.Add($"ET for {table} missing."); continue; }
     if (type.GetCustomAttribute<TableAttribute>()?.Name != table) errors.Add($"{type.Name}: [Table(\"{table}\")] missing.");
     if (type.GetConstructor(Type.EmptyTypes) is null) errors.Add($"{type.Name}: parameterless constructor missing.");

@@ -11,6 +11,9 @@ namespace ET
     [Table("LICH_SU_KHAM_BENH")]
     public class ET_LICHSUKHAMBENH
     {
+        private int khongKeThuoc;
+        private string? lyDoKhongKeThuoc;
+
         private string maLS = string.Empty;
         private string maPhieu = string.Empty;
         private string maBS = string.Empty;
@@ -91,5 +94,25 @@ namespace ET
         /// Ghi chú bổ sung; ánh xạ cột GhiChu của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
         /// </summary>
         public string? GhiChu { get => ghiChu; set => ghiChu = value; }
+
+        // Cột bổ sung P03; constructor cũ được giữ để tương thích mã gọi hiện có.
+        public int KhongKeThuoc { get => khongKeThuoc; set => khongKeThuoc = value; }
+        public string? LyDoKhongKeThuoc { get => lyDoKhongKeThuoc; set => lyDoKhongKeThuoc = value; }
+        public ET_LICHSUKHAMBENH(string maLS, string maPhieu, string maBS, string maPhong, DateTime thoiGianKham, string trieuChung, string chanDoan, string keHoachXuLy, string trangThai, DateTime? ngayXacNhan, string? ghiChu, int khongKeThuoc, string? lyDoKhongKeThuoc)
+        {
+            this.maLS = maLS;
+            this.maPhieu = maPhieu;
+            this.maBS = maBS;
+            this.maPhong = maPhong;
+            this.thoiGianKham = thoiGianKham;
+            this.trieuChung = trieuChung;
+            this.chanDoan = chanDoan;
+            this.keHoachXuLy = keHoachXuLy;
+            this.trangThai = trangThai;
+            this.ngayXacNhan = ngayXacNhan;
+            this.ghiChu = ghiChu;
+            this.khongKeThuoc = khongKeThuoc;
+            this.lyDoKhongKeThuoc = lyDoKhongKeThuoc;
+        }
     }
 }

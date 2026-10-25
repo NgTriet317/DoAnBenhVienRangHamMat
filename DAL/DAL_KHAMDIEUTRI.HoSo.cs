@@ -80,7 +80,9 @@ public sealed partial class DAL_KHAMDIEUTRI
           CASE WHEN @fullClinical=1 AND (l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.TrieuChung ELSE N'' END TrieuChung,
           CASE WHEN ((@fullClinical=1 OR @pharmacy=1) AND l.TrangThai=N'Đã xác nhận') OR (@doctor=1 AND l.MaBS=@MaNV) THEN l.ChanDoan ELSE N'' END ChanDoan,
           CASE WHEN @fullClinical=1 AND (l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.KeHoachXuLy ELSE N'' END KeHoachXuLy,
-          l.TrangThai,l.NgayXacNhan,CASE WHEN @fullClinical=1 AND (l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.GhiChu END GhiChu
+            l.TrangThai,l.NgayXacNhan,CASE WHEN @fullClinical=1 AND (l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.GhiChu END GhiChu,
+            CASE WHEN @fullClinical=1 AND (l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.KhongKeThuoc ELSE 0 END KhongKeThuoc,
+            CASE WHEN @fullClinical=1 AND (l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.LyDoKhongKeThuoc END LyDoKhongKeThuoc
           FROM dbo.LICH_SU_KHAM_BENH l JOIN @ls x ON x.MaLS=l.MaLS;
         SELECT t.* FROM dbo.TINH_TRANG_BENH t JOIN @ls x ON x.MaLS=t.MaLS JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=t.MaLS
           WHERE @fullClinical=1 AND (l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV));
@@ -93,9 +95,12 @@ public sealed partial class DAL_KHAMDIEUTRI
           WHERE (@nurse=1 AND d.MaNVThucHien=@MaNV) OR (@nurse=0 AND
             ((@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV) OR d.TrangThai=N'Đã xác nhận'));
         SELECT d.MaDT,d.MaLS,d.MaBS,d.NgayKe,CASE WHEN @fullClinical=1 OR @pharmacy=1 THEN d.LyDoThayThe END LyDoThayThe,
-          d.TrangThai,CASE WHEN @fullClinical=1 OR @pharmacy=1 THEN d.GhiChu END GhiChu FROM dbo.DON_THUOC d JOIN @dt x ON x.MaDT=d.MaDT;
+          d.TrangThai,d.MaDTThayThe,CASE WHEN @fullClinical=1 OR @pharmacy=1 THEN d.GhiChu END GhiChu FROM dbo.DON_THUOC d JOIN @dt x ON x.MaDT=d.MaDT;
         SELECT c.MaCTDT,c.MaDT,c.MaThuoc,CASE WHEN @fullClinical=1 OR @pharmacy=1 THEN c.LieuDung ELSE N'' END LieuDung,
-          c.SoLuong,c.SoNgayDung,CASE WHEN @fullClinical=1 OR @pharmacy=1 THEN c.HuongDan ELSE N'' END HuongDan
+            c.SoLuong,c.SoNgayDung,CASE WHEN @fullClinical=1 OR @pharmacy=1 THEN c.HuongDan ELSE N'' END HuongDan,
+            CASE WHEN @fullClinical=1 OR @pharmacy=1 THEN c.DuongDung END DuongDung,
+            c.TenThuocChot,c.HamLuongChot,c.DonViTinhChot,
+            CASE WHEN @fullClinical=1 OR @pharmacy=1 THEN c.PhienBanHuongDan END PhienBanHuongDan
           FROM dbo.CHI_TIET_DON_THUOC c JOIN @dt x ON x.MaDT=c.MaDT;
         SELECT h.* FROM dbo.HOA_DON h JOIN @hd x ON x.MaHD=h.MaHD;
         SELECT c.* FROM dbo.CHI_TIET_HOA_DON c JOIN @hd x ON x.MaHD=c.MaHD;

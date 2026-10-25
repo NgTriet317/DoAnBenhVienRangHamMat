@@ -11,6 +11,9 @@ namespace ET
     [Table("TINH_TRANG_BENH")]
     public class ET_TINHTRANGBENH
     {
+        private string? maDMTT;
+        private string? viTriRang;
+
         private string maTTB = string.Empty;
         private string maLS = string.Empty;
         private string loaiTinhTrang = string.Empty;
@@ -61,5 +64,20 @@ namespace ET
         /// Ghi chú bổ sung; ánh xạ cột GhiChu của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
         /// </summary>
         public string? GhiChu { get => ghiChu; set => ghiChu = value; }
+
+        // Cột bổ sung P03; constructor cũ được giữ để tương thích mã gọi hiện có.
+        public string? MaDMTT { get => maDMTT; set => maDMTT = value; }
+        public string? ViTriRang { get => viTriRang; set => viTriRang = value; }
+        public ET_TINHTRANGBENH(string maTTB, string maLS, string loaiTinhTrang, string moTaTinhTrang, string mucDo, string? ghiChu, string? maDMTT, string? viTriRang)
+        {
+            this.maTTB = maTTB;
+            this.maLS = maLS;
+            this.loaiTinhTrang = loaiTinhTrang;
+            this.moTaTinhTrang = moTaTinhTrang;
+            this.mucDo = mucDo;
+            this.ghiChu = ghiChu;
+            this.maDMTT = maDMTT;
+            this.viTriRang = viTriRang;
+        }
     }
 }

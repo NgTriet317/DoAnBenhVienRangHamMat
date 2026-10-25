@@ -59,11 +59,11 @@ namespace DAL
                     INSERT INTO dbo.[LICH_SU_KHAM_BENH] ([MaLS],[MaPhieu],[MaBS],
                         [MaPhong],[ThoiGianKham],[TrieuChung],
                         [ChanDoan],[KeHoachXuLy],[TrangThai],
-                        [NgayXacNhan],[GhiChu])
+                        [NgayXacNhan],[GhiChu],[KhongKeThuoc],[LyDoKhongKeThuoc])
                     VALUES (@MaLS,@MaPhieu,
                         @MaBS,@MaPhong,@ThoiGianKham,
                         @TrieuChung,@ChanDoan,@KeHoachXuLy,
-                        @TrangThai,@NgayXacNhan,@GhiChu)
+                        @TrangThai,@NgayXacNhan,@GhiChu,@KhongKeThuoc,@LyDoKhongKeThuoc)
                     """, duLieu, transaction);
                 return true;
             });
@@ -98,7 +98,7 @@ namespace DAL
                     SET [MaPhieu]=@MaPhieu,[MaBS]=@MaBS,[MaPhong]=@MaPhong,
                         [ThoiGianKham]=@ThoiGianKham,[TrieuChung]=@TrieuChung,[ChanDoan]=@ChanDoan,
                         [KeHoachXuLy]=@KeHoachXuLy,[TrangThai]=@TrangThai,[NgayXacNhan]=@NgayXacNhan,
-                        [GhiChu]=@GhiChu
+                        [GhiChu]=@GhiChu,[KhongKeThuoc]=@KhongKeThuoc,[LyDoKhongKeThuoc]=@LyDoKhongKeThuoc
                     WHERE [MaLS]=@MaLS
                     """, duLieu, transaction);
                 return true;

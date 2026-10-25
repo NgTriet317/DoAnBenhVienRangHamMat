@@ -11,6 +11,10 @@ namespace ET
     [Table("KE_HOACH_DIEU_TRI")]
     public class ET_KEHOACHDIEUTRI
     {
+        private string? maTTBNguon;
+        private string? maMauKH;
+        private int? phienBanMau;
+
         private string maKHDT = string.Empty;
         private string maLS = string.Empty;
         private string maBS = string.Empty;
@@ -80,5 +84,25 @@ namespace ET
         /// Ghi chú bổ sung; ánh xạ cột GhiChu của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
         /// </summary>
         public string? GhiChu { get => ghiChu; set => ghiChu = value; }
+
+        // Cột bổ sung P03; constructor cũ được giữ để tương thích mã gọi hiện có.
+        public string? MaTTBNguon { get => maTTBNguon; set => maTTBNguon = value; }
+        public string? MaMauKH { get => maMauKH; set => maMauKH = value; }
+        public int? PhienBanMau { get => phienBanMau; set => phienBanMau = value; }
+        public ET_KEHOACHDIEUTRI(string maKHDT, string maLS, string maBS, DateTime ngayLap, DateTime? ngayBatDau, DateTime? ngayDuKienKetThuc, decimal tongTienDuKien, string trangThai, string? ghiChu, string? maTTBNguon, string? maMauKH, int? phienBanMau)
+        {
+            this.maKHDT = maKHDT;
+            this.maLS = maLS;
+            this.maBS = maBS;
+            this.ngayLap = ngayLap;
+            this.ngayBatDau = ngayBatDau;
+            this.ngayDuKienKetThuc = ngayDuKienKetThuc;
+            this.tongTienDuKien = tongTienDuKien;
+            this.trangThai = trangThai;
+            this.ghiChu = ghiChu;
+            this.maTTBNguon = maTTBNguon;
+            this.maMauKH = maMauKH;
+            this.phienBanMau = phienBanMau;
+        }
     }
 }

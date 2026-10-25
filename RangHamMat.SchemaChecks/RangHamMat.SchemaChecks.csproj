@@ -8,5 +8,6 @@
   <ItemGroup>
     <ProjectReference Include="../ET/ET.csproj" />
     <None Include="../Database/QLBenhVienRangHamMat.sql" Link="QLBenhVienRangHamMat.sql" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Database/QLBenhVienRangHamMat_ClinicalWorkflow.sql" Link="QLBenhVienRangHamMat_ClinicalWorkflow.sql" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

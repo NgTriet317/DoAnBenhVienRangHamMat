@@ -11,6 +11,10 @@ namespace ET
     [Table("THANH_TOAN")]
     public class ET_THANHTOAN
     {
+        private decimal? soTienKhachDua;
+        private decimal? tienThua;
+        private string? maThamChieu;
+
         private string maTT = string.Empty;
         private string maHD = string.Empty;
         private string maNV = string.Empty;
@@ -79,5 +83,25 @@ namespace ET
         /// Trạng thái nghiệp vụ của bản ghi; ánh xạ cột TrangThai của bảng trong TableAttribute.
         /// </summary>
         public string TrangThai { get => trangThai; set => trangThai = value; }
+
+        // Cột bổ sung P03; constructor cũ được giữ để tương thích mã gọi hiện có.
+        public decimal? SoTienKhachDua { get => soTienKhachDua; set => soTienKhachDua = value; }
+        public decimal? TienThua { get => tienThua; set => tienThua = value; }
+        public string? MaThamChieu { get => maThamChieu; set => maThamChieu = value; }
+        public ET_THANHTOAN(string maTT, string maHD, string maNV, DateTime ngayThanhToan, decimal soTien, string loaiGiaoDich, string phuongThuc, string? lyDo, string trangThai, decimal? soTienKhachDua, decimal? tienThua, string? maThamChieu)
+        {
+            this.maTT = maTT;
+            this.maHD = maHD;
+            this.maNV = maNV;
+            this.ngayThanhToan = ngayThanhToan;
+            this.soTien = soTien;
+            this.loaiGiaoDich = loaiGiaoDich;
+            this.phuongThuc = phuongThuc;
+            this.lyDo = lyDo;
+            this.trangThai = trangThai;
+            this.soTienKhachDua = soTienKhachDua;
+            this.tienThua = tienThua;
+            this.maThamChieu = maThamChieu;
+        }
     }
 }

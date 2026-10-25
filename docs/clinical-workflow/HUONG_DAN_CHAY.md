@@ -1,6 +1,6 @@
 # Chạy phần nền đã triển khai
 
-Đây là hướng dẫn P01/P02 đã triển khai. Năm module lâm sàng đã dùng quyền theo chức vụ; quy trình khám/thanh toán mới đầy đủ ở P03–P12 chưa hoàn tất.
+Đây là hướng dẫn P01–P03 đã triển khai. Năm module lâm sàng dùng quyền theo chức vụ; bản build hiện tại cần schema ClinicalWorkflow v2. Quy trình khám/thanh toán đầy đủ ở P04–P12 chưa hoàn tất. Database gốc chưa được nâng cấp tự động; chạy kiểm tra/ứng dụng với biến môi trường của bản sao đã nâng cấp.
 
 1. Dùng Windows, .NET 8 SDK và SQL Server. Tạo backup COPY_ONLY CHECKSUM của database đã xác nhận, kiểm tra backup rồi restore sang tên thử riêng; không dùng script cài mới trên dữ liệu đang có.
 2. Đặt biến môi trường trong đúng terminal chạy kiểm tra. Ví dụ với xác thực Windows (không có mật khẩu):
@@ -20,7 +20,35 @@ Tiền kiểm chỉ đọc, tự chọn database bằng `-d`, cần đọc các 
 sqlcmd -S . -d RHM_ClinicalWorkflow_Test_20261025 -E -C -b -f 65001 -i .\Database\Migrations\20261024_01_Preflight_ClinicalWorkflow.sql
 ```
 
-3. Chạy hồi quy bằng các lệnh tại [BASELINE.md](BASELINE.md). Bốn suite cũ đang lỗi sẵn được ghi đúng tên; không thể kết luận toàn solution đã nghiệm thu.
+3. Chạy hồi quy bằng các lệnh tại [BASELINE.md](BASELINE.md). SchemaChecks đã đạt sau P03; ba suite còn lỗi sẵn được ghi đúng tên trong kết quả kiểm thử. Chưa nghiệm thu toàn solution.
+
+## SQL P03: chọn đúng đường cài
+
+**Database đã có dữ liệu:** backup COPY_ONLY CHECKSUM, RESTORE VERIFYONLY, restore sang bản thử; chạy preflight và đọc danh sách chứng từ lịch sử. Sau đó chạy upgrade và verify trên chính tên bản thử:
+
+```powershell
+sqlcmd -S . -d RHM_ClinicalWorkflow_Test_20261025 -E -C -b -f 65001 -i .\Database\Migrations\20261024_02_ClinicalWorkflow.sql
+sqlcmd -S . -d RHM_ClinicalWorkflow_Test_20261025 -E -C -b -f 65001 -i .\Database\Migrations\20261024_03_Verify_ClinicalWorkflow.sql
+dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --migration
+```
+
+Upgrade chỉ bổ sung schema, khóa `RHM:ClinicalWorkflow:Schema`, ghi extended property `RHM.ClinicalWorkflow.Version=2`; chạy lại kiểm tra hợp đồng rồi thoát. Verify từ chối cột sai kiểu/nullable, thiếu đối tượng hoặc FK/CHECK/trigger bị tắt. Không tự sửa schema khác hợp đồng; không sửa lịch sử, chạy lại seed, trừ tồn hoặc chốt nợ. Hóa đơn cũ mặc định phiên bản 1, tiền đưa/thối vẫn null.
+
+**Cài mới trống:** `Database/QLBenhVienRangHamMat_ClinicalWorkflow.sql` là file độc lập, gồm schema/dữ liệu baseline và phần bổ sung; không phụ thuộc `:r`. Mặc định tạo database riêng `QLBenhVienRangHamMat_ClinicalWorkflow`. Chọn tên mới trước khi chạy toàn file, không đổi sang tên database đang dùng. File từ chối database có bảng và đánh dấu hoàn tất baseline trong session trước khi cho phần nâng cấp chạy. Dùng `sqlcmd -b -f 65001` để dừng khi có lỗi. Giữ `Database/QLBenhVienRangHamMat.sql` làm baseline, không dùng file đó nâng cấp.
+
+**Rollback P03:** `20261024_04_Rollback_ClinicalWorkflow.sql` chỉ hạ schema khi cả sáu bảng bổ sung rỗng và mọi cột mới còn null/default lịch sử. Script giữ transaction và khóa bảng từ lúc kiểm tra đến DDL; gặp dữ liệu mới trả lỗi 52104 và dừng. Đã có dữ liệu thì cần sửa tiến hoặc phục hồi backup có đối chiếu, không xóa dữ liệu để ép rollback.
+
+Hai mode kiểm tra dưới đây **thực thi DDL**, chỉ dùng bản restore thử 46 bảng chưa nâng cấp, với `RHM_CONNECTION_STRING` có tiền tố `RHM_ClinicalWorkflow_Test_`. Chúng so sánh hash tất cả cột/dòng cũ và định nghĩa trigger/view, kiểm tra nâng cấp hai lần; mode rollback thêm hạ/nâng lại và hai ca từ chối có dữ liệu. Không restore hoặc drop database:
+
+```powershell
+dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --migration-upgrade
+# Chỉ trên một bản restore baseline khác:
+dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --migration-rollback
+```
+
+Mode `--migration` chỉ đọc hợp đồng 30 kiểm tra, chạy được sau upgrade/cài mới. Mặc định ClinicalChecks chạy 65 ca có fixture rollback; `--configuration` và `--new-data` chạy riêng từng nhóm.
+
+Sáu lớp DAL/BUS mới được nhóm trong `DAL_CAUHINHLAMSANG.cs`/`BUS_CAUHINHLAMSANG.cs`. Năm lớp cấu hình cung cấp `LayDanhSach`, `LuuNhap(entity,nguoiDung,banGoc)`; nhận transaction tùy chọn, xác minh lại phiên/quyền, kiểm tra snapshot và audit cùng transaction. Endpoint nháp không nhận chữ ký client. `BUS_BANGIAOTHUOC.LayTheoDon` đọc theo phạm vi đơn thuốc; chưa có API ghi bàn giao. Phê duyệt và giao diện cấu hình thuộc P05/P07/P10.
 
 ## Hợp đồng nền P02
 

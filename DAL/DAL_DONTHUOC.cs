@@ -58,10 +58,10 @@ namespace DAL
                 connection.Execute("""
                     INSERT INTO dbo.[DON_THUOC] ([MaDT],[MaLS],[MaBS],
                         [NgayKe],[LyDoThayThe],[TrangThai],
-                        [GhiChu])
+                        [GhiChu],[MaDTThayThe])
                     VALUES (@MaDT,@MaLS,@MaBS,
                         @NgayKe,@LyDoThayThe,@TrangThai,
-                        @GhiChu)
+                        @GhiChu,@MaDTThayThe)
                     """, duLieu, transaction);
                 return true;
             });
@@ -91,7 +91,7 @@ namespace DAL
                     KiemTraChiDoiTrangThai(duLieu, hienTai);
                 }
 
-                connection.Execute("UPDATE dbo.[DON_THUOC] SET [MaLS]=@MaLS,[MaBS]=@MaBS,[NgayKe]=@NgayKe,[LyDoThayThe]=@LyDoThayThe,[TrangThai]=@TrangThai,[GhiChu]=@GhiChu WHERE [MaDT]=@MaDT", duLieu, transaction);
+                connection.Execute("UPDATE dbo.[DON_THUOC] SET [MaLS]=@MaLS,[MaBS]=@MaBS,[NgayKe]=@NgayKe,[LyDoThayThe]=@LyDoThayThe,[TrangThai]=@TrangThai,[GhiChu]=@GhiChu,[MaDTThayThe]=@MaDTThayThe WHERE [MaDT]=@MaDT", duLieu, transaction);
                 return true;
             });
         }

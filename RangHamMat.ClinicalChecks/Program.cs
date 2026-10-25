@@ -2,9 +2,13 @@ using RangHamMat.ClinicalChecks;
 
 try
 {
+    if (args.Contains("--migration")) return MigrationChecks.Run();
+    if (args.Contains("--migration-upgrade")) return MigrationLifecycleChecks.Run(false);
+    if (args.Contains("--migration-rollback")) return MigrationLifecycleChecks.Run(true);
     var passed = 0;
     var failed = 0;
-    foreach (var (name, run) in QuyenVaTiepNhanChecks.Cases().Concat(PhamViGiaoDienChecks.Cases()))
+    var cases=args.Contains("--configuration") ? CauHinhChecks.Cases() : args.Contains("--new-data") ? DuLieuMoiChecks.Cases() : QuyenVaTiepNhanChecks.Cases().Concat(PhamViGiaoDienChecks.Cases()).Concat(CauHinhChecks.Cases()).Concat(DuLieuMoiChecks.Cases());
+    foreach (var (name, run) in cases)
     {
         try
         {
@@ -20,7 +24,7 @@ try
         }
     }
     Console.WriteLine($"ClinicalChecks: {passed} PASS, {failed} FAIL; toàn bộ fixture rollback.");
-    Console.WriteLine("Chưa nghiệm thu: tiếp nhận mới, migration, kế hoạch, kê đơn, thanh toán trọn gói và WPF.");
+    Console.WriteLine("Các ca SQL không thay thế nghiệm thu đầy đủ AT01–AT34; luồng tiếp nhận/khám/thu đủ và giao diện mới còn ở P04–P12.");
     return failed == 0 ? 0 : 1;
 }
 catch (Exception ex)
