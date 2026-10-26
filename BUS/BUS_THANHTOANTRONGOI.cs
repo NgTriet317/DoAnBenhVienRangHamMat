@@ -11,6 +11,13 @@ public sealed class BUS_THANHTOANTRONGOI
     { dal = new(transaction); callerTransaction = transaction; }
     public BangTinhPhi LapBangTinh(string maLS, string? maKhoCapThuoc, NguCanhNghiepVu nguoiDung)
         => dal.LapBangTinh(maLS, maKhoCapThuoc, nguoiDung);
+    public BanInHoaDon LayBanInHoaDon(string maHD,NguCanhNghiepVu nguoiDung)
+    {
+        if(callerTransaction is not null || System.Transactions.Transaction.Current is not null)
+            throw new LoiKhamException("MaHD","Nguồn in phải được đọc sau commit từ kết nối riêng.");
+        try{return dal.LayBanInHoaDon(maHD,nguoiDung);}
+        catch(System.Data.Common.DbException ex){throw new LoiKhamException("MaHD","Không đọc được hóa đơn đã lưu. Tải lại khi kết nối ổn định; không thu lại.",ex);}
+    }
     public KetQuaThanhToan ThanhToan(YeuCauThanhToan yeuCau, NguCanhNghiepVu nguoiDung)
     {
         if (callerTransaction is not null || System.Transactions.Transaction.Current is not null)

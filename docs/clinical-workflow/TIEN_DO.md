@@ -13,7 +13,8 @@ Ngày 26/10/2026. Kế hoạch chính: [KeHoach_CaiTo_QuyTrinhKham_6ChucNang.md]
 | P07 | Hoàn tất kê đơn nhiều dòng và snapshot | Chọn thuốc theo nhóm, hướng dẫn duyệt có xác nhận phù hợp, ký/thay đơn nguyên tử, thông tin an toàn và in đúng nguồn; 146 ca SQL, 35 ca WPF đạt; đồng thời ký/thay/sửa và tồn không đổi đạt |
 | P08 | Hoàn tất bảng tính phí và nguồn in | Dịch vụ + toàn bộ đơn hiệu lực, phân lô dùng chung luồng kho, token SQL, lịch sử chính xác và in gộp lô có truy vết; 160 ca SQL, 39 ca WPF và hai phiên xem phí đạt |
 | P09 | Hoàn tất thu đủ và chống lặp | BUS tự commit, kiểm tra lại nguồn/giá/tồn, tiền đưa/thối, yêu cầu cố định, xuất/HD/Thu/chờ giao cùng transaction; 185 ca SQL và 44 ca WPF đạt |
-| P10–P12 | Chưa triển khai | Bàn giao thực tế, liên kết/DPI và nghiệm thu toàn luồng |
+| P10 | Hoàn tất bàn giao và nguồn in | Hàng chờ dược sĩ phân trang, giao một lần/hoàn tất khi giao hết, đọc mã chứng từ đã commit, in lại không thu/xuất thêm; 198 ca SQL, 52 ca WPF đạt |
+| P11–P12 | Chưa triển khai | Liên kết toàn ứng dụng, DPI, tải và nghiệm thu toàn luồng |
 
 ## Quyết định khi thực hiện
 
@@ -60,6 +61,12 @@ Ngày 26/10/2026. Kế hoạch chính: [KeHoach_CaiTo_QuyTrinhKham_6ChucNang.md]
 39. Luồng xuất nội bộ thanh toán dùng giờ SQL cùng độ chính xác datetime2(0) như ngày kê; entry point legacy giữ hành vi cũ. Đối chiếu nguồn lô dùng cùng comparer cho hai danh sách để hỗ trợ mã Unicode hợp lệ; giữ thứ tự phân lô SQL hiện có. Không đổi chính sách kho. Ca kiểm thử đối chiếu API legacy chờ đúng điều kiện ngày kê đã đến thay vì phụ thuộc phần lẻ giây.
 40. Khi chưa xác nhận được kết quả, UI giữ nguyên DTO/UUID và khóa đổi bệnh nhân/lượt/kho/tiền; chỉ thử lại yêu cầu đó. Sau commit mới cập nhật cache/lịch sử; lỗi tải lại không biến kết quả thu thành thất bại. Chi phí: điều hướng/đóng toàn ứng dụng và in/giao thuốc hoàn chỉnh vẫn ở P10–P12, không tự tạo giao dịch mới để sửa lỗi xem/in.
 
+41. Bàn giao dùng MaDT làm khóa tự nhiên, yêu cầu GiaoThuoc đọc lại từ SQL; người/giờ lấy từ phiên và server. BUS tự commit, không nhận transaction ngoài khi ghi. Dùng cùng khóa writer thanh toán trước khóa lượt; không gọi xuất/thu/hóa đơn trong bước giao. Chi phí: writer dùng chung được tuần tự hóa, chưa có kết luận tải cao.
+42. Đọc chi tiết bàn giao lấy định tuyến bằng READCOMMITTEDLOCK, khóa lượt trước các nguồn HOLDLOCK rồi xác minh lại nguồn. Đã tái hiện và sửa vòng chờ reader giữ S trên bàn giao trong khi chờ khóa lượt của writer. Chi phí: đọc chi tiết có thể chờ lượt đang giao; đổi lại nguồn nhất quán, không đảo thứ tự khóa.
+43. Dược sĩ xác nhận đã đối chiếu người nhận và hướng dẫn bằng hai checkbox trước giao; đổi đơn xóa xác nhận cũ. Đây là xác nhận nghiệp vụ của người giao, không tự ghi thêm thông tin tự do người nhận hoặc tự kiểm tra y khoa. Chi phí: dược sĩ chịu trách nhiệm đối chiếu thực tế; điều hướng/đóng toàn ứng dụng thuộc P11.
+44. Nguồn hóa đơn in mới đọc theo MaHD đã commit, đơn theo MaDT ký; kiểm quyền lại trước gửi in và chặn reader đổi mã. Hóa đơn dùng nội dung/giá/tiền/đơn vị chốt, giữ phần lẻ lịch sử và mã CTPX khi gộp. Chi phí: đọc lại cần kết nối; lỗi chỉ cho in lại cùng chứng từ, không thu hay xuất thêm.
+45. Đơn dài dùng FlowDocument phân trang, giữ cỡ chữ và đủ hướng dẫn/ghi chú; legacy giữ fallback tên và thông tin từng có, không tự bổ sung snapshot quá khứ. Bảng thuốc bàn giao tự giãn hàng và cuộn pixel để không cắt liều/đường/ngày dùng; style chỉ sửa cục bộ. Chi phí: bản dài có nhiều trang; driver/máy in và DPI thực nghiệm thu ở P12.
+
 ## Rà soát độc lập
 
 Đã rà soát phần nền. Phát hiện quan trọng: chỉ kiểm tra MaNV/MaTK trong DTO còn cho phép thay toàn bộ định danh. Đã tái hiện bằng bốn ca FAIL và sửa bằng principal tại điểm đăng nhập; cả bốn ca chuyển PASS. Assertion từ chối quyền dùng exception riêng, không chấp nhận lỗi SQL bọc trong InvalidOperationException làm PASS.
@@ -86,7 +93,7 @@ Rà soát P07 phát hiện bốn Important: preview theo editor đang đổi ngu
 
 Các phần để đúng tác vụ: phí/thu P08/P09, bàn giao P10, điều hướng toàn ứng dụng/DPI P11 và nghiệm thu P12. Giữ fallback bản in lịch sử thiếu cột mới, CRUD ngoài clinical, giới hạn thật của bộ lọc dạng và một cấu hình hiện hành theo schema. Review chỉ đọc; kiểm chứng SQL/WPF/hai kết nối do executor thực hiện, có log. Word giữ nguyên, ba lỗi suite baseline vẫn được ghi rõ.
 
-Bước tiếp theo là P08: bảng tính phí theo lượt, đủ mọi dịch vụ/đơn còn hiệu lực, giá và phân bổ lô dự kiến, dấu vân tay nguồn. P08–P12, phân trang SQL quy mô lớn, giao diện tổng thể và giao dịch thu đủ chưa hoàn tất.
+Tại mốc P07, bước tiếp theo là P08: bảng tính phí theo lượt, đủ mọi dịch vụ/đơn còn hiệu lực, giá và phân bổ lô dự kiến, dấu vân tay nguồn. Kết quả P08–P10 được bổ sung dưới đây; bước hiện tại tiếp theo là P11.
 
 Rà soát P08 phát hiện Important ở dòng truy vết MaCTPX: thiếu LineHeight hữu hạn khiến paginator bỏ qua khi tìm biên trang. Phát hiện đường UI legacy chọn tab theo index được nâng lên Important để giữ tương thích, dù sản phẩm hiện mở phân hệ này ở chế độ clinical. Tái hiện 37 đạt/2 lỗi, sửa trong một lượt: dùng style InvoiceText và giữ tab hóa đơn cũ ở vị trí cũ. Kết quả 39/39 WPF, gồm phân trang thật ở bốn chiều cao giấy, số chốt và mã xuất. Không còn Important hoặc Minor hoãn lại P08.
 
@@ -95,3 +102,7 @@ Các phần giữ đúng tác vụ: P09 thu/chống lặp/tái kiểm tra trong 
 Rà soát P09 phát hiện Important: UUID mới trả hóa đơn đã có chưa được lưu ràng buộc, có thể dùng lại cho lượt/đầu vào khác. Tái hiện hai ca thất bại trước sửa, lưu ánh xạ trong nhật ký nghiệp vụ cùng transaction để mọi thử lại giữ đúng kết quả. Phần so thứ tự SQL/Ordinal từ danh sách chưa đánh giá được nâng thành Important sau ca thực ba lô Unicode bị từ chối; đối chiếu cùng comparer, không thay phân lô. RED 22 đạt/3 lỗi → 25/25 SQL P09 trong một lượt sửa; không rà soát lần hai. Không còn Important hoặc Minor hoãn lại P09.
 
 Các mục reviewer không phát hiện lỗi bổ sung được giữ: commit ở BUS, DAL con có transaction chung; mọi ghi tài chính/bàn giao/audit rollback cùng nhau; quyền thu và tiền kiểm tra lại SQL; API cũ không ghi v2; UI chỉ công bố sau commit, retry giữ UUID/đầu vào. Fallback tên/chứng từ và thông báo của nguồn xem trước cũ giữ tương thích; lỗi đầu mối thu mới đã che SQL, kể cả lỗi mở kết nối. Thông lượng writer chưa benchmark. Các phần P10 bàn giao/in, P11 điều hướng toàn ứng dụng/DPI và P12 nghiệm thu đầy đủ giữ đúng chủ sở hữu; tài liệu cập nhật sau kiểm chứng, Word và ba lỗi baseline giữ nguyên.
+
+Rà soát P10 phát hiện Important: đọc chi tiết giữ khóa hàng bàn giao trước khi lấy khóa lượt, ngược thứ tự writer. Ca hai kết nối thực RED 12 đạt/1 lỗi; định tuyến không giữ khóa dài, khóa lượt rồi đọc/xác minh nguồn, GREEN13/13. Kiểm tra thêm phát hiện thiếu ghi chú ký khi dựng document và style hàng 46 DIP cắt nội dung (vùng đọc26 DIP, cần khoảng47 DIP). Tái hiện WPF7 đạt/1 lỗi cho từng vấn đề rồi sửa trong cùng lượt: giữ ghi chú/legacy phone-note, hàng tự giãn và cuộn pixel; cuối8/8 P10 UI. Không rà soát lần hai; không còn Important hoặc Minor hoãn lại P10.
+
+Ảnh đầu chụp trước khi DataGrid hoàn tất binding/đo cột cho vùng trống; harness chờ ApplicationIdle và kiểm kích thước thật, không đưa thủ thuật reset cột vào sản phẩm. Fixture UI có kho/lô riêng để chạy lại không làm cạn tồn ca khác. Kết quả thực thi SQL/concurrency/fault do executor kiểm chứng; review chỉ đọc. Giữ đúng phạm vi: máy in/driver/tải và nghiệm thu đầy đủ P12; điều hướng/logout/cửa sổ phiên/DPI P11; không tự kiểm y khoa/ngân hàng hay thêm hồ sơ tự do người nhận. Legacy API/fallback giữ tương thích, không coi đó là snapshot hiện đại được bổ sung ngược. Tài liệu cập nhật sau kiểm chứng, Word và ba lỗi baseline giữ nguyên.

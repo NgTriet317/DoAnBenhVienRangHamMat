@@ -1,8 +1,8 @@
 # Kiểm chứng triển khai — cập nhật 26/10/2026
 
-**Kết quả mới nhất P09:** build/schema đạt; **185 ca SQL (160 hồi quy + 25 thanh toán) và 44 ca WPF (39 hồi quy + 5 thanh toán) đạt**, thu đồng thời/chống lặp/rollback và bất biến mọi hóa đơn v2 sau commit đạt. Ba lỗi suite baseline còn nguyên. Chi tiết từng đợt nằm cuối tài liệu; phần đợt nền dưới đây được giữ làm bằng chứng lịch sử.
+**Kết quả mới nhất P10:** build/schema đạt; **198 ca SQL (160 hồi quy + 25 thanh toán + 13 bàn giao) và 52 ca WPF (39 hồi quy + 5 thanh toán + 8 bàn giao/in) đạt**. Giao đồng thời/rollback, nguồn in cố định và in lỗi không đổi tài chính đạt. Ba lỗi suite baseline còn nguyên. Chi tiết từng đợt nằm cuối tài liệu; phần đợt nền dưới đây được giữ làm bằng chứng lịch sử.
 
-Phạm vi đã triển khai: P01–P09, chưa phải nghiệm thu sáu chức năng/P12. Kết quả trước sửa tại [BASELINE.md](BASELINE.md); việc còn lại tại [TIEN_DO.md](TIEN_DO.md).
+Phạm vi đã triển khai: P01–P10, chưa phải nghiệm thu sáu chức năng/P12. Kết quả trước sửa tại [BASELINE.md](BASELINE.md); việc còn lại tại [TIEN_DO.md](TIEN_DO.md).
 
 ## Vòng cuối sau thay đổi
 
@@ -283,3 +283,18 @@ Rà soát độc lập: một Important về truy vết bản in; đường tab 
 - Build cuối exit0, 0 lỗi/0 cảnh báo ở lượt incremental; lượt build đầy trước có 48 cảnh báo WPF cũ, không coi incremental là sửa cảnh báo. Schema45/363 đạt; Finance54, Supplier, Maintenance, Report18 đạt. Tiếp nhận/khám đồng thời chạy lại đạt và dọn fixture. Full160 ban đầu có ca P08 legacy so đồng hồ trước khi NgayKe đã đến; fixture chờ đúng điều kiện dưới khoảng nửa giây rồi so lô/trigger, vòng cuối160/160; không thay chính sách legacy.
 - Ba lỗi baseline còn nguyên: Checks trùng MaCa (-532462766), Persistence CS1729 BUS_NHANVIEN, WpfSmoke CS1061 NhanSu. Chưa tuyên bố toàn bộ suite hoặc nghiệm thu AT01–AT34 đạt. Không in máy thật hoặc giao thuốc thực tế trong P09.
 - Bản thử chính cuối giữ **52 bảng, 10 BN/HS/phiếu/HD/đơn/chi tiết đơn, tổng HD732.500, thu ròng467.500, tồn4.014**, fixture/config thử đều0. Database gốc và Word giữ nguyên; ảnh Supplier/Maintenance sinh lại được hoàn trả. Log tại obj/ClinicalWorkflowP09/.
+
+## P10 — Bàn giao, in sau thu và in lại (26/10/2026)
+
+- Kết quả cuối **198 ca SQL =160/160 ClinicalChecks +25/25 PaymentChecks +13/13 HandoverChecks**; **52 ca WPF =39/39 ClinicalUiChecks +5/5 PaymentUiChecks +8/8 HandoverUiChecks**. Các bộ có commit chạy trên DB riêng, không gộp vào mode rollback mặc định.
+- API skeleton RED0/12 →12/12: chưa thu không giao; dược sĩ thật từ SQL, cờ giả/admin/bác sĩ/thu ngân/điều dưỡng/tài khoản khóa bị từ chối; giao lặp giữ người/giờ và một audit; hai writer chỉ một chuyển trạng thái; nhiều đơn chỉ hoàn tất phiếu sau đơn cuối. Lỗi audit cuối rollback trạng thái giao/phiếu, không đổi HD/PX/Thu/tồn.
+- Hàng chờ phân trang/lọc trạng thái/mã đúng nguồn; tên/hàm lượng/hướng dẫn chốt không theo danh mục đổi. Read result thanh toán phản ánh Đã giao sau giao, không tiếp tục báo Chờ giao. Print API kiểm quyền, từ chối đọc nguồn trong transaction ngoài chưa commit, giữ cùng mã/ngày/giá/tiền và lịch sử partial100.000,25/thu40.000,10/còn60.000,15.
+- Review Important vòng khóa reader/writer: writer giữ global/lượt, reader đọc nguồn rồi chờ lượt, writer bị chặn UPDATE. Tái hiện thật RED12 đạt/1 lỗi; route đọc ngắn READCOMMITTEDLOCK, khóa lượt trước nguồn và xác minh lại, GREEN13/13. Không rà soát lần hai.
+- UI skeleton0/5 →5/5. Thiếu đơn vị chốt trên dòng in RED6 đạt/1 lỗi →7/7; đưa unit vào nhóm/Quantity, giữ CTPX. Bổ sung nguồn reader đổi mã không được gửi in và route module dược sĩ đúng đơn; thêm thử lỗi giao giữ mã để retry. Ghi chú ký bị bỏ khỏi document RED7 đạt/1 lỗi, bổ sung note và giữ phone/note legacy →8/8.
+- Kiểm ảnh thấy header/ô ban đầu chưa đo xong; harness chờ ApplicationIdle, kiểm cột/cell thật, không reset width trong sản phẩm. Lỗi thực là hàng46 DIP cắt liều/đường/ngày: vùng đọc26, cần khoảng47 DIP. Probe đo nội dung không giới hạn RED7 đạt/1 lỗi →8/8 với auto row height cục bộ và pixel scrolling. Ảnh cuối đã mở kiểm tra. UI fixture có kho/lô riêng100 để chạy lặp không cạn tồn ca khác.
+- Printer/spooler lỗi được giả lập qua callback của luồng in thật: thanh toán giữ kết quả, nút in lại vẫn dùng MaHD cũ; không tăng HD/PX/Thu hoặc giảm tồn. Cửa sổ in đọc lại nguồn mỗi lần, từ chối reader chuyển mã. Đơn hướng dẫn dài khoảng6.000 ký tự được dựng nhiều trang500×350, đủ trang và đoạn kết/ghi chú, không co một trang. Chưa kiểm máy in/driver thực.
+- Lượt cuối DB P10 mới sạch có **20 hóa đơn v2,20 Thu đủ,23 bàn giao (13 Chờ giao,10 Đã giao)**. Script độc lập xác minh mọi v2 đã commit thu đủ/đúng nguồn/lượng, không xuất lặp, người/giờ giao đúng trạng thái, audit giao không lặp, phiếu khớp giao hết đơn. P09 chạy lại25/25+5/5 và bất biến thu đủ đạt. Cả hai DB đã dọn, DB_ID=NULL.
+- Build cuối exit0,0 lỗi/0 cảnh báo ở lượt incremental; build trước có48 cảnh báo WPF cũ và9 DAL cũ theo lượt rebuild, không coi incremental là sửa chúng. Schema45/363 đạt; Finance54, Supplier, Maintenance, Report18 đạt. Tiếp nhận/khám đồng thời chạy lại đạt và dọn fixture. Ba lỗi baseline còn nguyên: Checks MaCa (-532462766), Persistence CS1729 BUS_NHANVIEN, WpfSmoke CS1061 NhanSu.
+- Bản thử chính cuối giữ52 bảng,10 BN/HS/phiếu/HD/đơn/chi tiết đơn, tổng HD732.500, thu ròng467.500, tồn4.014; fixture CW và cấu hình thử đều0. Không thay database gốc/Word, không đổi schema hoặc thuật toán kho. Ảnh hồi quy sinh lại được hoàn trả; log tại obj/ClinicalWorkflowP10/.
+
+Chưa nghiệm thu P11/P12: chuyển/đóng/logout toàn ứng dụng, DPI, thông lượng tải cao, thiết bị in thật và AT01–AT34 đầy đủ. Rà soát không đánh giá đúng/sai y khoa hoặc xác minh ngân hàng tự động; giữ xác nhận nghiệp vụ của người giao. Không còn Important hoặc Minor hoãn lại P10 sau lượt sửa và kiểm chứng cuối.

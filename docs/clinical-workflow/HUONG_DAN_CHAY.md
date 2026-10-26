@@ -1,6 +1,6 @@
 # Chạy phần nền đã triển khai
 
-Đây là hướng dẫn P01–P07 đã triển khai. Năm module lâm sàng dùng quyền theo chức vụ; bản build hiện tại cần schema ClinicalWorkflow v2. Quy trình khám/thanh toán đầy đủ ở P08–P12 chưa hoàn tất. Database gốc chưa được nâng cấp tự động; chạy kiểm tra/ứng dụng với biến môi trường của bản sao đã nâng cấp.
+Đây là hướng dẫn P01–P10 đã triển khai, gồm tiếp nhận, khám, dịch vụ, kê đơn, thu đủ, bàn giao và in lại. Năm module lâm sàng dùng quyền theo chức vụ; bản build hiện tại cần schema ClinicalWorkflow v2. P11–P12 còn liên kết toàn ứng dụng, DPI, tải và nghiệm thu. Database gốc chưa được nâng cấp tự động; chạy kiểm tra/ứng dụng với biến môi trường của bản sao đã nâng cấp.
 
 1. Dùng Windows, .NET 8 SDK và SQL Server. Tạo backup COPY_ONLY CHECKSUM của database đã xác nhận, kiểm tra backup rồi restore sang tên thử riêng; không dùng script cài mới trên dữ liệu đang có.
 2. Đặt biến môi trường trong đúng terminal chạy kiểm tra. Ví dụ với xác thực Windows (không có mật khẩu):
@@ -46,9 +46,9 @@ dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --migr
 dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --migration-rollback
 ```
 
-Mode `--migration` chỉ đọc hợp đồng 30 kiểm tra, chạy được sau upgrade/cài mới. Mặc định ClinicalChecks hiện chạy 146 ca có fixture rollback; `--configuration`, `--new-data`, `--reception`, `--examination`, `--services`, `--prescriptions` chạy riêng từng nhóm. Nhóm khám/kế hoạch có 24 ca, dịch vụ 20 ca, đơn thuốc 22 ca.
+Mode `--migration` chỉ đọc hợp đồng 30 kiểm tra, chạy được sau upgrade/cài mới. Mặc định ClinicalChecks hiện chạy 160 ca có fixture rollback; `--configuration`, `--new-data`, `--reception`, `--examination`, `--services`, `--prescriptions` chạy riêng từng nhóm. Nhóm khám/kế hoạch có 24 ca, dịch vụ 20 ca, đơn thuốc 22 ca. Các mode thanh toán/bàn giao có commit dùng DB riêng theo hướng dẫn P09/P10 bên dưới.
 
-Sáu lớp DAL/BUS mới được nhóm trong `DAL_CAUHINHLAMSANG.cs`/`BUS_CAUHINHLAMSANG.cs`. Năm lớp cấu hình cung cấp `LayDanhSach`, `LuuNhap(entity,nguoiDung,banGoc)`; nhận transaction tùy chọn, xác minh lại phiên/quyền, kiểm tra snapshot và audit cùng transaction. Endpoint nháp không nhận chữ ký client. P05 bổ sung duyệt mẫu điều trị qua aggregate khám bên dưới; cấu hình kê đơn thuộc P07. `BUS_BANGIAOTHUOC.LayTheoDon` đọc theo phạm vi đơn thuốc; chưa có API ghi bàn giao P10.
+Năm lớp cấu hình DAL/BUS được nhóm trong `DAL_CAUHINHLAMSANG.cs`/`BUS_CAUHINHLAMSANG.cs`, cung cấp `LayDanhSach`, `LuuNhap(entity,nguoiDung,banGoc)`; nhận transaction tùy chọn, xác minh lại phiên/quyền, kiểm tra snapshot và audit cùng transaction. Endpoint nháp không nhận chữ ký client. P05 bổ sung duyệt mẫu điều trị qua aggregate khám bên dưới; cấu hình kê đơn thuộc P07. P10 tách `BUS_BANGIAOTHUOC`/`DAL_BANGIAOTHUOC` ra file riêng, giữ `LayTheoDon` và bổ sung hàng chờ/chi tiết/xác nhận giao bên dưới.
 
 ## Hợp đồng nền P02
 
@@ -57,11 +57,11 @@ Sáu lớp DAL/BUS mới được nhóm trong `DAL_CAUHINHLAMSANG.cs`/`BUS_CAUHI
 - `BUS_KHAMDIEUTRI.LayHangDoi` lấy phiếu theo bác sĩ phiên, mặc định hôm nay, trang tối đa 100. Bộ lọc không nhận bác sĩ khác.
 - `LayChiTiet(maLS, nguoiDung)` và `BUS_DONTHUOC.LayChiTietCoQuyen` kiểm tra phạm vi ngay trong truy vấn. Bác sĩ chỉ đọc nháp mình, có thể đọc lịch sử đã xác nhận của BN mình được phân; Admin tra cứu có nhật ký mã nguồn.
 - `KiemTraQuyenGhiLanKham` là guard cho lượt nháp thuộc chính bác sĩ; bắt buộc nhận transaction của bên lưu hoặc transaction môi trường. Guard **không phải API lưu**; khi tích hợp phải giữ cùng transaction đến khi lệnh ghi kết thúc để tránh đổi quyền/phân công giữa kiểm tra và lưu.
-- Cấu hình ánh xạ ở `DAL/ClinicalWorkflowPermissions.json`, được nhúng khi build. CV004 có quyền thu, CV003 mặc định không thu. MainWindow đọc quyền này cho năm module lâm sàng; quyền module khác giữ nguyên. Quyền thu ở đây chưa phải giao dịch thu đủ P09.
+- Cấu hình ánh xạ ở `DAL/ClinicalWorkflowPermissions.json`, được nhúng khi build. CV004 có quyền thu, CV003 mặc định không thu. MainWindow đọc quyền này cho năm module lâm sàng; quyền module khác giữ nguyên. Giao dịch thu đủ dùng API P09 bên dưới.
 
 Trong chế độ lâm sàng, `DuLieuGiaoDien` nạp snapshot đã lọc tại SQL; lưu/xóa gọi guard DAL cùng transaction với BUS/DAL thực hiện ghi. Đổi định danh xóa các collection cũ. Form bác sĩ và tiếp nhận điền người thực hiện từ phiên; điều dưỡng chỉ sửa kết quả/thời gian dòng được giao.
 
-Hóa đơn lịch sử chỉ cho đối chiếu/in lại; các lệnh thu/hoàn/cấp thuốc cũ bị khóa trong chế độ này. BUS/DAL tài chính cũ vẫn giữ cho hồi quy và tích hợp ngoài luồng mới. Chưa có giao dịch thu đủ P09 hoặc bàn giao P10.
+Hóa đơn lịch sử chỉ cho đối chiếu/in lại; các lệnh thu/hoàn/cấp thuốc cũ bị khóa trong chế độ này. BUS/DAL tài chính cũ vẫn giữ cho hồi quy và tích hợp ngoài luồng mới, đồng thời từ chối ghi hóa đơn v2. Thu đủ và bàn giao dùng API P09/P10 bên dưới.
 
 `ClinicalUiChecks` chạy control WPF thật trên bản thử, gồm quyền module, cache đổi phiên, nút chỉ đọc, gọi ghi trực tiếp bị từ chối, lịch nhúng và lịch độc lập. Các ca bổ sung P04/P05 bên dưới không thay thế thử DPI/kích thước/nội dung dài toàn bộ ở P11/P12.
 
@@ -75,7 +75,7 @@ Hóa đơn lịch sử chỉ cho đối chiếu/in lại; các lệnh thu/hoàn/
 
 `BUS_TIEPNHAN.LayBacSi(maDV,nguoiDung)` và `TiepNhan(YeuCauTiepNhan,nguoiDung)` nhận transaction tùy chọn. API đọc lại quyền/tài khoản và giữ khóa nguồn, gồm cả khi transaction ngoài là ReadCommitted. Không truyền nhân viên, giờ, trạng thái hay số thứ tự trong DTO. Kết quả có MaBN/MaHS/MaPhieu/MaBS/SoThuTu/TrangThai; bác sĩ bắt đầu khám bằng P05 bên dưới.
 
-Kiểm tra đồng thời cần dữ liệu commit để hai kết nối nhìn thấy. Các mode P04/P05 dưới chạy trên bản thử đã nâng cấp; mode concurrency và fixture tiếp nhận WPF **commit dữ liệu giả rồi dọn theo mã GUID trong finally**, khác với 124 ca SQL mặc định rollback. Ca ký khám/mẫu/dịch vụ WPF dùng transaction ngoài và rollback. Mode ký dịch vụ P06 có database riêng bên dưới. Không chạy trên database thật:
+Kiểm tra đồng thời cần dữ liệu commit để hai kết nối nhìn thấy. Các mode P04/P05 dưới chạy trên bản thử đã nâng cấp; mode concurrency và fixture tiếp nhận WPF **commit dữ liệu giả rồi dọn theo mã GUID trong finally**, khác với 160 ca SQL mặc định rollback. Ca ký khám/mẫu/dịch vụ WPF dùng transaction ngoài và rollback. Mode ký dịch vụ P06 có database riêng bên dưới. Không chạy trên database thật:
 
 ```powershell
 dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --reception
@@ -83,7 +83,7 @@ dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --rece
 dotnet run --project .\RangHamMat.ClinicalUiChecks -c Debug --no-restore
 ```
 
-ClinicalUiChecks hiện có 35 ca, gồm tiếp nhận, khám, dịch vụ và đơn thuốc. Ảnh tiếp nhận trước/sau lưu ở `obj/ClinicalWorkflowP04/`; dữ liệu ảnh là FIXTURE. Kiểm tra này không thay thế thử toàn ứng dụng với DPI/SQL lớn ở P11/P12.
+ClinicalUiChecks mặc định hiện có 39 ca, gồm tiếp nhận, khám, dịch vụ, đơn thuốc và nguồn phí/in. Mode thanh toán có 5 ca, bàn giao/in có 8 ca trên DB riêng; tổng 52 ca WPF. Ảnh tiếp nhận trước/sau lưu ở `obj/ClinicalWorkflowP04/`; dữ liệu ảnh là FIXTURE. Kiểm tra này không thay thế thử toàn ứng dụng với DPI/SQL lớn ở P11/P12.
 
 ## Sử dụng khám và kế hoạch P05
 
@@ -167,10 +167,10 @@ Mode --pricing-concurrency chỉ nhận database mới riêng tiền tố RHM_Cl
 
 1. Mở Hóa đơn → chọn đúng bệnh nhân/lượt → Bảng tính phí; chọn kho nếu có thuốc, Xem bảng tính. Chỉ người có ThuTien được thu; bác sĩ phụ trách/Admin chỉ xem phí theo quyền, không mặc nhiên được thu.
 2. Chọn Tiền mặt hoặc Chuyển khoản, nhập tiền VND nguyên đồng không dấu phân cách. Tiền mặt ít nhất bằng phải thu; hệ thống hiển thị tiền thối dự kiến. Chuyển khoản đúng phải thu, có mã tham chiếu tối đa 100 ký tự và đánh dấu đã đối chiếu thủ công. Đây không phải xác nhận tự động từ ngân hàng.
-3. Nhấn Xác nhận thu đủ. Trong lúc xử lý nút thu và đầu vào bị khóa. Chỉ sau commit mới hiện Đã thanh toán, hóa đơn và tiền đưa/thối đã chốt; lịch sử được nạp/chọn đúng hóa đơn. Có thuốc thì phiếu Chờ nhận thuốc và mỗi đơn có bản Chờ giao; không có thuốc thì Hoàn tất. Giao thực tế là P10.
+3. Nhấn Xác nhận thu đủ. Trong lúc xử lý nút thu và đầu vào bị khóa. Chỉ sau commit mới hiện Đã thanh toán, hóa đơn và tiền đưa/thối đã chốt; lịch sử được nạp/chọn đúng hóa đơn, mở xem trước để in. Có thuốc thì phiếu Chờ nhận thuốc và mỗi đơn có bản Chờ giao; không có thuốc thì Hoàn tất. Bàn giao theo P10 bên dưới.
 4. Giá/tồn/nguồn đổi yêu cầu xem bảng tính mới; thiếu thuốc cuối hoặc lỗi bất kỳ bước nào không để lại bộ thu/xuất dở. Nguồn lẻ đồng cần đối chiếu/sửa nguồn phù hợp, không tự bù tiền. Hóa đơn hợp lệ tổng 0 nhập tiền đưa 0, không tạo dòng thanh toán 0.
 5. Nếu báo chưa xác nhận được kết quả, giữ nguyên lượt/kho/tiền và bấm Thử lại yêu cầu. Giao diện giữ DTO và UUID đã gửi, không lấy giá trị đang sửa để thử lại; không đổi bệnh nhân/lượt trong màn này khi chưa đối chiếu. Kết quả đã commit được trả lại bằng mã cũ, không thu/xuất thêm. Lỗi tải lại sau thu chỉ cần Tải lại để xem chứng từ, không phải xác nhận thu lần nữa.
-6. Các nút/API ghi tài chính legacy không áp dụng lên hóa đơn v2. Hóa đơn/phiếu xuất cũ, kể cả nháp dở, chuyển lịch sử đối chiếu; không dùng thu trọn gói để thu bù/xuất lại. In/giao hoàn chỉnh tiếp tục tại P10.
+6. Các nút/API ghi tài chính legacy không áp dụng lên hóa đơn v2. Hóa đơn/phiếu xuất cũ, kể cả nháp dở, chuyển lịch sử đối chiếu; không dùng thu trọn gói để thu bù/xuất lại. In/giao dùng nguồn đã lưu theo P10 bên dưới.
 
 BUS_THANHTOANTRONGOI.ThanhToan(YeuCauThanhToan, NguCanhNghiepVu) tự mở Serializable và commit trước trả KetQuaThanhToan; từ chối transaction ngoài/ambient khi ghi. Không gửi tổng/tiền thu/thối từ UI. DTO gồm MaLS, MaKhoCapThuoc tùy chọn, Guid MaYeuCau, DauVanTayBangTinh, PhuongThuc, SoTienKhachDua, MaThamChieu và DaDoiChieuChuyenKhoan. Các DAL con dùng đúng transaction; kết quả DAL trước commit không phải kết quả công bố cho người dùng.
 
@@ -183,3 +183,25 @@ dotnet run --project .\RangHamMat.ClinicalUiChecks -c Debug --no-restore -- --pa
 ```
 
 Hai mode --payments chỉ nhận tiền tố RHM_ClinicalWorkflow_Test_P09Payments_. Các fixture thành công phải commit thật, không dùng database gốc hoặc bản thử chính. Tạo database mới từ SQL v2 với guard không ghi đè và sqlcmd -f 65001; đặt RHM_CONNECTION_STRING đúng tên. Test tạo kho/lô nhận riêng cho mỗi ca, thêm trigger lỗi chỉ trong database riêng rồi dọn trigger. Sau kiểm chứng bất biến, dọn toàn bộ database thử do mình vừa tạo, không tắt trigger để xóa chứng từ ký. Lượt này đã tạo/dọn RHM_ClinicalWorkflow_Test_P09Payments_20261026 (DB_ID=NULL). Log/ảnh obj/ClinicalWorkflowP09/.
+
+## P10 — Bàn giao và in lại
+
+1. Đăng nhập dược sĩ có GiaoThuoc → Đơn thuốc. Màn Đã thanh toán · Bàn giao thuốc hiển thị Chờ giao, có tìm theo tên/mã bệnh nhân/đơn/hóa đơn, lọc Đã giao/Tất cả và phân trang25. Backend giới hạn tối đa100/trang, chỉ nhận bản ký, v2 thu đủ và xuất đúng nguồn; đơn chưa thu không xuất hiện.
+2. Chọn đúng đơn, đối chiếu tên, mã BN, ngày sinh nếu đã ghi nhận, mã lượt/đơn, hóa đơn và phiếu xuất. Đọc tên/hàm lượng/đơn vị, lượng, liều, đường, ngày và hướng dẫn chốt. Hàng tự giãn, cuộn pixel cho nội dung dài. Không thay thuốc hoặc sửa chỉ định tại quầy giao.
+3. Đánh dấu đã đối chiếu người nhận và đã hướng dẫn theo đơn; Xác nhận đã giao. Người giao là phiên dược sĩ, giờ do SQL ghi; người thu đứng trên phiếu xuất kỹ thuật không phải người giao. Đơn giao một lần; thử lại cùng MaDT trả người/giờ cũ, không xuất/thu thêm. Mọi đơn hiệu lực cùng lượt đều đã giao thì phiếu Hoàn tất; giao một trong nhiều đơn vẫn Chờ nhận thuốc.
+4. Nếu chưa rõ kết quả giao, dùng Thử lại đúng đơn; không đổi nguồn hoặc xuất thuốc lần nữa. Nút/nguồn bị khóa trong lúc xử lý, đổi đơn xóa hai xác nhận cũ. Lỗi cuối transaction rollback cả trạng thái bàn giao/phiếu/audit.
+5. Xem/in đơn đã ký và Xem/in hóa đơn đọc lại đúng mã, kiểm quyền trước gửi in. Hóa đơn giữ giá/tiền/đơn vị chốt, tiền đưa/thối, phần lẻ lịch sử và mã chi tiết xuất; không lấy giá hiện tại. Đơn dài phân trang ở cỡ chữ đọc được, giữ đủ hướng dẫn và ghi chú ký; không ép cả đơn vào một tờ nhỏ.
+6. Quầy thu có Thanh toán và in hóa đơn: chỉ sau commit mới mở xem trước. Lỗi in vẫn Đã thu tiền; nút Xem/in lại hóa đơn dùng cùng MaHD, không gọi ThanhToan hoặc DispensePrescription. Đóng/hủy hộp thoại in cũng không thay giao dịch. Chưa gửi lệnh in máy thật trong bộ kiểm tra.
+7. Dược sĩ có Lịch sử đơn cũ chỉ đọc và Cấu hình hướng dẫn theo quyền hiện có. Không giao mới từ nguồn tài chính cũ thiếu/nháp dở, không tự sửa dữ liệu lịch sử. Bản in hóa đơn v2 phải xác nhận/thu đủ; legacy giữ đúng số dư/phần lẻ và nhãn nháp khi tương ứng.
+
+BUS_BANGIAOTHUOC cung cấp LayHangDoi(BoLocBanGiao,user), LayChiTiet(maDT,user), XacNhanGiao(maDT,user) trả KetQuaBanGiao sau commit; giữ LayTheoDon cũ. Handover ghi dùng transaction riêng Serializable; constructor transaction tùy chọn phục vụ đọc, không dùng để công bố kết quả ghi trước commit. Kết quả thanh toán thử lại kèm trạng thái giao thực tế của từng đơn.
+
+BUS_THANHTOANTRONGOI.LayBanInHoaDon(maHD,user) đọc trên kết nối riêng sau commit, không chấp nhận transaction ngoài/ambient. Cửa sổ in giữ mã ban đầu và đọc lại trước gửi; reader đổi mã bị từ chối. Lỗi mở/đọc/in không tạo giao dịch tài chính mới.
+
+```powershell
+# Chỉ trên database P10Handover mới riêng:
+dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --handover
+dotnet run --project .\RangHamMat.ClinicalUiChecks -c Debug --no-restore -- --handover
+```
+
+Mode --handover chỉ nhận RHM_ClinicalWorkflow_Test_P10Handover_*. Fixture ký/thu/giao phải commit thật nên không dùng database gốc/bản thử chính. Tạo DB mới từ script v2 với guard không ghi đè, sqlcmd -f65001. Sau kiểm chứng toàn bộ bất biến, dọn đúng DB mới đã tạo; không tắt trigger để xóa đơn/chứng từ ký. Đợt này P09Payments và P10Handover riêng đều đã dọn (DB_ID=NULL); log/ảnh obj/ClinicalWorkflowP10/. P11/P12 tiếp tục kiểm tra điều hướng toàn ứng dụng, DPI, tải và máy in thực.

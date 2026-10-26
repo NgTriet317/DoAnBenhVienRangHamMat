@@ -75,13 +75,3 @@ public sealed class DAL_MAUKEHOACHDIEUTRI(IDbTransaction? transaction=null) : DA
 public sealed class DAL_CHITIETMAUKEHOACH(IDbTransaction? transaction=null) : DAL_CAUHINHLAMSANG<ET_CHITIETMAUKEHOACH>(transaction);
 public sealed class DAL_NHOMTHUOCKEDON(IDbTransaction? transaction=null) : DAL_CAUHINHLAMSANG<ET_NHOMTHUOCKEDON>(transaction);
 public sealed class DAL_CAUHINHTHUOCKEDON(IDbTransaction? transaction=null) : DAL_CAUHINHLAMSANG<ET_CAUHINHTHUOCKEDON>(transaction);
-
-/// <summary>Bàn giao chỉ đọc trong P03; ghi nhận giao thuốc được triển khai ở P10.</summary>
-public sealed class DAL_BANGIAOTHUOC(IDbTransaction? transaction=null) : dbconnect(transaction)
-{
-    public ET_BANGIAOTHUOC? LayTheoDon(string maDT,NguCanhNghiepVu nguoiDung) => ThucHien((db,tx) =>
-    {
-        new DAL_KHAMDIEUTRI(tx).LayDonThuoc(maDT,nguoiDung);
-        return db.QuerySingleOrDefault<ET_BANGIAOTHUOC>("SELECT * FROM dbo.BAN_GIAO_THUOC WHERE MaDT=@maDT",new{maDT},tx);
-    });
-}

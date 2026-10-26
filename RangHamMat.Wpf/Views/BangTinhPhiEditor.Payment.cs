@@ -13,12 +13,23 @@ public partial class BangTinhPhiEditor
     public bool DangXuLy { get; private set; }
     public bool ChoDoiChieu => pendingPayment is not null && KetQua is null;
     public event EventHandler? ThanhToanHoanTat;
+    public bool TryInHoaDon(Action<BanInHoaDon> send,out string? error)
+    {
+        error=null;try
+        {
+            var id=KetQua?.MaHD??throw new LoiKhamException("MaHD","Chưa có kết quả thanh toán đã commit.");
+            send(new BUS.BUS_THANHTOANTRONGOI().LayBanInHoaDon(id,user));return true;
+        }
+        catch(Exception){error=KetQua is null?"Chưa có hóa đơn đã thanh toán để in.":$"Đã thu tiền · Hóa đơn #{KetQua.MaHD}. Không in được; dùng In lại cùng chứng từ, không thanh toán lần nữa.";StatusText.Text=error;return false;}
+        finally{UpdatePaymentControls();}
+    }
 
     private void InitializePayment()
     {
         GivenText.TextChanged += (_, _) => UpdateChange();
         MethodBox.SelectionChanged += (_, _) => UpdateChange();
-        PayButton.Click += async (_, _) => await TryThanhToanAsync();
+        PayButton.Click += async (_, _) => {if(await TryThanhToanAsync())OpenInvoicePrint();};
+        PrintAgainButton.Click += (_,_)=>OpenInvoicePrint();
     }
     private void ResetPayment()
     {
@@ -31,7 +42,9 @@ public partial class BangTinhPhiEditor
         var allowed = user is not null && user.CoQuyen(QuyenLamViec.ThuTien) && BangTinh?.DuocThanhToan == true;
         PaymentPanel.Visibility = allowed || KetQua is not null ? Visibility.Visible : Visibility.Collapsed;
         PayButton.IsEnabled = allowed && KetQua is null && !DangXuLy;
-        PayButton.Content = ChoDoiChieu ? "Thử lại yêu cầu" : "Xác nhận thu đủ";
+        PayButton.Content = ChoDoiChieu ? "Thử lại yêu cầu" : "Thanh toán và in hóa đơn";
+        PrintAgainButton.IsEnabled=KetQua is not null&&!DangXuLy&&!ChoDoiChieu;
+        PrintAgainButton.Visibility=KetQua is null?Visibility.Collapsed:Visibility.Visible;
         PaymentInputs.IsEnabled = TransferChecked.IsEnabled = !DangXuLy && !ChoDoiChieu && KetQua is null;
         PreviewButton.IsEnabled = !string.IsNullOrEmpty(visitId) && !DangXuLy && !ChoDoiChieu;
         WarehouseFilter.IsEnabled = !DangXuLy && !ChoDoiChieu;
@@ -68,7 +81,7 @@ public partial class BangTinhPhiEditor
             var result=await Task.Run(()=>bus.ThanhToan(request,user));
             KetQua=result;pendingPayment=null;
             TotalText.Text=$"Đã thu: {Money(result.SoTienThu)} · Khách đưa: {Money(result.SoTienKhachDua)} · Thối: {Money(result.TienThua)}";
-            StatusText.Text=$"Đã thanh toán · Hóa đơn #{result.MaHD}. "+(result.CacDon.Count>0?"Thuốc đang chờ giao.":"Lượt đã hoàn tất.");
+            StatusText.Text=$"Đã thanh toán · Hóa đơn #{result.MaHD}. "+(result.CacDon.Count==0?"Lượt đã hoàn tất.":result.CacDon.Any(d=>d.TrangThaiGiao!="Đã giao")?"Thuốc đang chờ giao.":"Các đơn đã giao; lượt đã hoàn tất.");
             try { ThanhToanHoanTat?.Invoke(this,EventArgs.Empty); }
             catch { StatusText.Text+=" Chưa tải lại được danh sách; dùng Tải lại để đối chiếu hóa đơn đã lưu."; }
             return true;
@@ -83,4 +96,6 @@ public partial class BangTinhPhiEditor
         { StatusText.Text="Chưa xác nhận được kết quả. Giữ nguyên lượt, kho và tiền; bấm Thử lại yêu cầu để đối chiếu, không lập lần thu khác.";return false; }
         finally { DangXuLy=false;UpdatePaymentControls(); }
     }
+    private void OpenInvoicePrint()=>TryInHoaDon(source=>
+    {var id=source.HoaDon.MaHD;new XemTruocHoaDon(()=>new BUS.BUS_THANHTOANTRONGOI().LayBanInHoaDon(id,user)){Owner=Window.GetWindow(this)}.Show();},out _);
 }

@@ -1,6 +1,6 @@
 # Quy trình khám và thanh toán ngoại trú Implementation Plan
 
-> **Tiến độ 26/10/2026:** P01–P09 đã hoàn tất phần nền, migration, hồ sơ, tiếp nhận, khám, kế hoạch, dịch vụ, kê đơn snapshot, bảng tính và thu đủ trong một giao dịch. Đã kiểm chứng 185 ca SQL (160 hồi quy + 25 thanh toán), 44 ca WPF (39 hồi quy + 5 thanh toán), thu đồng thời/chống lặp/rollback; dữ liệu và tồn cũ giữ nguyên. P10–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
+> **Tiến độ 26/10/2026:** P01–P10 đã hoàn tất phần nền, migration, hồ sơ, tiếp nhận, khám, kế hoạch, dịch vụ, kê đơn snapshot, bảng tính, thu đủ, bàn giao và in lại chứng từ. Đã kiểm chứng 198 ca SQL (160 hồi quy + 25 thanh toán + 13 bàn giao), 52 ca WPF (39 hồi quy + 5 thanh toán + 8 bàn giao/in), giao đồng thời/rollback/in lỗi; dữ liệu và tồn cũ giữ nguyên. P11–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
 
 > **For agentic workers:** Triển khai từng tác vụ và đánh dấu `- [ ]` khi hoàn thành. Nếu môi trường có Superpowers, dùng `superpowers:executing-plans`; không phụ thuộc vào việc cài thêm kỹ năng để đọc hoặc thực hiện tài liệu này. Người dùng yêu cầu giao kế hoạch cho Codex terminal trong Visual Studio 2022, chưa yêu cầu triển khai trong phiên lập kế hoạch.
 
@@ -545,11 +545,11 @@ Không bắt đầu bằng thay toàn bộ XAML. Khóa hợp đồng dữ liệu
 
 **Interfaces:** `BUS_BANGIAOTHUOC.XacNhanGiao` chỉ chuyển trạng thái, ghi nhân viên dược và thời gian. Người thu trên chứng từ xuất kỹ thuật không thay thế người giao thuốc thực tế.
 
-- [ ] Viết ca chưa thanh toán không giao được; đã thanh toán giao một lần; lần gọi thứ hai trả đã giao, không tạo thêm xuất kho.
-- [ ] Làm danh sách chờ giao cho dược sĩ, xem đúng nội dung đơn, xác nhận người nhận phù hợp và hướng dẫn; mọi đơn của lượt đã giao thì phiếu Hoàn tất.
-- [ ] In hóa đơn từ MaHD đã commit, đơn từ MaDT đã ký; in lại dùng cùng mã, thời gian và số tiền chốt. Bản trước thu chỉ ghi Bảng tính.
-- [ ] Mô phỏng lỗi in: thu vẫn thành công, có nút in lại, không gọi ThanhToan lần nữa. Không sửa quyền sử dụng hoặc giao diện của phân hệ kho.
-- [ ] Chạy kiểm tra bàn giao, tồn và các bản in nhiều dòng dài; lưu thay đổi.
+- [x] Viết ca chưa thanh toán không giao được; đã thanh toán giao một lần; lần gọi thứ hai trả đã giao, không tạo thêm xuất kho.
+- [x] Làm danh sách chờ giao cho dược sĩ, xem đúng nội dung đơn, xác nhận người nhận phù hợp và hướng dẫn; mọi đơn của lượt đã giao thì phiếu Hoàn tất.
+- [x] In hóa đơn từ MaHD đã commit, đơn từ MaDT đã ký; in lại dùng cùng mã, thời gian và số tiền chốt. Bản trước thu chỉ ghi Bảng tính.
+- [x] Mô phỏng lỗi in: thu vẫn thành công, có nút in lại, không gọi ThanhToan lần nữa. Không sửa quyền sử dụng hoặc giao diện của phân hệ kho.
+- [x] Chạy kiểm tra bàn giao, tồn và các bản in nhiều dòng dài; lưu thay đổi.
 
 ### P11 Hoàn thiện trải nghiệm và liên kết
 

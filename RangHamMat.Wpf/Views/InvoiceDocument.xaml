@@ -46,6 +46,7 @@
    <TextBlock Style="{StaticResource InvoiceText}" TextAlignment="Right"><Bold>Phải thu: </Bold><Run Text="{Binding Due, Mode=OneWay}"/></TextBlock>
    <TextBlock Style="{StaticResource InvoiceText}" TextAlignment="Right"><Bold>Đã thu ròng: </Bold><Run Text="{Binding Collected, Mode=OneWay}"/></TextBlock>
    <TextBlock Style="{StaticResource InvoiceText}" TextAlignment="Right"><Bold>Còn phải trả: </Bold><Run Text="{Binding Remaining, Mode=OneWay}"/></TextBlock>
+   <TextBlock Style="{StaticResource InvoiceText}" TextAlignment="Right" Text="{Binding CashInfo}"/>
   </StackPanel>
   <TextBlock Style="{StaticResource InvoiceText}" Text="Khoản thuốc dựa trên thuốc đã cấp; đơn giá chốt khi lập hóa đơn. Số đã thu là tiền thu trừ các khoản hoàn đã xác nhận." FontSize="11" Foreground="#586B82"/>
   <TextBlock Style="{StaticResource InvoiceText}" Text="NHÂN VIÊN THU TIỀN" TextAlignment="Right" FontWeight="SemiBold" Margin="0,24,0,0"/>

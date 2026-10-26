@@ -24,6 +24,7 @@
     <CheckBox x:Name="TransferChecked" Content="Đã đối chiếu chuyển khoản thủ công" Margin="0,10,0,6"/>
     <TextBlock x:Name="ChangeText" Margin="0,0,0,8"/>
     <Button x:Name="PayButton" Content="Xác nhận thu đủ" HorizontalAlignment="Left" Style="{StaticResource HospitalPrimary}" IsEnabled="False"/>
+    <Button x:Name="PrintAgainButton" Content="Xem / in lại hóa đơn" HorizontalAlignment="Left" Margin="0,8,0,0" Visibility="Collapsed"/>
    </StackPanel>
   </StackPanel>
   <Border Grid.Row="1" Style="{StaticResource HospitalPanel}" Margin="0,0,0,12" Padding="12">

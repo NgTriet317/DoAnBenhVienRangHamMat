@@ -132,7 +132,8 @@ public sealed partial class DAL_THANHTOANTRONGOI
         if (h.PhienBanQuyTrinh != 2 || h.TrangThai != "Đã xác nhận" ||
             (h.SoTienPhaiThu == 0 ? payments.Length != 0 : payments.Length != 1 || payments[0].TrangThai != "Đã xác nhận" || payments[0].LoaiGiaoDich != "Thu" || payments[0].SoTien != h.SoTienPhaiThu || payments[0].SoTienKhachDua is null || payments[0].TienThua is null))
             throw Error("MaHD", "Chứng từ chưa đủ điều kiện thu trọn gói; cần đối chiếu, không tự thu thêm.");
-        var deliveries = db.Query<DonThuocDaThu>("SELECT MaDT,MaPX FROM dbo.BAN_GIAO_THUOC WITH(HOLDLOCK) WHERE MaHD=@id ORDER BY MaDT", new { id }, tx).ToArray();
+        var deliveries = db.Query<DeliveryState>("SELECT MaDT,MaPX,TrangThai TrangThaiGiao,MaNVGiao,ThoiGianGiao FROM dbo.BAN_GIAO_THUOC WITH(HOLDLOCK) WHERE MaHD=@id ORDER BY MaDT", new { id }, tx)
+            .Select(d=>new DonThuocDaThu(d.MaDT,d.MaPX){TrangThaiGiao=d.TrangThaiGiao,MaNVGiao=d.MaNVGiao,ThoiGianGiao=d.ThoiGianGiao}).ToArray();
         return new(h.MaLS, h.MaHD, payments.SingleOrDefault()?.MaTT, deliveries, h.SoTienPhaiThu,
             payments.SingleOrDefault()?.SoTienKhachDua ?? 0, payments.SingleOrDefault()?.TienThua ?? 0, existing);
     }
@@ -151,4 +152,9 @@ public sealed partial class DAL_THANHTOANTRONGOI
     }
     private sealed record PhanThuDaChot(string MaCTDT, string MaLo, decimal SoLuong, decimal DonGia, decimal ThanhTien);
     private sealed record RequestAlias(string MaLS,string MaHD,string DauVanTayYeuCau);
+    private sealed class DeliveryState
+    {
+        public string MaDT{get;set;}=""; public string MaPX{get;set;}="";
+        public string TrangThaiGiao{get;set;}="";public string? MaNVGiao{get;set;}public DateTime? ThoiGianGiao{get;set;}
+    }
 }

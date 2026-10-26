@@ -9,6 +9,7 @@ try
     if (args.Contains("--prescriptions-concurrency")) return PrescriptionConcurrencyChecks.Run();
     if (args.Contains("--pricing-concurrency")) return PricingConcurrencyChecks.Run();
     if (args.Contains("--payments")) return PaymentChecks.Run();
+    if (args.Contains("--handover")) return HandoverChecks.Run();
     if (args.Contains("--migration-upgrade")) return MigrationLifecycleChecks.Run(false);
     if (args.Contains("--migration-rollback")) return MigrationLifecycleChecks.Run(true);
     var passed = 0;
@@ -30,7 +31,7 @@ try
         }
     }
     Console.WriteLine($"ClinicalChecks: {passed} PASS, {failed} FAIL; toàn bộ fixture rollback.");
-    Console.WriteLine("Các ca SQL không thay thế nghiệm thu đầy đủ AT01–AT34; bàn giao và nghiệm thu toàn luồng còn ở P10–P12.");
+    Console.WriteLine("Các ca SQL không thay thế nghiệm thu đầy đủ AT01–AT34; liên kết/DPI và nghiệm thu toàn luồng còn ở P11–P12.");
     return failed == 0 ? 0 : 1;
 }
 catch (Exception ex)

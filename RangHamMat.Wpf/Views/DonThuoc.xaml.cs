@@ -12,6 +12,7 @@ namespace RangHamMat.Views;
 public partial class DonThuoc : UserControl, IPatientScoped
 {
     private readonly KeDonThuocEditor? clinicalEditor;
+    private readonly BanGiaoThuocEditor? pharmacyEditor;
     private bool updating;
     private string? visitId;
     private string? selectedId;
@@ -20,13 +21,19 @@ public partial class DonThuoc : UserControl, IPatientScoped
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.
     /// </summary>
     private string? legacyPatientId;
-    public string? PatientId { get => clinicalEditor is null?legacyPatientId:clinicalEditor.PatientId; private set=>legacyPatientId=value; }
+    public string? PatientId { get => pharmacyEditor?.PatientId??clinicalEditor?.PatientId??legacyPatientId; private set=>legacyPatientId=value; }
     /// <summary>
     /// Khởi tạo danh sách đơn thuốc từ XAML. Theo dõi cache khi Loaded và làm mới nội dung khi dữ liệu thay đổi; gỡ theo dõi khi Unloaded.
     /// </summary>
-    public DonThuoc()
+    public DonThuoc():this(false){}
+    internal DonThuoc(bool historyOnly)
     {
-        if(DuLieuGiaoDien.PhamViLamSang&&Controls.ClinicalWorkflow.QuyenNghiepVu.LayNguCanh().CoQuyen(ET.QuyenLamViec.Kham)){clinicalEditor=new KeDonThuocEditor();Content=clinicalEditor;return;}
+        if(!historyOnly&&DuLieuGiaoDien.PhamViLamSang)
+        {
+            var user=Controls.ClinicalWorkflow.QuyenNghiepVu.LayNguCanh();
+            if(user.CoQuyen(ET.QuyenLamViec.Kham)){clinicalEditor=new KeDonThuocEditor();Content=clinicalEditor;return;}
+            if(user.CoQuyen(ET.QuyenLamViec.GiaoThuoc)){pharmacyEditor=new BanGiaoThuocEditor(user);Content=pharmacyEditor;return;}
+        }
         InitializeComponent();
         DrugGuidanceButton.Visibility=DuLieuGiaoDien.PhamViLamSang&&(DuLieuGiaoDien.NguoiDungLamSang.LaAdmin||DuLieuGiaoDien.NguoiDungLamSang.CoQuyen(ET.QuyenLamViec.CauHinhHoTro))?Visibility.Visible:Visibility.Collapsed;
         HoTroGiaoDien.Observe(this, Refresh);
@@ -41,6 +48,7 @@ public partial class DonThuoc : UserControl, IPatientScoped
     /// </summary>
     public void FocusContext(string? patientId, string? visitId = null, string? prescriptionId = null)
     {
+        if(pharmacyEditor is not null){pharmacyEditor.FocusContext(patientId,visitId,prescriptionId);return;}
         if(clinicalEditor is not null){clinicalEditor.FocusContext(patientId,visitId,prescriptionId);return;}
         PatientId = patientId;
         this.visitId = visitId;

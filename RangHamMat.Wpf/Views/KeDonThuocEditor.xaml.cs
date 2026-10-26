@@ -85,16 +85,10 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
     private void Unlink_Click(object sender,RoutedEventArgs e){if(Editable&&RxLines.SelectedItem is DongThuocKeDon r){r.PhienBanHuongDan=null;r.DaXacNhanPhuHop=false;dirty=true;RxLines.Items.Refresh();}}
     private void Guidance_Click(object sender,RoutedEventArgs e){if(!CanLeave())return;Run(()=>{var c=new HuongDanThuocEditor(actor,transaction);c.BackRequested+=()=>{GuidanceHost.Content=null;GuidanceHost.Visibility=Visibility.Collapsed;MainSurface.Visibility=Visibility.Visible;LoadGroups();Search();};GuidanceHost.Content=c;GuidanceHost.Visibility=Visibility.Visible;MainSurface.Visibility=Visibility.Collapsed;},out _);}
     private static FlowDocument BuildPrint(BanInDonThuoc p)
-    {
-        var doc=new FlowDocument{FontFamily=new System.Windows.Media.FontFamily("Segoe UI"),FontSize=14,PagePadding=new Thickness(30),ColumnWidth=900};
-        doc.Blocks.Add(new Paragraph(new Bold(new Run("ĐƠN THUỐC · "+p.Nguon.Don.MaDT))){FontSize=22});doc.Blocks.Add(new Paragraph(new Run($"Người bệnh: {p.HoTenBN} ({p.Nguon.MaBN})\nNgày sinh: {p.NgaySinh?.ToString("dd/MM/yyyy")??"chưa ghi nhận"}\nLượt: {p.Nguon.Don.MaLS} · Bác sĩ: {p.TenBS} ({p.Nguon.Don.MaBS})\nNgày kê: {p.Nguon.Don.NgayKe:dd/MM/yyyy HH:mm}\nChẩn đoán: {p.ChanDoan}")));
-        foreach(var d in p.Nguon.CacDong)doc.Blocks.Add(new Paragraph(new Run($"{d.TenThuocChot} · {d.HamLuongChot}\nLượng: {d.SoLuong:0.###} {d.DonViTinhChot} · {d.SoNgayDung} ngày\nLiều: {d.LieuDung} · Đường dùng: {d.DuongDung}\nHướng dẫn: {d.HuongDan}")));
-        return doc;
-    }
+        =>DonThuocDocument.Tao(p);
     private void Print_Click(object sender,RoutedEventArgs e)
     {
-        Run(()=>{var read=TaoNguonInCoDinh();var initial=read();var id=initial.Nguon.Don.MaDT;var viewer=new FlowDocumentScrollViewer{Document=BuildPrint(initial),VerticalScrollBarVisibility=ScrollBarVisibility.Auto};var print=new Button{Content="In bản đã ký",Margin=new Thickness(10)};var feedback=new TextBlock{TextWrapping=TextWrapping.Wrap,Margin=new Thickness(10)};var panel=new DockPanel();DockPanel.SetDock(print,Dock.Top);DockPanel.SetDock(feedback,Dock.Top);panel.Children.Add(print);panel.Children.Add(feedback);panel.Children.Add(viewer);var window=new Window{Title="Đơn thuốc "+id,Content=panel,Width=850,Height=750};
-        print.Click+=(_,_)=>{try{var dialog=new PrintDialog();if(dialog.ShowDialog()!=true)return;var document=BuildPrint(read());viewer.Document=document;dialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator,"Đơn thuốc "+id);feedback.Text="Đã gửi đúng bản ký "+id+" tới máy in.";}catch(Exception ex){feedback.Text="Không thể in "+id+": "+ex.Message;}};window.Show();},out _);
+        Run(()=>new XemTruocDonThuoc(TaoNguonInCoDinh()){Owner=Window.GetWindow(this)}.Show(),out _);
     }
     private static string Known(string? text)=>string.IsNullOrWhiteSpace(text)?"chưa ghi nhận, cần đối chiếu":text;
     private static string Age(DateTime? dob){if(dob is not DateTime birth)return "chưa rõ";if(birth.Date>DateTime.Today)return "ngày sinh cần đối chiếu";var y=DateTime.Today.Year-birth.Year;if(birth.Date.AddYears(y)>DateTime.Today)y--;return y+" tuổi";}

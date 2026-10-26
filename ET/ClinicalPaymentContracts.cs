@@ -11,7 +11,12 @@ public sealed record YeuCauThanhToan
     public string? MaThamChieu { get; init; }
     public bool DaDoiChieuChuyenKhoan { get; init; }
 }
-public sealed record DonThuocDaThu(string MaDT, string MaPX);
+public sealed record DonThuocDaThu(string MaDT, string MaPX)
+{
+    public string TrangThaiGiao { get; init; } = "Chờ giao";
+    public string? MaNVGiao { get; init; }
+    public DateTime? ThoiGianGiao { get; init; }
+}
 public sealed record KetQuaThanhToan(string MaLS, string MaHD, string? MaTT,
     IReadOnlyList<DonThuocDaThu> CacDon, decimal SoTienThu, decimal SoTienKhachDua,
     decimal TienThua, bool DaTonTai);

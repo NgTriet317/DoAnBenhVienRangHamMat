@@ -263,7 +263,15 @@ public partial class HoaDon : UserControl, IPatientScoped
     /// Đọc lại đầu và chi tiết hóa đơn từ BUS, mở cửa sổ xem trước/in; thông báo lỗi nếu không đọc được chứng từ.
     /// </summary>
     private void Print_Click(object sender, RoutedEventArgs e)
-    { try { if (invoiceId is null) return; var header = (DuLieuGiaoDien.PhamViLamSang ? QuyenNghiepVu.DocDanhSachHoaDon() : finance.GetInvoices()).Rows.Cast<DataRow>().Single(r => Convert.ToString(r["MaHD"]) == invoiceId); var details = DuLieuGiaoDien.PhamViLamSang ? QuyenNghiepVu.DocChiTietHoaDon(invoiceId) : finance.GetInvoiceDetails(invoiceId); new XemTruocHoaDon(header, details) { Owner = Window.GetWindow(this) }.ShowDialog(); } catch (Exception ex) { PageStatus.Text = "Không thể xem trước hóa đơn: " + ex.Message; } }
+    {
+        try
+        {
+            if(invoiceId is not{}id)return;
+            if(DuLieuGiaoDien.PhamViLamSang){var actor=QuyenNghiepVu.LayNguCanh();new XemTruocHoaDon(()=>new BUS_THANHTOANTRONGOI().LayBanInHoaDon(id,actor)){Owner=Window.GetWindow(this)}.ShowDialog();}
+            else{var header=finance.GetInvoices().Rows.Cast<DataRow>().Single(r=>Convert.ToString(r["MaHD"])==id);new XemTruocHoaDon(header,finance.GetInvoiceDetails(id)){Owner=Window.GetWindow(this)}.ShowDialog();}
+        }
+        catch(Exception){PageStatus.Text="Không mở được bản in. Tải lại đúng hóa đơn; kết quả thu tiền giữ nguyên.";}
+    }
 }
 
 /// <summary>
