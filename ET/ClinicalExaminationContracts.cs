@@ -2,7 +2,11 @@ namespace ET;
 
 public sealed class LoiKhamException(string truong,string message) : InvalidOperationException(message)
 { public string Truong { get; } = truong; }
-public sealed class XungDotDuLieuKhamException() : InvalidOperationException("Dữ liệu đã thay đổi ở cửa sổ khác. Giữ nội dung đang nhập, tải lại để đối chiếu trước khi lưu.");
+public sealed class XungDotDuLieuKhamException : InvalidOperationException
+{
+    public XungDotDuLieuKhamException():base("Dữ liệu đã thay đổi ở cửa sổ khác. Giữ nội dung đang nhập, tải lại để đối chiếu trước khi lưu."){}
+    public XungDotDuLieuKhamException(string message):base(message){}
+}
 
 public sealed record BanNhapKham(ET_LICHSUKHAMBENH LanKham,IReadOnlyList<ET_TINHTRANGBENH> TinhTrang,string DauVanTay,bool DuocSua,string? MaBN=null,string? MaHS=null);
 public sealed record DuLieuKhongGianKham(BanNhapKham BanNhap,ET_BENHNHAN BenhNhan,IReadOnlyList<ET_DICHVU> DichVu,IReadOnlyList<ET_DMTINHTRANGBENH> DanhMucTinhTrang,IReadOnlyList<ET_KEHOACHDIEUTRI> KeHoach);

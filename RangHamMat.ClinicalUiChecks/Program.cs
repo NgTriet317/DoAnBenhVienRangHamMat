@@ -47,6 +47,61 @@ internal static class Program
         }
         try
         {
+            Check("P07 preview gắn đúng mã đơn dù editor đổi nguồn và đọc lại hiệu lực",()=>
+            {
+                using var f=new RangHamMat.ClinicalChecks.Fixture();f.Execute("DELETE dbo.CHI_TIET_DON_THUOC WHERE MaDT=@id;DELETE dbo.DON_THUOC WHERE MaDT=@id",new{id=f.Id("DTA")});var actor=f.User("A");var b=new BUS.BUS_DONTHUOC(f.Transaction);var drug=f.Scalar<string>("SELECT TOP(1) MaThuoc FROM dbo.THUOC ORDER BY MaThuoc");var r=new YeuCauLuuDon{MaLS=f.Id("LSA"),CacDong=[new(){MaThuoc=drug,LieuDung="FIXTURE",DuongDung="FIXTURE",HuongDan="FIXTURE không dùng thật"}]};var a=b.LuuDon(r,actor);a=b.XacNhanDon(a.Don.MaDT,a.DauVanTay,actor);
+                var view=new KeDonThuocEditor(actor,f.Transaction);view.FocusContext(f.Id("BN1"),f.Id("LSA"),a.Don.MaDT);var factory=view.GetType().GetMethod("TaoNguonInCoDinh")??throw new Exception("Preview chưa có nguồn riêng gắn mã đơn.");var reader=(Func<BanInDonThuoc>)factory.Invoke(view,null)!;
+                var other=b.LuuDon(r with {GhiChu="FIXTURE bổ sung"},actor);other=b.XacNhanDon(other.Don.MaDT,other.DauVanTay,actor);view.FocusContext(f.Id("BN1"),f.Id("LSA"),other.Don.MaDT);Require(reader().Nguon.Don.MaDT==a.Don.MaDT,"Preview A chuyển thành nguồn B.");var replacement=b.LuuDon(r with {MaDTThayThe=a.Don.MaDT,LyDoThayThe="FIXTURE"},actor);b.XacNhanDon(replacement.Don.MaDT,replacement.DauVanTay,actor);var refused=false;try{reader();}catch(LoiKhamException){refused=true;}Require(refused,"Preview vẫn in bản đã ngừng áp dụng.");
+            });
+            Check("P07 cấu hình tìm được thuốc ngoài 100 kết quả đầu",()=>
+            {
+                using var f=new RangHamMat.ClinicalChecks.Fixture();var actor=f.User("A");f.Execute("DECLARE @i int=1,@kind nvarchar(50)=(SELECT TOP(1) MaLoaiHH FROM dbo.HANG_HOA ORDER BY MaHH);WHILE @i<=101 BEGIN INSERT dbo.HANG_HOA(MaHH,TenHH,MaLoaiHH,DonViTinh,MoTa,TrangThai) VALUES(@prefix+'HH'+CAST(@i as nvarchar(4)),N'AAA FIXTURE '+CAST(@i as nvarchar(4)),@kind,N'FIXTURE',N'FIXTURE',N'Đang hoạt động');INSERT dbo.THUOC(MaThuoc,MaHH,HamLuong,MucTonToiThieu,DonGiaBan) VALUES(@prefix+'TH'+CAST(@i as nvarchar(4)),@prefix+'HH'+CAST(@i as nvarchar(4)),N'FIXTURE',0,0);SET @i+=1;END",new{prefix=f.Prefix});var view=new HuongDanThuocEditor(actor,f.Transaction);Require(view.FindName("DrugQuery") is TextBox,"Cấu hình không có tìm thuốc ngoài 100 dòng.");Find<TextBox>(view,"DrugQuery").Text="TH001";Find<Button>(view,"FindDrugButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));Require(Find<ComboBox>(view,"DrugChoice").Items.OfType<LuaChonDanhMuc>().Any(c=>c.Value=="TH001"),"Không tìm được thuốc sau dòng 100.");
+            });
+            Check("P07 cấu hình mới giữ mã thuốc khi chặn đổi nguồn và tải lại được",()=>
+            {
+                using var f=new RangHamMat.ClinicalChecks.Fixture();var view=new HuongDanThuocEditor(f.User("A"),f.Transaction);var picker=Find<ComboBox>(view,"DrugChoice");picker.SelectedIndex=0;var id=picker.SelectedValue;Find<TextBox>(view,"DoseEditor").Text="FIXTURE chưa lưu";picker.SelectedIndex=-1;Require(Equals(picker.SelectedValue,id),"Chặn đổi nguồn làm mất mã thuốc mới chưa lưu.");typeof(HuongDanThuocEditor).GetMethod("Reload_Click",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(view,new object[]{view,new RoutedEventArgs()});Require(!view.CoThayDoiChuaLuu&&Find<TextBox>(view,"DoseEditor").Text.Length==0,"Không bỏ được nháp mới để tiếp tục.");
+            });
+            Check("P07 cửa sổ in trực tiếp từ chối bản nháp",()=>
+            {var denied=false;try{new XemTruocDonThuoc(new RxCard(new Dictionary<string,object?>{{"MaDT","__nháp__"},{"TrangThai","Nháp"}})).Close();}catch(LoiKhamException){denied=true;}Require(denied,"Cửa sổ in trực tiếp vẫn mở nháp.");});
+            Check("P07 lịch sử/in dùng tên đơn vị chốt và từ chối cửa sổ in nháp",()=>
+            {
+                SignIn("CV005");DuLieuGiaoDien.ChonPhamViLamSang(true);var record=new Dictionary<string,object?>{{"MaThuoc","TH001"},{"TenThuocChot","FIXTURE tên đã ký"},{"HamLuongChot","FIXTURE hàm lượng"},{"DonViTinhChot","FIXTURE đơn vị"}};
+                var line=new PrescriptionLine(record);Require(line.Label.Contains("FIXTURE tên đã ký")&&line.Label.Contains("FIXTURE hàm lượng")&&line.Unit=="FIXTURE đơn vị","Lịch sử/in đổi theo danh mục thay vì snapshot.");
+                var denied=false;try{new XemTruocDonThuoc(new RxCard(new Dictionary<string,object?>{{"MaDT","__nháp__"},{"TrangThai","Nháp"}})).Close();}catch(LoiKhamException){denied=true;}Require(denied,"Cửa sổ in trực tiếp vẫn mở được nháp.");
+            });
+            Check("P07 form chung không tạo đơn thiếu dòng hoặc xóa bỏ nguồn nháp",()=>
+            {
+                SignIn("CV004");
+                try
+                {
+                    using var f=new ReceptionFixture();var receiver=new BUS.BUS_QUYENNGHIEPVU().LayNguCanh(PhienDangNhap.MaNV);var receipt=new BUS.BUS_TIEPNHAN().TiepNhan(new(){MaBN=f.Patient,MaDV=f.Service,MaBS=f.Doctor,MaPhong=f.Room,LyDoKham="FIXTURE"},receiver);
+                    PhienDangNhap.MaNV=f.Doctor;PhienDangNhap.KhoiTaoDinhDanhNghiepVu(f.Account);var actor=new BUS.BUS_QUYENNGHIEPVU().LayNguCanh(f.Doctor);var ls=new BUS.BUS_KHAMDIEUTRI().BatDauKham(receipt.MaPhieu,actor);DuLieuGiaoDien.ChonPhamViLamSang(true);
+                    var blocked=false;try{DuLieuGiaoDien.Upsert("DON_THUOC",new Dictionary<string,object?>{{"MaLS",ls},{"MaBS",f.Doctor},{"NgayKe",DateTime.Now},{"TrangThai","Nháp"}});}catch(LoiKhamException){blocked=true;}
+                    Require(blocked,"Form chung vẫn tạo được đơn rỗng ngoài aggregate P07.");
+                    var root=new DonThuoc();root.FocusContext(f.Patient,ls);Require(root.Content is KeDonThuocEditor c&&c.PatientId==f.Patient,"Màn chính chưa nối editor P07.");
+                }
+                finally{SignIn("CV004");DuLieuGiaoDien.RefreshFromDatabase();}
+            });
+            Check("P07 chọn nhiều thuốc, chống trùng, lưu và in snapshot đã ký",()=>
+            {
+                using var f=new RangHamMat.ClinicalChecks.Fixture();f.Execute("DELETE dbo.CHI_TIET_DON_THUOC WHERE MaDT=@id;DELETE dbo.DON_THUOC WHERE MaDT=@id",new{id=f.Id("DTA")});var actor=f.User("A");
+                f.Execute("UPDATE dbo.BENH_NHAN SET NgaySinh='1990-01-02',DiUng=N'FIXTURE dị ứng riêng',TienSuBenh=N'FIXTURE tiền sử riêng' WHERE MaBN=@id",new{id=f.Id("BN1")});var type=typeof(DonThuoc).Assembly.GetType("RangHamMat.Views.KeDonThuocEditor")??throw new Exception("Thiếu editor kê đơn P07");var view=(UserControl)Activator.CreateInstance(type,actor,f.Transaction)!;
+                type.GetMethod("FocusContext")!.Invoke(view,new object?[]{f.Id("BN1"),f.Id("LSA"),null});
+                Require(view.FindName("SafetyHeader") is TextBlock safety&&safety.Text.Contains("FIXTURE dị ứng riêng")&&safety.Text.Contains("FIXTURE tiền sử riêng")&&safety.Text.Contains("02/01/1990")&&safety.Text.Contains("tuổi"),"Thiếu thông tin người bệnh cần kiểm tra trước ký.");
+                using var host=new WindowLifetime(new Window{Content=view,Width=1366,Height=900,ShowInTaskbar=false});host.Window.Show();host.Window.UpdateLayout();
+                var picker=Find<DataGrid>(view,"DrugGrid");foreach(var row in picker.Items.Cast<object>().Take(3).ToArray())picker.SelectedItems.Add(row);Find<Button>(view,"AddSelectedButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));Find<Button>(view,"AddSelectedButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                var lines=Find<DataGrid>(view,"RxLines");var input=((System.Collections.IList)lines.ItemsSource).Cast<DongThuocKeDon>().ToArray();Require(input.Length==3,"Thêm trùng hoặc không đủ ba thuốc.");Require(!InvokeTry(view,"TrySave"),"Lưu đơn thiếu chỉ định.");
+                foreach(var line in input){line.LieuDung="FIXTURE không dùng thật";line.DuongDung="FIXTURE";line.HuongDan="FIXTURE không dùng thật";line.SoNgayDung=2;line.SoLuong=3;}
+                Require(InvokeTry(view,"TrySave"),Find<TextBlock>(view,"ErrorText").Text);Require(!InvokeTry(view,"TryPreparePrint"),"In được nháp.");EditCell(lines,1,"FIXTURE ô đang nhập");Require((bool)type.GetProperty("CoThayDoiChuaLuu")!.GetValue(view)!,"Không nhận nháp ô đang nhập.");Require(!InvokeTry(view,"TrySign"),"Ký chỉ định đang sửa chưa lưu.");Find<Button>(view,"ReloadButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));Require(InvokeTry(view,"TrySign"),Find<TextBlock>(view,"ErrorText").Text);Require(InvokeTry(view,"TryPreparePrint"),Find<TextBlock>(view,"ErrorText").Text);
+                Require(lines.IsReadOnly&&!Find<Button>(view,"SaveButton").IsEnabled,"Ký rồi còn sửa dòng.");SavePreview(view,"don-thuoc-da-ky.png","obj/ClinicalWorkflowP07");
+            });
+            Check("P07 cấu hình cần bác sĩ duyệt và áp hướng dẫn có xác nhận phù hợp",()=>
+            {
+                using var f=new RangHamMat.ClinicalChecks.Fixture();var admin=f.User("X");var type=typeof(DonThuoc).Assembly.GetType("RangHamMat.Views.HuongDanThuocEditor")??throw new Exception("Thiếu cấu hình thuốc P07");var view=(UserControl)Activator.CreateInstance(type,admin,f.Transaction)!;
+                var id=f.Scalar<string>("SELECT TOP(1) MaThuoc FROM dbo.THUOC ORDER BY MaThuoc");Find<ComboBox>(view,"DrugChoice").SelectedValue=id;Find<TextBox>(view,"PopulationEditor").Text="FIXTURE";Find<TextBox>(view,"RouteEditor").Text="FIXTURE";Find<TextBox>(view,"DoseEditor").Text="FIXTURE";Find<TextBox>(view,"InstructionEditor").Text="FIXTURE không dùng thật";
+                Require(InvokeTry(view,"TrySave"),Find<TextBlock>(view,"ErrorText").Text);Require(!Find<Button>(view,"ApproveButton").IsEnabled&&!InvokeTry(view,"TryApprove"),"Admin duyệt hướng dẫn thay bác sĩ.");var doctor=f.User("A");var medical=(UserControl)Activator.CreateInstance(type,doctor,f.Transaction)!;Find<ComboBox>(medical,"DrugChoice").SelectedValue=id;Require(InvokeTry(medical,"TryApprove"),Find<TextBlock>(medical,"ErrorText").Text);
+                var cart=new KeDonThuocEditor(doctor,f.Transaction);cart.FocusContext(f.Id("BN1"),f.Id("LSA"));Find<TextBox>(cart,"DrugSearch").Text=id;Find<Button>(cart,"SearchButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));Find<DataGrid>(cart,"DrugGrid").SelectedIndex=0;Find<Button>(cart,"AddSelectedButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));var cartLines=Find<DataGrid>(cart,"RxLines");cartLines.SelectedIndex=0;Require(!cart.TryApplyGuidance(false,out _),"Áp mẫu chưa xác nhận phù hợp.");Require(cart.TryApplyGuidance(true,out var error),error);var row=(DongThuocKeDon)cartLines.SelectedItem;Require(row.DaXacNhanPhuHop&&row.PhienBanHuongDan==1&&row.LieuDung=="FIXTURE","Không áp đúng phiên bản đã duyệt.");
+            });
             Check("P06 chọn lượt không tự khóa bộ chọn về một bệnh nhân",()=>
             {
                 using var f=new RangHamMat.ClinicalChecks.Fixture();var actor=f.User("A");

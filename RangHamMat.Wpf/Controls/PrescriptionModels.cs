@@ -71,6 +71,7 @@ public sealed class RxCard
     /// Số điện thoại của bệnh nhân nguồn, giữ dạng chuỗi để không mất số 0 đầu.
     /// </summary>
     public string Phone { get; }
+    public string BirthDate { get; }
     /// <summary>
     /// Ghi chú của bản ghi/dòng nháp để hiển thị hoặc nhập bổ sung trước khi lưu.
     /// </summary>
@@ -96,6 +97,7 @@ public sealed class RxCard
         var patient = DuLieuGiaoDien.Find("BENH_NHAN", DuLieuGiaoDien.PatientId("DON_THUOC", record));
         Patient = patient is null ? "—" : DuLieuGiaoDien.Label("BENH_NHAN", patient);
         Phone = patient is null ? "—" : UiRecord.Text(patient, "SDT");
+        BirthDate = patient is null?"chưa ghi nhận":UiRecord.Date(patient,"NgaySinh")?.ToString("dd/MM/yyyy")??"chưa ghi nhận";
         var visit = DuLieuGiaoDien.Find("LICH_SU_KHAM_BENH", UiRecord.Get(record, "MaLS"));
         Diagnosis = visit is null ? "—" : UiRecord.Text(visit, "ChanDoan");
         Lines = DuLieuGiaoDien.Children("CHI_TIET_DON_THUOC", "MaDT", UiRecord.Get(record, "MaDT")).Select(row => new PrescriptionLine(row)).ToArray();

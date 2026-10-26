@@ -10,7 +10,8 @@ Ngày 26/10/2026. Kế hoạch chính: [KeHoach_CaiTo_QuyTrinhKham_6ChucNang.md]
 | P04 | Hoàn tất hồ sơ và tiếp nhận | Bốn tab, tìm ngày sinh, lần khám gần nhất; dịch vụ–bác sĩ theo chuyên khoa/lịch; SQL cấp số và kiểm tra quyền; hai quầy không trùng phiếu/số. Tổng 80 ca SQL, 14 ca WPF đạt |
 | P05 | Hoàn tất khám và kế hoạch điều trị | Bắt đầu một MaLS/phiếu; lưu khám/tình trạng có snapshot; gợi ý, sao chép và duyệt mẫu/kế hoạch; hoàn tất và khóa. Tổng 104 ca SQL, 23 ca WPF đạt; đồng thời hai kết nối đạt |
 | P06 | Hoàn tất dịch vụ thực hiện | Dự kiến/Thực tế, giao điều dưỡng, giới hạn lượng cùng hồ sơ qua hai buổi, ký và khóa nguồn; 124 ca SQL, 27 ca WPF, hai kết nối xác nhận/tranh lượng/ReadCommitted đạt |
-| P07–P12 | Chưa triển khai | Ký đơn snapshot, bảng tính, thu đủ/chống lặp, bàn giao và nghiệm thu toàn luồng |
+| P07 | Hoàn tất kê đơn nhiều dòng và snapshot | Chọn thuốc theo nhóm, hướng dẫn duyệt có xác nhận phù hợp, ký/thay đơn nguyên tử, thông tin an toàn và in đúng nguồn; 146 ca SQL, 35 ca WPF đạt; đồng thời ký/thay/sửa và tồn không đổi đạt |
+| P08–P12 | Chưa triển khai | Bảng tính, thu đủ/chống lặp, bàn giao và nghiệm thu toàn luồng |
 
 ## Quyết định khi thực hiện
 
@@ -39,6 +40,11 @@ Ngày 26/10/2026. Kế hoạch chính: [KeHoach_CaiTo_QuyTrinhKham_6ChucNang.md]
 23. P06 giữ khóa ghi chung trước khóa lượt và khóa SQL nguồn; cùng khóa lượt với hoàn tất P05. Chi phí: ghi dịch vụ tuần tự ở quy mô đồ án; chưa có nghiệm thu tải lớn. ReadCommitted vẫn giữ nguồn tới commit/rollback.
 24. Giữ CRUD legacy cho hồi quy/tích hợp cũ, chặn Save/Delete qua cache lâm sàng với dịch vụ; dùng API chuyên dụng để giữ audit/lượng. Chi phí: API cũ ngoài luồng này không thay thế cơ chế xác thực mới. Giá trị xác nhận là nguồn P08, không tự phát hành hóa đơn P06.
 25. Ca đồng thời có commit chữ ký chạy trên database mới riêng, có guard không ghi đè; dọn cả database thử tạm sau kiểm tra, giữ log. Không tắt trigger/xóa lịch sử đã ký để dọn fixture trên bản thử chính. Ca SQL/WPF còn lại rollback hoặc dọn nháp theo GUID.
+26. P07 giữ nhập đủ liều/đường dùng/hướng dẫn/ngày/lượng ngay khi lưu nháp. Không có hướng dẫn duyệt thì nhập thủ công. Nháp đã lưu giữ tên/hàm lượng/đơn vị tham chiếu; danh mục đổi trước ký báo xung đột, cần lưu/đối chiếu lại. Chi phí: thêm bước kiểm tra lại khi danh mục đổi; không tự đổi liều theo thông tin mới.
+27. Schema không có cột dạng bào chế riêng; bộ lọc Đơn vị/dạng cấp phát dùng DonViTinh sẵn có. Không suy danh mục dạng thuốc từ tên hoặc sửa schema kho. Hướng dẫn giữ một phiên bản hiện hành theo khóa MaThuoc; bản trước nằm trong audit và chỉ định đã sao chép, không bị áp lại tự động.
+28. Một nguồn chỉ có một nháp thay đang soạn; MaLS/MaDTThayThe bất biến sau lưu. Đơn cũ giữ hiệu lực tới khi ký mới. Lý do thay bắt buộc; đơn bổ sung được kiểm lý do cả khi lưu sửa lẫn ký. Chi phí: phải mở/hủy nháp hiện có khi chọn sai nguồn, không tạo nhiều nháp thay mơ hồ.
+29. Giữ khóa ghi Rx trước khóa lượt P05 và khóa nguồn SQL; kiểm cả hóa đơn hủy hoặc dòng xuất nháp có FK để giữ nguồn. Chi phí: ghi Rx tuần tự ở quy mô đồ án; phải xử lý chứng từ phụ thuộc trước khi thay đơn. Chưa đo tải lớn.
+30. Lịch sử đơn trong hồ sơ chỉ đọc, có Mở khu kê đơn; Save/Delete chung bị chặn sau kiểm quyền. CRUD ngoài clinical giữ cho tương thích. Preview giữ cố định mã đơn, đọc lại hiệu lực/quyền ngay trước in; thông tin chưa có hiển thị rõ, không suy là không dị ứng hoặc có bộ phát hiện tương tác đầy đủ.
 
 ## Rà soát độc lập
 
@@ -62,4 +68,8 @@ Rà soát P06 phát hiện bốn Important: quầy thu đọc được kết qu�
 
 Rà soát giữ đúng phạm vi các phần sau: P07 đơn, P08/P09 phí/thu, P10 bàn giao, P11/P12 điều hướng toàn ứng dụng/DPI. Không tự đổi trạng thái tiến độ kế hoạch; lượng dự kiến/đã làm/nháp được tính từ nguồn thực tế. Ngày kế hoạch là dự kiến, thời gian thực hiện phải hợp lệ theo lượt và đồng hồ SQL. Khóa chung, đọc mã cha sơ bộ rồi kiểm tra lại và xác nhận idempotent được giữ có chủ đích. Tài liệu/ảnh đã cập nhật hoặc hoàn trả sau kiểm chứng.
 
-Bước tiếp theo là P07: kê đơn nhiều dòng theo nhóm thuốc, snapshot khi ký và thay đơn có kiểm soát. P07–P12, phân trang SQL quy mô lớn, giao diện tổng thể và giao dịch thu đủ chưa hoàn tất.
+Rà soát P07 phát hiện bốn Important: preview theo editor đang đổi nguồn, thiếu thông tin an toàn/ngày sinh trước ký/in, cấu hình chỉ chọn được 100 thuốc đầu, lý do đơn bổ sung bị bỏ qua khi lưu sửa/ký. Kiểm tra thêm phát hiện cấu hình mới mất mã thuốc khi chặn đổi nguồn, và danh mục đổi hàm lượng sau lưu có thể tự đổi nguồn khi ký. Tái hiện SQL **18 đạt/3 lỗi**, WPF **31 đạt/4 lỗi**; sửa trong một lượt, bổ sung ca hàm lượng **21 đạt/1 lỗi → 22/22 P07**. Kết quả cuối **146/146 SQL, 35/35 WPF**; không còn Important hoặc Minor hoãn lại P07.
+
+Các phần để đúng tác vụ: phí/thu P08/P09, bàn giao P10, điều hướng toàn ứng dụng/DPI P11 và nghiệm thu P12. Giữ fallback bản in lịch sử thiếu cột mới, CRUD ngoài clinical, giới hạn thật của bộ lọc dạng và một cấu hình hiện hành theo schema. Review chỉ đọc; kiểm chứng SQL/WPF/hai kết nối do executor thực hiện, có log. Word giữ nguyên, ba lỗi suite baseline vẫn được ghi rõ.
+
+Bước tiếp theo là P08: bảng tính phí theo lượt, đủ mọi dịch vụ/đơn còn hiệu lực, giá và phân bổ lô dự kiến, dấu vân tay nguồn. P08–P12, phân trang SQL quy mô lớn, giao diện tổng thể và giao dịch thu đủ chưa hoàn tất.

@@ -11,7 +11,8 @@ Nguồn yêu cầu: hai file `KeHoach_CaiTo_QuyTrinhKham_6ChucNang.docx` và `.m
 - P04: thêm BUS/DAL_TIEPNHAN và hợp đồng chọn bác sĩ/tiếp nhận; quyền điều phối ngoài lịch CV004; bốn tab, tìm ngày sinh/lần khám gần nhất, form tiếp nhận mới và guard chặn lập phiếu bằng form chung. Không thêm schema hoặc sửa thuật toán lập lịch; chỉ cập nhật trạng thái lịch Chờ khám trong transaction tiếp nhận như điểm tích hợp cũ.
 - P05: thêm hợp đồng và aggregate BUS/DAL khám, tình trạng, kế hoạch và mẫu; màn khám bốn tab, cấu hình soạn/duyệt mẫu; bắt đầu idempotent, snapshot, ký/khóa, bảo vệ nháp. Hồ sơ nhúng lịch sử chỉ đọc; thao tác khám ở workspace Khám điều trị. Không đổi schema, tạo dịch vụ thực hiện hoặc seed chuyên môn.
 - P06: thêm hợp đồng, API lưu/xác nhận/hủy và workspace Dự kiến/Thực tế; xác minh người được giao, lượng theo bước cùng hồ sơ qua nhiều lượt, snapshot và nguồn đã thu; chặn đường form chung bỏ qua API. Nguồn thu chỉ dùng dịch vụ xác nhận, quầy thu không nhận kết quả/lý do chuyên môn. Không đổi schema, thuật toán lịch hoặc tự tạo hóa đơn.
-- P07–P12 chưa được nghiệm thu. Không coi các endpoint nền là sáu màn hình đã cải tổ hoàn chỉnh.
+- P07: thêm DTO/API tìm, lưu, ký, hủy nháp, thay đơn và cấu hình hướng dẫn; workspace chọn nhiều thuốc, thông tin an toàn/ngày sinh/tuổi, snapshot, nguồn preview cố định và in bản ký. Chặn form chung ghi/xóa đầu/dòng đơn, lịch sử chỉ đọc có liên kết đến khu kê đơn. Không đổi schema, tự soạn liều hoặc trừ kho khi kê/ký.
+- P08–P12 chưa được nghiệm thu. Không coi các endpoint nền là sáu màn hình đã cải tổ hoàn chỉnh.
 - Không sửa nhân sự, kho, lịch làm việc, lịch hẹn hoặc báo cáo để làm xanh lỗi baseline.
 - Không áp migration lên `QLBenhVienRangHamMat`. Kiểm tra ghi dùng `RHM_ClinicalWorkflow_Test_20261025`, bản restore `_Rollback_20261025`, cài mới `_FreshFinal_20261025` và fixture rollback. Bản `_Fresh_20261025` là lần cài mới kiểm tra trước sửa review.
 

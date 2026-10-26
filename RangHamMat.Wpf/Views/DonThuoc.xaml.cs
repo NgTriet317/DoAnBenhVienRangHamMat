@@ -11,6 +11,7 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class DonThuoc : UserControl, IPatientScoped
 {
+    private readonly KeDonThuocEditor? clinicalEditor;
     private bool updating;
     private string? visitId;
     private string? selectedId;
@@ -18,13 +19,16 @@ public partial class DonThuoc : UserControl, IPatientScoped
     /// <summary>
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.
     /// </summary>
-    public string? PatientId { get; private set; }
+    private string? legacyPatientId;
+    public string? PatientId { get => clinicalEditor is null?legacyPatientId:clinicalEditor.PatientId; private set=>legacyPatientId=value; }
     /// <summary>
     /// Khởi tạo danh sách đơn thuốc từ XAML. Theo dõi cache khi Loaded và làm mới nội dung khi dữ liệu thay đổi; gỡ theo dõi khi Unloaded.
     /// </summary>
     public DonThuoc()
     {
+        if(DuLieuGiaoDien.PhamViLamSang&&Controls.ClinicalWorkflow.QuyenNghiepVu.LayNguCanh().CoQuyen(ET.QuyenLamViec.Kham)){clinicalEditor=new KeDonThuocEditor();Content=clinicalEditor;return;}
         InitializeComponent();
+        DrugGuidanceButton.Visibility=DuLieuGiaoDien.PhamViLamSang&&(DuLieuGiaoDien.NguoiDungLamSang.LaAdmin||DuLieuGiaoDien.NguoiDungLamSang.CoQuyen(ET.QuyenLamViec.CauHinhHoTro))?Visibility.Visible:Visibility.Collapsed;
         HoTroGiaoDien.Observe(this, Refresh);
         Refresh();
     }
@@ -37,6 +41,7 @@ public partial class DonThuoc : UserControl, IPatientScoped
     /// </summary>
     public void FocusContext(string? patientId, string? visitId = null, string? prescriptionId = null)
     {
+        if(clinicalEditor is not null){clinicalEditor.FocusContext(patientId,visitId,prescriptionId);return;}
         PatientId = patientId;
         this.visitId = visitId;
         requestedId = prescriptionId;
@@ -45,6 +50,11 @@ public partial class DonThuoc : UserControl, IPatientScoped
         SearchBox.Clear(); StatusFilter.SelectedIndex = 0;
         updating = false;
         Refresh();
+    }
+    private void DrugGuidance_Click(object sender,RoutedEventArgs e)
+    {
+        try{var original=Content;var editor=new HuongDanThuocEditor();editor.BackRequested+=()=>{Content=original;Refresh();};Content=editor;}
+        catch(InvalidOperationException ex){Feedback.Text=ex.Message;}
     }
     /// <summary>
     /// Lọc đơn theo bệnh nhân/lần khám/từ khóa/trạng thái, giữ mã đơn được yêu cầu khi còn khớp và cập nhật vùng chưa chọn.

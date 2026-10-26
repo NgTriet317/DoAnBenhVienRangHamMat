@@ -1,0 +1,19 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.HuongDanThuocEditor" FontFamily="Segoe UI" FontSize="14" Language="vi-VN" Background="#F3F6FA">
+ <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/HospitalStyles.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
+ <Grid Margin="12"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <StackPanel Margin="0,0,0,12"><DockPanel><Button Content="← Quay lại" Click="Back_Click" DockPanel.Dock="Right"/><TextBlock Text="Nhóm và hướng dẫn kê đơn" Style="{StaticResource HospitalHeading}"/></DockPanel><TextBlock Text="Chỉ áp hướng dẫn sau khi được duyệt và bác sĩ xác nhận phù hợp. Không có nội dung tự duyệt sẵn." Foreground="#9A3412" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel>
+  <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"><StackPanel>
+   <Expander Header="Thêm nhóm kê đơn"><StackPanel Margin="10"><TextBox x:Name="GroupName" MaxLength="255"/><Button Content="Lưu nhóm" Click="AddGroup_Click" HorizontalAlignment="Right" Margin="0,8,0,0"/></StackPanel></Expander>
+   <TextBlock Text="Tìm thuốc theo mã hoặc tên" Style="{StaticResource FieldLabel}"/><DockPanel><Button x:Name="FindDrugButton" Content="Tìm thuốc" DockPanel.Dock="Right" Click="FindDrug_Click"/><TextBox x:Name="DrugQuery" Margin="0,0,8,0"/></DockPanel><TextBlock Text="Thuốc" Style="{StaticResource FieldLabel}" Margin="0,8,0,0"/><ComboBox x:Name="DrugChoice" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Drug_Changed" MinHeight="36"/>
+   <TextBlock x:Name="ReviewText" TextWrapping="Wrap" Margin="0,10,0,10"/>
+   <StackPanel x:Name="InputPanel"><TextBlock Text="Nhóm kê đơn"/><ComboBox x:Name="GroupChoice" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Field_Changed" MinHeight="36"/>
+    <TextBlock Text="Đối tượng áp dụng / điều kiện cần kiểm tra" Margin="0,10,0,0"/><TextBox x:Name="PopulationEditor" MaxLength="255" TextChanged="Input_Changed"/>
+    <TextBlock Text="Đường dùng" Margin="0,10,0,0"/><TextBox x:Name="RouteEditor" MaxLength="100" TextChanged="Input_Changed"/>
+    <TextBlock Text="Liều gợi ý" Margin="0,10,0,0"/><TextBox x:Name="DoseEditor" MaxLength="255" TextChanged="Input_Changed"/>
+    <TextBlock Text="Hướng dẫn gợi ý" Margin="0,10,0,0"/><TextBox x:Name="InstructionEditor" AcceptsReturn="True" MinHeight="100" TextWrapping="Wrap" TextChanged="Input_Changed"/>
+   </StackPanel>
+   <Button x:Name="NextVersionButton" Content="Soạn phiên bản nháp tiếp theo" Click="NextVersion_Click" Margin="0,12,0,0" HorizontalAlignment="Left"/>
+  </StackPanel></ScrollViewer>
+  <StackPanel Grid.Row="2" Margin="0,10,0,0"><TextBlock x:Name="ErrorText" Foreground="#B91C1C" TextWrapping="Wrap"/><DockPanel Margin="0,8,0,0"><WrapPanel DockPanel.Dock="Right"><Button Content="Tải lại (bỏ nháp)" Click="Reload_Click"/><Button x:Name="SaveButton" Content="Lưu nháp" Click="Save_Click" Margin="8,0"/><Button x:Name="ApproveButton" Content="Duyệt hướng dẫn" Click="Approve_Click" Style="{StaticResource HospitalPrimary}"/></WrapPanel><TextBlock x:Name="StatusText" VerticalAlignment="Center" TextWrapping="Wrap"/></DockPanel></StackPanel>
+ </Grid>
+</UserControl>

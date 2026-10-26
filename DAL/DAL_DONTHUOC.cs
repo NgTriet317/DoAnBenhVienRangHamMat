@@ -8,7 +8,7 @@ namespace DAL
     /// <summary>
     /// Tầng truy cập SQL cho đơn thuốc trong bảng DON_THUOC. Lưu đầu đơn theo lần khám và bác sĩ; giới hạn sửa nội dung theo trạng thái trước khi cấp thuốc. Dapper ánh xạ dòng SQL sang ET; ThucHien dùng giao dịch được truyền vào hoặc tự quản lý giao dịch cục bộ.
     /// </summary>
-    public class DAL_DONTHUOC : dbconnect
+    public partial class DAL_DONTHUOC : dbconnect
     {
         /// <summary>
         /// Tạo DAL quản lý đơn thuốc, chuyển giao dịch tùy chọn cho dbconnect để nhiều thao tác có thể dùng chung kết nối và phạm vi lưu.

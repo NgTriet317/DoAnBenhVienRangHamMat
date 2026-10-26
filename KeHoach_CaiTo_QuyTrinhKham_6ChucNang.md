@@ -1,6 +1,6 @@
 # Quy trình khám và thanh toán ngoại trú Implementation Plan
 
-> **Tiến độ 26/10/2026:** P01–P06 đã hoàn tất phần nền, migration, hồ sơ, tiếp nhận, khám, kế hoạch và dịch vụ thực hiện. Đã kiểm chứng 124 ca SQL, 27 ca WPF, tiếp nhận/khám/xác nhận dịch vụ đồng thời; dữ liệu cũ giữ nguyên. P07–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
+> **Tiến độ 26/10/2026:** P01–P07 đã hoàn tất phần nền, migration, hồ sơ, tiếp nhận, khám, kế hoạch, dịch vụ thực hiện và kê đơn snapshot. Đã kiểm chứng 146 ca SQL, 35 ca WPF, tiếp nhận/khám/ký dịch vụ/thay đơn đồng thời; dữ liệu và tồn cũ giữ nguyên. P08–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
 
 > **For agentic workers:** Triển khai từng tác vụ và đánh dấu `- [ ]` khi hoàn thành. Nếu môi trường có Superpowers, dùng `superpowers:executing-plans`; không phụ thuộc vào việc cài thêm kỹ năng để đọc hoặc thực hiện tài liệu này. Người dùng yêu cầu giao kế hoạch cho Codex terminal trong Visual Studio 2022, chưa yêu cầu triển khai trong phiên lập kế hoạch.
 
@@ -509,11 +509,11 @@ Không bắt đầu bằng thay toàn bộ XAML. Khóa hợp đồng dữ liệu
 
 **Interfaces:** Cung cấp `TimThuoc`, `LuuDon`, `XacNhanDon`; `BoLocThuoc` có MaNhomThuoc, TuKhoa, dạng/hàm lượng tùy chọn; kết quả gồm mã, tên, hàm lượng, đơn vị, giá tham khảo, tồn tham khảo và cấu hình hướng dẫn.
 
-- [ ] Viết ca lọc theo nhóm, thêm ba thuốc, chặn thêm trùng, lượng/ngày không hợp lệ, thiếu hướng dẫn và thuốc ngừng dùng.
-- [ ] Làm bộ chọn thuốc nhiều lựa chọn; áp mẫu chỉ khi đã duyệt và bác sĩ xác nhận phù hợp đối tượng; thiếu mẫu không tự bịa hướng dẫn.
-- [ ] Lưu đầu đơn/các dòng/thay đơn trong cùng transaction. Bản ký có snapshot tên, hàm lượng, đơn vị, liều, đường dùng và hướng dẫn.
-- [ ] Chạy ca lỗi dòng thứ ba rollback cả đơn; thay đơn khi lượt đã hoàn tất nhưng chưa cấp/thu vẫn được; đơn cũ còn hiệu lực lúc soạn, chỉ sang Ngừng áp dụng khi ký mới; bảng tính chặn khi còn đơn thay thế nháp; đơn đã cấp/thu không cho thay; Không kê thuốc có lý do vẫn hoàn tất được.
-- [ ] Đối chiếu tồn trước/sau kê và ký phải bằng nhau; in đơn chỉ với dữ liệu đã xác nhận. Lưu thay đổi.
+- [x] Viết ca lọc theo nhóm, thêm ba thuốc, chặn thêm trùng, lượng/ngày không hợp lệ, thiếu hướng dẫn và thuốc ngừng dùng.
+- [x] Làm bộ chọn thuốc nhiều lựa chọn; áp mẫu chỉ khi đã duyệt và bác sĩ xác nhận phù hợp đối tượng; thiếu mẫu không tự bịa hướng dẫn.
+- [x] Lưu đầu đơn/các dòng/thay đơn trong cùng transaction. Bản ký có snapshot tên, hàm lượng, đơn vị, liều, đường dùng và hướng dẫn.
+- [x] Chạy ca lỗi dòng thứ ba rollback cả đơn; thay đơn khi lượt đã hoàn tất nhưng chưa cấp/thu vẫn được; đơn cũ còn hiệu lực lúc soạn, chỉ sang Ngừng áp dụng khi ký mới; bảng tính chặn khi còn đơn thay thế nháp; đơn đã cấp/thu không cho thay; Không kê thuốc có lý do vẫn hoàn tất được.
+- [x] Đối chiếu tồn trước/sau kê và ký phải bằng nhau; in đơn chỉ với dữ liệu đã xác nhận. Lưu thay đổi.
 
 ### P08 Bảng tính phí và hóa đơn
 

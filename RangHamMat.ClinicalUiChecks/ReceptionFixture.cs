@@ -47,6 +47,8 @@ internal sealed class ReceptionFixture : IDisposable
                 DELETE n FROM dbo.NHAT_KY_THAO_TAC n WHERE n.LoaiDoiTuong=N'PHIEU_KHAM_BENH' AND n.MaDoiTuong IN(SELECT p.MaPhieu FROM dbo.PHIEU_KHAM_BENH p JOIN dbo.HO_SO_BENH_AN h ON h.MaHS=p.MaHS WHERE h.MaBN=@patient);
                 DELETE dbo.TINH_TRANG_BENH WHERE MaLS IN(SELECT MaLS FROM @visits);
                 DELETE dbo.DICH_VU_THUC_HIEN WHERE MaLS IN(SELECT MaLS FROM @visits);
+                DELETE c FROM dbo.CHI_TIET_DON_THUOC c JOIN dbo.DON_THUOC d ON d.MaDT=c.MaDT WHERE d.MaLS IN(SELECT MaLS FROM @visits);
+                DELETE dbo.DON_THUOC WHERE MaLS IN(SELECT MaLS FROM @visits);
                 DELETE dbo.LICH_SU_KHAM_BENH WHERE MaLS IN(SELECT MaLS FROM @visits);
                 DELETE p FROM dbo.PHIEU_KHAM_BENH p JOIN dbo.HO_SO_BENH_AN h ON h.MaHS=p.MaHS WHERE h.MaBN=@patient;
                 DELETE dbo.HO_SO_BENH_AN WHERE MaBN=@patient;

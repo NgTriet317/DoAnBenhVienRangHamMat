@@ -255,6 +255,7 @@ public static class DuLieuGiaoDien
         {
             if (table == "LICH_KHAM") { if (!NguoiDungLamSang.LaAdmin) throw new TuChoiQuyenNghiepVuException(); }
             else new BUS_QUYENNGHIEPVU(transaction).KiemTraGhiHoSo(table, values, id, false, NguoiDungLamSang);
+            if(table is "DON_THUOC" or "CHI_TIET_DON_THUOC")throw new LoiKhamException("MaDT","Lưu/ký cả đơn tại Đơn thuốc để kiểm tra mọi dòng và chốt chỉ định.");
         }
         Dictionary<string, object?> saved;
         switch (table)
@@ -385,6 +386,7 @@ public static class DuLieuGiaoDien
         {
             if (table == "LICH_KHAM") { if (!NguoiDungLamSang.LaAdmin) throw new TuChoiQuyenNghiepVuException(); }
             else new BUS_QUYENNGHIEPVU(transaction).KiemTraGhiHoSo(table, expected ?? new Dictionary<string, object?>(), id, true, NguoiDungLamSang);
+            if(table is "DON_THUOC" or "CHI_TIET_DON_THUOC")throw new LoiKhamException("MaDT","Hủy nháp tại Đơn thuốc để giữ lịch sử và nguồn thay thế.");
         }
         switch (table)
         {

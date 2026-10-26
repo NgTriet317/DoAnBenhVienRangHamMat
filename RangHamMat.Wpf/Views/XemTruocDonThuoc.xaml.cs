@@ -15,12 +15,18 @@ public partial class XemTruocDonThuoc : Window
     /// <summary>
     /// Khởi tạo xem trước/in đơn thuốc từ XAML.
     /// </summary>
-    public XemTruocDonThuoc(RxCard card) { InitializeComponent(); DataContext = card; }
+    public XemTruocDonThuoc(RxCard card) { ValidateSigned(card);InitializeComponent(); DataContext = card; }
+    private static void ValidateSigned(RxCard card)
+    {
+        if(!card.CanPrint)throw new ET.LoiKhamException("MaDT","Chỉ in đơn đã xác nhận.");
+        if(DuLieuGiaoDien.PhamViLamSang && new BUS.BUS_DONTHUOC().LayChiTietCoQuyen(card.Code,Controls.ClinicalWorkflow.QuyenNghiepVu.LayNguCanh()).DonThuoc.TrangThai!="Đã xác nhận")throw new ET.LoiKhamException("MaDT","Đơn đã đổi hiệu lực; tải lại trước khi in.");
+    }
     /// <summary>
     /// Mở hộp thoại chọn máy in; sau khi người dùng đồng ý thì in vùng đơn thuốc, có thể chọn Microsoft Print to PDF để xuất tệp.
     /// </summary>
     private void Print_Click(object sender, RoutedEventArgs e)
     {
+        try{if(DataContext is not RxCard card)throw new ET.LoiKhamException("MaDT","Thiếu nguồn đơn.");ValidateSigned(card);}catch(InvalidOperationException ex){PrintStatus.Text=ex.Message;return;}
         var dialog = new PrintDialog();
         if (dialog.ShowDialog() != true) return;
         var oldTransform = PrintablePage.LayoutTransform;

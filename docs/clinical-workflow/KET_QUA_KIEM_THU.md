@@ -1,8 +1,8 @@
 # Kiểm chứng triển khai — cập nhật 26/10/2026
 
-**Kết quả mới nhất P06:** build/schema đạt; **124 ca SQL và 27 ca WPF đạt**, ba mode đồng thời đạt. Ba lỗi suite baseline còn nguyên. Chi tiết từng đợt nằm cuối tài liệu; phần đợt nền dưới đây được giữ làm bằng chứng lịch sử.
+**Kết quả mới nhất P07:** build/schema đạt; **146 ca SQL và 35 ca WPF đạt**, các kiểm tra đồng thời tiếp nhận/khám/dịch vụ/đơn đạt tại từng mốc. Ba lỗi suite baseline còn nguyên. Chi tiết từng đợt nằm cuối tài liệu; phần đợt nền dưới đây được giữ làm bằng chứng lịch sử.
 
-Phạm vi đã triển khai: P01–P06, chưa phải nghiệm thu sáu chức năng/P12. Kết quả trước sửa tại [BASELINE.md](BASELINE.md); việc còn lại tại [TIEN_DO.md](TIEN_DO.md).
+Phạm vi đã triển khai: P01–P07, chưa phải nghiệm thu sáu chức năng/P12. Kết quả trước sửa tại [BASELINE.md](BASELINE.md); việc còn lại tại [TIEN_DO.md](TIEN_DO.md).
 
 ## Vòng cuối sau thay đổi
 
@@ -222,3 +222,36 @@ Ký đồng thời cần commit, nên đã tạo database riêng `RHM_ClinicalWo
 Đối chiếu cuối bản thử chính: **52 bảng; 10 BN/10 hồ sơ/10 phiếu/10 hóa đơn; tổng 732.500,00; thu ròng 467.500,00; tồn 4.014,000**. Fixture CW đều 0, danh mục/mẫu thử 0. Database gốc và Word giữ nguyên. Ảnh Supplier/Maintenance/Report tự sinh đã trả về Git.
 
 Log ở `obj/ClinicalWorkflowP06/`: `results.json`, `Clinical-final.log`, `ClinicalUi-final.log`, `services-concurrency-final.log`, `review-sql-red.log`, `review-ui-red.log`, `data-final.log`, log build/schema và ba suite baseline. P06 chưa phải nghiệm thu toàn hệ thống; P07–P12 (đơn snapshot, phí/thu đủ, bàn giao, UI tổng thể, AT01–AT34) vẫn còn.
+
+## Đợt P07: kê đơn nhiều dòng và snapshot — 26/10/2026
+
+| Kiểm tra | Kết quả cuối P07 |
+| --- | --- |
+| Build Debug / SchemaChecks | Exit 0; 45 entity / 363 cột / 0 lỗi, 52 bảng không đổi. Rebuild có 57 cảnh báo ở mã sẵn có DAL/WPF; không thêm cảnh báo trong file P07 |
+| ClinicalChecks | **146 PASS / 0 FAIL**; 124 ca trước + 22 ca P07, fixture rollback |
+| ClinicalUiChecks | **35 PASS / 0 FAIL**; 27 ca trước + 8 ca P07, WPF thật |
+| Đồng thời P04/P05 | Tiếp nhận và khám tiếp tục đạt |
+| Đồng thời P07 | Hai kết nối ký thay cùng nguồn chỉ một chữ ký/audit và đổi hiệu lực cũ; sửa cùng snapshot một xung đột; cùng nguồn chỉ một nháp; ReadCommitted giữ thuốc đến rollback; tồn không đổi |
+| Finance / Supplier / Maintenance / Report | 54 ca tài chính đạt; các suite khác exit 0, báo cáo 18 chuyên đề |
+| Checks / Persistence / WpfSmoke | Ba lỗi sẵn không đổi: MaCa trùng (-532462766), CS1729 constructor BUS_NHANVIEN, CS1061 NhanSu.TryReadPosition/TryReadEmployee |
+
+Đã kiểm tra lọc nhóm, thuốc hoạt động THUOC nối HANG_HOA, nhiều dòng, trùng thuốc và thiếu liều/đường dùng/hướng dẫn/ngày/lượng. Lỗi dòng thứ ba không thay đầu/dòng cũ, kể cả transaction ngoài bắt lỗi rồi tiếp tục. Dòng mới đặt trước dòng cũ vẫn giữ mã duy nhất. Quyền bác sĩ sở hữu được đọc lại; bác sĩ khác, điều dưỡng, Admin không ký thay. Cấu hình nháp không gợi ý; chỉ hướng dẫn duyệt đúng phiên bản và xác nhận phù hợp mới được áp.
+
+Đơn ký giữ tên/hàm lượng/đơn vị cùng mọi chỉ định. Nháp lưu giữ thông tin tham chiếu; danh mục đổi trước ký báo xung đột, cần lưu/đối chiếu lại thay vì tự ký nguồn hàm lượng mới. Có nhiều đơn hiệu lực nếu bổ sung có lý do; kiểm lý do cả khi lưu sửa và ký. Sau hoàn tất vẫn soạn/ký thay trước xử lý: cũ hiệu lực trong lúc soạn, ngừng cùng transaction ký mới. Có hóa đơn/xuất thì chặn; Không kê thuốc có lý do vẫn hoàn tất hợp lệ và không tạo đơn rỗng. KiemTraDonChoThu chặn mọi đơn/dịch vụ nháp, kể cả thay thế, để P08/P09 dùng trong transaction của mình.
+
+Tồn trước/sau lưu/ký/thay bằng nhau. Ca xuất ghi sổ riêng trong fixture giảm đúng 3 đơn vị rồi chặn thay đơn; mọi dữ liệu rollback. Đây không phải triển khai cấp/thu P09. Bản in mới chỉ lấy nguồn đã ký đủ snapshot, có ngày sinh; preview giữ mã đơn riêng và đọc lại hiệu lực/quyền trước in, không theo editor đang đổi nguồn. Bản cũ thiếu cột chốt giữ fallback lịch sử chỉ đọc. Không gửi lệnh in máy thật trong kiểm thử; đã kiểm tra dữ liệu và document.
+
+Bằng chứng RED → GREEN:
+
+- API ban đầu **0/14 → 14/14**; thêm phiên bản hướng dẫn, nhiều đơn và xuất thuốc thành 17/17. Reorder dòng mới trước mã cũ gây **17 đạt/1 lỗi → 18/18** sau giữ các mã cũ trước cấp mã mới.
+- Thiếu workspace **27 đạt/2 lỗi → 29/29**. Đường in nháp/snapshot cũ/form chung gây **29 đạt/3 lỗi → 32/32**; giữ đúng exception từ chối quyền khi chặn form chung (một ca P02 từng 31 đạt/1 lỗi).
+- Rà soát độc lập có 4 Important: preview theo nguồn editor hiện tại, thiếu thông tin trước ký/in, cấu hình chỉ chọn 100 thuốc đầu, lý do bổ sung bị vượt qua. Thêm phát hiện cấu hình mới mất mã thuốc khi chặn đổi. Tái hiện **SQL 18 đạt/3 lỗi**, **WPF 31 đạt/4 lỗi**, sửa một lượt thành 21 ca P07/35 WPF đạt.
+- Kiểm tra nguồn thuốc sau lưu tìm thêm hàm lượng có thể tự đổi khi ký: **21 đạt/1 lỗi → 22/22 P07** sau so tên/hàm lượng/đơn vị với tham chiếu đã lưu, trước mọi ghi ký. Tổng cuối 146/146. Không còn Important hoặc Minor hoãn lại P07.
+
+WPF thử chọn ba thuốc hai lần vẫn ba dòng, điền đủ chỉ định, ô đang edit được tính nháp, không ký thay đổi chưa lưu, lưu/ký/in document và khóa; áp hướng dẫn false/true, Admin không duyệt; tìm thuốc ngoài 100 kết quả với 101 hàng giả; giữ mã cấu hình chưa lưu và tải lại bỏ nháp; preview A vẫn A khi editor B và từ chối sau A ngừng hiệu lực. Vùng an toàn/ngày sinh/tuổi hiển thị ở đầu; chỉ định dài xuống dòng để đọc đủ. Ảnh don-thuoc-da-ky.png đã được xem; dữ liệu FIXTURE, không phải hướng dẫn điều trị thật.
+
+Đồng thời có commit chữ ký chạy trên database mới riêng RHM_ClinicalWorkflow_Test_P07Concurrency_20261026, guard không ghi đè và không nhận bản thử chính. Lượt cuối sau sửa nguồn thuốc đạt rồi dọn đúng database tự tạo; concurrency-cleanup.log ghi DB_ID NULL. Không tắt trigger/xóa lịch sử ký để dọn trên bản thử chính.
+
+Đối chiếu cuối: **52 bảng; 10 BN/10 hồ sơ/10 phiếu/10 hóa đơn/10 đơn thuốc/10 dòng thuốc; tổng 732.500,00; thu ròng 467.500,00; tồn 4.014,000**. Fixture CW đều 0; nhóm/hướng dẫn thuốc và mẫu thử 0. Database gốc/Word giữ nguyên, ảnh hồi quy tự sinh đã trả về Git.
+
+Log ở obj/ClinicalWorkflowP07/: results.json, final-results.json, Clinical-final.log, ClinicalUi-final.log, concurrency-final.log, review-sql-red.log, review-ui-red.log, drug-source-red.log, data-final.log và log các suite. P08–P12 còn lại: bảng phí/phân bổ dự kiến, thu đủ/chống lặp, bàn giao, UI tổng thể và AT01–AT34; chưa tuyên bố toàn dự án đạt.

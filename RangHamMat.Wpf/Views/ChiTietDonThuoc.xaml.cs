@@ -54,17 +54,19 @@ public partial class ChiTietDonThuoc : UserControl, IPatientScoped
     /// </summary>
     private void UpdateAccess()
     {
-        var allowed = canOpen("DonThuoc") && (HoTroGiaoDien.Workspace(this)?.CanOpen("DonThuoc") ?? true) && Controls.ClinicalWorkflow.QuyenNghiepVu.DuocTao("DON_THUOC");
+        var allowed = !DuLieuGiaoDien.PhamViLamSang && canOpen("DonThuoc") && (HoTroGiaoDien.Workspace(this)?.CanOpen("DonThuoc") ?? true) && Controls.ClinicalWorkflow.QuyenNghiepVu.DuocTao("DON_THUOC");
         EditButton.IsEnabled = ConfirmButton.IsEnabled = CancelButton.IsEnabled = allowed && Card?.IsDraft == true;
         NewButton.IsEnabled = allowed && Card is not null;
         ServicesButton.IsEnabled=canOpen("DichVuThucHien");
         InvoiceButton.IsEnabled=canOpen("HoaDon");
+        OpenEditorButton.Visibility=DuLieuGiaoDien.PhamViLamSang&&DuLieuGiaoDien.NguoiDungLamSang.CoQuyen(ET.QuyenLamViec.Kham)?Visibility.Visible:Visibility.Collapsed;
     }
     /// <summary>
     /// Kiểm tra quyền từ cả màn hình và workspace trước thao tác đổi đơn; thiếu quyền thì ghi thông báo lên Feedback.
     /// </summary>
     private bool CanModify()
     {
+        if(DuLieuGiaoDien.PhamViLamSang){Feedback.Text="Lịch sử chỉ xem. Mở khu kê đơn để tiếp tục theo đúng lượt.";return false;}
         if (canOpen("DonThuoc") && (HoTroGiaoDien.Workspace(this)?.CanOpen("DonThuoc") ?? true) && Controls.ClinicalWorkflow.QuyenNghiepVu.DuocTao("DON_THUOC")) return true;
         Feedback.Text = "Vai trò hiện tại không được thay đổi đơn thuốc.";
         return false;
@@ -182,6 +184,7 @@ public partial class ChiTietDonThuoc : UserControl, IPatientScoped
     {
         e.Handled = true;
         if (Card is RxCard { CanPrint: true } card)
-            new XemTruocDonThuoc(card) { Owner = Window.GetWindow(this) }.ShowDialog();
+            try{new XemTruocDonThuoc(card) { Owner = Window.GetWindow(this) }.ShowDialog();}catch(InvalidOperationException ex){Feedback.Text=ex.Message;}
     }
+    private void OpenEditor_Click(object sender,RoutedEventArgs e){if(Card is RxCard c&&canOpen("DonThuoc"))DieuHuongHoSo.Open(this,"DonThuoc",c.PatientId,c.Visit,c.Code);}
 }
