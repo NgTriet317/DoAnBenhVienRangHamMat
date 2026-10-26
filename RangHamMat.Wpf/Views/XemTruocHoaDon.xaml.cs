@@ -26,12 +26,7 @@ public partial class XemTruocHoaDon : Window
             Code = $"Hóa đơn #{code}", Status = Convert.ToString(header["TrangThai"]), Patient = $"{header["HoTenBN"]} · Mã {header["MaBN"]}", Visit = Convert.ToString(header["MaLS"]),
             Date = Convert.ToDateTime(header["NgayLap"]).ToString("dd/MM/yyyy HH:mm"), Employee = Convert.ToString(header["NguoiLap"]),
             Total = Money(header["TongTien"]), Discount = Money(header["GiamGia"]), Due = Money(header["SoTienPhaiThu"]), Collected = Money(header["DaThu"]), Remaining = Money(header["ConPhaiThu"]),
-            Lines = lines.Rows.Cast<DataRow>().Select(line => new
-            {
-                Description = Convert.ToString(line["NoiDung"]) ?? "",
-                Quantity = Convert.ToDecimal(line["SoLuong"]).ToString("0.###", CultureInfo.GetCultureInfo("vi-VN")),
-                Price = Money(line["DonGiaChot"]), Amount = Money(line["ThanhTien"])
-            }).ToArray()
+            Lines = InvoicePrintLines.Group(lines)
         };
     }
     /// <summary>

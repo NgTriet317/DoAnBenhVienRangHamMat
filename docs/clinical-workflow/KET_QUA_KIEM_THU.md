@@ -1,8 +1,8 @@
 # Kiểm chứng triển khai — cập nhật 26/10/2026
 
-**Kết quả mới nhất P07:** build/schema đạt; **146 ca SQL và 35 ca WPF đạt**, các kiểm tra đồng thời tiếp nhận/khám/dịch vụ/đơn đạt tại từng mốc. Ba lỗi suite baseline còn nguyên. Chi tiết từng đợt nằm cuối tài liệu; phần đợt nền dưới đây được giữ làm bằng chứng lịch sử.
+**Kết quả mới nhất P08:** build/schema đạt; **160 ca SQL và 39 ca WPF đạt**, kiểm tra xem phí đồng thời và khóa giá/lô đạt. Ba lỗi suite baseline còn nguyên. Chi tiết từng đợt nằm cuối tài liệu; phần đợt nền dưới đây được giữ làm bằng chứng lịch sử.
 
-Phạm vi đã triển khai: P01–P07, chưa phải nghiệm thu sáu chức năng/P12. Kết quả trước sửa tại [BASELINE.md](BASELINE.md); việc còn lại tại [TIEN_DO.md](TIEN_DO.md).
+Phạm vi đã triển khai: P01–P08, chưa phải nghiệm thu sáu chức năng/P12. Kết quả trước sửa tại [BASELINE.md](BASELINE.md); việc còn lại tại [TIEN_DO.md](TIEN_DO.md).
 
 ## Vòng cuối sau thay đổi
 
@@ -255,3 +255,17 @@ WPF thử chọn ba thuốc hai lần vẫn ba dòng, điền đủ chỉ địn
 Đối chiếu cuối: **52 bảng; 10 BN/10 hồ sơ/10 phiếu/10 hóa đơn/10 đơn thuốc/10 dòng thuốc; tổng 732.500,00; thu ròng 467.500,00; tồn 4.014,000**. Fixture CW đều 0; nhóm/hướng dẫn thuốc và mẫu thử 0. Database gốc/Word giữ nguyên, ảnh hồi quy tự sinh đã trả về Git.
 
 Log ở obj/ClinicalWorkflowP07/: results.json, final-results.json, Clinical-final.log, ClinicalUi-final.log, concurrency-final.log, review-sql-red.log, review-ui-red.log, drug-source-red.log, data-final.log và log các suite. P08–P12 còn lại: bảng phí/phân bổ dự kiến, thu đủ/chống lặp, bàn giao, UI tổng thể và AT01–AT34; chưa tuyên bố toàn dự án đạt.
+
+## P08 — Bảng tính phí và nguồn in (26/10/2026)
+
+- API skeleton chạy RED 0 đạt/8 lỗi; sau triển khai đạt 8/8. Bổ sung các biên nguồn/lô/lịch sử thành 14 ca P08; bộ SQL đầy đủ đạt **160/160**. WPF skeleton RED 35 đạt/2 lỗi → 37/37; rà soát thêm RED 37 đạt/2 lỗi → **39/39**.
+- Phí một dịch vụ 100.000 + hai thuốc 50.000 = 150.000; thêm đơn hiệu lực có lý do được cộng. Ký đơn thay đổi lượng đổi token, đơn cũ Ngừng áp dụng và nháp Hủy không cộng; còn nháp thay thế chặn tính phí.
+- Ba lô mỗi lô 0,005 × giá 1 cho tổng 0,03 thay vì làm tròn tổng 0,015 thành 0,02. Preview khớp tổng thực từ DispensePrescription + CreateInvoice + trigger trong fixture rollback; giữ FIFO theo ngày nhập dù thứ tự hạn dùng khác. Chặn dùng trùng tồn cho hai đơn và kho thiếu không ghi dở.
+- Dấu vân tay ổn định khi cùng nguồn, đổi khi đổi giá, lượng/đơn hiệu lực hoặc tồn/lô sau xuất của lượt khác. Xem phí không thay số HD/PX/TT hoặc tồn. Quyền giả/nurse/pharm/bác sĩ khác bị từ chối; DTO không có kết quả hoặc hướng dẫn dùng thuốc; Admin có audit.
+- Hóa đơn lịch sử phải thu 100.000,25, thu ròng 40.000,10, còn 60.000,15 giữ nguyên; không suy là đã thu đủ, không tạo nguồn thu mới. Phiếu xuất nháp cũng chuyển đối chiếu. Bản in gộp đúng dòng đơn/giá, cộng tiền đã chốt, giữ MaCTPX và phần lẻ; phân trang ở bốn chiều cao giấy không cắt dòng truy vết.
+- Hai kết nối thật: tổng/token giống nhau; caller ReadCommitted giữ giá thuốc và lô tới rollback; số chứng từ/tồn giữ nguyên. Fixture ký chỉ commit trên database P08Concurrency riêng, đã dọn database (DB_ID=NULL). Lỗi setup đầu do sqlcmd thiếu -f 65001 và ca test tham chiếu cột không tồn tại đã được sửa; không thay constraint của sản phẩm.
+- Build cuối exit 0, 0 lỗi (lượt incremental 0 cảnh báo; lượt build trước có 48 cảnh báo WPF cũ). Schema 45 entity/363 cột, 0 lỗi. Finance54, Supplier, Maintenance, Report18 đạt. Tiếp nhận/khám đồng thời chạy lại đạt và dọn fixture. Các kiểm chứng P06/P07 đồng thời trước đó giữ bằng chứng ở mốc tương ứng.
+- Ba lỗi baseline chạy lại còn nguyên: Checks trùng MaCa (-532462766), Persistence CS1729 BUS_NHANVIEN, WpfSmoke CS1061 NhanSu. Chưa tuyên bố toàn bộ suite hoặc AT01–AT34 đạt.
+- Đối chiếu cuối: 52 bảng, 10 BN/HS/phiếu/HD/đơn/chi tiết đơn; tổng hóa đơn 732.500, thu ròng 467.500, tồn 4.014; fixture CW và danh mục/hướng dẫn điều trị thử đều 0. Không áp SQL lên database gốc. Log/ảnh tại obj/ClinicalWorkflowP08/; ảnh hồi quy sinh lại được hoàn trả theo Git.
+
+Rà soát độc lập: một Important về truy vết bản in; đường tab legacy từ phần chưa đánh giá được nâng thành Important. Cả hai có kiểm thử tái hiện thất bại trước sửa và đã đạt trong cùng lượt sửa. Không còn Important hoặc Minor hoãn lại P08. P09 thu đủ/chống lặp, P10 bàn giao, P11/P12 điều hướng/DPI/tải/nghiệm thu và quy trình xử lý lịch sử chưa thuộc kết quả P08; chưa thử máy in thật.

@@ -144,3 +144,21 @@ dotnet run --project .\RangHamMat.ClinicalUiChecks -c Debug --no-restore
 ```
 
 Mode --prescriptions-concurrency commit chữ ký trên database mới riêng có tiền tố RHM_ClinicalWorkflow_Test_P07Concurrency_, chưa có fixture CW; từ chối bản thử chính. Tạo từ SQL cài mới v2 vào tên mới có guard không ghi đè rồi đặt RHM_CONNECTION_STRING đúng tên trước chạy. Kiểm tra hai kết nối ký thay cùng đơn, xung đột sửa nháp, một nháp thay cho nguồn, khóa ReadCommitted và tồn không đổi. Lượt triển khai đã tạo/dọn RHM_ClinicalWorkflow_Test_P07Concurrency_20261026, không tắt trigger để xóa lịch sử ký. Log/ảnh ở obj/ClinicalWorkflowP07/.
+
+## P08 — Xem bảng tính phí
+
+1. Bác sĩ phụ trách hoàn tất chuyên môn, ký dịch vụ và tất cả đơn cần dùng; hủy nháp không dùng. Phiếu phải Chờ thanh toán. Đơn thay thế còn nháp chặn tính phí cho tới khi ký hoặc hủy.
+2. Mở Hóa đơn → chọn bệnh nhân và đúng lần khám → Bảng tính phí. Chọn kho hoạt động đủ toàn bộ thuốc nếu có đơn; lượt chỉ dịch vụ dùng Không dùng kho. Nhấn Xem bảng tính. Bác sĩ chỉ đọc lượt phụ trách; tiếp nhận/thu ngân có quyền thu được đọc nguồn phí, Admin có audit. Dược sĩ xem lịch sử đã có tại tab hóa đơn.
+3. Bảng tính gồm dịch vụ xác nhận, tất cả đơn ký còn hiệu lực và các phần lô dự kiến. Kho dùng FIFO theo ngày nhập rồi hạn/mã lô, giống xuất kho hiện có. Một đơn ngừng/hủy không được cộng; cùng lượng tồn không được dùng lại cho hai đơn.
+4. Số lẻ đồng giữ nguyên để đối chiếu, không cho thu mới bằng cách tự làm tròn. Nếu đã có hóa đơn/xuất hoặc đơn cũ thiếu snapshot, xem hướng dẫn đối chiếu và tab Hóa đơn / thu tiền; không tạo lần thu mới. Tiền đã thu ròng và còn phải thu luôn hiển thị riêng, giữ phần lẻ cũ.
+5. Đổi lượt/kho hoặc tính lỗi xóa bảng cũ. Đây là bảng tính, chưa thu tiền hoặc giữ chỗ thuốc. P09 sẽ kiểm tra lại giá/tồn/nguồn và dấu vân tay trong cùng giao dịch trước ghi. Các nút ghi tài chính cũ trong clinical vẫn bị khóa.
+6. In lại hóa đơn lấy nội dung/giá/thành tiền chốt; các phần lô cùng dòng đơn và giá được gộp nhưng mã chi tiết xuất vẫn nằm trên bản in. Cộng thành tiền từng phần đã chốt, không lấy tổng lượng nhân giá lại. Đã kiểm tra phân trang visual; chưa gửi lệnh in máy thật.
+
+API BUS_THANHTOANTRONGOI.LapBangTinh(maLS, maKhoCapThuoc, nguoiDung) nhận transaction ngoài nếu có; trả BangTinhPhi với token, danh sách dịch vụ/thuốc/lô hoặc hóa đơn cần đối chiếu. Không nhận tổng tiền từ UI và không gọi CreateInvoice/DispensePrescription/RecordPayment. Quyền được đọc lại từ SQL theo principal phiên.
+
+```powershell
+dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --pricing
+dotnet run --project .\RangHamMat.ClinicalUiChecks -c Debug --no-restore
+```
+
+Mode --pricing-concurrency chỉ nhận database mới riêng tiền tố RHM_ClinicalWorkflow_Test_P08Concurrency_, chưa có fixture CW. Cài script v2 vào tên mới có guard không ghi đè, dùng sqlcmd -f 65001 để giữ Unicode constraint; đặt RHM_CONNECTION_STRING đúng tên. Lượt triển khai đã tạo/dọn RHM_ClinicalWorkflow_Test_P08Concurrency_20261026. Không dùng mode này trên database gốc hoặc bản thử chính. Log/ảnh obj/ClinicalWorkflowP08/.

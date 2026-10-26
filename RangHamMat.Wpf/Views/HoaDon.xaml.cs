@@ -47,7 +47,7 @@ public partial class HoaDon : UserControl, IPatientScoped
     /// Áp dụng ngữ cảnh hồ sơ rồi chọn tab Cấp thuốc để người dùng chọn kho và ghi sổ đơn đã xác nhận.
     /// </summary>
     public void OpenDispensing(string? patientId, string? visitId = null, string? prescriptionId = null)
-    { FocusContext(patientId, visitId, prescriptionId); DetailTabs.SelectedItem = DispenseTab; }
+    { FocusContext(patientId, visitId, prescriptionId); if (!DuLieuGiaoDien.PhamViLamSang) DetailTabs.SelectedItem = DispenseTab; }
     /// <summary>
     /// Nạp lựa chọn bệnh nhân/lần khám/nhân viên/kho/đơn thuốc, đọc danh sách hóa đơn qua BUS và lọc theo bệnh nhân; giữ lựa chọn cũ, cập nhật nút và chi tiết.
     /// </summary>
@@ -75,7 +75,19 @@ public partial class HoaDon : UserControl, IPatientScoped
             InvoiceList.ItemsSource = table.DefaultView;
             InvoiceList.SelectedItem = table.DefaultView.Cast<DataRowView>().FirstOrDefault(r => Convert.ToString(r["MaHD"]) == invoiceId);
             InvoiceCount.Text = $"{table.DefaultView.Count} hóa đơn"; CreateButton.IsEnabled = HasVisit() && HasEmployee(); ShowInvoice(); ShowStock();
-            if (DuLieuGiaoDien.PhamViLamSang) { CreateButton.IsEnabled = false; EmployeeFilter.SelectedValue = PhienDangNhap.MaNV; EmployeeFilter.IsEnabled = false; DispenseTab.Visibility = Visibility.Collapsed; PageStatus.Text = "Đối chiếu và in lại chứng từ lịch sử; giữ nguyên các khoản đã thu và đã cấp thuốc."; }
+            if (DuLieuGiaoDien.PhamViLamSang)
+            {
+                CreateButton.IsEnabled = false; EmployeeFilter.SelectedValue = PhienDangNhap.MaNV; EmployeeFilter.IsEnabled = false; DispenseTab.Visibility = Visibility.Collapsed;
+                var actor = QuyenNghiepVu.LayNguCanh();
+                if (actor.LaAdmin || actor.CoQuyen(ET.QuyenLamViec.ThuTien) || actor.CoQuyen(ET.QuyenLamViec.Kham))
+                {
+                    var first = PricingHost.Content is null;
+                    var pricing = PricingHost.Content as BangTinhPhiEditor ?? new BangTinhPhiEditor(actor);
+                    PricingHost.Content = pricing; PricingTab.Visibility = Visibility.Visible; pricing.FocusContext(visitId);
+                    if (first || DetailTabs.SelectedItem == DispenseTab) DetailTabs.SelectedItem = PricingTab;
+                }
+                PageStatus.Text = "Xem bảng tính theo lượt; chọn hóa đơn để đối chiếu lịch sử và in lại.";
+            }
         }
         catch (Exception ex) { PageStatus.Text = "Không thể tải hóa đơn: " + ex.Message; }
         finally { updating = false; }

@@ -79,7 +79,7 @@ public sealed class DAL_CHITIETHOADON : dbconnect
         SELECT c.*,COALESCE(s.SoLuong,x.SoLuong) SoLuong,
             COALESCE(s.DonGia,c.DonGia) DonGiaChot,
             CASE WHEN c.MaDVThucHien IS NOT NULL THEN N'Dịch vụ' ELSE N'Thuốc đã cấp' END Loai,
-            d.MaDT,l.SoLo,hh.DonViTinh
+            d.MaDT,d.MaCTDT,l.SoLo,hh.DonViTinh
         FROM dbo.CHI_TIET_HOA_DON c
         LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
         LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX

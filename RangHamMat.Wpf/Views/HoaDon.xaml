@@ -102,6 +102,7 @@
       </DataGrid.Columns>
      </DataGrid>
     </StackPanel></Border></ScrollViewer></TabItem>
+    <TabItem x:Name="PricingTab" Header="Bảng tính phí" Visibility="Collapsed"><ContentControl x:Name="PricingHost"/></TabItem>
    </TabControl>
   </Grid>
  </Grid>

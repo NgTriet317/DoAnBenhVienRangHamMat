@@ -7,11 +7,12 @@ try
     if (args.Contains("--examination-concurrency")) return ExaminationConcurrencyChecks.Run();
     if (args.Contains("--services-concurrency")) return ServiceConcurrencyChecks.Run();
     if (args.Contains("--prescriptions-concurrency")) return PrescriptionConcurrencyChecks.Run();
+    if (args.Contains("--pricing-concurrency")) return PricingConcurrencyChecks.Run();
     if (args.Contains("--migration-upgrade")) return MigrationLifecycleChecks.Run(false);
     if (args.Contains("--migration-rollback")) return MigrationLifecycleChecks.Run(true);
     var passed = 0;
     var failed = 0;
-    var cases=args.Contains("--prescriptions") ? DonThuocChecks.Cases() : args.Contains("--services") ? DichVuThucHienChecks.Cases() : args.Contains("--examination") ? KhamVaKeHoachChecks.Cases() : args.Contains("--reception") ? TiepNhanChecks.Cases() : args.Contains("--configuration") ? CauHinhChecks.Cases() : args.Contains("--new-data") ? DuLieuMoiChecks.Cases() : QuyenVaTiepNhanChecks.Cases().Concat(PhamViGiaoDienChecks.Cases()).Concat(CauHinhChecks.Cases()).Concat(DuLieuMoiChecks.Cases()).Concat(TiepNhanChecks.Cases()).Concat(KhamVaKeHoachChecks.Cases()).Concat(DichVuThucHienChecks.Cases()).Concat(DonThuocChecks.Cases());
+    var cases=args.Contains("--pricing") ? ThanhToanChecks.Cases() : args.Contains("--prescriptions") ? DonThuocChecks.Cases() : args.Contains("--services") ? DichVuThucHienChecks.Cases() : args.Contains("--examination") ? KhamVaKeHoachChecks.Cases() : args.Contains("--reception") ? TiepNhanChecks.Cases() : args.Contains("--configuration") ? CauHinhChecks.Cases() : args.Contains("--new-data") ? DuLieuMoiChecks.Cases() : QuyenVaTiepNhanChecks.Cases().Concat(PhamViGiaoDienChecks.Cases()).Concat(CauHinhChecks.Cases()).Concat(DuLieuMoiChecks.Cases()).Concat(TiepNhanChecks.Cases()).Concat(KhamVaKeHoachChecks.Cases()).Concat(DichVuThucHienChecks.Cases()).Concat(DonThuocChecks.Cases()).Concat(ThanhToanChecks.Cases());
     foreach (var (name, run) in cases)
     {
         try
@@ -28,7 +29,7 @@ try
         }
     }
     Console.WriteLine($"ClinicalChecks: {passed} PASS, {failed} FAIL; toàn bộ fixture rollback.");
-    Console.WriteLine("Các ca SQL không thay thế nghiệm thu đầy đủ AT01–AT34; bảng tính phí, thu đủ và giao diện hoàn chỉnh còn ở P08–P12.");
+    Console.WriteLine("Các ca SQL không thay thế nghiệm thu đầy đủ AT01–AT34; thu đủ, bàn giao và nghiệm thu toàn luồng còn ở P09–P12.");
     return failed == 0 ? 0 : 1;
 }
 catch (Exception ex)

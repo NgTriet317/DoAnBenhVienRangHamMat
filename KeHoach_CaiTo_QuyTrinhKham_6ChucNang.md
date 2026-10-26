@@ -1,6 +1,6 @@
 # Quy trình khám và thanh toán ngoại trú Implementation Plan
 
-> **Tiến độ 26/10/2026:** P01–P07 đã hoàn tất phần nền, migration, hồ sơ, tiếp nhận, khám, kế hoạch, dịch vụ thực hiện và kê đơn snapshot. Đã kiểm chứng 146 ca SQL, 35 ca WPF, tiếp nhận/khám/ký dịch vụ/thay đơn đồng thời; dữ liệu và tồn cũ giữ nguyên. P08–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
+> **Tiến độ 26/10/2026:** P01–P08 đã hoàn tất phần nền, migration, hồ sơ, tiếp nhận, khám, kế hoạch, dịch vụ, kê đơn snapshot và bảng tính phí. Đã kiểm chứng 160 ca SQL, 39 ca WPF và xem phí đồng thời; dữ liệu và tồn cũ giữ nguyên. P09–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
 
 > **For agentic workers:** Triển khai từng tác vụ và đánh dấu `- [ ]` khi hoàn thành. Nếu môi trường có Superpowers, dùng `superpowers:executing-plans`; không phụ thuộc vào việc cài thêm kỹ năng để đọc hoặc thực hiện tài liệu này. Người dùng yêu cầu giao kế hoạch cho Codex terminal trong Visual Studio 2022, chưa yêu cầu triển khai trong phiên lập kế hoạch.
 
@@ -521,11 +521,11 @@ Không bắt đầu bằng thay toàn bộ XAML. Khóa hợp đồng dữ liệu
 
 **Interfaces:** Cung cấp `LapBangTinh(maLS, maKhoCapThuoc, nguoiDung)`; kho bắt buộc khi có thuốc và không bắt buộc khi chỉ có dịch vụ. `DauVanTay` tính từ dữ liệu nguồn ổn định, không phải một số tổng UI tự gán. Chưa gọi CreateInvoice hoặc DispensePrescription ở bước này.
 
-- [ ] Viết ca một dịch vụ 100.000 và hai dòng thuốc tổng 50.000 cho kết quả 150.000; thêm đơn hiệu lực thứ hai phải được cộng; Hủy/Ngừng áp dụng không cộng.
-- [ ] Truy vấn đúng lượt và nguồn còn hiệu lực; kiểm tra giá thuốc, dịch vụ và nguồn cũ chưa xử lý; không đọc kết quả chưa được quyền xem.
-- [ ] Tạo bảng kê và token nguồn; mô phỏng phân lô đúng logic ghi sổ, cộng tiền theo từng phần lô như trigger. Thử số lượng lẻ chia ba lô để phát hiện khác biệt làm tròn; thay giá, lượng hoặc lô dùng làm token đổi. Xem bảng tính không thay số dòng hóa đơn, xuất kho và thanh toán.
-- [ ] Với dữ liệu tài chính cũ, giữ hiển thị tổng và lịch sử chính xác; không biến tiền còn phải thu thành đã thu, không tạo nguồn thu lần hai.
-- [ ] Kiểm tra bản in dùng dữ liệu chốt và cách gộp lô vẫn đối chiếu được về MaCTPX. Lưu thay đổi.
+- [x] Viết ca một dịch vụ 100.000 và hai dòng thuốc tổng 50.000 cho kết quả 150.000; thêm đơn hiệu lực thứ hai phải được cộng; Hủy/Ngừng áp dụng không cộng.
+- [x] Truy vấn đúng lượt và nguồn còn hiệu lực; kiểm tra giá thuốc, dịch vụ và nguồn cũ chưa xử lý; không đọc kết quả chưa được quyền xem.
+- [x] Tạo bảng kê và token nguồn; mô phỏng phân lô đúng logic ghi sổ, cộng tiền theo từng phần lô như trigger. Thử số lượng lẻ chia ba lô để phát hiện khác biệt làm tròn; thay giá, lượng hoặc lô dùng làm token đổi. Xem bảng tính không thay số dòng hóa đơn, xuất kho và thanh toán.
+- [x] Với dữ liệu tài chính cũ, giữ hiển thị tổng và lịch sử chính xác; không biến tiền còn phải thu thành đã thu, không tạo nguồn thu lần hai.
+- [x] Kiểm tra bản in dùng dữ liệu chốt và cách gộp lô vẫn đối chiếu được về MaCTPX. Lưu thay đổi.
 
 ### P09 Thanh toán đủ tiền và chống lặp
 

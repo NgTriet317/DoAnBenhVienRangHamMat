@@ -47,6 +47,58 @@ internal static class Program
         }
         try
         {
+            Check("P08 phân trang giữ trọn dòng truy vết CTPX ở nhiều khổ giấy",()=>
+            {
+                var document=new InvoiceDocument {DataContext=new {Lines=Enumerable.Range(0,10).Select(i=>new InvoicePrintLine("FIXTURE thuốc đã chốt "+i,1,1,1,Enumerable.Range(0,16).Select(j=>$"CTPX-{i:D2}-{j:D2}").ToArray())).ToArray()}};
+                foreach(var height in new[]{240d,275d,310d,360d})
+                {
+                    var paginator=document.CreatePaginator(new Size(500,height));Require(paginator.PageCount>1,"Không thử được ngắt trang");
+                    var source=(FrameworkElement)paginator.Source;var boundaries=new List<double>();var end=0d;
+                    for(var i=0;i<paginator.PageCount;i++){var page=paginator.GetPage(i);end+=page.ContentBox.Height;boundaries.Add(end);}
+                    var traces=TextBlocks(source).Where(t=>t.Text.StartsWith("Chi tiết xuất:")).ToArray();Require(traces.Length==10,"Mất truy vết khi phân trang");
+                    foreach(var trace in traces)
+                    {
+                        Require(double.IsFinite(trace.LineHeight),"Dòng truy vết không có chiều cao hữu hạn, paginator bỏ qua dòng chữ");
+                        var top=trace.TranslatePoint(new Point(),source).Y;
+                        for(var offset=0d;offset<trace.ActualHeight-.01;offset+=trace.LineHeight)
+                        {var bottom=top+Math.Min(offset+trace.LineHeight,trace.ActualHeight);Require(!boundaries.Any(b=>b>top+offset+.01&&b<bottom-.01),"Đường ngắt trang cắt đôi dòng truy vết");}
+                    }
+                }
+            });
+            Check("P08 tab mới giữ vị trí mở hóa đơn của giao diện legacy",()=>
+            {
+                var page=new HoaDon();var tabs=Find<TabControl>(page,"DetailTabs");tabs.SelectedIndex=0;
+                Require(tabs.SelectedItem is TabItem t&&t.Visibility==Visibility.Visible&&Convert.ToString(t.Header)=="Hóa đơn / thu tiền","Lối mở hóa đơn cũ đang chọn tab ẩn");
+            });
+            Check("P08 xem bảng phí thực, đổi nguồn xóa bảng cũ và không ghi tài chính",()=>
+            {
+                using var f = new RangHamMat.ClinicalChecks.Fixture();
+                f.Execute("DELETE dbo.CHI_TIET_DON_THUOC WHERE MaDT=@id;DELETE dbo.DON_THUOC WHERE MaDT=@id",new{id=f.Id("DTA")});
+                var a=f.User("A");var services=new BUS.BUS_DICHVUTHUCHIEN(f.Transaction);
+                var draft=services.LuuThucHien(new(){MaLS=f.Id("LSA"),MaDV=f.Scalar<string>("SELECT TOP(1) MaDV FROM dbo.DICH_VU WHERE TrangThai=N'Đang hoạt động' ORDER BY MaDV"),MaNVThucHien=a.MaNV,ThoiGianThucHien=f.Scalar<DateTime>("SELECT CONVERT(datetime2(0),SYSDATETIME())"),SoLuong=1,DonGia=100000,KetQua="FIXTURE riêng",LyDoPhatSinh="FIXTURE"},a);
+                services.XacNhanThucHien(draft.DichVu.MaDVThucHien,draft.DauVanTay,a);
+                var clinical=new BUS.BUS_KHAMDIEUTRI(f.Transaction);var s=clinical.LayBanNhap(f.Id("LSA"),a);
+                s=clinical.LuuKham(new(){MaLS=f.Id("LSA"),DauVanTay=s.DauVanTay,TrieuChung="FIXTURE",ChanDoan="FIXTURE",KeHoachXuLy="FIXTURE",KhongKeThuoc=true,LyDoKhongKeThuoc="FIXTURE",TinhTrang=[new(){LoaiTinhTrang="FIXTURE",MoTaTinhTrang="FIXTURE",MucDo="FIXTURE"}]},a);clinical.HoanTatKham(f.Id("LSA"),s.DauVanTay,a);
+                var before=f.Scalar<int>("SELECT COUNT(*) FROM dbo.HOA_DON");var view=new BangTinhPhiEditor(f.User("C"),f.Transaction);view.FocusContext(f.Id("LSA"));
+                using var host=new WindowLifetime(new Window{Content=view,Width=1000,Height=720,ShowInTaskbar=false});host.Window.Show();host.Window.UpdateLayout();
+                Require(view.TryLapBangTinh(out var error),error??"Không tính được phí");Require(view.BangTinh?.TongTien==100000,"Sai tổng hiển thị");
+                Require(Find<DataGrid>(view,"ServicesGrid").Items.Count==1,"Thiếu nguồn dịch vụ");SavePreview(view,"P08-bang-tinh.png","obj/ClinicalWorkflowP08");
+                view.FocusContext(f.Id("LSB"));Require(view.BangTinh is null&&Find<DataGrid>(view,"ServicesGrid").Items.Count==0,"Giữ phí của lượt cũ");
+                Require(!view.TryLapBangTinh(out _),"Cho tính lượt chưa hoàn tất");Require(f.Scalar<int>("SELECT COUNT(*) FROM dbo.HOA_DON")==before,"Xem UI đã ghi hóa đơn");
+            });
+            Check("P08 gộp bản in theo dòng đơn/giá chốt, giữ mã CTPX và phần lẻ",()=>
+            {
+                var t=new DataTable();foreach(var c in new[]{"MaCTHD","MaCTPX","MaCTDT","MaDT","NoiDung"})t.Columns.Add(c);foreach(var c in new[]{"SoLuong","DonGiaChot","ThanhTien"})t.Columns.Add(c,typeof(decimal));
+                t.Rows.Add("H1","X1","D1","RX1","Tên thuốc đã chốt",.005m,1m,.01m);t.Rows.Add("H2","X2","D1","RX1","Tên thuốc đã chốt",.005m,1m,.01m);t.Rows.Add("H3","X3","D1","RX1","Tên thuốc đã chốt",.005m,1m,.01m);
+                t.Rows.Add("H4","X4","D2","RX2","Tên thuốc đã chốt",1m,2m,2m);
+                var grouped=InvoicePrintLines.Group(t);Require(grouped.Count==2,"Gộp lẫn đơn/giá hoặc không gộp lô");var first=grouped[0];Require(first.ThanhTien==.03m&&first.SoLuong==.015m&&first.MaCTPX.SequenceEqual(new[]{"X1","X2","X3"})&&first.Description=="Tên thuốc đã chốt","Tính lại tiền/gỡ truy vết hoặc đọc tên danh mục hiện tại");
+                var h=new DataTable();foreach(var c in new[]{"MaHD","TrangThai","HoTenBN","MaBN","MaLS","NguoiLap"})h.Columns.Add(c);h.Columns.Add("NgayLap",typeof(DateTime));foreach(var c in new[]{"TongTien","GiamGia","SoTienPhaiThu","DaThu","ConPhaiThu"})h.Columns.Add(c,typeof(decimal));
+                h.Rows.Add("FIXTURE-HD","Đã xác nhận","FIXTURE","BN-IN","LS-IN","FIXTURE",DateTime.Now,2.03m,0m,2.03m,1m,1.03m);
+                var preview=new XemTruocHoaDon(h.Rows[0],t);using var host=new WindowLifetime(preview);preview.Show();preview.UpdateLayout();
+                var doc=Find<FrameworkElement>(preview,"InvoiceDocument");var data=doc.DataContext;var printRows=(IReadOnlyList<InvoicePrintLine>)data.GetType().GetProperty("Lines")!.GetValue(data)!;
+                Require(printRows[0].Amount==first.Amount&&printRows[0].Trace.Contains("X3")&&data.GetType().GetProperty("Remaining")!.GetValue(data)!.ToString()!.Contains("1,03"),"Bản xem trước không dùng số chốt/truy vết hoặc mất lẻ cũ");
+                SavePreview(doc,"P08-hoa-don-chot.png","obj/ClinicalWorkflowP08");
+            });
             Check("P07 preview gắn đúng mã đơn dù editor đổi nguồn và đọc lại hiệu lực",()=>
             {
                 using var f=new RangHamMat.ClinicalChecks.Fixture();f.Execute("DELETE dbo.CHI_TIET_DON_THUOC WHERE MaDT=@id;DELETE dbo.DON_THUOC WHERE MaDT=@id",new{id=f.Id("DTA")});var actor=f.User("A");var b=new BUS.BUS_DONTHUOC(f.Transaction);var drug=f.Scalar<string>("SELECT TOP(1) MaThuoc FROM dbo.THUOC ORDER BY MaThuoc");var r=new YeuCauLuuDon{MaLS=f.Id("LSA"),CacDong=[new(){MaThuoc=drug,LieuDung="FIXTURE",DuongDung="FIXTURE",HuongDan="FIXTURE không dùng thật"}]};var a=b.LuuDon(r,actor);a=b.XacNhanDon(a.Don.MaDT,a.DauVanTay,actor);
@@ -471,6 +523,13 @@ internal static class Program
         var args=new object?[]{null};
         try{return (bool)view.GetType().GetMethod(method)!.Invoke(view,args)!;}
         catch(TargetInvocationException ex){throw ex.InnerException??ex;}
+    }
+
+    private static IEnumerable<TextBlock> TextBlocks(DependencyObject root)
+    {
+        if(root is TextBlock text)yield return text;
+        for(var i=0;i<System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);i++)
+            foreach(var child in TextBlocks(System.Windows.Media.VisualTreeHelper.GetChild(root,i)))yield return child;
     }
 
     private static void EditCell(DataGrid grid,int column,string text)

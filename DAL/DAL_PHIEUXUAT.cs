@@ -97,20 +97,7 @@ public sealed class DAL_PHIEUXUAT : dbconnect
     /// <summary>
     /// SQL tính tồn theo từng lô từ chứng từ nhập/xuất đã ghi sổ, lọc đúng kho và hàng trong đơn, loại lô chưa nhập/hết hạn/ngừng sử dụng/hết tồn. Ưu tiên NgayNhap trước, rồi lô có hạn dùng và HanSuDung sớm, cuối cùng MaLo; không phải chỉ sắp theo hạn dùng.
     /// </summary>
-    private const string StockSql = """
-        SELECT l.MaLo,l.MaHH,l.SoLo,l.NgayNhap,l.HanSuDung,
-          COALESCE(n.SoLuong,0)-COALESCE(x.SoLuong,0) TonKho
-        FROM dbo.LO_HANG_HOA l
-        OUTER APPLY(SELECT SUM(c.SoLuong) SoLuong FROM dbo.CHI_TIET_PHIEU_NHAP c JOIN dbo.PHIEU_NHAP p ON p.MaPN=c.MaPN
-          WHERE c.MaLo=l.MaLo AND p.MaKho=@warehouseId AND p.TrangThai=N'Đã ghi sổ') n
-        OUTER APPLY(SELECT SUM(c.SoLuong) SoLuong FROM dbo.CHI_TIET_PHIEU_XUAT c JOIN dbo.PHIEU_XUAT p ON p.MaPX=c.MaPX
-          WHERE c.MaLo=l.MaLo AND p.MaKho=@warehouseId AND p.TrangThai=N'Đã ghi sổ') x
-        WHERE l.MaKho=@warehouseId AND l.MaHH IN(SELECT t.MaHH FROM dbo.CHI_TIET_DON_THUOC c JOIN dbo.THUOC t ON t.MaThuoc=c.MaThuoc WHERE c.MaDT=@prescriptionId)
-          AND l.TrangThai=N'Còn sử dụng' AND l.NgayNhap<=SYSDATETIME()
-          AND(l.HanSuDung IS NULL OR l.HanSuDung>=CAST(SYSDATETIME() AS date))
-          AND COALESCE(n.SoLuong,0)>COALESCE(x.SoLuong,0)
-        ORDER BY l.NgayNhap,CASE WHEN l.HanSuDung IS NULL THEN 1 ELSE 0 END,l.HanSuDung,l.MaLo
-        """;
+    private const string StockSql = PhanBoLoThuoc.StockSql;
     /// <summary>
     /// Trả tồn khả dụng theo kho và thuốc trong đơn: tổng nhập Đã ghi sổ trừ tổng xuất Đã ghi sổ; chỉ lấy lô Còn sử dụng, đã đến ngày nhập, chưa hết hạn và còn lượng dương.
     /// </summary>
@@ -119,7 +106,7 @@ public sealed class DAL_PHIEUXUAT : dbconnect
     /// <returns>DataTable đã nạp đủ các dòng kết quả; có thể rỗng nếu chưa có dữ liệu phù hợp.</returns>
     public DataTable GetStock(string warehouseId, string prescriptionId)
     {
-        return Query(StockSql, new { warehouseId, prescriptionId });
+        return Query(StockSql, new { warehouseId, prescriptionIds = new[] { prescriptionId } });
     }
 
     /// <summary>
@@ -171,15 +158,15 @@ public sealed class DAL_PHIEUXUAT : dbconnect
                 throw new InvalidOperationException("Đơn thuốc đã được cấp; không thể cấp lại.");
             }
 
-            var lines = db.Query<PrescriptionLine>("SELECT c.MaCTDT,c.SoLuong,t.MaHH FROM dbo.CHI_TIET_DON_THUOC c JOIN dbo.THUOC t ON t.MaThuoc=c.MaThuoc WHERE c.MaDT=@prescriptionId ORDER BY c.MaCTDT", new { prescriptionId }, tx).ToArray();
+            var lines = db.Query<PhanBoLoThuoc.Dong>("SELECT c.MaCTDT,c.SoLuong,t.MaHH FROM dbo.CHI_TIET_DON_THUOC c JOIN dbo.THUOC t ON t.MaThuoc=c.MaThuoc WHERE c.MaDT=@prescriptionId ORDER BY c.MaCTDT", new { prescriptionId }, tx).ToArray();
             if (lines.Length == 0)
             {
                 throw new InvalidOperationException("Đơn thuốc không có thuốc để cấp.");
             }
 
-            var lots = db.Query<Lot>(StockSql, new { warehouseId, prescriptionId }, tx).ToArray();
+            var lots = PhanBoLoThuoc.LayLo(db, tx, warehouseId, new[] { prescriptionId });
             // Chỉ lập phương án cấp trong bộ nhớ: nếu thiếu bất kỳ thuốc nào thì dừng trước khi INSERT phiếu/chi tiết.
-            var phuongAnCap = LapPhuongAnCapThuoc(lines, lots);
+            var phuongAnCap = PhanBoLoThuoc.Lap(lines, lots);
 
             // Khi đã đủ toàn bộ đơn mới ghi đầu phiếu, từng dòng phân bổ và chuyển sang ghi sổ trong cùng giao dịch.
             var exportId = TaoMa(db, tx, "PHIEU_XUAT", "MaPX");
@@ -205,120 +192,10 @@ public sealed class DAL_PHIEUXUAT : dbconnect
         });
     }
 
-    /// <summary>
-    /// Tính lô và lượng cần lấy cho từng dòng thuốc bằng vòng lặp.
-    /// Hàm chỉ lập phương án trong bộ nhớ; nếu thiếu thuốc thì báo lỗi trước khi ghi phiếu xuất.
-    /// Thứ tự lô đã được SQL sắp xếp để lấy lô nhập trước, còn hạn sử dụng.
-    /// </summary>
-    private static List<PhanBoThuoc> LapPhuongAnCapThuoc(PrescriptionLine[] cacThuoc, Lot[] cacLo)
-    {
-        var phuongAn = new List<PhanBoThuoc>();
-
-        foreach (var thuoc in cacThuoc)
-        {
-            decimal conThieu = thuoc.SoLuong;
-
-            foreach (var lo in cacLo)
-            {
-                if (lo.MaHH != thuoc.MaHH || lo.TonKho <= 0)
-                {
-                    continue;
-                }
-
-                decimal soLuongLay = Math.Min(conThieu, lo.TonKho);
-                phuongAn.Add(new PhanBoThuoc
-                {
-                    MaCTDT = thuoc.MaCTDT,
-                    MaHH = thuoc.MaHH,
-                    MaLo = lo.MaLo,
-                    SoLuong = soLuongLay
-                });
-
-                // Giảm tồn tạm để hai dòng cùng thuốc không dùng lại cùng một lượng tồn.
-                lo.TonKho -= soLuongLay;
-                conThieu -= soLuongLay;
-                if (conThieu == 0)
-                {
-                    break;
-                }
-            }
-
-            if (conThieu > 0)
-            {
-                throw new InvalidOperationException($"Kho không đủ thuốc mã hàng {thuoc.MaHH} (thiếu {conThieu:N3}). Chưa cấp bất kỳ thuốc nào; chọn kho đủ toàn bộ đơn hoặc bổ sung tồn hợp lệ.");
-            }
-        }
-
-        return phuongAn;
-    }
-
-    /// <summary>Một phần thuốc lấy từ một lô; thay tuple bằng lớp có tên trường giống ET để dễ đọc.</summary>
-    private sealed class PhanBoThuoc
-    {
-        /// <summary>Dòng đơn thuốc nhận phần cấp phát này.</summary>
-        public string MaCTDT { get; set; } = "";
-        /// <summary>Mã hàng hóa của thuốc cần lấy.</summary>
-        public string MaHH { get; set; } = "";
-        /// <summary>Lô được chọn theo thứ tự nhập trước.</summary>
-        public string MaLo { get; set; } = "";
-        /// <summary>Lượng lấy từ lô để cấp cho dòng thuốc.</summary>
-        public decimal SoLuong { get; set; }
-    }
-
-    /// <summary>
-    /// Kết quả truy vấn đầu đơn, giữ lần khám, trạng thái và ngày kê để kiểm tra trước khi cấp thuốc.
-    /// </summary>
     private sealed class Prescription
     {
-        /// <summary>
-        /// Mã lần khám gắn với đầu đơn thuốc trong kết quả truy vấn.
-        /// </summary>
-        public string MaLS { get; set; }
-        /// <summary>
-        /// Trạng thái SQL của bản được đọc, dùng kiểm tra đã xác nhận trước khi lập hóa đơn hoặc cấp thuốc.
-        /// </summary>
+        public string MaLS { get; set; } = "";
         public string TrangThai { get; set; } = "";
-        /// <summary>
-        /// Ngày kê đơn để chặn cấp thuốc trước thời điểm kê.
-        /// </summary>
         public DateTime NgayKe { get; set; }
-    }
-
-    /// <summary>
-    /// Dòng đơn thuốc sau khi ghép danh mục thuốc: mã dòng, mã hàng và số lượng cần phân bổ từ các lô.
-    /// </summary>
-    private sealed class PrescriptionLine
-    {
-        /// <summary>
-        /// Mã dòng đơn thuốc để liên kết chi tiết phiếu xuất với lượng đã kê.
-        /// </summary>
-        public string MaCTDT { get; set; }
-        /// <summary>
-        /// Mã hàng hóa dùng ghép dòng thuốc với các lô tồn cùng mặt hàng.
-        /// </summary>
-        public string MaHH { get; set; }
-        /// <summary>
-        /// Số lượng của dòng đơn cần cấp đầy đủ từ một hoặc nhiều lô.
-        /// </summary>
-        public decimal SoLuong { get; set; }
-    }
-
-    /// <summary>
-    /// Kết quả tồn khả dụng của lô; TonKho được giảm trong bộ nhớ sau mỗi phân bổ để các dòng đơn không dùng trùng lượng tồn.
-    /// </summary>
-    private sealed class Lot
-    {
-        /// <summary>
-        /// Mã lô hàng được chọn làm nguồn cấp thuốc.
-        /// </summary>
-        public string MaLo { get; set; }
-        /// <summary>
-        /// Mã hàng hóa dùng ghép dòng thuốc với các lô tồn cùng mặt hàng.
-        /// </summary>
-        public string MaHH { get; set; }
-        /// <summary>
-        /// Lượng tồn khả dụng của lô; giảm tạm trong bộ nhớ khi phân bổ cho từng dòng đơn.
-        /// </summary>
-        public decimal TonKho { get; set; }
     }
 }

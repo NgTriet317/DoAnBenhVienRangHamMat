@@ -11,7 +11,8 @@ Ngày 26/10/2026. Kế hoạch chính: [KeHoach_CaiTo_QuyTrinhKham_6ChucNang.md]
 | P05 | Hoàn tất khám và kế hoạch điều trị | Bắt đầu một MaLS/phiếu; lưu khám/tình trạng có snapshot; gợi ý, sao chép và duyệt mẫu/kế hoạch; hoàn tất và khóa. Tổng 104 ca SQL, 23 ca WPF đạt; đồng thời hai kết nối đạt |
 | P06 | Hoàn tất dịch vụ thực hiện | Dự kiến/Thực tế, giao điều dưỡng, giới hạn lượng cùng hồ sơ qua hai buổi, ký và khóa nguồn; 124 ca SQL, 27 ca WPF, hai kết nối xác nhận/tranh lượng/ReadCommitted đạt |
 | P07 | Hoàn tất kê đơn nhiều dòng và snapshot | Chọn thuốc theo nhóm, hướng dẫn duyệt có xác nhận phù hợp, ký/thay đơn nguyên tử, thông tin an toàn và in đúng nguồn; 146 ca SQL, 35 ca WPF đạt; đồng thời ký/thay/sửa và tồn không đổi đạt |
-| P08–P12 | Chưa triển khai | Bảng tính, thu đủ/chống lặp, bàn giao và nghiệm thu toàn luồng |
+| P08 | Hoàn tất bảng tính phí và nguồn in | Dịch vụ + toàn bộ đơn hiệu lực, phân lô dùng chung luồng kho, token SQL, lịch sử chính xác và in gộp lô có truy vết; 160 ca SQL, 39 ca WPF và hai phiên xem phí đạt |
+| P09–P12 | Chưa triển khai | Thu đủ/chống lặp, bàn giao và nghiệm thu toàn luồng |
 
 ## Quyết định khi thực hiện
 
@@ -46,6 +47,11 @@ Ngày 26/10/2026. Kế hoạch chính: [KeHoach_CaiTo_QuyTrinhKham_6ChucNang.md]
 29. Giữ khóa ghi Rx trước khóa lượt P05 và khóa nguồn SQL; kiểm cả hóa đơn hủy hoặc dòng xuất nháp có FK để giữ nguồn. Chi phí: ghi Rx tuần tự ở quy mô đồ án; phải xử lý chứng từ phụ thuộc trước khi thay đơn. Chưa đo tải lớn.
 30. Lịch sử đơn trong hồ sơ chỉ đọc, có Mở khu kê đơn; Save/Delete chung bị chặn sau kiểm quyền. CRUD ngoài clinical giữ cho tương thích. Preview giữ cố định mã đơn, đọc lại hiệu lực/quyền ngay trước in; thông tin chưa có hiển thị rõ, không suy là không dị ứng hoặc có bộ phát hiện tương tác đầy đủ.
 
+31. P08 giữ chính sách lô hiện có: ngày nhập trước, rồi hạn dùng và mã lô. Dùng chung truy vấn tồn/thuật toán với xuất kho cũ; không đổi sang chỉ ưu tiên hạn dùng. Chi phí: nếu muốn FEFO phải có yêu cầu kho riêng, không lẫn vào cải tổ thu phí.
+32. Bảng tính cộng tiền đã làm tròn từng phần lô; giữ số lẻ để đối chiếu và khóa khả năng thu mới nếu nguồn có phần lẻ đồng. Không tự làm tròn tổng. Chi phí: cần điều chỉnh nguồn phù hợp trước P09; chứng từ cũ vẫn giữ đầy đủ phần lẻ.
+33. Bất kỳ hóa đơn hoặc nguồn xuất phụ thuộc đã có, kể cả nháp/hủy, đều đưa lượt về đối chiếu lịch sử. Đơn cũ thiếu snapshot không tự bổ sung từ danh mục hiện tại. Chi phí: cần quy trình xử lý lịch sử riêng; không thu thêm từ những nguồn chưa được đối chiếu.
+34. P08 chỉ xem phí và in lại. Dấu vân tay không giữ tồn sau khi đóng transaction; P09 phải xác thực quyền thu, tính lại và so dấu trong cùng transaction ghi. Chi phí: bảng tính có thể hết hiệu lực khi giá/tồn đổi; người thu cần xem lại.
+
 ## Rà soát độc lập
 
 Đã rà soát phần nền. Phát hiện quan trọng: chỉ kiểm tra MaNV/MaTK trong DTO còn cho phép thay toàn bộ định danh. Đã tái hiện bằng bốn ca FAIL và sửa bằng principal tại điểm đăng nhập; cả bốn ca chuyển PASS. Assertion từ chối quyền dùng exception riêng, không chấp nhận lỗi SQL bọc trong InvalidOperationException làm PASS.
@@ -73,3 +79,7 @@ Rà soát P07 phát hiện bốn Important: preview theo editor đang đổi ngu
 Các phần để đúng tác vụ: phí/thu P08/P09, bàn giao P10, điều hướng toàn ứng dụng/DPI P11 và nghiệm thu P12. Giữ fallback bản in lịch sử thiếu cột mới, CRUD ngoài clinical, giới hạn thật của bộ lọc dạng và một cấu hình hiện hành theo schema. Review chỉ đọc; kiểm chứng SQL/WPF/hai kết nối do executor thực hiện, có log. Word giữ nguyên, ba lỗi suite baseline vẫn được ghi rõ.
 
 Bước tiếp theo là P08: bảng tính phí theo lượt, đủ mọi dịch vụ/đơn còn hiệu lực, giá và phân bổ lô dự kiến, dấu vân tay nguồn. P08–P12, phân trang SQL quy mô lớn, giao diện tổng thể và giao dịch thu đủ chưa hoàn tất.
+
+Rà soát P08 phát hiện Important ở dòng truy vết MaCTPX: thiếu LineHeight hữu hạn khiến paginator bỏ qua khi tìm biên trang. Phát hiện đường UI legacy chọn tab theo index được nâng lên Important để giữ tương thích, dù sản phẩm hiện mở phân hệ này ở chế độ clinical. Tái hiện 37 đạt/2 lỗi, sửa trong một lượt: dùng style InvoiceText và giữ tab hóa đơn cũ ở vị trí cũ. Kết quả 39/39 WPF, gồm phân trang thật ở bốn chiều cao giấy, số chốt và mã xuất. Không còn Important hoặc Minor hoãn lại P08.
+
+Các phần giữ đúng tác vụ: P09 thu/chống lặp/tái kiểm tra trong transaction và khóa đường ghi cũ với hóa đơn v2; P10 bàn giao; P11 điều hướng toàn ứng dụng/DPI; P12 nghiệm thu và quy trình đối chiếu lịch sử. Không đổi FIFO, không tự sửa chứng từ hoặc làm tròn tiền lịch sử. Chưa benchmark thông lượng khóa ở tải cao; kết quả hai kết nối không thay cho nghiệm thu tải P11/P12. Tài liệu đã cập nhật, Word giữ nguyên và ba lỗi baseline còn nguyên.

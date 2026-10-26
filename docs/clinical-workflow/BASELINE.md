@@ -54,3 +54,5 @@ Log thô tại `obj/ClinicalWorkflowBaseline/` trên máy này; tài liệu trê
 Các chứng từ cũ cần giữ nguyên: HD004/LS004 nháp còn 100.000; HD005/LS005 nháp còn 150.000; HD006–HD010 nháp tổng 0; PX001–PX008 đã ghi sổ và liên kết DT001–DT008 qua chi tiết xuất/chi tiết đơn. Không tự xác nhận, xóa, thu bù hoặc xuất lại các nguồn này.
 
 Đã xác minh ánh xạ thực tế: CV002 bác sĩ (2), CV003 điều dưỡng (1), CV004 tiếp nhận (1), CV005 dược sĩ (1), CV007 thu ngân (1); vai trò hệ thống giữ Admin/User. Nhân viên/điện thoại/bệnh án không được xuất ra báo cáo này.
+
+Đối chiếu sau P08 (26/10/2026): bản thử vẫn 52 bảng v2, 10 BN/HS/phiếu/HD/đơn/chi tiết đơn; tổng hóa đơn 732.500, thu ròng 467.500 và tồn 4.014. Không còn fixture CW hoặc cấu hình điều trị thử. Database P08Concurrency mới đã dọn sau kiểm chứng; không đổi database gốc/chứng từ lịch sử. Xem log obj/ClinicalWorkflowP08/data-final.log và kết quả kiểm thử P08.
