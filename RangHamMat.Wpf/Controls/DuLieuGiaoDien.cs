@@ -250,6 +250,7 @@ public static class DuLieuGiaoDien
     /// </summary>
     private static Dictionary<string, object?> Save(string table, IDictionary<string, object?> values, string? id = null, IDictionary<string, object?>? expected = null, bool statusOnly = false)
     {
+        if(PhamViLamSang&&table=="DICH_VU_THUC_HIEN")throw new LoiKhamException("MaDVThucHien","Lưu và xác nhận tại Dịch vụ thực hiện để kiểm tra nguồn, phần lượng còn lại và người được giao.");
         if (PhamViLamSang && table is not ("NHA_CUNG_CAP" or "BAO_TRI_THIET_BI"))
         {
             if (table == "LICH_KHAM") { if (!NguoiDungLamSang.LaAdmin) throw new TuChoiQuyenNghiepVuException(); }
@@ -379,6 +380,7 @@ public static class DuLieuGiaoDien
     /// </summary>
     private static void DeleteRecord(string table, string id, IDictionary<string, object?>? expected = null)
     {
+        if(PhamViLamSang&&table=="DICH_VU_THUC_HIEN")throw new LoiKhamException("MaDVThucHien","Hủy nháp tại Dịch vụ thực hiện để giữ lịch sử và trả phần lượng dự kiến.");
         if (PhamViLamSang && table is not ("NHA_CUNG_CAP" or "BAO_TRI_THIET_BI"))
         {
             if (table == "LICH_KHAM") { if (!NguoiDungLamSang.LaAdmin) throw new TuChoiQuyenNghiepVuException(); }

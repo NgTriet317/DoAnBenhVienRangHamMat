@@ -1,0 +1,46 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.ThucHienDichVuEditor" FontFamily="Segoe UI" FontSize="14" Language="vi-VN" Background="#F3F6FA">
+  <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/HospitalStyles.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
+  <Grid Margin="12"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <StackPanel Margin="0,0,0,12"><DockPanel><Button x:Name="ReloadButton" Content="Tải lại (bỏ nháp)" DockPanel.Dock="Right" Click="Reload_Click"/><TextBlock Text="Dịch vụ thực hiện" Style="{StaticResource HospitalHeading}"/></DockPanel>
+      <ComboBox x:Name="VisitPicker" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Visit_Changed" Margin="0,10,0,8" MinHeight="36"/>
+      <TextBlock x:Name="PatientHeader" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock x:Name="VisitHeader" Margin="0,6,0,0" TextWrapping="Wrap"/>
+    </StackPanel>
+    <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="380"/></Grid.ColumnDefinitions>
+      <TabControl x:Name="SourceTabs">
+        <TabItem Header="Dự kiến từ kế hoạch"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <TextBlock Text="Chỉ bước đã duyệt cùng hồ sơ. Phần còn lại đã trừ dịch vụ xác nhận và các dòng nháp được giao." TextWrapping="Wrap" Margin="8"/>
+          <DataGrid x:Name="PlannedGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" SelectionMode="Single" MinRowHeight="36"><DataGrid.Columns>
+            <DataGridTextColumn Header="Bước" Binding="{Binding MaCTKH}" Width="100"/><DataGridTextColumn Header="Dịch vụ" Binding="{Binding TenDV}" Width="180"/><DataGridTextColumn Header="Buổi" Binding="{Binding LanThu}" Width="60"/>
+            <DataGridTextColumn Header="Dự kiến" Binding="{Binding SoLuongDuKien}" Width="85"/><DataGridTextColumn Header="Đã xác nhận" Binding="{Binding DaXacNhan}" Width="100"/><DataGridTextColumn Header="Đang nháp" Binding="{Binding DangNhap}" Width="90"/><DataGridTextColumn Header="Còn lại" Binding="{Binding ConLai}" Width="80"/>
+          </DataGrid.Columns></DataGrid>
+          <Button x:Name="FromStepButton" Grid.Row="2" Content="Thực hiện bước đang chọn" Click="FromStep_Click" HorizontalAlignment="Right" Margin="8"/>
+        </Grid></TabItem>
+        <TabItem Header="Thực tế"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
+          <TextBlock x:Name="ActualSummary" TextWrapping="Wrap" Margin="8"/>
+          <DataGrid x:Name="ActualGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" SelectionMode="Single" SelectionChanged="Actual_Changed" MinRowHeight="36"><DataGrid.Columns>
+            <DataGridTextColumn Header="Mã thực hiện" Binding="{Binding DichVu.MaDVThucHien}" Width="110"/><DataGridTextColumn Header="Dịch vụ" Binding="{Binding TenDV}" Width="180"/><DataGridTextColumn Header="Người làm" Binding="{Binding TenNguoiThucHien}" Width="140"/>
+            <DataGridTextColumn Header="Thời gian" Binding="{Binding DichVu.ThoiGianThucHien,StringFormat=dd/MM/yyyy HH:mm}" Width="145"/><DataGridTextColumn Header="Lượng" Binding="{Binding DichVu.SoLuong}" Width="70"/><DataGridTextColumn Header="Giá chốt" Binding="{Binding DichVu.DonGia,StringFormat=N0}" Width="95"/>
+            <DataGridTextColumn Header="Kết quả" Binding="{Binding DichVu.KetQua}" Width="180"/><DataGridTextColumn Header="Trạng thái" Binding="{Binding DichVu.TrangThai}" Width="120"/><DataGridCheckBoxColumn Header="Đã tính phí" Binding="{Binding DaTinhPhi}" Width="95"/>
+          </DataGrid.Columns></DataGrid>
+        </Grid></TabItem>
+      </TabControl>
+      <Border Grid.Column="2" Background="White" CornerRadius="10" Padding="12"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
+        <TextBlock x:Name="SourceHeader" FontWeight="SemiBold" TextWrapping="Wrap"/><Button x:Name="NewButton" Content="Dịch vụ phát sinh ngoài kế hoạch" Click="New_Click" Margin="0,10,0,10"/>
+        <TextBlock Text="Dịch vụ" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="ServiceChoice" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Field_Changed" MinHeight="36"/>
+        <TextBlock Text="Người thực hiện được phân công" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/><ComboBox x:Name="PerformerChoice" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Field_Changed" MinHeight="36"/>
+        <TextBlock Text="Thời gian thực hiện (dd/MM/yyyy HH:mm:ss)" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/><TextBox x:Name="TimeEditor" TextChanged="Input_Changed"/>
+        <Grid Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition/></Grid.ColumnDefinitions>
+          <StackPanel><TextBlock Text="Số lượng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="QuantityEditor" TextChanged="Input_Changed"/></StackPanel>
+          <StackPanel Grid.Column="2"><TextBlock Text="Đơn giá thực hiện" Style="{StaticResource FieldLabel}"/><TextBox x:Name="PriceEditor" TextChanged="Input_Changed"/></StackPanel>
+        </Grid>
+        <TextBlock Text="Lý do phát sinh (không chọn bước)" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/><TextBox x:Name="ReasonEditor" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" MaxLength="1000" TextChanged="Input_Changed"/>
+        <TextBlock Text="Kết quả thực hiện" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/><TextBox x:Name="ResultEditor" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" TextChanged="Input_Changed"/>
+        <TextBlock Text="Lưu nháp chưa coi là đã làm. Bác sĩ xác nhận sau khi kiểm tra kết quả; chỉ dịch vụ đã xác nhận là nguồn tính phí." TextWrapping="Wrap" Margin="0,12,0,0" Foreground="#475569"/>
+      </StackPanel></ScrollViewer></Border>
+    </Grid>
+    <StackPanel Grid.Row="2" Margin="0,10,0,0"><TextBlock x:Name="ErrorText" Foreground="#B91C1C" TextWrapping="Wrap"/><DockPanel Margin="0,8,0,0">
+      <WrapPanel DockPanel.Dock="Right"><Button x:Name="CancelButton" Content="Hủy nháp" Click="Cancel_Click"/><Button x:Name="SaveButton" Content="Lưu nháp" Click="Save_Click" Margin="8,0"/><Button x:Name="ConfirmButton" Content="Xác nhận đã thực hiện" Click="Confirm_Click" Style="{StaticResource HospitalPrimary}"/></WrapPanel>
+      <TextBlock x:Name="StatusText" VerticalAlignment="Center" TextWrapping="Wrap"/>
+    </DockPanel></StackPanel>
+  </Grid>
+</UserControl>

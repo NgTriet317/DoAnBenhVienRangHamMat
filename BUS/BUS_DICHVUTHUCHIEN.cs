@@ -9,7 +9,7 @@ namespace BUS
     /// Tầng nghiệp vụ dịch vụ thực hiện, cung cấp thao tác cho giao diện và chuyển truy cập dữ liệu đến DAL_DICHVUTHUCHIEN. Các
     /// lời gọi DAL được bọc XuLyLoi để đổi SqlException sang InvalidOperationException tiếng Việt; lỗi nghiệp vụ khác giữ nguyên.
     /// </summary>
-    public class BUS_DICHVUTHUCHIEN
+    public partial class BUS_DICHVUTHUCHIEN
     {
         /// <summary>
         /// Đối tượng DAL_DICHVUTHUCHIEN thực hiện truy vấn/ghi dịch vụ thực hiện trong giao dịch được truyền vào constructor.

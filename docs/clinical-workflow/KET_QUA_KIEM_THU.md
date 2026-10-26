@@ -1,8 +1,8 @@
-# Kiểm chứng triển khai — 25/10/2026
+# Kiểm chứng triển khai — cập nhật 26/10/2026
 
-**Kết quả mới nhất P05:** build/schema đạt; **104 ca SQL và 23 ca WPF đạt**, hai mode đồng thời đạt. Ba lỗi suite baseline còn nguyên. Chi tiết từng đợt nằm cuối tài liệu; phần đợt nền dưới đây được giữ làm bằng chứng lịch sử.
+**Kết quả mới nhất P06:** build/schema đạt; **124 ca SQL và 27 ca WPF đạt**, ba mode đồng thời đạt. Ba lỗi suite baseline còn nguyên. Chi tiết từng đợt nằm cuối tài liệu; phần đợt nền dưới đây được giữ làm bằng chứng lịch sử.
 
-Phạm vi đã triển khai: P01–P05, chưa phải nghiệm thu sáu chức năng/P12. Kết quả trước sửa tại [BASELINE.md](BASELINE.md); việc còn lại tại [TIEN_DO.md](TIEN_DO.md).
+Phạm vi đã triển khai: P01–P06, chưa phải nghiệm thu sáu chức năng/P12. Kết quả trước sửa tại [BASELINE.md](BASELINE.md); việc còn lại tại [TIEN_DO.md](TIEN_DO.md).
 
 ## Vòng cuối sau thay đổi
 
@@ -192,3 +192,33 @@ WPF kiểm tra bắt đầu từ hàng đợi bằng nút thật, mở đúng kh
 Log tại `obj/ClinicalWorkflowP05/`: `results.json`, `final-results.json`, `Clinical-final.log`, `Ui-review-green.log`, `Ui-service-red.log`, `ReceptionConcurrency.log`, `ExaminationConcurrency-final.log`, `data-final.log` và các suite baseline. Log TDD/đợt đầu còn ở `obj/ClinicalExaminationP05*.log`, `obj/ClinicalUiP05*.log`.
 
 P05 hoàn tất trong phạm vi khám/kế hoạch. Retry áp mẫu được thử tuần tự, kèm khóa/ràng buộc SQL; chưa đo tải nhiều bác sĩ hoặc thử mọi tranh chấp cấu hình. P06–P12 vẫn còn: dịch vụ thực hiện, đơn snapshot, bảng tính, thu đủ/chống lặp, giao thuốc, guard điều hướng toàn ứng dụng/DPI và AT01–AT34. Ba suite baseline còn lỗi; chưa tuyên bố toàn dự án đạt.
+
+## Đợt P06: dịch vụ thực hiện — 26/10/2026
+
+| Kiểm tra | Kết quả cuối P06 |
+| --- | --- |
+| Build solution Debug / SchemaChecks | Exit 0; 45 entity / 363 cột / 0 lỗi, schema 52 bảng không đổi |
+| ClinicalChecks | **124 PASS / 0 FAIL**: 104 ca trước + 20 dịch vụ, rollback fixture |
+| ClinicalUiChecks | **27 PASS / 0 FAIL**: 23 ca trước + 4 dịch vụ, WPF thật |
+| Đồng thời P04/P05 | Hai mode tiếp nhận/khám tiếp tục đạt |
+| Đồng thời P06 | Hai kết nối xác nhận cùng dòng chỉ một ký/audit/nguồn phí; hai bác sĩ/hai lượt cùng hồ sơ tranh lượng cuối chỉ một lưu; ReadCommitted giữ dịch vụ đến rollback (1222) |
+| Finance / Supplier / Maintenance / Report | 54 ca tài chính đạt; các suite khác exit 0, báo cáo 18 chuyên đề |
+| Checks / Persistence / WpfSmoke | Ba lỗi cũ không đổi: MaCa trùng (-532462766), CS1729 constructor BUS_NHANVIEN, CS1061 NhanSu.TryReadPosition/TryReadEmployee |
+
+Các ca mới kiểm tra bước đã duyệt/cùng MaHS/đúng dịch vụ, lượng đã làm và nháp đang giao, hủy trả lượng, thời gian từ lúc bắt đầu lượt đến giờ SQL, người làm đúng chức vụ/tài khoản hoạt động. Điều dưỡng chỉ sửa kết quả/thời gian dòng được giao; dòng khác không được đọc/sửa, không tự tạo hoặc ký. Snapshot cũ và khóa tài khoản sau mở đều bị chặn. Phát sinh cần lý do có audit; MaLS/MaCTKH/MaDV không đổi sau lưu đầu. Xác nhận thiếu kết quả bị chặn.
+
+Hai buổi cùng hồ sơ dùng một bước: mỗi lượt chỉ tổng hợp phần xác nhận của lượt đó. Kế hoạch/nháp/hủy không thành khoản thu. Có ca lập chứng từ legacy đã xác nhận/thu trong fixture rollback để chứng minh dịch vụ/bước nguồn đã thu vẫn khóa; đây không phải triển khai giao dịch thu đủ P09. P06 không tự phát hành hóa đơn. SQL giữ nguyên trigger bảo vệ nguồn đã ký.
+
+Bằng chứng RED → GREEN:
+
+- API chưa có **0/13 → 13/13**. Mở rộng nguồn đã thu/tài khoản bị khóa thành 16 ca; dòng từ kế hoạch của điều dưỡng gửi lý do trống từng **16 đạt/1 lỗi**, sau chuẩn hóa nullable thành 17/17.
+- Workspace chưa có **23 đạt/2 lỗi → 25/25**. Form chung/cache có thể ghi/xóa bỏ qua kiểm tra nguồn: **25 đạt/1 lỗi → 26/26** sau chặn đúng đường ghi/xóa đó.
+- Rà soát phát hiện bốn Important: kết quả/lý do lộ cho quầy thu, đọc trực tiếp Admin thiếu audit, lý do cùng giây sắp chuỗi sai tại 999/1000, chọn lượt làm mất BN khác trong bộ chọn. Lỗi chọn dòng mới vẫn giữ dòng cũ nâng từ Minor lên Important theo ảnh hưởng mở lại/nhầm đích nhập. Tái hiện **SQL 17 đạt/3 lỗi**, **WPF 25 đạt/2 lỗi**; sửa trong cùng lượt thành **124/124 SQL, 27/27 WPF**. Không còn phát hiện quan trọng hoặc Minor hoãn lại P06.
+
+WPF đã thử chọn bước giữ dịch vụ, lưu vẫn Nháp, ô lượng sai không dùng giá trị cũ, ký riêng rồi khóa, chọn lại dòng sau mở dòng mới, chuyển giữa hai BN, điều dưỡng chỉ sửa trường được giao và giữ nháp khi đổi nguồn. Ảnh `obj/ClinicalWorkflowP06/dich-vu-da-xac-nhan.png` đã được xem sau khi xử lý lượt Render; thông tin FIXTURE, nguồn/giá chốt/khóa hiển thị đúng. Guard đóng/đổi phân hệ toàn ứng dụng và ma trận DPI thuộc P11/P12.
+
+Ký đồng thời cần commit, nên đã tạo database riêng `RHM_ClinicalWorkflow_Test_P06Concurrency_20261026` từ SQL cài mới v2 với guard không ghi đè. Chạy lần cuối sau sửa review đạt, rồi dọn đúng database tự tạo; `concurrency-cleanup.log` xác nhận DB_ID là NULL. Không tắt trigger/xóa dòng ký để dọn trên bản thử chính. API mode này từ chối tên bản thử chính hoặc database đã có fixture CW.
+
+Đối chiếu cuối bản thử chính: **52 bảng; 10 BN/10 hồ sơ/10 phiếu/10 hóa đơn; tổng 732.500,00; thu ròng 467.500,00; tồn 4.014,000**. Fixture CW đều 0, danh mục/mẫu thử 0. Database gốc và Word giữ nguyên. Ảnh Supplier/Maintenance/Report tự sinh đã trả về Git.
+
+Log ở `obj/ClinicalWorkflowP06/`: `results.json`, `Clinical-final.log`, `ClinicalUi-final.log`, `services-concurrency-final.log`, `review-sql-red.log`, `review-ui-red.log`, `data-final.log`, log build/schema và ba suite baseline. P06 chưa phải nghiệm thu toàn hệ thống; P07–P12 (đơn snapshot, phí/thu đủ, bàn giao, UI tổng thể, AT01–AT34) vẫn còn.

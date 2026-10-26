@@ -1,6 +1,6 @@
 # Chạy phần nền đã triển khai
 
-Đây là hướng dẫn P01–P05 đã triển khai. Năm module lâm sàng dùng quyền theo chức vụ; bản build hiện tại cần schema ClinicalWorkflow v2. Quy trình khám/thanh toán đầy đủ ở P06–P12 chưa hoàn tất. Database gốc chưa được nâng cấp tự động; chạy kiểm tra/ứng dụng với biến môi trường của bản sao đã nâng cấp.
+Đây là hướng dẫn P01–P06 đã triển khai. Năm module lâm sàng dùng quyền theo chức vụ; bản build hiện tại cần schema ClinicalWorkflow v2. Quy trình khám/thanh toán đầy đủ ở P07–P12 chưa hoàn tất. Database gốc chưa được nâng cấp tự động; chạy kiểm tra/ứng dụng với biến môi trường của bản sao đã nâng cấp.
 
 1. Dùng Windows, .NET 8 SDK và SQL Server. Tạo backup COPY_ONLY CHECKSUM của database đã xác nhận, kiểm tra backup rồi restore sang tên thử riêng; không dùng script cài mới trên dữ liệu đang có.
 2. Đặt biến môi trường trong đúng terminal chạy kiểm tra. Ví dụ với xác thực Windows (không có mật khẩu):
@@ -46,7 +46,7 @@ dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --migr
 dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --migration-rollback
 ```
 
-Mode `--migration` chỉ đọc hợp đồng 30 kiểm tra, chạy được sau upgrade/cài mới. Mặc định ClinicalChecks hiện chạy 104 ca có fixture rollback; `--configuration`, `--new-data`, `--reception`, `--examination` chạy riêng từng nhóm. Nhóm khám/kế hoạch có 24 ca.
+Mode `--migration` chỉ đọc hợp đồng 30 kiểm tra, chạy được sau upgrade/cài mới. Mặc định ClinicalChecks hiện chạy 124 ca có fixture rollback; `--configuration`, `--new-data`, `--reception`, `--examination`, `--services` chạy riêng từng nhóm. Nhóm khám/kế hoạch có 24 ca, dịch vụ có 20 ca.
 
 Sáu lớp DAL/BUS mới được nhóm trong `DAL_CAUHINHLAMSANG.cs`/`BUS_CAUHINHLAMSANG.cs`. Năm lớp cấu hình cung cấp `LayDanhSach`, `LuuNhap(entity,nguoiDung,banGoc)`; nhận transaction tùy chọn, xác minh lại phiên/quyền, kiểm tra snapshot và audit cùng transaction. Endpoint nháp không nhận chữ ký client. P05 bổ sung duyệt mẫu điều trị qua aggregate khám bên dưới; cấu hình kê đơn thuộc P07. `BUS_BANGIAOTHUOC.LayTheoDon` đọc theo phạm vi đơn thuốc; chưa có API ghi bàn giao P10.
 
@@ -75,7 +75,7 @@ Hóa đơn lịch sử chỉ cho đối chiếu/in lại; các lệnh thu/hoàn/
 
 `BUS_TIEPNHAN.LayBacSi(maDV,nguoiDung)` và `TiepNhan(YeuCauTiepNhan,nguoiDung)` nhận transaction tùy chọn. API đọc lại quyền/tài khoản và giữ khóa nguồn, gồm cả khi transaction ngoài là ReadCommitted. Không truyền nhân viên, giờ, trạng thái hay số thứ tự trong DTO. Kết quả có MaBN/MaHS/MaPhieu/MaBS/SoThuTu/TrangThai; bác sĩ bắt đầu khám bằng P05 bên dưới.
 
-Kiểm tra đồng thời cần dữ liệu commit để hai kết nối nhìn thấy. Các mode dưới chạy trên bản thử đã nâng cấp; mode concurrency và fixture tiếp nhận WPF **commit dữ liệu giả rồi dọn theo mã GUID trong finally**, khác với 104 ca SQL mặc định rollback. Ca ký khám/mẫu WPF dùng transaction ngoài và rollback. Không chạy trên database thật:
+Kiểm tra đồng thời cần dữ liệu commit để hai kết nối nhìn thấy. Các mode P04/P05 dưới chạy trên bản thử đã nâng cấp; mode concurrency và fixture tiếp nhận WPF **commit dữ liệu giả rồi dọn theo mã GUID trong finally**, khác với 124 ca SQL mặc định rollback. Ca ký khám/mẫu/dịch vụ WPF dùng transaction ngoài và rollback. Mode ký dịch vụ P06 có database riêng bên dưới. Không chạy trên database thật:
 
 ```powershell
 dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --reception
@@ -83,7 +83,7 @@ dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --rece
 dotnet run --project .\RangHamMat.ClinicalUiChecks -c Debug --no-restore
 ```
 
-ClinicalUiChecks hiện có 23 ca, gồm các ca tiếp nhận trên và khám bên dưới. Ảnh tiếp nhận trước/sau lưu ở `obj/ClinicalWorkflowP04/`; dữ liệu ảnh là FIXTURE. Kiểm tra này không thay thế thử toàn ứng dụng với DPI/SQL lớn ở P11/P12.
+ClinicalUiChecks hiện có 27 ca, gồm tiếp nhận, khám và dịch vụ. Ảnh tiếp nhận trước/sau lưu ở `obj/ClinicalWorkflowP04/`; dữ liệu ảnh là FIXTURE. Kiểm tra này không thay thế thử toàn ứng dụng với DPI/SQL lớn ở P11/P12.
 
 ## Sử dụng khám và kế hoạch P05
 
@@ -104,3 +104,22 @@ dotnet run --project .\RangHamMat.ClinicalUiChecks -c Debug --no-restore
 ```
 
 Mode đồng thời P05 kiểm tra hai kết nối bắt đầu cùng phiếu và lưu cùng snapshot; dữ liệu giả được commit rồi dọn. Các ca áp mẫu idempotent hiện kiểm tra retry tuần tự và ràng buộc/khóa SQL; chưa tuyên bố kiểm thử tải nhiều bác sĩ hay nghiệm thu toàn bộ AT01–AT34. Ảnh không gian khám với FIXTURE ở `obj/ClinicalWorkflowP05/kham-bat-dau.png`.
+
+## Sử dụng dịch vụ thực hiện P06
+
+1. Bác sĩ mở Dịch vụ thực hiện từ lượt đang khám hoặc chọn lượt trong bộ chọn. Nhận diện cố định gồm tên/mã BN, hồ sơ, lượt và bác sĩ phụ trách. Chọn lượt thông thường không làm mất các BN khác khỏi bộ chọn; điều hướng từ hồ sơ vẫn giữ phạm vi BN đã truyền.
+2. Tab Dự kiến chỉ lấy bước đã duyệt cùng MaHS, gồm bước còn lại từ buổi trước. Chọn bước, bấm Thực hiện bước đang chọn: dịch vụ lấy từ bước và không được tự thay. Lượng còn lại đã trừ dòng xác nhận và nháp đang giao; không âm thầm tăng dự kiến.
+3. Chọn người làm là bác sĩ/điều dưỡng có tài khoản hoạt động; nhập thời gian từ lúc bắt đầu lượt đến hiện tại, lượng/giá thực hiện và kết quả. Dịch vụ phát sinh ngoài kế hoạch cần lý do tối đa 1000 ký tự; lý do có nhật ký trong cùng transaction.
+4. Lưu nháp rồi bác sĩ phụ trách kiểm tra, xác nhận riêng. Chỉ dòng xác nhận là nguồn tính phí; nháp/hủy và kế hoạch không thành khoản thu. Hai lần xác nhận cùng dòng dùng cùng nguồn, không ký/tính hai lần. Dòng xác nhận hoặc đã tính phí khóa sửa/hủy; muốn đổi nguồn của nháp phải hủy và lập dòng mới.
+5. Điều dưỡng chỉ thấy dòng được giao, chỉ sửa kết quả/thời gian; không tự tạo, đổi dịch vụ/lượng/giá/người làm hoặc xác nhận. Thu ngân/tiếp nhận có quyền thu chỉ nhận thông tin nguồn, lượng, giá, trạng thái; kết quả và lý do chuyên môn bị loại tại DAL. Admin tra cứu được ghi nhật ký kể cả mở trực tiếp mã dòng.
+6. Tab Thực tế hiển thị tên dịch vụ/người làm, thời gian, lượng, giá chốt, kết quả theo quyền, trạng thái và đã tính phí. Giá trị xác nhận tổng hợp đúng lượt hiện tại. Phát hành hóa đơn/thu đủ ở P08/P09; P06 không tự tạo hóa đơn.
+7. Nháp được giữ khi đổi tab; đổi lượt/dòng bị chặn tới khi lưu hoặc Tải lại để bỏ thay đổi. Form chung/cache không được ghi/xóa dịch vụ để bỏ qua kiểm tra nguồn và lượng. Bảo vệ đóng/chuyển phân hệ toàn ứng dụng vẫn thuộc P11.
+
+`BUS_DICHVUTHUCHIEN` thêm `LayLuotThucHien` (tối đa 100 lượt có quyền), `LayKhongGianThucHien`, `LayThucHien`, `LuuThucHien`, `XacNhanThucHien`, `HuyThucHien`. DTO ghi có nguồn, người làm, giờ, lượng/giá, kết quả, lý do khi phát sinh và dấu vân tay. Nhận transaction ngoài thì bên gọi chịu trách nhiệm commit/rollback và chỉ tải cache sau commit; mặc định API tự quản lý transaction. CRUD cũ giữ cho tương thích ngoài luồng mới.
+
+```powershell
+dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --services
+dotnet run --project .\RangHamMat.ClinicalUiChecks -c Debug --no-restore
+```
+
+Mode `--services-concurrency` **commit fixture có chữ ký**, chỉ chấp nhận database mới riêng có tiền tố `RHM_ClinicalWorkflow_Test_P06Concurrency_`, chưa có fixture CW. Tạo từ SQL cài mới v2 vào tên mới (không ghi đè), đặt `RHM_CONNECTION_STRING` trỏ đúng database đó rồi chạy mode. Mode kiểm tra hai kết nối xác nhận cùng dòng, hai bác sĩ/hai lượt tranh lượng cuối và ReadCommitted giữ khóa nguồn. Sau kiểm tra giữ log và dọn database thử tạm đã tự tạo; không tắt trigger để xóa chứng từ đã ký trên bản thử chính. Lượt triển khai đã tạo/dọn `RHM_ClinicalWorkflow_Test_P06Concurrency_20261026`, kết quả ở `obj/ClinicalWorkflowP06/services-concurrency-final.log` / `concurrency-cleanup.log`.

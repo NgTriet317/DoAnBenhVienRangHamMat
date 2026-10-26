@@ -1,6 +1,6 @@
 # Quy trình khám và thanh toán ngoại trú Implementation Plan
 
-> **Tiến độ 25/10/2026:** P01–P05 đã hoàn tất phần nền, migration, hồ sơ, tiếp nhận, khám và kế hoạch điều trị. Đã kiểm chứng 104 ca SQL, 23 ca WPF, tiếp nhận và khám đồng thời; dữ liệu cũ giữ nguyên. P06–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
+> **Tiến độ 26/10/2026:** P01–P06 đã hoàn tất phần nền, migration, hồ sơ, tiếp nhận, khám, kế hoạch và dịch vụ thực hiện. Đã kiểm chứng 124 ca SQL, 27 ca WPF, tiếp nhận/khám/xác nhận dịch vụ đồng thời; dữ liệu cũ giữ nguyên. P07–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
 
 > **For agentic workers:** Triển khai từng tác vụ và đánh dấu `- [ ]` khi hoàn thành. Nếu môi trường có Superpowers, dùng `superpowers:executing-plans`; không phụ thuộc vào việc cài thêm kỹ năng để đọc hoặc thực hiện tài liệu này. Người dùng yêu cầu giao kế hoạch cho Codex terminal trong Visual Studio 2022, chưa yêu cầu triển khai trong phiên lập kế hoạch.
 
@@ -495,13 +495,13 @@ Không bắt đầu bằng thay toàn bộ XAML. Khóa hợp đồng dữ liệu
 
 **Files:** `Views/DichVuThucHien.*`, phần kế hoạch trong `ChiTietKhamDieuTri.*`, `TreatmentModels.cs`; BUS/DAL dịch vụ, kế hoạch và chi tiết liên quan; `KhamVaKeHoachChecks.cs`.
 
-**Interfaces:** Cung cấp `LuuThucHien`, `XacNhanThucHien`; giữ `MaDVThucHien`, `MaCTKH`, `MaLS` làm nguồn cho tính phí. Người phụ trách và người thực hiện là hai vai trò có thể khác nhau. `YeuCauThucHienDichVu` gồm MaDVThucHien tùy chọn, MaLS, MaCTKH tùy chọn, MaDV, MaNVThucHien, ThoiGianThucHien, SoLuong, DonGia, KetQua và DauVanTay; giới hạn trường được sửa theo vai trò ở phần 4.3.
+**Interfaces:** Cung cấp `LuuThucHien`, `XacNhanThucHien`; giữ `MaDVThucHien`, `MaCTKH`, `MaLS` làm nguồn cho tính phí. Người phụ trách và người thực hiện là hai vai trò có thể khác nhau. `YeuCauThucHienDichVu` gồm MaDVThucHien tùy chọn, MaLS, MaCTKH tùy chọn, MaDV, MaNVThucHien, ThoiGianThucHien, SoLuong, DonGia, KetQua, DauVanTay và LyDoPhatSinh khi ngoài kế hoạch; giới hạn trường được sửa theo vai trò ở phần 4.3.
 
-- [ ] Viết ca chỉ có kế hoạch chưa làm thì tiền thu là 0; dịch vụ Nháp/Hủy không tính; dịch vụ xác nhận tính đúng một lần.
-- [ ] Tách tab dự kiến/thực tế; tạo thực hiện từ bước có sẵn không nhập lại mã dịch vụ tùy ý; dịch vụ phát sinh cần lý do.
-- [ ] Kiểm tra bước cùng hồ sơ, đúng dịch vụ, đủ lượng còn lại và thời gian hợp lệ; điều dưỡng chỉ sửa kết quả/thời gian dòng bác sĩ đã giao cho đúng MaNVThucHien của mình; bác sĩ của lượt xác nhận. Thử sửa dòng của điều dưỡng khác phải bị từ chối.
-- [ ] Kiểm tra liệu trình hai buổi: lượt thứ hai dùng bước còn lại cùng MaHS, hóa đơn mỗi lượt chỉ tính phần đã làm trong lượt đó; không sửa bước đã thu ở buổi trước.
-- [ ] Chạy kiểm tra nguồn, đồng thời xác nhận hai lần, và khóa sau thu; lưu thay đổi.
+- [x] Viết ca chỉ có kế hoạch chưa làm thì tiền thu là 0; dịch vụ Nháp/Hủy không tính; dịch vụ xác nhận tính đúng một lần.
+- [x] Tách tab dự kiến/thực tế; tạo thực hiện từ bước có sẵn không nhập lại mã dịch vụ tùy ý; dịch vụ phát sinh cần lý do.
+- [x] Kiểm tra bước cùng hồ sơ, đúng dịch vụ, đủ lượng còn lại và thời gian hợp lệ; điều dưỡng chỉ sửa kết quả/thời gian dòng bác sĩ đã giao cho đúng MaNVThucHien của mình; bác sĩ của lượt xác nhận. Thử sửa dòng của điều dưỡng khác phải bị từ chối.
+- [x] Kiểm tra liệu trình hai buổi: lượt thứ hai dùng bước còn lại cùng MaHS, hóa đơn mỗi lượt chỉ tính phần đã làm trong lượt đó; không sửa bước đã thu ở buổi trước.
+- [x] Chạy kiểm tra nguồn, đồng thời xác nhận hai lần, và khóa sau thu; lưu thay đổi.
 
 ### P07 Đơn thuốc nhiều dòng
 

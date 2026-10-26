@@ -8,7 +8,7 @@ namespace DAL
     /// <summary>
     /// Tầng truy cập SQL cho dịch vụ đã thực hiện trong bảng DICH_VU_THUC_HIEN. Ghi nhận dịch vụ thực tế, nhân viên, số lượng, giá và kết quả của lần khám; kiểm tra bước kế hoạch và giữ nguyên dịch vụ đã xác nhận. Dapper ánh xạ dòng SQL sang ET; ThucHien dùng giao dịch được truyền vào hoặc tự quản lý giao dịch cục bộ.
     /// </summary>
-    public class DAL_DICHVUTHUCHIEN : dbconnect
+    public partial class DAL_DICHVUTHUCHIEN : dbconnect
     {
         /// <summary>
         /// Tạo DAL quản lý dịch vụ đã thực hiện, chuyển giao dịch tùy chọn cho dbconnect để nhiều thao tác có thể dùng chung kết nối và phạm vi lưu.

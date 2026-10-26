@@ -47,6 +47,59 @@ internal static class Program
         }
         try
         {
+            Check("P06 chọn lượt không tự khóa bộ chọn về một bệnh nhân",()=>
+            {
+                using var f=new RangHamMat.ClinicalChecks.Fixture();var actor=f.User("A");
+                f.Execute("INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaPhong,MaBS,MaNVTiepNhan,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai) SELECT @id,MaHS,MaPhong,@doctor,MaNVTiepNhan,SoThuTu+1,ThoiGianTiepNhan,LyDoKham,TrangThai FROM dbo.PHIEU_KHAM_BENH WHERE MaPhieu=@source",new{id=f.Id("PHNEXT"),doctor=actor.MaNV,source=f.Id("PHU")});
+                var other=new BUS.BUS_KHAMDIEUTRI(f.Transaction).BatDauKham(f.Id("PHNEXT"),actor);var view=new ThucHienDichVuEditor(actor,f.Transaction);var picker=Find<ComboBox>(view,"VisitPicker");
+                picker.SelectedValue=f.Id("LSA");Require(picker.Items.OfType<LuaChonDanhMuc>().Any(c=>c.Value==other),"Chọn lượt đã làm mất người bệnh khác trong bộ chọn.");
+                picker.SelectedValue=other;Require(Find<TextBlock>(view,"PatientHeader").Text.Contains(f.Id("BN2")),"Không chuyển được sang lượt người bệnh thứ hai.");
+            });
+            Check("P06 form chung không bỏ qua kiểm tra nguồn và xóa nháp",()=>
+            {
+                SignIn("CV004");
+                try
+                {
+                    using var f=new ReceptionFixture();var receiver=new BUS.BUS_QUYENNGHIEPVU().LayNguCanh(PhienDangNhap.MaNV);
+                    var receipt=new BUS.BUS_TIEPNHAN().TiepNhan(new(){MaBN=f.Patient,MaDV=f.Service,MaBS=f.Doctor,MaPhong=f.Room,LyDoKham="FIXTURE"},receiver);
+                    PhienDangNhap.MaNV=f.Doctor;PhienDangNhap.KhoiTaoDinhDanhNghiepVu(f.Account);var actor=new BUS.BUS_QUYENNGHIEPVU().LayNguCanh(f.Doctor);var ls=new BUS.BUS_KHAMDIEUTRI().BatDauKham(receipt.MaPhieu,actor);DuLieuGiaoDien.ChonPhamViLamSang(true);
+                    var blocked=false;try{DuLieuGiaoDien.Upsert("DICH_VU_THUC_HIEN",new Dictionary<string,object?>{{"MaLS",ls},{"MaDV",f.Service},{"MaNVThucHien",f.Doctor},{"ThoiGianThucHien",DateTime.Now},{"SoLuong",1m},{"DonGia",10000m},{"KetQua","FIXTURE"},{"TrangThai","Nháp"}});}catch(LoiKhamException){blocked=true;}
+                    using var clock=new DAL_DONTHUOC().MoKetNoi();var actualTime=clock.ExecuteScalar<DateTime>("SELECT CONVERT(datetime2(0),SYSDATETIME())");
+                    var line=new BUS.BUS_DICHVUTHUCHIEN().LuuThucHien(new(){MaLS=ls,MaDV=f.Service,MaNVThucHien=f.Doctor,ThoiGianThucHien=actualTime,SoLuong=1,DonGia=10000,LyDoPhatSinh="FIXTURE"},actor);
+                    DuLieuGiaoDien.RefreshFromDatabase();var deleteBlocked=false;try{DuLieuGiaoDien.Delete("DICH_VU_THUC_HIEN",DuLieuGiaoDien.Find("DICH_VU_THUC_HIEN",line.DichVu.MaDVThucHien)!);}catch(LoiKhamException){deleteBlocked=true;}
+                    Require(blocked&&deleteBlocked,"Form/cache chung vẫn ghi/xóa bỏ qua API nguồn P06.");
+                }
+                finally{SignIn("CV004");DuLieuGiaoDien.RefreshFromDatabase();}
+            });
+            Check("P06 tách dự kiến/thực tế, chọn bước giữ dịch vụ và ký riêng",()=>
+            {
+                using var f=new RangHamMat.ClinicalChecks.Fixture();var actor=f.User("A");
+                var planBus=new BUS.BUS_KHAMDIEUTRI(f.Transaction);var serviceId=f.Scalar<string>("SELECT TOP(1) MaDV FROM dbo.DICH_VU WHERE TrangThai=N'Đang hoạt động' ORDER BY MaDV");
+                var plan=planBus.LuuKeHoach(new(){MaLS=f.Id("LSA"),CacBuoc=[new(){MaDV=serviceId,SoLuongDuKien=2,DonGiaDuKien=10000,NoiDungBuoc="FIXTURE"}]},actor);planBus.XacNhanKeHoach(plan.KeHoach.MaKHDT,plan.DauVanTay,actor);
+                var type=typeof(DichVuThucHien).Assembly.GetType("RangHamMat.Views.ThucHienDichVuEditor")??throw new Exception("Thiếu workspace dịch vụ P06");
+                var view=(UserControl)Activator.CreateInstance(type,actor,f.Transaction)!;type.GetMethod("FocusContext")!.Invoke(view,new object?[]{f.Id("BN1"),f.Id("LSA")});
+                using var host=new WindowLifetime(new Window {Content=view,Width=1366,Height=900,ShowInTaskbar=false});host.Window.Show();host.Window.UpdateLayout();
+                var planned=Find<DataGrid>(view,"PlannedGrid");Require(planned.Items.Count==1,"Không thấy bước kế hoạch.");planned.SelectedIndex=0;Find<Button>(view,"FromStepButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Require(!Find<ComboBox>(view,"ServiceChoice").IsEnabled && (string?)Find<ComboBox>(view,"ServiceChoice").SelectedValue==serviceId,"Thực hiện từ bước cho đổi dịch vụ.");
+                Find<TextBox>(view,"ResultEditor").Text="FIXTURE kết quả";Require(InvokeTry(view,"TrySave"),Find<TextBlock>(view,"ErrorText").Text);
+                Require(f.Scalar<int>("SELECT COUNT(*) FROM dbo.DICH_VU_THUC_HIEN WHERE MaLS=@id AND TrangThai=N'Nháp'",new{id=f.Id("LSA")})==1,"Lưu tự coi đã thực hiện.");
+                Find<TextBox>(view,"QuantityEditor").Text="không phải số";Require(!InvokeTry(view,"TrySave"),"Ô lượng sai vẫn dùng giá trị cũ.");
+                Find<Button>(view,"ReloadButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));Require(InvokeTry(view,"TryConfirm"),Find<TextBlock>(view,"ErrorText").Text);
+                Require(!Find<Button>(view,"SaveButton").IsEnabled,"Xác nhận rồi vẫn sửa.");SavePreview(view,"dich-vu-da-xac-nhan.png","obj/ClinicalWorkflowP06");
+                var actual=Find<DataGrid>(view,"ActualGrid");var old=actual.SelectedItem;Find<Button>(view,"NewButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));Require(actual.SelectedItem is null,"Dòng mới vẫn chọn dòng thực tế cũ.");actual.SelectedItem=old;Require(!Find<Button>(view,"SaveButton").IsEnabled,"Không mở lại được dòng cũ sau nhập dòng mới.");
+            });
+            Check("P06 điều dưỡng chỉ thấy và sửa kết quả dòng được giao",()=>
+            {
+                using var f=new RangHamMat.ClinicalChecks.Fixture();var doctor=f.User("A");var b=new BUS.BUS_DICHVUTHUCHIEN(f.Transaction);
+                var serviceId=f.Scalar<string>("SELECT TOP(1) MaDV FROM dbo.DICH_VU WHERE TrangThai=N'Đang hoạt động' ORDER BY MaDV");
+                b.LuuThucHien(new(){MaLS=f.Id("LSA"),MaDV=serviceId,MaNVThucHien=f.Id("N"),ThoiGianThucHien=f.Scalar<DateTime>("SELECT CONVERT(datetime2(0),SYSDATETIME())"),SoLuong=1,DonGia=10000,LyDoPhatSinh="FIXTURE"},doctor);
+                var nurse=f.User("N");var type=typeof(DichVuThucHien).Assembly.GetType("RangHamMat.Views.ThucHienDichVuEditor")??throw new Exception("Thiếu workspace dịch vụ P06");var view=(UserControl)Activator.CreateInstance(type,nurse,f.Transaction)!;
+                type.GetMethod("FocusContext")!.Invoke(view,new object?[]{f.Id("BN1"),f.Id("LSA")});var grid=Find<DataGrid>(view,"ActualGrid");grid.SelectedIndex=0;
+                Require(!Find<Button>(view,"NewButton").IsEnabled&&!Find<Button>(view,"ConfirmButton").IsEnabled&&!Find<TextBox>(view,"QuantityEditor").IsEnabled&&!Find<ComboBox>(view,"PerformerChoice").IsEnabled,"Điều dưỡng được đổi nguồn/lượng hoặc xác nhận.");
+                Find<TextBox>(view,"ResultEditor").Text="FIXTURE đã thực hiện";Require(InvokeTry(view,"TrySave"),Find<TextBlock>(view,"ErrorText").Text);
+                Require(f.Scalar<string>("SELECT KetQua FROM dbo.DICH_VU_THUC_HIEN WHERE MaLS=@id",new{id=f.Id("LSA")})=="FIXTURE đã thực hiện","Không lưu kết quả điều dưỡng.");
+                Find<TextBox>(view,"ResultEditor").Text="FIXTURE nháp";type.GetMethod("FocusContext")!.Invoke(view,new object?[]{"__khác__","__khác__"});Require(Find<TextBox>(view,"ResultEditor").Text=="FIXTURE nháp","Đổi nguồn mất nháp điều dưỡng.");
+            });
             Check("Kế hoạch cũ vẫn hiện dịch vụ đã ngừng hoạt động",()=>
             {
                 using var f=new RangHamMat.ClinicalChecks.Fixture();var actor=f.User("A");var serviceId=f.Scalar<string>("SELECT TOP(1) MaDV FROM dbo.DICH_VU WHERE TrangThai=N'Đang hoạt động' ORDER BY MaDV");
@@ -374,6 +427,7 @@ internal static class Program
 
     private static void SavePreview(FrameworkElement view,string name,string folder="obj/ClinicalWorkflowP04")
     {
+        view.Dispatcher.Invoke(()=>{},System.Windows.Threading.DispatcherPriority.Render);view.UpdateLayout();
         var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap((int)Math.Ceiling(view.ActualWidth),(int)Math.Ceiling(view.ActualHeight),96,96,System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(view);var encoder=new System.Windows.Media.Imaging.PngBitmapEncoder();encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
         System.IO.Directory.CreateDirectory(folder);

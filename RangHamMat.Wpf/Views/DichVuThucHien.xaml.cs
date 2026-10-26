@@ -12,6 +12,7 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class DichVuThucHien : UserControl, IPatientScoped
 {
+    private readonly ThucHienDichVuEditor? clinicalWorkspace;
     private bool updating;
     private string? visitId;
     private string? prescriptionId;
@@ -19,7 +20,8 @@ public partial class DichVuThucHien : UserControl, IPatientScoped
     /// <summary>
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.
     /// </summary>
-    public string? PatientId { get; private set; }
+    private string? legacyPatientId;
+    public string? PatientId { get => clinicalWorkspace is null ? legacyPatientId : clinicalWorkspace.PatientId; private set => legacyPatientId=value; }
     /// <summary>
     /// Dịch vụ/dòng đang chọn hoặc cờ đánh dấu dịch vụ trong danh mục trước khi thêm vào nháp.
     /// </summary>
@@ -30,6 +32,7 @@ public partial class DichVuThucHien : UserControl, IPatientScoped
     /// </summary>
     public DichVuThucHien()
     {
+        if(DuLieuGiaoDien.PhamViLamSang){clinicalWorkspace=new ThucHienDichVuEditor();Content=clinicalWorkspace;return;}
         InitializeComponent();
         HoTroGiaoDien.Observe(this, Refresh);
         Refresh();
@@ -44,6 +47,16 @@ public partial class DichVuThucHien : UserControl, IPatientScoped
     /// </summary>
     public void FocusContext(string? patientId, string? visitId = null, string? prescriptionId = null)
     {
+        if(clinicalWorkspace is not null)
+        {
+            if(prescriptionId is not null)
+            {
+                var source=DuLieuGiaoDien.Find("DON_THUOC",prescriptionId);
+                if(source is null||patientId is not null&&DuLieuGiaoDien.PatientId("DON_THUOC",source)!=patientId||visitId is not null&&UiRecord.Text(source,"MaLS")!=visitId){clinicalWorkspace.FocusContext(patientId,"__missing__");return;}
+                visitId??=UiRecord.Text(source,"MaLS");
+            }
+            clinicalWorkspace.FocusContext(patientId,visitId);PatientId=clinicalWorkspace.PatientId;return;
+        }
         var order = DuLieuGiaoDien.Find("DON_THUOC", prescriptionId);
         var requestedVisit = visitId ?? (order is null ? null : UiRecord.Text(order, "MaLS"));
         var visit = DuLieuGiaoDien.Find("LICH_SU_KHAM_BENH", requestedVisit);
