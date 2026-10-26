@@ -1,8 +1,8 @@
 # Kiểm chứng triển khai — cập nhật 26/10/2026
 
-**Kết quả mới nhất P08:** build/schema đạt; **160 ca SQL và 39 ca WPF đạt**, kiểm tra xem phí đồng thời và khóa giá/lô đạt. Ba lỗi suite baseline còn nguyên. Chi tiết từng đợt nằm cuối tài liệu; phần đợt nền dưới đây được giữ làm bằng chứng lịch sử.
+**Kết quả mới nhất P09:** build/schema đạt; **185 ca SQL (160 hồi quy + 25 thanh toán) và 44 ca WPF (39 hồi quy + 5 thanh toán) đạt**, thu đồng thời/chống lặp/rollback và bất biến mọi hóa đơn v2 sau commit đạt. Ba lỗi suite baseline còn nguyên. Chi tiết từng đợt nằm cuối tài liệu; phần đợt nền dưới đây được giữ làm bằng chứng lịch sử.
 
-Phạm vi đã triển khai: P01–P08, chưa phải nghiệm thu sáu chức năng/P12. Kết quả trước sửa tại [BASELINE.md](BASELINE.md); việc còn lại tại [TIEN_DO.md](TIEN_DO.md).
+Phạm vi đã triển khai: P01–P09, chưa phải nghiệm thu sáu chức năng/P12. Kết quả trước sửa tại [BASELINE.md](BASELINE.md); việc còn lại tại [TIEN_DO.md](TIEN_DO.md).
 
 ## Vòng cuối sau thay đổi
 
@@ -269,3 +269,17 @@ Log ở obj/ClinicalWorkflowP07/: results.json, final-results.json, Clinical-fin
 - Đối chiếu cuối: 52 bảng, 10 BN/HS/phiếu/HD/đơn/chi tiết đơn; tổng hóa đơn 732.500, thu ròng 467.500, tồn 4.014; fixture CW và danh mục/hướng dẫn điều trị thử đều 0. Không áp SQL lên database gốc. Log/ảnh tại obj/ClinicalWorkflowP08/; ảnh hồi quy sinh lại được hoàn trả theo Git.
 
 Rà soát độc lập: một Important về truy vết bản in; đường tab legacy từ phần chưa đánh giá được nâng thành Important. Cả hai có kiểm thử tái hiện thất bại trước sửa và đã đạt trong cùng lượt sửa. Không còn Important hoặc Minor hoãn lại P08. P09 thu đủ/chống lặp, P10 bàn giao, P11/P12 điều hướng/DPI/tải/nghiệm thu và quy trình xử lý lịch sử chưa thuộc kết quả P08; chưa thử máy in thật.
+
+## P09 — Thu đủ, thử lại và rollback (26/10/2026)
+
+- Kết quả cuối: **160/160 ClinicalChecks trên bản thử chính + 25/25 PaymentChecks trên DB riêng = 185 ca SQL**; **39/39 ClinicalUiChecks + 5/5 PaymentUiChecks = 44 ca WPF**. Các bộ thanh toán có commit thật nên không gộp vào mode rollback mặc định.
+- RED API skeleton 0 đạt/14 lỗi; sau điều phối phát hiện lệch giây NgayKe/giờ máy, sửa riêng đường xuất nội bộ thanh toán theo giờ SQL datetime2(0). Ca hóa đơn lấy tên hiện tại thay chốt RED 13 đạt/1 lỗi → đạt; dùng snapshot tên/hàm lượng với fallback null cho legacy. Lỗi mở kết nối RED 20 đạt/1 lỗi → 21/21, mapper che SQL và giữ inner exception phục vụ chẩn đoán.
+- Thực tế 450.000: tiền đưa 500.000 lưu Thu 450.000/thối 50.000 ngay INSERT; đưa 400.000 không ghi bảng/tồn/audit. Bank phải đúng tiền, có tham chiếu đã trim và xác nhận đối chiếu; sai đầu vào, quyền giả/khóa tài khoản hoặc Admin/bác sĩ/dược sĩ không được thu. Tổng 0 có nguồn tạo hóa đơn xác nhận, không tạo Thu 0.
+- Hai kết nối cùng UUID hoặc khác UUID cùng lượt chỉ một bộ thu/xuất. Hai lượt/kho riêng cùng chờ khóa tồn tái hiện SQL1205, RED 21 đạt/1 lỗi; khóa writer trước phạm vi SQL cũ cho kết quả 22/22. Phép thử cùng UUID trên kết nối mới sau commit mô phỏng mất phản hồi của client và không định giá lại theo giá đã đổi; không cắt mạng thực tế tại thời điểm COMMIT.
+- Giá đổi/tồn đổi phải xem lại; xuất hết thuốc cuối bằng chứng từ hợp lệ không xuất dở thuốc đầu. Trigger lỗi INSERT thanh toán và lỗi audit cuối đều rollback HD/CTHD/PX/CTPX/Thu/bàn giao/audit/trạng thái phiếu, tồn bằng trước. Fixture có kho riêng để ca hết thuốc không ảnh hưởng ca khác.
+- Review Important: UUID mới trả hóa đơn cũ chưa được ràng buộc, tái dùng cho lượt/đầu vào khác lọt. Hai ca RED; ghi ánh xạ UUID/hash/lượt/HD trong nhật ký cùng transaction, thử lại chỉ đọc. Ca ba lô mã Unicode hợp lệ chứng minh sai comparer SQL/Ordinal; nâng từ mục chưa đánh giá thành Important. Tổng RED 22 đạt/3 lỗi → **25/25**, sửa cùng một lượt; không còn Important hoặc Minor hoãn lại.
+- UI RED 0/4 → 4/4; harness bổ sung DispatcherSynchronizationContext đúng handler WPF vì không gọi Application.Run. Kiểm tra nút khóa khi SQL đang chờ, bấm lần hai không gửi thêm; bank cần đối chiếu; lỗi chưa rõ kết quả giữ DTO/UUID, chặn đổi nguồn/tiền, thử lại không đọc đầu vào bị sửa. Bác sĩ chỉ xem. Ca tích hợp màn Hóa đơn thêm thành **5/5**, kiểm tra bộ lọc không đổi đích khi đang thu và lịch sử chọn đúng HD sau commit. Ảnh đã mở kiểm tra.
+- Lượt cuối trên DB mới sạch có **21 hóa đơn v2, 20 Thu đủ, 13 Chờ giao và 4 UUID đối chiếu bổ sung**. Script độc lập xác minh mọi v2 đã commit thu ròng đúng phải thu, không Thu 0/thu lặp, đủ từng lượng thuốc/dịch vụ/phần xuất, journal không trùng và đúng chứng từ. Đã dọn DB riêng, DB_ID=NULL.
+- Build cuối exit0, 0 lỗi/0 cảnh báo ở lượt incremental; lượt build đầy trước có 48 cảnh báo WPF cũ, không coi incremental là sửa cảnh báo. Schema45/363 đạt; Finance54, Supplier, Maintenance, Report18 đạt. Tiếp nhận/khám đồng thời chạy lại đạt và dọn fixture. Full160 ban đầu có ca P08 legacy so đồng hồ trước khi NgayKe đã đến; fixture chờ đúng điều kiện dưới khoảng nửa giây rồi so lô/trigger, vòng cuối160/160; không thay chính sách legacy.
+- Ba lỗi baseline còn nguyên: Checks trùng MaCa (-532462766), Persistence CS1729 BUS_NHANVIEN, WpfSmoke CS1061 NhanSu. Chưa tuyên bố toàn bộ suite hoặc nghiệm thu AT01–AT34 đạt. Không in máy thật hoặc giao thuốc thực tế trong P09.
+- Bản thử chính cuối giữ **52 bảng, 10 BN/HS/phiếu/HD/đơn/chi tiết đơn, tổng HD732.500, thu ròng467.500, tồn4.014**, fixture/config thử đều0. Database gốc và Word giữ nguyên; ảnh Supplier/Maintenance sinh lại được hoàn trả. Log tại obj/ClinicalWorkflowP09/.

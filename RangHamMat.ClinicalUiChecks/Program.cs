@@ -31,7 +31,7 @@ internal static class Program
     }
 
     [STAThread]
-    private static int Main()
+    private static int Main(string[] args)
     {
         var configured = Environment.GetEnvironmentVariable("RHM_CONNECTION_STRING");
         if (string.IsNullOrWhiteSpace(configured) || !new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(configured).InitialCatalog.StartsWith("RHM_ClinicalWorkflow_Test_", StringComparison.OrdinalIgnoreCase))
@@ -47,6 +47,7 @@ internal static class Program
         }
         try
         {
+            if(args.Contains("--payments")) return PaymentUiChecks.Run();
             Check("P08 phân trang giữ trọn dòng truy vết CTPX ở nhiều khổ giấy",()=>
             {
                 var document=new InvoiceDocument {DataContext=new {Lines=Enumerable.Range(0,10).Select(i=>new InvoicePrintLine("FIXTURE thuốc đã chốt "+i,1,1,1,Enumerable.Range(0,16).Select(j=>$"CTPX-{i:D2}-{j:D2}").ToArray())).ToArray()}};

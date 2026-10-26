@@ -23,10 +23,13 @@ public partial class BangTinhPhiEditor : UserControl
             new BUS_KHO(tx).layToanBoKho().Where(k => k.TrangThai == "Đang hoạt động")
                 .Select(k => new LuaChonDanhMuc(k.MaKho, k.TenKho))).ToArray();
         WarehouseFilter.SelectedIndex = 0;
+        InitializePayment();
         FocusContext(null);
     }
     public void FocusContext(string? maLS)
     {
+        if (maLS == visitId && BangTinh is not null) return;
+        if (DangXuLy || ChoDoiChieu) { StatusText.Text = "Cần đối chiếu yêu cầu đang thu trước khi đổi lượt."; return; }
         visitId = maLS; Clear();
         VisitText.Text = string.IsNullOrEmpty(maLS) ? "Chọn một lượt khám ở bộ lọc phía trên." : "Lần khám #" + maLS;
         PreviewButton.IsEnabled = !string.IsNullOrEmpty(maLS);
@@ -36,9 +39,11 @@ public partial class BangTinhPhiEditor : UserControl
     {
         BangTinh = null; TotalText.Text = "Chưa có bảng tính";
         ServicesGrid.ItemsSource = DrugsGrid.ItemsSource = LotsGrid.ItemsSource = HistoryGrid.ItemsSource = null;
+        ResetPayment();
     }
     public bool TryLapBangTinh(out string? error)
     {
+        if (DangXuLy || ChoDoiChieu) { error = "Cần đối chiếu yêu cầu đang thu trước khi lập lại bảng tính."; StatusText.Text = error; return false; }
         Clear(); error = null;
         try
         {
@@ -49,12 +54,12 @@ public partial class BangTinhPhiEditor : UserControl
             LotsGrid.ItemsSource = s.Thuoc.SelectMany(d => d.CacLo.Select(l => new { d.MaCTDT, l.MaLo, l.SoLo, l.SoLuong, Tien = Money(l.ThanhTien) })).ToArray();
             HistoryGrid.ItemsSource = s.HoaDonCu.Select(h => new { h.MaHD, h.TrangThai, PhaiThu = Money(h.PhaiThu), DaThu = Money(h.DaThu), ConPhaiThu = Money(h.ConPhaiThu) }).ToArray();
             TotalText.Text = s.DauVanTay is null ? "Đối chiếu chứng từ đã có" : $"Tổng dự kiến: {Money(s.TongTien)}";
-            StatusText.Text = s.ThongBao; return true;
+            StatusText.Text = s.ThongBao; UpdatePaymentControls(); return true;
         }
         catch (Exception ex) { error = ex.Message; StatusText.Text = "Chưa lập được bảng tính: " + ex.Message; return false; }
     }
     private static string Money(decimal amount) => TreatmentMoney.Format(amount);
     private void Preview_Click(object sender, RoutedEventArgs e) => TryLapBangTinh(out _);
     private void Warehouse_Changed(object sender, SelectionChangedEventArgs e)
-    { if (TotalText is null) return; Clear(); StatusText.Text = "Kho đã đổi. Xem lại bảng tính theo kho mới."; }
+    { if (TotalText is null) return; if(DangXuLy || ChoDoiChieu) { WarehouseFilter.SelectedValue=BangTinh?.MaKhoCapThuoc??""; return; } Clear(); StatusText.Text = "Kho đã đổi. Xem lại bảng tính theo kho mới."; }
 }

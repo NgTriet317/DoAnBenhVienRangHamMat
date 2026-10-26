@@ -117,6 +117,12 @@ public sealed class DAL_PHIEUXUAT : dbconnect
     /// <param name = "employeeId">Mã nhân viên thực hiện; phải là nhân viên Đang làm việc.</param>
     /// <returns>Mã phiếu xuất đã ghi sổ sau khi phân bổ đủ đơn.</returns>
     public string DispensePrescription(string prescriptionId, string warehouseId, string employeeId)
+        => DispenseCore(prescriptionId, warehouseId, employeeId, false);
+
+    internal string DispenseCoordinatedPrescription(string prescriptionId, string warehouseId, string employeeId)
+        => DispenseCore(prescriptionId, warehouseId, employeeId, true);
+
+    private string DispenseCore(string prescriptionId, string warehouseId, string employeeId, bool coordinated)
     {
         return ThucHien((db, tx) =>
         {
@@ -133,6 +139,7 @@ public sealed class DAL_PHIEUXUAT : dbconnect
             }
 
             db.ExecuteScalar<string>("SELECT MaLS FROM dbo.LICH_SU_KHAM_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaLS=@visitId", new { visitId }, tx);
+            DAL_HOADON.KiemTraLuotLegacy(db, tx, visitId);
             // Khóa hàng hóa trước đầu đơn theo cùng thứ tự mà trigger tồn kho sử dụng để hạn chế tranh chấp khóa.
             db.Query<string>("""
             SELECT h.MaHH FROM dbo.HANG_HOA h WITH(UPDLOCK,HOLDLOCK)
@@ -145,7 +152,8 @@ public sealed class DAL_PHIEUXUAT : dbconnect
                 throw new InvalidOperationException("Chỉ cấp đơn thuốc đã xác nhận và còn áp dụng.");
             }
 
-            if (prescription.NgayKe > DateTime.Now)
+            var now = coordinated ? db.ExecuteScalar<DateTime>("SELECT CONVERT(datetime2(0),SYSDATETIME())", transaction: tx) : DateTime.Now;
+            if (prescription.NgayKe > now)
             {
                 throw new InvalidOperationException("Ngày kê đơn chưa đến.");
             }

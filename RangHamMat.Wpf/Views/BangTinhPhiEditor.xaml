@@ -15,9 +15,19 @@
     <Button x:Name="PreviewButton" Content="Xem bảng tính" Margin="0,20,0,0" Click="Preview_Click" Style="{StaticResource HospitalPrimary}"/>
    </WrapPanel>
    <TextBlock x:Name="StatusText" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" Margin="0,0,0,12"/>
+   <StackPanel x:Name="PaymentPanel" Visibility="Collapsed" Margin="0,0,0,12">
+    <WrapPanel x:Name="PaymentInputs">
+     <StackPanel Width="160" Margin="0,0,12,0"><TextBlock Text="Phương thức" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="MethodBox" SelectedValuePath="Content" SelectedIndex="0"><ComboBoxItem Content="Tiền mặt"/><ComboBoxItem Content="Chuyển khoản"/></ComboBox></StackPanel>
+     <StackPanel Width="170" Margin="0,0,12,0"><TextBlock Text="Tiền khách đưa (đ)" Style="{StaticResource FieldLabel}"/><TextBox x:Name="GivenText" Text="0" MaxLength="16"/></StackPanel>
+     <StackPanel Width="200"><TextBlock Text="Mã tham chiếu chuyển khoản" Style="{StaticResource FieldLabel}"/><TextBox x:Name="ReferenceText" MaxLength="100"/></StackPanel>
+    </WrapPanel>
+    <CheckBox x:Name="TransferChecked" Content="Đã đối chiếu chuyển khoản thủ công" Margin="0,10,0,6"/>
+    <TextBlock x:Name="ChangeText" Margin="0,0,0,8"/>
+    <Button x:Name="PayButton" Content="Xác nhận thu đủ" HorizontalAlignment="Left" Style="{StaticResource HospitalPrimary}" IsEnabled="False"/>
+   </StackPanel>
   </StackPanel>
   <Border Grid.Row="1" Style="{StaticResource HospitalPanel}" Margin="0,0,0,12" Padding="12">
-   <StackPanel><TextBlock x:Name="TotalText" Text="Chưa có bảng tính" FontSize="20" FontWeight="SemiBold"/>
+   <StackPanel><TextBlock x:Name="TotalText" Text="Chưa có bảng tính" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"/>
     <TextBlock Text="Dịch vụ đã xác nhận và toàn bộ đơn còn hiệu lực. Bảng tính chưa phải hóa đơn." TextWrapping="Wrap" Margin="0,6,0,0" Style="{StaticResource HospitalMuted}"/>
    </StackPanel>
   </Border>

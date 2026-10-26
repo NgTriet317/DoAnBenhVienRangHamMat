@@ -5,9 +5,10 @@ using Dapper;
 using ET;
 namespace DAL;
 
-public sealed class DAL_THANHTOANTRONGOI : dbconnect
+public sealed partial class DAL_THANHTOANTRONGOI : dbconnect
 {
-    public DAL_THANHTOANTRONGOI(IDbTransaction? transaction = null) : base(transaction) { }
+    private readonly IDbTransaction? paymentTransaction;
+    public DAL_THANHTOANTRONGOI(IDbTransaction? transaction = null) : base(transaction) => paymentTransaction = transaction;
     public BangTinhPhi LapBangTinh(string maLS, string? maKhoCapThuoc, NguCanhNghiepVu nguoiDung)
         => ThucHien((db, tx) =>
         {

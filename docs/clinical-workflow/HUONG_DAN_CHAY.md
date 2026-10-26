@@ -162,3 +162,24 @@ dotnet run --project .\RangHamMat.ClinicalUiChecks -c Debug --no-restore
 ```
 
 Mode --pricing-concurrency chỉ nhận database mới riêng tiền tố RHM_ClinicalWorkflow_Test_P08Concurrency_, chưa có fixture CW. Cài script v2 vào tên mới có guard không ghi đè, dùng sqlcmd -f 65001 để giữ Unicode constraint; đặt RHM_CONNECTION_STRING đúng tên. Lượt triển khai đã tạo/dọn RHM_ClinicalWorkflow_Test_P08Concurrency_20261026. Không dùng mode này trên database gốc hoặc bản thử chính. Log/ảnh obj/ClinicalWorkflowP08/.
+
+## P09 — Thu đủ tiền
+
+1. Mở Hóa đơn → chọn đúng bệnh nhân/lượt → Bảng tính phí; chọn kho nếu có thuốc, Xem bảng tính. Chỉ người có ThuTien được thu; bác sĩ phụ trách/Admin chỉ xem phí theo quyền, không mặc nhiên được thu.
+2. Chọn Tiền mặt hoặc Chuyển khoản, nhập tiền VND nguyên đồng không dấu phân cách. Tiền mặt ít nhất bằng phải thu; hệ thống hiển thị tiền thối dự kiến. Chuyển khoản đúng phải thu, có mã tham chiếu tối đa 100 ký tự và đánh dấu đã đối chiếu thủ công. Đây không phải xác nhận tự động từ ngân hàng.
+3. Nhấn Xác nhận thu đủ. Trong lúc xử lý nút thu và đầu vào bị khóa. Chỉ sau commit mới hiện Đã thanh toán, hóa đơn và tiền đưa/thối đã chốt; lịch sử được nạp/chọn đúng hóa đơn. Có thuốc thì phiếu Chờ nhận thuốc và mỗi đơn có bản Chờ giao; không có thuốc thì Hoàn tất. Giao thực tế là P10.
+4. Giá/tồn/nguồn đổi yêu cầu xem bảng tính mới; thiếu thuốc cuối hoặc lỗi bất kỳ bước nào không để lại bộ thu/xuất dở. Nguồn lẻ đồng cần đối chiếu/sửa nguồn phù hợp, không tự bù tiền. Hóa đơn hợp lệ tổng 0 nhập tiền đưa 0, không tạo dòng thanh toán 0.
+5. Nếu báo chưa xác nhận được kết quả, giữ nguyên lượt/kho/tiền và bấm Thử lại yêu cầu. Giao diện giữ DTO và UUID đã gửi, không lấy giá trị đang sửa để thử lại; không đổi bệnh nhân/lượt trong màn này khi chưa đối chiếu. Kết quả đã commit được trả lại bằng mã cũ, không thu/xuất thêm. Lỗi tải lại sau thu chỉ cần Tải lại để xem chứng từ, không phải xác nhận thu lần nữa.
+6. Các nút/API ghi tài chính legacy không áp dụng lên hóa đơn v2. Hóa đơn/phiếu xuất cũ, kể cả nháp dở, chuyển lịch sử đối chiếu; không dùng thu trọn gói để thu bù/xuất lại. In/giao hoàn chỉnh tiếp tục tại P10.
+
+BUS_THANHTOANTRONGOI.ThanhToan(YeuCauThanhToan, NguCanhNghiepVu) tự mở Serializable và commit trước trả KetQuaThanhToan; từ chối transaction ngoài/ambient khi ghi. Không gửi tổng/tiền thu/thối từ UI. DTO gồm MaLS, MaKhoCapThuoc tùy chọn, Guid MaYeuCau, DauVanTayBangTinh, PhuongThuc, SoTienKhachDua, MaThamChieu và DaDoiChieuChuyenKhoan. Các DAL con dùng đúng transaction; kết quả DAL trước commit không phải kết quả công bố cho người dùng.
+
+UUID mới trả hóa đơn đã có cũng được ràng buộc bằng nhật ký loại YEU_CAU_THANH_TOAN với hash đầu vào chuẩn hóa. Các dòng này cần giữ như dữ liệu nghiệp vụ, không dọn như log chẩn đoán. Writer thanh toán tuần tự hóa để tránh deadlock vùng khóa rộng của SQL cũ; chưa có kết luận thông lượng tải cao.
+
+```powershell
+# Chỉ trên database P09Payments mới riêng:
+dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --payments
+dotnet run --project .\RangHamMat.ClinicalUiChecks -c Debug --no-restore -- --payments
+```
+
+Hai mode --payments chỉ nhận tiền tố RHM_ClinicalWorkflow_Test_P09Payments_. Các fixture thành công phải commit thật, không dùng database gốc hoặc bản thử chính. Tạo database mới từ SQL v2 với guard không ghi đè và sqlcmd -f 65001; đặt RHM_CONNECTION_STRING đúng tên. Test tạo kho/lô nhận riêng cho mỗi ca, thêm trigger lỗi chỉ trong database riêng rồi dọn trigger. Sau kiểm chứng bất biến, dọn toàn bộ database thử do mình vừa tạo, không tắt trigger để xóa chứng từ ký. Lượt này đã tạo/dọn RHM_ClinicalWorkflow_Test_P09Payments_20261026 (DB_ID=NULL). Log/ảnh obj/ClinicalWorkflowP09/.

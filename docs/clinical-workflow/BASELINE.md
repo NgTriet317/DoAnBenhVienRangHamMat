@@ -56,3 +56,5 @@ Các chứng từ cũ cần giữ nguyên: HD004/LS004 nháp còn 100.000; HD005
 Đã xác minh ánh xạ thực tế: CV002 bác sĩ (2), CV003 điều dưỡng (1), CV004 tiếp nhận (1), CV005 dược sĩ (1), CV007 thu ngân (1); vai trò hệ thống giữ Admin/User. Nhân viên/điện thoại/bệnh án không được xuất ra báo cáo này.
 
 Đối chiếu sau P08 (26/10/2026): bản thử vẫn 52 bảng v2, 10 BN/HS/phiếu/HD/đơn/chi tiết đơn; tổng hóa đơn 732.500, thu ròng 467.500 và tồn 4.014. Không còn fixture CW hoặc cấu hình điều trị thử. Database P08Concurrency mới đã dọn sau kiểm chứng; không đổi database gốc/chứng từ lịch sử. Xem log obj/ClinicalWorkflowP08/data-final.log và kết quả kiểm thử P08.
+
+Đối chiếu sau P09 (26/10/2026): bản thử chính vẫn 52 bảng, 10 BN/HS/phiếu/HD/đơn/chi tiết đơn; tổng hóa đơn732.500, thu ròng467.500, tồn4.014, không còn fixture/config thử. Ca thu thật chỉ commit trên P09Payments riêng, kiểm tra bất biến toàn bộ hóa đơn v2 rồi dọn database (DB_ID=NULL). Không thay database gốc/chứng từ cũ. Xem obj/ClinicalWorkflowP09/data-main-final.log và payments-invariants-final.log.

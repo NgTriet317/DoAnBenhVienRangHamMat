@@ -100,7 +100,7 @@ public sealed class DAL_CHITIETHOADON : dbconnect
         WHERE s.MaLS=@visitId AND s.TrangThai=N'Đã xác nhận'
             AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaDVThucHien=s.MaDVThucHien)
         UNION ALL
-        SELECT NULL,x.MaCTPX,hh.TenHH+N' '+t.HamLuong,x.SoLuong,t.DonGiaBan,t.DonGiaBan,
+        SELECT NULL,x.MaCTPX,COALESCE(NULLIF(ct.TenThuocChot,N''),hh.TenHH)+N' '+COALESCE(NULLIF(ct.HamLuongChot,N''),t.HamLuong),x.SoLuong,t.DonGiaBan,t.DonGiaBan,
             CAST(ROUND(x.SoLuong*t.DonGiaBan,2) AS decimal(18,2)),N'Thuốc đã cấp'
         FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX
         JOIN dbo.CHI_TIET_DON_THUOC ct ON ct.MaCTDT=x.MaCTDT

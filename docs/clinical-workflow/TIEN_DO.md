@@ -12,7 +12,8 @@ Ngày 26/10/2026. Kế hoạch chính: [KeHoach_CaiTo_QuyTrinhKham_6ChucNang.md]
 | P06 | Hoàn tất dịch vụ thực hiện | Dự kiến/Thực tế, giao điều dưỡng, giới hạn lượng cùng hồ sơ qua hai buổi, ký và khóa nguồn; 124 ca SQL, 27 ca WPF, hai kết nối xác nhận/tranh lượng/ReadCommitted đạt |
 | P07 | Hoàn tất kê đơn nhiều dòng và snapshot | Chọn thuốc theo nhóm, hướng dẫn duyệt có xác nhận phù hợp, ký/thay đơn nguyên tử, thông tin an toàn và in đúng nguồn; 146 ca SQL, 35 ca WPF đạt; đồng thời ký/thay/sửa và tồn không đổi đạt |
 | P08 | Hoàn tất bảng tính phí và nguồn in | Dịch vụ + toàn bộ đơn hiệu lực, phân lô dùng chung luồng kho, token SQL, lịch sử chính xác và in gộp lô có truy vết; 160 ca SQL, 39 ca WPF và hai phiên xem phí đạt |
-| P09–P12 | Chưa triển khai | Thu đủ/chống lặp, bàn giao và nghiệm thu toàn luồng |
+| P09 | Hoàn tất thu đủ và chống lặp | BUS tự commit, kiểm tra lại nguồn/giá/tồn, tiền đưa/thối, yêu cầu cố định, xuất/HD/Thu/chờ giao cùng transaction; 185 ca SQL và 44 ca WPF đạt |
+| P10–P12 | Chưa triển khai | Bàn giao thực tế, liên kết/DPI và nghiệm thu toàn luồng |
 
 ## Quyết định khi thực hiện
 
@@ -52,6 +53,13 @@ Ngày 26/10/2026. Kế hoạch chính: [KeHoach_CaiTo_QuyTrinhKham_6ChucNang.md]
 33. Bất kỳ hóa đơn hoặc nguồn xuất phụ thuộc đã có, kể cả nháp/hủy, đều đưa lượt về đối chiếu lịch sử. Đơn cũ thiếu snapshot không tự bổ sung từ danh mục hiện tại. Chi phí: cần quy trình xử lý lịch sử riêng; không thu thêm từ những nguồn chưa được đối chiếu.
 34. P08 chỉ xem phí và in lại. Dấu vân tay không giữ tồn sau khi đóng transaction; P09 phải xác thực quyền thu, tính lại và so dấu trong cùng transaction ghi. Chi phí: bảng tính có thể hết hiệu lực khi giá/tồn đổi; người thu cần xem lại.
 
+35. BUS thanh toán tự mở Serializable, commit rồi trả kết quả; từ chối constructor transaction ngoài hoặc TransactionScope khi ghi. Transaction tùy chọn vẫn dùng để đọc bảng tính và cho các DAL con. Chi phí: tích hợp mới phải gọi đầu mối BUS, không xem kết quả DAL đang nằm trong transaction như kết quả đã commit.
+36. Chuyển khoản có mã tham chiếu và cờ người thu xác nhận đã đối chiếu thủ công; không tích hợp ngân hàng tự động. Hóa đơn hợp lệ tổng 0 chỉ nhận tiền đưa 0, không tạo Thu 0. Chi phí: nhân viên chịu trách nhiệm đối chiếu chuyển khoản; không tự giữ khoản tiền đưa/thối không có giao dịch.
+37. Khóa theo yêu cầu → writer chung ngắn → lượt → mặt hàng ổn định. Đã tái hiện deadlock SQL1205 giữa hai lượt ở vùng khóa rộng của mã cũ, rồi sửa bằng khóa writer trước các truy vấn phạm vi. Chi phí: writer thanh toán được tuần tự hóa; chưa khẳng định thông lượng tải cao, cần benchmark ở P11/P12.
+38. Mã yêu cầu mới trả hóa đơn đã có vẫn lưu ánh xạ mã/hash/lượt/hóa đơn trong NHAT_KY_THAO_TAC, loại YEU_CAU_THANH_TOAN. Khóa yêu cầu và writer bảo vệ ánh xạ chỉ ghi thêm; thử lại không ghi nhật ký lặp. Chi phí: các bản ghi này là dữ liệu nghiệp vụ chống lặp, phải giữ khi sao lưu/đối chiếu, không xóa như log chẩn đoán. Không thêm bảng hoặc sửa schema.
+39. Luồng xuất nội bộ thanh toán dùng giờ SQL cùng độ chính xác datetime2(0) như ngày kê; entry point legacy giữ hành vi cũ. Đối chiếu nguồn lô dùng cùng comparer cho hai danh sách để hỗ trợ mã Unicode hợp lệ; giữ thứ tự phân lô SQL hiện có. Không đổi chính sách kho. Ca kiểm thử đối chiếu API legacy chờ đúng điều kiện ngày kê đã đến thay vì phụ thuộc phần lẻ giây.
+40. Khi chưa xác nhận được kết quả, UI giữ nguyên DTO/UUID và khóa đổi bệnh nhân/lượt/kho/tiền; chỉ thử lại yêu cầu đó. Sau commit mới cập nhật cache/lịch sử; lỗi tải lại không biến kết quả thu thành thất bại. Chi phí: điều hướng/đóng toàn ứng dụng và in/giao thuốc hoàn chỉnh vẫn ở P10–P12, không tự tạo giao dịch mới để sửa lỗi xem/in.
+
 ## Rà soát độc lập
 
 Đã rà soát phần nền. Phát hiện quan trọng: chỉ kiểm tra MaNV/MaTK trong DTO còn cho phép thay toàn bộ định danh. Đã tái hiện bằng bốn ca FAIL và sửa bằng principal tại điểm đăng nhập; cả bốn ca chuyển PASS. Assertion từ chối quyền dùng exception riêng, không chấp nhận lỗi SQL bọc trong InvalidOperationException làm PASS.
@@ -83,3 +91,7 @@ Bước tiếp theo là P08: bảng tính phí theo lượt, đủ mọi dịch 
 Rà soát P08 phát hiện Important ở dòng truy vết MaCTPX: thiếu LineHeight hữu hạn khiến paginator bỏ qua khi tìm biên trang. Phát hiện đường UI legacy chọn tab theo index được nâng lên Important để giữ tương thích, dù sản phẩm hiện mở phân hệ này ở chế độ clinical. Tái hiện 37 đạt/2 lỗi, sửa trong một lượt: dùng style InvoiceText và giữ tab hóa đơn cũ ở vị trí cũ. Kết quả 39/39 WPF, gồm phân trang thật ở bốn chiều cao giấy, số chốt và mã xuất. Không còn Important hoặc Minor hoãn lại P08.
 
 Các phần giữ đúng tác vụ: P09 thu/chống lặp/tái kiểm tra trong transaction và khóa đường ghi cũ với hóa đơn v2; P10 bàn giao; P11 điều hướng toàn ứng dụng/DPI; P12 nghiệm thu và quy trình đối chiếu lịch sử. Không đổi FIFO, không tự sửa chứng từ hoặc làm tròn tiền lịch sử. Chưa benchmark thông lượng khóa ở tải cao; kết quả hai kết nối không thay cho nghiệm thu tải P11/P12. Tài liệu đã cập nhật, Word giữ nguyên và ba lỗi baseline còn nguyên.
+
+Rà soát P09 phát hiện Important: UUID mới trả hóa đơn đã có chưa được lưu ràng buộc, có thể dùng lại cho lượt/đầu vào khác. Tái hiện hai ca thất bại trước sửa, lưu ánh xạ trong nhật ký nghiệp vụ cùng transaction để mọi thử lại giữ đúng kết quả. Phần so thứ tự SQL/Ordinal từ danh sách chưa đánh giá được nâng thành Important sau ca thực ba lô Unicode bị từ chối; đối chiếu cùng comparer, không thay phân lô. RED 22 đạt/3 lỗi → 25/25 SQL P09 trong một lượt sửa; không rà soát lần hai. Không còn Important hoặc Minor hoãn lại P09.
+
+Các mục reviewer không phát hiện lỗi bổ sung được giữ: commit ở BUS, DAL con có transaction chung; mọi ghi tài chính/bàn giao/audit rollback cùng nhau; quyền thu và tiền kiểm tra lại SQL; API cũ không ghi v2; UI chỉ công bố sau commit, retry giữ UUID/đầu vào. Fallback tên/chứng từ và thông báo của nguồn xem trước cũ giữ tương thích; lỗi đầu mối thu mới đã che SQL, kể cả lỗi mở kết nối. Thông lượng writer chưa benchmark. Các phần P10 bàn giao/in, P11 điều hướng toàn ứng dụng/DPI và P12 nghiệm thu đầy đủ giữ đúng chủ sở hữu; tài liệu cập nhật sau kiểm chứng, Word và ba lỗi baseline giữ nguyên.

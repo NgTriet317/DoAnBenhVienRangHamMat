@@ -151,6 +151,7 @@ public sealed class DAL_HOADON : dbconnect
             {
                 throw new InvalidOperationException("Không tìm thấy lần khám.");
             }
+            KiemTraLuotLegacy(db, tx, visitId);
 
             if (visit.TrangThai != "Đã xác nhận")
             {
@@ -199,7 +200,7 @@ public sealed class DAL_HOADON : dbconnect
     /// <returns>ET rút gọn chứa MaHD, TrangThai và SoTienPhaiThu; không có hóa đơn thì ném lỗi.</returns>
     internal static ET_HOADON LockInvoice(IDbConnection db, IDbTransaction? tx, string invoiceId)
     {
-        return db.QuerySingleOrDefault<ET_HOADON>("SELECT MaHD,TrangThai,SoTienPhaiThu FROM dbo.HOA_DON WITH(UPDLOCK,HOLDLOCK) WHERE MaHD=@invoiceId", new { invoiceId }, tx) ?? throw new InvalidOperationException("Không tìm thấy hóa đơn.");
+        return db.QuerySingleOrDefault<ET_HOADON>("SELECT MaHD,MaLS,TrangThai,SoTienPhaiThu,PhienBanQuyTrinh FROM dbo.HOA_DON WITH(UPDLOCK,HOLDLOCK) WHERE MaHD=@invoiceId", new { invoiceId }, tx) ?? throw new InvalidOperationException("Không tìm thấy hóa đơn.");
     }
 
     /// <summary>
@@ -207,10 +208,17 @@ public sealed class DAL_HOADON : dbconnect
     /// </summary>
     /// <param name = "invoiceId">Mã hóa đơn cần đọc, khóa, xác nhận, hủy hoặc ghi nhận thanh toán.</param>
     public void ConfirmInvoice(string invoiceId)
+        => ConfirmInvoiceCore(invoiceId, false);
+
+    internal void ConfirmCoordinatedInvoice(string invoiceId) => ConfirmInvoiceCore(invoiceId, true);
+    private void ConfirmInvoiceCore(string invoiceId, bool coordinated)
     {
         ThucHien((db, tx) =>
         {
-            if (LockInvoice(db, tx, invoiceId).TrangThai != "Nháp")
+            var invoice = LockInvoice(db, tx, invoiceId);
+            if (!coordinated) KiemTraHoaDonLegacy(invoice);
+            else if (invoice.PhienBanQuyTrinh != 2) throw new InvalidOperationException("Cần hóa đơn quy trình 2.");
+            if (invoice.TrangThai != "Nháp")
             {
                 throw new InvalidOperationException("Chỉ xác nhận hóa đơn nháp.");
             }
@@ -228,7 +236,9 @@ public sealed class DAL_HOADON : dbconnect
     {
         ThucHien((db, tx) =>
         {
-            if (LockInvoice(db, tx, invoiceId).TrangThai != "Nháp")
+            var invoice = LockInvoice(db, tx, invoiceId);
+            KiemTraHoaDonLegacy(invoice);
+            if (invoice.TrangThai != "Nháp")
             {
                 throw new InvalidOperationException("Chỉ hủy hóa đơn nháp. Hóa đơn xác nhận được giữ nguyên.");
             }
@@ -239,6 +249,17 @@ public sealed class DAL_HOADON : dbconnect
             db.Execute("UPDATE dbo.HOA_DON SET TrangThai=N'Hủy',NgayXacNhan=NULL WHERE MaHD=@invoiceId", new { invoiceId }, tx);
             return true;
         });
+    }
+
+    internal static void KiemTraHoaDonLegacy(ET_HOADON invoice)
+    {
+        if (invoice.PhienBanQuyTrinh == 2)
+            throw new LoiKhamException("MaHD", "Hóa đơn quy trình mới chỉ được ghi trong đầu mối thu trọn gói; chứng từ đã thu chỉ được xem/in lại.");
+    }
+    internal static void KiemTraLuotLegacy(IDbConnection db, IDbTransaction? tx, string visitId)
+    {
+        if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.HOA_DON WITH(HOLDLOCK) WHERE MaLS=@visitId AND PhienBanQuyTrinh=2", new { visitId }, tx) > 0)
+            throw new LoiKhamException("MaLS", "Lượt đã thanh toán theo quy trình mới; không lập thêm hóa đơn hoặc xuất thuốc.");
     }
 
     /// <summary>

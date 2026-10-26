@@ -39,6 +39,7 @@ public partial class HoaDon : UserControl, IPatientScoped
     /// </summary>
     public void FocusContext(string? patientId, string? visitId = null, string? prescriptionId = null)
     {
+        if(!CanChangePricingContext()) return;
         PatientId = patientId; this.visitId = visitId; this.prescriptionId = prescriptionId; invoiceId = null;
         if (!string.IsNullOrEmpty(prescriptionId)) DetailTabs.SelectedItem = DispenseTab;
         Refresh();
@@ -83,6 +84,7 @@ public partial class HoaDon : UserControl, IPatientScoped
                 {
                     var first = PricingHost.Content is null;
                     var pricing = PricingHost.Content as BangTinhPhiEditor ?? new BangTinhPhiEditor(actor);
+                    if(first) pricing.ThanhToanHoanTat += (_,_) => { invoiceId=pricing.KetQua?.MaHD; DuLieuGiaoDien.RefreshFromDatabase(); Refresh(); };
                     PricingHost.Content = pricing; PricingTab.Visibility = Visibility.Visible; pricing.FocusContext(visitId);
                     if (first || DetailTabs.SelectedItem == DispenseTab) DetailTabs.SelectedItem = PricingTab;
                 }
@@ -168,12 +170,19 @@ public partial class HoaDon : UserControl, IPatientScoped
     /// Đổi bệnh nhân lọc, xóa ngữ cảnh lần khám/đơn/hóa đơn cũ và làm mới để không dùng dữ liệu thuộc bệnh nhân trước.
     /// </summary>
     private void Patient_Changed(object sender, SelectionChangedEventArgs e)
-    { if (updating) return; PatientId = HoTroGiaoDien.Selected(PatientFilter); visitId = prescriptionId = null; invoiceId = null; Refresh(); }
+    { if (updating || !CanChangePricingContext()) return; PatientId = HoTroGiaoDien.Selected(PatientFilter); visitId = prescriptionId = null; invoiceId = null; Refresh(); }
     /// <summary>
     /// Đổi lần khám, bỏ lựa chọn đơn và hóa đơn cũ, suy ra đúng bệnh nhân từ lần khám rồi tải lại dữ liệu.
     /// </summary>
     private void Visit_Changed(object sender, SelectionChangedEventArgs e)
-    { if (updating) return; visitId = HoTroGiaoDien.Selected(VisitFilter); prescriptionId = null; invoiceId = null; var visit = DuLieuGiaoDien.Find("LICH_SU_KHAM_BENH", visitId); if (visit is not null) PatientId = DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH", visit); Refresh(); }
+    { if (updating || !CanChangePricingContext()) return; visitId = HoTroGiaoDien.Selected(VisitFilter); prescriptionId = null; invoiceId = null; var visit = DuLieuGiaoDien.Find("LICH_SU_KHAM_BENH", visitId); if (visit is not null) PatientId = DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH", visit); Refresh(); }
+
+    private bool CanChangePricingContext()
+    {
+        if(PricingHost.Content is not BangTinhPhiEditor { } pricing || (!pricing.DangXuLy && !pricing.ChoDoiChieu)) return true;
+        updating=true;try{PatientFilter.SelectedValue=PatientId??"";VisitFilter.SelectedValue=visitId??"";}finally{updating=false;}
+        PageStatus.Text="Cần đối chiếu yêu cầu đang thu trước khi đổi bệnh nhân hoặc lượt.";return false;
+    }
     /// <summary>
     /// Khi đổi nhân viên thực hiện, cập nhật khả năng lập hóa đơn/thanh toán/cấp thuốc theo lựa chọn hiện tại.
     /// </summary>

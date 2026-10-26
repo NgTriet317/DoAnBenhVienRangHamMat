@@ -63,6 +63,10 @@ internal static class ThanhToanChecks
             Need(s.TienThuoc == .03m && s.TongTien == 100000.03m && s.Thuoc.Single().CacLo.Count == 3 && !s.DuocThanhToan, "Đã làm tròn một lần hoặc cho thu lẻ đồng");
             Need(s.Thuoc.Single().CacLo.Select(l => l.MaLo).SequenceEqual(new[] { f.Id("L1"), f.Id("L2"), f.Id("L3") }), "Đổi FIFO sang chỉ ưu tiên hạn dùng");
             Need(Counts(f) == before, "Preview trừ tồn");
+            // API legacy so với giờ máy chính xác hơn giây SQL đã làm tròn; đợi đơn thực sự đến giờ.
+            // Ca này so phân lô/trigger, không thay quy tắc thời gian của entry point cũ.
+            var dated=f.Scalar<DateTime>("SELECT NgayKe FROM dbo.DON_THUOC WHERE MaDT=@id",new{id=s.Thuoc.Single().MaDT})-DateTime.Now;
+            if(dated>TimeSpan.Zero)Thread.Sleep(dated+TimeSpan.FromMilliseconds(20));
             var legacy = new BUS_HOADON(f.Transaction); legacy.DispensePrescription(s.Thuoc.Single().MaDT, w, f.Id("P"));
             var invoice = legacy.CreateInvoice(f.Id("LSA"), f.Id("C"));
             Need(f.Scalar<decimal>("SELECT TongTien FROM dbo.HOA_DON WHERE MaHD=@invoice", new { invoice }) == s.TongTien, "Preview khác tổng trigger");

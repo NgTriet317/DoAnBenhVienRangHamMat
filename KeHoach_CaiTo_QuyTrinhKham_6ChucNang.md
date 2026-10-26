@@ -1,6 +1,6 @@
 # Quy trình khám và thanh toán ngoại trú Implementation Plan
 
-> **Tiến độ 26/10/2026:** P01–P08 đã hoàn tất phần nền, migration, hồ sơ, tiếp nhận, khám, kế hoạch, dịch vụ, kê đơn snapshot và bảng tính phí. Đã kiểm chứng 160 ca SQL, 39 ca WPF và xem phí đồng thời; dữ liệu và tồn cũ giữ nguyên. P09–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
+> **Tiến độ 26/10/2026:** P01–P09 đã hoàn tất phần nền, migration, hồ sơ, tiếp nhận, khám, kế hoạch, dịch vụ, kê đơn snapshot, bảng tính và thu đủ trong một giao dịch. Đã kiểm chứng 185 ca SQL (160 hồi quy + 25 thanh toán), 44 ca WPF (39 hồi quy + 5 thanh toán), thu đồng thời/chống lặp/rollback; dữ liệu và tồn cũ giữ nguyên. P10–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
 
 > **For agentic workers:** Triển khai từng tác vụ và đánh dấu `- [ ]` khi hoàn thành. Nếu môi trường có Superpowers, dùng `superpowers:executing-plans`; không phụ thuộc vào việc cài thêm kỹ năng để đọc hoặc thực hiện tài liệu này. Người dùng yêu cầu giao kế hoạch cho Codex terminal trong Visual Studio 2022, chưa yêu cầu triển khai trong phiên lập kế hoạch.
 
@@ -533,11 +533,11 @@ Không bắt đầu bằng thay toàn bộ XAML. Khóa hợp đồng dữ liệu
 
 **Interfaces:** Cung cấp `ThanhToan` theo phần 10.3 và thứ tự phần 8.2. Constructor DAL/BUS con nhận cùng `IDbTransaction`. Không chuyển quyền commit xuống một lớp con.
 
-- [ ] Viết ca phải thu 450.000: đưa 500.000 thì thu 450.000/thối 50.000; đưa 400.000 thì không ghi gì; chuyển khoản phải đủ và có mã tham chiếu.
-- [ ] Viết ca hai thanh toán đồng thời cùng lượt, cùng mã yêu cầu, khác mã yêu cầu, mất kết nối sau commit rồi thử lại; đều chỉ có một kết quả thu/xuất.
-- [ ] Viết ca giá đổi, tồn đổi, thiếu thuốc cuối đơn và lỗi chèn thanh toán; kiểm tra số dòng tất cả bảng và tồn sau rollback bằng trước.
-- [ ] Triển khai điều phối với khóa ổn định, xác minh đầu vào, ghi tiền khách đưa/thối ngay khi INSERT Thu; tổng 0 có nguồn hợp lệ không tạo giao dịch 0. Kiểm tra đầu mối cũ bị chặn khi ghi thêm lên hóa đơn phiên bản 2.
-- [ ] Chạy toàn bộ ca SQL bằng các connection độc lập khi kiểm tra tranh chấp; xác minh không có hóa đơn phiên bản 2 đã commit bị thiếu tiền, không quá thu và không trừ kho lặp. Lưu thay đổi.
+- [x] Viết ca phải thu 450.000: đưa 500.000 thì thu 450.000/thối 50.000; đưa 400.000 thì không ghi gì; chuyển khoản phải đủ và có mã tham chiếu.
+- [x] Viết ca hai thanh toán đồng thời cùng lượt, cùng mã yêu cầu, khác mã yêu cầu, mất kết nối sau commit rồi thử lại; đều chỉ có một kết quả thu/xuất.
+- [x] Viết ca giá đổi, tồn đổi, thiếu thuốc cuối đơn và lỗi chèn thanh toán; kiểm tra số dòng tất cả bảng và tồn sau rollback bằng trước.
+- [x] Triển khai điều phối với khóa ổn định, xác minh đầu vào, ghi tiền khách đưa/thối ngay khi INSERT Thu; tổng 0 có nguồn hợp lệ không tạo giao dịch 0. Kiểm tra đầu mối cũ bị chặn khi ghi thêm lên hóa đơn phiên bản 2.
+- [x] Chạy toàn bộ ca SQL bằng các connection độc lập khi kiểm tra tranh chấp; xác minh không có hóa đơn phiên bản 2 đã commit bị thiếu tiền, không quá thu và không trừ kho lặp. Lưu thay đổi.
 
 ### P10 Bàn giao thuốc và in chứng từ
 

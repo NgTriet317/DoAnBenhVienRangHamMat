@@ -1,7 +1,11 @@
 namespace ET;
 
-public sealed class LoiKhamException(string truong,string message) : InvalidOperationException(message)
-{ public string Truong { get; } = truong; }
+public sealed class LoiKhamException : InvalidOperationException
+{
+    public string Truong { get; }
+    public LoiKhamException(string truong,string message) : base(message) => Truong=truong;
+    public LoiKhamException(string truong,string message,Exception inner) : base(message,inner) => Truong=truong;
+}
 public sealed class XungDotDuLieuKhamException : InvalidOperationException
 {
     public XungDotDuLieuKhamException():base("Dữ liệu đã thay đổi ở cửa sổ khác. Giữ nội dung đang nhập, tải lại để đối chiếu trước khi lưu."){}
