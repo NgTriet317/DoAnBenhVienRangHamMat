@@ -3,6 +3,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using RangHamMat;
+using System.Runtime.InteropServices;
+using System.Text;
 
 /// <summary>
 /// Mở từng phân hệ bằng nút thật ở trang chủ. Kiểm tra này xác nhận màn hình nạp được,
@@ -17,6 +19,20 @@ internal static class DieuHuongPhanHeChecks
     public static void Run()
     {
         var home = new MainWindow { ShowInTaskbar = false };
+        string? dialog=null;
+        var timer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(20)};
+        timer.Tick+=(_,_)=>EnumThreadWindows(GetCurrentThreadId(),(h,_)=>
+        {
+            var name=new StringBuilder(64);GetClassName(h,name,name.Capacity);
+            if(name.ToString()=="#32770")
+            {
+                var lines=new List<string>();
+                EnumChildWindows(h,(child,_)=>{var cls=new StringBuilder(64);GetClassName(child,cls,cls.Capacity);if(cls.ToString()=="Static"){var text=new StringBuilder(4000);GetWindowText(child,text,text.Capacity);lines.Add(text.ToString());}return true;},IntPtr.Zero);
+                dialog=string.Join(" ",lines);SendMessage(h,0x10,IntPtr.Zero,IntPtr.Zero);
+            }
+            return true;
+        },IntPtr.Zero);
+        timer.Start();
         try
         {
             home.Show();
@@ -26,6 +42,7 @@ internal static class DieuHuongPhanHeChecks
             {
                 var module = (string)button.Tag;
                 button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, button));
+                if(dialog is not null)throw new InvalidOperationException(module+": "+dialog);
                 home.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
                 home.UpdateLayout();
                 var workspace = ((ContentControl)home.FindName("AppHost")).Content as AppWorkspace;
@@ -36,6 +53,13 @@ internal static class DieuHuongPhanHeChecks
             }
             Console.WriteLine("PASS: 25/25 phân hệ mở đúng màn hình XAML từ trang chủ; không kiểm tra lưu ở các form mẫu.");
         }
-        finally { home.Close(); }
+        finally { timer.Stop();home.Close(); }
     }
+    private delegate bool WindowCallback(IntPtr h,IntPtr state);
+    [DllImport("kernel32.dll")]private static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll")]private static extern bool EnumThreadWindows(uint thread,WindowCallback callback,IntPtr state);
+    [DllImport("user32.dll")]private static extern bool EnumChildWindows(IntPtr h,WindowCallback callback,IntPtr state);
+    [DllImport("user32.dll",CharSet=CharSet.Unicode)]private static extern int GetClassName(IntPtr h,StringBuilder text,int length);
+    [DllImport("user32.dll",CharSet=CharSet.Unicode)]private static extern int GetWindowText(IntPtr h,StringBuilder text,int length);
+    [DllImport("user32.dll")]private static extern IntPtr SendMessage(IntPtr h,int msg,IntPtr w,IntPtr l);
 }

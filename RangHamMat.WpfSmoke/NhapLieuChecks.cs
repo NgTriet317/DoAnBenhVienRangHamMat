@@ -132,19 +132,18 @@ internal static class NhapLieuChecks
     private static void CheckEmployee(Window host)
     {
         var form=new NhanSu();host.Content=form;host.UpdateLayout();Drain(host);
-        Require(!form.TryReadPosition(out _,out var error)&&error.Contains("Tên chức vụ"),"Chức vụ phải có tên.");
-        ((TextBox)form.FindName("txtTenChucVu")).Text="Chức vụ thử";
-        Require(!form.TryReadPosition(out _,out error)&&error.Contains("Mô tả"),"Chức vụ phải có mô tả đúng schema.");
-        ((TextBox)form.FindName("txtMoTaChucVu")).Text="Mô tả thử";
-        Require(form.TryReadPosition(out _,out _),"Chức vụ hợp lệ phải qua kiểm tra.");
-        Require(!form.TryReadEmployee(out _,out error)&&error.Contains("Họ tên"),"Nhân viên phải có họ tên.");
+        // Form hiện hành yêu cầu điện thoại/ngày sinh; gọi validator thật, không giả định API cũ đã bị bỏ.
+        var validate=typeof(NhanSu).GetMethod("KiemTraDuLieuThemNhanVien",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!;
+        bool Read(out string error){object?[] input=[null];var result=(bool)validate.Invoke(form,input)!;error=Convert.ToString(input[0])!;return result;}
+        Require(!Read(out _),"Nhân viên trống phải bị chặn.");
         ((TextBox)form.FindName("txtHoTen")).Text="Nhân viên thử";
         ((TextBox)form.FindName("txtSDT")).Text="sai";
-        Require(!form.TryReadEmployee(out _,out error)&&error.Contains("điện thoại"),"Nhân viên sai điện thoại phải bị chặn.");
-        ((TextBox)form.FindName("txtSDT")).Text="";
+        Require(!Read(out var error)&&error.Contains("điện thoại"),"Nhân viên sai điện thoại phải bị chặn.");
+        ((TextBox)form.FindName("txtSDT")).Text="0900123456";
         ((ComboBox)form.FindName("cboChucVu")).SelectedIndex=0;
+        ((DatePicker)form.FindName("dpNgaySinh")).SelectedDate=DateTime.Today.AddYears(-25);
         ((DatePicker)form.FindName("dpNgayVaoLam")).SelectedDate=DateTime.Today;
-        Require(form.TryReadEmployee(out _,out error),"Nhân viên cho phép thông tin nullable trống: "+error);
+        Require(Read(out error),"Nhân viên hợp lệ phải qua validator của nút Lưu: "+error);
     }
 
     /// <summary>AI tạo: thử binding thực với rule/converter của cột XAML; ô sai không được dùng giá trị model cũ để lưu.</summary>
@@ -152,7 +151,7 @@ internal static class NhapLieuChecks
     {
         var form=new CuaSoKhamDieuTri();
         var grid=(DataGrid)form.FindName("PlanDrafts");
-        var column=(DataGridTextColumn)grid.Columns.Single(c=>Equals(c.Header,"S.L"));
+        var column=(DataGridTextColumn)grid.Columns.OfType<DataGridTextColumn>().Single(c=>c.Binding is Binding b&&b.Path.Path=="Quantity");
         var draft=new TreatmentDraft {Quantity=2,Price=10};
         var box=new TextBox {DataContext=draft};
         box.SetBinding(TextBox.TextProperty,column.Binding);

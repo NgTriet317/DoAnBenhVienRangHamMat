@@ -2,6 +2,8 @@ using RangHamMat.ClinicalChecks;
 
 try
 {
+    if (args.Contains("--deployment")) return DeploymentChecks.Run();
+    if (args.Contains("--acceptance")) return AcceptanceChecks.Run();
     if (args.Contains("--migration")) return MigrationChecks.Run();
     if (args.Contains("--reception-concurrency")) return TiepNhanConcurrencyChecks.Run();
     if (args.Contains("--examination-concurrency")) return ExaminationConcurrencyChecks.Run();

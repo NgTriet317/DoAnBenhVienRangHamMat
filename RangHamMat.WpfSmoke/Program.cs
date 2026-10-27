@@ -31,6 +31,7 @@ internal static class Program
         {
             app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml", UriKind.Relative) });
             KiemTraNhapLieu.Register();
+            if (args.Contains("--login-modules")) { LoginDeploymentChecks.Run(); return 0; }
             DuLieuGiaoDien.RefreshFromDatabase();
             if (args.Contains("--validation"))
             {
@@ -39,6 +40,7 @@ internal static class Program
                 NhapLieuChecks.Run(host);
                 return 0;
             }
+            if (args.Contains("--modules")) { DieuHuongPhanHeChecks.Run(); return 0; }
             var patients = DuLieuGiaoDien.Rows("BENH_NHAN").OrderBy(row => UiRecord.Text(row, "MaBN")).ToArray();
             var patient = patients.First(row=>DuLieuGiaoDien.Rows("LICH_SU_KHAM_BENH").Any(visit=>DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH",visit)==UiRecord.Text(row,"MaBN")));
             var profile = new HoSoBenhNhan(patient);
@@ -57,7 +59,7 @@ internal static class Program
             var scoped = (LichKham)profile.FindName("PatientAppointments");
             Require(!HasVisibleAddPatient(scoped), "Lịch trong hồ sơ không được có nút Thêm bệnh nhân.");
             var global = new LichKham(); host.Content = global; Drain(host);
-            Require(HasVisibleAddPatient(global), "Mục Lịch khám độc lập phải giữ nút Thêm bệnh nhân.");
+            Require(Elements(global).OfType<Button>().Any(b=>Equals(b.Content,"Thêm lịch khám")&&b.IsVisible&&b.IsEnabled), "Mục Lịch khám độc lập phải giữ nút Thêm lịch khám hiện hành.");
             var services=new DichVuThucHien();host.Content=services;services.FocusContext(patientId,UiRecord.Text(visits[0],"MaLS"));Drain(host);
             var serviceGrid=(DataGrid)services.FindName("Grid_DICH_VU_THUC_HIEN");
             Require(serviceGrid.Items.OfType<DongChiTietLanKham>().All(row=>row.PatientId==patientId && row.VisitId==UiRecord.Text(visits[0],"MaLS")),"Dịch vụ phải thuộc đúng bệnh nhân/lần khám.");
@@ -93,7 +95,7 @@ internal static class Program
             CheckFinance(host);
             GiaoDienXamlChecks.Run(host);
             NhapLieuChecks.Run(host);
-            DieuHuongPhanHeChecks.Run();
+            LoginDeploymentChecks.Run();
             Console.WriteLine("PASS: SQL → hồ sơ/lịch sử; lịch theo bệnh nhân; phạm vi dịch vụ; form v8; lưu/sửa đơn nhiều dòng; kế hoạch/dịch vụ; hóa đơn/phân trang in; rollback SQL và cache.");
             return 0;
         }

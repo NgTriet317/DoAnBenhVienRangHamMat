@@ -13,6 +13,31 @@ public static class PhienDangNhap
     internal static event Func<bool>? TruocKhiDoiDinhDanh;
     private static string? accountCommitted,nameCommitted;
     private static bool adminCommitted;
+    private static DesktopPrincipal? desktopPrincipal;
+    private sealed class DesktopPrincipal : ClaimsPrincipal
+    {
+        internal ClaimsPrincipal Current { get; set; }=new();
+        public override IEnumerable<ClaimsIdentity> Identities=>Current.Identities;
+        public override System.Security.Principal.IIdentity? Identity=>Current.Identity;
+        public override IEnumerable<Claim> Claims=>Current.Claims;
+        public override Claim? FindFirst(string type)=>Current.FindFirst(type);
+        public override Claim? FindFirst(Predicate<Claim> match)=>Current.FindFirst(match);
+        public override IEnumerable<Claim> FindAll(string type)=>Current.FindAll(type);
+        public override IEnumerable<Claim> FindAll(Predicate<Claim> match)=>Current.FindAll(match);
+        public override bool HasClaim(string type,string value)=>Current.HasClaim(type,value);
+        public override bool HasClaim(Predicate<Claim> match)=>Current.HasClaim(match);
+        public override bool IsInRole(string role)=>Current.IsInRole(role);
+    }
+
+    /// <summary>Khởi tạo một lần ở App.Startup: định danh mặc định tồn tại qua các ExecutionContext của Dispatcher.</summary>
+    public static void KhoiTaoPhienUngDung()
+    {
+        if(desktopPrincipal is not null)return;
+        var principal=new DesktopPrincipal();
+        AppDomain.CurrentDomain.SetThreadPrincipal(principal);
+        desktopPrincipal=principal;
+        Thread.CurrentPrincipal=principal;
+    }
 
     /// <summary>Chỉ gọi sau khi đăng nhập thành công; chốt định danh cho các API quy trình khám.</summary>
     public static void KhoiTaoDinhDanhNghiepVu(string maTK)
@@ -34,11 +59,17 @@ public static class PhienDangNhap
             }
             finally{if(allow){MaNV=proposedEmployee;IsAdmin=proposedAdmin;TenDangNhap=proposedName;}}
         }
-        Thread.CurrentPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        var identity=new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, maTK),
             new Claim(DinhDanhNghiepVu.MaNhanVienClaim, MaNV)
-        }, DinhDanhNghiepVu.KieuXacThuc));
+        }, DinhDanhNghiepVu.KieuXacThuc);
+        if(desktopPrincipal is null)Thread.CurrentPrincipal=new ClaimsPrincipal(identity);
+        else
+        {
+            desktopPrincipal.Current=new ClaimsPrincipal(identity);
+            Thread.CurrentPrincipal=desktopPrincipal;
+        }
         accountCommitted=maTK;adminCommitted=IsAdmin;nameCommitted=TenDangNhap;
         DinhDanhThayDoi?.Invoke();
     }

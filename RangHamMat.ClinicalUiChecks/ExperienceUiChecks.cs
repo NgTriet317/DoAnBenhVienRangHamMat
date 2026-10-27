@@ -35,7 +35,7 @@ internal static class ExperienceUiChecks
     internal static int Run(bool includeLayout=true)
     {
         using(var db=new DAL.DAL_DONTHUOC().MoKetNoi())
-            if(!db.Database.StartsWith("RHM_ClinicalWorkflow_Test_P10Handover_",StringComparison.Ordinal)&&!db.Database.StartsWith("RHM_ClinicalWorkflow_Test_P11Experience_",StringComparison.Ordinal))
+            if(!db.Database.StartsWith("RHM_ClinicalWorkflow_Test_P10Handover_",StringComparison.Ordinal)&&!db.Database.StartsWith("RHM_ClinicalWorkflow_Test_P11Experience_",StringComparison.Ordinal)&&!db.Database.StartsWith("RHM_ClinicalWorkflow_Test_P09Payments_P12",StringComparison.Ordinal))
                 throw new InvalidOperationException("Kiểm tra P11 có ca lưu thật cần DB P10Handover/P11Experience mới riêng.");
         var pass=0;var fail=0;
         void Check(string name,Action run){try{run();Console.WriteLine("PASS: "+name);pass++;}catch(Exception ex){Console.Error.WriteLine("FAIL: "+name+": "+ex.GetBaseException().Message);fail++;}}

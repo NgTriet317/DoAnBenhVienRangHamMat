@@ -39,13 +39,7 @@ namespace DAL
         /// <returns>Kết nối SQL chưa mở; nơi sử dụng chịu trách nhiệm mở và giải phóng.</returns>
         protected IDbConnection CreateConnection()
         {
-            string? chuoiKetNoi = Environment.GetEnvironmentVariable("RHM_CONNECTION_STRING");
-            if (chuoiKetNoi is null)
-            {
-                chuoiKetNoi = @"Data Source=DESKTOP-C9VCE8A;Initial Catalog=QLBenhVienRangHamMat;Integrated Security=True;TrustServerCertificate=True;";
-            }
-
-            return new SqlConnection(chuoiKetNoi);
+            return new SqlConnection(CauHinhKetNoi.LayChuoiKetNoi());
         }
 
         /// <summary>
@@ -227,10 +221,10 @@ namespace DAL
         }
 
         /// <summary>
-        /// Ghép chữ đầu các từ của tên bảng với số thứ tự có ít nhất hai chữ số, ví dụ mã bệnh nhân mới là BN01; không đổi các mã cũ trong database.
+        /// Ghép chữ đầu các từ của tên bảng với số thứ tự có ít nhất ba chữ số, ví dụ mã bệnh nhân mới là BN001; không đổi các mã cũ trong database.
         /// </summary>
         /// <param name = "table">Tên bảng nội bộ gồm các phần phân tách bởi dấu gạch dưới.</param>
-        /// <param name = "number">Số thứ tự dương đã cấp; D2 bổ sung số 0 khi cần, không cắt số dài hơn hai chữ số.</param>
+        /// <param name = "number">Số thứ tự dương đã cấp; D3 bổ sung số 0 khi cần, không cắt số dài hơn ba chữ số.</param>
         /// <returns>Chuỗi tiền tố chữ đầu cộng số thứ tự, dùng định dạng số không phụ thuộc ngôn ngữ máy.</returns>
         public static string DinhDangMa(string table, long number)
         {

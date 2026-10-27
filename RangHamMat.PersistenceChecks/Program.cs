@@ -137,10 +137,10 @@ try
         }
         finally {transaction.Rollback();}
     });
-    Check("mã chữ đầu bảng với hậu tố tối thiểu hai chữ số",()=>
+    Check("mã chữ đầu bảng với hậu tố tối thiểu ba chữ số",()=>
     {
         var format=typeof(DAL.dbconnect).GetMethod("DinhDangMa")??throw new InvalidOperationException("Thiếu quy tắc định dạng mã tự động.");
-        foreach(var item in new[]{("BENH_NHAN",1L,"BN01"),("BENH_NHAN",9L,"BN09"),("BENH_NHAN",10L,"BN10"),("BENH_NHAN",100L,"BN100"),("HO_SO_BENH_AN",2L,"HSBA02"),("LICH_SU_KHAM_BENH",3L,"LSKB03"),("CHI_TIET_DON_THUOC",4L,"CTDT04")})
+        foreach(var item in new[]{("BENH_NHAN",1L,"BN001"),("BENH_NHAN",9L,"BN009"),("BENH_NHAN",10L,"BN010"),("BENH_NHAN",100L,"BN100"),("HO_SO_BENH_AN",2L,"HSBA002"),("LICH_SU_KHAM_BENH",3L,"LSKB003"),("CHI_TIET_DON_THUOC",4L,"CTDT004")})
             Require(Convert.ToString(format.Invoke(null,new object[]{item.Item1,item.Item2}))==item.Item3,"Mã không đúng quy tắc: "+item.Item3);
         var first=Patient();var second=Patient();
         Require(Id(first,"MaBN").StartsWith("BN")&&Id(first,"MaBN")!=Id(second,"MaBN"),"Mã cấp thực tế phải duy nhất và được lưu SQL.");
@@ -191,18 +191,19 @@ try
         }
         finally { transaction.Rollback(); }
     });
-    Check("mọi ET đọc SQL qua đúng BUS tương ứng",()=>
+    Check("39 ET nền đọc SQL qua đúng BUS; 6 entity lâm sàng dùng suite quyền chuyên dụng",()=>
     {
         using var connection = new DAL.DAL_BENHNHAN().MoKetNoi();
         using var transaction = connection.BeginTransaction(IsolationLevel.Serializable);
         try
         {
-            foreach (var type in typeof(ET_BENHNHAN).Assembly.GetTypes().Where(type => type.Name.StartsWith("ET_")))
+            foreach (var type in typeof(ET_BENHNHAN).Assembly.GetTypes().Where(type => System.Reflection.CustomAttributeExtensions.GetCustomAttribute<Dapper.Contrib.Extensions.TableAttribute>(type, false) is { } map && !new[]{"DM_TINH_TRANG_BENH","MAU_KE_HOACH_DIEU_TRI","CHI_TIET_MAU_KE_HOACH","NHOM_THUOC_KE_DON","CAU_HINH_THUOC_KE_DON","BAN_GIAO_THUOC"}.Contains(map.Name)))
             {
                 var busType = typeof(BUS_BENHNHAN).Assembly.GetType("BUS.BUS_" + type.Name[3..])!;
                 var entityBus = Activator.CreateInstance(busType, new object?[] { transaction })!;
+                Console.WriteLine("P12 persistence entity: "+type.Name);
                 var read = busType.GetMethods().First(method => method.GetParameters().Length == 0 &&
-                    typeof(System.Collections.IEnumerable).IsAssignableFrom(method.ReturnType));
+                    typeof(System.Collections.IEnumerable).IsAssignableFrom(method.ReturnType) && typeof(IEnumerable<>).MakeGenericType(type).IsAssignableFrom(method.ReturnType));
                 var rows = (System.Collections.IEnumerable)read.Invoke(entityBus, null)!;
                 foreach (var row in rows) Require(row.GetType() == type, busType.Name + " phải trả về đúng ET.");
             }

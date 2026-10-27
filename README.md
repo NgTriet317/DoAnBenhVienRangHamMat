@@ -1,51 +1,65 @@
-# Đồ án Bệnh viện Răng Hàm Mặt
+# Quản lý Bệnh viện Răng Hàm Mặt
 
-Đọc [giải thích code bằng tiếng Việt](GIAI_THICH_CODE_TIENG_VIET.md) để tra chức năng từng file, cách giao diện gọi xử lý/lưu dữ liệu và phạm vi hỗ trợ AI. Chú thích chi tiết nằm ngay trên các lớp, hàm, thuộc tính C# và các vùng XAML liên quan.
+Ứng dụng WPF .NET8, SQL Server2016 trở lên. Solution bàn giao có đúng bốn project:
 
-Đọc [phần AI đã thực hiện trong giao diện](PHAN_AI_THUC_HIEN_GIAO_DIEN.md) để biết AI đã tạo, chỉnh sửa hoặc bổ sung chú thích gì trong từng file XAML/C# của giao diện.
+- `RangHamMat.Wpf`: giao diện, điều hướng, phiên đăng nhập.
+- `ET`: thực thể và hợp đồng dữ liệu.
+- `BUS`: quy tắc và các đầu mối nghiệp vụ.
+- `DAL`: SQL, transaction, kiểm tra quyền và kết nối.
 
-Đọc [kiểm tra nhập liệu](KIEM_TRA_NHAP_LIEU.md) để xem các trường hợp đã chặn, thông báo lỗi, kết quả kiểm thử và phạm vi các form mẫu chưa nối lưu SQL.
+Trong `RangHamMat.Wpf/Views`, mỗi màn hình gồm `.xaml` và `.xaml.cs` được Visual Studio lồng cùng nhau. File C# phụ trợ/partial đã chuyển sang `Presentation` hoặc `Controls`. Không xóa `.xaml.cs`: đây là code-behind xử lý sự kiện của XAML.
 
-Đọc [hướng dẫn trình bày dbconnect và DAL](HUONG_DAN_TRINH_BAY_CODE_DAL.md) để hiểu luồng lưu theo từng bước, phần code đã đơn giản hóa và các câu hỏi thường gặp khi bảo vệ đồ án.
+## 1. Chuẩn bị database
 
-Đọc [tình trạng toàn bộ chức năng](TINH_TRANG_CHUC_NANG.md) để tra 25 phân hệ, phần đã nối SQL, phần còn là giao diện mẫu và đối chiếu ET–DAL–BUS với database. Bộ vai trò dùng tên `ET_VAITRO`, `DAL_VAITRO`, `BUS_VAITRO` và ánh xạ bảng `VAI_TRO`.
+**Cài mới:** mở `Database/QLBenhVienRangHamMat.sql` bằng SSMS và chạy toàn bộ file trên SQL Server. Script tạo database `QLBenhVienRangHamMat`,52 bảng và schema quy trình khám2; dữ liệu mẫu là hư cấu. Script từ chối database đã có bảng, không xóa/ghi đè dữ liệu cũ.
 
-Bản chú thích mở rộng đã bao gồm toàn bộ BUS/DAL. Biểu đồ, lịch tuần, chi tiết chung và bản in hóa đơn có file XAML hiện hữu; code-behind chỉ xử lý dữ liệu/sự kiện và phân trang bản in. Xem [kết quả rà toàn bộ code và XAML](KET_QUA_TOAN_BO_CODE_XAML.md).
+**Đã có database bản cũ:** sao lưu trước, chọn đúng database trong SSMS rồi lần lượt chạy:
 
-Bản cập nhật 11/10/2026 thực hiện luồng hồ sơ theo kế hoạch ban đầu, được ghi lại trong [kết quả thực hiện kế hoạch](THUC_HIEN_KE_HOACH.md). Hồ sơ bệnh nhân, lịch khám/tiếp nhận, khám điều trị, đơn thuốc, dịch vụ thực hiện, hóa đơn và thanh toán đọc/lưu SQL Server qua ET → DAL → BUS → WPF. Đã bỏ chức năng nạp dữ liệu minh họa. Các thao tác lưu tiếp tục tồn tại khi đóng và mở lại ứng dụng.
+1. `Database/Migrations/20261024_01_Preflight_ClinicalWorkflow.sql`
+2. `Database/Migrations/20261024_02_ClinicalWorkflow.sql`
+3. `Database/Migrations/20261024_03_Verify_ClinicalWorkflow.sql`
 
-Schema các bảng đang chạy là **v8**: `Database/DB_Nhom4_v8.docx` và `Database/QLBenhVienRangHamMat.sql`. Database đang chạy có 44 bảng; file SQL hiện khai báo thêm `CA_THEO_NGAY` thành 45 bảng, nhưng bảng bổ sung này chưa tồn tại trong database đang chạy. Các tài liệu/JSON mang tên v7 và một số giao diện mẫu còn mô tả cấu trúc trước; xem báo cáo tình trạng để biết các trường chưa khớp v8.
+Nâng cấp giữ chứng từ/số tiền/tồn cũ, không thu hoặc xuất lại. Chạy bước2 lần hai an toàn. Không dùng file cài mới để nâng cấp. Rollback04 chỉ dành cho trước khi có dữ liệu nghiệp vụ mới; sau đó cần quy trình restore/đối chiếu, xem [hướng dẫn](docs/clinical-workflow/HUONG_DAN_CHAY.md).
 
-Bản sửa 13/10/2026 có đủ 39 bộ ET–DAL–BUS cùng hậu tố, khớp 303 cột SQL. Xử lý liên kết nằm trong các DAL/BUS của từng thực thể; giao dịch nhiều dòng dùng chung IDbTransaction. Giao diện tiếp nhận và chi tiết đổi thành TiepNhanKham và ChiTietHoSo. Khóa chính/khóa ngoại là chuỗi theo SQL hiện tại. Mã tự cấp theo chữ đầu tên bảng và số tối thiểu hai chữ số: BN01, HSBA01, LSKB01; tiếp tục số lớn nhất đang có và giữ mã cũ. Xem [báo cáo sửa DAL/BUS/ET](CAP_NHAT_DAL_BUS_ET.md) để tra cấu trúc và kết quả kiểm tra mới nhất.
+## 2. Cấu hình và chạy
 
-## Chạy ứng dụng
+Cài Visual Studio2022 với .NET desktop development và .NET8 SDK. Mở `BenhVienRangHamMat.sln`, chọn `RangHamMat.Wpf` làm Startup Project rồi F5.
 
-1. Mở `BenhVienRangHamMat.sln` bằng Visual Studio 2022 có .NET desktop development và .NET 8 SDK.
-2. Chọn `RangHamMat.Wpf` làm Startup Project rồi F5.
-3. Kết nối mặc định: SQL Server `DESKTOP-C9VCE8A`, database `QLBenhVienRangHamMat`, Windows Authentication. Máy hiện tại đã có database này.
-4. Nếu dùng máy/server khác, đặt biến môi trường `RHM_CONNECTION_STRING` trước khi mở Visual Studio hoặc chạy ứng dụng:
+Sửa `RangHamMat.Wpf/appsettings.json` theo SQL Server của máy. Mặc định Windows Authentication, server `.` và database `QLBenhVienRangHamMat`:
+
+```json
+{
+  "ConnectionStrings": {
+    "RangHamMat": "Data Source=.;Initial Catalog=QLBenhVienRangHamMat;Integrated Security=True;TrustServerCertificate=True;"
+  }
+}
+```
+
+File này được chép cạnh executable khi build/publish. Có thể ưu tiên cấu hình bằng biến môi trường:
 
 ```powershell
-$env:RHM_CONNECTION_STRING = 'Data Source=TEN_SERVER;Initial Catalog=QLBenhVienRangHamMat;Integrated Security=True;TrustServerCertificate=True;'
+$env:RHM_CONNECTION_STRING='Data Source=TEN_SERVER;Initial Catalog=QLBenhVienRangHamMat;Integrated Security=True;TrustServerCertificate=True;'
 dotnet run --project RangHamMat.Wpf -c Release
 ```
 
-Không chạy lại script khởi tạo trên database đang có dữ liệu. Database cần schema v8 và danh mục nhân viên, phòng, dịch vụ, thuốc, kho/lô thực tế. Nút **Tải lại dữ liệu** đọc lại SQL. Đăng nhập/chọn vai trò giữ cách hoạt động của source gốc; chọn vai trò Quản trị để thử toàn bộ luồng liên phân hệ. Trong Hóa đơn cần chọn rõ nhân viên thực hiện.
+Nếu SQL Server dùng instance có tên, dùng dạng `TEN_MAY\SQLEXPRESS` trong chuỗi kết nối; trong JSON phải viết `TEN_MAY\\SQLEXPRESS`. Máy đích cần database đã cài/nâng cấp và .NET8 Desktop Runtime khi chạy bản publish phụ thuộc framework.
 
-## Luồng sử dụng
+Tài khoản mẫu `admin001` và `user002`…`user010`, mật khẩu mẫu `123456`. Quyền nghề nghiệp lấy từ nhân viên trong SQL, không chỉ từ nhãn Admin/User. Không dùng tài khoản mẫu cho dữ liệu thật. Danh sách chức vụ/tài khoản mẫu và thứ tự thao tác trong [hướng dẫn chạy](docs/clinical-workflow/HUONG_DAN_CHAY.md).
 
-**Bệnh nhân → Bệnh án → Tiếp nhận → Lần khám → Kế hoạch/dịch vụ/đơn thuốc → Cấp thuốc → Hóa đơn → Thanh toán → In.**
+## 3. Luồng khám mới
 
-Các liên kết giữ đúng bệnh nhân và lần khám nguồn. Form bệnh nhân có BHYT, số điện thoại dạng chuỗi, ngày sinh có thể để trống. Xác nhận lần khám lưu đồng thời ngày xác nhận. Bản xác nhận được khóa; thao tác nhiều dòng lưu trong một giao dịch, lỗi thì rollback. Form đã cũ bị chặn ghi đè dữ liệu mới.
+**Bệnh nhân →Hồ sơ →Tiếp nhận →Khám/kế hoạch →Dịch vụ đã làm/đơn ký →Thu đủ →Bàn giao thuốc →In lại.**
 
-Hóa đơn chỉ lấy dịch vụ đã xác nhận và thuốc đã xuất ghi sổ của đúng lần khám. Cấp thuốc chọn một kho đủ toàn bộ đơn, theo FIFO lô còn hạn. Một nguồn thu chỉ vào một hóa đơn; không tính lại khoản đã lập. Thu tiền không vượt số còn phải thu; hoàn không vượt tiền đã thu ròng và phải có lý do. Hóa đơn dài được phân trang; **In / Xuất PDF…** chọn máy in hoặc Microsoft Print to PDF.
+Ký đơn chưa trừ kho; thu đủ mới ghi xuất và chờ giao trong cùng transaction. Bàn giao/in lại không thu hay trừ tồn lần nữa. Khi rời trang có nhập liệu, chọn Lưu nháp/Bỏ thay đổi/Hủy; Lưu nháp không ký hoặc thu tiền. Yêu cầu thu/giao chưa rõ kết quả giữ nguyên mã để đối chiếu khi thử lại.
 
-Đọc [hướng dẫn thao tác](HUONG_DAN_GIAO_DIEN_BENH_VIEN.md) và [kết quả thực hiện kế hoạch](THUC_HIEN_KE_HOACH.md).
+## 4. Kiểm tra và đóng gói
 
-## Kiểm tra
+Chạy `KiemTra.bat` để kiểm cấu trúc bốn project và build Debug/Release. Kiểm thêm SQL bằng Windows Authentication:
 
-- `KiemTra.bat`: build Release, kiểm tra XAML/luồng và đối chiếu ET với SQL.
-- `KiemTraDatabase.bat`: kiểm tra persistence, nghiệp vụ tài chính và WPF trên SQL thật; mọi bản ghi thử được rollback.
-- `KiemTraWpf.bat`: riêng kiểm tra WPF; cần Windows và database đang chạy.
+```powershell
+.\KiemTra.bat -KiemTraSql -MayChu . -Database QLBenhVienRangHamMat
+```
 
-Build và các kiểm tra đã chạy trên máy hiện tại. Xem lệnh, số kiểm tra, ảnh giao diện và giới hạn kiểm chứng trong `THUC_HIEN_KE_HOACH.md`; [báo cáo tình trạng mới nhất](TINH_TRANG_CHUC_NANG.md) ghi rõ các phân hệ chưa nối SQL. Bộ WPF hiện kiểm tra thêm việc mở đủ 25 màn hình từ các nút trang chủ.
+Phần SQL chỉ đọc/đối chiếu schema. Đóng gói bằng `dotnet publish RangHamMat.Wpf -c Release -o PhatHanh`; sao chép toàn bộ thư mục kết quả và sửa appsettings cạnh exe. Không chỉ chép một fileexe.
+
+Các project kiểm thử phát triển đã được chạy trước khi dọn khỏi bản bàn giao. [Báo cáo P12](docs/clinical-workflow/BAN_GIAO_P12.md) ghi lệnh/kết quả, ma trận AT01–AT34, checkpoint chứa source kiểm thử và giới hạn thiết bị thực. [Tiến độ](docs/clinical-workflow/TIEN_DO.md) và [kết quả các mốc](docs/clinical-workflow/KET_QUA_KIEM_THU.md) giữ lịch sử triển khai. Tài liệu trước đợt cải tổ nằm trong `docs/legacy` và có thể mô tả phiên bản cũ; dùng README này để cài/chạy hiện tại.

@@ -47,6 +47,7 @@ internal static class Program
         }
         try
         {
+            if(args.Contains("--keyboard"))return KeyboardDeploymentChecks.Run();
             if(args.Contains("--payments")) return PaymentUiChecks.Run();
             if(args.Contains("--handover")) return HandoverUiChecks.Run();
             if(args.Contains("--experience")) return ExperienceUiChecks.Run();

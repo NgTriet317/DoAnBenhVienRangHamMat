@@ -21,8 +21,8 @@ internal static class KiemTraGiaoDien
         void Check(bool condition, string message) { if (!condition) errors.Add(message); }
         var wpf = Path.Combine(root, "RangHamMat.Wpf");
         var sql=File.ReadAllText(Path.Combine(root,"Database","QLBenhVienRangHamMat.sql"));
-        var schema=Regex.Matches(sql,@"CREATE TABLE \[dbo\]\.\[(\w+)\] \((.*?)\r?\n\);",RegexOptions.Singleline)
-            .Cast<Match>().ToDictionary(table=>table.Groups[1].Value,table=>Regex.Matches(table.Groups[2].Value,@"^\s*\[(\w+)\] (.+?)(?:,)?\r?$",RegexOptions.Multiline)
+        var schema=Regex.Matches(sql,@"CREATE TABLE \[dbo\]\.\[(\w+)\] \((.*?)\r?\n[ \t]*\);",RegexOptions.Singleline)
+            .Cast<Match>().ToDictionary(table=>table.Groups[1].Value,table=>Regex.Matches(table.Groups[2].Value,@"^\s*\[(\w+)\]\s+((?:INT|NVARCHAR|DATE|DATETIME2|TIME|DECIMAL|AS)\b[^\r\n]*)",RegexOptions.Multiline)
                 .Cast<Match>().ToDictionary(column=>column.Groups[1].Value,column=>column.Groups[2].Value));
         var modules = JsonSerializer.Deserialize<Dictionary<string, string[]>>(File.ReadAllText(Path.Combine(root, "Database", "UI_DBv7.modules.json")))!;
         XNamespace w = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
