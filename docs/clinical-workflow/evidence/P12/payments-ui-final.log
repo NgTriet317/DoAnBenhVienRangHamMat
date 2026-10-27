@@ -1,0 +1,6 @@
+PASS: P09 WPF tiền mặt, khóa nút khi thu và chặn bấm hai lần
+PASS: P09 WPF chuyển khoản cần đối chiếu và tham chiếu
+PASS: P09 WPF lỗi chưa rõ kết quả giữ nguyên yêu cầu và nguồn khi thử lại
+PASS: P09 WPF bác sĩ xem phí nhưng không có quyền thu
+PASS: P09 WPF hóa đơn giữ nguồn khi thu và tải lịch sử sau commit
+PaymentUiChecks: 5 PASS, 0 FAIL; commit chỉ trên database P09Payments riêng.

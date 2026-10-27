@@ -1,0 +1,4 @@
+PASS: Hai kết nối xác nhận cùng dòng, một lần ký/audit/nguồn phí
+PASS: Hai bác sĩ/hai lượt cùng hồ sơ tranh phần lượng cuối, chỉ một lưu
+PASS: Caller ReadCommitted giữ khóa nguồn dịch vụ đến rollback
+PASS: Fixture ký chỉ nằm trong database đồng thời riêng, không tắt trigger để dọn lịch sử

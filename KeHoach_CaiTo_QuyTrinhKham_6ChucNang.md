@@ -1,6 +1,6 @@
 # Quy trình khám và thanh toán ngoại trú Implementation Plan
 
-> **Tiến độ 27/10/2026:** P01–P11 đã hoàn tất; P11 bổ sung điều hướng có ngữ cảnh, bảo vệ dữ liệu chưa lưu/đổi phiên, phân trang SQL và giao diện thích ứng DPI. Đã kiểm chứng 210 ca SQL (172 hồi quy/P11 + 25 thanh toán + 13 bàn giao), 179 ca WPF (39 hồi quy + 127 P11 + 5 thanh toán + 8 bàn giao/in); dữ liệu và tồn cũ giữ nguyên. Còn P12 nghiệm thu toàn luồng, khôi phục và đóng gói; ba lỗi suite baseline vẫn được ghi rõ. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
+> **Tiến độ 27/10/2026:** P01–P12 đã hoàn tất phần mềm và kiểm chứng cài mới/nâng cấp/khôi phục. Bản bàn giao đúng RangHamMat.Wpf + ET/DAL/BUS, Views dùng cặp XAML/code-behind; SQL chính52 bảng/version2. Build Debug/Release/publish và đăng nhập25 phân hệ đạt; kiểm chứng SQL/WPF, AT01–AT34 và giới hạn thiết bị tại [bàn giao P12](docs/clinical-workflow/BAN_GIAO_P12.md). Database cũ cần chạy migration, không tự thay dữ liệu đang dùng. Xem [tiến độ](docs/clinical-workflow/TIEN_DO.md) và [kết quả](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
 
 > **For agentic workers:** Triển khai từng tác vụ và đánh dấu `- [ ]` khi hoàn thành. Nếu môi trường có Superpowers, dùng `superpowers:executing-plans`; không phụ thuộc vào việc cài thêm kỹ năng để đọc hoặc thực hiện tài liệu này. Người dùng yêu cầu giao kế hoạch cho Codex terminal trong Visual Studio 2022, chưa yêu cầu triển khai trong phiên lập kế hoạch.
 
@@ -333,7 +333,7 @@ Preflight kiểm tra cấu trúc đang có, trigger/view, quyền tài khoản, 
 
 Migration có version guard, `SET XACT_ABORT ON` và transaction cho DDL phù hợp; kiểm tra tồn tại và đúng kiểu trước ADD/ALTER để chạy lại không nhân đôi. Không DROP database, không TRUNCATE bảng và không sửa lịch sử để làm đẹp dữ liệu. Backup bản sao trước nâng cấp và thử restore.
 
-Tạo thêm `Database/QLBenhVienRangHamMat_ClinicalWorkflow.sql` làm bản cài mới đầy đủ từ baseline cộng thay đổi, thay vì chỉ cập nhật ET rồi để `SchemaChecks` đọc schema cũ. Giữ script baseline gốc để đối chiếu; chỉnh đường dẫn đầu vào của bộ kiểm tra schema sang bản hợp đồng mới. Không xóa/bỏ qua kiểm tra các bảng ngoài phạm vi.
+Tạo thêm `Database/QLBenhVienRangHamMat.sql` làm bản cài mới đầy đủ từ baseline cộng thay đổi, thay vì chỉ cập nhật ET rồi để `SchemaChecks` đọc schema cũ. Giữ script baseline gốc để đối chiếu; chỉnh đường dẫn đầu vào của bộ kiểm tra schema sang bản hợp đồng mới. Không xóa/bỏ qua kiểm tra các bảng ngoài phạm vi.
 
 Seed chỉ thêm nhóm và cấu hình nghiệp vụ cần thiết, không phân nhóm dược lý hoặc điền liều bằng suy đoán. Mẫu điều trị/hướng dẫn chưa được chuyên môn kiểm tra phải ở Nháp. Fixture kiểm thử được phép có mẫu giả được đánh dấu rõ, nằm trong database thử nghiệm và rollback sau kiểm tra.
 
@@ -457,7 +457,7 @@ Không bắt đầu bằng thay toàn bộ XAML. Khóa hợp đồng dữ liệu
 
 ### P03 Migration và ánh xạ dữ liệu
 
-**Files:** Bốn migration ở phần 9.5, `Database/QLBenhVienRangHamMat_ClinicalWorkflow.sql`; ET/DAL/BUS mới và cũ của bảng tại phần 9; cập nhật JSON map liên quan; `RangHamMat.SchemaChecks/Program.cs` và `.csproj`; `RangHamMat.ClinicalChecks/MigrationChecks.cs`.
+**Files:** Bốn migration ở phần 9.5, `Database/QLBenhVienRangHamMat.sql`; ET/DAL/BUS mới và cũ của bảng tại phần 9; cập nhật JSON map liên quan; `RangHamMat.SchemaChecks/Program.cs` và `.csproj`; `RangHamMat.ClinicalChecks/MigrationChecks.cs`.
 
 **Interfaces:** Sáu bảng/cột tại phần 9 là hợp đồng chuẩn. DTO nghiệp vụ ở file Contracts không giả làm entity bảng; lớp entity phải có kiểu, nullable và `[Write(false)]` đúng cho tiền derived.
 
@@ -569,15 +569,15 @@ Không bắt đầu bằng thay toàn bộ XAML. Khóa hợp đồng dữ liệu
 
 **Interfaces:** Đầu ra là source triển khai, migration/cài mới, hướng dẫn SQL và báo cáo các lệnh đã chạy thực tế; không chỉ gửi ảnh hoặc kế hoạch lần nữa.
 
-- [ ] Chạy ma trận phần 13 trên database mới và database nâng cấp; fixture không để lại dữ liệu người bệnh hoặc chứng từ giả trong bản sử dụng.
-- [ ] Chạy lại build, kiểm tra schema/persistence/tài chính/WPF và bộ hồi quy của các phân hệ liên quan tại phần 12; so với baseline.
-- [ ] Kiểm tra diff file và DDL; mọi thay đổi ngoài danh sách phải được loại bỏ hoặc giải trình là tích hợp tối thiểu cho sáu miền.
-- [ ] Thử khôi phục backup và kế hoạch quay lại; lập hướng dẫn thứ tự chạy SQL, cấu hình connection và thao tác theo từng chức vụ.
-- [ ] Bàn giao danh sách file, migration, kết quả thực tế và các giới hạn chưa xử lý; chỉ ghi đạt nếu có bằng chứng. Không tự sửa tính năng khác để “tiện thể” cải tiến.
+- [x] Chạy ma trận phần 13 trên database mới và database nâng cấp; fixture không để lại dữ liệu người bệnh hoặc chứng từ giả trong bản sử dụng.
+- [x] Chạy lại build, kiểm tra schema/persistence/tài chính/WPF và bộ hồi quy của các phân hệ liên quan tại phần 12; so với baseline.
+- [x] Kiểm tra diff file và DDL; mọi thay đổi ngoài danh sách phải được loại bỏ hoặc giải trình là tích hợp tối thiểu cho sáu miền.
+- [x] Thử khôi phục backup và kế hoạch quay lại; lập hướng dẫn thứ tự chạy SQL, cấu hình connection và thao tác theo từng chức vụ.
+- [x] Bàn giao danh sách file, migration, kết quả thực tế và các giới hạn chưa xử lý; chỉ ghi đạt nếu có bằng chứng. Không tự sửa tính năng khác để “tiện thể” cải tiến.
 
 ## 12 Lệnh kiểm tra dành cho Codex terminal
 
-Chạy từ thư mục chứa solution trên Windows có .NET 8 SDK và SQL Server thử nghiệm. Đặt biến `RHM_CONNECTION_STRING` bằng cấu hình riêng của máy, không chép chuỗi kết nối có mật khẩu vào tài liệu/log. Khi bộ kiểm tra cần SQL chưa được cấu hình thì báo chưa chạy, không gắn nhãn PASS.
+Các lệnh trong mục này là bộ phát triển đã chạy trước khi thu gọn ở P12; source kiểm thử ở checkpoint Git3f77526. Bản bàn giao bốn project dùng KiemTra.bat/tools/KiemTraBanGiao.ps1, xem README. Chạy bộ phát triển từ thư mục chứa solution trên Windows có .NET 8 SDK và SQL Server thử nghiệm. Đặt biến `RHM_CONNECTION_STRING` bằng cấu hình riêng của máy, không chép chuỗi kết nối có mật khẩu vào tài liệu/log. Khi bộ kiểm tra cần SQL chưa được cấu hình thì báo chưa chạy, không gắn nhãn PASS.
 
 ```powershell
 dotnet build .\BenhVienRangHamMat.sln -c Debug

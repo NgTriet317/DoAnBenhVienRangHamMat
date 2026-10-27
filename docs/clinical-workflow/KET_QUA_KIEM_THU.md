@@ -1,8 +1,8 @@
 # Kiểm chứng triển khai — cập nhật 26/10/2026
 
-**Kết quả mới nhất P11:** build/schema đạt; **210 ca SQL (172 hồi quy/P11 + 25 thanh toán + 13 bàn giao) và 179 ca WPF (39 hồi quy + 127 P11 + 5 thanh toán + 8 bàn giao/in) đạt**. P11 gồm bảo vệ nháp/đổi phiên, ngữ cảnh SQL, phân trang và 99 tổ hợp kích thước/DPI. Ba lỗi suite baseline còn nguyên. Chi tiết từng đợt nằm cuối tài liệu; phần đợt nền dưới đây được giữ làm bằng chứng lịch sử.
+**Kết quả mới nhất P12:** SQL chính52 bảng/version2, cài mới/nâng cấp/rollback/recovery đã kiểm chứng. Solution thu gọn đúng bốn project; Views giữ cặp XAML/code-behind. Build Debug/Release/publish đạt; nghiệp vụ172SQL trên mỗi DB, thanh toán25/bàn giao13, WPF39+127 trên mỗi DB, thu5/giao8, persistence16, Finance54, ReportSQL18 và đăng nhập25 module đạt. Bốn ca sửa review RED→GREEN. Xem [bàn giao P12](BAN_GIAO_P12.md) để đọc ma trận AT01–AT34, log và giới hạn thiết bị.
 
-Phạm vi đã triển khai: P01–P11, chưa phải nghiệm thu toàn luồng/P12. Kết quả trước sửa tại [BASELINE.md](BASELINE.md); việc còn lại tại [TIEN_DO.md](TIEN_DO.md).
+Phạm vi đã triển khai: P01–P12 trong kiểm chứng phần mềm; giới hạn máy in/màn hình thực được ghi rõ ở báo cáo bàn giao. Kết quả trước sửa tại [BASELINE.md](BASELINE.md); việc còn lại tại [TIEN_DO.md](TIEN_DO.md).
 
 ## Vòng cuối sau thay đổi
 
@@ -311,3 +311,8 @@ Chưa nghiệm thu P11/P12: chuyển/đóng/logout toàn ứng dụng, DPI, thô
 - Build kiểm chứng trước ma trận0 lỗi/52 cảnh báo cũ; build solution ngay trước checkpoint0 lỗi/61 cảnh báo, gồm cảnh báo C# sẵn có và NU1900 do không truy cập được nguồn dữ liệu lỗ hổng NuGet trong môi trường mạng hạn chế. Không có cảnh báo trong file P11 mới. Schema45 entity/363 cột, Finance54, Supplier, Maintenance, Report18 đạt. Ba lỗi baseline giữ nguyên: Checks trùng MaCa, Persistence thiếu constructor BUS_NHANVIEN(transaction), WpfSmoke thiếu NhanSu.TryReadPosition/TryReadEmployee. Không sửa nhân sự/lịch ngoài phạm vi.
 
 Bằng chứng tại obj/ClinicalWorkflowP11/: build-checkpoint.log, build-final.log, clinical-final.log, payments-final.log, handover-final.log, ui-final.log, experience-final.log, payments-ui-final.log, handover-ui-final.log, ui-refresh-results.json, regression-results.json, reception-concurrency-final.log, examination-concurrency-final.log, payments-invariants-final.log, handover-invariants-final.log, data-main-final.log, database-cleanup-final.log và ảnh P11-*.png. P12 còn nghiệm thu đầy đủ AT01–AT34 trên cài mới/nâng cấp, khôi phục backup, thiết bị in/màn hình thực và đóng gói. Giới hạn/chi phí có chủ đích tại mục46–52 của TIEN_DO.md.
+## P12 — Nghiệm thu phần mềm và thu gọn bản giao (27/10/2026)
+
+Chi tiết ma trận AT01–AT34, lệnh và giới hạn tại [BAN_GIAO_P12.md](BAN_GIAO_P12.md), bằng chứng bền vững tại [evidence/P12](evidence/P12/README.md). Đã chạy trên DB cài mới52 bảng và DB46 bảng nâng cấp/rollback/nâng lại:172 SQL mỗi DB;25 payment/13 handover;39 UI và127 experience mỗi DB;5/8 UI thu/giao;16 persistence,54 Finance, Supplier/Maintenance, ReportSQL18,616 nhập liệu và login25 module đạt. Bốn ca review0/4→4/4, thêm BN tiếp nhận ngoài cache4/1→5/5. Bản DLL Release chạy lại39 và127 trên cả hai DB đều đạt.
+
+COPY_ONLY CHECKSUM/VERIFYONLY/RESTORE/CHECKDB và hash52 bảng khớp. Sáu DB fixture dọn với DB_ID=NULL sau kiểm toàn bộ bất biến; bản thử chính vẫn baseline52/10 BN/HS/phiếu/HD/đơn/chi tiết đơn,732500 tổng HD,467500 thu ròng,4014 tồn,CW/config0. Database gốc không tự nâng cấp; Word hash giữ nguyên. Debug/Release/publish0 lỗi (4/55 cảnh báo cũ/NU1900), cấu trúc4 project và63 cặp Views đạt. Source-check112 quy ước cũ được nghỉ dùng có giải trình; Persistence/WpfSmoke nay chạy được và đạt. Thiết bị in/driver/mixed-monitor vật lý chưa nghiệm thu, không suy từ native-DPI hoặc paginator.

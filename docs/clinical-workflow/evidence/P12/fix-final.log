@@ -1,0 +1,6 @@
+PASS: P12 review employee invalid-name giữ nhập liệu, báo lỗi, không thoát sự kiện/không báo lưu thành công.
+PASS: P12 review employee restore-sql giữ nhập liệu, báo lỗi, không thoát sự kiện/không báo lưu thành công.
+PASS: P12 review employee resign-sql giữ nhập liệu, báo lỗi, không thoát sự kiện/không báo lưu thành công.
+PASS: P12 tiếp nhận tải đúng bệnh nhân ngoài cache50 trước khởi tạo form.
+PASS: P12 guide matches main installer catalog.
+P12ReviewFixChecks: 5 PASS, 0 FAIL.

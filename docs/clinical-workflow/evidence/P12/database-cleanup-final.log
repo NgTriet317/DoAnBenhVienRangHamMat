@@ -1,0 +1,13 @@
+Changed database context to 'master'.
+Name                                                                                                                             DatabaseId
+-------------------------------------------------------------------------------------------------------------------------------- ----------
+RHM_ClinicalWorkflow_Test_P06Concurrency_P12_20261027                                                                                  NULL
+RHM_ClinicalWorkflow_Test_P07Concurrency_P12_20261027                                                                                  NULL
+RHM_ClinicalWorkflow_Test_P08Concurrency_P12_20261027                                                                                  NULL
+RHM_ClinicalWorkflow_Test_P09Payments_P12Fresh_20261027                                                                                NULL
+RHM_ClinicalWorkflow_Test_P10Handover_P12Upgrade_20261027                                                                              NULL
+RHM_ClinicalWorkflow_Test_P12Restore_20261027                                                                                          NULL
+OriginalDatabaseId MainTestDatabaseId
+------------------ ------------------
+                11                 14
+PASS: chỉ dọn sáu DB fixture P12; DB_ID=NULL, database gốc và bản thử chính vẫn tồn tại.

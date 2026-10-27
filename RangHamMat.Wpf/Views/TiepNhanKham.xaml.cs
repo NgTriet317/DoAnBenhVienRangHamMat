@@ -27,6 +27,8 @@ public partial class TiepNhanKham : UserControl
             var seed=BieuMauHoSo.GetRecord(this);
             patientId=BieuMauHoSo.GetPatientScope(this);
             if(string.IsNullOrEmpty(patientId) && seed is not null) patientId=DuLieuGiaoDien.PatientId("PHIEU_KHAM_BENH",seed);
+            if(DuLieuGiaoDien.PhamViLamSang && !string.IsNullOrEmpty(patientId) && DuLieuGiaoDien.Find("BENH_NHAN",patientId) is null)
+                DuLieuGiaoDien.BaoDamNguCanh(new(){MaBN=patientId});
             var patient=DuLieuGiaoDien.Find("BENH_NHAN",patientId) ?? throw new InvalidOperationException("Chọn bệnh nhân từ hồ sơ trước khi tiếp nhận.");
             PatientIdentity.Text=$"{UiRecord.Text(patient,"HoTenBN")} · {patientId} · {UiRecord.Date(patient,"NgaySinh"):dd/MM/yyyy} · {UiRecord.Text(patient,"SDT")}";
             var history=DuLieuGiaoDien.Children("HO_SO_BENH_AN","MaBN",patientId).SingleOrDefault();

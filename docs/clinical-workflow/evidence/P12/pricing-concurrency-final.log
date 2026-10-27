@@ -1,0 +1,3 @@
+PASS: Hai kết nối xem cùng lượt có cùng tổng và token, không tạo bộ tài chính
+PASS: Caller ReadCommitted giữ giá thuốc và lô nguồn đến rollback
+PASS: Số hóa đơn/xuất/thu và tồn không đổi sau xem đồng thời

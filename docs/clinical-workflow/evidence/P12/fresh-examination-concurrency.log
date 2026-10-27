@@ -1,0 +1,4 @@
+PASS: Hai kết nối bắt đầu một phiếu trả cùng MaLS
+PASS: Hai kết nối lưu cùng snapshot chỉ một commit, một xung đột đúng loại
+PASS: Tình trạng thuộc lần khám duy nhất, không lưu dở
+PASS: Fixture đồng thời P05 đã dọn sạch

@@ -1,0 +1,42 @@
+PASS: Nâng cấp giữ nguyên toàn bộ cột/dòng của 46 bảng cũ
+PASS: Trigger và view baseline giữ nguyên định nghĩa
+PASS: Chạy nâng cấp lần hai không đổi schema/nhân bản đối tượng
+PASS: Schema có 46 bảng cũ và đúng 6 bảng bổ sung
+PASS: SQL table DM_TINH_TRANG_BENH
+PASS: ET ánh xạ DM_TINH_TRANG_BENH
+PASS: SQL table MAU_KE_HOACH_DIEU_TRI
+PASS: ET ánh xạ MAU_KE_HOACH_DIEU_TRI
+PASS: SQL table CHI_TIET_MAU_KE_HOACH
+PASS: ET ánh xạ CHI_TIET_MAU_KE_HOACH
+PASS: SQL table NHOM_THUOC_KE_DON
+PASS: ET ánh xạ NHOM_THUOC_KE_DON
+PASS: SQL table CAU_HINH_THUOC_KE_DON
+PASS: ET ánh xạ CAU_HINH_THUOC_KE_DON
+PASS: SQL table BAN_GIAO_THUOC
+PASS: ET ánh xạ BAN_GIAO_THUOC
+PASS: SQL thêm đủ cột TINH_TRANG_BENH
+PASS: ET thêm đủ cột TINH_TRANG_BENH
+PASS: SQL thêm đủ cột KE_HOACH_DIEU_TRI
+PASS: ET thêm đủ cột KE_HOACH_DIEU_TRI
+PASS: SQL thêm đủ cột CHI_TIET_KE_HOACH
+PASS: ET thêm đủ cột CHI_TIET_KE_HOACH
+PASS: SQL thêm đủ cột LICH_SU_KHAM_BENH
+PASS: ET thêm đủ cột LICH_SU_KHAM_BENH
+PASS: SQL thêm đủ cột DON_THUOC
+PASS: ET thêm đủ cột DON_THUOC
+PASS: SQL thêm đủ cột CHI_TIET_DON_THUOC
+PASS: ET thêm đủ cột CHI_TIET_DON_THUOC
+PASS: SQL thêm đủ cột HOA_DON
+PASS: ET thêm đủ cột HOA_DON
+PASS: SQL thêm đủ cột THANH_TOAN
+PASS: ET thêm đủ cột THANH_TOAN
+PASS: Version guard đã ghi phiên bản 2
+Migration contract: 30 PASS, 0 FAIL.
+PASS: Rollback trước dữ liệu mới khôi phục schema baseline
+PASS: Rollback giữ dữ liệu/trigger/view cũ
+PASS: Có thể nâng cấp lại sau rollback
+PASS: Rollback từ chối dữ liệu cột mới bằng lỗi 52104
+PASS: Rollback từ chối dữ liệu bảng mới bằng lỗi 52104
+PASS: Rollback bị chặn giữ đủ schema mới
+PASS: Fixture kiểm tra rollback không để lại dữ liệu
+PASS: Migration lifecycle hoàn tất trên RHM_ClinicalWorkflow_Test_P10Handover_P12Upgrade_20261027

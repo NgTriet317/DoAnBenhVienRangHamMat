@@ -1,0 +1,5 @@
+PASS: SQL, tên liên kết, tìm kiếm, lọc ngày/trạng thái, chi tiết, trạng thái rỗng, bố cục 1366/1024.
+PASS: nút thêm/lưu thật, mã tự sinh, chi phí lẻ, cập nhật, form cũ, xóa nháp và rollback.
+PASS: ràng buộc nội dung, nhân viên, chi phí, ngày, trạng thái, sửa đồng thời; giữ lịch sử hoàn tất.
+PASS: tính hạn theo thiết bị, bỏ lịch cũ/hủy, lọc đến hạn.
+PASS: tất cả kiểm tra bảo trì; dữ liệu ghi thử đã rollback.

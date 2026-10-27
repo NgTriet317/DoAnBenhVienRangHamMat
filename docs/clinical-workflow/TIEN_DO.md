@@ -15,7 +15,7 @@ Ngày 27/10/2026. Kế hoạch chính: [KeHoach_CaiTo_QuyTrinhKham_6ChucNang.md]
 | P09 | Hoàn tất thu đủ và chống lặp | BUS tự commit, kiểm tra lại nguồn/giá/tồn, tiền đưa/thối, yêu cầu cố định, xuất/HD/Thu/chờ giao cùng transaction; 185 ca SQL và 44 ca WPF đạt |
 | P10 | Hoàn tất bàn giao và nguồn in | Hàng chờ dược sĩ phân trang, giao một lần/hoàn tất khi giao hết, đọc mã chứng từ đã commit, in lại không thu/xuất thêm; 198 ca SQL, 52 ca WPF đạt |
 | P11 | Hoàn tất trải nghiệm và liên kết | SQL xác minh sáu mã, bảo vệ nháp/đổi phiên/cửa sổ con, phân trang và style thích ứng; 210 ca SQL, 179 ca WPF đạt, gồm 99 tổ hợp kích thước/DPI |
-| P12 | Chưa triển khai | Nghiệm thu AT01–AT34 trên bản mới/nâng cấp, thiết bị thực, khôi phục và đóng gói; đối chiếu ba lỗi suite baseline |
+| P12 | Hoàn tất bàn giao phần mềm | Cài mới/nâng cấp/rollback/recovery và ma trận AT01–AT34 có bằng chứng; bốn project, SQL52, build/publish và login25 module; thiết bị in/màn hình vật lý chưa nghiệm thu |
 
 ## Quyết định khi thực hiện
 
@@ -94,7 +94,7 @@ Rà soát P07 phát hiện bốn Important: preview theo editor đang đổi ngu
 
 Các phần để đúng tác vụ: phí/thu P08/P09, bàn giao P10, điều hướng toàn ứng dụng/DPI P11 và nghiệm thu P12. Giữ fallback bản in lịch sử thiếu cột mới, CRUD ngoài clinical, giới hạn thật của bộ lọc dạng và một cấu hình hiện hành theo schema. Review chỉ đọc; kiểm chứng SQL/WPF/hai kết nối do executor thực hiện, có log. Word giữ nguyên, ba lỗi suite baseline vẫn được ghi rõ.
 
-Tại mốc P07, bước tiếp theo là P08: bảng tính phí theo lượt, đủ mọi dịch vụ/đơn còn hiệu lực, giá và phân bổ lô dự kiến, dấu vân tay nguồn. Kết quả P08–P10 được bổ sung dưới đây; bước hiện tại tiếp theo là P12 sau kết quả P11 ở cuối tài liệu.
+Tại mốc P07, bước tiếp theo là P08: bảng tính phí theo lượt, đủ mọi dịch vụ/đơn còn hiệu lực, giá và phân bổ lô dự kiến, dấu vân tay nguồn. Kết quả P08–P10 được bổ sung dưới đây; kết quả P11/P12 và bàn giao được bổ sung ở cuối tài liệu.
 
 Rà soát P08 phát hiện Important ở dòng truy vết MaCTPX: thiếu LineHeight hữu hạn khiến paginator bỏ qua khi tìm biên trang. Phát hiện đường UI legacy chọn tab theo index được nâng lên Important để giữ tương thích, dù sản phẩm hiện mở phân hệ này ở chế độ clinical. Tái hiện 37 đạt/2 lỗi, sửa trong một lượt: dùng style InvoiceText và giữ tab hóa đơn cũ ở vị trí cũ. Kết quả 39/39 WPF, gồm phân trang thật ở bốn chiều cao giấy, số chốt và mã xuất. Không còn Important hoặc Minor hoãn lại P08.
 
@@ -112,7 +112,7 @@ Rà soát P10 phát hiện Important: đọc chi tiết giữ khóa hàng bàn g
 
 Một lượt rà soát độc lập chỉ đọc phát hiện bốn Important và một vấn đề lỗi/focus được nâng thành Important. Cả năm đã có ca WPF thất bại trước sửa và đạt sau sửa trong cùng lượt: cửa sổ con còn mở sau về Home/đổi phiên; nguồn thu/lịch sử đơn/lịch hẹn nằm ngoài cache ban đầu; form đã commit nhưng giữ baseline cũ; đổi nguồn/kho/xem lại phí làm mất tiền đang nhập; Rx/tiếp nhận chưa focus đúng hoặc lộ lỗi SQL. Không rà soát lần hai, không còn phát hiện hoãn lại của P11.
 
-Kiểm tra bổ sung sửa cắt nút trên màn hóa đơn chứa bảng phí ở DPI cao (123 đạt/4 lỗi →125/2→127/0), chẩn đoán nháp điều dưỡng có thể đọc/tìm trong danh sách phân trang (10/1→11/0), và nguồn đọc hóa đơn còn tải snapshot toàn bộ chỉ để kiểm quyền (11/1→12/0). Lượt cuối172/172 SQL,179/179 WPF, kiểm tra đồng thời tiếp nhận/khám và bất biến chứng từ đạt. Baseline bản thử chính và Word giữ nguyên; hai DB fixture tạm đã dọn với DB_ID=NULL. Bước tiếp theo là P12.
+Kiểm tra bổ sung sửa cắt nút trên màn hóa đơn chứa bảng phí ở DPI cao (123 đạt/4 lỗi →125/2→127/0), chẩn đoán nháp điều dưỡng có thể đọc/tìm trong danh sách phân trang (10/1→11/0), và nguồn đọc hóa đơn còn tải snapshot toàn bộ chỉ để kiểm quyền (11/1→12/0). Lượt cuối172/172 SQL,179/179 WPF, kiểm tra đồng thời tiếp nhận/khám và bất biến chứng từ đạt. Baseline bản thử chính và Word giữ nguyên; hai DB fixture tạm đã dọn với DB_ID=NULL. P12 đã được bổ sung tại báo cáo bàn giao.
 
 46. Điều hướng xác minh MaBN/MaHS/MaPhieu/MaLS/MaDT/MaHD tại SQL theo định danh hiện hành, chuẩn hóa mã cha; cache thiếu không đồng nghĩa không có quyền. Mã sai/mâu thuẫn báo lỗi, không chọn dòng đầu. Nguồn hóa đơn chỉ lấy mã lượt hợp lệ trước đọc chứng từ, không kéo toàn bộ nội dung khám vào màn thu.
 47. Chuyển module/Home/tải lại/đóng/đổi phiên và cửa sổ lâm sàng con dùng Lưu nháp/Bỏ thay đổi/Hủy rời trang. Lưu chỉ lưu nháp; tiền chưa gửi phải xác nhận Thu riêng. Yêu cầu thu/giao đang xử lý hoặc chưa rõ kết quả khóa rời trang, giữ mã yêu cầu. Danh mục nhóm/tình trạng yêu cầu nút Lưu danh mục riêng và giữ dữ liệu; một số nút Quay lại/đổi nguồn chuyên môn giữ guard Lưu hoặc Tải lại cũ. Chi phí: thêm thao tác, chưa đồng nhất mọi nút cục bộ.
@@ -121,3 +121,11 @@ Kiểm tra bổ sung sửa cắt nút trên màn hóa đơn chứa bảng phí �
 50. OPTION(RECOMPILE) khắc phục timeout hơn30 giây của kế hoạch truy vấn trang lượt400; lượt cuối ba truy vấn trên1000 BN/10000 lượt mất497ms ở máy thử. Chi phí thêm CPU biên dịch; chưa kết luận thông lượng production, khóa writer thu/giao vẫn tuần tự.
 51. Style chỉ merge trong view lâm sàng, chuyển hai vùng thành tab khi hẹp và tái sử dụng control để giữ nháp. Ma trận99 tổ hợp kiểm actual WPF DPI1/1.25/1.5 qua WM_DPICHANGED, nút/ô/hàng thật và shell cha. Thiết bị nhiều màn hình, máy in/driver, khả năng tiếp cận đầy đủ và AT01–AT34 thuộc P12.
 52. Giữ quyền, FIFO, tiền chốt, journal YEU_CAU_THANH_TOAN và xác nhận chuyên môn/ngân hàng/người nhận thủ công đã duyệt. Danh sách điều dưỡng không chứa hoặc tìm theo chẩn đoán nháp. Không bổ sung khuyến nghị y khoa, tự đối soát ngân hàng hoặc nội dung điều trị mẫu. Ba lỗi suite baseline là việc đối chiếu P12, không bỏ assertion để làm xanh.
+## P12 và dọn bản bàn giao
+
+Theo yêu cầu mới, đã hoàn tất kiểm chứng cài mới/nâng cấp, backup/restore/CHECKDB/hash52 bảng, đồng thời và luồng ký→thu→giao→in/retry; giữ dữ liệu/baseline và Word. SQL tên chính hiện là schema52 bảng/version2; môi trường có DB46 bảng phải chạy migration trước khi dùng app, không tự chạy installer ghi đè.
+
+Solution chỉ còn RangHamMat.Wpf + ET/DAL/BUS. Chín file C# phụ trợ rời Views sang Presentation, các cặp XAML/code-behind giữ nguyên. Mười project kiểm thử được checkpoint3f77526 rồi dọn; công cụ kiểm hiện tại KiemTra.bat và tools/KiemTraBanGiao.ps1. Tài liệu cũ chuyển docs/legacy; README/HUONG_DAN_CHAY đã cập nhật. Không coi source-check112 quy ước cũ là đã sửa; bộ đó được nghỉ dùng có giải trình. Persistence16 và WpfSmoke đầy đủ/616 nhập liệu nay đạt.
+
+Một review chỉ đọc, một lượt sửa: lỗi nhân viên thoát sự kiện và tên database hướng dẫn (nâng từ Minor vì làm cấu hình sai) RED0/4→GREEN4/4; không còn Minor hoãn. Bản phần mềm đã build Debug/Release/publish và chạy đăng nhập25 phân hệ bằng DLL phát hành. Giới hạn thiết bị, thông lượng, worker-session và phạm vi các form mẫu có chủ đích tại [BAN_GIAO_P12.md](BAN_GIAO_P12.md). Các quyết định46–52 và quyền/chốt tiền/FIFO/journal chống lặp giữ nguyên. Không merge/push.
+Trong cùng lượt sửa cuối, suite39 phát hiện thêm form tiếp nhận được Configure trực tiếp theo MaBN ngoài snapshot50 không tải được BN. Ca độc lập xác nhận FormError “Chọn bệnh nhân…” (4 đạt/1 lỗi); Form_Loaded nay tải đúng ngữ cảnh qua SQL khi BN thiếu trong cache, không chọn hàng khác. Ca lưu biên nhận đúng BN đạt, tổng5/5. Suite39 đã đạt lại; không đổi quyền hoặc cơ chế tiếp nhận/thu kho để sửa lỗi này.

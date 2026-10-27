@@ -1,6 +1,6 @@
 # Quản lý Bệnh viện Răng Hàm Mặt
 
-Ứng dụng WPF .NET8, SQL Server2016 trở lên. Solution bàn giao có đúng bốn project:
+Ứng dụng WPF .NET8, SQL Server2016SP1 trở lên. Solution bàn giao có đúng bốn project:
 
 - `RangHamMat.Wpf`: giao diện, điều hướng, phiên đăng nhập.
 - `ET`: thực thể và hợp đồng dữ liệu.

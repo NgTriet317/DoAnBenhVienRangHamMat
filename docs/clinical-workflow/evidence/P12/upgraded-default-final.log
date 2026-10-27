@@ -1,0 +1,181 @@
+PASS: CV004 được tiếp nhận và thu theo cấu hình
+PASS: CV003 không tự được cấp quyền thu
+PASS: Thu ngân và dược sĩ có quyền riêng
+PASS: Admin không có chức vụ bác sĩ không được ký
+PASS: Hàng đợi SQL chỉ chứa phiếu của bác sĩ đăng nhập
+PASS: Bỏ bộ lọc không mở rộng sang bác sĩ khác
+PASS: Từ khóa là tham số SQL, không vượt phạm vi
+PASS: Chặn trang vượt 100 dòng
+PASS: Bác sĩ đọc được nháp của mình
+PASS: MaLS trực tiếp của bác sĩ khác không lộ nháp dù cùng bệnh nhân
+PASS: Bác sĩ đọc lịch sử đã xác nhận của bệnh nhân được phân
+PASS: Bệnh nhân trùng tên không được mở rộng quyền lịch sử
+PASS: Kiểm tra quyền ghi từ chối lượt của bác sĩ khác
+PASS: Không sửa nội dung lượt đã ký của chính bác sĩ
+PASS: MaDT trực tiếp không được đọc nháp của bác sĩ khác
+PASS: Đọc đơn lịch sử đã ký, không đọc đơn BN khác cùng tên
+PASS: Khóa tài khoản sau mở form làm mất quyền cả đọc và ghi
+PASS: Đổi chức vụ sau mở form không giữ quyền ký từ ngữ cảnh cũ
+PASS: Nhân viên ngừng làm việc không dùng được ngữ cảnh cũ
+PASS: Cờ quyền tự dựng ở UI không cấp quyền bác sĩ
+PASS: Mã không tồn tại bị từ chối, không chọn bản đầu
+PASS: Admin tra cứu có nhật ký mã nguồn và không chép bệnh án
+PASS: Không tạo ngữ cảnh B khi phiên xác thực là A
+PASS: Đổi toàn bộ định danh trong DTO không mạo danh phiên khác
+PASS: Ngữ cảnh phiên trước mất hiệu lực khi đổi người đăng nhập
+PASS: Không có phiên ứng dụng đã xác thực thì không đọc hồ sơ
+PASS: Snapshot UI bác sĩ loại BN ngoài phân công và nháp bác sĩ khác
+PASS: Snapshot dược chỉ có lượt và đơn đã ký, không triệu chứng tự do
+PASS: Tiếp nhận được ghi BN, bác sĩ và Admin tra cứu không được sửa BN
+PASS: Guard dòng thuốc truy ngược cả đơn/lượt/phiếu, không tin MaDT thay thế
+PASS: Guard ký/hủy/xóa đơn bác sĩ khác và thay người ký bị chặn
+PASS: Quyền đổi khi form mở làm guard mọi bảng từ chối
+PASS: Điều dưỡng chỉ sửa kết quả/thời gian dòng được giao
+PASS: Dòng giao điều dưỡng chỉ kèm định danh lượt, không nội dung khám nháp
+PASS: Thu ngân chỉ nhận nguồn tính phí, không đọc kết quả dịch vụ/ghi chú đơn
+PASS: ET/DAL/BUS cho DM_TINH_TRANG_BENH
+PASS: ET/DAL/BUS cho MAU_KE_HOACH_DIEU_TRI
+PASS: ET/DAL/BUS cho CHI_TIET_MAU_KE_HOACH
+PASS: ET/DAL/BUS cho NHOM_THUOC_KE_DON
+PASS: ET/DAL/BUS cho CAU_HINH_THUOC_KE_DON
+PASS: ET/DAL/BUS cho BAN_GIAO_THUOC
+PASS: Danh mục ghi/đọc qua BUS và audit đúng tài khoản
+PASS: Thu ngân không được sửa cấu hình hỗ trợ
+PASS: Cấu hình kiểm tra lại tài khoản đã khóa
+PASS: Cấu hình nháp không nhận chữ ký do client cung cấp
+PASS: Cập nhật cấu hình không ghi đè snapshot đã cũ
+PASS: Năm bảng cấu hình roundtrip đúng kiểu/nullable qua BUS
+PASS: Cột tình trạng/kế hoạch/chi tiết lưu qua DAL và giữ tiền derived
+PASS: Snapshot đơn thuốc lấy đủ cột mới và giới hạn hướng dẫn theo quyền
+PASS: Snapshot lần khám lấy cột không kê thuốc trong đúng phạm vi
+PASS: SQL giữ nội dung lần khám đã ký
+PASS: SQL giữ snapshot dòng đơn thuốc đã ký
+PASS: SQL chặn tình trạng bổ sung vào lần khám đã ký
+PASS: SQL không kê thuốc cần lý do
+PASS: SQL không kê thuốc không đồng thời có đơn nháp
+PASS: SQL giữ FK danh mục tình trạng
+PASS: SQL khóa yêu cầu v2 phải là UUID chuẩn và hash đủ 64 hex
+PASS: SQL cấu hình yêu cầu actor audit
+PASS: Verify phát hiện trigger mới bị vô hiệu hóa
+PASS: Kế hoạch đã duyệt không trở về nháp tại SQL
+PASS: Bước đã thực hiện không chuyển sang kế hoạch của bệnh nhân khác
+PASS: Kế hoạch có sẵn không gắn mẫu chưa duyệt
+PASS: Kế hoạch có mẫu bắt buộc phiên bản khác null
+PASS: Mẫu ngừng áp dụng không chặn cập nhật tiến độ kế hoạch đã sao chép
+PASS: Bàn giao rỗng đọc qua quyền đơn, không cho đọc mã người khác
+PASS: Tiếp nhận chỉ liệt kê bác sĩ đúng chuyên khoa và tài khoản hoạt động
+PASS: Tiếp nhận tạo phiếu đúng bác sĩ, dùng hồ sơ cũ và không sinh MaLS
+PASS: Tiếp nhận thiếu bác sĩ không lưu
+PASS: Tiếp nhận bác sĩ sai chuyên khoa bị chặn lại tại SQL
+PASS: Không có lịch phải hiện rõ và có lý do điều phối
+PASS: Điều dưỡng không tự được điều phối ngoài lịch
+PASS: Có lịch hợp lệ thì điều dưỡng được tiếp nhận và phòng phải khớp
+PASS: Lịch đã xác định vắng thì không được điều phối vượt
+PASS: Thu ngân và bác sĩ không tự tiếp nhận dù có DTO quyền giả
+PASS: Đổi quyền sau mở form vẫn bị từ chối
+PASS: Guard form chung không lập phiếu bỏ qua đầu mối tiếp nhận
+PASS: Chưa có hồ sơ chỉ lập một lần và retry trực tiếp trả phiếu cũ
+PASS: Lịch hẹn giữ nguyên khóa nguồn và retry không tạo hai phiếu
+PASS: Lịch hẹn không chuyển sang bệnh nhân trùng tên khác
+PASS: Bác sĩ có đơn nghỉ đã duyệt bị chặn dù còn lịch làm việc
+PASS: SQL chặn sửa tình trạng sau hoàn tất qua API khám
+PASS: SQL chặn xóa tình trạng sau hoàn tất qua API khám
+PASS: Danh mục ngừng áp dụng không khóa ghi chú tình trạng đã ghi trước đó
+PASS: Kế hoạch nháp phải xử lý, kế hoạch tương lai đã duyệt cho đóng buổi
+PASS: Kế hoạch nháp rỗng có thể hủy, không xóa lịch sử hoặc chặn buổi mãi
+PASS: Hai cửa sổ kế hoạch không ký bản đã bị sửa
+PASS: Còn dịch vụ nháp thì không đóng chuyên môn
+PASS: Lỗi dòng tình trạng thứ hai không để lại dòng đầu trong transaction ngoài
+PASS: Gợi ý và áp mẫu dùng cùng quy tắc so mức độ của SQL
+PASS: Bản sao giữ nội dung khi mẫu nguồn ngừng áp dụng và có phiên bản mới
+PASS: Nhiều tình trạng không tự áp tất cả mẫu hoặc sinh dịch vụ
+PASS: Bắt đầu phiếu hai lần chỉ có một MaLS và chuyển Đang khám
+PASS: Bác sĩ khác biết MaPhieu vẫn không bắt đầu khám
+PASS: Lưu nháp khám và nhiều tình trạng không chuyển chờ thanh toán
+PASS: Hai cửa sổ lưu khám cùng snapshot báo xung đột
+PASS: API lưu khám từ chối bác sĩ khác và Admin giả quyền
+PASS: Mẫu nháp không gợi ý; mẫu khớp mức độ đứng trước tổng quát
+PASS: Áp mẫu cùng nguồn hai lần không nhân kế hoạch hoặc dịch vụ thu phí
+PASS: Không có mẫu vẫn lưu và duyệt kế hoạch thủ công
+PASS: Admin soạn nháp nhưng không ký mẫu thay bác sĩ
+PASS: Duyệt mẫu ghi bác sĩ phiên và nhật ký, không tin chữ ký client
+PASS: Hoàn tất khám thiếu nội dung chuyên môn bị chặn
+PASS: Đơn nháp chưa xử lý chặn hoàn tất chuyên môn
+PASS: Không kê thuốc có lý do cho hoàn tất, rồi khóa nội dung/tình trạng
+PASS: Quầy thu đọc nguồn phí không thấy kết quả/lý do chuyên môn
+PASS: Admin đọc trực tiếp dịch vụ phải có nhật ký đúng mã nguồn
+PASS: Lý do mới nhất cùng giây qua biên mã 999/1000 không bị trả cũ
+PASS: Điều dưỡng lưu dòng từ bước với lý do trống không đổi nguồn
+PASS: Nguồn bước và dịch vụ của dòng đã lưu không đổi ngầm
+PASS: Khóa tài khoản sau mở dịch vụ chặn lưu và xác nhận
+PASS: Nguồn đã thu giữ nguyên ở buổi trước
+PASS: Kế hoạch/nháp/hủy không tạo khoản thu; xác nhận một lần
+PASS: Phát sinh không có lý do bị chặn, có lý do audit giữ nguồn
+PASS: Chỉ bác sĩ phụ trách tạo và xác nhận, Admin không giả quyền
+PASS: Điều dưỡng chỉ sửa kết quả/thời gian dòng được giao
+PASS: Điều dưỡng khác không đọc hoặc sửa dòng không được giao
+PASS: Bước nháp, sai dịch vụ hoặc khác hồ sơ không thực hiện
+PASS: Lượng đã xác nhận và nháp cùng giữ giới hạn bước
+PASS: Thời gian trước lượt hoặc tương lai bị chặn
+PASS: Người làm phải có tài khoản/chức vụ hoạt động
+PASS: Snapshot cũ không ghi đè hoặc xác nhận nội dung đã đổi
+PASS: Dịch vụ đã xác nhận không sửa, hủy hoặc đổi nguồn
+PASS: Kết quả rỗng không xác nhận dịch vụ
+PASS: Hai buổi cùng hồ sơ dùng phần còn lại, nguồn phí tách lượt
+PASS: RX07: Hàm lượng đổi sau lưu không âm thầm đổi nguồn khi ký
+PASS: RX07: Hai nháp tạo trước không được ký bổ sung thiếu lý do
+PASS: RX07: Sửa đơn bổ sung không được xóa lý do trước ký
+PASS: RX07: Không gian trước ký và bản in có ngày sinh cùng thông tin an toàn
+PASS: RX07: Chèn dòng mới trước các mã dòng cũ không cấp trùng khóa
+PASS: RX07: Hướng dẫn đổi phiên bản không sửa đơn ký và chặn ký nháp cũ
+PASS: RX07: Nhiều đơn hiệu lực độc lập và lý do bổ sung bắt buộc
+PASS: RX07: Đơn đã xuất ghi sổ không được thay và chỉ có xuất mới đổi tồn
+PASS: RX07: Lưu ba thuốc và ký snapshot không thay tồn
+PASS: RX07: Trùng thuốc, lượng/ngày/liều/hướng dẫn thiếu không lưu đơn
+PASS: RX07: Lỗi dòng thứ ba giữ nguyên đầu và dòng cũ trong transaction ngoài
+PASS: RX07: Thuốc ngừng dùng không tìm/chọn/ký
+PASS: RX07: Nhóm lọc thuốc riêng; hướng dẫn nháp không gợi ý
+PASS: RX07: Áp hướng dẫn cần xác nhận phù hợp và đúng phiên bản duyệt
+PASS: RX07: Admin/dược sĩ soạn cấu hình, Admin không ký thay chuyên môn
+PASS: RX07: Bác sĩ khác, điều dưỡng và Admin không lưu/ký dù biết mã
+PASS: RX07: Snapshot cũ không ghi đè hoặc ký đơn đã đổi
+PASS: RX07: Thay đơn sau hoàn tất, cũ chỉ ngừng khi ký mới và chặn chờ thu
+PASS: RX07: Một nguồn thay chỉ có một bản nháp đang soạn
+PASS: RX07: Đã có hóa đơn thì không soạn/thay/ký đơn
+PASS: RX07: Không kê thuốc có lý do không tạo đơn nháp hoặc mở khóa lượt
+PASS: RX07: In chỉ đơn ký; bản chốt không đổi theo danh mục
+PASS: P08: Ba lô lượng lẻ làm tròn từng lô đúng trigger và FIFO
+PASS: P08: Đơn thứ hai không được dùng lại tồn đã phân cho đơn thứ nhất
+PASS: P08: Đổi lượng bằng đơn thay thế đổi token; đơn ngừng/hủy không cộng
+PASS: P08: Xuất của lượt khác làm đổi tồn/lô và token bảng tính
+PASS: P08: Hóa đơn cũ thu một phần giữ nguyên số lẻ và số còn phải thu
+PASS: P08: Phiếu xuất nháp cũ cũng bắt đối chiếu, không tái lập phí
+PASS: P08: Dịch vụ 100000 và hai thuốc 50000; xem không ghi tài chính/tồn
+PASS: P08: Tất cả đơn hiệu lực được cộng; dùng chung tồn
+PASS: P08: Token ổn định và đổi khi đổi giá thuốc
+PASS: P08: Có thuốc bắt buộc kho đang hoạt động
+PASS: P08: Dịch vụ không kê thuốc tính được không cần kho
+PASS: P08: Quyền SQL và đúng bác sĩ; không lộ dữ liệu chuyên môn
+PASS: P08: Chưa hoàn tất không được tính phí
+PASS: P08: Admin tra cứu có nhật ký
+PASS: P11 liên kết đơn suy đúng BN/hồ sơ/phiếu/lượt
+PASS: P11 mã hồ sơ/phiếu khác BN bị từ chối
+PASS: P11 đơn/lượt khác nhau không tự chọn nguồn
+PASS: P11 mã không tồn tại hoặc quá dài bị từ chối
+PASS: P11 bác sĩ không mở nháp bác sĩ khác
+PASS: P11 chỉ suy định danh, không ghi tài chính/kho
+PASS: P11 danh sách mã lượt hóa đơn kiểm quyền tại SQL không cần toàn bộ hồ sơ
+PASS: P11 lịch sử đơn phân trang giữ dòng và định danh theo quyền
+PASS: P11 lịch sử đơn không tin cờ quyền thu ngân và không đọc nháp bác sĩ khác
+PASS: P11 lịch sử đơn tìm ký tự wildcard theo nghĩa đen
+PASS: P11 hàng phân trang điều dưỡng không lộ hoặc tìm theo chẩn đoán nháp
+P11 LOAD setup start
+P11 LOAD setup complete
+P11 LOAD LayTrangBenhNhan page 1
+P11 LOAD LayTrangBenhNhan page 40
+P11 LOAD LayTrangLanKham page 400
+P11 LOAD UI snapshot
+P11 SQL LOAD: 1000BN/10000LS; pages25; cacheBN50/LS100; three queries 478ms (máy thử).
+PASS: P11 SQL phân trang 1000 BN/10000 lượt và cache UI có giới hạn
+ClinicalChecks: 172 PASS, 0 FAIL; toàn bộ fixture rollback.
+Các ca SQL không thay thế nghiệm thu đầy đủ AT01–AT34; liên kết/DPI và nghiệm thu toàn luồng còn ở P11–P12.

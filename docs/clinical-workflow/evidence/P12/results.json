@@ -1,0 +1,96 @@
+{
+    "ExperienceUiCasesPerSchema":  127,
+    "HandoverUiCases":  8,
+    "Date":  "2026-10-27",
+    "DpiCombinationsPerSchema":  99,
+    "ViewXaml":  63,
+    "SqlRollbackCasesPerSchema":  172,
+    "PaymentCases":  25,
+    "OriginalWordSha256":  "7BAA235C67555AA80B4FF07BDE40BEF4A35336424B56B6E5F12FEEE9F5A630AA",
+    "OwnedDatabaseCleanupCount":  6,
+    "KeyboardCasesPerSchema":  1,
+    "PaymentUiCases":  5,
+    "RecoveredTableHashesMatched":  52,
+    "ViewCodeBehind":  63,
+    "MainSqlSha256":  "F232911087462468C7666CBC3D4F70551BD20678756EA4E914FEEBD28C6B0897",
+    "Proofs":  [
+                   {
+                       "Expected":  "ClinicalChecks: 172 PASS, 0 FAIL",
+                       "Log":  "fresh-default-final.log"
+                   },
+                   {
+                       "Expected":  "ClinicalChecks: 172 PASS, 0 FAIL",
+                       "Log":  "upgraded-default-final.log"
+                   },
+                   {
+                       "Expected":  "PaymentChecks: 25 PASS, 0 FAIL",
+                       "Log":  "payments-final.log"
+                   },
+                   {
+                       "Expected":  "HandoverChecks: 13 PASS, 0 FAIL",
+                       "Log":  "handover-final.log"
+                   },
+                   {
+                       "Expected":  "ClinicalUiChecks: 39 PASS, 0 FAIL",
+                       "Log":  "ui-final.log"
+                   },
+                   {
+                       "Expected":  "ExperienceUiChecks: 127 PASS, 0 FAIL",
+                       "Log":  "experience-final.log"
+                   },
+                   {
+                       "Expected":  "ExperienceUiChecks: 127 PASS, 0 FAIL",
+                       "Log":  "fresh-experience-final.log"
+                   },
+                   {
+                       "Expected":  "P12ReviewFixChecks: 5 PASS, 0 FAIL",
+                       "Log":  "fix-final.log"
+                   },
+                   {
+                       "Expected":  "25/25 phân hệ",
+                       "Log":  "smoke-final.log"
+                   },
+                   {
+                       "Expected":  "SUCCESS: 16 kiểm tra nghiệp vụ SQL",
+                       "Log":  "persistence-postreview.log"
+                   },
+                   {
+                       "Expected":  "45 tables, 363 columns, 0 failures",
+                       "Log":  "schema.log"
+                   }
+               ],
+    "TestSourceCheckpoint":  "3f77526",
+    "PackagedSqlMatchesSource":  true,
+    "DeploymentCases":  4,
+    "BuildReleaseWarnings":  55,
+    "PersistenceCases":  16,
+    "OriginalAndMainTestDatabasePreserved":  true,
+    "ViewHelperCs":  0,
+    "BuildReleaseErrors":  0,
+    "PhysicalMixedMonitorVerified":  false,
+    "FinanceCases":  54,
+    "BuildDebugErrors":  0,
+    "DeferredMinors":  [
+
+                       ],
+    "Stage":  "P12",
+    "SchemaTables":  52,
+    "ContinuousAcceptanceCasesPerSchema":  3,
+    "PhysicalPrinterVerified":  false,
+    "HandoverCases":  13,
+    "ProductProjects":  [
+                            "RangHamMat.Wpf",
+                            "ET",
+                            "DAL",
+                            "BUS"
+                        ],
+    "BuildWarningNote":  "Existing nullable warnings plus NU1900 unavailable vulnerability feed; no claim zero warnings.",
+    "ValidationAssertions":  616,
+    "BuildDebugWarnings":  4,
+    "ClinicalUiCasesPerSchema":  39,
+    "ReportTopics":  18,
+    "ModulesOpenedAfterRealLogin":  25,
+    "ReviewAndReceptionRegressionCases":  5,
+    "SchemaVersion":  2,
+    "RetiredSourceCheckerErrors":  112
+}

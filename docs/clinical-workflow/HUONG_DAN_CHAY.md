@@ -1,4 +1,17 @@
-# Chạy phần nền đã triển khai
+# Cài đặt và chạy bản bàn giao P12
+
+Bản hiện tại chỉ còn RangHamMat.Wpf, ET, DAL, BUS. Hướng dẫn cài mới/nâng cấp, appsettings và chạy nằm tại [README](../../README.md); kiểm chứng và giới hạn tại [BAN_GIAO_P12.md](BAN_GIAO_P12.md).
+
+- Cài mới: chạy toàn bộ Database/QLBenhVienRangHamMat.sql, mặc định database QLBenhVienRangHamMat,52 bảng/version2.
+- Database đã có bảng: backup rồi chọn đúng database, chạy Migrations01_Preflight→02_ClinicalWorkflow→03_Verify. Không chạy file cài mới để nâng cấp.
+- Sửa RangHamMat.Wpf/appsettings.json cho máy SQL của mình, mở solution và F5; hoặc chạy PhatHanh/RangHamMat.Wpf.exe sau khi sửa appsettings cạnh exe.
+- KiemTra.bat kiểm cấu trúc và build Debug/Release; thêm -KiemTraSql -MayChu . -Database TEN_DB để đối chiếu schema chỉ đọc.
+- Tài khoản mẫu admin001/user002…user010, mật khẩu123456; chức vụ theo SQL. Dùng vai trò tiếp nhận→bác sĩ→thu ngân/tiếp nhận có quyền thu→dược sĩ theo luồng. Admin không ký khám/thu/giao thay chức vụ.
+
+## Lịch sử lệnh và hướng dẫn từng mốc P01–P11
+
+Các mục dưới giữ lại cách đã thực thi khi triển khai. Những lệnh dotnet run tới project Checks/Smoke thuộc source checkpoint3f77526, đã bỏ khỏi bản bàn giao; không chạy trực tiếp các lệnh đó trên cấu trúc bốn project. Bộ source-check cũ đã nghỉ dùng. Cách kiểm bản hiện tại là KiemTra.bat/tools/KiemTraBanGiao.ps1. Các câu trạng thái “P12 còn…” bên dưới là lịch sử, xem kết quả P12 ở đầu tài liệu và báo cáo bàn giao.
+# Hướng dẫn lịch sử P01–P11
 
 Đây là hướng dẫn P01–P11 đã triển khai, gồm tiếp nhận, khám, dịch vụ, kê đơn, thu đủ, bàn giao, in lại và điều hướng có bảo vệ dữ liệu chưa lưu. Năm module lâm sàng dùng quyền theo chức vụ; bản build hiện tại cần schema ClinicalWorkflow v2. P12 còn nghiệm thu toàn luồng, thiết bị thực, khôi phục và đóng gói. Database gốc chưa được nâng cấp tự động; chạy kiểm tra/ứng dụng với biến môi trường của bản sao đã nâng cấp.
 
@@ -34,7 +47,7 @@ dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --migr
 
 Upgrade chỉ bổ sung schema, khóa `RHM:ClinicalWorkflow:Schema`, ghi extended property `RHM.ClinicalWorkflow.Version=2`; chạy lại kiểm tra hợp đồng rồi thoát. Verify từ chối cột sai kiểu/nullable, thiếu đối tượng hoặc FK/CHECK/trigger bị tắt. Không tự sửa schema khác hợp đồng; không sửa lịch sử, chạy lại seed, trừ tồn hoặc chốt nợ. Hóa đơn cũ mặc định phiên bản 1, tiền đưa/thối vẫn null.
 
-**Cài mới trống:** `Database/QLBenhVienRangHamMat_ClinicalWorkflow.sql` là file độc lập, gồm schema/dữ liệu baseline và phần bổ sung; không phụ thuộc `:r`. Mặc định tạo database riêng `QLBenhVienRangHamMat_ClinicalWorkflow`. Chọn tên mới trước khi chạy toàn file, không đổi sang tên database đang dùng. File từ chối database có bảng và đánh dấu hoàn tất baseline trong session trước khi cho phần nâng cấp chạy. Dùng `sqlcmd -b -f 65001` để dừng khi có lỗi. Giữ `Database/QLBenhVienRangHamMat.sql` làm baseline, không dùng file đó nâng cấp.
+**Cài mới trống:** `Database/QLBenhVienRangHamMat.sql` là file độc lập, gồm schema/dữ liệu baseline và phần bổ sung; không phụ thuộc `:r`. Mặc định tạo database `QLBenhVienRangHamMat`. Chọn tên mới trước khi chạy toàn file, không đổi sang tên database đang dùng. File từ chối database có bảng và đánh dấu hoàn tất baseline trong session trước khi cho phần nâng cấp chạy. Dùng `sqlcmd -b -f 65001` để dừng khi có lỗi. File này là installer hiện hành52 bảng; nâng cấp dữ liệu cũ bằng Migrations01→02→03, không chạy installer trên database có bảng.
 
 **Rollback P03:** `20261024_04_Rollback_ClinicalWorkflow.sql` chỉ hạ schema khi cả sáu bảng bổ sung rỗng và mọi cột mới còn null/default lịch sử. Script giữ transaction và khóa bảng từ lúc kiểm tra đến DDL; gặp dữ liệu mới trả lỗi 52104 và dừng. Đã có dữ liệu thì cần sửa tiến hoặc phục hồi backup có đối chiếu, không xóa dữ liệu để ép rollback.
 

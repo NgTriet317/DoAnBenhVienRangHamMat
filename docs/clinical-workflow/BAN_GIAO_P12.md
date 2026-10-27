@@ -69,4 +69,31 @@ Chưa gửi in ra máy in vật lý hoặc di chuyển giữa nhiều màn hình
 
 ## Chốt bàn giao
 
-Checkpoint source kiểm thử, kết quả build/publish cuối, danh sách file và dọn DB fixture được bổ sung sau lượt dọn/review. Không cộng các lần chạy lặp thành số ca độc lập.
+Source kiểm thử ở checkpoint3f77526. Kết quả build/publish, danh sách file và dọn DB fixture đã chốt ở mục Kết quả cuối/evidence; checkpoint bản bàn giao xem git log mới nhất. Không cộng lượt chạy lặp thành số ca độc lập.
+
+## Rà soát cuối và quyết định
+
+Một review chỉ đọc:0 Critical,1 Important (ngoại lệ nhân viên thoát sự kiện WPF),1 Minor (tên database trong hướng dẫn). Vấn đề tên database được nâng Important vì người vận hành có thể cấu hình sai và không chạy được ứng dụng. Đã sửa cả hai trong một lượt; ba sự kiện lưu/khôi phục/nghỉ việc và hợp đồng tên database RED0/4→GREEN4/4. UI giữ nhập liệu, thông báo an toàn, không báo thành công khi ghi lỗi; DAL vẫn phát ngoại lệ để transaction ngoài rollback. Nút nghỉ việc chỉ đổi trạng thái UI khi UPDATE thành công. Không còn Minor hoãn lại, không review lần hai.
+
+Các giới hạn/call có chủ đích đã đối chiếu từ review:
+
+1. Kết quả lệnh do executor xác nhận, không coi review source thay cho build/test; thiếu log không được báo đạt.
+2. Đối chiếu bất biến/DBCC, baseline/hash Word và dọn đúng sáu DB fixture do executor thực hiện; không xóa dữ liệu đã ký để dọn.
+3. Máy in/driver/nhiều màn hình và hỗ trợ tiếp cận đầy đủ chưa có thiết bị để nghiệm thu; native-DPI/paginator/focus chỉ chứng minh phạm vi phần mềm đã ghi.
+4. Ca concurrency hữu hạn không chứng minh công suất production hoặc mọi lịch tranh khóa; chi phí khóa writer tuần tự được giữ, không thêm retry che deadlock suite chồng.
+5. Xác nhận y khoa/người nhận/chuyển khoản vẫn là trách nhiệm nghiệp vụ đã duyệt; không thêm ngân hàng tự động hoặc nội dung điều trị mẫu.
+6. Mở25 phân hệ không chứng minh CRUD của mọi form mẫu ngoài sáu miền; không mở rộng dự án sang tính năng chưa được đặc tả.
+7. Phiên desktop dành cho một định danh ứng dụng, có guard đổi phiên và SQL kiểm lại quyền; chưa chứng minh mọi interleaving worker. Nếu mở rộng thành server nhiều người dùng cần thiết kế phiên riêng, không dùng global principal này.
+8. P01–P11 được dùng làm baseline đã kiểm chứng; P12 chạy lại suite hiện hành và kiểm phần thay đổi, không coi review P12 là review mọi dòng lịch sử từ đầu.
+9. Manifest, bằng chứng bền vững, checklist và checkpoint phải được chốt sau các lệnh cuối; source kiểm thử giữ ở Git3f77526 thay vì phụ thuộc10 project dư trong solution bàn giao.
+Trong cùng lượt sửa cuối, suite39 phát hiện thêm form tiếp nhận được Configure trực tiếp theo MaBN ngoài snapshot50 không tải được BN. Ca độc lập xác nhận FormError “Chọn bệnh nhân…” (4 đạt/1 lỗi); Form_Loaded nay tải đúng ngữ cảnh qua SQL khi BN thiếu trong cache, không chọn hàng khác. Ca lưu biên nhận đúng BN đạt, tổng5/5. Suite39 đã đạt lại; không đổi quyền hoặc cơ chế tiếp nhận/thu kho để sửa lỗi này.
+## Kết quả cuối đã xác nhận
+
+- Checkpoint source kiểm thử trước dọn: `3f77526`; baseline trước P12: `144c901`. Source ca sửa cuối trong evidence/P12/ReviewFixChecks.cs.txt. Bản bàn giao không cần project kiểm thử để build/chạy.
+- Bốn project và63 cặp Views .xaml/.xaml.cs, không còn helper.cs trong Views. Chín helper/partial ở Presentation; mười project kiểm thử đã dọn. Tài liệu cũ ở docs/legacy.
+- Debug và Release0 lỗi; lượt cuối Debug4 cảnh báo, Release55 cảnh báo gồm nullable sẵn có và NU1900 do môi trường không đọc được nguồn dữ liệu lỗ hổng NuGet. Không tuyên bố không còn cảnh báo. Publish framework-dependent vào PhatHanh, có exe/dll/runtimes/appsettings, SQL cài mới/migration và hướng dẫn ngắn; cần .NET8 Desktop Runtime ở máy chạy.
+- Lượt cuối sau sửa:5/5 ca tái hiện,39/39 UI,127/127 trải nghiệm trên mỗi DB cài mới/nâng cấp bằng DLL Release; smoke đầy đủ,616 nhập liệu và25 module đạt. Kiểm SQL172/persistence16 và tài chính/thu/giao/concurrency như bảng trên đạt, không cộng lượt lặp.
+- Bất biến cuối: DB fresh24 HDv2/22 Thu/16 bàn giao (13 chờ,3 giao); DB nâng cấp23 HDv2/22 Thu/26 bàn giao (13 chờ,13 giao). Hóa đơn0 không có Thu0; mọi nguồn/tiền/lượng/alias/người/giờ/trạng thái phiếu đúng. Sáu DB fixture CHECKDB đạt rồi dọn, cả sáu DB_ID=NULL; original/main vẫn tồn tại.
+- Bản thử chính giữ52 bảng,10 BN/HS/phiếu/HD/đơn/chi tiết đơn, tổng HD732500, thu ròng467500, tồn4014; CW/cấu hình0. Word SHA256 vẫn7BAA235C67555AA80B4FF07BDE40BEF4A35336424B56B6E5F12FEEE9F5A630AA. SQL trong gói phát hành có SHA256 khớp file nguồn.
+
+Log đã chuyển khỏi obj sang [evidence/P12](evidence/P12/README.md), số liệu trong [results.json](evidence/P12/results.json); danh sách source tại [DANH_SACH_FILE_BAN_GIAO.md](DANH_SACH_FILE_BAN_GIAO.md). Cache build và workspace điều phối được dọn sau lưu bằng chứng/checkpoint; giữ PhatHanh cho chạy thử. Không merge/push. Các giới hạn thiết bị/performance/ngoài sáu miền ở trên vẫn áp dụng.

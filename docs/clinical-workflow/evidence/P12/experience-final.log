@@ -1,0 +1,128 @@
+PASS: P11 hủy rời ứng dụng giữ đúng nháp khám
+PASS: P11 lưu trước rời chỉ lưu nháp, không ký
+PASS: P11 bỏ thay đổi tải lại nguồn, không ghi SQL
+PASS: P11 lỗi nguồn đã đổi chặn rời và giữ nội dung
+PASS: P11 yêu cầu thu chưa rõ kết quả không được bỏ hoặc rời
+PASS: P11 form người bệnh trong modal được bảo vệ khi Escape
+PASS: P11 nút trang chủ/đổi module/đóng cửa sổ đều giữ nháp khi hủy
+PASS: P11 cửa sổ bàn giao chưa rõ kết quả chặn rời dù chọn bỏ
+PASS: P11 nhập lượng sai hiện lỗi dưới trường và đưa focus về ô sai
+PASS: P11 hủy đổi phiên giữ định danh cũ và nội dung đang nhập
+PASS: P11 đổi phiên sau bỏ nháp xóa màn và cửa sổ phiên cũ
+PASS: P11 làm mới cùng định danh không bỏ nháp hoặc thay màn
+PASS: P11 đã nhập tiền nhưng chưa gửi không tự lưu/thu khi rời
+PASS: P11 lỗi kết nối khi xem phí có thông báo dễ hiểu và không báo thành công
+PASS: P11 lỗi cuối transaction lưu người bệnh giữ nháp và rollback SQL
+PASS: P11 review cửa sổ in đóng khi đổi phiên sau về trang chủ
+PASS: P11 review nháp trong cửa sổ con chặn đóng con và cửa sổ chính
+PASS: P11 review form lưu xong bị giữ lại có thể sửa/lưu lần hai bản mới
+PASS: P11 review form lưu xong bị giữ lại có thể sửa/lưu lần hai bản có sẵn
+PASS: P11 review hủy đổi lượt giữ tiền và nguồn trong màn thu
+PASS: P11 review hủy đổi kho giữ tiền và nguồn trong màn thu
+PASS: P11 review hủy đổi xem lại giữ tiền và nguồn trong màn thu
+PASS: P11 review đơn thiếu liều đưa focus về dòng thuốc sai
+PASS: P11 review mất kết nối tiếp nhận không hiện lỗi SQL thô
+PASS: P11 review quầy thu tìm lượt ngoài 50 BN/100 lượt đầu
+PASS: P11 review lịch sử đơn tìm và mở đơn ngoài snapshot đầu
+PASS: P11 review lịch hẹn lịch sử và hẹn hôm nay không mất sau 100 hẹn
+PASS: P11 review điều hướng hóa đơn hợp lệ không phụ thuộc có sẵn trong cache
+PASS: P11 WPF BenhNhan 1024×768 DPI100
+PASS: P11 WPF BenhNhan 1024×768 DPI125
+PASS: P11 WPF BenhNhan 1024×768 DPI150
+PASS: P11 WPF BenhNhan 1366×768 DPI100
+PASS: P11 WPF BenhNhan 1366×768 DPI125
+PASS: P11 WPF BenhNhan 1366×768 DPI150
+PASS: P11 WPF BenhNhan 1920×1080 DPI100
+PASS: P11 WPF BenhNhan 1920×1080 DPI125
+PASS: P11 WPF BenhNhan 1920×1080 DPI150
+PASS: P11 WPF HoSo 1024×768 DPI100
+PASS: P11 WPF HoSo 1024×768 DPI125
+PASS: P11 WPF HoSo 1024×768 DPI150
+PASS: P11 WPF HoSo 1366×768 DPI100
+PASS: P11 WPF HoSo 1366×768 DPI125
+PASS: P11 WPF HoSo 1366×768 DPI150
+PASS: P11 WPF HoSo 1920×1080 DPI100
+PASS: P11 WPF HoSo 1920×1080 DPI125
+PASS: P11 WPF HoSo 1920×1080 DPI150
+PASS: P11 WPF TiepNhan 1024×768 DPI100
+PASS: P11 WPF TiepNhan 1024×768 DPI125
+PASS: P11 WPF TiepNhan 1024×768 DPI150
+PASS: P11 WPF TiepNhan 1366×768 DPI100
+PASS: P11 WPF TiepNhan 1366×768 DPI125
+PASS: P11 WPF TiepNhan 1366×768 DPI150
+PASS: P11 WPF TiepNhan 1920×1080 DPI100
+PASS: P11 WPF TiepNhan 1920×1080 DPI125
+PASS: P11 WPF TiepNhan 1920×1080 DPI150
+PASS: P11 WPF FormBenhNhan 1024×768 DPI100
+PASS: P11 WPF FormBenhNhan 1024×768 DPI125
+PASS: P11 WPF FormBenhNhan 1024×768 DPI150
+PASS: P11 WPF FormBenhNhan 1366×768 DPI100
+PASS: P11 WPF FormBenhNhan 1366×768 DPI125
+PASS: P11 WPF FormBenhNhan 1366×768 DPI150
+PASS: P11 WPF FormBenhNhan 1920×1080 DPI100
+PASS: P11 WPF FormBenhNhan 1920×1080 DPI125
+PASS: P11 WPF FormBenhNhan 1920×1080 DPI150
+PASS: P11 WPF Kham 1024×768 DPI100
+PASS: P11 WPF Kham 1024×768 DPI125
+PASS: P11 WPF Kham 1024×768 DPI150
+PASS: P11 WPF Kham 1366×768 DPI100
+PASS: P11 WPF Kham 1366×768 DPI125
+PASS: P11 WPF Kham 1366×768 DPI150
+PASS: P11 WPF Kham 1920×1080 DPI100
+PASS: P11 WPF Kham 1920×1080 DPI125
+PASS: P11 WPF Kham 1920×1080 DPI150
+PASS: P11 WPF DichVu 1024×768 DPI100
+PASS: P11 WPF DichVu 1024×768 DPI125
+PASS: P11 WPF DichVu 1024×768 DPI150
+PASS: P11 WPF DichVu 1366×768 DPI100
+PASS: P11 WPF DichVu 1366×768 DPI125
+PASS: P11 WPF DichVu 1366×768 DPI150
+PASS: P11 WPF DichVu 1920×1080 DPI100
+PASS: P11 WPF DichVu 1920×1080 DPI125
+PASS: P11 WPF DichVu 1920×1080 DPI150
+PASS: P11 WPF DonThuoc 1024×768 DPI100
+PASS: P11 WPF DonThuoc 1024×768 DPI125
+PASS: P11 WPF DonThuoc 1024×768 DPI150
+PASS: P11 WPF DonThuoc 1366×768 DPI100
+PASS: P11 WPF DonThuoc 1366×768 DPI125
+PASS: P11 WPF DonThuoc 1366×768 DPI150
+PASS: P11 WPF DonThuoc 1920×1080 DPI100
+PASS: P11 WPF DonThuoc 1920×1080 DPI125
+PASS: P11 WPF DonThuoc 1920×1080 DPI150
+PASS: P11 WPF BangTinh 1024×768 DPI100
+PASS: P11 WPF BangTinh 1024×768 DPI125
+PASS: P11 WPF BangTinh 1024×768 DPI150
+PASS: P11 WPF BangTinh 1366×768 DPI100
+PASS: P11 WPF BangTinh 1366×768 DPI125
+PASS: P11 WPF BangTinh 1366×768 DPI150
+PASS: P11 WPF BangTinh 1920×1080 DPI100
+PASS: P11 WPF BangTinh 1920×1080 DPI125
+PASS: P11 WPF BangTinh 1920×1080 DPI150
+PASS: P11 WPF BanGiao 1024×768 DPI100
+PASS: P11 WPF BanGiao 1024×768 DPI125
+PASS: P11 WPF BanGiao 1024×768 DPI150
+PASS: P11 WPF BanGiao 1366×768 DPI100
+PASS: P11 WPF BanGiao 1366×768 DPI125
+PASS: P11 WPF BanGiao 1366×768 DPI150
+PASS: P11 WPF BanGiao 1920×1080 DPI100
+PASS: P11 WPF BanGiao 1920×1080 DPI125
+PASS: P11 WPF BanGiao 1920×1080 DPI150
+PASS: P11 WPF HoaDon 1024×768 DPI100
+PASS: P11 WPF HoaDon 1024×768 DPI125
+PASS: P11 WPF HoaDon 1024×768 DPI150
+PASS: P11 WPF HoaDon 1366×768 DPI100
+PASS: P11 WPF HoaDon 1366×768 DPI125
+PASS: P11 WPF HoaDon 1366×768 DPI150
+PASS: P11 WPF HoaDon 1920×1080 DPI100
+PASS: P11 WPF HoaDon 1920×1080 DPI125
+PASS: P11 WPF HoaDon 1920×1080 DPI150
+PASS: P11 WPF ShellBenhNhan 1024×768 DPI100
+PASS: P11 WPF ShellBenhNhan 1024×768 DPI125
+PASS: P11 WPF ShellBenhNhan 1024×768 DPI150
+PASS: P11 WPF ShellBenhNhan 1366×768 DPI100
+PASS: P11 WPF ShellBenhNhan 1366×768 DPI125
+PASS: P11 WPF ShellBenhNhan 1366×768 DPI150
+PASS: P11 WPF ShellBenhNhan 1920×1080 DPI100
+PASS: P11 WPF ShellBenhNhan 1920×1080 DPI125
+PASS: P11 WPF ShellBenhNhan 1920×1080 DPI150
+ExperienceUiChecks: 127 PASS, 0 FAIL; ca lưu thật chỉ trên DB riêng.

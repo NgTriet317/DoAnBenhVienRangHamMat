@@ -1,0 +1,9 @@
+PASS: P10 WPF giao cần đối chiếu người nhận và hướng dẫn, không xuất thêm
+PASS: P10 WPF đang giao giữ đúng nguồn, đổi đơn xóa xác nhận cũ
+PASS: P10 WPF in lỗi sau thu giữ kết quả và in lại cùng hóa đơn
+PASS: P10 WPF nguồn hóa đơn cố định và thử lỗi paginator không đổi tiền
+PASS: P10 WPF đơn ký dài phân nhiều trang, giữ đủ chỉ định chốt
+PASS: P10 WPF nguồn in bị đổi mã sau mở không in nhầm chứng từ
+PASS: P10 WPF module dược sĩ mở hàng bàn giao và giữ đúng ngữ cảnh
+PASS: P10 WPF lỗi giao giữ mã đơn để thử lại, không đổi sang bệnh nhân khác
+HandoverUiChecks: 8 PASS, 0 FAIL; commit chỉ trên DB P10Handover riêng.
