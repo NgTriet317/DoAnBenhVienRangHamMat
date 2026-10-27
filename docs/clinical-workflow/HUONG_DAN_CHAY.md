@@ -1,6 +1,6 @@
 # Chạy phần nền đã triển khai
 
-Đây là hướng dẫn P01–P10 đã triển khai, gồm tiếp nhận, khám, dịch vụ, kê đơn, thu đủ, bàn giao và in lại. Năm module lâm sàng dùng quyền theo chức vụ; bản build hiện tại cần schema ClinicalWorkflow v2. P11–P12 còn liên kết toàn ứng dụng, DPI, tải và nghiệm thu. Database gốc chưa được nâng cấp tự động; chạy kiểm tra/ứng dụng với biến môi trường của bản sao đã nâng cấp.
+Đây là hướng dẫn P01–P11 đã triển khai, gồm tiếp nhận, khám, dịch vụ, kê đơn, thu đủ, bàn giao, in lại và điều hướng có bảo vệ dữ liệu chưa lưu. Năm module lâm sàng dùng quyền theo chức vụ; bản build hiện tại cần schema ClinicalWorkflow v2. P12 còn nghiệm thu toàn luồng, thiết bị thực, khôi phục và đóng gói. Database gốc chưa được nâng cấp tự động; chạy kiểm tra/ứng dụng với biến môi trường của bản sao đã nâng cấp.
 
 1. Dùng Windows, .NET 8 SDK và SQL Server. Tạo backup COPY_ONLY CHECKSUM của database đã xác nhận, kiểm tra backup rồi restore sang tên thử riêng; không dùng script cài mới trên dữ liệu đang có.
 2. Đặt biến môi trường trong đúng terminal chạy kiểm tra. Ví dụ với xác thực Windows (không có mật khẩu):
@@ -46,7 +46,7 @@ dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --migr
 dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --migration-rollback
 ```
 
-Mode `--migration` chỉ đọc hợp đồng 30 kiểm tra, chạy được sau upgrade/cài mới. Mặc định ClinicalChecks hiện chạy 160 ca có fixture rollback; `--configuration`, `--new-data`, `--reception`, `--examination`, `--services`, `--prescriptions` chạy riêng từng nhóm. Nhóm khám/kế hoạch có 24 ca, dịch vụ 20 ca, đơn thuốc 22 ca. Các mode thanh toán/bàn giao có commit dùng DB riêng theo hướng dẫn P09/P10 bên dưới.
+Mode `--migration` chỉ đọc hợp đồng 30 kiểm tra, chạy được sau upgrade/cài mới. Mặc định ClinicalChecks hiện chạy 172 ca có fixture rollback; `--configuration`, `--new-data`, `--reception`, `--examination`, `--services`, `--prescriptions`, `--experience` chạy riêng từng nhóm. Nhóm khám/kế hoạch có 24 ca, dịch vụ 20 ca, đơn thuốc 22 ca, P11 có 12 ca. Các mode thanh toán/bàn giao có commit dùng DB riêng theo hướng dẫn P09/P10 bên dưới.
 
 Năm lớp cấu hình DAL/BUS được nhóm trong `DAL_CAUHINHLAMSANG.cs`/`BUS_CAUHINHLAMSANG.cs`, cung cấp `LayDanhSach`, `LuuNhap(entity,nguoiDung,banGoc)`; nhận transaction tùy chọn, xác minh lại phiên/quyền, kiểm tra snapshot và audit cùng transaction. Endpoint nháp không nhận chữ ký client. P05 bổ sung duyệt mẫu điều trị qua aggregate khám bên dưới; cấu hình kê đơn thuộc P07. P10 tách `BUS_BANGIAOTHUOC`/`DAL_BANGIAOTHUOC` ra file riêng, giữ `LayTheoDon` và bổ sung hàng chờ/chi tiết/xác nhận giao bên dưới.
 
@@ -83,7 +83,7 @@ dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --rece
 dotnet run --project .\RangHamMat.ClinicalUiChecks -c Debug --no-restore
 ```
 
-ClinicalUiChecks mặc định hiện có 39 ca, gồm tiếp nhận, khám, dịch vụ, đơn thuốc và nguồn phí/in. Mode thanh toán có 5 ca, bàn giao/in có 8 ca trên DB riêng; tổng 52 ca WPF. Ảnh tiếp nhận trước/sau lưu ở `obj/ClinicalWorkflowP04/`; dữ liệu ảnh là FIXTURE. Kiểm tra này không thay thế thử toàn ứng dụng với DPI/SQL lớn ở P11/P12.
+ClinicalUiChecks mặc định hiện có 39 ca, gồm tiếp nhận, khám, dịch vụ, đơn thuốc và nguồn phí/in. Mode thanh toán có 5 ca, bàn giao/in có 8 ca và P11 có 127 ca trên DB riêng; tổng 179 ca WPF. Ảnh tiếp nhận trước/sau lưu ở `obj/ClinicalWorkflowP04/`; dữ liệu ảnh là FIXTURE. Cách chạy P11 và giới hạn thử DPI ở cuối tài liệu; nghiệm thu đầy đủ thuộc P12.
 
 ## Sử dụng khám và kế hoạch P05
 
@@ -205,3 +205,27 @@ dotnet run --project .\RangHamMat.ClinicalUiChecks -c Debug --no-restore -- --ha
 ```
 
 Mode --handover chỉ nhận RHM_ClinicalWorkflow_Test_P10Handover_*. Fixture ký/thu/giao phải commit thật nên không dùng database gốc/bản thử chính. Tạo DB mới từ script v2 với guard không ghi đè, sqlcmd -f65001. Sau kiểm chứng toàn bộ bất biến, dọn đúng DB mới đã tạo; không tắt trigger để xóa đơn/chứng từ ký. Đợt này P09Payments và P10Handover riêng đều đã dọn (DB_ID=NULL); log/ảnh obj/ClinicalWorkflowP10/. P11/P12 tiếp tục kiểm tra điều hướng toàn ứng dụng, DPI, tải và máy in thực.
+
+## P11 — Ngữ cảnh, nháp, phân trang và kiểm tra DPI
+
+1. Hồ sơ/lượt/đơn/phiếu/hóa đơn chuyển bằng mã cần thiết, SQL kiểm lại liên kết và quyền trước mở. Mã không tồn tại hoặc khác BN báo rõ; không chuyển sang dòng đầu. Có thể tìm/phân trang để mở bản ghi ngoài snapshot ban đầu; lịch sử đơn chỉ đọc giữ tên/dòng thuốc của đúng trang. Màn thu tìm được MaHD, MaLS, MaBN hoặc tên và chọn nguồn ngoài cache.
+2. Rời module, Home, tải lại, đóng cửa sổ hoặc đổi phiên khi nhập sẽ hỏi Lưu nháp/Bỏ thay đổi/Hủy rời trang; cửa sổ con vẫn được kiểm kể cả sau Home. Lưu không ký khám/đơn hoặc thu tiền. Tiền đang nhập phải nhấn xác nhận thu riêng; yêu cầu thu/giao đang gửi hoặc chưa rõ kết quả giữ nguyên mã và chặn rời trang. Lỗi lưu/xung đột giữ dữ liệu để sửa, không báo thành công. Sau commit form giữ đúng mã để sửa tiếp.
+3. Đổi tài khoản/nhân viên chỉ tiếp tục khi giải quyết nháp; hủy giữ phiên cũ. Đổi thật đóng cả preview/cửa sổ lâm sàng cũ, refresh cùng định danh giữ nháp. PhienDangNhap chỉ bổ sung callback trước/sau đổi định danh, không đổi thuật toán đăng nhập.
+4. Khi vùng hiển thị hẹp, hai vùng chuyển thành Danh sách/Chi tiết; chọn tab chi tiết để nhập. Vẫn là control cũ nên resize không xóa nội dung. Style cục bộ tự giãn hàng/bao chữ, lỗi ngay dưới trường và đưa focus tới ô cần sửa; thông báo kết nối không lộ SQL. Danh mục nhóm/tình trạng lưu riêng bằng nút của danh mục nếu được nhắc.
+5. Snapshot UI ban đầu giới hạn50 BN/100 lượt/150 phiếu/100 lịch hẹn; danh sách BN15 dòng, các lịch sử/lượt/nguồn thu25 dòng mỗi trang bằng SQL. Chọn ngữ cảnh sẽ tải đúng BN/lượt; lịch hẹn tải toàn bộ của riêng BN. API snapshot cũ/picker cũ giữ tương thích, chưa benchmark danh mục hay lượng lịch hẹn rất lớn của một BN. Không dùng cache làm nguồn cấp quyền.
+
+```powershell
+# Trên bản sao thử đã nâng cấp; SQL experience có12 ca rollback:
+dotnet run --project .\RangHamMat.ClinicalChecks -- --experience
+
+# WPF experience có ca commit: đổi RHM_CONNECTION_STRING sang DB MỚI RIÊNG
+# tên RHM_ClinicalWorkflow_Test_P10Handover_* hoặc RHM_ClinicalWorkflow_Test_P11Experience_*.
+# Tạo từ SQL v2 với guard không ghi đè như P09/P10, KHÔNG dùng bản thử chính:
+dotnet run --project .\RangHamMat.ClinicalUiChecks -- --experience
+# Chỉ28 ca nghiệp vụ, bỏ ma trận99 tổ hợp:
+dotnet run --project .\RangHamMat.ClinicalUiChecks -- --experience-core
+```
+
+Giữ DB riêng đến khi kiểm bất biến tiền/xuất/bàn giao rồi dọn đúng DB đã tạo, không tắt trigger/xóa lịch sử ký. Lượt P11 đã dọn hai DB P09Payments/P10Handover ngày20261027, DB_ID=NULL. Log/ảnh trong obj/ClinicalWorkflowP11/. Hai mode WPF trên từ chối bản thử chính và có fixture ký/commit thật.
+
+Ma trận dùng WPF HWND thật và WM_DPICHANGED, xác nhận scale100/125/150%; nguồn kỹ thuật: [Microsoft hướng dẫn High DPI](https://learn.microsoft.com/en-us/windows/win32/hidpi/high-dpi-desktop-application-development-on-windows) và [mã HwndTarget của WPF](https://raw.githubusercontent.com/dotnet/wpf/main/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/InterOp/HwndTarget.cs). Nghiệm thu nhiều màn hình/máy in/driver thực, AT01–AT34 và khôi phục thuộc P12. Kết quả cũ nói “thuộc P11” ở các mục lịch sử phía trên được cập nhật bằng phần này.

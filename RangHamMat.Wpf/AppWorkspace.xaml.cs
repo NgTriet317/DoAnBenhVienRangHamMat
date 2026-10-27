@@ -23,6 +23,7 @@ public partial class AppWorkspace : UserControl
     private IInputElement? previousFocus;
     private readonly Stack<object> modalHistory = new();
     private readonly Dictionary<DataGrid, List<DataGridColumn>> extraColumns = new();
+    private readonly TextBlock navigationError=new(){TextWrapping=TextWrapping.Wrap,Foreground=System.Windows.Media.Brushes.Firebrick,Visibility=Visibility.Collapsed,Margin=new Thickness(0,8,0,0)};
 
     /// <summary>
     /// Khởi tạo AppWorkspace từ XAML.
@@ -30,6 +31,11 @@ public partial class AppWorkspace : UserControl
     public AppWorkspace(MainWindow home, string title, string role, UserControl page)
     {
         InitializeComponent();
+        if(ShellBar.Child is Grid shell)
+        {
+            shell.RowDefinitions.Add(new RowDefinition{Height=GridLength.Auto});shell.RowDefinitions.Add(new RowDefinition{Height=GridLength.Auto});
+            Grid.SetRow(navigationError,1);Grid.SetColumnSpan(navigationError,3);shell.Children.Add(navigationError);
+        }
         this.home = home;
         this.page = page;
         AppTitle.Text = title;
@@ -57,6 +63,8 @@ public partial class AppWorkspace : UserControl
     /// Chuyển việc kiểm tra quyền hiển thị phân hệ về MainWindow để dùng cùng bộ quyền cho mọi màn hình con.
     /// </summary>
     public bool CanOpen(string module) => home.CanOpen(module);
+    internal bool HasClinicalContent=>QuyenNghiepVu.LaPhanHe(page.GetType().Name)||ClinicalPendingWork.Nodes(this).Any(n=>n is IClinicalPendingWork||n is UserControl f&&BieuMauHoSo.IsClinicalForm(f));
+    internal IEnumerable<DependencyObject> ClinicalRoots=>new[]{Workspace.Content,ModalContent.Content}.Concat(history).Concat(modalHistory).OfType<DependencyObject>();
     /// <summary>
     /// Truyền ngữ cảnh bệnh nhân/lần khám/đơn thuốc cho đúng loại màn hình; lịch khám chỉ nhận phạm vi bệnh nhân.
     /// </summary>
@@ -71,23 +79,19 @@ public partial class AppWorkspace : UserControl
         else if (page is HoaDon invoices) invoices.FocusContext(patientId,visitId,prescriptionId);
         else if (page is LichKham appointments && !string.IsNullOrWhiteSpace(patientId)) appointments.SetPatient(patientId);
     }
+    internal void FocusHoSo(ET.NguCanhHoSo context)
+    {
+        if(page is HoaDon invoices){invoices.FocusContext(context);return;}
+        FocusHoSo(context.MaBN,context.MaLS,context.MaDT);
+        if(context.MaHS is not null&&context.MaLS is null&&page is BenhNhan patients)patients.OpenMedicalRecord();
+        if(context.MaPhieu is not null&&context.MaLS is null&&page is KhamDieuTri visits)visits.FocusReceipt(context.MaPhieu);
+    }
     /// <summary>
     /// Kiểm tra bệnh nhân tồn tại và lần khám, đơn thuốc thuộc đúng hồ sơ trước khi yêu cầu cửa sổ chính mở phân hệ đích.
     /// </summary>
-    public void DieuHuongHoSo(string module, string patientId, string? visitId = null, string? prescriptionId = null)
+    public void DieuHuongHoSo(string module, string patientId, string? visitId = null, string? prescriptionId = null,string? medicalId=null,string? receiptId=null,string? invoiceId=null)
     {
-        if (DuLieuGiaoDien.Find("BENH_NHAN",patientId) is null) { MessageBox.Show("Không tìm thấy bệnh nhân liên kết. Hãy kiểm tra nguồn dữ liệu."); return; }
-        if (!string.IsNullOrEmpty(visitId))
-        {
-            var visit=DuLieuGiaoDien.Find("LICH_SU_KHAM_BENH",visitId);
-            if(visit is null || DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH",visit)!=patientId) { MessageBox.Show("Lần khám không thuộc bệnh nhân đang xem."); return; }
-        }
-        if (!string.IsNullOrEmpty(prescriptionId))
-        {
-            var order=DuLieuGiaoDien.Find("DON_THUOC",prescriptionId);
-            if(order is null || DuLieuGiaoDien.PatientId("DON_THUOC",order)!=patientId || !string.IsNullOrEmpty(visitId) && UiRecord.Text(order,"MaLS")!=visitId) { MessageBox.Show("Đơn thuốc không thuộc hồ sơ/lần khám đang xem."); return; }
-        }
-        home.OpenHoSoApp(module,patientId,visitId,prescriptionId);
+        home.OpenHoSoApp(module,patientId,visitId,prescriptionId,medicalId,receiptId,invoiceId);
     }
 
     /// <summary>
@@ -95,6 +99,8 @@ public partial class AppWorkspace : UserControl
     /// </summary>
     internal bool ReturnToPage()
     {
+        var target=ModalLayer.Visibility==Visibility.Visible?ModalContent.Content:history.Count>0?Workspace.Content:null;
+        if(target is DependencyObject current&&!TryLeaveClinicalWork(null,[current]))return true;
         if (ModalLayer.Visibility == Visibility.Visible)
         {
             if (modalHistory.Count > 0) { ModalContent.Content = modalHistory.Pop(); if(ModalContent.Content is UserControl prior) Dispatcher.BeginInvoke(new Action(()=>prior.MoveFocus(new TraversalRequest(FocusNavigationDirection.First)))); }
@@ -307,8 +313,22 @@ public partial class AppWorkspace : UserControl
     /// </summary>
     private void Reload_Click(object sender, RoutedEventArgs e)
     {
+        if(!TryLeaveClinicalWork())return;
         try {DuLieuGiaoDien.RefreshFromDatabase();}
         catch(InvalidOperationException ex) {MessageBox.Show(ex.Message,"Tải dữ liệu",MessageBoxButton.OK,MessageBoxImage.Error);}
+    }
+
+    internal bool TryLeaveClinicalWork(Func<string,MessageBoxResult>? decision=null,IEnumerable<DependencyObject>? roots=null)
+    {
+        roots??=ClinicalRoots;
+        var ok=ClinicalPendingWork.TryLeave(roots,decision??home.LeaveDecision,out var error);
+        navigationError.Text=error;navigationError.Visibility=string.IsNullOrEmpty(error)?Visibility.Collapsed:Visibility.Visible;
+        if(!ok&&!string.IsNullOrEmpty(error))
+        {
+            var control=ClinicalPendingWork.Nodes(this).OfType<TextBlock>().FirstOrDefault(t=>t.Name is "ClinicalError" or "ErrorText" or "FormError" or "StatusText");
+            if(control is not null){control.Text=error;control.BringIntoView();}else ToolTip=error;
+        }
+        return ok;
     }
 
     /// <summary>
@@ -348,6 +368,7 @@ public partial class AppWorkspace : UserControl
             {
                 var table=BieuMauHoSo.GetTable(editor); var record=BieuMauHoSo.GetSaved(editor);
                 var newPatient=table=="BENH_NHAN" && (BieuMauHoSo.GetRecord(editor) is null || DuLieuGiaoDien.Find(table,UiRecord.Get(BieuMauHoSo.GetRecord(editor)!,"MaBN")) is null);
+                BieuMauHoSo.RebaseCommittedInput(editor);
                 var openMedical=(editor.FindName("CreateMedical") as CheckBox)?.IsChecked==true;
                 var openVisit=(editor.FindName("OpenVisitAfterSave") as CheckBox)?.IsChecked==true;
                 modalHistory.Clear(); ReturnToPage();

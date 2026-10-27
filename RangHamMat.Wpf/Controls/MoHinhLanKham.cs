@@ -332,11 +332,11 @@ public sealed class MucDanhSachLanKham
     /// <summary>
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.
     /// </summary>
-    public string PatientId => DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH", Record);
+    public string PatientId => UiRecord.Text(Record,"MaBN") is {Length:>0} id?id:DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH", Record);
     /// <summary>
     /// Thông tin hoặc nhãn bệnh nhân liên kết với bản ghi/hồ sơ đang xem.
     /// </summary>
-    public string Patient => DuLieuGiaoDien.Lookup("MaBN", PatientId);
+    public string Patient => UiRecord.Text(Record,"HoTenBN") is {Length:>0} name?$"{name} ({PatientId})":DuLieuGiaoDien.Lookup("MaBN", PatientId);
     /// <summary>
     /// Ngày/giờ của dòng nghiệp vụ được định dạng để hiển thị; nội dung mặc định cho biết chưa có thời gian.
     /// </summary>

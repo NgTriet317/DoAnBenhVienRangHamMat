@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using BUS;
 using ET;
+using RangHamMat.Controls.ClinicalWorkflow;
 using RangHamMat.Controls;
 namespace RangHamMat.Views;
 
@@ -77,7 +78,7 @@ public partial class ThucHienDichVuEditor : UserControl,IPatientScoped
     }
     private bool CanLeave(){if(dirty)ErrorText.Text="Có thay đổi chưa lưu. Lưu nháp hoặc tải lại để bỏ thay đổi trước khi chuyển nguồn.";return !dirty;}
     private bool Run(Action action,out string error)
-    {error="";ErrorText.Text="";try{action();return true;}catch(InvalidOperationException ex){error=ErrorText.Text=ex.Message;return false;}}
+    {error="";ErrorText.Text="";ClinicalFormInput.ClearErrors(this);try{action();return true;}catch(InvalidOperationException ex){error=ErrorText.Text=ClinicalFormInput.Message(ex);ClinicalFormInput.ShowError(this,ex);return false;}}
     private static decimal Number(TextBox editor,string field)
     {if(decimal.TryParse(editor.Text.Trim().Replace(',','.'),NumberStyles.AllowDecimalPoint|NumberStyles.AllowLeadingSign,CultureInfo.InvariantCulture,out var value))return value;throw new LoiKhamException(field,"Nhập số hợp lệ; dùng dấu phẩy cho phần lẻ.");}
     public bool TrySave(out string error)=>Run(()=>

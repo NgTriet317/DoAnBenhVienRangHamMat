@@ -15,6 +15,8 @@ try
     var passed = 0;
     var failed = 0;
     var cases=args.Contains("--pricing") ? ThanhToanChecks.Cases() : args.Contains("--prescriptions") ? DonThuocChecks.Cases() : args.Contains("--services") ? DichVuThucHienChecks.Cases() : args.Contains("--examination") ? KhamVaKeHoachChecks.Cases() : args.Contains("--reception") ? TiepNhanChecks.Cases() : args.Contains("--configuration") ? CauHinhChecks.Cases() : args.Contains("--new-data") ? DuLieuMoiChecks.Cases() : QuyenVaTiepNhanChecks.Cases().Concat(PhamViGiaoDienChecks.Cases()).Concat(CauHinhChecks.Cases()).Concat(DuLieuMoiChecks.Cases()).Concat(TiepNhanChecks.Cases()).Concat(KhamVaKeHoachChecks.Cases()).Concat(DichVuThucHienChecks.Cases()).Concat(DonThuocChecks.Cases()).Concat(ThanhToanChecks.Cases());
+    if(args.Contains("--experience"))cases=ExperienceChecks.Cases();
+    else if(args.Length==0)cases=cases.Concat(ExperienceChecks.Cases());
     foreach (var (name, run) in cases)
     {
         try
@@ -26,7 +28,7 @@ try
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"FAIL: {name}: {ex.Message}");
+            Console.Error.WriteLine($"FAIL: {name}: {ex.GetBaseException().Message}");
             failed++;
         }
     }

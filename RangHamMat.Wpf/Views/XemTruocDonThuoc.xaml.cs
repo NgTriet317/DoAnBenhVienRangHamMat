@@ -20,7 +20,7 @@ public partial class XemTruocDonThuoc : Window
     public FlowDocument? DonDaDoc {get;private set;}
     public XemTruocDonThuoc(Func<BanInDonThuoc> read)
     {
-        InitializeComponent();this.read=read;var source=read();fixedId=source.Nguon.Don.MaDT;ShowModern(source);
+        InitializeComponent();RangHamMat.Controls.ClinicalWorkflow.ClinicalWindowLifecycle.Attach(this);this.read=read;var source=read();fixedId=source.Nguon.Don.MaDT;ShowModern(source);
     }
     private void ShowModern(BanInDonThuoc source)
     {
@@ -50,7 +50,7 @@ public partial class XemTruocDonThuoc : Window
     /// </summary>
     public XemTruocDonThuoc(RxCard card)
     {
-        ValidateSigned(card);InitializeComponent();DataContext=card;
+        ValidateSigned(card);InitializeComponent();RangHamMat.Controls.ClinicalWorkflow.ClinicalWindowLifecycle.Attach(this);DataContext=card;
         if(DuLieuGiaoDien.PhamViLamSang)
         {
             var actor=Controls.ClinicalWorkflow.QuyenNghiepVu.LayNguCanh();var service=new BUS.BUS_DONTHUOC();var detail=service.LayChiTietCoQuyen(card.Code,actor);

@@ -1,71 +1,69 @@
-<UserControl x:Class="RangHamMat.Views.BangTinhPhiEditor"
- xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- Language="vi-VN">
+<UserControl xmlns:clinical="clr-namespace:RangHamMat.Controls.ClinicalWorkflow" clinical:ClinicalLayout.IsEnabled="True" x:Class="RangHamMat.Views.BangTinhPhiEditor" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Language="vi-VN">
  <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries>
-  <ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/HospitalStyles.xaml"/>
+  <ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/ClinicalWorkflowStyles.xaml" />
  </ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
- <Grid Margin="4,12,4,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+ <Grid Margin="4,12,4,0"><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
   <StackPanel>
-   <TextBlock Text="Bảng tính phí theo lượt khám" Style="{StaticResource HospitalSection}"/>
-   <TextBlock x:Name="VisitText" Margin="0,6" TextWrapping="Wrap"/>
-   <WrapPanel Margin="0,8,0,10">
-    <StackPanel Width="280" Margin="0,0,14,0"><TextBlock Text="Kho cấp thuốc (bắt buộc khi có thuốc)" Style="{StaticResource FieldLabel}"/>
-     <ComboBox x:Name="WarehouseFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Warehouse_Changed" AutomationProperties.Name="Kho lập bảng tính"/>
+   <TextBlock Text="Bảng tính phí theo lượt khám" Style="{StaticResource HospitalSection}" />
+   <TextBlock x:Name="VisitText" Margin="0,6" TextWrapping="Wrap" />
+
+
+
+  <Border Style="{StaticResource HospitalPanel}" Margin="0,0,0,12" Padding="12">
+   <StackPanel><TextBlock x:Name="TotalText" Text="Chưa có bảng tính" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
+    <TextBlock Text="Dịch vụ đã xác nhận và toàn bộ đơn còn hiệu lực. Bảng tính chưa phải hóa đơn." TextWrapping="Wrap" Margin="0,6,0,0" Style="{StaticResource HospitalMuted}" />
+   </StackPanel>
+  </Border></StackPanel>
+
+
+ <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel><WrapPanel Margin="0,8,0,10">
+    <StackPanel Width="280" Margin="0,0,14,0"><TextBlock Text="Kho cấp thuốc (bắt buộc khi có thuốc)" Style="{StaticResource FieldLabel}" />
+     <ComboBox x:Name="WarehouseFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Warehouse_Changed" AutomationProperties.Name="Kho lập bảng tính" />
     </StackPanel>
-    <Button x:Name="PreviewButton" Content="Xem bảng tính" Margin="0,20,0,0" Click="Preview_Click" Style="{StaticResource HospitalPrimary}"/>
-   </WrapPanel>
-   <TextBlock x:Name="StatusText" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" Margin="0,0,0,12"/>
-   <StackPanel x:Name="PaymentPanel" Visibility="Collapsed" Margin="0,0,0,12">
+    <Button x:Name="PreviewButton" Content="Xem bảng tính" Margin="0,20,0,0" Click="Preview_Click" Style="{StaticResource HospitalPrimary}" />
+   </WrapPanel><TextBlock x:Name="StatusText" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" Margin="0,0,0,12" /><StackPanel x:Name="PaymentPanel" Visibility="Collapsed" Margin="0,0,0,12">
     <WrapPanel x:Name="PaymentInputs">
-     <StackPanel Width="160" Margin="0,0,12,0"><TextBlock Text="Phương thức" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="MethodBox" SelectedValuePath="Content" SelectedIndex="0"><ComboBoxItem Content="Tiền mặt"/><ComboBoxItem Content="Chuyển khoản"/></ComboBox></StackPanel>
-     <StackPanel Width="170" Margin="0,0,12,0"><TextBlock Text="Tiền khách đưa (đ)" Style="{StaticResource FieldLabel}"/><TextBox x:Name="GivenText" Text="0" MaxLength="16"/></StackPanel>
-     <StackPanel Width="200"><TextBlock Text="Mã tham chiếu chuyển khoản" Style="{StaticResource FieldLabel}"/><TextBox x:Name="ReferenceText" MaxLength="100"/></StackPanel>
+     <StackPanel Width="160" Margin="0,0,12,0"><TextBlock Text="Phương thức" Style="{StaticResource FieldLabel}" /><ComboBox x:Name="MethodBox" SelectedValuePath="Content" SelectedIndex="0"><ComboBoxItem Content="Tiền mặt" /><ComboBoxItem Content="Chuyển khoản" /></ComboBox></StackPanel>
+     <StackPanel Width="170" Margin="0,0,12,0"><TextBlock Text="Tiền khách đưa (đ)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="GivenText" Text="0" MaxLength="16" /></StackPanel>
+     <StackPanel Width="200"><TextBlock Text="Mã tham chiếu chuyển khoản" Style="{StaticResource FieldLabel}" /><TextBox x:Name="ReferenceText" MaxLength="100" /></StackPanel>
     </WrapPanel>
-    <CheckBox x:Name="TransferChecked" Content="Đã đối chiếu chuyển khoản thủ công" Margin="0,10,0,6"/>
-    <TextBlock x:Name="ChangeText" Margin="0,0,0,8"/>
-    <Button x:Name="PayButton" Content="Xác nhận thu đủ" HorizontalAlignment="Left" Style="{StaticResource HospitalPrimary}" IsEnabled="False"/>
-    <Button x:Name="PrintAgainButton" Content="Xem / in lại hóa đơn" HorizontalAlignment="Left" Margin="0,8,0,0" Visibility="Collapsed"/>
-   </StackPanel>
-  </StackPanel>
-  <Border Grid.Row="1" Style="{StaticResource HospitalPanel}" Margin="0,0,0,12" Padding="12">
-   <StackPanel><TextBlock x:Name="TotalText" Text="Chưa có bảng tính" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"/>
-    <TextBlock Text="Dịch vụ đã xác nhận và toàn bộ đơn còn hiệu lực. Bảng tính chưa phải hóa đơn." TextWrapping="Wrap" Margin="0,6,0,0" Style="{StaticResource HospitalMuted}"/>
-   </StackPanel>
-  </Border>
-  <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
-   <TextBlock Text="Dịch vụ thực hiện" Style="{StaticResource HospitalSection}" Margin="0,0,0,8"/>
+    <CheckBox x:Name="TransferChecked" Content="Đã đối chiếu chuyển khoản thủ công" Margin="0,10,0,6" />
+    <TextBlock x:Name="ChangeText" Margin="0,0,0,8" />
+    <Button x:Name="PayButton" Content="Xác nhận thu đủ" HorizontalAlignment="Left" Style="{StaticResource HospitalPrimary}" IsEnabled="False" />
+    <Button x:Name="PrintAgainButton" Content="Xem / in lại hóa đơn" HorizontalAlignment="Left" Margin="0,8,0,0" Visibility="Collapsed" />
+   </StackPanel><StackPanel>
+   <TextBlock Text="Dịch vụ thực hiện" Style="{StaticResource HospitalSection}" Margin="0,0,0,8" />
    <DataGrid x:Name="ServicesGrid" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False" MaxHeight="240" MinHeight="65"><DataGrid.Columns>
-    <DataGridTextColumn Header="Nguồn" Binding="{Binding MaDVThucHien}" Width="120"/>
-    <DataGridTextColumn Header="Dịch vụ" Binding="{Binding NoiDung}" Width="*"/>
-    <DataGridTextColumn Header="SL" Binding="{Binding SoLuong}" Width="65"/>
-    <DataGridTextColumn Header="Đơn giá" Binding="{Binding Gia}" Width="110"/>
-    <DataGridTextColumn Header="Thành tiền" Binding="{Binding Tien}" Width="120"/>
+    <DataGridTextColumn Header="Nguồn" Binding="{Binding MaDVThucHien}" Width="120" />
+    <DataGridTextColumn Header="Dịch vụ" Binding="{Binding NoiDung}" Width="*" />
+    <DataGridTextColumn Header="SL" Binding="{Binding SoLuong}" Width="65" />
+    <DataGridTextColumn Header="Đơn giá" Binding="{Binding Gia}" Width="110" />
+    <DataGridTextColumn Header="Thành tiền" Binding="{Binding Tien}" Width="120" />
    </DataGrid.Columns></DataGrid>
-   <TextBlock Text="Thuốc trong các đơn đang áp dụng" Style="{StaticResource HospitalSection}" Margin="0,18,0,8"/>
+   <TextBlock Text="Thuốc trong các đơn đang áp dụng" Style="{StaticResource HospitalSection}" Margin="0,18,0,8" />
    <DataGrid x:Name="DrugsGrid" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False" MaxHeight="260" MinHeight="65"><DataGrid.Columns>
-    <DataGridTextColumn Header="Đơn / dòng" Binding="{Binding Nguon}" Width="150"/>
-    <DataGridTextColumn Header="Thuốc đã chốt" Binding="{Binding NoiDung}" Width="*"/>
-    <DataGridTextColumn Header="ĐVT" Binding="{Binding DonViTinh}" Width="65"/>
-    <DataGridTextColumn Header="SL" Binding="{Binding SoLuong}" Width="65"/>
-    <DataGridTextColumn Header="Giá hiện tại" Binding="{Binding Gia}" Width="110"/>
-    <DataGridTextColumn Header="Thành tiền" Binding="{Binding Tien}" Width="120"/>
+    <DataGridTextColumn Header="Đơn / dòng" Binding="{Binding Nguon}" Width="150" />
+    <DataGridTextColumn Header="Thuốc đã chốt" Binding="{Binding NoiDung}" Width="*" />
+    <DataGridTextColumn Header="ĐVT" Binding="{Binding DonViTinh}" Width="65" />
+    <DataGridTextColumn Header="SL" Binding="{Binding SoLuong}" Width="65" />
+    <DataGridTextColumn Header="Giá hiện tại" Binding="{Binding Gia}" Width="110" />
+    <DataGridTextColumn Header="Thành tiền" Binding="{Binding Tien}" Width="120" />
    </DataGrid.Columns></DataGrid>
-   <TextBlock Text="Dự kiến cấp từ lô" Style="{StaticResource HospitalSection}" Margin="0,18,0,8"/>
+   <TextBlock Text="Dự kiến cấp từ lô" Style="{StaticResource HospitalSection}" Margin="0,18,0,8" />
    <DataGrid x:Name="LotsGrid" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False" MaxHeight="220" MinHeight="65"><DataGrid.Columns>
-    <DataGridTextColumn Header="Dòng đơn" Binding="{Binding MaCTDT}" Width="150"/>
-    <DataGridTextColumn Header="Mã lô" Binding="{Binding MaLo}" Width="130"/>
-    <DataGridTextColumn Header="Số lô" Binding="{Binding SoLo}" Width="*"/>
-    <DataGridTextColumn Header="SL" Binding="{Binding SoLuong}" Width="65"/>
-    <DataGridTextColumn Header="Tiền từng lô" Binding="{Binding Tien}" Width="120"/>
+    <DataGridTextColumn Header="Dòng đơn" Binding="{Binding MaCTDT}" Width="150" />
+    <DataGridTextColumn Header="Mã lô" Binding="{Binding MaLo}" Width="130" />
+    <DataGridTextColumn Header="Số lô" Binding="{Binding SoLo}" Width="*" />
+    <DataGridTextColumn Header="SL" Binding="{Binding SoLuong}" Width="65" />
+    <DataGridTextColumn Header="Tiền từng lô" Binding="{Binding Tien}" Width="120" />
    </DataGrid.Columns></DataGrid>
-   <TextBlock Text="Chứng từ đã có — đối chiếu tại mục Hóa đơn / thu tiền" Style="{StaticResource HospitalSection}" Margin="0,18,0,8" TextWrapping="Wrap"/>
+   <TextBlock Text="Chứng từ đã có — đối chiếu tại mục Hóa đơn / thu tiền" Style="{StaticResource HospitalSection}" Margin="0,18,0,8" TextWrapping="Wrap" />
    <DataGrid x:Name="HistoryGrid" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False" MaxHeight="220" MinHeight="65"><DataGrid.Columns>
-    <DataGridTextColumn Header="Hóa đơn" Binding="{Binding MaHD}" Width="120"/>
-    <DataGridTextColumn Header="Trạng thái" Binding="{Binding TrangThai}" Width="*"/>
-    <DataGridTextColumn Header="Phải thu" Binding="{Binding PhaiThu}" Width="120"/>
-    <DataGridTextColumn Header="Đã thu ròng" Binding="{Binding DaThu}" Width="120"/>
-    <DataGridTextColumn Header="Còn phải thu" Binding="{Binding ConPhaiThu}" Width="120"/>
+    <DataGridTextColumn Header="Hóa đơn" Binding="{Binding MaHD}" Width="120" />
+    <DataGridTextColumn Header="Trạng thái" Binding="{Binding TrangThai}" Width="*" />
+    <DataGridTextColumn Header="Phải thu" Binding="{Binding PhaiThu}" Width="120" />
+    <DataGridTextColumn Header="Đã thu ròng" Binding="{Binding DaThu}" Width="120" />
+    <DataGridTextColumn Header="Còn phải thu" Binding="{Binding ConPhaiThu}" Width="120" />
    </DataGrid.Columns></DataGrid>
-  </StackPanel></ScrollViewer>
- </Grid>
+  </StackPanel></StackPanel></ScrollViewer></Grid>
 </UserControl>

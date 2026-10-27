@@ -49,6 +49,8 @@ internal static class Program
         {
             if(args.Contains("--payments")) return PaymentUiChecks.Run();
             if(args.Contains("--handover")) return HandoverUiChecks.Run();
+            if(args.Contains("--experience")) return ExperienceUiChecks.Run();
+            if(args.Contains("--experience-core")) return ExperienceUiChecks.Run(false);
             Check("P08 phân trang giữ trọn dòng truy vết CTPX ở nhiều khổ giấy",()=>
             {
                 var document=new InvoiceDocument {DataContext=new {Lines=Enumerable.Range(0,10).Select(i=>new InvoicePrintLine("FIXTURE thuốc đã chốt "+i,1,1,1,Enumerable.Range(0,16).Select(j=>$"CTPX-{i:D2}-{j:D2}").ToArray())).ToArray()}};
@@ -334,7 +336,7 @@ internal static class Program
                 var detail=new ChiTietHoSo("LICH_KHAM","Lịch sử lịch hẹn",appointment);
                 Require(Find<Button>(detail,"EditButton").Visibility!=Visibility.Visible && Find<Button>(detail,"ConfirmButton").Visibility!=Visibility.Visible && Find<Button>(detail,"CancelButton").Visibility!=Visibility.Visible,"Lịch sử chỉ đọc vẫn có nút sửa/hủy.");
             });
-            Check("Lần khám gần nhất trên 10000 lượt không quét lại từng hồ sơ",()=>
+            Check("Lần khám gần nhất của đường cache legacy không quét lại từng hồ sơ",()=>
             {
                 SignIn("CV004");DuLieuGiaoDien.ChonPhamViLamSang(true);
                 try
@@ -343,7 +345,9 @@ internal static class Program
                     DuLieuGiaoDien.Replace("HO_SO_BENH_AN",Enumerable.Range(0,1000).Select(i=>(object)new Dictionary<string,object?> {{"MaHS","PERFHS"+i},{"MaBN","PERFBN"+i}}));
                     DuLieuGiaoDien.Replace("PHIEU_KHAM_BENH",Enumerable.Range(0,10000).Select(i=>(object)new Dictionary<string,object?> {{"MaPhieu","PERFPH"+i},{"MaHS","PERFHS"+(i%1000)}}));
                     DuLieuGiaoDien.Replace("LICH_SU_KHAM_BENH",Enumerable.Range(0,10000).Select(i=>(object)new Dictionary<string,object?> {{"MaLS","PERFLS"+i},{"MaPhieu","PERFPH"+i},{"ThoiGianKham",DateTime.Today.AddDays(i)}}));
+                    typeof(DuLieuGiaoDien).GetField("<PhamViLamSang>k__BackingField",BindingFlags.Static|BindingFlags.NonPublic)!.SetValue(null,false);
                     var timer=System.Diagnostics.Stopwatch.StartNew();var view=new BenhNhan();var grid=Find<DataGrid>(view,"Grid_BENH_NHAN");
+                    Require(grid.Items.Count==15,"Ca cache legacy không có đủ trang 15 BN.");
                     foreach(var row in grid.Items.Cast<object>())
                     {
                         Require(UiRecord.Text(row,"LanKhamGanNhat").StartsWith("Khám gần nhất:"),"Mất lần khám gần nhất.");
@@ -353,7 +357,7 @@ internal static class Program
                     }
                     Console.WriteLine("PERF: 1000 BN/10000 lượt, trang đầu và tính lần khám gần nhất: "+timer.ElapsedMilliseconds+"ms");
                 }
-                finally {DuLieuGiaoDien.RefreshFromDatabase();}
+                finally {typeof(DuLieuGiaoDien).GetField("<PhamViLamSang>k__BackingField",BindingFlags.Static|BindingFlags.NonPublic)!.SetValue(null,true);DuLieuGiaoDien.RefreshFromDatabase();}
             });
             Check("WPF tiếp nhận lưu hồ sơ/phiếu rồi mới tải cache và báo hàng đợi",()=>
             {

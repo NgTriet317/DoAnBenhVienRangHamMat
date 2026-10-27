@@ -34,6 +34,17 @@ public partial class HoaDon : UserControl, IPatientScoped
     /// Áp dụng mã bệnh nhân nguồn và làm mới dữ liệu trong phạm vi hồ sơ này.
     /// </summary>
     public void SetPatient(string id) => FocusContext(id);
+    internal void FocusContext(ET.NguCanhHoSo context)
+    {
+        if(!CanChangePricingContext())return;
+        PatientId=context.MaBN;visitId=context.MaLS;prescriptionId=context.MaDT;invoiceId=context.MaHD;
+        Refresh();
+        if(context.MaHD is not null)
+        {
+            DetailTabs.SelectedIndex=0;
+            if(invoiceId!=context.MaHD)PageStatus.Text="Không tìm thấy hóa đơn được yêu cầu trong phạm vi; không chọn chứng từ khác.";
+        }
+    }
     /// <summary>
     /// Giữ bộ mã bệnh nhân/lần khám/đơn thuốc nguồn, bỏ lựa chọn hóa đơn cũ, chuyển sang tab cấp thuốc khi có đơn và tải lại danh sách đúng phạm vi.
     /// </summary>
@@ -59,11 +70,15 @@ public partial class HoaDon : UserControl, IPatientScoped
         try
         {
             var employee = HoTroGiaoDien.Selected(EmployeeFilter); var warehouse = HoTroGiaoDien.Selected(WarehouseFilter);
+            if(DuLieuGiaoDien.PhamViLamSang)LoadClinicalSelectors();
+            else
+            {
             PatientFilter.ItemsSource = DuLieuGiaoDien.Options("BENH_NHAN", true).ToArray(); PatientFilter.SelectedValue = PatientId ?? "";
             VisitFilter.ItemsSource = new[] { new LuaChonDanhMuc("", "Tất cả lần khám") }.Concat(DuLieuGiaoDien.Rows("LICH_SU_KHAM_BENH")
                 .Where(r => string.IsNullOrEmpty(PatientId) || DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH", r) == PatientId)
                 .Select(r => new LuaChonDanhMuc(UiRecord.Text(r, "MaLS"), $"#{UiRecord.Text(r, "MaLS")} · {UiRecord.Date(r, "ThoiGianKham"):dd/MM/yyyy} · {UiRecord.Text(r, "TrangThai")}"))).ToArray();
             VisitFilter.SelectedValue = visitId ?? "";
+            }
             EmployeeFilter.ItemsSource = DuLieuGiaoDien.Rows("NHAN_VIEN").Where(r => UiRecord.Text(r, "TrangThai") == "Đang làm việc")
                 .Select(r => new LuaChonDanhMuc(UiRecord.Text(r, "MaNV"), DuLieuGiaoDien.Label("NHAN_VIEN", r))).ToArray(); EmployeeFilter.SelectedValue = employee;
             WarehouseFilter.ItemsSource = DuLieuGiaoDien.Rows("KHO").Where(r => UiRecord.Text(r, "TrangThai") == "Đang hoạt động")
@@ -85,13 +100,13 @@ public partial class HoaDon : UserControl, IPatientScoped
                     var first = PricingHost.Content is null;
                     var pricing = PricingHost.Content as BangTinhPhiEditor ?? new BangTinhPhiEditor(actor);
                     if(first) pricing.ThanhToanHoanTat += (_,_) => { invoiceId=pricing.KetQua?.MaHD; DuLieuGiaoDien.RefreshFromDatabase(); Refresh(); };
-                    PricingHost.Content = pricing; PricingTab.Visibility = Visibility.Visible; pricing.FocusContext(visitId);
+                    PricingHost.Content = pricing; PricingTab.Visibility = Visibility.Visible; pricing.FocusContext(visitId);pricing.SetVisitIdentity(sourceVisits.FirstOrDefault(s=>s.MaLS==visitId));
                     if (first || DetailTabs.SelectedItem == DispenseTab) DetailTabs.SelectedItem = PricingTab;
                 }
                 PageStatus.Text = "Xem bảng tính theo lượt; chọn hóa đơn để đối chiếu lịch sử và in lại.";
             }
         }
-        catch (Exception ex) { PageStatus.Text = "Không thể tải hóa đơn: " + ex.Message; }
+        catch (Exception ex) { PageStatus.Text = "Không thể tải hóa đơn: " + ClinicalFormInput.Message(ex); }
         finally { updating = false; }
     }
     /// <summary>
@@ -170,16 +185,16 @@ public partial class HoaDon : UserControl, IPatientScoped
     /// Đổi bệnh nhân lọc, xóa ngữ cảnh lần khám/đơn/hóa đơn cũ và làm mới để không dùng dữ liệu thuộc bệnh nhân trước.
     /// </summary>
     private void Patient_Changed(object sender, SelectionChangedEventArgs e)
-    { if (updating || !CanChangePricingContext()) return; PatientId = HoTroGiaoDien.Selected(PatientFilter); visitId = prescriptionId = null; invoiceId = null; Refresh(); }
+    { if (updating || !CanChangePricingContext()) return; PatientId = HoTroGiaoDien.Selected(PatientFilter);if(PatientId=="")PatientId=null;visitId = prescriptionId = null; invoiceId = null;sourcePage=1;sourceQuery="";FinanceSearch.Clear();try{EnsureSelectedClinicalContext();Refresh();}catch(InvalidOperationException ex){PageStatus.Text=ClinicalFormInput.Message(ex);} }
     /// <summary>
     /// Đổi lần khám, bỏ lựa chọn đơn và hóa đơn cũ, suy ra đúng bệnh nhân từ lần khám rồi tải lại dữ liệu.
     /// </summary>
     private void Visit_Changed(object sender, SelectionChangedEventArgs e)
-    { if (updating || !CanChangePricingContext()) return; visitId = HoTroGiaoDien.Selected(VisitFilter); prescriptionId = null; invoiceId = null; var visit = DuLieuGiaoDien.Find("LICH_SU_KHAM_BENH", visitId); if (visit is not null) PatientId = DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH", visit); Refresh(); }
+    { if (updating || !CanChangePricingContext()) return; visitId = HoTroGiaoDien.Selected(VisitFilter);if(visitId=="")visitId=null;prescriptionId = null; invoiceId = null;var source=sourceVisits.FirstOrDefault(r=>r.MaLS==visitId);if(source is not null)PatientId=source.MaBN;else{var visit=DuLieuGiaoDien.Find("LICH_SU_KHAM_BENH",visitId);if(visit is not null)PatientId=DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH",visit);}try{EnsureSelectedClinicalContext();Refresh();}catch(InvalidOperationException ex){PageStatus.Text=ClinicalFormInput.Message(ex);} }
 
     private bool CanChangePricingContext()
     {
-        if(PricingHost.Content is not BangTinhPhiEditor { } pricing || (!pricing.DangXuLy && !pricing.ChoDoiChieu)) return true;
+        if(PricingHost.Content is not BangTinhPhiEditor { } pricing || pricing.CanChangeSource(out _)) return true;
         updating=true;try{PatientFilter.SelectedValue=PatientId??"";VisitFilter.SelectedValue=visitId??"";}finally{updating=false;}
         PageStatus.Text="Cần đối chiếu yêu cầu đang thu trước khi đổi bệnh nhân hoặc lượt.";return false;
     }

@@ -17,6 +17,7 @@ public partial class DonThuoc : UserControl, IPatientScoped
     private string? visitId;
     private string? selectedId;
     private string? requestedId;
+    private int historyPage=1;
     /// <summary>
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.
     /// </summary>
@@ -73,6 +74,7 @@ public partial class DonThuoc : UserControl, IPatientScoped
         updating = true;
         PatientFilter.ItemsSource = DuLieuGiaoDien.Options("BENH_NHAN", all: true).ToArray();
         PatientFilter.SelectedValue = PatientId ?? "";
+        if(DuLieuGiaoDien.PhamViLamSang){RefreshHistoryPage();return;}
         var rows = DuLieuGiaoDien.Rows("DON_THUOC")
             .Where(row => HoTroGiaoDien.Matches("DON_THUOC", row, SearchBox.Text, HoTroGiaoDien.Choice(StatusFilter), PatientId))
             .Where(row => string.IsNullOrEmpty(visitId) || UiRecord.Text(row, "MaLS") == visitId)
@@ -92,6 +94,10 @@ public partial class DonThuoc : UserControl, IPatientScoped
     {
         if (PrescriptionList.SelectedItem is RxCard card)
         {
+            var prior=updating;updating=true;
+            try{DuLieuGiaoDien.BaoDamNguCanh(new(){MaBN=card.PatientId,MaLS=card.Visit,MaDT=card.Code});}
+            catch(InvalidOperationException ex){DetailHost.Content=null;DetailEmpty.Visibility=Visibility.Visible;DetailEmptyText.Text=ex.Message;return;}
+            finally{updating=prior;}
             selectedId = card.Code;
             requestedId = null;
             if (DetailHost.Content is not ChiTietDonThuoc detail || detail.OrderId != card.Code)
@@ -125,7 +131,7 @@ public partial class DonThuoc : UserControl, IPatientScoped
     /// <summary>
     /// Lọc và hiển thị lại danh sách theo nội dung tìm kiếm/trạng thái/ngày đang chọn; chưa thay đổi dữ liệu SQL.
     /// </summary>
-    private void Filter_Changed(object sender, RoutedEventArgs e) => Refresh();
+    private void Filter_Changed(object sender, RoutedEventArgs e) {if(updating)return;historyPage=1;Refresh();}
     /// <summary>
     /// Cập nhật mã bệnh nhân theo ComboBox, bỏ lựa chọn không còn cùng phạm vi và làm mới danh sách; bỏ qua sự kiện trong lúc đổ dữ liệu.
     /// </summary>
@@ -133,7 +139,7 @@ public partial class DonThuoc : UserControl, IPatientScoped
     {
         if (updating) return;
         PatientId = string.IsNullOrEmpty(HoTroGiaoDien.Selected(PatientFilter)) ? null : HoTroGiaoDien.Selected(PatientFilter);
-        visitId = null; requestedId = null; selectedId = null; Refresh();
+        visitId = null; requestedId = null; selectedId = null;historyPage=1;Refresh();
     }
     /// <summary>
     /// Xóa các bộ lọc đang áp dụng và làm mới danh sách theo phạm vi còn lại.

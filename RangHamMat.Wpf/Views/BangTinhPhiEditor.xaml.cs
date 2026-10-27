@@ -13,6 +13,8 @@ public partial class BangTinhPhiEditor : UserControl
     private readonly BUS_THANHTOANTRONGOI bus;
     private readonly NguCanhNghiepVu user;
     private string? visitId;
+    private bool restoringWarehouse;
+    private DongLanKhamDanhSach? linkedVisit;
     public BangTinhPhi? BangTinh { get; private set; }
 
     public BangTinhPhiEditor(NguCanhNghiepVu? user = null, IDbTransaction? tx = null)
@@ -29,8 +31,8 @@ public partial class BangTinhPhiEditor : UserControl
     public void FocusContext(string? maLS)
     {
         if (maLS == visitId && BangTinh is not null) return;
-        if (DangXuLy || ChoDoiChieu) { StatusText.Text = "Cần đối chiếu yêu cầu đang thu trước khi đổi lượt."; return; }
-        visitId = maLS; Clear();
+        if (!CanChangeSource(out _))return;
+        visitId = maLS;linkedVisit=null;Clear();
         VisitText.Text = string.IsNullOrEmpty(maLS) ? "Chọn một lượt khám ở bộ lọc phía trên." : "Lần khám #" + maLS;
         PreviewButton.IsEnabled = !string.IsNullOrEmpty(maLS);
         StatusText.Text = "Chọn kho nếu có thuốc, sau đó xem bảng tính.";
@@ -43,12 +45,12 @@ public partial class BangTinhPhiEditor : UserControl
     }
     public bool TryLapBangTinh(out string? error)
     {
-        if (DangXuLy || ChoDoiChieu) { error = "Cần đối chiếu yêu cầu đang thu trước khi lập lại bảng tính."; StatusText.Text = error; return false; }
+        if(!CanChangeSource(out error))return false;
         Clear(); error = null;
         try
         {
             var s = bus.LapBangTinh(visitId ?? "", WarehouseFilter.SelectedValue as string, user);
-            BangTinh = s; VisitText.Text = $"{s.HoTenBN} · Mã {s.MaBN} · Lần khám #{s.MaLS}";
+            BangTinh = s;RenderVisitIdentity();
             ServicesGrid.ItemsSource = s.DichVu.Select(d => new { d.MaDVThucHien, d.NoiDung, d.SoLuong, Gia = Money(d.DonGia), Tien = Money(d.ThanhTien) }).ToArray();
             DrugsGrid.ItemsSource = s.Thuoc.Select(d => new { Nguon = $"{d.MaDT} / {d.MaCTDT}", d.NoiDung, d.DonViTinh, d.SoLuong, Gia = Money(d.DonGia), Tien = Money(d.ThanhTien) }).ToArray();
             LotsGrid.ItemsSource = s.Thuoc.SelectMany(d => d.CacLo.Select(l => new { d.MaCTDT, l.MaLo, l.SoLo, l.SoLuong, Tien = Money(l.ThanhTien) })).ToArray();
@@ -56,10 +58,31 @@ public partial class BangTinhPhiEditor : UserControl
             TotalText.Text = s.DauVanTay is null ? "Đối chiếu chứng từ đã có" : $"Tổng dự kiến: {Money(s.TongTien)}";
             StatusText.Text = s.ThongBao; UpdatePaymentControls(); return true;
         }
-        catch (Exception ex) { error = ex.Message; StatusText.Text = "Chưa lập được bảng tính: " + ex.Message; return false; }
+        catch (Exception ex) { error = ClinicalFormInput.Message(ex); StatusText.Text = "Chưa lập được bảng tính: " + error; return false; }
     }
     private static string Money(decimal amount) => TreatmentMoney.Format(amount);
+    internal void SetVisitIdentity(DongLanKhamDanhSach? source)
+    {linkedVisit=source?.MaLS==visitId?source:null;RenderVisitIdentity();}
+    private void RenderVisitIdentity()
+    {
+        var name=BangTinh?.HoTenBN??linkedVisit?.HoTenBN;var patient=BangTinh?.MaBN??linkedVisit?.MaBN;
+        VisitText.Text=name is null?(string.IsNullOrEmpty(visitId)?"Chọn một lượt khám ở bộ lọc phía trên.":"Lần khám #"+visitId):$"{name} · Mã {patient} · Lần khám #{visitId}";
+        if(linkedVisit is not null)VisitText.Text+=$"\nBác sĩ: {linkedVisit.TenBS} ({linkedVisit.MaBS})";
+    }
     private void Preview_Click(object sender, RoutedEventArgs e) => TryLapBangTinh(out _);
     private void Warehouse_Changed(object sender, SelectionChangedEventArgs e)
-    { if (TotalText is null) return; if(DangXuLy || ChoDoiChieu) { WarehouseFilter.SelectedValue=BangTinh?.MaKhoCapThuoc??""; return; } Clear(); StatusText.Text = "Kho đã đổi. Xem lại bảng tính theo kho mới."; }
+    {
+        if(TotalText is null||restoringWarehouse)return;
+        if(!CanChangeSource(out _))
+        {restoringWarehouse=true;try{WarehouseFilter.SelectedValue=BangTinh?.MaKhoCapThuoc??"";}finally{restoringWarehouse=false;}return;}
+        Clear();StatusText.Text="Kho đã đổi. Xem lại bảng tính theo kho mới.";
+    }
+    internal bool CanChangeSource(out string? error)
+    {
+        error=null;
+        if(DangXuLy||ChoDoiChieu){error=StatusText.Text="Cần đối chiếu yêu cầu đang thu trước khi đổi nguồn hoặc lập lại bảng tính.";return false;}
+        var decision=ClinicalWindowLifecycle.OwnerMain(Window.GetWindow(this))?.LeaveDecision;
+        if(ClinicalPendingWork.TryLeave([this],decision,out var message))return true;
+        error=string.IsNullOrEmpty(message)?"Đã giữ lượt, kho và tiền đang nhập.":message;StatusText.Text=error;return false;
+    }
 }

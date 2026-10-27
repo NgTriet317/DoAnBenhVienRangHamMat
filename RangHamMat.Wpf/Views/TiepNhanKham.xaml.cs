@@ -1,6 +1,7 @@
 using BUS;
 using ET;
 using RangHamMat.Controls;
+using RangHamMat.Controls.ClinicalWorkflow;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -94,7 +95,7 @@ public partial class TiepNhanKham : UserControl
     /// <summary>Được workspace gọi ngoài giao dịch cache; chỉ tải cache sau khi BUS đã commit.</summary>
     public bool TryReceive(out string error)
     {
-        error="";FormError.Text="";
+        error="";FormError.Text="";ClinicalFormInput.ClearErrors(this);
         if(SavedResult is not null)return true;
         try
         {
@@ -109,7 +110,7 @@ public partial class TiepNhanKham : UserControl
         }
         catch(InvalidOperationException ex)
         {
-            error=FormError.Text=ex.Message;
+            error=FormError.Text=ClinicalFormInput.Message(ex);ClinicalFormInput.ShowError(this,ex);
             if(ex is LoiTiepNhanException invalid)
                 (invalid.Truong switch {"MaDV"=>ServicePicker,"MaBS"=>DoctorPicker,"MaPhong"=>RoomPicker,"LyDoKham"=>ArrivalReason,"LyDoDieuPhoiNgoaiLich"=>DispatchReason,_=>(Control)AppointmentPicker}).Focus();
             return false;

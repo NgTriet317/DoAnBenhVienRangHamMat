@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Automation;
 using System.Windows.Input;
+using System.Security.Claims;
 using RangHamMat.Views;
 using RangHamMat.Controls;
 using RangHamMat.Controls.ClinicalWorkflow;
@@ -16,6 +17,9 @@ namespace RangHamMat;
 /// </summary>
 public partial class MainWindow : Window
 {
+    private string? sessionAccount=(Thread.CurrentPrincipal as ClaimsPrincipal)?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    private string? sessionEmployee=(Thread.CurrentPrincipal as ClaimsPrincipal)?.FindFirst(ET.DinhDanhNghiepVu.MaNhanVienClaim)?.Value;
+    private readonly TextBlock detachedWorkError=new(){Foreground=System.Windows.Media.Brushes.Firebrick,Background=System.Windows.Media.Brushes.White,TextWrapping=TextWrapping.Wrap,Margin=new Thickness(24),VerticalAlignment=VerticalAlignment.Bottom,Visibility=Visibility.Collapsed};
     private static readonly HashSet<string> AllPages = new(StringComparer.Ordinal)
     {
         "TongQuan", "BenhNhan", "KhamDieuTri", "DichVuThucHien", "DonThuoc", "NhanSu", "ChungChiNhanVien", "CaLamViec",
@@ -36,6 +40,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        if(Content is Panel root)root.Children.Add(detachedWorkError);
         RolePicker.Items.Clear();
         RolePicker.Items.Add(new ComboBoxItem { Content = PhienDangNhap.IsAdmin ? "Admin" : "User" });
         RolePicker.SelectedIndex = 0;
@@ -45,6 +50,10 @@ public partial class MainWindow : Window
             if (e.Key == Key.Escape && AppHost.Content is AppWorkspace workspace && workspace.ReturnToPage())
                 e.Handled = true;
         };
+        Closing+=(_,e)=>{if(!TryLeaveClinicalWork())e.Cancel=true;};
+        PhienDangNhap.TruocKhiDoiDinhDanh+=BeforeIdentityChange;
+        PhienDangNhap.DinhDanhThayDoi+=IdentityChanged;
+        Closed+=(_,_)=>{PhienDangNhap.TruocKhiDoiDinhDanh-=BeforeIdentityChange;PhienDangNhap.DinhDanhThayDoi-=IdentityChanged;};
     }
 
     /// <summary>
@@ -80,21 +89,24 @@ public partial class MainWindow : Window
     /// <summary>
     /// Kiểm tra vai trò, nạp dữ liệu SQL cho các phân hệ hồ sơ/tài chính, tạo UserControl tương ứng và đặt vào AppWorkspace; thông báo nếu không kết nối được.
     /// </summary>
-    internal void OpenApp(string tag)
+    internal bool OpenApp(string tag)
+        =>OpenAppCore(tag,null);
+    private bool OpenAppCore(string tag,ET.NguCanhHoSo? context)
     {
+        if(!TryLeaveClinicalWork())return false;
         if (!CanOpen(tag))
         {
             MessageBox.Show("Tài khoản hiện tại không có quyền mở phân hệ này.",
                 "Quyền truy cập", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
+            return false;
         }
 
-        try { DuLieuGiaoDien.ChonPhamViLamSang(QuyenNghiepVu.LaPhanHe(tag)); }
-        catch (InvalidOperationException ex) { MessageBox.Show(ex.Message, "Dữ liệu theo quyền", MessageBoxButton.OK, MessageBoxImage.Error); return; }
+        try { DuLieuGiaoDien.ChonPhamViLamSang(QuyenNghiepVu.LaPhanHe(tag),context); }
+        catch (InvalidOperationException ex) { MessageBox.Show(ex.Message, "Dữ liệu theo quyền", MessageBoxButton.OK, MessageBoxImage.Error); return false; }
         if (tag is "BenhNhan" or "LichKham" or "KhamDieuTri" or "DichVuThucHien" or "DonThuoc" or "HoaDon" or "BaoTri" or "NhaCungCap")
         {
             try {DuLieuGiaoDien.EnsureLoaded();}
-            catch(InvalidOperationException ex) {MessageBox.Show(ex.Message,"Kết nối database",MessageBoxButton.OK,MessageBoxImage.Error);return;}
+            catch(InvalidOperationException ex) {MessageBox.Show(ex.Message,"Kết nối database",MessageBoxButton.OK,MessageBoxImage.Error);return false;}
         }
         UserControl? page = tag switch
         {
@@ -126,7 +138,7 @@ public partial class MainWindow : Window
             "XinNghiViec" => new XinNghiViec(),
             _ => null
         };
-        if (page is null) return;
+        if (page is null) return false;
 
         string tenTrang = "Đơn xin nghỉ phép / nghỉ việc";
         if (tag != "XinNghiViec")
@@ -137,6 +149,7 @@ public partial class MainWindow : Window
         AppHost.Content = new AppWorkspace(this, tenTrang, CurrentRole, page);
         HomeSurface.Visibility = Visibility.Collapsed;
         AppHost.Visibility = Visibility.Visible;
+        return true;
     }
 
     /// <summary>
@@ -147,13 +160,13 @@ public partial class MainWindow : Window
     /// <summary>
     /// Kiểm tra quyền mở phân hệ rồi truyền đồng thời mã bệnh nhân, lần khám và đơn thuốc sang màn hình đích.
     /// </summary>
-    internal void OpenHoSoApp(string module, string? patientId, string? visitId = null, string? prescriptionId = null)
+    internal void OpenHoSoApp(string module, string? patientId, string? visitId = null, string? prescriptionId = null,string? medicalId=null,string? receiptId=null,string? invoiceId=null)
     {
         if (!CanOpen(module)) { MessageBox.Show("Vai trò hiện tại không được mở chức năng này.", "Quyền truy cập"); return; }
-        try { if (QuyenNghiepVu.LaPhanHe(module)) new BUS.BUS_KHAMDIEUTRI().KiemTraLienKet(patientId, visitId, prescriptionId, QuyenNghiepVu.LayNguCanh()); }
+        var context=new ET.NguCanhHoSo{MaBN=patientId,MaLS=visitId,MaDT=prescriptionId,MaHS=medicalId,MaPhieu=receiptId,MaHD=invoiceId};
+        try { if (QuyenNghiepVu.LaPhanHe(module)) context=new BUS.BUS_KHAMDIEUTRI().XacMinhNguCanh(context,QuyenNghiepVu.LayNguCanh()); }
         catch (InvalidOperationException ex) { MessageBox.Show(ex.Message, "Quyền truy cập"); return; }
-        OpenApp(module);
-        if (AppHost.Content is AppWorkspace workspace) workspace.FocusHoSo(patientId, visitId, prescriptionId);
+        if(OpenAppCore(module,context)&&AppHost.Content is AppWorkspace workspace) workspace.FocusHoSo(context);
     }
 
     /// <summary>
@@ -196,9 +209,33 @@ public partial class MainWindow : Window
     /// </summary>
     internal void ShowHome()
     {
+        if(!TryLeaveClinicalWork())return;
         AppHost.Content = null;
         AppHost.Visibility = Visibility.Collapsed;
         HomeSurface.Visibility = Visibility.Visible;
+    }
+
+    internal Func<string,MessageBoxResult>? LeaveDecision {get;set;}
+    public bool TryLeaveClinicalWork(Func<string,MessageBoxResult>? decision=null)
+    {
+        var owned=ClinicalWindowLifecycle.Owned(this).Where(ClinicalWindowLifecycle.IsClinical).Cast<DependencyObject>();
+        if(AppHost.Content is AppWorkspace workspace)return workspace.TryLeaveClinicalWork(decision??LeaveDecision,workspace.ClinicalRoots.Concat(owned));
+        var ok=ClinicalPendingWork.TryLeave(owned,decision??LeaveDecision,out var error);detachedWorkError.Text=error;detachedWorkError.Visibility=string.IsNullOrEmpty(error)?Visibility.Collapsed:Visibility.Visible;return ok;
+    }
+    private bool BeforeIdentityChange()=>TryLeaveClinicalWork();
+    private void IdentityChanged()
+    {
+        var currentAccount=(Thread.CurrentPrincipal as ClaimsPrincipal)?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var currentEmployee=(Thread.CurrentPrincipal as ClaimsPrincipal)?.FindFirst(ET.DinhDanhNghiepVu.MaNhanVienClaim)?.Value;
+        if(currentAccount!=sessionAccount||currentEmployee!=sessionEmployee)
+        {
+            var clinical=AppHost.Content is AppWorkspace workspace&&workspace.HasClinicalContent;
+            foreach(var child in ClinicalWindowLifecycle.Owned(this).Where(w=>clinical||ClinicalWindowLifecycle.IsClinical(w)).Reverse().ToArray()){child.Content=null;child.Close();}
+            if(clinical){AppHost.Content=null;AppHost.Visibility=Visibility.Collapsed;HomeSurface.Visibility=Visibility.Visible;}
+        }
+        sessionAccount=currentAccount;sessionEmployee=currentEmployee;
+        if(RolePicker.Items.OfType<ComboBoxItem>().FirstOrDefault() is { } item)item.Content=CurrentRole;
+        Dispatcher.BeginInvoke(new Action(()=>{if(IsLoaded)FilterApps();}));
     }
 
     /// <summary>

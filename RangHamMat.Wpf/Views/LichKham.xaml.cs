@@ -19,7 +19,8 @@ namespace RangHamMat.Views
         public void SetPatient(string? maBenhNhan)
         {
             PatientId = maBenhNhan;
-            ApDungBoLoc();
+            if(DuLieuGiaoDien.PhamViLamSang&&maBenhNhan is not null){DuLieuGiaoDien.BaoDamNguCanh(new(){MaBN=maBenhNhan});TaiDuLieu();}
+            else ApDungBoLoc();
         }
 
         // Chỉ lấy nhân viên có chức vụ bác sĩ.

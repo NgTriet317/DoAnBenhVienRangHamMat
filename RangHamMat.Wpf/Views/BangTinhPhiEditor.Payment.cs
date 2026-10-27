@@ -35,6 +35,7 @@ public partial class BangTinhPhiEditor
     {
         pendingPayment = null; KetQua = null; MaYeuCauHienTai = Guid.NewGuid();
         GivenText.Text = "0"; ReferenceText.Text = ""; TransferChecked.IsChecked = false;
+        MethodBox.SelectedIndex=0;
         UpdatePaymentControls();
     }
     private void UpdatePaymentControls()

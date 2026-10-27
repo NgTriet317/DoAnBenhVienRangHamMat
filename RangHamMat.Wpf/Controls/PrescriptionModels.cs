@@ -44,7 +44,7 @@ public sealed class RxCard
     /// <summary>
     /// Nhãn bác sĩ hoặc nhân viên thực hiện được tra từ mã liên kết trong bản ghi nguồn.
     /// </summary>
-    public string Doctor => DuLieuGiaoDien.Lookup("MaBS", UiRecord.Get(Record, "MaBS"));
+    public string Doctor => Record is ET.DongLichSuDon row?row.TenBS:DuLieuGiaoDien.Lookup("MaBS", UiRecord.Get(Record, "MaBS"));
     /// <summary>
     /// Lần khám nguồn của dữ liệu đang xem; dùng để mở lại lần khám hoặc tổng hợp thông tin điều trị.
     /// </summary>
@@ -52,11 +52,11 @@ public sealed class RxCard
     /// <summary>
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.
     /// </summary>
-    public string PatientId => DuLieuGiaoDien.PatientId("DON_THUOC", Record);
+    public string PatientId => Record is ET.DongLichSuDon row?row.MaBN:DuLieuGiaoDien.PatientId("DON_THUOC", Record);
     /// <summary>
     /// Ngày/giờ của lần khám nguồn; hiển thị thông báo khi liên kết lần khám không tồn tại.
     /// </summary>
-    public string VisitWhen => DuLieuGiaoDien.Find("LICH_SU_KHAM_BENH", Visit) is object visit
+    public string VisitWhen => Record is ET.DongLichSuDon row?row.ThoiGianKham.ToString("dd/MM/yyyy HH:mm"):DuLieuGiaoDien.Find("LICH_SU_KHAM_BENH", Visit) is object visit
         ? UiRecord.Date(visit, "ThoiGianKham")?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa có thời gian khám"
         : "Không tìm thấy lần khám";
     /// <summary>
@@ -94,6 +94,11 @@ public sealed class RxCard
     public RxCard(object record, bool expanded = false)
     {
         Record = record; IsExpanded = expanded;
+        if(record is ET.DongLichSuDon dto)
+        {
+            Patient=$"{dto.HoTenBN} ({dto.MaBN})";Phone=dto.SDT??"—";BirthDate=dto.NgaySinh?.ToString("dd/MM/yyyy")??"chưa ghi nhận";Diagnosis=dto.ChanDoan;
+            Lines=dto.CacDong.Select(r=>new PrescriptionLine(r)).ToArray();return;
+        }
         var patient = DuLieuGiaoDien.Find("BENH_NHAN", DuLieuGiaoDien.PatientId("DON_THUOC", record));
         Patient = patient is null ? "—" : DuLieuGiaoDien.Label("BENH_NHAN", patient);
         Phone = patient is null ? "—" : UiRecord.Text(patient, "SDT");

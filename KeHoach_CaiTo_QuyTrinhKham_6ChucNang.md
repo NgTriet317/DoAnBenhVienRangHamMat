@@ -1,6 +1,6 @@
 # Quy trình khám và thanh toán ngoại trú Implementation Plan
 
-> **Tiến độ 26/10/2026:** P01–P10 đã hoàn tất phần nền, migration, hồ sơ, tiếp nhận, khám, kế hoạch, dịch vụ, kê đơn snapshot, bảng tính, thu đủ, bàn giao và in lại chứng từ. Đã kiểm chứng 198 ca SQL (160 hồi quy + 25 thanh toán + 13 bàn giao), 52 ca WPF (39 hồi quy + 5 thanh toán + 8 bàn giao/in), giao đồng thời/rollback/in lỗi; dữ liệu và tồn cũ giữ nguyên. P11–P12 còn lại. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
+> **Tiến độ 27/10/2026:** P01–P11 đã hoàn tất; P11 bổ sung điều hướng có ngữ cảnh, bảo vệ dữ liệu chưa lưu/đổi phiên, phân trang SQL và giao diện thích ứng DPI. Đã kiểm chứng 210 ca SQL (172 hồi quy/P11 + 25 thanh toán + 13 bàn giao), 179 ca WPF (39 hồi quy + 127 P11 + 5 thanh toán + 8 bàn giao/in); dữ liệu và tồn cũ giữ nguyên. Còn P12 nghiệm thu toàn luồng, khôi phục và đóng gói; ba lỗi suite baseline vẫn được ghi rõ. Xem [tiến độ và quyết định](docs/clinical-workflow/TIEN_DO.md), [baseline](docs/clinical-workflow/BASELINE.md) và [kết quả kiểm thử](docs/clinical-workflow/KET_QUA_KIEM_THU.md).
 
 > **For agentic workers:** Triển khai từng tác vụ và đánh dấu `- [ ]` khi hoàn thành. Nếu môi trường có Superpowers, dùng `superpowers:executing-plans`; không phụ thuộc vào việc cài thêm kỹ năng để đọc hoặc thực hiện tài liệu này. Người dùng yêu cầu giao kế hoạch cho Codex terminal trong Visual Studio 2022, chưa yêu cầu triển khai trong phiên lập kế hoạch.
 
@@ -557,11 +557,11 @@ Không bắt đầu bằng thay toàn bộ XAML. Khóa hợp đồng dữ liệu
 
 **Interfaces:** Điều hướng luôn mang MaBN/MaHS/MaPhieu/MaLS/MaDT hoặc MaHD cần thiết, và kiểm tra lại mối liên kết trước mở. `CanOpen` không được dùng như quyền ghi chung cho mọi nút.
 
-- [ ] Rà trạng thái nút theo vai trò, trạng thái bản ghi và dữ liệu đang nhập; chuyển trang có thay đổi chưa lưu phải nhắc Lưu/Bỏ/Hủy rời trang.
-- [ ] Áp style cục bộ; lỗi dưới trường, giữ lựa chọn và focus, báo khi dữ liệu nguồn vừa đổi. Không nuốt lỗi BUS/DAL rồi hiện thành công.
-- [ ] Kiểm tra chuỗi liên kết hồ sơ → lượt → đơn → dịch vụ → hóa đơn luôn đúng BN; mã không tồn tại báo rõ, không tự chọn bản đầu danh sách.
-- [ ] Chạy WPF thật ở ba kích thước, DPI 100/125/150 phần trăm; thử tên, địa chỉ, chẩn đoán và đơn dài, không có dữ liệu, đang tải và lỗi SQL.
-- [ ] Kiểm tra tìm/phân trang với dữ liệu thử đủ lớn; lưu thay đổi sau khi UI và điều hướng đạt.
+- [x] Rà trạng thái nút theo vai trò, trạng thái bản ghi và dữ liệu đang nhập; chuyển trang có thay đổi chưa lưu phải nhắc Lưu/Bỏ/Hủy rời trang.
+- [x] Áp style cục bộ; lỗi dưới trường, giữ lựa chọn và focus, báo khi dữ liệu nguồn vừa đổi. Không nuốt lỗi BUS/DAL rồi hiện thành công.
+- [x] Kiểm tra chuỗi liên kết hồ sơ → lượt → đơn → dịch vụ → hóa đơn luôn đúng BN; mã không tồn tại báo rõ, không tự chọn bản đầu danh sách.
+- [x] Chạy WPF thật ở ba kích thước, DPI 100/125/150 phần trăm; thử tên, địa chỉ, chẩn đoán và đơn dài, không có dữ liệu, đang tải và lỗi SQL.
+- [x] Kiểm tra tìm/phân trang với dữ liệu thử đủ lớn; lưu thay đổi sau khi UI và điều hướng đạt.
 
 ### P12 Nghiệm thu và bàn giao triển khai
 

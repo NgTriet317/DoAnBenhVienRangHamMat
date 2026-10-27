@@ -49,7 +49,7 @@ public partial class HoSoBenhNhan : UserControl, IPatientScoped
     /// </summary>
     private void RefreshProfile()
     {
-        if (!ready) return;
+        if (!ready||refreshing) return;
         var patient = Patient;
         var medical = Medical;
         DataContext = new { Record = patient, MedicalRecord = medical };
@@ -70,9 +70,13 @@ public partial class HoSoBenhNhan : UserControl, IPatientScoped
             .Where(row => patient is not null && !string.IsNullOrWhiteSpace(PatientId) && DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH", row) == PatientId)
             .OrderByDescending(row => UiRecord.Date(row, "ThoiGianKham"))
             .Select(row => new PatientVisitRow(row)).ToArray();
-        HistoryGrid.ItemsSource = visits;
-        HistoryCount.Text = $"{visits.Length} lần khám · Chỉ hiển thị dữ liệu của bệnh nhân {PatientId}";
-        HistoryEmpty.Visibility = visits.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+        if(DuLieuGiaoDien.PhamViLamSang)RefreshHistoryPage();
+        else
+        {
+            HistoryGrid.ItemsSource = visits;
+            HistoryCount.Text = $"{visits.Length} lần khám · Chỉ hiển thị dữ liệu của bệnh nhân {PatientId}";
+            HistoryEmpty.Visibility = visits.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
         refreshing = false;
         // Kiểm tra lại liên kết sau mỗi lần dữ liệu đổi trước khi giữ vùng chi tiết lần khám.
         if (openedVisitId is not null)
@@ -128,6 +132,9 @@ public partial class HoSoBenhNhan : UserControl, IPatientScoped
     /// </summary>
     public void OpenVisit(string id)
     {
+        try{refreshing=true;DuLieuGiaoDien.BaoDamNguCanh(new(){MaBN=PatientId,MaLS=id});}
+        catch(InvalidOperationException ex){HistoryCount.Text=ex.Message;return;}
+        finally{refreshing=false;}
         var visit = DuLieuGiaoDien.Find("LICH_SU_KHAM_BENH", id);
         if (!allowed("KhamDieuTri")) { MessageBox.Show("Vai trò hiện tại không có quyền xem khám điều trị.", "Hồ sơ bệnh nhân"); return; }
         if (visit is null || DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH", visit) != PatientId)

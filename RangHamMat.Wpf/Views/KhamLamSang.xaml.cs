@@ -91,7 +91,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
         SavePlanButton.IsEnabled=planEdit;ConfirmPlanButton.IsEnabled=planEdit&&plan is not null;OpenServicesButton.IsEnabled=allowed("DichVuThucHien");OpenPrescriptionButton.IsEnabled=allowed("DonThuoc");
     }
     private bool Run(Action action,out string error)
-    {error="";ClinicalError.Text="";try{action();return true;}catch(InvalidOperationException ex){error=ClinicalError.Text=ex.Message;return false;}}
+    {error="";ClinicalError.Text="";ClinicalFormInput.ClearErrors(this);try{action();return true;}catch(InvalidOperationException ex){error=ClinicalError.Text=ClinicalFormInput.Message(ex);ClinicalFormInput.ShowError(this,ex);return false;}}
     private void SyncCache()
     {
         if(transaction is not null)return;

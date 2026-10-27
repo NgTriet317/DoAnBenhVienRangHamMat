@@ -20,7 +20,7 @@ public partial class XemTruocHoaDon : Window
     private readonly Func<BanInHoaDon>? read;
     public BanInHoaDon? NguonIn {get;private set;}
     public XemTruocHoaDon(Func<BanInHoaDon> read)
-    {InitializeComponent();this.read=read;var initial=read();code=initial.HoaDon.MaHD;Apply(initial);}
+    {InitializeComponent();RangHamMat.Controls.ClinicalWorkflow.ClinicalWindowLifecycle.Attach(this);this.read=read;var initial=read();code=initial.HoaDon.MaHD;Apply(initial);}
     public bool TryPrint(Action<DocumentPaginator> send,Size pageSize,out string? error)
     {
         error=null;try
@@ -43,7 +43,7 @@ public partial class XemTruocHoaDon : Window
     /// </summary>
     public XemTruocHoaDon(DataRow header, DataTable lines)
     {
-        InitializeComponent(); code = Convert.ToString(header["MaHD"]) ?? "";
+        InitializeComponent();RangHamMat.Controls.ClinicalWorkflow.ClinicalWindowLifecycle.Attach(this); code = Convert.ToString(header["MaHD"]) ?? "";
         InvoiceDocument.DataContext = new
         {
             Code = $"Hóa đơn #{code}", Status = Convert.ToString(header["TrangThai"]), Patient = $"{header["HoTenBN"]} · Mã {header["MaBN"]}", Visit = Convert.ToString(header["MaLS"]),

@@ -7,6 +7,10 @@ namespace DAL;
 public sealed partial class DAL_KHAMDIEUTRI
 {
     public DuLieuHoSoTheoQuyen LayDuLieuHoSo(NguCanhNghiepVu nguoiDung)
+        =>LaySnapshot(nguoiDung,null);
+    public DuLieuHoSoTheoQuyen LayDuLieuHoSoGiaoDien(NguCanhHoSo context,NguCanhNghiepVu actor)
+        =>LaySnapshot(actor,context??throw new ArgumentNullException(nameof(context)));
+    private DuLieuHoSoTheoQuyen LaySnapshot(NguCanhNghiepVu nguoiDung,NguCanhHoSo? context)
         => ThucHien((db, tx) =>
         {
             var user = DAL_QUYENNGHIEPVU.XacThuc(db, tx, nguoiDung);
@@ -17,7 +21,7 @@ public sealed partial class DAL_KHAMDIEUTRI
             var pharmacy = user.CoQuyen(QuyenLamViec.GiaoThuoc);
             var fullClinical = doctor || reception || user.LaAdmin;
             var finance = doctor || user.CoQuyen(QuyenLamViec.ThuTien) || pharmacy || user.LaAdmin;
-            using var reader = db.QueryMultiple(SnapshotSql, new { user.MaNV, doctor, reception, nurse, pharmacy, fullClinical, finance, user.LaAdmin }, tx);
+            using var reader = db.QueryMultiple(SnapshotSql, new { user.MaNV, doctor, reception, nurse, pharmacy, fullClinical, finance, user.LaAdmin,ui=context is not null,patient=context?.MaBN,visit=context?.MaLS,patientLimit=context is null?int.MaxValue:context.MaBN is null?50:1,visitLimit=context is null?int.MaxValue:100,receiptLimit=context is null?int.MaxValue:150,appointmentLimit=context is null||context.MaBN is not null?int.MaxValue:100 }, tx);
             var data = new Dictionary<string, object[]>(StringComparer.Ordinal);
             void Add<T>(string table) => data.Add(table, reader.Read<T>().Cast<object>().ToArray());
             Add<ET_BENHNHAN>("BENH_NHAN");
@@ -45,14 +49,14 @@ public sealed partial class DAL_KHAMDIEUTRI
 
     private const string SnapshotSql = """
         DECLARE @bn TABLE(MaBN nvarchar(50) PRIMARY KEY);
-        INSERT @bn SELECT b.MaBN FROM dbo.BENH_NHAN b WHERE @reception=1 OR @LaAdmin=1
+        INSERT @bn SELECT TOP(@patientLimit) b.MaBN FROM dbo.BENH_NHAN b WHERE (@patient IS NULL OR b.MaBN=@patient) AND (@reception=1 OR @LaAdmin=1
           OR (@doctor=1 AND EXISTS(SELECT 1 FROM dbo.HO_SO_BENH_AN hs JOIN dbo.PHIEU_KHAM_BENH p ON p.MaHS=hs.MaHS WHERE hs.MaBN=b.MaBN AND p.MaBS=@MaNV AND p.TrangThai<>N'Hủy'))
-          OR ((@pharmacy=1 OR @finance=1) AND @doctor=0 AND EXISTS(SELECT 1 FROM dbo.HO_SO_BENH_AN hs JOIN dbo.PHIEU_KHAM_BENH p ON p.MaHS=hs.MaHS JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaPhieu=p.MaPhieu WHERE hs.MaBN=b.MaBN AND l.TrangThai=N'Đã xác nhận'));
+          OR ((@pharmacy=1 OR @finance=1) AND @doctor=0 AND EXISTS(SELECT 1 FROM dbo.HO_SO_BENH_AN hs JOIN dbo.PHIEU_KHAM_BENH p ON p.MaHS=hs.MaHS JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaPhieu=p.MaPhieu WHERE hs.MaBN=b.MaBN AND l.TrangThai=N'Đã xác nhận'))) ORDER BY b.MaBN;
         DECLARE @ls TABLE(MaLS nvarchar(50) PRIMARY KEY);
-        INSERT @ls SELECT l.MaLS FROM dbo.LICH_SU_KHAM_BENH l JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
+        INSERT @ls SELECT TOP(@visitLimit) l.MaLS FROM dbo.LICH_SU_KHAM_BENH l JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
           JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS JOIN @bn b ON b.MaBN=hs.MaBN
-          WHERE (@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV) OR l.TrangThai=N'Đã xác nhận'
-          OR (@nurse=1 AND EXISTS(SELECT 1 FROM dbo.DICH_VU_THUC_HIEN d WHERE d.MaLS=l.MaLS AND d.MaNVThucHien=@MaNV));
+          WHERE (@visit IS NULL OR l.MaLS=@visit) AND ((@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV) OR l.TrangThai=N'Đã xác nhận'
+          OR (@nurse=1 AND EXISTS(SELECT 1 FROM dbo.DICH_VU_THUC_HIEN d WHERE d.MaLS=l.MaLS AND d.MaNVThucHien=@MaNV))) ORDER BY l.ThoiGianKham DESC,l.MaLS;
         DECLARE @kh TABLE(MaKHDT nvarchar(50) PRIMARY KEY);
         INSERT @kh SELECT k.MaKHDT FROM dbo.KE_HOACH_DIEU_TRI k JOIN @ls l ON l.MaLS=k.MaLS
           WHERE @fullClinical=1 AND (k.TrangThai<>N'Nháp' OR (@doctor=1 AND k.MaBS=@MaNV));
@@ -70,12 +74,13 @@ public sealed partial class DAL_KHAMDIEUTRI
           FROM dbo.BENH_NHAN b JOIN @bn x ON x.MaBN=b.MaBN;
         SELECT h.MaHS,h.MaBN,h.NgayLap,CASE WHEN @fullClinical=1 THEN h.LyDoKhamBanDau ELSE N'' END LyDoKhamBanDau,
           CASE WHEN @fullClinical=1 THEN h.GhiChu END GhiChu,h.TrangThai FROM dbo.HO_SO_BENH_AN h JOIN @bn b ON b.MaBN=h.MaBN;
-        SELECT p.MaPhieu,p.MaHS,p.MaLich,p.MaPhong,p.MaBS,p.MaNVTiepNhan,p.MaDV,p.SoThuTu,p.ThoiGianTiepNhan,
+        SELECT TOP(@receiptLimit) p.MaPhieu,p.MaHS,p.MaLich,p.MaPhong,p.MaBS,p.MaNVTiepNhan,p.MaDV,p.SoThuTu,p.ThoiGianTiepNhan,
           CASE WHEN @fullClinical=1 THEN p.LyDoKham ELSE N'' END LyDoKham,p.TrangThai,CASE WHEN @fullClinical=1 THEN p.GhiChu END GhiChu
           FROM dbo.PHIEU_KHAM_BENH p JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS JOIN @bn b ON b.MaBN=hs.MaBN
           WHERE @reception=1 OR @LaAdmin=1 OR (@doctor=1 AND p.MaBS=@MaNV)
-          OR EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l JOIN @ls x ON x.MaLS=l.MaLS WHERE l.MaPhieu=p.MaPhieu);
-        SELECT k.* FROM dbo.LICH_KHAM k JOIN @bn b ON b.MaBN=k.MaBN WHERE @fullClinical=1;
+          OR EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l JOIN @ls x ON x.MaLS=l.MaLS WHERE l.MaPhieu=p.MaPhieu)
+          ORDER BY CASE WHEN EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l JOIN @ls x ON x.MaLS=l.MaLS WHERE l.MaPhieu=p.MaPhieu) THEN 0 ELSE 1 END,p.ThoiGianTiepNhan DESC,p.MaPhieu;
+        SELECT TOP(@appointmentLimit) k.* FROM dbo.LICH_KHAM k JOIN @bn b ON b.MaBN=k.MaBN WHERE @fullClinical=1 ORDER BY k.NgayGioKham DESC,k.MaLich;
         SELECT l.MaLS,l.MaPhieu,l.MaBS,l.MaPhong,l.ThoiGianKham,
           CASE WHEN @fullClinical=1 AND (l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.TrieuChung ELSE N'' END TrieuChung,
           CASE WHEN ((@fullClinical=1 OR @pharmacy=1) AND l.TrangThai=N'Đã xác nhận') OR (@doctor=1 AND l.MaBS=@MaNV) THEN l.ChanDoan ELSE N'' END ChanDoan,

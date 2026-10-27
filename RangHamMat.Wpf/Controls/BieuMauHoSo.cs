@@ -19,7 +19,7 @@ namespace RangHamMat.Controls;
 /// <summary>
 /// Cơ chế đọc/lưu biểu mẫu theo Tag DB và Time, quản lý snapshot chống ghi đè và ngữ cảnh bệnh nhân/liên kết cha.
 /// </summary>
-public static class BieuMauHoSo
+public static partial class BieuMauHoSo
 {
     public static readonly DependencyProperty SavedProperty = DependencyProperty.RegisterAttached("Saved", typeof(object), typeof(BieuMauHoSo));
     /// <summary>
@@ -112,6 +112,7 @@ public static class BieuMauHoSo
                 if (table == "CHI_TIET_KE_HOACH" && field == "MaDV" && DuLieuGiaoDien.Children("DICH_VU_THUC_HIEN", "MaCTKH", UiRecord.Get(existing, "MaCTKH")).Length > 0) element.IsEnabled = false;
             }
         }
+        TrackClinicalInput(form);
     }
     /// <summary>
     /// Duyệt cây logical của form, đọc các control có Tag DB:BANG.COT và ghép ngày với giờ HH:mm từ Tag Time; trả dictionary tên cột/giá trị để lưu.

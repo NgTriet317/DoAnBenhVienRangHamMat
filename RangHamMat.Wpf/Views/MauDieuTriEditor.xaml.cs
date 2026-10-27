@@ -63,7 +63,7 @@ public partial class MauDieuTriEditor : UserControl
         TemplateServiceColumn.ItemsSource=serviceCatalog.Where(d=>d.TrangThai=="Đang hoạt động"||referenced.Contains(d.MaDV)).Select(d=>new LuaChonDanhMuc(d.MaDV,$"{d.TenDV} ({d.MaDV})"+(d.TrangThai=="Đang hoạt động"?"":" · ngừng hoạt động"))).ToArray();
     }
     private bool Run(Action action,out string error)
-    {error="";TemplateError.Text="";try{action();return true;}catch(InvalidOperationException ex){error=TemplateError.Text=ex.Message;return false;}}
+    {error="";TemplateError.Text="";ClinicalFormInput.ClearErrors(this);try{action();return true;}catch(InvalidOperationException ex){error=TemplateError.Text=ClinicalFormInput.Message(ex);ClinicalFormInput.ShowError(this,ex);return false;}}
     private void SyncCache(){if(transaction is not null)return;try{DuLieuGiaoDien.RefreshFromDatabase();}catch(InvalidOperationException){TemplateStatus.Text+=" Đã lưu dữ liệu; tải lại sau khi kết nối ổn định.";}}
     public bool TrySaveTemplate(out string error)=>Run(()=>
     {

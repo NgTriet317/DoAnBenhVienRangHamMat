@@ -25,18 +25,35 @@ public static class DuLieuGiaoDien
 {
     public static bool PhamViLamSang { get; private set; }
     public static void ChonPhamViLamSang(bool enabled)
+        =>ChonPhamViLamSang(enabled,clinicalScope);
+    internal static void ChonPhamViLamSang(bool enabled,NguCanhHoSo? scope)
     {
         if (PhamViLamSang != enabled) { XoaCachePhien(); PhamViLamSang = enabled; }
+        clinicalScope=scope??new();
         if (enabled) RefreshFromDatabase();
     }
     private static NguCanhNghiepVu? clinicalUser;
+    private static NguCanhHoSo clinicalScope=new();
+    internal static void GiuBanGhiDaCommit(string table,object saved)
+    {
+        if(!tables.TryGetValue(table,out var rows)){rows=new ObservableCollection<object>();tables[table]=rows;}
+        var key=Key(table);var id=UiRecord.Text(saved,key);var index=rows.ToList().FindIndex(r=>UiRecord.Text(r,key)==id);
+        if(index<0)rows.Add(saved);else rows[index]=saved;
+    }
+    internal static void BaoDamNguCanh(NguCanhHoSo context)
+    {
+        if(!PhamViLamSang)return;
+        if(clinicalScope.MaBN==context.MaBN&&(context.MaLS is null||clinicalScope.MaLS==context.MaLS)&&Find("BENH_NHAN",context.MaBN) is not null&&(context.MaDT is null||Find("DON_THUOC",context.MaDT) is not null)&&(context.MaHD is null||Find("HOA_DON",context.MaHD) is not null))return;
+        var valid=new BUS_KHAMDIEUTRI().XacMinhNguCanh(context,QuyenNghiepVu.LayNguCanh());
+        clinicalScope=valid;RefreshFromDatabase();
+    }
     public static NguCanhNghiepVu NguoiDungLamSang { get { EnsureLoaded(); return clinicalUser ?? throw new TuChoiQuyenNghiepVuException(); } }
     static DuLieuGiaoDien() => PhienDangNhap.DinhDanhThayDoi += XoaCachePhien;
     private static void XoaCachePhien()
     {
         if (batching) throw new InvalidOperationException("Không đổi phiên khi đang lưu chứng từ.");
         foreach (var rows in tables.Values) rows.Clear();
-        tables.Clear(); loaded = false; clinicalUser = null;
+        tables.Clear(); loaded = false; clinicalUser = null;clinicalScope=new();
     }
     private static readonly Dictionary<string, ObservableCollection<object>> tables = new();
     private static IDbTransaction? transaction;
@@ -204,7 +221,7 @@ public static class DuLieuGiaoDien
         using var pending = new BUS_DONTHUOC().BatDauGiaoDich();
         using var connection = pending.Connection!;
         var transaction = pending;
-        var scoped = PhamViLamSang ? new BUS_KHAMDIEUTRI(transaction).LayDuLieuHoSo(new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(PhienDangNhap.MaNV)) : null;
+        var scoped = PhamViLamSang ? new BUS_KHAMDIEUTRI(transaction).LayDuLieuHoSoGiaoDien(clinicalScope,new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(PhienDangNhap.MaNV)) : null;
         clinicalUser = scoped?.NguoiDung;
         if (scoped is not null)
         {

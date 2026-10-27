@@ -60,8 +60,7 @@ public static class QuyenNghiepVu
     {
         using var tx = new BUS_DONTHUOC().BatDauGiaoDich(); using var connection = tx.Connection!;
         var user = new BUS_QUYENNGHIEPVU(tx).LayNguCanh(PhienDangNhap.MaNV);
-        var data = new BUS_KHAMDIEUTRI(tx).LayDuLieuHoSo(user);
-        if (!data.CacBang["HOA_DON"].Cast<ET_HOADON>().Any(h => h.MaHD == id)) throw new TuChoiQuyenNghiepVuException();
+        new BUS_KHAMDIEUTRI(tx).XacMinhNguCanh(new(){MaHD=id},user);
         var finance = new BUS_HOADON(tx);
         var result = payments ? finance.GetPayments(id) : finance.GetInvoiceDetails(id);
         tx.Commit(); return result;
@@ -71,10 +70,10 @@ public static class QuyenNghiepVu
     {
         using var tx = new BUS_DONTHUOC().BatDauGiaoDich(); using var connection = tx.Connection!;
         var user = new BUS_QUYENNGHIEPVU(tx).LayNguCanh(PhienDangNhap.MaNV);
-        var data = new BUS_KHAMDIEUTRI(tx).LayDuLieuHoSo(user);
+        var visits = new BUS_KHAMDIEUTRI(tx).LayMaLuotHoaDon(string.IsNullOrEmpty(visit)?null:visit,user);
         var finance = new BUS_HOADON(tx);
         var result = finance.GetInvoices("__khong_co_luot__");
-        foreach (var id in data.CacBang["HOA_DON"].Cast<ET_HOADON>().Select(h => h.MaLS).Where(id => string.IsNullOrEmpty(visit) || id == visit).Distinct())
+        foreach (var id in visits)
             result.Merge(finance.GetInvoices(id));
         tx.Commit(); return result;
     }

@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using BUS;
 using ET;
+using RangHamMat.Controls.ClinicalWorkflow;
 using RangHamMat.Controls;
 namespace RangHamMat.Views;
 public partial class HuongDanThuocEditor:UserControl
@@ -15,7 +16,7 @@ public partial class HuongDanThuocEditor:UserControl
     private void Fill(BanNhapHuongDanThuoc? s)
     {var prior=loading;loading=true;try{saved=s;nextVersion=false;GroupChoice.SelectedValue=s?.CauHinh.MaNhomThuoc??"";PopulationEditor.Text=s?.CauHinh.DoiTuongApDung??"";RouteEditor.Text=s?.CauHinh.DuongDung??"";DoseEditor.Text=s?.CauHinh.LieuDungGoiY??"";InstructionEditor.Text=s?.CauHinh.HuongDanGoiY??"";ReviewText.Text=s is null?"Hướng dẫn mới v1 — chưa duyệt":$"v{s.CauHinh.PhienBan} · {s.CauHinh.TrangThai} · người duyệt {s.CauHinh.MaNguoiDuyet??"chưa có"} · {s.CauHinh.NgayDuyet:dd/MM/yyyy HH:mm}";dirty=false;Rights();}finally{loading=prior;}}
     private void Rights(){var edit=saved is null||saved.CauHinh.TrangThai=="Nháp"||nextVersion;InputPanel.IsEnabled=SaveButton.IsEnabled=edit&&DrugChoice.SelectedValue is string;ApproveButton.IsEnabled=edit&&!nextVersion&&saved is not null&&actor.CoQuyen(QuyenLamViec.DuyetHuongDanThuoc);NextVersionButton.IsEnabled=saved is not null&&saved.CauHinh.TrangThai!="Nháp"&&!nextVersion;}
-    private bool Run(Action action,out string error){error="";ErrorText.Text="";try{action();return true;}catch(InvalidOperationException ex){error=ErrorText.Text=ex.Message;return false;}}
+    private bool Run(Action action,out string error){error="";ErrorText.Text="";ClinicalFormInput.ClearErrors(this);try{action();return true;}catch(InvalidOperationException ex){error=ErrorText.Text=ClinicalFormInput.Message(ex);ClinicalFormInput.ShowError(this,ex);return false;}}
     public bool TrySave(out string error)=>Run(()=>{if(DrugChoice.SelectedValue is not string id)throw new LoiKhamException("MaThuoc","Chọn thuốc.");var c=new ET_CAUHINHTHUOCKEDON{MaThuoc=id,MaNhomThuoc=GroupChoice.SelectedValue is string g&&g.Length>0?g:null,DoiTuongApDung=PopulationEditor.Text,DuongDung=RouteEditor.Text,LieuDungGoiY=DoseEditor.Text,HuongDanGoiY=InstructionEditor.Text,TrangThai="Nháp",PhienBan=saved is null?1:saved.CauHinh.PhienBan+(nextVersion?1:0)};Fill(service.LuuHuongDan(c,saved?.DauVanTay,actor));StatusText.Text="Đã lưu nháp; chưa được áp hướng dẫn.";Sync();},out error);
     public bool TryApprove(out string error)=>Run(()=>{if(saved is null||dirty||nextVersion)throw new LoiKhamException("HuongDan","Lưu nháp trước khi duyệt.");Fill(service.DuyetHuongDan(saved.CauHinh.MaThuoc,saved.DauVanTay,actor));StatusText.Text="Đã duyệt bằng định danh phiên và ghi nhật ký.";Sync();},out error);
     private void Sync(){if(transaction is null)try{DuLieuGiaoDien.RefreshFromDatabase();}catch(InvalidOperationException){StatusText.Text+=" Đã lưu dữ liệu; tải lại khi kết nối ổn định.";}}
