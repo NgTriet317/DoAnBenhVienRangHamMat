@@ -10,7 +10,7 @@ namespace DAL;
 /// <summary>Đọc/lưu cấu hình hỗ trợ trong cùng transaction với kiểm tra định danh và audit SQL.</summary>
 public abstract class DAL_CAUHINHLAMSANG<T> : dbconnect where T : class, new()
 {
-    private static readonly Type[] Allowed = [typeof(ET_DMTINHTRANGBENH),typeof(ET_MAUKEHOACHDIEUTRI),typeof(ET_CHITIETMAUKEHOACH),typeof(ET_NHOMTHUOCKEDON),typeof(ET_CAUHINHTHUOCKEDON)];
+    private static readonly Type[] Allowed = [typeof(ET_NHOMTHUOCKEDON),typeof(ET_CAUHINHTHUOCKEDON)];
     private static readonly string Table = Allowed.Contains(typeof(T)) ? typeof(T).GetCustomAttribute<TableAttribute>()!.Name : throw new InvalidOperationException("Entity ngoài hợp đồng cấu hình.");
     private static readonly PropertyInfo[] Columns = typeof(T).GetProperties();
     private static readonly PropertyInfo Key = Columns.Single(p => p.GetCustomAttribute<ExplicitKeyAttribute>() is not null);
@@ -29,8 +29,7 @@ public abstract class DAL_CAUHINHLAMSANG<T> : dbconnect where T : class, new()
         ArgumentNullException.ThrowIfNull(duLieu);
         var user=DAL_QUYENNGHIEPVU.XacThuc(db,tx,nguoiDung);
         if(!user.CoQuyen(QuyenLamViec.CauHinhHoTro) && !user.LaAdmin) throw DAL_QUYENNGHIEPVU.TuChoi();
-        if(duLieu is ET_MAUKEHOACHDIEUTRI m && (m.TrangThai!="Nháp" || m.MaBSDuyet is not null || m.NgayDuyet is not null)
-            || duLieu is ET_CAUHINHTHUOCKEDON c && (c.TrangThai!="Nháp" || c.MaNguoiDuyet is not null || c.NgayDuyet is not null))
+        if(duLieu is ET_CAUHINHTHUOCKEDON c && (c.TrangThai!="Nháp" || c.MaNguoiDuyet is not null || c.NgayDuyet is not null))
             throw new InvalidOperationException("Chỉ lưu cấu hình nháp; phê duyệt qua thao tác chuyên môn riêng.");
         var id=(string?)Key.GetValue(duLieu);
         var current=string.IsNullOrWhiteSpace(id) ? null : db.QuerySingleOrDefault<T>($"SELECT * FROM dbo.[{Table}] WITH(UPDLOCK,HOLDLOCK) WHERE [{Key.Name}]=@id",new{id},tx);
@@ -70,8 +69,5 @@ public abstract class DAL_CAUHINHLAMSANG<T> : dbconnect where T : class, new()
     });
 }
 
-public sealed class DAL_DMTINHTRANGBENH(IDbTransaction? transaction=null) : DAL_CAUHINHLAMSANG<ET_DMTINHTRANGBENH>(transaction);
-public sealed class DAL_MAUKEHOACHDIEUTRI(IDbTransaction? transaction=null) : DAL_CAUHINHLAMSANG<ET_MAUKEHOACHDIEUTRI>(transaction);
-public sealed class DAL_CHITIETMAUKEHOACH(IDbTransaction? transaction=null) : DAL_CAUHINHLAMSANG<ET_CHITIETMAUKEHOACH>(transaction);
 public sealed class DAL_NHOMTHUOCKEDON(IDbTransaction? transaction=null) : DAL_CAUHINHLAMSANG<ET_NHOMTHUOCKEDON>(transaction);
 public sealed class DAL_CAUHINHTHUOCKEDON(IDbTransaction? transaction=null) : DAL_CAUHINHLAMSANG<ET_CAUHINHTHUOCKEDON>(transaction);

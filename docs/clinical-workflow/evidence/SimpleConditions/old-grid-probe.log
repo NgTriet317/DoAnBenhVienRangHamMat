@@ -1,0 +1,17 @@
+baseline dll=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\ConditionProbe\bin\Debug\net8.0-windows\RangHamMat.Wpf.dll
+auth=RHM.Desktop employee=NV003
+draft state=Nháp allowed=True grid enabled=True readonly=False add=True viewCanAdd=True items=1
+column=Danh mục readonly=False
+column=Loại readonly=False
+column=Mô tả readonly=False
+column=Mức độ readonly=False
+column=Vị trí răng readonly=False
+column=Ghi chú readonly=False
+new row BeginEdit=True adding=True selectedType=TinhTrangKhamNhap
+text editor exists=True enabled=True readonly=False
+cellCommit=True rowCommit=True
+collectionCount=1 typedValueCommitted=True dirty=True
+existing row BeginEdit=True
+existing cellCommit=True rowCommit=True valueCommitted=True
+history grid enabled=True readonly=True add=False BeginEdit=False
+SQL SAVE NEVER CALLED

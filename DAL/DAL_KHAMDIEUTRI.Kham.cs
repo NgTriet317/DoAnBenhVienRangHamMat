@@ -12,9 +12,8 @@ public sealed partial class DAL_KHAMDIEUTRI
         var(_,v)=OwnedVisit(db,tx,maLS,user,false);var s=ClinicalSnapshot(db,tx,v);
         var patient=db.QuerySingle<ET_BENHNHAN>("SELECT * FROM dbo.BENH_NHAN WITH(HOLDLOCK) WHERE MaBN=@MaBN",v,tx);
         var services=db.Query<ET_DICHVU>("SELECT d.* FROM dbo.DICH_VU d WHERE d.TrangThai=N'Đang hoạt động' OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_KE_HOACH c JOIN dbo.KE_HOACH_DIEU_TRI k ON k.MaKHDT=c.MaKHDT WHERE k.MaLS=@maLS AND c.MaDV=d.MaDV) ORDER BY d.TenDV,d.MaDV",new{maLS},tx).ToArray();
-        var categories=db.Query<ET_DMTINHTRANGBENH>("SELECT * FROM dbo.DM_TINH_TRANG_BENH ORDER BY TenTinhTrang,MaDMTT",transaction:tx).ToArray();
         var plans=db.Query<ET_KEHOACHDIEUTRI>("SELECT * FROM dbo.KE_HOACH_DIEU_TRI WITH(HOLDLOCK) WHERE MaLS=@maLS ORDER BY NgayLap,MaKHDT",new{maLS},tx).ToArray();
-        return new DuLieuKhongGianKham(s,patient,services,categories,plans);
+        return new DuLieuKhongGianKham(s,patient,services,plans);
     });
     public string BatDauKham(string maPhieu,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
@@ -57,13 +56,10 @@ public sealed partial class DAL_KHAMDIEUTRI
             if(r is null)throw KhamError("TinhTrang","Dòng tình trạng không hợp lệ.");
             ET_TINHTRANGBENH? current=null;
             if(!string.IsNullOrEmpty(r.MaTTB) && (!old.TryGetValue(r.MaTTB,out current)||!keys.Add(r.MaTTB)))throw DAL_QUYENNGHIEPVU.TuChoi();
-            var category=string.IsNullOrWhiteSpace(r.MaDMTT)?null:current?.MaDMTT==r.MaDMTT
-                ?db.QuerySingleOrDefault<ET_DMTINHTRANGBENH>("SELECT * FROM dbo.DM_TINH_TRANG_BENH WITH(HOLDLOCK) WHERE MaDMTT=@id",new{id=r.MaDMTT},tx)??throw KhamError("MaDMTT","Danh mục nguồn không tồn tại.")
-                :ActiveCondition(db,tx,r.MaDMTT);
-            var row=new ET_TINHTRANGBENH {MaTTB=current?.MaTTB??"",MaLS=visit.MaLS,MaDMTT=category?.MaDMTT,LoaiTinhTrang=string.IsNullOrWhiteSpace(r.LoaiTinhTrang)?category?.TenTinhTrang??"":r.LoaiTinhTrang,MoTaTinhTrang=string.IsNullOrWhiteSpace(r.MoTaTinhTrang)?category?.TenTinhTrang??"":r.MoTaTinhTrang,MucDo=r.MucDo,ViTriRang=r.ViTriRang,GhiChu=r.GhiChu};
-            Required(row.LoaiTinhTrang,"TinhTrang","Nhập loại tình trạng hoặc chọn danh mục.");Required(row.MoTaTinhTrang,"TinhTrang","Nhập mô tả tình trạng.");Required(row.MucDo,"TinhTrang","Nhập mức độ tình trạng.");
+            var name=r.LoaiTinhTrang?.Trim()??"";
+            var row=new ET_TINHTRANGBENH {MaTTB=current?.MaTTB??"",MaLS=visit.MaLS,MaDMTT=current?.MaDMTT,LoaiTinhTrang=name,MoTaTinhTrang=string.IsNullOrWhiteSpace(r.MoTaTinhTrang)?name:r.MoTaTinhTrang.Trim(),ViTriRang=r.ViTriRang,GhiChu=r.GhiChu};
+            Required(row.LoaiTinhTrang,"TinhTrang","Nhập tình trạng bệnh.");
             KiemTra(db,tx,"TINH_TRANG_BENH",row,current,null);
-            if(current is not null && current.MaDMTT!=row.MaDMTT && ConditionHasPlan(db,tx,current.MaTTB))throw KhamError("TinhTrang","Tình trạng đã là nguồn kế hoạch; thêm tình trạng mới để đổi danh mục.");
             incoming.Add(row);
         }
         foreach(var removed in old.Values.Where(t=>!keys.Contains(t.MaTTB)))
@@ -78,9 +74,9 @@ public sealed partial class DAL_KHAMDIEUTRI
             if(string.IsNullOrEmpty(row.MaTTB))
             {
                 row.MaTTB=TaoMa(db,tx,"TINH_TRANG_BENH","MaTTB");
-                db.Execute("INSERT dbo.TINH_TRANG_BENH(MaTTB,MaLS,LoaiTinhTrang,MoTaTinhTrang,MucDo,GhiChu,MaDMTT,ViTriRang) VALUES(@MaTTB,@MaLS,@LoaiTinhTrang,@MoTaTinhTrang,@MucDo,@GhiChu,@MaDMTT,@ViTriRang)",row,tx);
+                db.Execute("INSERT dbo.TINH_TRANG_BENH(MaTTB,MaLS,LoaiTinhTrang,MoTaTinhTrang,GhiChu,MaDMTT,ViTriRang) VALUES(@MaTTB,@MaLS,@LoaiTinhTrang,@MoTaTinhTrang,@GhiChu,@MaDMTT,@ViTriRang)",row,tx);
             }
-            else db.Execute("UPDATE dbo.TINH_TRANG_BENH SET LoaiTinhTrang=@LoaiTinhTrang,MoTaTinhTrang=@MoTaTinhTrang,MucDo=@MucDo,GhiChu=@GhiChu,MaDMTT=@MaDMTT,ViTriRang=@ViTriRang WHERE MaTTB=@MaTTB",row,tx);
+            else db.Execute("UPDATE dbo.TINH_TRANG_BENH SET LoaiTinhTrang=@LoaiTinhTrang,MoTaTinhTrang=@MoTaTinhTrang,GhiChu=@GhiChu,MaDMTT=@MaDMTT,ViTriRang=@ViTriRang WHERE MaTTB=@MaTTB",row,tx);
         db.Execute("UPDATE dbo.LICH_SU_KHAM_BENH SET TrieuChung=@TrieuChung,ChanDoan=@ChanDoan,KeHoachXuLy=@KeHoachXuLy,GhiChu=@GhiChu,KhongKeThuoc=@KhongKeThuoc,LyDoKhongKeThuoc=@LyDoKhongKeThuoc WHERE MaLS=@MaLS",visit,tx);
         var saved=ClinicalSnapshot(db,tx,visit);ClinicalAudit(db,tx,actor,"Lưu nháp khám","LICH_SU_KHAM_BENH",visit.MaLS,original.DauVanTay,saved.DauVanTay);return saved;
     });
@@ -126,7 +122,6 @@ public sealed partial class DAL_KHAMDIEUTRI
     private static void Required(string? value,string field,string message){if(string.IsNullOrWhiteSpace(value))throw KhamError(field,message);}
     private static void ClinicalLock(IDbConnection db,IDbTransaction? tx,string source)
     {if(db.ExecuteScalar<int>("DECLARE @r int; EXEC @r=sys.sp_getapplock @Resource=@resource,@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000; SELECT @r",new{resource="RHM:Kham:"+source},tx)<0)throw new InvalidOperationException("Dữ liệu đang được lưu ở cửa sổ khác. Vui lòng thử lại.");}
-    private static ET_DMTINHTRANGBENH ActiveCondition(IDbConnection db,IDbTransaction? tx,string id)=>db.QuerySingleOrDefault<ET_DMTINHTRANGBENH>("SELECT * FROM dbo.DM_TINH_TRANG_BENH WITH(HOLDLOCK) WHERE MaDMTT=@id AND TrangThai=N'Đang áp dụng'",new{id},tx)??throw KhamError("MaDMTT","Danh mục tình trạng không còn áp dụng.");
     private static bool ConditionHasPlan(IDbConnection db,IDbTransaction? tx,string id)=>db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.KE_HOACH_DIEU_TRI WITH(UPDLOCK,HOLDLOCK) WHERE MaTTBNguon=@id",new{id},tx)>0;
     private static void ClinicalAudit(IDbConnection db,IDbTransaction? tx,NguCanhNghiepVu user,string action,string table,string id,string? before,string? after)
     {db.Execute("INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau) VALUES(@nk,@MaTK,SYSDATETIME(),@action,@table,@id,N'Thành công',@before,@after)",new{nk=TaoMa(db,tx,"NHAT_KY_THAO_TAC","MaNK"),user.MaTK,action,table,id,before,after},tx);}

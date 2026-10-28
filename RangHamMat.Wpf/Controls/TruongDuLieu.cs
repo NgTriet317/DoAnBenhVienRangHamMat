@@ -21,7 +21,7 @@ public static class TruongDuLieu
         ["HO_SO_BENH_AN"] = new() { ["MaHS"] = "Mã hồ sơ", ["MaBN"] = "Bệnh nhân", ["NgayLap"] = "Ngày lập", ["LyDoKhamBanDau"] = "Lý do khám ban đầu", ["GhiChu"] = "Ghi chú", ["TrangThai"] = "Trạng thái" },
         ["LICH_KHAM"] = new() { ["MaLich"] = "Mã lịch khám", ["MaBN"] = "Bệnh nhân", ["MaBS"] = "Bác sĩ", ["MaCa"] = "Ca làm", ["MaPhong"] = "Phòng", ["MaDV"] = "Dịch vụ dự kiến", ["NgayGioKham"] = "Ngày giờ khám", ["ThoiLuongDuKien"] = "Thời lượng dự kiến (phút)", ["UuTien"] = "Ưu tiên", ["LyDoKham"] = "Lý do khám", ["LyDoThayDoi"] = "Lý do thay đổi", ["TrangThai"] = "Trạng thái", ["GhiChu"] = "Ghi chú", ["NgayTao"] = "Ngày tạo", ["NgayCapNhat"] = "Ngày cập nhật" },
         ["LICH_SU_KHAM_BENH"] = new() { ["MaLS"] = "Mã lần khám", ["MaPhieu"] = "Phiếu tiếp nhận", ["MaBS"] = "Bác sĩ khám", ["MaPhong"] = "Phòng khám", ["ThoiGianKham"] = "Thời gian khám", ["TrieuChung"] = "Triệu chứng", ["ChanDoan"] = "Chẩn đoán", ["KeHoachXuLy"] = "Kế hoạch xử lý", ["TrangThai"] = "Trạng thái", ["NgayXacNhan"] = "Ngày xác nhận", ["GhiChu"] = "Ghi chú" },
-        ["TINH_TRANG_BENH"] = new() { ["MaTTB"] = "Mã tình trạng", ["MaLS"] = "Lần khám", ["LoaiTinhTrang"] = "Loại tình trạng", ["MoTaTinhTrang"] = "Mô tả tình trạng", ["MucDo"] = "Mức độ", ["GhiChu"] = "Ghi chú" },
+        ["TINH_TRANG_BENH"] = new() { ["MaTTB"] = "Mã tình trạng", ["MaLS"] = "Lần khám", ["LoaiTinhTrang"] = "Loại tình trạng", ["MoTaTinhTrang"] = "Mô tả tình trạng", ["GhiChu"] = "Ghi chú" },
         ["KE_HOACH_DIEU_TRI"] = new() { ["MaKHDT"] = "Mã kế hoạch", ["MaLS"] = "Lần khám khởi tạo", ["MaBS"] = "Bác sĩ lập", ["NgayLap"] = "Ngày lập", ["NgayBatDau"] = "Ngày bắt đầu", ["NgayDuKienKetThuc"] = "Ngày dự kiến kết thúc", ["TrangThai"] = "Trạng thái", ["GhiChu"] = "Ghi chú" },
         ["CHI_TIET_KE_HOACH"] = new() { ["MaCTKH"] = "Mã chi tiết kế hoạch", ["MaKHDT"] = "Kế hoạch điều trị", ["MaDV"] = "Dịch vụ", ["LanThu"] = "Lần thứ", ["SoLuongDuKien"] = "Số lượng dự kiến", ["DonGiaDuKien"] = "Đơn giá dự kiến", ["TrangThai"] = "Trạng thái", ["GhiChu"] = "Ghi chú" },
         ["DICH_VU_THUC_HIEN"] = new() { ["MaDVThucHien"] = "Mã thực hiện", ["MaLS"] = "Lần khám", ["MaCTKH"] = "Bước kế hoạch (nếu có)", ["MaDV"] = "Dịch vụ", ["MaNVThucHien"] = "Người thực hiện", ["ThoiGianThucHien"] = "Thời gian thực hiện", ["SoLuong"] = "Số lượng", ["DonGia"] = "Đơn giá thực hiện", ["KetQua"] = "Kết quả", ["TrangThai"] = "Trạng thái" },
@@ -60,7 +60,7 @@ public static class TruongDuLieu
         Add("BAN_GIAO_THUOC","MaDT MaHD MaPX TrangThai MaNVGiao ThoiGianGiao GhiChu");
         foreach(var pair in new Dictionary<string,string>
         {
-            ["TINH_TRANG_BENH"]="MaDMTT ViTriRang", ["KE_HOACH_DIEU_TRI"]="MaTTBNguon MaMauKH PhienBanMau",
+            ["TINH_TRANG_BENH"]="ViTriRang", ["KE_HOACH_DIEU_TRI"]="MaTTBNguon MaMauKH PhienBanMau",
             ["CHI_TIET_KE_HOACH"]="NoiDungBuoc", ["LICH_SU_KHAM_BENH"]="KhongKeThuoc LyDoKhongKeThuoc",
             ["DON_THUOC"]="MaDTThayThe", ["CHI_TIET_DON_THUOC"]="DuongDung TenThuocChot HamLuongChot DonViTinhChot PhienBanHuongDan",
             ["HOA_DON"]="PhienBanQuyTrinh MaYeuCau DauVanTayYeuCau", ["THANH_TOAN"]="SoTienKhachDua TienThua MaThamChieu"

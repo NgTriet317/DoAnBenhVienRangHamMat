@@ -56,7 +56,6 @@
     <Cot Ten="MaLS" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
     <Cot Ten="LoaiTinhTrang" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
     <Cot Ten="MoTaTinhTrang" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
-    <Cot Ten="MucDo" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
     <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
     <Cot Ten="MaDMTT" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
     <Cot Ten="ViTriRang" Kieu="nvarchar" QuyCach="100" ChoTrong="true" Khoa="false" />

@@ -28,7 +28,7 @@ internal static class ClinicalFormInput
             "MaNVThucHien"=>["PerformerChoice"],"MaDV"=>["ServiceChoice","ServicePicker"],"MaThuoc"=>["RxLines","DrugChoice","DrugGrid"],
             "MaBS"=>["DoctorPicker"],"MaPhong"=>["RoomPicker"],"LyDoKham"=>["ArrivalReason"],"LyDoDieuPhoiNgoaiLich"=>["DispatchReason"],
             "NgayBatDau"=>["PlanStart"],"NgayDuKienKetThuc"=>["PlanEnd"],"TenMau"=>["TemplateName"],"PhienBan"=>["VersionEditor"],
-            "TenNhom"=>["GroupName"],"TenTinhTrang"=>["NewCategoryName"],"MaDMTT"=>["CategoryPicker"],
+            "TenNhom"=>["GroupName"],"TinhTrang"=>["ConditionNameEditor","ConditionList"],
             "CacDong" or "LieuDung" or "DuongDung" or "HuongDan"=>["RxLines","DoseEditor","InstructionEditor"],
             _=>Array.Empty<string>()
         };

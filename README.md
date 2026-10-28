@@ -19,8 +19,10 @@ Trong `RangHamMat.Wpf/Views`, mỗi màn hình gồm `.xaml` và `.xaml.cs` đư
 2. `Database/Migrations/20261024_02_ClinicalWorkflow.sql`
 3. `Database/Migrations/20261024_03_Verify_ClinicalWorkflow.sql`
 4. `Database/Migrations/20261028_05_AdminFullAccess.sql`
+5. `Database/Migrations/20261028_06_SimpleConditions.sql`
+6. `Database/Migrations/20261028_07_DemoSpecialties.sql` — thêm dữ liệu hư cấu để chạy thử chuyên khoa.
 
-Nâng cấp giữ chứng từ/số tiền/tồn cũ, không thu hoặc xuất lại. Chạy bước2 lần hai an toàn. Không dùng file cài mới để nâng cấp. Rollback04 chỉ dành cho trước khi có dữ liệu nghiệp vụ mới; sau đó cần quy trình restore/đối chiếu, xem [hướng dẫn](docs/clinical-workflow/HUONG_DAN_CHAY.md).
+Database đã là v2 chỉ cần các bước 4–6 chưa áp dụng. Migration06 bỏ cột `TINH_TRANG_BENH.MucDo`; các dữ liệu khác được giữ. Migration07 bổ sung dữ liệu demo, chạy lại không đặt lại trạng thái khám, nội dung đã sửa hoặc mật khẩu. Nâng cấp giữ chứng từ/số tiền/tồn cũ, không thu hoặc xuất lại. Không dùng file cài mới để nâng cấp. Rollback04 chỉ dành cho trước khi có dữ liệu nghiệp vụ mới; sau đó cần quy trình restore/đối chiếu, xem [hướng dẫn](docs/clinical-workflow/HUONG_DAN_CHAY.md).
 
 ## 2. Cấu hình và chạy
 
@@ -45,13 +47,17 @@ dotnet run --project RangHamMat.Wpf -c Release
 
 Nếu SQL Server dùng instance có tên, dùng dạng `TEN_MAY\SQLEXPRESS` trong chuỗi kết nối; trong JSON phải viết `TEN_MAY\\SQLEXPRESS`. Máy đích cần database đã cài/nâng cấp và .NET8 Desktop Runtime khi chạy bản publish phụ thuộc framework.
 
-Tài khoản mẫu `admin001` và `user002`…`user010`, mật khẩu mẫu `123456`. **Admin có toàn quyền ở mọi mục chức năng**, gồm tiếp nhận, khám/kế hoạch, duyệt mẫu, xác nhận dịch vụ, ký đơn, thu tiền và giao thuốc cho mọi bác sĩ. Trong **Đơn thuốc**, dùng nút **Bàn giao thuốc** để chuyển sang quầy giao. User vẫn theo chức vụ và phạm vi được phân trong SQL. Các chứng từ đã chốt, kiểm tra dữ liệu bắt buộc, tiền và tồn kho vẫn được bảo vệ. Database v2 đã cài trước ngày28/10 cần chạy migration05 để đồng bộ quyền duyệt/giao; bản cài mới đã tích hợp. Không dùng tài khoản mẫu cho dữ liệu thật. Xem [thay đổi quyền Admin](docs/clinical-workflow/QUYEN_ADMIN.md) và [hướng dẫn chạy](docs/clinical-workflow/HUONG_DAN_CHAY.md).
+Tài khoản mẫu `admin001` và `user002`…`user010`, mật khẩu mẫu `123456`. **Admin có toàn quyền ở mọi mục chức năng**, gồm tiếp nhận, khám/kế hoạch, xác nhận dịch vụ, ký đơn, thu tiền và giao thuốc cho mọi bác sĩ. Trong **Đơn thuốc**, dùng nút **Bàn giao thuốc** để chuyển sang quầy giao. User vẫn theo chức vụ và phạm vi được phân trong SQL. Các chứng từ đã chốt, kiểm tra dữ liệu bắt buộc, tiền và tồn kho vẫn được bảo vệ. Database v2 đã cài trước ngày28/10 cần chạy migration05 để đồng bộ quyền duyệt/giao; bản cài mới đã tích hợp. Không dùng tài khoản mẫu cho dữ liệu thật. Xem [thay đổi quyền Admin](docs/clinical-workflow/QUYEN_ADMIN.md) và [hướng dẫn chạy](docs/clinical-workflow/HUONG_DAN_CHAY.md).
+
+Dữ liệu mới có 12 bác sĩ thuộc CK002–CK007, thêm vào 2 bác sĩ tổng quát có sẵn: tổng 14 bác sĩ ở 7 chuyên khoa. Các tài khoản `demo_ck002_ngay`, `demo_ck002_dem`…`demo_ck007_dem` có mật khẩu ban đầu `123456`. Xem [danh sách tài khoản, dịch vụ và lịch trực](docs/clinical-workflow/DU_LIEU_MAU_CHUYEN_KHOA.md). Trên máy hiện tại, các phiếu mẫu được phân ca đêm lúc nạp dữ liệu; có thể dùng `demo_ck002_dem` hoặc Admin để xem thử.
 
 ## 3. Luồng khám mới
 
 **Bệnh nhân →Hồ sơ →Tiếp nhận →Khám/kế hoạch →Dịch vụ đã làm/đơn ký →Thu đủ →Bàn giao thuốc →In lại.**
 
 Trong **Khám điều trị**, tab mặc định **Hàng chờ khám** lấy các phiếu tiếp nhận được phân cho bác sĩ đăng nhập, xếp theo giờ tiếp nhận từ trước đến sau. Chọn người bệnh để kiểm tra thông tin rồi bấm **Bắt đầu khám** hoặc **Khám tiếp**. Hàng chờ giữ cả phiếu chưa khám từ ngày trước, tự cập nhật mỗi10 giây khi không có nháp đang nhập. Admin xem tất cả hoặc lọc theo bác sĩ. Các lượt đã hoàn tất nằm trong tab **Lịch sử khám**, chỉ xem. Xem [luồng hàng chờ bác sĩ](docs/clinical-workflow/HANG_CHO_BAC_SI.md).
+
+Tab **Tình trạng bệnh** dùng form tên tình trạng, mô tả, vị trí răng/vùng và ghi chú, với nút **Thêm/Cập nhật/Xóa**. Chỉ tên tình trạng bắt buộc; bấm **Lưu nháp** cũng nhận nội dung đang gõ dù chưa bấm Thêm. Không còn Mức độ, chọn danh mục, Gợi ý mẫu hoặc Cấu hình hỗ trợ của Khám điều trị. Kế hoạch được lập trực tiếp từ dịch vụ. Có 14 phiếu mẫu chờ/đang khám và 7 bản nháp để thử nhập; xem [thiết kế và kết quả kiểm tra](docs/clinical-workflow/TINH_TRANG_BENH_DON_GIAN.md).
 
 Ký đơn chưa trừ kho; thu đủ mới ghi xuất và chờ giao trong cùng transaction. Bàn giao/in lại không thu hay trừ tồn lần nữa. Khi rời trang có nhập liệu, chọn Lưu nháp/Bỏ thay đổi/Hủy; Lưu nháp không ký hoặc thu tiền. Yêu cầu thu/giao chưa rõ kết quả giữ nguyên mã để đối chiếu khi thử lại.
 

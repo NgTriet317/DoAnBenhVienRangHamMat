@@ -18,7 +18,7 @@ public partial class KhamDieuTri : UserControl,IPatientScoped
     private readonly DispatcherTimer queueTimer=new(DispatcherPriority.Background){Interval=TimeSpan.FromSeconds(10)};
     public string? PatientId{get;private set;}
     private bool QueueMode=>WorkTabs?.SelectedIndex==0;
-    private bool EditorDirty=>DetailHost?.Content is ChiTietKhamDieuTri d&&d.CoThayDoiChuaLuu||DetailHost?.Content is MauDieuTriEditor m&&m.CoThayDoiChuaLuu;
+    private bool EditorDirty=>DetailHost?.Content is ChiTietKhamDieuTri d&&d.CoThayDoiChuaLuu;
 
     public KhamDieuTri()
     {
@@ -26,14 +26,13 @@ public partial class KhamDieuTri : UserControl,IPatientScoped
         if(DuLieuGiaoDien.PhamViLamSang)
         {
             var actor=QuyenNghiepVu.LayNguCanh();
-            TemplateConfigButton.Visibility=actor.CoQuyen(QuyenLamViec.CauHinhHoTro)&&actor.CoQuyen(QuyenLamViec.Kham)?Visibility.Visible:Visibility.Collapsed;
             QueueTab.IsEnabled=actor.CoQuyen(QuyenLamViec.Kham);
             if(!QueueTab.IsEnabled)WorkTabs.SelectedIndex=1;
             DoctorFilter.ItemsSource=new[]{new LuaChonDanhMuc("","Tất cả bác sĩ")}.Concat(DuLieuGiaoDien.Rows("NHAN_VIEN").Where(r=>UiRecord.Text(r,"MaChucVu")=="CV002").Select(r=>new LuaChonDanhMuc(UiRecord.Text(r,"MaNV"),UiRecord.Text(r,"HoTen")))).ToArray();
             DoctorFilter.SelectedValue="";
             ScopeText.Text=actor.LaAdmin?"Theo dõi hàng tiếp nhận của tất cả bác sĩ; có thể lọc bác sĩ nhận khám.":$"Hàng tiếp nhận của bác sĩ {DuLieuGiaoDien.Lookup("MaBS",actor.MaNV)} ({actor.MaNV}).";
         }
-        else{QueueTab.IsEnabled=false;WorkTabs.SelectedIndex=1;TemplateConfigButton.Visibility=Visibility.Collapsed;}
+        else{QueueTab.IsEnabled=false;WorkTabs.SelectedIndex=1;}
         activeTab=WorkTabs.SelectedIndex;updating=false;UpdateMode();
         HoTroGiaoDien.Observe(this,Refresh);
         queueTimer.Tick+=(_,_)=>{if(QueueMode&&!EditorDirty&&!configurationOpen)RefreshQueue();};
@@ -127,10 +126,4 @@ public partial class KhamDieuTri : UserControl,IPatientScoped
         if(!CanLeaveEditor())return;updating=true;SearchBox.Clear();StatusFilter.SelectedIndex=0;DoctorFilter.SelectedValue="";FromDate.SelectedDate=ToDate.SelectedDate=null;PatientId=null;explicitVisitId=explicitReceiptId=selectedVisitId=selectedReceiptId=null;queuePage=visitPage=1;ClearDetail();updating=false;Refresh();
     }
     private void Reload_Click(object sender,RoutedEventArgs e){if(!CanLeaveEditor())return;Refresh();}
-    private void TemplateConfig_Click(object sender,RoutedEventArgs e)
-    {
-        if(configurationOpen||!CanLeaveEditor())return;
-        try{var editor=new MauDieuTriEditor();editor.BackRequested+=()=>{configurationOpen=false;ClearDetail();Refresh();};configurationOpen=true;DetailHost.Content=editor;DetailEmpty.Visibility=QueuePreview.Visibility=Visibility.Collapsed;}
-        catch(InvalidOperationException ex){PageStatus.Text=ClinicalFormInput.Message(ex);}
-    }
 }

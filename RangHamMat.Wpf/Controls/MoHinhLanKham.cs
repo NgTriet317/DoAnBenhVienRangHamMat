@@ -241,10 +241,6 @@ public sealed class DongChiTietLanKham
     /// </summary>
     public string Description => UiRecord.Text(Record, "MoTaTinhTrang");
     /// <summary>
-    /// Mức độ tình trạng bệnh đã ghi trong lần khám.
-    /// </summary>
-    public string Severity => UiRecord.Text(Record, "MucDo");
-    /// <summary>
     /// Ghi chú của bản ghi/dòng nháp để hiển thị hoặc nhập bổ sung trước khi lưu.
     /// </summary>
     public string Note => UiRecord.Text(Record, "GhiChu");

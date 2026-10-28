@@ -44,7 +44,7 @@ internal static class Program
             }));
             Check("Bắt đầu/nhấn lặp/hoàn tất đúng lượt, ra khỏi hàng chờ vào lịch sử",()=>Tx(tx=>{
                 Fixture(tx);var a=Identity(tx,"NV002","TK002");var bus=new BUS_KHAMDIEUTRI(tx);var id=bus.BatDauKham("Q_FIRST",a);Assert(bus.BatDauKham("Q_FIRST",a)==id,"Tạo trùng lượt");
-                var s=bus.LayBanNhap(id,a);s=bus.LuuKham(new(){MaLS=id,DauVanTay=s.DauVanTay,TrieuChung="Mô phỏng",ChanDoan="Kiểm thử",KeHoachXuLy="Mô phỏng",KhongKeThuoc=true,LyDoKhongKeThuoc="Kiểm thử không kê đơn",TinhTrang=[new(){LoaiTinhTrang="Kiểm thử",MoTaTinhTrang="Mô phỏng",MucDo="Nhẹ"}]},a);
+                var s=bus.LayBanNhap(id,a);s=bus.LuuKham(new(){MaLS=id,DauVanTay=s.DauVanTay,TrieuChung="Mô phỏng",ChanDoan="Kiểm thử",KeHoachXuLy="Mô phỏng",KhongKeThuoc=true,LyDoKhongKeThuoc="Kiểm thử không kê đơn",TinhTrang=[new(){LoaiTinhTrang="Kiểm thử",MoTaTinhTrang="Mô phỏng"}]},a);
                 bus.HoanTatKham(id,s.DauVanTay,a);Assert(!bus.LayHangDoi(new(),a).Any(x=>x.MaPhieu=="Q_FIRST"),"Lượt xong vẫn trong hàng chờ");Assert(bus.LayTrangLanKham(new(){MaLS=id},a).CacDong.Single().TrangThai=="Đã xác nhận","Không thấy lịch sử đã khám");
             }));
             Check("Tìm kiếm ký tự đặc biệt và kiểm tra bộ lọc",()=>Tx(tx=>{

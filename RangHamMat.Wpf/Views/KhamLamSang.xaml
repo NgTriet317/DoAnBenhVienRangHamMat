@@ -13,25 +13,25 @@
         <TextBlock Text="Xử trí / định hướng điều trị" Style="{StaticResource FieldLabel}" Margin="0,12,0,0"/><TextBox x:Name="TreatmentEditor" MinHeight="65" AcceptsReturn="True" TextWrapping="Wrap" TextChanged="Clinical_Changed"/>
         <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}" Margin="0,12,0,0"/><TextBox x:Name="ClinicalNote" MinHeight="45" AcceptsReturn="True" TextWrapping="Wrap" TextChanged="Clinical_Changed"/>
       </StackPanel></ScrollViewer></TabItem>
-      <TabItem Header="Tình trạng bệnh"><Grid Margin="12"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
-        <TextBlock Text="Chọn mã danh mục hoặc mô tả thủ công; bác sĩ tự ghi mức độ và vị trí. Lưu nháp trước khi yêu cầu gợi ý." TextWrapping="Wrap" Margin="0,0,0,10"/>
-        <DataGrid x:Name="ConditionGrid" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="True" CellEditEnding="Condition_Edit" MinRowHeight="36"><DataGrid.Columns>
-          <DataGridComboBoxColumn x:Name="ConditionCategoryColumn" Header="Danh mục" SelectedValueBinding="{Binding MaDMTT}" SelectedValuePath="Value" DisplayMemberPath="Label" Width="170"/>
-          <DataGridTextColumn Header="Loại" Binding="{Binding LoaiTinhTrang}" Width="100"/><DataGridTextColumn Header="Mô tả" Binding="{Binding MoTaTinhTrang}" Width="200"/>
-          <DataGridTextColumn Header="Mức độ" Binding="{Binding MucDo}" Width="110"/><DataGridTextColumn Header="Vị trí răng" Binding="{Binding ViTriRang}" Width="110"/><DataGridTextColumn Header="Ghi chú" Binding="{Binding GhiChu}" Width="150"/>
-        </DataGrid.Columns></DataGrid>
-      </Grid></TabItem>
+      <TabItem Header="Tình trạng bệnh"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="12">
+        <TextBlock Text="Ghi nhận tình trạng bệnh" FontSize="17" FontWeight="SemiBold"/>
+        <TextBlock Text="Nhập tình trạng, bổ sung mô tả hoặc vị trí nếu cần rồi Thêm/Cập nhật. Có thể bấm Lưu nháp để lưu ngay nội dung đang nhập." TextWrapping="Wrap" Margin="0,6,0,12"/>
+        <StackPanel x:Name="ConditionInputPanel">
+          <TextBlock Text="Tình trạng *" Style="{StaticResource FieldLabel}"/><TextBox x:Name="ConditionNameEditor" MaxLength="255" TextChanged="ConditionInput_Changed"/>
+          <TextBlock Text="Mô tả (không bắt buộc)" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/><TextBox x:Name="ConditionDetailEditor" MinHeight="60" MaxHeight="110" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" TextChanged="ConditionInput_Changed"/>
+          <TextBlock Text="Vị trí răng / vùng ghi nhận" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/><TextBox x:Name="ConditionLocationEditor" MaxLength="100" TextChanged="ConditionInput_Changed"/>
+          <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/><TextBox x:Name="ConditionNoteEditor" MinHeight="40" MaxHeight="90" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" TextChanged="ConditionInput_Changed"/>
+          <WrapPanel Margin="0,12,0,12"><Button x:Name="AddConditionButton" Content="Thêm tình trạng" Click="AddCondition_Click"/><Button x:Name="UpdateConditionButton" Content="Cập nhật dòng chọn" Click="UpdateCondition_Click" Margin="8,0,0,0"/><Button x:Name="DeleteConditionButton" Content="Xóa dòng chọn" Click="DeleteCondition_Click" Margin="8,0,0,0"/><Button x:Name="ClearConditionButton" Content="Bỏ nhập / Nhập mới" Click="ClearCondition_Click" Margin="8,0,0,0"/></WrapPanel>
+        </StackPanel>
+        <TextBlock x:Name="ConditionCount" FontWeight="SemiBold" Margin="0,4,0,8"/>
+        <ListBox x:Name="ConditionList" SelectionChanged="Condition_Selected" MinHeight="120" MaxHeight="280" ScrollViewer.HorizontalScrollBarVisibility="Disabled"><ListBox.ItemTemplate><DataTemplate><Border Padding="10" BorderBrush="#DFE8F3" BorderThickness="0,0,0,1"><StackPanel><TextBlock Text="{Binding LoaiTinhTrang}" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding MoTaTinhTrang}" TextWrapping="Wrap" Margin="0,5,0,0"/><TextBlock Text="{Binding ViTriRang}" Foreground="#64748B" TextWrapping="Wrap"/><TextBlock Text="{Binding GhiChu}" Foreground="#64748B" TextWrapping="Wrap"/></StackPanel></Border></DataTemplate></ListBox.ItemTemplate></ListBox>
+      </StackPanel></ScrollViewer></TabItem>
+
       <TabItem Header="Kế hoạch điều trị"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="12">
-        <TextBlock Text="Gợi ý từ tình trạng đã lưu" FontWeight="SemiBold" FontSize="16"/>
-        <TextBlock Text="Chỉ mẫu đã duyệt, theo mã và mức độ. Chọn từng mẫu để kiểm tra; hệ thống không tự gộp hoặc tự xác nhận điều trị." TextWrapping="Wrap" Margin="0,6,0,10"/>
-        <WrapPanel><Button x:Name="SuggestButton" Content="Gợi ý kế hoạch" Click="Suggest_Click"/><Button x:Name="ApplyTemplateButton" Content="Áp dụng mẫu đã chọn" Click="Apply_Click"/></WrapPanel>
-        <ComboBox x:Name="SuggestionPicker" DisplayMemberPath="Nhan" SelectionChanged="Suggestion_Changed" MinHeight="36" Margin="0,8,0,0"/>
-        <TextBlock x:Name="SuggestionPreview" TextWrapping="Wrap" Margin="0,8,0,12"/>
-        <WrapPanel><Button x:Name="NewPlanButton" Content="Kế hoạch thủ công mới" Click="NewPlan_Click"/><Button Content="Tải lại (bỏ thay đổi chưa lưu)" Click="Reload_Click"/></WrapPanel>
+        <WrapPanel><Button x:Name="NewPlanButton" Content="Kế hoạch mới" Click="NewPlan_Click"/><Button Content="Tải lại (bỏ thay đổi chưa lưu)" Click="Reload_Click"/></WrapPanel>
         <ComboBox x:Name="PlanPicker" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Plan_Changed" MinHeight="36" Margin="0,10,0,0"/>
         <TextBlock x:Name="PlanIdentity" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,8,0,8"/>
         <StackPanel x:Name="PlanFields">
-          <TextBlock Text="Tình trạng nguồn (tùy chọn với kế hoạch thủ công)" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="PlanSourcePicker" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Plan_FieldChanged" MinHeight="34"/>
           <WrapPanel Margin="0,10,0,0"><StackPanel Margin="0,0,12,0"><TextBlock Text="Bắt đầu dự kiến"/><DatePicker x:Name="PlanStart" SelectedDateChanged="Plan_FieldChanged"/></StackPanel><StackPanel><TextBlock Text="Kết thúc dự kiến"/><DatePicker x:Name="PlanEnd" SelectedDateChanged="Plan_FieldChanged"/></StackPanel></WrapPanel>
           <TextBlock Text="Ghi chú kế hoạch" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/><TextBox x:Name="PlanNote" TextChanged="Plan_TextChanged" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="45"/>
         </StackPanel>

@@ -1,0 +1,32 @@
+$ErrorActionPreference='Stop'
+$db=[Data.SqlClient.SqlConnection]::new('Data Source=.;Initial Catalog=QLBenhVienRangHamMat;Integrated Security=True;TrustServerCertificate=True;');$db.Open()
+function Read-Table($sql,$parameters=@{}){$cmd=$db.CreateCommand();$cmd.CommandText=$sql;$cmd.CommandTimeout=120;foreach($p in $parameters.GetEnumerator()){[void]$cmd.Parameters.AddWithValue($p.Key,$p.Value)};$table=[Data.DataTable]::new();$reader=$cmd.ExecuteReader();try{$table.Load($reader)}finally{$reader.Dispose();$cmd.Dispose()};return ,$table}
+function Snapshot($spec){
+ $where='';$parameters=@{}
+ if($spec.KeyJson){$where=" WHERE EXISTS(SELECT 1 FROM OPENJSON(@originalKeys) k WHERE $($spec.Predicate))";$parameters['@originalKeys']=$spec.KeyJson}
+ $data=Read-Table ("DECLARE @j nvarchar(max)=(SELECT $($spec.Columns) FROM dbo.$($spec.QuotedName) t$where ORDER BY $($spec.Keys) FOR JSON PATH,INCLUDE_NULL_VALUES); SELECT CONVERT(varchar(64),HASHBYTES('SHA2_256',COALESCE(@j,N'[]')),2) Hash,(SELECT COUNT_BIG(*) FROM dbo.$($spec.QuotedName) t$where) [RowCount];") $parameters
+ [pscustomobject]@{Table=$spec.Table;Hash=[string]$data.Rows[0].Hash;RowCount=[long]$data.Rows[0].RowCount}
+}
+try{
+ if(Get-Process RangHamMat.Wpf -ErrorAction SilentlyContinue){throw 'Ứng dụng đang mở; lưu nháp và đóng trước khi thay schema.'}
+ $meta=Read-Table @'
+SELECT t.name [Table],QUOTENAME(t.name) QuotedName,
+ STUFF((SELECT ',t.'+QUOTENAME(c.name) FROM sys.columns c WHERE c.object_id=t.object_id AND NOT(t.name=N'TINH_TRANG_BENH' AND c.name=N'MucDo') ORDER BY c.column_id FOR XML PATH(''),TYPE).value('.','nvarchar(max)'),1,1,'') Columns,
+ STUFF((SELECT ',t.'+QUOTENAME(c.name) FROM sys.indexes i JOIN sys.index_columns ic ON ic.object_id=i.object_id AND ic.index_id=i.index_id JOIN sys.columns c ON c.object_id=ic.object_id AND c.column_id=ic.column_id WHERE i.object_id=t.object_id AND i.is_primary_key=1 ORDER BY ic.key_ordinal FOR XML PATH(''),TYPE).value('.','nvarchar(max)'),1,1,'') Keys,
+ STUFF((SELECT ' AND JSON_VALUE(k.value,''$.'+c.name+''')=CONVERT(nvarchar(4000),t.'+QUOTENAME(c.name)+',126)' FROM sys.indexes i JOIN sys.index_columns ic ON ic.object_id=i.object_id AND ic.index_id=i.index_id JOIN sys.columns c ON c.object_id=ic.object_id AND c.column_id=ic.column_id WHERE i.object_id=t.object_id AND i.is_primary_key=1 ORDER BY ic.key_ordinal FOR XML PATH(''),TYPE).value('.','nvarchar(max)'),1,5,'') Predicate
+FROM sys.tables t WHERE t.is_ms_shipped=0 ORDER BY t.name;
+'@
+ if($meta.Rows.Count -ne 52){throw 'Database khác52 bảng đã khảo sát; dừng để đối chiếu.'}
+ $specs=@(foreach($row in $meta.Rows){$keySql="SELECT (SELECT $($row.Keys) FROM dbo.$($row.QuotedName) t ORDER BY $($row.Keys) FOR JSON PATH,INCLUDE_NULL_VALUES) AS FullJson";$cmd=$db.CreateCommand();$cmd.CommandText=$keySql;$keyJson=[string]$cmd.ExecuteScalar();$cmd.Dispose();if([string]::IsNullOrEmpty($keyJson)){$keyJson='[]'};[pscustomobject]@{Table=$row.Table;QuotedName=$row.QuotedName;Columns=$row.Columns;Keys=$row.Keys;Predicate=$row.Predicate;KeyJson=$keyJson}})
+ $before=@(foreach($spec in $specs){Snapshot $spec});$before|ConvertTo-Json|Set-Content -LiteralPath obj/SimpleConditionChecks/local-before.json -Encoding UTF8
+ $dir=[string](Read-Table "SELECT CONVERT(nvarchar(4000),SERVERPROPERTY('InstanceDefaultBackupPath')) Path").Rows[0].Path
+ if([string]::IsNullOrWhiteSpace($dir)){throw 'Thiếu thư mục backup SQL Server.'}
+ $backup=Join-Path $dir ('QLBenhVienRangHamMat_before_simple_conditions_'+(Get-Date -Format yyyyMMdd_HHmmss)+'_'+[guid]::NewGuid().ToString('N')+'.bak')
+ $cmd=$db.CreateCommand();$cmd.CommandTimeout=120;$cmd.CommandText='BACKUP DATABASE [QLBenhVienRangHamMat] TO DISK=@file WITH COPY_ONLY,CHECKSUM; RESTORE VERIFYONLY FROM DISK=@file WITH CHECKSUM;';[void]$cmd.Parameters.AddWithValue('@file',$backup);[void]$cmd.ExecuteNonQuery();$cmd.Dispose();[IO.File]::WriteAllText((Join-Path $PWD 'obj/SimpleConditionChecks/backup-path.txt'),$backup);Write-Output "BACKUP VERIFIED: $backup"
+ foreach($name in @('20261028_06_SimpleConditions.sql','20261028_07_DemoSpecialties.sql')){& sqlcmd -S . -d QLBenhVienRangHamMat -E -C -b -f65001 -i (Join-Path $PWD ('Database/Migrations/'+$name));if($LASTEXITCODE -ne 0){throw "Dừng sau lỗi $name. Backup: $backup"}}
+ $after=@(foreach($spec in $specs){Snapshot $spec});$after|ConvertTo-Json|Set-Content -LiteralPath obj/SimpleConditionChecks/local-after.json -Encoding UTF8
+ foreach($prior in $before){$current=$after|Where-Object Table -eq $prior.Table;if($current.Hash -ne $prior.Hash -or $current.RowCount -ne $prior.RowCount){throw "Các dòng gốc khác ở bảng $($prior.Table); cần đối chiếu backup."}}
+ Write-Output "PASS: toàn bộ dòng gốc của52 bảng giữ nguyên, ngoài cột MucDo được bỏ theo yêu cầu."
+ & sqlcmd -S . -d QLBenhVienRangHamMat -E -C -b -f65001 -W -Q "SET NOCOUNT ON; SELECT COUNT(*) SoBang FROM sys.tables; SELECT COUNT(*) SoBacSi FROM dbo.NHAN_VIEN WHERE MaChucVu=N'CV002' AND TrangThai=N'Đang làm việc'; SELECT COL_LENGTH(N'dbo.TINH_TRANG_BENH',N'MucDo') MucDoDaBo;"
+ if($LASTEXITCODE -ne 0){throw 'Kiểm tra cuối thất bại.'}
+}finally{$db.Dispose()}

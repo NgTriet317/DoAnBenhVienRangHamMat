@@ -25,7 +25,6 @@ public enum QuyenLamViec
     ThuTien = 16,
     GiaoThuoc = 32,
     CauHinhHoTro = 64,
-    DuyetMauDieuTri = 128,
     DuyetHuongDanThuoc = 256,
     DieuPhoiNgoaiLich = 512
 }

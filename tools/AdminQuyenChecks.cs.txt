@@ -51,12 +51,8 @@ internal static class Program
             Fixture(tx,false);var a=Login(tx,"NV001","TK001");var id=new BUS_KHAMDIEUTRI(tx).BatDauKham("AD_PH",a);
             Assert(tx.Connection!.QuerySingle<string>("SELECT MaBS FROM dbo.LICH_SU_KHAM_BENH WHERE MaLS=@id",new{id},tx)=="NV002","Đổi bác sĩ thành Admin");
         }));
-        Check("Admin duyệt mẫu điều trị và hướng dẫn qua trigger SQL",()=>InTransaction(tx=>{
+        Check("Admin duyệt hướng dẫn thuốc qua trigger SQL",()=>InTransaction(tx=>{
             var a=Login(tx,"NV001","TK001");
-            new DAL_DMTINHTRANGBENH(tx).LuuNhap(new(){TenTinhTrang="Kiểm thử Admin",TrangThai="Đang áp dụng"},a);
-            var cat=tx.Connection!.QuerySingle<string>("SELECT MaDMTT FROM dbo.DM_TINH_TRANG_BENH WHERE TenTinhTrang=N'Kiểm thử Admin'",transaction:tx);
-            var k=new BUS_KHAMDIEUTRI(tx);var m=k.LuuMauDieuTri(new(){MaDMTT=cat,TenMau="Admin test",CacBuoc=[new(){MaDV="DV001",NoiDungBuoc="Kiểm thử"}]},a);
-            var approved=k.DuyetMauDieuTri(m.Mau.MaMauKH,m.DauVanTay,a);Assert(approved.Mau.MaBSDuyet==a.MaNV,"Sai người duyệt");
             var rx=new BUS_DONTHUOC(tx);var g=rx.LuuHuongDan(new(){MaThuoc="TH001",DoiTuongApDung="Mô phỏng kiểm thử",DuongDung="Kiểm thử",LieuDungGoiY="Kiểm thử",HuongDanGoiY="Không dùng điều trị",TrangThai="Nháp",PhienBan=1},null,a);
             Assert(rx.DuyetHuongDan(g.CauHinh.MaThuoc,g.DauVanTay,a).CauHinh.MaNguoiDuyet==a.MaNV,"Sai người duyệt hướng dẫn");
         }));
@@ -111,7 +107,7 @@ internal static class Program
     static void Flow(IDbTransaction tx)
     {
         Fixture(tx);var a=Login(tx,"NV001","TK001");var k=new BUS_KHAMDIEUTRI(tx);var v=k.LayBanNhap("AD_LS",a);
-        v=k.LuuKham(new(){MaLS="AD_LS",DauVanTay=v.DauVanTay,TrieuChung="Mô phỏng",ChanDoan="Kiểm thử",KeHoachXuLy="Mô phỏng",TinhTrang=[new(){LoaiTinhTrang="Mô phỏng",MoTaTinhTrang="Kiểm thử",MucDo="Nhẹ"}]},a);
+        v=k.LuuKham(new(){MaLS="AD_LS",DauVanTay=v.DauVanTay,TrieuChung="Mô phỏng",ChanDoan="Kiểm thử",KeHoachXuLy="Mô phỏng",TinhTrang=[new(){LoaiTinhTrang="Mô phỏng",MoTaTinhTrang="Kiểm thử"}]},a);
         var p=k.LuuKeHoach(new(){MaLS="AD_LS",CacBuoc=[new(){MaDV="DV001",NoiDungBuoc="Kiểm thử"}]},a);
         Assert(p.KeHoach.MaBS=="NV002","Sai bác sĩ kế hoạch");p=k.XacNhanKeHoach(p.KeHoach.MaKHDT,p.DauVanTay,a);
         var service=new BUS_DICHVUTHUCHIEN(tx);Assert(service.LayKhongGianThucHien("AD_LS",a).DuocTao,"Không được thực hiện");

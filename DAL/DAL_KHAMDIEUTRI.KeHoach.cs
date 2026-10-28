@@ -13,49 +13,6 @@ public sealed partial class DAL_KHAMDIEUTRI
         db.Execute("UPDATE dbo.KE_HOACH_DIEU_TRI SET TrangThai=N'Hủy' WHERE MaKHDT=@maKHDT",new{maKHDT},tx);var saved=PlanSnapshot(db,tx,maKHDT);
         ClinicalAudit(db,tx,actor,"Hủy kế hoạch nháp","KE_HOACH_DIEU_TRI",maKHDT,p.DauVanTay,saved.DauVanTay);return saved;
     });
-    public IReadOnlyList<GoiYKeHoachItem> GoiYKeHoach(string maLS,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
-    {
-        OwnedVisit(db,tx,maLS,user,true);
-        var conditions=db.Query<ET_TINHTRANGBENH>("SELECT * FROM dbo.TINH_TRANG_BENH WITH(HOLDLOCK) WHERE MaLS=@maLS ORDER BY MaTTB",new{maLS},tx).ToArray();
-        var result=new List<GoiYKeHoachItem>();
-        foreach(var t in conditions.Where(c=>c.MaDMTT is not null))
-        {
-            var templates=db.Query<ET_MAUKEHOACHDIEUTRI>("""
-                SELECT m.* FROM dbo.MAU_KE_HOACH_DIEU_TRI m WITH(HOLDLOCK)
-                JOIN dbo.DM_TINH_TRANG_BENH d WITH(HOLDLOCK) ON d.MaDMTT=m.MaDMTT
-                WHERE m.MaDMTT=@MaDMTT AND m.TrangThai=N'Đã duyệt' AND d.TrangThai=N'Đang áp dụng'
-                  AND(m.MucDo IS NULL OR m.MucDo=@MucDo)
-                ORDER BY CASE WHEN m.MucDo=@MucDo THEN 0 ELSE 1 END,m.PhienBan DESC,m.MaMauKH
-                """,t,tx).ToArray();
-            foreach(var m in templates)
-            {
-                var steps=MauSteps(db,tx,m.MaMauKH);
-                if(steps.Length>0 && steps.All(s=>db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DICH_VU WITH(HOLDLOCK) WHERE MaDV=@MaDV AND TrangThai=N'Đang hoạt động'",s,tx)==1))
-                    result.Add(new(t,m,steps,m.MucDo is not null));
-            }
-        }
-        return (IReadOnlyList<GoiYKeHoachItem>)result;
-    });
-
-    public BanNhapKeHoach ApDungMau(string maLS,string maTTB,string maMauKH,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
-    {
-        var(actor,visit)=OwnedVisit(db,tx,maLS,user,true);ValidCode(maTTB);ValidCode(maMauKH);
-        var condition=db.QuerySingleOrDefault<ET_TINHTRANGBENH>("SELECT * FROM dbo.TINH_TRANG_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaTTB=@maTTB AND MaLS=@maLS",new{maTTB,maLS},tx)??throw DAL_QUYENNGHIEPVU.TuChoi();
-        var old=db.QuerySingleOrDefault<ET_KEHOACHDIEUTRI>("SELECT * FROM dbo.KE_HOACH_DIEU_TRI WITH(UPDLOCK,HOLDLOCK) WHERE MaLS=@maLS AND MaTTBNguon=@maTTB AND MaMauKH=@maMauKH",new{maLS,maTTB,maMauKH},tx);
-        if(old is not null)return PlanSnapshot(db,tx,old);
-        ClinicalLock(db,tx,"Mau:"+maMauKH);
-        var template=MauSnapshot(db,tx,maMauKH);
-        if(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.MAU_KE_HOACH_DIEU_TRI WITH(HOLDLOCK) WHERE MaMauKH=@id AND TrangThai=N'Đã duyệt' AND MaDMTT=@MaDMTT AND(MucDo IS NULL OR MucDo=@MucDo)",new{id=maMauKH,condition.MaDMTT,condition.MucDo},tx)!=1)throw KhamError("MaMauKH","Chọn mẫu đã duyệt khớp danh mục và mức độ tình trạng.");
-        ActiveCondition(db,tx,template.Mau.MaDMTT);
-        if(template.CacBuoc.Count==0)throw KhamError("CacBuoc","Mẫu không có bước điều trị.");
-        var steps=template.CacBuoc.Select(s=>new BuocKeHoachNhap {MaDV=s.MaDV,LanThu=s.LanThu,SoLuongDuKien=s.SoLuongDuKien,DonGiaDuKien=ActiveService(db,tx,s.MaDV).DonGia,NoiDungBuoc=s.NoiDung}).ToArray();
-        var plan=new ET_KEHOACHDIEUTRI {MaKHDT=TaoMa(db,tx,"KE_HOACH_DIEU_TRI","MaKHDT"),MaLS=maLS,MaBS=visit.MaBS,NgayLap=ClinicalNow(db,tx),TrangThai="Nháp",MaTTBNguon=maTTB,MaMauKH=maMauKH,PhienBanMau=template.Mau.PhienBan};
-        KiemTra<ET_KEHOACHDIEUTRI>(db,tx,"KE_HOACH_DIEU_TRI",plan,null,null);
-        var rows=PreparePlanSteps(db,tx,plan,steps,Array.Empty<ET_CHITIETKEHOACH>());
-        InsertPlan(db,tx,plan);WritePlanSteps(db,tx,plan,rows,Array.Empty<ET_CHITIETKEHOACH>());
-        var saved=PlanSnapshot(db,tx,plan.MaKHDT);ClinicalAudit(db,tx,actor,"Áp dụng mẫu đã duyệt","KE_HOACH_DIEU_TRI",plan.MaKHDT,null,saved.DauVanTay);return saved;
-    });
-
     public BanNhapKeHoach LayKeHoach(string maKHDT,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {var (_,plan)=OwnedPlan(db,tx,maKHDT,user,false);return plan;});
 
