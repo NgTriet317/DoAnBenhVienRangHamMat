@@ -51,6 +51,8 @@ Tài khoản mẫu `admin001` và `user002`…`user010`, mật khẩu mẫu `123
 
 **Bệnh nhân →Hồ sơ →Tiếp nhận →Khám/kế hoạch →Dịch vụ đã làm/đơn ký →Thu đủ →Bàn giao thuốc →In lại.**
 
+Trong **Khám điều trị**, tab mặc định **Hàng chờ khám** lấy các phiếu tiếp nhận được phân cho bác sĩ đăng nhập, xếp theo giờ tiếp nhận từ trước đến sau. Chọn người bệnh để kiểm tra thông tin rồi bấm **Bắt đầu khám** hoặc **Khám tiếp**. Hàng chờ giữ cả phiếu chưa khám từ ngày trước, tự cập nhật mỗi10 giây khi không có nháp đang nhập. Admin xem tất cả hoặc lọc theo bác sĩ. Các lượt đã hoàn tất nằm trong tab **Lịch sử khám**, chỉ xem. Xem [luồng hàng chờ bác sĩ](docs/clinical-workflow/HANG_CHO_BAC_SI.md).
+
 Ký đơn chưa trừ kho; thu đủ mới ghi xuất và chờ giao trong cùng transaction. Bàn giao/in lại không thu hay trừ tồn lần nữa. Khi rời trang có nhập liệu, chọn Lưu nháp/Bỏ thay đổi/Hủy; Lưu nháp không ký hoặc thu tiền. Yêu cầu thu/giao chưa rõ kết quả giữ nguyên mã để đối chiếu khi thử lại.
 
 ## 4. Kiểm tra và đóng gói

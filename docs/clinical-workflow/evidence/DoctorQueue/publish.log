@@ -1,0 +1,9 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ET -> D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\ET\bin\Release\net8.0\ET.dll
+  DAL -> D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\DAL\bin\Release\net8.0\DAL.dll
+  BUS -> D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\BUS\bin\Release\net8.0\BUS.dll
+  RangHamMat.Wpf -> D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\RangHamMat.Wpf\bin\Release\net8.0-windows\RangHamMat.Wpf.dll
+  RangHamMat.Wpf -> D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\PhatHanh\
+
+Workload updates are available. Run `dotnet workload list` for more information.

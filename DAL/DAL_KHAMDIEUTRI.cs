@@ -10,37 +10,7 @@ public sealed partial class DAL_KHAMDIEUTRI : dbconnect
     public DAL_KHAMDIEUTRI(IDbTransaction? transaction = null) : base(transaction) { }
 
     public IReadOnlyList<HangDoiKhamItem> LayHangDoi(BoLocHangDoi boLoc, NguCanhNghiepVu nguoiDung)
-        => ThucHien((db, tx) =>
-        {
-            var user = DAL_QUYENNGHIEPVU.XacThuc(db, tx, nguoiDung);
-            if (!user.CoQuyen(QuyenLamViec.Kham)) throw DAL_QUYENNGHIEPVU.TuChoi();
-            if (boLoc is null || boLoc.Trang < 1 || boLoc.KichThuocTrang is < 1 or > 100 ||
-                boLoc.TuKhoa?.Length > 255 || boLoc.TrangThai?.Length > 50 || boLoc.MaBN?.Length>50)
-                throw new InvalidOperationException("Bộ lọc hàng đợi không hợp lệ; mỗi trang từ 1 đến 100 dòng.");
-            var from = (boLoc.TuNgay ?? DateTime.Today).Date;
-            var until = (boLoc.DenNgay ?? boLoc.TuNgay ?? DateTime.Today).Date;
-            if (from > until || until == DateTime.MaxValue.Date)
-                throw new InvalidOperationException("Khoảng ngày hàng đợi không hợp lệ.");
-            var offset = ((long)boLoc.Trang - 1) * boLoc.KichThuocTrang;
-            var term = boLoc.TuKhoa?.Trim() ?? "";
-            var search = "%" + term.Replace("~", "~~").Replace("%", "~%").Replace("_", "~_").Replace("[", "~[") + "%";
-            return (IReadOnlyList<HangDoiKhamItem>)db.Query<HangDoiKhamItem>("""
-                SELECT p.MaPhieu,l.MaLS,p.MaHS,hs.MaBN,b.HoTenBN,b.NgaySinh,p.MaBS,p.MaPhong,
-                    p.MaDV,p.SoThuTu,p.ThoiGianTiepNhan,p.TrangThai
-                FROM dbo.PHIEU_KHAM_BENH p JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS
-                JOIN dbo.BENH_NHAN b ON b.MaBN=hs.MaBN
-                LEFT JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaPhieu=p.MaPhieu
-                WHERE (@LaAdmin=1 OR (p.MaBS=@MaNV AND (l.MaLS IS NULL OR l.MaBS=@MaNV)))
-                  AND (@patient IS NULL OR b.MaBN=@patient)
-                  AND p.ThoiGianTiepNhan>=@from AND p.ThoiGianTiepNhan<@end
-                  AND (@status IS NULL OR p.TrangThai=@status)
-                  AND (@term=N'' OR p.MaPhieu LIKE @search ESCAPE N'~' OR b.MaBN LIKE @search ESCAPE N'~'
-                      OR b.HoTenBN LIKE @search ESCAPE N'~')
-                ORDER BY p.ThoiGianTiepNhan,p.SoThuTu,p.MaPhieu
-                OFFSET @offset ROWS FETCH NEXT @size ROWS ONLY
-                """, new { user.MaNV, user.LaAdmin, from, end = until.AddDays(1), status = string.IsNullOrWhiteSpace(boLoc.TrangThai) ? null : boLoc.TrangThai,
-                    patient=string.IsNullOrWhiteSpace(boLoc.MaBN)?null:boLoc.MaBN,term, search, offset, size = boLoc.KichThuocTrang }, tx).ToArray();
-        });
+        => LayTrangHangDoi(boLoc,nguoiDung).CacDong;
 
     public LanKhamChiTiet LayChiTiet(string maLS, NguCanhNghiepVu nguoiDung)
         => ThucHien((db, tx) =>

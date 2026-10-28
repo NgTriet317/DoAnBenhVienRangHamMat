@@ -22,6 +22,8 @@ public sealed partial class BUS_KHAMDIEUTRI
     public BUS_KHAMDIEUTRI(IDbTransaction? transaction = null) => dal = new(transaction);
     public IReadOnlyList<HangDoiKhamItem> LayHangDoi(BoLocHangDoi boLoc, NguCanhNghiepVu nguoiDung)
         => XuLyLoi.ThucHien(() => dal.LayHangDoi(boLoc, nguoiDung));
+    public TrangHoSo<HangDoiKhamItem> LayTrangHangDoi(BoLocHangDoi boLoc,NguCanhNghiepVu nguoiDung)
+        => XuLyLoi.ThucHien(() => dal.LayTrangHangDoi(boLoc,nguoiDung));
     public LanKhamChiTiet LayChiTiet(string maLS, NguCanhNghiepVu nguoiDung)
         => XuLyLoi.ThucHien(() => dal.LayChiTiet(maLS, nguoiDung));
 }

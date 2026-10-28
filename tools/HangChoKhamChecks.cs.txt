@@ -1,0 +1,161 @@
+using System.Data;
+using System.IO;
+using System.Reflection;
+using System.Security.Claims;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Threading;
+using BUS;
+using DAL;
+using Dapper;
+using ET;
+using RangHamMat;
+using RangHamMat.Controls;
+using RangHamMat.Views;
+
+internal static class Program
+{
+    static string cs="";static int pass,fail;static bool uiOnly;
+    [STAThread] static int Main(string[] args)
+    {
+        uiOnly=args.Length==3&&args[2]=="--ui-only";
+        if(args.Length<2||(!uiOnly&&args[1]!="RHM_HangChoKham_Test_20261028"))throw new Exception("Ghi thử chỉ trên database fixture riêng.");
+        cs=$"Data Source={args[0]};Initial Catalog={args[1]};Integrated Security=True;TrustServerCertificate=True;";Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",cs);
+        if(!uiOnly){
+            Check("Hàng chờ mặc định chỉ còn chờ/đang khám và giữ phiếu qua ngày",()=>Tx(tx=>{
+                Fixture(tx);var a=Identity(tx,"NV002","TK002");var rows=new BUS_KHAMDIEUTRI(tx).LayHangDoi(new(),a);
+                Assert(string.Join(',',rows.Select(r=>r.MaPhieu))=="Q_EARLY,Q_FIRST,Q_SECOND,Q_ACTIVE","Sai thứ tự/phạm vi: "+string.Join(',',rows.Select(r=>r.MaPhieu)));
+            }));
+            Check("Phân trang SQL có tổng số và không mất thứ tự",()=>Tx(tx=>{
+                Fixture(tx);var a=Identity(tx,"NV002","TK002");var first=Page(tx,new(){KichThuocTrang=2},a);var second=Page(tx,new(){Trang=2,KichThuocTrang=2},a);
+                Assert(first.TongSo==4&&second.TongSo==4,"Sai tổng số");Assert(string.Join(',',first.CacDong.Concat(second.CacDong).Select(r=>r.MaPhieu))=="Q_EARLY,Q_FIRST,Q_SECOND,Q_ACTIVE","Sai phân trang FIFO");
+            }));
+            Check("Bác sĩ khác/DTO giả quyền không thấy hàng chờ riêng",()=>Tx(tx=>{
+                Fixture(tx);var a=Identity(tx,"NV003","TK003");Assert(new BUS_KHAMDIEUTRI(tx).LayHangDoi(new(),a with{LaAdmin=true,Quyen=(QuyenLamViec)1023}).All(r=>r.MaBS=="NV003"),"Lộ bệnh nhân bác sĩ khác");
+                var filter=DoctorFilter("NV002");Denied(()=>Page(tx,filter,a));
+            }));
+            Check("Admin xem tất cả hoặc lọc đúng bác sĩ",()=>Tx(tx=>{
+                Fixture(tx);var a=Identity(tx,"NV001","TK001");Assert(Page(tx,new(),a).TongSo==5,"Admin thiếu phiếu");Assert(Page(tx,DoctorFilter("NV003"),a).CacDong.Single().MaPhieu=="Q_OTHER","Lọc bác sĩ sai");
+            }));
+            Check("Tiếp nhận thật qua BUS vào ngay hàng chờ đúng bác sĩ",()=>Tx(tx=>{
+                var nurse=Identity(tx,"NV005","TK005");var reception=new BUS_TIEPNHAN(tx);var doctor=reception.LayBacSi("DV001",nurse).First();
+                var r=reception.TiepNhan(new(){MaBN="BN004",MaDV="DV001",MaBS=doctor.MaNV,MaPhong=doctor.MaPhong??"PH001",LyDoKham="Mô phỏng kiểm thử",LyDoDieuPhoiNgoaiLich="Kiểm thử điều phối"},nurse);
+                var a=Identity(tx,doctor.MaNV,doctor.MaNV=="NV002"?"TK002":"TK003");Assert(Page(tx,new(),a).CacDong.Any(x=>x.MaPhieu==r.MaPhieu&&x.MaBS==doctor.MaNV),"Tiếp nhận không vào hàng chờ");
+            }));
+            Check("Bắt đầu/nhấn lặp/hoàn tất đúng lượt, ra khỏi hàng chờ vào lịch sử",()=>Tx(tx=>{
+                Fixture(tx);var a=Identity(tx,"NV002","TK002");var bus=new BUS_KHAMDIEUTRI(tx);var id=bus.BatDauKham("Q_FIRST",a);Assert(bus.BatDauKham("Q_FIRST",a)==id,"Tạo trùng lượt");
+                var s=bus.LayBanNhap(id,a);s=bus.LuuKham(new(){MaLS=id,DauVanTay=s.DauVanTay,TrieuChung="Mô phỏng",ChanDoan="Kiểm thử",KeHoachXuLy="Mô phỏng",KhongKeThuoc=true,LyDoKhongKeThuoc="Kiểm thử không kê đơn",TinhTrang=[new(){LoaiTinhTrang="Kiểm thử",MoTaTinhTrang="Mô phỏng",MucDo="Nhẹ"}]},a);
+                bus.HoanTatKham(id,s.DauVanTay,a);Assert(!bus.LayHangDoi(new(),a).Any(x=>x.MaPhieu=="Q_FIRST"),"Lượt xong vẫn trong hàng chờ");Assert(bus.LayTrangLanKham(new(){MaLS=id},a).CacDong.Single().TrangThai=="Đã xác nhận","Không thấy lịch sử đã khám");
+            }));
+            Check("Tìm kiếm ký tự đặc biệt và kiểm tra bộ lọc",()=>Tx(tx=>{
+                Fixture(tx);var a=Identity(tx,"NV002","TK002");Assert(Page(tx,new(){TuKhoa="%"},a).TongSo==0,"Từ khóa % bị coi là wildcard");Invalid(()=>Page(tx,new(){Trang=0},a));Invalid(()=>Page(tx,new(){TuNgay=DateTime.Today,DenNgay=DateTime.Today.AddDays(-1)},a));
+            }));
+        }
+        var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};app.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml",UriKind.Relative)});
+        if(!uiOnly)Tx(tx=>{Fixture(tx);tx.Commit();});
+        Check("Mở khám mặc định là hàng chờ, lịch sử nằm riêng",()=>WithPage("NV002","TK002",page=>{
+            Assert(page.FindName("WorkTabs") is TabControl{SelectedIndex:0},"Chưa mặc định hàng chờ");Assert(page.FindName("QueueList") is ListBox,"Thiếu danh sách tiếp nhận");Assert(page.FindName("HistoryTab") is TabItem,"Thiếu tab lịch sử");
+            if(!uiOnly)Assert(Queue(page).Cast<HangDoiKhamItem>().Select(r=>r.MaPhieu).SequenceEqual(new[]{"Q_EARLY","Q_FIRST","Q_SECOND","Q_ACTIVE"}),"GUI không phản ánh hàng chờ bác sĩ");
+        }));
+        if(!uiOnly){
+            Check("Chọn tiếp nhận không tự khám, bấm mới mở đúng bệnh nhân",()=>WithPage("NV002","TK002",page=>{
+                var list=(ListBox)page.FindName("QueueList");list.SelectedItem=Queue(page).Cast<HangDoiKhamItem>().Single(r=>r.MaPhieu=="Q_SECOND");Pump();
+                using var db=Open();Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.LICH_SU_KHAM_BENH WHERE MaPhieu=N'Q_SECOND'")==0,"Chỉ chọn đã tạo lượt");
+                ((Button)page.FindName("QueueStartButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));Pump();
+                var id=db.QuerySingle<string>("SELECT MaLS FROM dbo.LICH_SU_KHAM_BENH WHERE MaPhieu=N'Q_SECOND'");Assert(((ContentControl)page.FindName("DetailHost")).Content is ChiTietKhamDieuTri,"Không mở khám");Assert(db.QuerySingle<string>("SELECT MaBS FROM dbo.LICH_SU_KHAM_BENH WHERE MaLS=@id",new{id})=="NV002","Khám nhầm bác sĩ");
+                Assert(((ListBox)page.FindName("QueueList")).SelectedItem is HangDoiKhamItem{MaPhieu:"Q_SECOND",TrangThai:"Đang khám"},"Không cập nhật trạng thái/giữ lựa chọn");
+                var detail=(ChiTietKhamDieuTri)((ContentControl)page.FindName("DetailHost")).Content;var editor=(KhamLamSang)detail.Content;
+                ((TextBox)editor.FindName("SymptomsEditor")).Text="Nội dung đang nhập";((TabControl)page.FindName("WorkTabs")).SelectedIndex=1;Pump();
+                Assert(((TabControl)page.FindName("WorkTabs")).SelectedIndex==0&&((TextBox)editor.FindName("SymptomsEditor")).Text=="Nội dung đang nhập","Chuyển tab làm mất nháp");
+            }));
+            Check("Lượt đang khám ra khỏi bộ lọc Chờ khám vẫn giữ editor sau tải lại/lưu nháp",()=>WithPage("NV003","TK003",page=>{
+                ((ComboBox)page.FindName("StatusFilter")).SelectedIndex=1;var list=(ListBox)page.FindName("QueueList");list.SelectedItem=Queue(page).Cast<HangDoiKhamItem>().Single(r=>r.MaPhieu=="Q_OTHER");
+                ((Button)page.FindName("QueueStartButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));Pump();var detail=((ContentControl)page.FindName("DetailHost")).Content;
+                Assert(detail is ChiTietKhamDieuTri,"Không mở editor");Invoke(page,"RefreshQueue");Assert(ReferenceEquals(detail,((ContentControl)page.FindName("DetailHost")).Content),"Tự đóng editor vì lượt ra khỏi bộ lọc");
+                var editor=(KhamLamSang)((ChiTietKhamDieuTri)detail).Content;((TextBox)editor.FindName("SymptomsEditor")).Text="Bản nháp đang mở";Assert(editor.TrySave(out var error),"Không lưu nháp: "+error);Pump();
+                Assert(ReferenceEquals(detail,((ContentControl)page.FindName("DetailHost")).Content)&&((TextBox)editor.FindName("SymptomsEditor")).Text=="Bản nháp đang mở","Lưu nháp làm đóng editor");
+            }));
+            Check("Tải lại không tự chọn người khác khi phiếu bị hủy",()=>WithPage("NV002","TK002",page=>{
+                var list=(ListBox)page.FindName("QueueList");list.SelectedItem=Queue(page).Cast<HangDoiKhamItem>().Single(r=>r.MaPhieu=="Q_FIRST");
+                using var db=Open();db.Execute("UPDATE dbo.PHIEU_KHAM_BENH SET TrangThai=N'Hủy' WHERE MaPhieu=N'Q_FIRST'");
+                Invoke(page,"RefreshQueue");Assert(list.SelectedItem is null,"Tự chọn người khác");Assert(((Button)page.FindName("QueueStartButton")).IsEnabled==false,"Nút khám phiếu cũ còn bật");
+            }));
+            Check("Admin lọc bác sĩ trong hàng chờ; lịch sử chỉ xem",()=>WithPage("NV001","TK001",page=>{
+                var picker=(ComboBox)page.FindName("DoctorFilter");picker.SelectedValue="NV003";Pump();Assert(Queue(page).Cast<HangDoiKhamItem>().Single().MaBS=="NV003","Lọc Admin không áp dụng");
+                ((TabControl)page.FindName("WorkTabs")).SelectedIndex=1;Pump();Assert(page.FindName("VisitList") is ListBox{Items.Count:>0},"Lịch sử bị mất");
+                var history=(ListBox)page.FindName("VisitList");Assert(history.Items.Cast<MucDanhSachLanKham>().All(v=>v.Status=="Đã xác nhận"),"Trộn nháp vào lịch sử");history.SelectedIndex=0;Pump();
+                var detail=(ChiTietKhamDieuTri)((ContentControl)page.FindName("DetailHost")).Content;var editor=(KhamLamSang)detail.Content;
+                Assert(((Button)editor.FindName("SaveClinicalButton")).IsEnabled==false&&!editor.TrySave(out _),"Lịch sử còn ghi được");
+            }));
+            Check("Phiếu vừa hủy ở máy khác không được bắt đầu khi danh sách còn cũ",()=>WithPage("NV002","TK002",page=>{
+                var list=(ListBox)page.FindName("QueueList");list.SelectedItem=Queue(page).Cast<HangDoiKhamItem>().Single(r=>r.MaPhieu=="Q_EARLY");using var db=Open();
+                db.Execute("UPDATE dbo.PHIEU_KHAM_BENH SET TrangThai=N'Hủy' WHERE MaPhieu=N'Q_EARLY'");((Button)page.FindName("QueueStartButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));Pump();
+                Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.LICH_SU_KHAM_BENH WHERE MaPhieu=N'Q_EARLY'")==0,"Đã khám phiếu hủy");
+                Assert(list.SelectedItem is null&&((Button)page.FindName("QueueStartButton")).IsEnabled==false,"Không làm mới phiếu đã hủy");
+            }));
+            Check("Bác sĩ đang mở trang tự thấy tiếp nhận mới từ quầy",()=>WithPage("NV002","TK002",page=>{
+                string receipt="";
+                Tx(tx=>{var nurse=Identity(tx,"NV005","TK005");var doctor=new BUS_TIEPNHAN(tx).LayBacSi("DV001",nurse).Single(d=>d.MaNV=="NV002");receipt=new BUS_TIEPNHAN(tx).TiepNhan(new(){MaBN="BN005",MaDV="DV001",MaBS="NV002",MaPhong=doctor.MaPhong??"PH001",LyDoKham="Kiểm thử cập nhật giữa quầy và bác sĩ",LyDoDieuPhoiNgoaiLich="Mô phỏng điều phối"},nurse).MaPhieu;tx.Commit();});
+                PhienDangNhap.KhoiTaoDinhDanhNghiepVu("TK002");var timer=(DispatcherTimer)typeof(KhamDieuTri).GetField("queueTimer",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(page)!;timer.Interval=TimeSpan.FromMilliseconds(100);
+                Until(()=>Queue(page).Cast<HangDoiKhamItem>().Any(r=>r.MaPhieu==receipt));Assert(((ContentControl)page.FindName("DetailHost")).Content is null,"Tự mở khám khi quầy tiếp nhận");
+            }));
+            Check("Nhiều trang và phiếu ngoài cache50 vẫn mở đúng người bệnh",()=>{
+                using(var db=Open()){
+                    db.Execute("""
+                    DECLARE @i int=1;WHILE @i<=55 BEGIN
+                    DECLARE @n nvarchar(3)=RIGHT(N'000'+CONVERT(nvarchar(3),@i),3);
+                    INSERT dbo.BENH_NHAN(MaBN,HoTenBN,GioiTinh,NgaySinh,SDT,DiaChi,TrangThai) VALUES(N'ZQ_BN'+@n,N'Người bệnh kiểm thử '+@n,N'Nam','20000101',N'0900000000',N'Mô phỏng',N'Đang theo dõi');
+                    INSERT dbo.HO_SO_BENH_AN(MaHS,MaBN,NgayLap,LyDoKhamBanDau,TrangThai) VALUES(N'ZQ_HS'+@n,N'ZQ_BN'+@n,SYSDATETIME(),N'Kiểm thử',N'Đang theo dõi');
+                    INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaPhong,MaBS,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai)
+                    VALUES(N'ZQ_PH'+@n,N'ZQ_HS'+@n,N'PH001',N'NV002',N'NV005',N'DV001',100+@i,DATEADD(second,@i-60,SYSDATETIME()),N'Kiểm thử phân trang',N'Chờ khám');SET @i+=1;END;
+                    """);
+                }
+                WithPage("NV002","TK002",page=>{
+                    typeof(DuLieuGiaoDien).GetMethod("ChonPhamViLamSang",BindingFlags.NonPublic|BindingFlags.Static,null,[typeof(bool),typeof(NguCanhHoSo)],null)!.Invoke(null,[true,new NguCanhHoSo()]);
+                    Assert(DuLieuGiaoDien.Find("BENH_NHAN","ZQ_BN055") is null,"Fixture không vượt cache50");
+                    Assert(((Button)page.FindName("NextQueuePage")).IsEnabled,"Không có trang tiếp theo");var first=Queue(page).Cast<HangDoiKhamItem>().Select(r=>r.MaPhieu).ToArray();((Button)page.FindName("NextQueuePage")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));Assert(!Queue(page).Cast<HangDoiKhamItem>().Any(r=>first.Contains(r.MaPhieu)),"Lặp dòng giữa hai trang");
+                    typeof(KhamDieuTri).GetMethod("FocusReceipt",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(page,["ZQ_PH055"]);Assert(((ListBox)page.FindName("QueueList")).SelectedItem is HangDoiKhamItem{MaBN:"ZQ_BN055"},"Không chọn đúng phiếu ngoài trang đầu");
+                    ((Button)page.FindName("QueueStartButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));Pump();Assert(((ContentControl)page.FindName("DetailHost")).Content is ChiTietKhamDieuTri{PatientId:"ZQ_BN055"},"Mở sai bệnh nhân ngoài cache");
+                });
+            });
+            Check("Giao diện hàng chờ dùng được ở1280x850,1024x768,800x600",()=>{
+                foreach(var size in new[]{(1280,850),(1024,768),(800,600)})WithPage("NV001","TK001",page=>{
+                    var window=Window.GetWindow(page);window.Width=size.Item1;window.Height=size.Item2;Pump();window.UpdateLayout();
+                    var list=(ListBox)page.FindName("QueueList");list.SelectedIndex=0;Pump();var action=(Button)page.FindName("QueueStartButton");action.BringIntoView();Pump();window.UpdateLayout();
+                    Assert(action.IsVisible&&action.IsEnabled&&action.ActualHeight>=30,"Không truy cập được nút khám ở "+size);
+                    var point=action.TranslatePoint(new Point(0,0),page);Assert(point.X>=0&&point.Y>=0&&point.X+action.ActualWidth<=page.ActualWidth+1&&point.Y+action.ActualHeight<=page.ActualHeight+1,"Nút khám bị cắt ở "+size);
+                    var patient=(TextBlock)page.FindName("QueuePatientText");var identityPoint=patient.TranslatePoint(new Point(0,0),page);var preview=(Border)page.FindName("QueuePreview");var previewTop=preview.TranslatePoint(new Point(0,0),page).Y;Assert(identityPoint.Y>=previewTop&&identityPoint.Y+patient.ActualHeight<=previewTop+preview.ActualHeight,"Tên người bệnh bị cuộn khuất khi bấm khám ở "+size);
+                    Assert(((ScrollViewer)page.FindName("QueueDetailsScroll")).ActualHeight>=40,"Vùng thông tin tiếp nhận quá thấp ở "+size+": "+((ScrollViewer)page.FindName("QueueDetailsScroll")).ActualHeight);
+                    var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap((int)Math.Ceiling(page.ActualWidth),(int)Math.Ceiling(page.ActualHeight),96,96,System.Windows.Media.PixelFormats.Pbgra32);bitmap.Render(page);var encoder=new System.Windows.Media.Imaging.PngBitmapEncoder();encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+                    Directory.CreateDirectory("obj/HangChoKhamChecks");using var file=File.Create($"obj/HangChoKhamChecks/queue-{size.Item1}x{size.Item2}.png");encoder.Save(file);
+                });
+            });
+        }
+        app.Shutdown();Console.WriteLine($"RESULT: {pass} passed, {fail} failed");return fail==0?0:1;
+    }
+    static TrangHoSo<HangDoiKhamItem> Page(IDbTransaction tx,BoLocHangDoi f,NguCanhNghiepVu a)
+    {var m=typeof(BUS_KHAMDIEUTRI).GetMethod("LayTrangHangDoi");Assert(m is not null,"Thiếu API hàng chờ có phân trang/tổng số");try{return (TrangHoSo<HangDoiKhamItem>)m!.Invoke(new BUS_KHAMDIEUTRI(tx),[f,a])!;}catch(TargetInvocationException ex){throw ex.InnerException!;}}
+    static BoLocHangDoi DoctorFilter(string id){var f=new BoLocHangDoi();var p=typeof(BoLocHangDoi).GetProperty("MaBS");Assert(p is not null,"Thiếu bộ lọc bác sĩ");p!.SetValue(f,id);return f;}
+    static NguCanhNghiepVu Identity(IDbTransaction tx,string nv,string tk){Thread.CurrentPrincipal=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.NameIdentifier,tk),new(DinhDanhNghiepVu.MaNhanVienClaim,nv)],DinhDanhNghiepVu.KieuXacThuc));return new BUS_QUYENNGHIEPVU(tx).LayNguCanh(nv);}
+    static Microsoft.Data.SqlClient.SqlConnection Open(){var db=new Microsoft.Data.SqlClient.SqlConnection(cs);db.Open();return db;}
+    static void Tx(Action<IDbTransaction> run){using var db=Open();using var tx=db.BeginTransaction(IsolationLevel.Serializable);try{run(tx);}finally{if(tx.Connection is not null)tx.Rollback();}}
+    static void WithPage(string nv,string tk,Action<KhamDieuTri> test){PhienDangNhap.MaNV=nv;PhienDangNhap.TenDangNhap=nv;PhienDangNhap.IsAdmin=nv=="NV001";PhienDangNhap.KhoiTaoDinhDanhNghiepVu(tk);DuLieuGiaoDien.ChonPhamViLamSang(true);var page=new KhamDieuTri();var window=new Window{Content=page,Width=1280,Height=850,Left=-20000,Top=-20000,ShowInTaskbar=false};window.Show();Pump();try{test(page);}finally{window.Content=null;window.Close();Pump();}}
+    static System.Collections.IEnumerable Queue(KhamDieuTri page)=>((ListBox)page.FindName("QueueList")).Items;
+    static void Pump()=>Dispatcher.CurrentDispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
+    static void Until(Func<bool> check){var watch=System.Diagnostics.Stopwatch.StartNew();while(!check()&&watch.Elapsed<TimeSpan.FromSeconds(4)){Pump();Thread.Sleep(10);}Assert(check(),"Hàng chờ chưa tự cập nhật tiếp nhận mới");}
+    static object? Invoke(object o,string name)=>o.GetType().GetMethod(name,BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(o,null);
+    static void Denied(Action a){try{a();}catch(TuChoiQuyenNghiepVuException){return;}throw new Exception("Không từ chối phạm vi trái quyền");}
+    static void Invalid(Action a){try{a();}catch(InvalidOperationException){return;}throw new Exception("Không chặn bộ lọc sai");}
+    static void Assert(bool ok,string error){if(!ok)throw new Exception(error);}
+    static void Check(string name,Action run){try{run();Console.WriteLine("PASS: "+name);pass++;}catch(Exception ex){Console.WriteLine("FAIL: "+name+" | "+ex.GetType().Name+": "+ex.Message);fail++;}}
+    static void Fixture(IDbTransaction tx)
+    {
+        tx.Connection!.Execute("""
+        INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaPhong,MaBS,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai)
+        SELECT v.Id,v.HS,N'PH001',v.Doctor,N'NV005',N'DV001',v.Num,DATEADD(second,v.OffsetSeconds,CAST(CAST(SYSDATETIME() AS date) AS datetime2)),N'Mô phỏng hàng chờ',v.State
+        FROM(VALUES(N'Q_EARLY',N'HS001',N'NV002',99,-120,N'Chờ khám'),(N'Q_FIRST',N'HS001',N'NV002',5,60,N'Chờ khám'),(N'Q_SECOND',N'HS002',N'NV002',2,120,N'Chờ khám'),(N'Q_ACTIVE',N'HS003',N'NV002',3,180,N'Đang khám'),(N'Q_OTHER',N'HS004',N'NV003',1,90,N'Chờ khám'),(N'Q_CANCEL',N'HS005',N'NV002',4,200,N'Hủy'))v(Id,HS,Doctor,Num,OffsetSeconds,State);
+        INSERT dbo.LICH_SU_KHAM_BENH(MaLS,MaPhieu,MaBS,MaPhong,ThoiGianKham,TrieuChung,ChanDoan,KeHoachXuLy,TrangThai)
+        VALUES(N'Q_LACTIVE',N'Q_ACTIVE',N'NV002',N'PH001',DATEADD(second,181,CAST(CAST(SYSDATETIME() AS date) AS datetime2)),N'Mô phỏng',N'Kiểm thử',N'Mô phỏng',N'Nháp');
+        """,transaction:tx);
+    }
+}

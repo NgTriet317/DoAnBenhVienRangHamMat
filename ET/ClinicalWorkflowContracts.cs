@@ -45,6 +45,8 @@ public sealed record NguCanhNghiepVu
 public sealed record BoLocHangDoi
 {
     public string? MaBN { get; init; }
+    public string? MaBS { get; init; }
+    public string? MaPhieu { get; init; }
     public DateTime? TuNgay { get; init; }
     public DateTime? DenNgay { get; init; }
     public string? TrangThai { get; init; }
@@ -67,6 +69,11 @@ public sealed class HangDoiKhamItem
     public int SoThuTu { get; set; }
     public DateTime ThoiGianTiepNhan { get; set; }
     public string TrangThai { get; set; } = "";
+    public string TenBS { get; set; } = "";
+    public string TenPhong { get; set; } = "";
+    public string TenDV { get; set; } = "";
+    public string LyDoKham { get; set; } = "";
+    public string ThaoTac => MaLS is null ? "Bắt đầu khám" : "Khám tiếp";
 }
 
 /// <summary>Chi tiết đã qua kiểm tra phạm vi, không phải entity bảng SQL.</summary>
