@@ -31,9 +31,9 @@ public sealed partial class DAL_QUYENNGHIEPVU : dbconnect
             var allowed = db.ExecuteScalar<int>("""
                 SELECT COUNT(*) FROM dbo.LICH_SU_KHAM_BENH l WITH(UPDLOCK,HOLDLOCK)
                 JOIN dbo.PHIEU_KHAM_BENH p WITH(UPDLOCK,HOLDLOCK) ON p.MaPhieu=l.MaPhieu
-                WHERE l.MaLS=@maLS AND l.MaBS=@MaNV AND p.MaBS=@MaNV AND l.TrangThai=N'Nháp'
+                WHERE l.MaLS=@maLS AND (@LaAdmin=1 OR (l.MaBS=@MaNV AND p.MaBS=@MaNV)) AND l.TrangThai=N'Nháp'
                   AND p.TrangThai IN(N'Chờ khám',N'Đang khám')
-                """, new { maLS, user.MaNV }, tx);
+                """, new { maLS, user.MaNV, user.LaAdmin }, tx);
             if (allowed != 1) throw TuChoi();
             return true;
         });
@@ -60,7 +60,7 @@ public sealed partial class DAL_QUYENNGHIEPVU : dbconnect
             throw TuChoi();
         var user = db.QuerySingleOrDefault<NguCanhNghiepVu>("""
             SELECT nv.MaNV,tk.MaTK,nv.MaChucVu,nv.MaCK,
-                CONVERT(bit,CASE WHEN vt.TenVaiTro=N'Admin' THEN 1 ELSE 0 END) AS LaAdmin
+                CONVERT(bit,CASE WHEN UPPER(LTRIM(RTRIM(vt.TenVaiTro))) IN(N'ADMIN',N'QUẢN TRỊ') THEN 1 ELSE 0 END) AS LaAdmin
             FROM dbo.TAI_KHOAN tk WITH(HOLDLOCK)
             JOIN dbo.NHAN_VIEN nv WITH(HOLDLOCK) ON nv.MaNV=tk.MaNV
             JOIN dbo.CHUC_VU cv ON cv.MaChucVu=nv.MaChucVu
@@ -68,7 +68,10 @@ public sealed partial class DAL_QUYENNGHIEPVU : dbconnect
             WHERE nv.MaNV=@maNV AND tk.TrangThai=N'Đang hoạt động' AND nv.TrangThai=N'Đang làm việc'
             """, new { maNV }, tx);
         if (user is null || user.MaTK != accountClaims[0].Value) throw TuChoi();
-        return user with { Quyen = Mapping.Value.GetValueOrDefault(user.MaChucVu, QuyenLamViec.Khong) };
+        // Chỉ vai trò vừa xác thực lại trong SQL được cấp toàn quyền; không dùng cờ từ DTO/UI.
+        return user with { Quyen = user.LaAdmin
+            ? Enum.GetValues<QuyenLamViec>().Aggregate(QuyenLamViec.Khong, (all, right) => all | right)
+            : Mapping.Value.GetValueOrDefault(user.MaChucVu, QuyenLamViec.Khong) };
     }
 
     internal static void GhiTraCuuAdmin(IDbConnection db, IDbTransaction? tx, NguCanhNghiepVu user, string table, string id)

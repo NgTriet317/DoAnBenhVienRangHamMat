@@ -3,10 +3,10 @@
 Bản hiện tại chỉ còn RangHamMat.Wpf, ET, DAL, BUS. Hướng dẫn cài mới/nâng cấp, appsettings và chạy nằm tại [README](../../README.md); kiểm chứng và giới hạn tại [BAN_GIAO_P12.md](BAN_GIAO_P12.md).
 
 - Cài mới: chạy toàn bộ Database/QLBenhVienRangHamMat.sql, mặc định database QLBenhVienRangHamMat,52 bảng/version2.
-- Database đã có bảng: backup rồi chọn đúng database, chạy Migrations01_Preflight→02_ClinicalWorkflow→03_Verify. Không chạy file cài mới để nâng cấp.
+- Database đã có bảng: backup rồi chọn đúng database, chạy Migrations01_Preflight→02_ClinicalWorkflow→03_Verify→05_AdminFullAccess. Database đã làv2 chỉ cần05. Không chạy file cài mới để nâng cấp.
 - Sửa RangHamMat.Wpf/appsettings.json cho máy SQL của mình, mở solution và F5; hoặc chạy PhatHanh/RangHamMat.Wpf.exe sau khi sửa appsettings cạnh exe.
 - KiemTra.bat kiểm cấu trúc và build Debug/Release; thêm -KiemTraSql -MayChu . -Database TEN_DB để đối chiếu schema chỉ đọc.
-- Tài khoản mẫu admin001/user002…user010, mật khẩu123456; chức vụ theo SQL. Dùng vai trò tiếp nhận→bác sĩ→thu ngân/tiếp nhận có quyền thu→dược sĩ theo luồng. Admin không ký khám/thu/giao thay chức vụ.
+- Tài khoản mẫu admin001/user002…user010, mật khẩu123456. Admin có toàn quyền nghiệp vụ cho mọi bác sĩ để chạy thử toàn luồng; User theo chức vụ trong SQL. Admin mở Đơn thuốc→Bàn giao thuốc để giao đơn đã thu đủ. Không đổi MaBS của chứng từ; nhật ký ghi tài khoản Admin thực hiện. Xem [quyền hiện hành](QUYEN_ADMIN.md).
 
 ## Lịch sử lệnh và hướng dẫn từng mốc P01–P11
 
@@ -47,7 +47,7 @@ dotnet run --project .\RangHamMat.ClinicalChecks -c Debug --no-restore -- --migr
 
 Upgrade chỉ bổ sung schema, khóa `RHM:ClinicalWorkflow:Schema`, ghi extended property `RHM.ClinicalWorkflow.Version=2`; chạy lại kiểm tra hợp đồng rồi thoát. Verify từ chối cột sai kiểu/nullable, thiếu đối tượng hoặc FK/CHECK/trigger bị tắt. Không tự sửa schema khác hợp đồng; không sửa lịch sử, chạy lại seed, trừ tồn hoặc chốt nợ. Hóa đơn cũ mặc định phiên bản 1, tiền đưa/thối vẫn null.
 
-**Cài mới trống:** `Database/QLBenhVienRangHamMat.sql` là file độc lập, gồm schema/dữ liệu baseline và phần bổ sung; không phụ thuộc `:r`. Mặc định tạo database `QLBenhVienRangHamMat`. Chọn tên mới trước khi chạy toàn file, không đổi sang tên database đang dùng. File từ chối database có bảng và đánh dấu hoàn tất baseline trong session trước khi cho phần nâng cấp chạy. Dùng `sqlcmd -b -f 65001` để dừng khi có lỗi. File này là installer hiện hành52 bảng; nâng cấp dữ liệu cũ bằng Migrations01→02→03, không chạy installer trên database có bảng.
+**Cài mới trống:** `Database/QLBenhVienRangHamMat.sql` là file độc lập, gồm schema/dữ liệu baseline và phần bổ sung; không phụ thuộc `:r`. Mặc định tạo database `QLBenhVienRangHamMat`. Chọn tên mới trước khi chạy toàn file, không đổi sang tên database đang dùng. File từ chối database có bảng và đánh dấu hoàn tất baseline trong session trước khi cho phần nâng cấp chạy. Dùng `sqlcmd -b -f 65001` để dừng khi có lỗi. File này là installer hiện hành52 bảng; nâng cấp dữ liệu cũ bằng Migrations01→02→03→05, không chạy installer trên database có bảng.
 
 **Rollback P03:** `20261024_04_Rollback_ClinicalWorkflow.sql` chỉ hạ schema khi cả sáu bảng bổ sung rỗng và mọi cột mới còn null/default lịch sử. Script giữ transaction và khóa bảng từ lúc kiểm tra đến DDL; gặp dữ liệu mới trả lỗi 52104 và dừng. Đã có dữ liệu thì cần sửa tiến hoặc phục hồi backup có đối chiếu, không xóa dữ liệu để ép rollback.
 
@@ -105,7 +105,7 @@ ClinicalUiChecks mặc định hiện có 39 ca, gồm tiếp nhận, khám, d�
 3. Lưu tình trạng rồi Gợi ý mẫu. Chỉ mẫu đã duyệt có danh mục/mức độ phù hợp được gợi ý, mẫu tổng quát đứng sau. Xem nội dung, nguồn, phiên bản và bác sĩ duyệt trước áp dụng từng mẫu; nhiều tình trạng không tự cộng bước. Không có mẫu thì lập kế hoạch thủ công. Áp lại cùng nguồn/mẫu dùng cùng kế hoạch, bản sao không đổi theo mẫu nguồn.
 4. Lưu kế hoạch, kiểm tra lượng/giá dự kiến, buổi và ngày rồi duyệt; không sinh dịch vụ thực hiện hay khoản thu. Kế hoạch nháp có thể hủy và giữ lịch sử. Tình trạng đã được kế hoạch tham chiếu không xóa/đổi danh mục nguồn. Các bước buổi sau chưa thực hiện không chặn đóng buổi nếu kế hoạch đã duyệt.
 5. Tổng kết: chọn Không kê thuốc và ghi lý do khi phù hợp, hoặc dùng đơn đã xác nhận. Hoàn tất chỉ nhận triệu chứng/chẩn đoán/xử trí và ít nhất một tình trạng, không còn đơn/dịch vụ/kế hoạch nháp. Xác nhận khóa nội dung/tình trạng và chuyển phiếu Chờ thanh toán. Soạn/ký đơn mới và thao tác thực hiện dịch vụ đầy đủ tiếp tục ở P06/P07; thu tiền ở P09.
-6. Cấu hình hỗ trợ: bác sĩ hoặc Admin soạn danh mục/mẫu nháp; chỉ bác sĩ có quyền chuyên môn duyệt. Hệ thống ghi bác sĩ/thời gian từ phiên, audit thay đổi. Mẫu đã duyệt được ngừng áp dụng hoặc sao chép sang mã/phiên bản mới; không sửa nội dung bản đã duyệt. Không có mẫu điều trị tự duyệt sẵn.
+6. Cấu hình hỗ trợ: bác sĩ hoặc Admin soạn danh mục/mẫu nháp; bác sĩ có quyền chuyên môn hoặc Admin được duyệt. Hệ thống ghi bác sĩ/thời gian từ phiên, audit thay đổi. Mẫu đã duyệt được ngừng áp dụng hoặc sao chép sang mã/phiên bản mới; không sửa nội dung bản đã duyệt. Không có mẫu điều trị tự duyệt sẵn.
 7. Đổi tab giữ nháp. Đổi bộ lọc/bệnh nhân/lần khám, cache refresh hoặc quay lại bị chặn nếu đang nhập, kể cả ô bảng/ngày chưa commit và danh mục mới chưa lưu. Lịch sử lần khám trong hồ sơ chỉ xem; nhập liệu tại Khám điều trị. Guard đóng cửa sổ/chuyển phân hệ toàn ứng dụng thuộc P11.
 
 `BUS_KHAMDIEUTRI` bổ sung `BatDauKham`, `LayKhongGianKham`/`LayBanNhap`, `LuuKham`, `GoiYKeHoach`, `ApDungMau`, `LayKeHoach`, `LuuKeHoach`, `XacNhanKeHoach`, `HuyKeHoach`, `HoanTatKham`; cấu hình có `LuuMauDieuTri`, `LayMauDieuTri`, `DuyetMauDieuTri`, `NgungApDungMau`. Các DTO ghi chỉ nhận trường được phép và dấu vân tay bản gốc. API xác minh lại danh tính, khóa nguồn và kiểm tra snapshot. Khi không truyền transaction, API tự commit/rollback; khi truyền transaction ngoài, nơi gọi chịu trách nhiệm commit/rollback và chỉ tải cache sau commit. Form sản phẩm dùng transaction tự quản lý; transaction ngoài trong WPF phục vụ kiểm tra rollback.
@@ -178,7 +178,7 @@ Mode --pricing-concurrency chỉ nhận database mới riêng tiền tố RHM_Cl
 
 ## P09 — Thu đủ tiền
 
-1. Mở Hóa đơn → chọn đúng bệnh nhân/lượt → Bảng tính phí; chọn kho nếu có thuốc, Xem bảng tính. Chỉ người có ThuTien được thu; bác sĩ phụ trách/Admin chỉ xem phí theo quyền, không mặc nhiên được thu.
+1. Mở Hóa đơn → chọn đúng bệnh nhân/lượt → Bảng tính phí; chọn kho nếu có thuốc, Xem bảng tính. Chỉ người có ThuTien được thu; bác sĩ phụ trách chỉ xem phí; Admin có đủ quyền thu tiền.
 2. Chọn Tiền mặt hoặc Chuyển khoản, nhập tiền VND nguyên đồng không dấu phân cách. Tiền mặt ít nhất bằng phải thu; hệ thống hiển thị tiền thối dự kiến. Chuyển khoản đúng phải thu, có mã tham chiếu tối đa 100 ký tự và đánh dấu đã đối chiếu thủ công. Đây không phải xác nhận tự động từ ngân hàng.
 3. Nhấn Xác nhận thu đủ. Trong lúc xử lý nút thu và đầu vào bị khóa. Chỉ sau commit mới hiện Đã thanh toán, hóa đơn và tiền đưa/thối đã chốt; lịch sử được nạp/chọn đúng hóa đơn, mở xem trước để in. Có thuốc thì phiếu Chờ nhận thuốc và mỗi đơn có bản Chờ giao; không có thuốc thì Hoàn tất. Bàn giao theo P10 bên dưới.
 4. Giá/tồn/nguồn đổi yêu cầu xem bảng tính mới; thiếu thuốc cuối hoặc lỗi bất kỳ bước nào không để lại bộ thu/xuất dở. Nguồn lẻ đồng cần đối chiếu/sửa nguồn phù hợp, không tự bù tiền. Hóa đơn hợp lệ tổng 0 nhập tiền đưa 0, không tạo dòng thanh toán 0.

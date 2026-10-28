@@ -49,7 +49,7 @@ public sealed partial class DAL_KHAMDIEUTRI
         ActiveCondition(db,tx,template.Mau.MaDMTT);
         if(template.CacBuoc.Count==0)throw KhamError("CacBuoc","Mẫu không có bước điều trị.");
         var steps=template.CacBuoc.Select(s=>new BuocKeHoachNhap {MaDV=s.MaDV,LanThu=s.LanThu,SoLuongDuKien=s.SoLuongDuKien,DonGiaDuKien=ActiveService(db,tx,s.MaDV).DonGia,NoiDungBuoc=s.NoiDung}).ToArray();
-        var plan=new ET_KEHOACHDIEUTRI {MaKHDT=TaoMa(db,tx,"KE_HOACH_DIEU_TRI","MaKHDT"),MaLS=maLS,MaBS=actor.MaNV,NgayLap=ClinicalNow(db,tx),TrangThai="Nháp",MaTTBNguon=maTTB,MaMauKH=maMauKH,PhienBanMau=template.Mau.PhienBan};
+        var plan=new ET_KEHOACHDIEUTRI {MaKHDT=TaoMa(db,tx,"KE_HOACH_DIEU_TRI","MaKHDT"),MaLS=maLS,MaBS=visit.MaBS,NgayLap=ClinicalNow(db,tx),TrangThai="Nháp",MaTTBNguon=maTTB,MaMauKH=maMauKH,PhienBanMau=template.Mau.PhienBan};
         KiemTra<ET_KEHOACHDIEUTRI>(db,tx,"KE_HOACH_DIEU_TRI",plan,null,null);
         var rows=PreparePlanSteps(db,tx,plan,steps,Array.Empty<ET_CHITIETKEHOACH>());
         InsertPlan(db,tx,plan);WritePlanSteps(db,tx,plan,rows,Array.Empty<ET_CHITIETKEHOACH>());
@@ -63,9 +63,9 @@ public sealed partial class DAL_KHAMDIEUTRI
     {
         ArgumentNullException.ThrowIfNull(request);var(actor,visit)=OwnedVisit(db,tx,request.MaLS,user,true);
         var original=string.IsNullOrEmpty(request.MaKHDT)?null:PlanSnapshot(db,tx,ValidCode(request.MaKHDT));
-        if(original is not null && (original.KeHoach.MaLS!=visit.MaLS || original.KeHoach.MaBS!=actor.MaNV))throw DAL_QUYENNGHIEPVU.TuChoi();
+        if(original is not null && (original.KeHoach.MaLS!=visit.MaLS || !actor.LaAdmin && original.KeHoach.MaBS!=actor.MaNV))throw DAL_QUYENNGHIEPVU.TuChoi();
         if(original is not null){if(original.KeHoach.TrangThai!="Nháp")throw KhamError("KeHoach","Kế hoạch đã duyệt chỉ còn cập nhật tiến độ.");RequireFingerprint(request.DauVanTay,original.DauVanTay);}
-        ET_KEHOACHDIEUTRI header=original?.KeHoach??new() {MaKHDT=TaoMa(db,tx,"KE_HOACH_DIEU_TRI","MaKHDT"),MaLS=visit.MaLS,MaBS=actor.MaNV,NgayLap=ClinicalNow(db,tx),TrangThai="Nháp",MaTTBNguon=string.IsNullOrWhiteSpace(request.MaTTBNguon)?null:request.MaTTBNguon};
+        ET_KEHOACHDIEUTRI header=original?.KeHoach??new() {MaKHDT=TaoMa(db,tx,"KE_HOACH_DIEU_TRI","MaKHDT"),MaLS=visit.MaLS,MaBS=visit.MaBS,NgayLap=ClinicalNow(db,tx),TrangThai="Nháp",MaTTBNguon=string.IsNullOrWhiteSpace(request.MaTTBNguon)?null:request.MaTTBNguon};
         if(original is not null && request.MaTTBNguon is not null && request.MaTTBNguon!=header.MaTTBNguon)throw DAL_QUYENNGHIEPVU.TuChoi();
         if(header.MaTTBNguon is not null && db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.TINH_TRANG_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaTTB=@id AND MaLS=@ls",new{id=header.MaTTBNguon,ls=visit.MaLS},tx)!=1)throw DAL_QUYENNGHIEPVU.TuChoi();
         header.NgayBatDau=request.NgayBatDau?.Date;header.NgayDuKienKetThuc=request.NgayDuKienKetThuc?.Date;header.GhiChu=request.GhiChu;
@@ -81,7 +81,7 @@ public sealed partial class DAL_KHAMDIEUTRI
     public BanNhapKeHoach XacNhanKeHoach(string maKHDT,string dauVanTay,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
         var(actor,p)=OwnedPlan(db,tx,maKHDT,user,true);
-        if(p.KeHoach.MaBS!=actor.MaNV)throw DAL_QUYENNGHIEPVU.TuChoi();RequireFingerprint(dauVanTay,p.DauVanTay);
+        if(!actor.LaAdmin && p.KeHoach.MaBS!=actor.MaNV)throw DAL_QUYENNGHIEPVU.TuChoi();RequireFingerprint(dauVanTay,p.DauVanTay);
         if(p.KeHoach.TrangThai!="Nháp")throw KhamError("KeHoach","Chỉ duyệt kế hoạch nháp.");
         if(p.CacBuoc.Count==0)throw KhamError("CacBuoc","Kế hoạch cần ít nhất một bước.");
         foreach(var s in p.CacBuoc){ActiveService(db,tx,s.MaDV);Required(s.NoiDungBuoc,"CacBuoc","Bổ sung nội dung từng bước.");}
@@ -125,7 +125,7 @@ public sealed partial class DAL_KHAMDIEUTRI
         // Chỉ tìm đường tới khóa cha; giá trị đọc sơ bộ không cấp quyền và phải kiểm tra lại sau khóa.
         var parent=db.QuerySingleOrDefault<string>("SELECT MaLS FROM dbo.KE_HOACH_DIEU_TRI WITH(READUNCOMMITTED) WHERE MaKHDT=@id",new{id=ValidCode(id)},tx)??throw DAL_QUYENNGHIEPVU.TuChoi();
         var(actor,_)=OwnedVisit(db,tx,parent,user,draft);var plan=PlanSnapshot(db,tx,id);
-        if(plan.KeHoach.MaLS!=parent || plan.KeHoach.MaBS!=actor.MaNV)throw DAL_QUYENNGHIEPVU.TuChoi();return(actor,plan);
+        if(plan.KeHoach.MaLS!=parent || !actor.LaAdmin && plan.KeHoach.MaBS!=actor.MaNV)throw DAL_QUYENNGHIEPVU.TuChoi();return(actor,plan);
     }
     private static BanNhapKeHoach PlanSnapshot(IDbConnection db,IDbTransaction? tx,string id)=>PlanSnapshot(db,tx,PlanHeader(db,tx,id));
     private static BanNhapKeHoach PlanSnapshot(IDbConnection db,IDbTransaction? tx,ET_KEHOACHDIEUTRI p)

@@ -30,7 +30,7 @@ public sealed partial class DAL_KHAMDIEUTRI : dbconnect
                 FROM dbo.PHIEU_KHAM_BENH p JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS
                 JOIN dbo.BENH_NHAN b ON b.MaBN=hs.MaBN
                 LEFT JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaPhieu=p.MaPhieu
-                WHERE p.MaBS=@MaNV AND (l.MaLS IS NULL OR l.MaBS=@MaNV)
+                WHERE (@LaAdmin=1 OR (p.MaBS=@MaNV AND (l.MaLS IS NULL OR l.MaBS=@MaNV)))
                   AND (@patient IS NULL OR b.MaBN=@patient)
                   AND p.ThoiGianTiepNhan>=@from AND p.ThoiGianTiepNhan<@end
                   AND (@status IS NULL OR p.TrangThai=@status)
@@ -38,7 +38,7 @@ public sealed partial class DAL_KHAMDIEUTRI : dbconnect
                       OR b.HoTenBN LIKE @search ESCAPE N'~')
                 ORDER BY p.ThoiGianTiepNhan,p.SoThuTu,p.MaPhieu
                 OFFSET @offset ROWS FETCH NEXT @size ROWS ONLY
-                """, new { user.MaNV, from, end = until.AddDays(1), status = string.IsNullOrWhiteSpace(boLoc.TrangThai) ? null : boLoc.TrangThai,
+                """, new { user.MaNV, user.LaAdmin, from, end = until.AddDays(1), status = string.IsNullOrWhiteSpace(boLoc.TrangThai) ? null : boLoc.TrangThai,
                     patient=string.IsNullOrWhiteSpace(boLoc.MaBN)?null:boLoc.MaBN,term, search, offset, size = boLoc.KichThuocTrang }, tx).ToArray();
         });
 
@@ -53,7 +53,7 @@ public sealed partial class DAL_KHAMDIEUTRI : dbconnect
                 SELECT l.*,hs.MaBN,p.MaHS,p.MaBS AS BacSiTiepNhan,p.TrangThai AS TrangThaiPhieu
                 FROM dbo.LICH_SU_KHAM_BENH l JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
                 JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS
-                WHERE l.MaLS=@maLS AND (
+                WHERE l.MaLS=@maLS AND (@LaAdmin=1 OR
                     (@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV)
                     OR (l.TrangThai=N'Đã xác nhận' AND (
                         @reception=1 OR @LaAdmin=1 OR (@doctor=1 AND EXISTS(
@@ -62,7 +62,7 @@ public sealed partial class DAL_KHAMDIEUTRI : dbconnect
                 """, new { maLS, user.MaNV, doctor, reception, user.LaAdmin }, tx);
             if (row is null) throw DAL_QUYENNGHIEPVU.TuChoi();
             DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db, tx, user, "LICH_SU_KHAM_BENH", maLS);
-            var canEdit = doctor && row.MaBS == user.MaNV && row.BacSiTiepNhan == user.MaNV &&
+            var canEdit = doctor && (user.LaAdmin || row.MaBS == user.MaNV && row.BacSiTiepNhan == user.MaNV) &&
                 row.TrangThai == "Nháp" && row.TrangThaiPhieu is "Chờ khám" or "Đang khám";
             return new LanKhamChiTiet(row, row.MaBN, row.MaHS, canEdit);
         });
@@ -81,7 +81,7 @@ public sealed partial class DAL_KHAMDIEUTRI : dbconnect
                 FROM dbo.DON_THUOC d JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=d.MaLS
                 JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
                 JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS
-                WHERE d.MaDT=@maDT AND (
+                WHERE d.MaDT=@maDT AND (@LaAdmin=1 OR
                     (@doctor=1 AND d.MaBS=@MaNV AND l.MaBS=@MaNV AND p.MaBS=@MaNV)
                     OR (l.TrangThai=N'Đã xác nhận' AND d.TrangThai IN(N'Đã xác nhận',N'Ngừng áp dụng') AND (
                         @pharmacy=1 OR @reception=1 OR @LaAdmin=1 OR (@doctor=1 AND EXISTS(
@@ -91,7 +91,7 @@ public sealed partial class DAL_KHAMDIEUTRI : dbconnect
             if (row is null) throw DAL_QUYENNGHIEPVU.TuChoi();
             var lines = db.Query<ET_CHITIETDONTHUOC>("SELECT * FROM dbo.CHI_TIET_DON_THUOC WHERE MaDT=@maDT ORDER BY MaCTDT", new { maDT }, tx).ToArray();
             DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db, tx, user, "DON_THUOC", maDT);
-            var canEdit = doctor && row.ChinhBacSi && row.TrangThai == "Nháp" && row.TrangThaiLanKham == "Nháp"
+            var canEdit = doctor && (user.LaAdmin || row.ChinhBacSi) && row.TrangThai == "Nháp" && row.TrangThaiLanKham == "Nháp"
                 && row.TrangThaiPhieu is "Chờ khám" or "Đang khám";
             return new DonThuocChiTiet(row, lines, row.MaBN, canEdit);
         });

@@ -41,7 +41,7 @@ public sealed partial class DAL_QUYENNGHIEPVU
                 {
                     if(original is null)throw new LoiTiepNhanException("MaPhieu","Lập lượt mới qua đầu mối tiếp nhận để kiểm tra bác sĩ, lịch và cấp số thứ tự.");
                     if (original is not null && db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.LICH_SU_KHAM_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaPhieu=@ma", new { ma }, tx) != 0) throw TuChoi();
-                    if (values.TryGetValue("MaNVTiepNhan", out var receiver) && Text(receiver) != user.MaNV) throw TuChoi();
+                    if (!user.LaAdmin && values.TryGetValue("MaNVTiepNhan", out var receiver) && Text(receiver) != user.MaNV) throw TuChoi();
                 }
                 return true;
             }
@@ -50,8 +50,8 @@ public sealed partial class DAL_QUYENNGHIEPVU
             if (bang == "LICH_SU_KHAM_BENH")
             {
                 var receipt = ReadRow(db, tx, "PHIEU_KHAM_BENH", Text(values.GetValueOrDefault("MaPhieu"))) ?? throw TuChoi();
-                if (!user.CoQuyen(QuyenLamViec.Kham) || Text(receipt.GetValueOrDefault("MaBS")) != user.MaNV ||
-                    Text(values.GetValueOrDefault("MaBS")) != user.MaNV || Text(receipt.GetValueOrDefault("TrangThai")) is not ("Chờ khám" or "Đang khám")) throw TuChoi();
+                if (!user.CoQuyen(QuyenLamViec.Kham) || (!user.LaAdmin && (Text(receipt.GetValueOrDefault("MaBS")) != user.MaNV ||
+                    Text(values.GetValueOrDefault("MaBS")) != user.MaNV)) || Text(receipt.GetValueOrDefault("TrangThai")) is not ("Chờ khám" or "Đang khám")) throw TuChoi();
                 if (original is not null && Text(original.GetValueOrDefault("TrangThai")) != "Nháp") throw TuChoi();
                 return true;
             }
@@ -59,7 +59,7 @@ public sealed partial class DAL_QUYENNGHIEPVU
             {
                 var parentTable = bang == "CHI_TIET_DON_THUOC" ? "DON_THUOC" : "KE_HOACH_DIEU_TRI";
                 var header = ReadRow(db, tx, parentTable, Text(values.GetValueOrDefault(metadata.Parent))) ?? throw TuChoi();
-                if (Text(header.GetValueOrDefault("TrangThai")) != "Nháp" || Text(header.GetValueOrDefault("MaBS")) != user.MaNV) throw TuChoi();
+                if (Text(header.GetValueOrDefault("TrangThai")) != "Nháp" || !user.LaAdmin && Text(header.GetValueOrDefault("MaBS")) != user.MaNV) throw TuChoi();
                 visit = Text(header.GetValueOrDefault("MaLS"));
             }
             else visit = Text(values.GetValueOrDefault("MaLS"));
@@ -76,7 +76,7 @@ public sealed partial class DAL_QUYENNGHIEPVU
             KiemTraQuyenGhiLanKham(visit, user);
             if (original is not null && original.TryGetValue("TrangThai", out var state) && Text(state) != "Nháp") throw TuChoi();
             if (bang is "DON_THUOC" or "KE_HOACH_DIEU_TRI")
-                if (Text(values.GetValueOrDefault("MaBS")) != user.MaNV) throw TuChoi();
+                if (!user.LaAdmin && Text(values.GetValueOrDefault("MaBS")) != user.MaNV) throw TuChoi();
             return true;
         });
     }

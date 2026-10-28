@@ -16,12 +16,12 @@ public partial class DAL_DICHVUTHUCHIEN
         JOIN dbo.BENH_NHAN b ON b.MaBN=h.MaBN
         """;
     private const string ReadScope="""
-        ((@Doctor=1 AND (l.MaBS=@MaNV AND p.MaBS=@MaNV OR l.TrangThai=N'Đã xác nhận' AND EXISTS(
+        (@LaAdmin=1 OR (@Doctor=1 AND (l.MaBS=@MaNV AND p.MaBS=@MaNV OR l.TrangThai=N'Đã xác nhận' AND EXISTS(
            SELECT 1 FROM dbo.PHIEU_KHAM_BENH ownp JOIN dbo.HO_SO_BENH_AN ownh ON ownh.MaHS=ownp.MaHS WHERE ownp.MaBS=@MaNV AND ownh.MaBN=h.MaBN)))
          OR (@Nurse=1 AND EXISTS(SELECT 1 FROM dbo.DICH_VU_THUC_HIEN a WHERE a.MaLS=l.MaLS AND a.MaNVThucHien=@MaNV))
          OR (@Cash=1 AND l.TrangThai=N'Đã xác nhận'))
         """;
-    private static object Scope(NguCanhNghiepVu a,string? maLS=null,string? maBN=null)=>new{a.MaNV,maLS,maBN,Doctor=a.CoQuyen(QuyenLamViec.Kham),Nurse=a.CoQuyen(QuyenLamViec.CapNhatKetQuaDuocGiao),Cash=a.LaAdmin||a.CoQuyen(QuyenLamViec.ThuTien)};
+    private static object Scope(NguCanhNghiepVu a,string? maLS=null,string? maBN=null)=>new{a.MaNV,a.LaAdmin,maLS,maBN,Doctor=a.CoQuyen(QuyenLamViec.Kham),Nurse=a.CoQuyen(QuyenLamViec.CapNhatKetQuaDuocGiao),Cash=a.LaAdmin||a.CoQuyen(QuyenLamViec.ThuTien)};
     public IReadOnlyList<LuotThucHien> LayLuotThucHien(NguCanhNghiepVu user,string? maBN=null)=>ThucHien((db,tx)=>
     {
         if(maBN is not null)DAL_QUYENNGHIEPVU.KiemTraMa(maBN);
@@ -134,7 +134,7 @@ public partial class DAL_DICHVUTHUCHIEN
         if(r.MaLS!=v.MaLS||a.CoQuyen(QuyenLamViec.CapNhatKetQuaDuocGiao)&&!Own(a,v)&&r.MaNVThucHien!=a.MaNV||!Own(a,v)&&!a.CoQuyen(QuyenLamViec.CapNhatKetQuaDuocGiao)&&r.TrangThai!="Đã xác nhận")throw DAL_QUYENNGHIEPVU.TuChoi();return(a,v,r);
     }
     private static ET_DICHVUTHUCHIEN ReadRow(IDbConnection db,IDbTransaction? tx,string id)=>db.QuerySingleOrDefault<ET_DICHVUTHUCHIEN>("SELECT * FROM dbo.DICH_VU_THUC_HIEN WITH(HOLDLOCK) WHERE MaDVThucHien=@id",new{id},tx)??throw DAL_QUYENNGHIEPVU.TuChoi();
-    private static bool Own(NguCanhNghiepVu a,Visit v)=>a.CoQuyen(QuyenLamViec.Kham)&&v.MaBS==a.MaNV&&v.BacSiPhieu==a.MaNV;
+    private static bool Own(NguCanhNghiepVu a,Visit v)=>a.CoQuyen(QuyenLamViec.Kham)&&(a.LaAdmin||v.MaBS==a.MaNV&&v.BacSiPhieu==a.MaNV);
     private static bool Draft(Visit v)=>v.TrangThai=="Nháp"&&v.TrangThaiPhieu is "Chờ khám" or "Đang khám";
     private static bool Billed(IDbConnection db,IDbTransaction? tx,string id)=>db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.CHI_TIET_HOA_DON c WITH(HOLDLOCK) JOIN dbo.HOA_DON h WITH(HOLDLOCK) ON h.MaHD=c.MaHD WHERE c.MaDVThucHien=@id AND h.TrangThai<>N'Hủy'",new{id},tx)>0;
     private static void EnsureDraft(IDbConnection db,IDbTransaction? tx,ET_DICHVUTHUCHIEN r,Visit v)

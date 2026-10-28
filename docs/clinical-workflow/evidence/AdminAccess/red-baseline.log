@@ -1,0 +1,8 @@
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\AdminBaseline\Program.cs(93,16): warning CS8604: Possible null reference argument for parameter 'cnn' in 'int SqlMapper.ExecuteScalar<int>(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\AdminBaseline\AdminBaseline.csproj]
+FAIL: Admin nhận đủ tất cả quyền nghiệp vụ từ SQL | Exception: Thiếu XemHoSo
+PASS: User CV001 không tự được toàn quyền
+FAIL: Admin xem/sửa bản nháp của bác sĩ khác; User vẫn bị chặn | TuChoiQuyenNghiepVuException: Không tìm thấy dữ liệu trong phạm vi được phép hoặc tài khoản không còn quyền thao tác.
+FAIL: Admin bắt đầu khám phiếu bác sĩ khác và giữ bác sĩ | TuChoiQuyenNghiepVuException: Không tìm thấy dữ liệu trong phạm vi được phép hoặc tài khoản không còn quyền thao tác.
+FAIL: Admin duyệt mẫu điều trị và hướng dẫn qua trigger SQL | TuChoiQuyenNghiepVuException: Không tìm thấy dữ liệu trong phạm vi được phép hoặc tài khoản không còn quyền thao tác.
+FAIL: Admin xuyên suốt khám/kế hoạch/dịch vụ/đơn/thu/giao, không sửa chứng từ chốt | TuChoiQuyenNghiepVuException: Không tìm thấy dữ liệu trong phạm vi được phép hoặc tài khoản không còn quyền thao tác.
+RESULT: 1 passed, 5 failed

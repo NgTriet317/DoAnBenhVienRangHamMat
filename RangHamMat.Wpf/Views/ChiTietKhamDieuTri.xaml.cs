@@ -31,7 +31,7 @@ public partial class ChiTietKhamDieuTri : UserControl, IPatientScoped
         InitializeComponent();
         HoTroGiaoDien.Observe(this, Refresh);
         Refresh();
-        if(DuLieuGiaoDien.PhamViLamSang && UiRecord.Text(visit,"MaBS")==PhienDangNhap.MaNV && Controls.ClinicalWorkflow.QuyenNghiepVu.LayNguCanh().CoQuyen(ET.QuyenLamViec.Kham))
+        if(DuLieuGiaoDien.PhamViLamSang && (DuLieuGiaoDien.NguoiDungLamSang.LaAdmin || UiRecord.Text(visit,"MaBS")==PhienDangNhap.MaNV) && Controls.ClinicalWorkflow.QuyenNghiepVu.LayNguCanh().CoQuyen(ET.QuyenLamViec.Kham))
         {
             clinicalEditor=new KhamLamSang(visitId);if(historyReadOnly)clinicalEditor.RestrictToHistory();clinicalEditor.BackRequested+=()=>BackRequested?.Invoke();Content=clinicalEditor;
         }

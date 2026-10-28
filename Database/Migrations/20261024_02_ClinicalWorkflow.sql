@@ -319,8 +319,8 @@ BEGIN
   THROW 52115,N''Mẫu đã duyệt giữ nguyên nội dung; tạo mã/phiên bản mới.'',1;
  IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã duyệt'' AND
  (NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_MAU_KE_HOACH c WHERE c.MaMauKH=i.MaMauKH) OR
- NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaBSDuyet AND n.MaChucVu=N''CV002'' AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động'')))
-  THROW 52115,N''Mẫu cần các bước và bác sĩ hoạt động duyệt.'',1;
+ NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaBSDuyet AND (n.MaChucVu=N''CV002'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động'')))
+  THROW 52115,N''Mẫu cần các bước và bác sĩ hoặc Admin đang hoạt động duyệt.'',1;
 END;';
 EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_CTMau_BaoVe ON dbo.CHI_TIET_MAU_KE_HOACH AFTER INSERT,UPDATE,DELETE AS
 BEGIN
@@ -338,7 +338,7 @@ BEGIN
  OR(i.PhienBan=d.PhienBan+1 AND i.TrangThai=N''Nháp'' AND i.MaNguoiDuyet IS NULL AND i.NgayDuyet IS NULL))))
   THROW 52117,N''Đổi hướng dẫn đã duyệt phải lập phiên bản nháp tiếp theo và giữ lịch sử.'',1;
  IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã duyệt'' AND NOT EXISTS(
- SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNguoiDuyet AND n.MaChucVu IN(N''CV002'',N''CV005'') AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
+ SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNguoiDuyet AND (n.MaChucVu IN(N''CV002'',N''CV005'') OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
   THROW 52117,N''Người duyệt hướng dẫn cần quyền chuyên môn đang hoạt động.'',1;
 END;';
 EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_HD_Request ON dbo.HOA_DON AFTER UPDATE AS
@@ -369,8 +369,8 @@ BEGIN
  NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT WHERE x.MaPX=i.MaPX AND c.MaDT=i.MaDT) OR
  EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT x LEFT JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT WHERE x.MaPX=i.MaPX AND(c.MaDT IS NULL OR c.MaDT<>i.MaDT)))
  THROW 52121,N''Bàn giao cần hóa đơn đã thu đủ, xuất ghi sổ và đơn cùng lượt.'',1;
- IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã giao'' AND NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNVGiao AND n.MaChucVu=N''CV005'' AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
- THROW 52121,N''Người giao phải là dược sĩ đang hoạt động.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã giao'' AND NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNVGiao AND (n.MaChucVu=N''CV005'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
+ THROW 52121,N''Người giao phải là dược sĩ hoặc Admin đang hoạt động.'',1;
 END;';
 EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.[TR_CW_Audit_DM_TINH_TRANG_BENH] ON dbo.[DM_TINH_TRANG_BENH] AFTER INSERT,UPDATE,DELETE AS
 BEGIN

@@ -55,15 +55,15 @@ public sealed partial class DAL_KHAMDIEUTRI
         DECLARE @ls TABLE(MaLS nvarchar(50) PRIMARY KEY);
         INSERT @ls SELECT TOP(@visitLimit) l.MaLS FROM dbo.LICH_SU_KHAM_BENH l JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
           JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS JOIN @bn b ON b.MaBN=hs.MaBN
-          WHERE (@visit IS NULL OR l.MaLS=@visit) AND ((@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV) OR l.TrangThai=N'Đã xác nhận'
+          WHERE (@visit IS NULL OR l.MaLS=@visit) AND (@LaAdmin=1 OR (@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV) OR l.TrangThai=N'Đã xác nhận'
           OR (@nurse=1 AND EXISTS(SELECT 1 FROM dbo.DICH_VU_THUC_HIEN d WHERE d.MaLS=l.MaLS AND d.MaNVThucHien=@MaNV))) ORDER BY l.ThoiGianKham DESC,l.MaLS;
         DECLARE @kh TABLE(MaKHDT nvarchar(50) PRIMARY KEY);
         INSERT @kh SELECT k.MaKHDT FROM dbo.KE_HOACH_DIEU_TRI k JOIN @ls l ON l.MaLS=k.MaLS
-          WHERE @fullClinical=1 AND (k.TrangThai<>N'Nháp' OR (@doctor=1 AND k.MaBS=@MaNV));
+          WHERE @fullClinical=1 AND (@LaAdmin=1 OR k.TrangThai<>N'Nháp' OR (@doctor=1 AND k.MaBS=@MaNV));
         DECLARE @dt TABLE(MaDT nvarchar(50) PRIMARY KEY);
         INSERT @dt SELECT d.MaDT FROM dbo.DON_THUOC d JOIN @ls x ON x.MaLS=d.MaLS
           JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=d.MaLS JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
-          WHERE (@doctor=1 AND d.MaBS=@MaNV AND l.MaBS=@MaNV AND p.MaBS=@MaNV)
+          WHERE @LaAdmin=1 OR (@doctor=1 AND d.MaBS=@MaNV AND l.MaBS=@MaNV AND p.MaBS=@MaNV)
           OR (l.TrangThai=N'Đã xác nhận' AND d.TrangThai IN(N'Đã xác nhận',N'Ngừng áp dụng'));
         DECLARE @hd TABLE(MaHD nvarchar(50) PRIMARY KEY);
         INSERT @hd SELECT h.MaHD FROM dbo.HOA_DON h JOIN @ls l ON l.MaLS=h.MaLS WHERE @finance=1;
@@ -82,22 +82,22 @@ public sealed partial class DAL_KHAMDIEUTRI
           ORDER BY CASE WHEN EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l JOIN @ls x ON x.MaLS=l.MaLS WHERE l.MaPhieu=p.MaPhieu) THEN 0 ELSE 1 END,p.ThoiGianTiepNhan DESC,p.MaPhieu;
         SELECT TOP(@appointmentLimit) k.* FROM dbo.LICH_KHAM k JOIN @bn b ON b.MaBN=k.MaBN WHERE @fullClinical=1 ORDER BY k.NgayGioKham DESC,k.MaLich;
         SELECT l.MaLS,l.MaPhieu,l.MaBS,l.MaPhong,l.ThoiGianKham,
-          CASE WHEN @fullClinical=1 AND (l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.TrieuChung ELSE N'' END TrieuChung,
-          CASE WHEN ((@fullClinical=1 OR @pharmacy=1) AND l.TrangThai=N'Đã xác nhận') OR (@doctor=1 AND l.MaBS=@MaNV) THEN l.ChanDoan ELSE N'' END ChanDoan,
-          CASE WHEN @fullClinical=1 AND (l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.KeHoachXuLy ELSE N'' END KeHoachXuLy,
-            l.TrangThai,l.NgayXacNhan,CASE WHEN @fullClinical=1 AND (l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.GhiChu END GhiChu,
-            CASE WHEN @fullClinical=1 AND (l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.KhongKeThuoc ELSE 0 END KhongKeThuoc,
-            CASE WHEN @fullClinical=1 AND (l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.LyDoKhongKeThuoc END LyDoKhongKeThuoc
+          CASE WHEN @fullClinical=1 AND (@LaAdmin=1 OR l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.TrieuChung ELSE N'' END TrieuChung,
+          CASE WHEN @LaAdmin=1 OR ((@fullClinical=1 OR @pharmacy=1) AND l.TrangThai=N'Đã xác nhận') OR (@doctor=1 AND l.MaBS=@MaNV) THEN l.ChanDoan ELSE N'' END ChanDoan,
+          CASE WHEN @fullClinical=1 AND (@LaAdmin=1 OR l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.KeHoachXuLy ELSE N'' END KeHoachXuLy,
+            l.TrangThai,l.NgayXacNhan,CASE WHEN @fullClinical=1 AND (@LaAdmin=1 OR l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.GhiChu END GhiChu,
+            CASE WHEN @fullClinical=1 AND (@LaAdmin=1 OR l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.KhongKeThuoc ELSE 0 END KhongKeThuoc,
+            CASE WHEN @fullClinical=1 AND (@LaAdmin=1 OR l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV)) THEN l.LyDoKhongKeThuoc END LyDoKhongKeThuoc
           FROM dbo.LICH_SU_KHAM_BENH l JOIN @ls x ON x.MaLS=l.MaLS;
         SELECT t.* FROM dbo.TINH_TRANG_BENH t JOIN @ls x ON x.MaLS=t.MaLS JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=t.MaLS
-          WHERE @fullClinical=1 AND (l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV));
+          WHERE @fullClinical=1 AND (@LaAdmin=1 OR l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV));
         SELECT k.* FROM dbo.KE_HOACH_DIEU_TRI k JOIN @kh x ON x.MaKHDT=k.MaKHDT;
         SELECT c.* FROM dbo.CHI_TIET_KE_HOACH c JOIN @kh x ON x.MaKHDT=c.MaKHDT;
         SELECT d.MaDVThucHien,d.MaLS,d.MaCTKH,d.MaDV,d.MaNVThucHien,d.ThoiGianThucHien,d.SoLuong,d.DonGia,d.ThanhTien,
           CASE WHEN @fullClinical=1 THEN d.KetQua END KetQua,d.TrangThai
           FROM dbo.DICH_VU_THUC_HIEN d JOIN @ls x ON x.MaLS=d.MaLS JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=d.MaLS
           JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
-          WHERE (@nurse=1 AND d.MaNVThucHien=@MaNV) OR (@nurse=0 AND
+          WHERE @LaAdmin=1 OR (@nurse=1 AND d.MaNVThucHien=@MaNV) OR (@nurse=0 AND
             ((@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV) OR d.TrangThai=N'Đã xác nhận'));
         SELECT d.MaDT,d.MaLS,d.MaBS,d.NgayKe,CASE WHEN @fullClinical=1 OR @pharmacy=1 THEN d.LyDoThayThe END LyDoThayThe,
           d.TrangThai,d.MaDTThayThe,CASE WHEN @fullClinical=1 OR @pharmacy=1 THEN d.GhiChu END GhiChu FROM dbo.DON_THUOC d JOIN @dt x ON x.MaDT=d.MaDT;

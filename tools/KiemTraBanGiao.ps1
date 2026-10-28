@@ -1,4 +1,4 @@
-param(
+﻿param(
     [switch]$ChiCauTruc,
     [switch]$KiemTraSql,
     [string]$MayChu='.',
@@ -37,6 +37,8 @@ try {
         if(!(Get-Command sqlcmd -ErrorAction SilentlyContinue)){throw 'Cần cài sqlcmd hoặc chạy Verify trong SSMS.'}
         & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -i 'Database/Migrations/20261024_03_Verify_ClinicalWorkflow.sql'
         if($LASTEXITCODE -ne 0){throw 'Database chưa khớp schema quy trình khám2.'}
+        & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -Q "SET NOCOUNT ON; IF (SELECT COUNT(*) FROM sys.triggers WHERE name IN(N'TR_CW_MauKH_BaoVe',N'TR_CW_CauHinh_BaoVe',N'TR_CW_BanGiao_BaoVe') AND is_disabled=0 AND OBJECT_DEFINITION(object_id) LIKE N'%QUẢN TRỊ%')<>3 THROW 52130,N'Chạy migration20261028_05_AdminFullAccess để đồng bộ quyền Admin.',1;"
+        if($LASTEXITCODE -ne 0){throw 'Database chưa đồng bộ quyền Admin; chạy migration05.'}
         Write-Output 'PASS: database khớp schema2; kiểm tra SQL chỉ đọc.'
     }
 } finally {Pop-Location}

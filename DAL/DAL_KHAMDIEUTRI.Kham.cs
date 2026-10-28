@@ -21,17 +21,17 @@ public sealed partial class DAL_KHAMDIEUTRI
         ClinicalLock(db,tx,"Phieu:"+ValidCode(maPhieu));
         var actor=Doctor(db,tx,user);
         var p=db.QuerySingleOrDefault<ET_PHIEUKHAMBENH>("SELECT * FROM dbo.PHIEU_KHAM_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaPhieu=@maPhieu",new{maPhieu},tx);
-        if(p is null || p.MaBS!=actor.MaNV)throw DAL_QUYENNGHIEPVU.TuChoi();
+        if(p is null || !actor.LaAdmin && p.MaBS!=actor.MaNV)throw DAL_QUYENNGHIEPVU.TuChoi();
         var old=db.QuerySingleOrDefault<ET_LICHSUKHAMBENH>("SELECT * FROM dbo.LICH_SU_KHAM_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaPhieu=@maPhieu",new{maPhieu},tx);
         if(old is not null)
         {
-            if(old.MaBS!=actor.MaNV)throw DAL_QUYENNGHIEPVU.TuChoi();
+            if(!actor.LaAdmin && old.MaBS!=actor.MaNV)throw DAL_QUYENNGHIEPVU.TuChoi();
             if(old.TrangThai=="Nháp" && p.TrangThai=="Chờ khám")db.Execute("UPDATE dbo.PHIEU_KHAM_BENH SET TrangThai=N'Đang khám' WHERE MaPhieu=@maPhieu",new{maPhieu},tx);
             return old.MaLS;
         }
         var now=ClinicalNow(db,tx);
         if(p.TrangThai!="Chờ khám" || p.ThoiGianTiepNhan>now)throw KhamError("MaPhieu","Chỉ bắt đầu phiếu chờ khám có thời gian hợp lệ.");
-        var visit=new ET_LICHSUKHAMBENH {MaLS=TaoMa(db,tx,"LICH_SU_KHAM_BENH","MaLS"),MaPhieu=p.MaPhieu,MaBS=actor.MaNV,MaPhong=p.MaPhong,ThoiGianKham=now,TrieuChung="",ChanDoan="",KeHoachXuLy="",TrangThai="Nháp"};
+        var visit=new ET_LICHSUKHAMBENH {MaLS=TaoMa(db,tx,"LICH_SU_KHAM_BENH","MaLS"),MaPhieu=p.MaPhieu,MaBS=p.MaBS!,MaPhong=p.MaPhong,ThoiGianKham=now,TrieuChung="",ChanDoan="",KeHoachXuLy="",TrangThai="Nháp"};
         KiemTra<ET_LICHSUKHAMBENH>(db,tx,"LICH_SU_KHAM_BENH",visit,null,null);
         db.Execute("INSERT dbo.LICH_SU_KHAM_BENH(MaLS,MaPhieu,MaBS,MaPhong,ThoiGianKham,TrieuChung,ChanDoan,KeHoachXuLy,TrangThai,NgayXacNhan,GhiChu,KhongKeThuoc,LyDoKhongKeThuoc) VALUES(@MaLS,@MaPhieu,@MaBS,@MaPhong,@ThoiGianKham,@TrieuChung,@ChanDoan,@KeHoachXuLy,@TrangThai,@NgayXacNhan,@GhiChu,@KhongKeThuoc,@LyDoKhongKeThuoc)",visit,tx);
         db.Execute("UPDATE dbo.PHIEU_KHAM_BENH SET TrangThai=N'Đang khám' WHERE MaPhieu=@maPhieu",new{maPhieu},tx);
@@ -109,7 +109,7 @@ public sealed partial class DAL_KHAMDIEUTRI
     private static (NguCanhNghiepVu,VisitRead) OwnedVisit(IDbConnection db,IDbTransaction? tx,string id,NguCanhNghiepVu user,bool draft)
     {
         ClinicalLock(db,tx,"LanKham:"+ValidCode(id));var actor=Doctor(db,tx,user);
-        var v=db.QuerySingleOrDefault<VisitRead>("SELECT l.*,p.MaHS,p.MaBS BacSiTiepNhan,p.TrangThai TrangThaiPhieu,h.MaBN FROM dbo.LICH_SU_KHAM_BENH l WITH(UPDLOCK,HOLDLOCK) JOIN dbo.PHIEU_KHAM_BENH p WITH(UPDLOCK,HOLDLOCK) ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN h WITH(HOLDLOCK) ON h.MaHS=p.MaHS WHERE l.MaLS=@id AND l.MaBS=@MaNV AND p.MaBS=@MaNV",new{id,actor.MaNV},tx);
+        var v=db.QuerySingleOrDefault<VisitRead>("SELECT l.*,p.MaHS,p.MaBS BacSiTiepNhan,p.TrangThai TrangThaiPhieu,h.MaBN FROM dbo.LICH_SU_KHAM_BENH l WITH(UPDLOCK,HOLDLOCK) JOIN dbo.PHIEU_KHAM_BENH p WITH(UPDLOCK,HOLDLOCK) ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN h WITH(HOLDLOCK) ON h.MaHS=p.MaHS WHERE l.MaLS=@id AND (@LaAdmin=1 OR (l.MaBS=@MaNV AND p.MaBS=@MaNV))",new{id,actor.MaNV,actor.LaAdmin},tx);
         if(v is null || draft&&!Editable(v))throw DAL_QUYENNGHIEPVU.TuChoi();return(actor,v);
     }
     private static bool Editable(VisitRead v)=>v.TrangThai=="Nháp" && v.TrangThaiPhieu is "Chờ khám" or "Đang khám";

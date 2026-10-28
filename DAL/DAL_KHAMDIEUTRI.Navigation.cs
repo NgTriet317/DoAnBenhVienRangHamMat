@@ -49,12 +49,12 @@ public sealed partial class DAL_KHAMDIEUTRI
                 """,new{c.MaBN,user.MaNV,user.LaAdmin,reception,doctor,finance},tx);
             if(allowed!=1)throw DAL_QUYENNGHIEPVU.TuChoi();
         }
-        if(visit is not null&&!(doctor&&visit.MaBS==user.MaNV&&receipt?.MaBS==user.MaNV)&&visit.TrangThai!="Đã xác nhận")
+        if(!user.LaAdmin&&visit is not null&&!(doctor&&visit.MaBS==user.MaNV&&receipt?.MaBS==user.MaNV)&&visit.TrangThai!="Đã xác nhận")
         {
             var assigned=user.CoQuyen(QuyenLamViec.CapNhatKetQuaDuocGiao)&&db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DICH_VU_THUC_HIEN WHERE MaLS=@MaLS AND MaNVThucHien=@MaNV",new{c.MaLS,user.MaNV},tx)>0;
             if(!assigned)throw DAL_QUYENNGHIEPVU.TuChoi();
         }
-        if(rx is not null&&!(doctor&&rx.MaBS==user.MaNV&&visit?.MaBS==user.MaNV&&receipt?.MaBS==user.MaNV)&&!(visit?.TrangThai=="Đã xác nhận"&&rx.TrangThai is "Đã xác nhận" or "Ngừng áp dụng"))throw DAL_QUYENNGHIEPVU.TuChoi();
+        if(!user.LaAdmin&&rx is not null&&!(doctor&&rx.MaBS==user.MaNV&&visit?.MaBS==user.MaNV&&receipt?.MaBS==user.MaNV)&&!(visit?.TrangThai=="Đã xác nhận"&&rx.TrangThai is "Đã xác nhận" or "Ngừng áp dụng"))throw DAL_QUYENNGHIEPVU.TuChoi();
         DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db,tx,user,"NGU_CANH_HO_SO",c.MaHD??c.MaDT??c.MaLS??c.MaPhieu??c.MaHS??c.MaBN??user.MaNV);
         return c;
     });

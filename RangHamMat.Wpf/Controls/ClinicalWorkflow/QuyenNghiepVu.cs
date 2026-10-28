@@ -41,6 +41,7 @@ public static class QuyenNghiepVu
         if (table == "CHI_TIET_KE_HOACH") row = DuLieuGiaoDien.Find("KE_HOACH_DIEU_TRI", UiRecord.Get(row, "MaKHDT")) ?? new object();
         var visit = table == "LICH_SU_KHAM_BENH" ? row : DuLieuGiaoDien.Find("LICH_SU_KHAM_BENH", UiRecord.Get(row, "MaLS"));
         if (visit is null || UiRecord.Text(visit, "TrangThai") != "Nháp") return false;
+        if (user.LaAdmin) return user.CoQuyen(QuyenLamViec.Kham);
         if (table == "DICH_VU_THUC_HIEN" && user.CoQuyen(QuyenLamViec.CapNhatKetQuaDuocGiao))
             return UiRecord.Text(row, "MaNVThucHien") == user.MaNV;
         var receipt = DuLieuGiaoDien.Find("PHIEU_KHAM_BENH", UiRecord.Get(visit, "MaPhieu"));
@@ -48,7 +49,7 @@ public static class QuyenNghiepVu
     }
 
     public static bool DuocXemNoiDungKham(object row)
-        => !DuLieuGiaoDien.PhamViLamSang || UiRecord.Text(row,"TrangThai") == "Đã xác nhận" ||
+        => !DuLieuGiaoDien.PhamViLamSang || DuLieuGiaoDien.NguoiDungLamSang.LaAdmin || UiRecord.Text(row,"TrangThai") == "Đã xác nhận" ||
             (DuLieuGiaoDien.NguoiDungLamSang.CoQuyen(QuyenLamViec.Kham) && UiRecord.Text(row,"MaBS") == PhienDangNhap.MaNV);
 
     public static void KiemTraLienKet(string? patient, string? visit = null, string? prescription = null)

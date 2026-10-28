@@ -1,6 +1,6 @@
 /*
 NHÓM 4 - BỆNH VIỆN RĂNG HÀM MẶT - DATABASE V8, MÃ CHUỖI
-Schema ClinicalWorkflow v2 đồng bộ ứng dụng ngày 27/10/2026; 52 bảng. Dữ liệu mô phỏng gốc ngày 13/10/2026 được giữ nguyên.
+Schema ClinicalWorkflow v2 đồng bộ ứng dụng ngày 28/10/2026; 52 bảng. Dữ liệu mô phỏng gốc ngày 13/10/2026 được giữ nguyên.
 Tên người, doanh nghiệp, liên hệ, số chứng nhận và bệnh án đều hư cấu;
 không phải hồ sơ thật hay dữ liệu của doanh nghiệp/bệnh viện có thật.
 Giá dịch vụ, thuốc và lương là giá nội bộ minh họa, không phải giá thị trường.
@@ -15,7 +15,7 @@ MaKhoa=NULL, MaPhong=NULL. Mật khẩu đăng nhập của cả 10 là 123456.
 MatKhauHash lưu PBKDF2-HMAC-SHA256: pbkdf2_sha256$210000$base64(salt)$base64(hash).
 Salt ngẫu nhiên 16 byte, hash 32 byte; mật khẩu UTF-8. C# cần xác minh theo
 định dạng này; không so sánh trực tiếp MatKhauHash với chuỗi nhập 123456.
-Vai trò Admin/User dùng để phân quyền hệ thống; chức vụ nghề nghiệp vẫn
+Admin có toàn quyền nghiệp vụ và phạm vi mọi bác sĩ; User theo chức vụ. Chức vụ vẫn
 lưu ở NHAN_VIEN, không thay chức vụ bác sĩ/dược sĩ bằng vai trò tài khoản.
 
 CÁCH CHẠY: mở toàn bộ file bằng SQL Server Management Studio, kết nối SQL
@@ -2305,8 +2305,8 @@ BEGIN
   THROW 52115,N''Mẫu đã duyệt giữ nguyên nội dung; tạo mã/phiên bản mới.'',1;
  IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã duyệt'' AND
  (NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_MAU_KE_HOACH c WHERE c.MaMauKH=i.MaMauKH) OR
- NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaBSDuyet AND n.MaChucVu=N''CV002'' AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động'')))
-  THROW 52115,N''Mẫu cần các bước và bác sĩ hoạt động duyệt.'',1;
+ NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaBSDuyet AND (n.MaChucVu=N''CV002'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động'')))
+  THROW 52115,N''Mẫu cần các bước và bác sĩ hoặc Admin đang hoạt động duyệt.'',1;
 END;';
 EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_CTMau_BaoVe ON dbo.CHI_TIET_MAU_KE_HOACH AFTER INSERT,UPDATE,DELETE AS
 BEGIN
@@ -2324,7 +2324,7 @@ BEGIN
  OR(i.PhienBan=d.PhienBan+1 AND i.TrangThai=N''Nháp'' AND i.MaNguoiDuyet IS NULL AND i.NgayDuyet IS NULL))))
   THROW 52117,N''Đổi hướng dẫn đã duyệt phải lập phiên bản nháp tiếp theo và giữ lịch sử.'',1;
  IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã duyệt'' AND NOT EXISTS(
- SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNguoiDuyet AND n.MaChucVu IN(N''CV002'',N''CV005'') AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
+ SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNguoiDuyet AND (n.MaChucVu IN(N''CV002'',N''CV005'') OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
   THROW 52117,N''Người duyệt hướng dẫn cần quyền chuyên môn đang hoạt động.'',1;
 END;';
 EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_HD_Request ON dbo.HOA_DON AFTER UPDATE AS
@@ -2355,8 +2355,8 @@ BEGIN
  NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT WHERE x.MaPX=i.MaPX AND c.MaDT=i.MaDT) OR
  EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT x LEFT JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT WHERE x.MaPX=i.MaPX AND(c.MaDT IS NULL OR c.MaDT<>i.MaDT)))
  THROW 52121,N''Bàn giao cần hóa đơn đã thu đủ, xuất ghi sổ và đơn cùng lượt.'',1;
- IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã giao'' AND NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNVGiao AND n.MaChucVu=N''CV005'' AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
- THROW 52121,N''Người giao phải là dược sĩ đang hoạt động.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã giao'' AND NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNVGiao AND (n.MaChucVu=N''CV005'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
+ THROW 52121,N''Người giao phải là dược sĩ hoặc Admin đang hoạt động.'',1;
 END;';
 EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.[TR_CW_Audit_DM_TINH_TRANG_BENH] ON dbo.[DM_TINH_TRANG_BENH] AFTER INSERT,UPDATE,DELETE AS
 BEGIN

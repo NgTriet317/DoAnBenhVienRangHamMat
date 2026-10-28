@@ -28,24 +28,24 @@ public sealed partial class DAL_KHAMDIEUTRI
     public TrangHoSo<DongBenhNhanDanhSach> LayTrangBenhNhan(BoLocDanhSachHoSo filter,NguCanhNghiepVu actor)=>ReadPage<DongBenhNhanDanhSach>(filter,actor,"""
         SELECT b.MaBN,b.HoTenBN,b.NgaySinh,b.GioiTinh,b.SDT,b.DiaChi,b.TrangThai,
          (SELECT MAX(l.ThoiGianKham) FROM dbo.HO_SO_BENH_AN hs JOIN dbo.PHIEU_KHAM_BENH p ON p.MaHS=hs.MaHS JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaPhieu=p.MaPhieu
-          WHERE hs.MaBN=b.MaBN AND (l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV))) LanKhamGanNhat
+          WHERE hs.MaBN=b.MaBN AND (@LaAdmin=1 OR l.TrangThai=N'Đã xác nhận' OR (@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV))) LanKhamGanNhat
         FROM patients b WHERE (@status IS NULL OR b.TrangThai=@status) AND (@gender IS NULL OR b.GioiTinh=@gender)
           AND (@patient IS NULL OR b.MaBN=@patient) AND (@term=N'' OR b.MaBN LIKE @search ESCAPE N'~' OR b.HoTenBN LIKE @search ESCAPE N'~' OR b.SDT LIKE @search ESCAPE N'~' OR b.NgaySinh=@birth)
         ""","*","HoTenBN,MaBN");
     public TrangHoSo<DongLanKhamDanhSach> LayTrangLanKham(BoLocDanhSachHoSo filter,NguCanhNghiepVu actor)=>ReadPage<DongLanKhamDanhSach>(filter,actor,"""
         SELECT l.MaLS,l.MaPhieu,l.MaBS,l.MaPhong,l.ThoiGianKham,l.TrangThai,l.NgayXacNhan,b.MaBN,b.HoTenBN,n.HoTen TenBS,
-          CASE WHEN @fullClinical=1 AND(l.TrangThai=N'Đã xác nhận' OR(@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV)) THEN l.ChanDoan ELSE N'' END ChanDoan,CASE WHEN p.MaLich IS NULL THEN N'Trực tiếp' ELSE N'Lịch hẹn #'+p.MaLich END NguonTiepNhan
+          CASE WHEN @fullClinical=1 AND(@LaAdmin=1 OR l.TrangThai=N'Đã xác nhận' OR(@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV)) THEN l.ChanDoan ELSE N'' END ChanDoan,CASE WHEN p.MaLich IS NULL THEN N'Trực tiếp' ELSE N'Lịch hẹn #'+p.MaLich END NguonTiepNhan
         FROM dbo.LICH_SU_KHAM_BENH l JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS JOIN patients b ON b.MaBN=hs.MaBN JOIN dbo.NHAN_VIEN n ON n.MaNV=l.MaBS
-        WHERE ((@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV) OR l.TrangThai=N'Đã xác nhận' OR (@nurse=1 AND EXISTS(SELECT 1 FROM dbo.DICH_VU_THUC_HIEN d WHERE d.MaLS=l.MaLS AND d.MaNVThucHien=@MaNV)))
-          AND (@doctor=0 OR l.MaBS=@MaNV OR ((@onlyMine=0 OR @visit=l.MaLS) AND l.TrangThai=N'Đã xác nhận'))
+        WHERE (@LaAdmin=1 OR (@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV) OR l.TrangThai=N'Đã xác nhận' OR (@nurse=1 AND EXISTS(SELECT 1 FROM dbo.DICH_VU_THUC_HIEN d WHERE d.MaLS=l.MaLS AND d.MaNVThucHien=@MaNV)))
+          AND (@LaAdmin=1 OR @doctor=0 OR l.MaBS=@MaNV OR ((@onlyMine=0 OR @visit=l.MaLS) AND l.TrangThai=N'Đã xác nhận'))
           AND (@status IS NULL OR l.TrangThai=@status) AND (@patient IS NULL OR b.MaBN=@patient) AND (@visit IS NULL OR l.MaLS=@visit)
           AND (@from IS NULL OR l.ThoiGianKham>=@from) AND (@end IS NULL OR l.ThoiGianKham<@end)
-          AND (@term=N'' OR l.MaLS LIKE @search ESCAPE N'~' OR b.MaBN LIKE @search ESCAPE N'~' OR b.HoTenBN LIKE @search ESCAPE N'~' OR (@fullClinical=1 AND(l.TrangThai=N'Đã xác nhận' OR(@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV)) AND l.ChanDoan LIKE @search ESCAPE N'~') OR (@finance=1 AND EXISTS(SELECT 1 FROM dbo.HOA_DON h WHERE h.MaLS=l.MaLS AND h.MaHD LIKE @search ESCAPE N'~')))
+          AND (@term=N'' OR l.MaLS LIKE @search ESCAPE N'~' OR b.MaBN LIKE @search ESCAPE N'~' OR b.HoTenBN LIKE @search ESCAPE N'~' OR (@fullClinical=1 AND(@LaAdmin=1 OR l.TrangThai=N'Đã xác nhận' OR(@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV)) AND l.ChanDoan LIKE @search ESCAPE N'~') OR (@finance=1 AND EXISTS(SELECT 1 FROM dbo.HOA_DON h WHERE h.MaLS=l.MaLS AND h.MaHD LIKE @search ESCAPE N'~')))
         ""","*","ThoiGianKham DESC,MaLS");
     public TrangHoSo<DongLichSuDon> LayTrangLichSuDon(BoLocDanhSachHoSo filter,NguCanhNghiepVu actor)=>ReadPage<DongLichSuDon>(filter,actor,"""
         SELECT d.*,b.MaBN,b.HoTenBN,b.SDT,b.NgaySinh,l.ThoiGianKham,l.ChanDoan,n.HoTen TenBS
         FROM dbo.DON_THUOC d JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=d.MaLS JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS JOIN patients b ON b.MaBN=hs.MaBN JOIN dbo.NHAN_VIEN n ON n.MaNV=d.MaBS
-        WHERE ((@doctor=1 AND d.MaBS=@MaNV AND l.MaBS=@MaNV AND p.MaBS=@MaNV) OR (l.TrangThai=N'Đã xác nhận' AND d.TrangThai IN(N'Đã xác nhận',N'Ngừng áp dụng')))
+        WHERE (@LaAdmin=1 OR (@doctor=1 AND d.MaBS=@MaNV AND l.MaBS=@MaNV AND p.MaBS=@MaNV) OR (l.TrangThai=N'Đã xác nhận' AND d.TrangThai IN(N'Đã xác nhận',N'Ngừng áp dụng')))
           AND (@patient IS NULL OR b.MaBN=@patient) AND (@visit IS NULL OR d.MaLS=@visit) AND (@status IS NULL OR d.TrangThai=@status)
           AND (@term=N'' OR d.MaDT LIKE @search ESCAPE N'~' OR b.MaBN LIKE @search ESCAPE N'~' OR b.HoTenBN LIKE @search ESCAPE N'~' OR b.SDT LIKE @search ESCAPE N'~' OR n.HoTen LIKE @search ESCAPE N'~')
         ""","*","NgayKe DESC,MaDT",(db,tx,rows)=>
@@ -63,7 +63,7 @@ public sealed partial class DAL_KHAMDIEUTRI
             SELECT DISTINCT h.MaLS FROM dbo.HOA_DON h JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=h.MaLS
             JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS JOIN patients b ON b.MaBN=hs.MaBN
             WHERE @finance=1 AND (@visit IS NULL OR h.MaLS=@visit)
-              AND ((@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV) OR l.TrangThai=N'Đã xác nhận')
+              AND (@LaAdmin=1 OR (@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV) OR l.TrangThai=N'Đã xác nhận')
             ORDER BY h.MaLS OPTION(RECOMPILE)
             """,new{user.MaNV,user.LaAdmin,doctor,reception,finance,visit=maLS},tx).ToArray();
         DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db,tx,user,"DANH_SACH_HOA_DON",maLS??user.MaNV);return (IReadOnlyList<string>)rows;

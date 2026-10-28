@@ -18,6 +18,7 @@ Trong `RangHamMat.Wpf/Views`, mỗi màn hình gồm `.xaml` và `.xaml.cs` đư
 1. `Database/Migrations/20261024_01_Preflight_ClinicalWorkflow.sql`
 2. `Database/Migrations/20261024_02_ClinicalWorkflow.sql`
 3. `Database/Migrations/20261024_03_Verify_ClinicalWorkflow.sql`
+4. `Database/Migrations/20261028_05_AdminFullAccess.sql`
 
 Nâng cấp giữ chứng từ/số tiền/tồn cũ, không thu hoặc xuất lại. Chạy bước2 lần hai an toàn. Không dùng file cài mới để nâng cấp. Rollback04 chỉ dành cho trước khi có dữ liệu nghiệp vụ mới; sau đó cần quy trình restore/đối chiếu, xem [hướng dẫn](docs/clinical-workflow/HUONG_DAN_CHAY.md).
 
@@ -44,7 +45,7 @@ dotnet run --project RangHamMat.Wpf -c Release
 
 Nếu SQL Server dùng instance có tên, dùng dạng `TEN_MAY\SQLEXPRESS` trong chuỗi kết nối; trong JSON phải viết `TEN_MAY\\SQLEXPRESS`. Máy đích cần database đã cài/nâng cấp và .NET8 Desktop Runtime khi chạy bản publish phụ thuộc framework.
 
-Tài khoản mẫu `admin001` và `user002`…`user010`, mật khẩu mẫu `123456`. Quyền nghề nghiệp lấy từ nhân viên trong SQL, không chỉ từ nhãn Admin/User. Không dùng tài khoản mẫu cho dữ liệu thật. Danh sách chức vụ/tài khoản mẫu và thứ tự thao tác trong [hướng dẫn chạy](docs/clinical-workflow/HUONG_DAN_CHAY.md).
+Tài khoản mẫu `admin001` và `user002`…`user010`, mật khẩu mẫu `123456`. **Admin có toàn quyền ở mọi mục chức năng**, gồm tiếp nhận, khám/kế hoạch, duyệt mẫu, xác nhận dịch vụ, ký đơn, thu tiền và giao thuốc cho mọi bác sĩ. Trong **Đơn thuốc**, dùng nút **Bàn giao thuốc** để chuyển sang quầy giao. User vẫn theo chức vụ và phạm vi được phân trong SQL. Các chứng từ đã chốt, kiểm tra dữ liệu bắt buộc, tiền và tồn kho vẫn được bảo vệ. Database v2 đã cài trước ngày28/10 cần chạy migration05 để đồng bộ quyền duyệt/giao; bản cài mới đã tích hợp. Không dùng tài khoản mẫu cho dữ liệu thật. Xem [thay đổi quyền Admin](docs/clinical-workflow/QUYEN_ADMIN.md) và [hướng dẫn chạy](docs/clinical-workflow/HUONG_DAN_CHAY.md).
 
 ## 3. Luồng khám mới
 

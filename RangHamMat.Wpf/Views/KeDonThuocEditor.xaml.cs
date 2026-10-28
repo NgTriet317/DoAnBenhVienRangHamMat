@@ -17,7 +17,7 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
     public KeDonThuocEditor(NguCanhNghiepVu? user=null,IDbTransaction? transaction=null)
     {
         this.transaction=transaction;service=new(transaction);actor=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(user?.MaNV??PhienDangNhap.MaNV);if(!actor.CoQuyen(QuyenLamViec.Kham))throw new TuChoiQuyenNghiepVuException();
-        InitializeComponent();RxLines.ItemsSource=lines;lines.CollectionChanged+=(_,_)=>{if(!loading)dirty=true;};RxLines.BeginningEdit+=(_,_)=>{if(!loading)dirty=true;};LoadGroups();LoadVisits();Search();loading=false;UpdateRights();
+        InitializeComponent();HandoverButton.Visibility=actor.CoQuyen(QuyenLamViec.GiaoThuoc)?Visibility.Visible:Visibility.Collapsed;RxLines.ItemsSource=lines;lines.CollectionChanged+=(_,_)=>{if(!loading)dirty=true;};RxLines.BeginningEdit+=(_,_)=>{if(!loading)dirty=true;};LoadGroups();LoadVisits();Search();loading=false;UpdateRights();
     }
     private bool Editable=>saved?.DuocSua??(board?.DuocTao==true||replacement is not null);
     private void LoadVisits()=>VisitPicker.ItemsSource=service.LayLuotKeDon(actor,patientScope).Select(v=>new LuaChonDanhMuc(v.MaLS,$"{v.MaLS} · {v.HoTenBN} ({v.MaBN}) · {v.ThoiGianKham:dd/MM/yyyy}")).ToArray();
@@ -25,12 +25,15 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
     public void SetPatient(string id)=>FocusContext(id);
     public void FocusContext(string? patientId,string? visitId=null,string? prescriptionId=null)
     {
+        var handover=HandoverHost.Content as BanGiaoThuocEditor;
+        if(handover is not null&&!ClinicalPendingWork.TryLeave([handover],null,out _))return;
         if(!CanLeave())return;Run(()=>
         {
             var requested=prescriptionId is null?null:service.LayBanNhapDon(prescriptionId,actor);visitId??=requested?.Don.MaLS;
             if(requested is not null&&(requested.Don.MaLS!=visitId||patientId is not null&&requested.MaBN!=patientId))throw new TuChoiQuyenNghiepVuException();
             var next=visitId is null?null:service.LayKhongGianKeDon(visitId,actor);if(next is not null&&patientId is not null&&next.Luot.MaBN!=patientId)throw new TuChoiQuyenNghiepVuException();
             loading=true;try{patientScope=patientId;PatientId=next?.Luot.MaBN??patientId;board=next;LoadVisits();VisitPicker.SelectedValue=visitId;RefreshOrders(requested?.Don.MaDT);Fill(requested);}finally{loading=false;}
+            handover?.FocusContext(patientId,visitId,prescriptionId);
         },out _);
     }
     private void RefreshOrders(string? select=null)
@@ -84,6 +87,22 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
     private void ApplyGuidance_Click(object sender,RoutedEventArgs e)=>Run(()=>{if(RxLines.SelectedItem is not DongThuocKeDon r)throw new LoiKhamException("MaThuoc","Chọn dòng thuốc.");var c=service.TimThuoc(new(TuKhoa:r.MaThuoc),actor).FirstOrDefault(d=>d.MaThuoc==r.MaThuoc)?.HuongDan;if(c is null)throw new LoiKhamException("HuongDan","Chưa có hướng dẫn đã duyệt; nhập thủ công.");var yes=MessageBox.Show($"Đối tượng: {c.DoiTuongApDung}\nĐường dùng: {c.DuongDung}\nLiều: {c.LieuDungGoiY}\nHướng dẫn: {c.HuongDanGoiY}\nPhiên bản {c.PhienBan} · người duyệt {c.MaNguoiDuyet}\nBác sĩ xác nhận phù hợp người bệnh hiện tại?","Kiểm tra hướng dẫn",MessageBoxButton.YesNo,MessageBoxImage.Question)==MessageBoxResult.Yes;TryApplyGuidance(yes,out _);},out _);
     private void Unlink_Click(object sender,RoutedEventArgs e){if(Editable&&RxLines.SelectedItem is DongThuocKeDon r){r.PhienBanHuongDan=null;r.DaXacNhanPhuHop=false;dirty=true;RxLines.Items.Refresh();}}
     private void Guidance_Click(object sender,RoutedEventArgs e){if(!CanLeave())return;Run(()=>{var c=new HuongDanThuocEditor(actor,transaction);c.BackRequested+=()=>{GuidanceHost.Content=null;GuidanceHost.Visibility=Visibility.Collapsed;MainSurface.Visibility=Visibility.Visible;LoadGroups();Search();};GuidanceHost.Content=c;GuidanceHost.Visibility=Visibility.Visible;MainSurface.Visibility=Visibility.Collapsed;},out _);}
+    private void Handover_Click(object sender,RoutedEventArgs e)
+    {
+        if(!CanLeave())return;
+        Run(()=>
+        {
+            if(!actor.CoQuyen(QuyenLamViec.GiaoThuoc))throw new TuChoiQuyenNghiepVuException();
+            var handover=new BanGiaoThuocEditor(actor);handover.FocusContext(patientScope,board?.Luot.MaLS,saved?.Don.MaDT);
+            HandoverHost.Content=handover;HandoverSurface.Visibility=Visibility.Visible;MainSurface.Visibility=Visibility.Collapsed;
+        },out _);
+    }
+    private void HandoverBack_Click(object sender,RoutedEventArgs e)
+    {
+        if(HandoverHost.Content is DependencyObject page&&!ClinicalPendingWork.TryLeave([page],null,out _))return;
+        HandoverHost.Content=null;HandoverSurface.Visibility=Visibility.Collapsed;MainSurface.Visibility=Visibility.Visible;
+        Run(()=>{LoadVisits();if(board is not null){board=service.LayKhongGianKeDon(board.Luot.MaLS,actor);RefreshOrders(saved?.Don.MaDT);if(saved is not null)Fill(service.LayBanNhapDon(saved.Don.MaDT,actor));}},out _);
+    }
     private static FlowDocument BuildPrint(BanInDonThuoc p)
         =>DonThuocDocument.Tao(p);
     private void Print_Click(object sender,RoutedEventArgs e)
