@@ -13,13 +13,12 @@ public sealed class XungDotDuLieuKhamException : InvalidOperationException
 }
 
 public sealed record BanNhapKham(ET_LICHSUKHAMBENH LanKham,IReadOnlyList<ET_TINHTRANGBENH> TinhTrang,string DauVanTay,bool DuocSua,string? MaBN=null,string? MaHS=null);
-public sealed record DuLieuKhongGianKham(BanNhapKham BanNhap,ET_BENHNHAN BenhNhan,IReadOnlyList<ET_DICHVU> DichVu,IReadOnlyList<ET_KEHOACHDIEUTRI> KeHoach);
+public sealed record DuLieuKhongGianKham(BanNhapKham BanNhap,ET_BENHNHAN BenhNhan,IReadOnlyList<ET_DICHVU> DichVu,IReadOnlyList<ET_KEHOACHDIEUTRI> KeHoach,IReadOnlyList<ET_DMTINHTRANGBENH> DinhHuong);
 public sealed class TinhTrangKhamNhap
 {
     public string? MaTTB {get;set;}
     public string LoaiTinhTrang {get;set;}="";
     public string MoTaTinhTrang {get;set;}="";
-    public string? ViTriRang {get;set;}
     public string? GhiChu {get;set;}
 }
 public sealed record YeuCauLuuKham

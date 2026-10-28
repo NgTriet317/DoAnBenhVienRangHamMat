@@ -57,10 +57,10 @@ namespace DAL
                 KiemTra<ET_TINHTRANGBENH>(connection, transaction, "TINH_TRANG_BENH", duLieu, null, null);
                 connection.Execute("""
                     INSERT INTO dbo.[TINH_TRANG_BENH] ([MaTTB],[MaLS],[LoaiTinhTrang],
-                        [MoTaTinhTrang],[GhiChu],[MaDMTT],[ViTriRang])
+                        [MoTaTinhTrang],[GhiChu],[MaDMTT])
                     VALUES (@MaTTB,
                         @MaLS,@LoaiTinhTrang,@MoTaTinhTrang,
-                        @GhiChu,@MaDMTT,@ViTriRang)
+                        @GhiChu,@MaDMTT)
                     """, duLieu, transaction);
                 return true;
             });
@@ -93,7 +93,7 @@ namespace DAL
                 connection.Execute("""
                     UPDATE dbo.[TINH_TRANG_BENH]
                     SET [MaLS]=@MaLS,[LoaiTinhTrang]=@LoaiTinhTrang,[MoTaTinhTrang]=@MoTaTinhTrang,
-                        [GhiChu]=@GhiChu,[MaDMTT]=@MaDMTT,[ViTriRang]=@ViTriRang
+                        [GhiChu]=@GhiChu,[MaDMTT]=@MaDMTT
                     WHERE [MaTTB]=@MaTTB
                     """, duLieu, transaction);
                 return true;

@@ -13,7 +13,8 @@ public sealed partial class DAL_KHAMDIEUTRI
         var patient=db.QuerySingle<ET_BENHNHAN>("SELECT * FROM dbo.BENH_NHAN WITH(HOLDLOCK) WHERE MaBN=@MaBN",v,tx);
         var services=db.Query<ET_DICHVU>("SELECT d.* FROM dbo.DICH_VU d WHERE d.TrangThai=N'Đang hoạt động' OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_KE_HOACH c JOIN dbo.KE_HOACH_DIEU_TRI k ON k.MaKHDT=c.MaKHDT WHERE k.MaLS=@maLS AND c.MaDV=d.MaDV) ORDER BY d.TenDV,d.MaDV",new{maLS},tx).ToArray();
         var plans=db.Query<ET_KEHOACHDIEUTRI>("SELECT * FROM dbo.KE_HOACH_DIEU_TRI WITH(HOLDLOCK) WHERE MaLS=@maLS ORDER BY NgayLap,MaKHDT",new{maLS},tx).ToArray();
-        return new DuLieuKhongGianKham(s,patient,services,plans);
+        var reference=db.Query<ET_DMTINHTRANGBENH>("SELECT * FROM dbo.DM_TINH_TRANG_BENH WHERE MaDMTT LIKE N'REF28[_]%' AND TrangThai=N'Đang áp dụng' ORDER BY TenTinhTrang",transaction:tx).ToArray();
+        return new DuLieuKhongGianKham(s,patient,services,plans,reference);
     });
     public string BatDauKham(string maPhieu,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
@@ -57,7 +58,7 @@ public sealed partial class DAL_KHAMDIEUTRI
             ET_TINHTRANGBENH? current=null;
             if(!string.IsNullOrEmpty(r.MaTTB) && (!old.TryGetValue(r.MaTTB,out current)||!keys.Add(r.MaTTB)))throw DAL_QUYENNGHIEPVU.TuChoi();
             var name=r.LoaiTinhTrang?.Trim()??"";
-            var row=new ET_TINHTRANGBENH {MaTTB=current?.MaTTB??"",MaLS=visit.MaLS,MaDMTT=current?.MaDMTT,LoaiTinhTrang=name,MoTaTinhTrang=string.IsNullOrWhiteSpace(r.MoTaTinhTrang)?name:r.MoTaTinhTrang.Trim(),ViTriRang=r.ViTriRang,GhiChu=r.GhiChu};
+            var row=new ET_TINHTRANGBENH {MaTTB=current?.MaTTB??"",MaLS=visit.MaLS,MaDMTT=current?.MaDMTT,LoaiTinhTrang=name,MoTaTinhTrang=string.IsNullOrWhiteSpace(r.MoTaTinhTrang)?name:r.MoTaTinhTrang.Trim(),GhiChu=r.GhiChu};
             Required(row.LoaiTinhTrang,"TinhTrang","Nhập tình trạng bệnh.");
             KiemTra(db,tx,"TINH_TRANG_BENH",row,current,null);
             incoming.Add(row);
@@ -74,9 +75,9 @@ public sealed partial class DAL_KHAMDIEUTRI
             if(string.IsNullOrEmpty(row.MaTTB))
             {
                 row.MaTTB=TaoMa(db,tx,"TINH_TRANG_BENH","MaTTB");
-                db.Execute("INSERT dbo.TINH_TRANG_BENH(MaTTB,MaLS,LoaiTinhTrang,MoTaTinhTrang,GhiChu,MaDMTT,ViTriRang) VALUES(@MaTTB,@MaLS,@LoaiTinhTrang,@MoTaTinhTrang,@GhiChu,@MaDMTT,@ViTriRang)",row,tx);
+                db.Execute("INSERT dbo.TINH_TRANG_BENH(MaTTB,MaLS,LoaiTinhTrang,MoTaTinhTrang,GhiChu,MaDMTT) VALUES(@MaTTB,@MaLS,@LoaiTinhTrang,@MoTaTinhTrang,@GhiChu,@MaDMTT)",row,tx);
             }
-            else db.Execute("UPDATE dbo.TINH_TRANG_BENH SET LoaiTinhTrang=@LoaiTinhTrang,MoTaTinhTrang=@MoTaTinhTrang,GhiChu=@GhiChu,MaDMTT=@MaDMTT,ViTriRang=@ViTriRang WHERE MaTTB=@MaTTB",row,tx);
+            else db.Execute("UPDATE dbo.TINH_TRANG_BENH SET LoaiTinhTrang=@LoaiTinhTrang,MoTaTinhTrang=@MoTaTinhTrang,GhiChu=@GhiChu,MaDMTT=@MaDMTT WHERE MaTTB=@MaTTB",row,tx);
         db.Execute("UPDATE dbo.LICH_SU_KHAM_BENH SET TrieuChung=@TrieuChung,ChanDoan=@ChanDoan,KeHoachXuLy=@KeHoachXuLy,GhiChu=@GhiChu,KhongKeThuoc=@KhongKeThuoc,LyDoKhongKeThuoc=@LyDoKhongKeThuoc WHERE MaLS=@MaLS",visit,tx);
         var saved=ClinicalSnapshot(db,tx,visit);ClinicalAudit(db,tx,actor,"Lưu nháp khám","LICH_SU_KHAM_BENH",visit.MaLS,original.DauVanTay,saved.DauVanTay);return saved;
     });

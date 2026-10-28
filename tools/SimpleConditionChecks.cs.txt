@@ -23,11 +23,19 @@ internal static class Program
         cs=$"Data Source={args[0]};Initial Catalog={args[1]};Integrated Security=True;TrustServerCertificate=True;";Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",cs);
         var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};app.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml",UriKind.Relative)});
         if(!readOnly){
-        Check("Schema và hợp đồng tình trạng không còn MucDo",()=>Tx(tx=>{Assert(tx.Connection!.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.columns WHERE object_id=OBJECT_ID(N'dbo.TINH_TRANG_BENH') AND name=N'MucDo'",transaction:tx)==0,"SQL còn MucDo");Assert(typeof(ET_TINHTRANGBENH).GetProperty("MucDo") is null&&typeof(TinhTrangKhamNhap).GetProperty("MucDo") is null,"Model còn MucDo");}));
+        Check("Schema và hợp đồng tình trạng không còn MucDo hoặc ViTriRang",()=>Tx(tx=>{Assert(tx.Connection!.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.columns WHERE object_id=OBJECT_ID(N'dbo.TINH_TRANG_BENH') AND name IN(N'MucDo',N'ViTriRang')",transaction:tx)==0,"SQL còn thuộc tính đã bỏ");Assert(typeof(ET_TINHTRANGBENH).GetProperty("MucDo") is null&&typeof(TinhTrangKhamNhap).GetProperty("ViTriRang") is null,"Model còn thuộc tính đã bỏ");}));
+        Check("Tình trạng tự hiện đề xuất, lập nháp không ghi đè kế hoạch đang nhập",()=>Tx(tx=>{
+            Fixture(tx);var editor=new KhamLamSang("TC_LS",Login(tx),tx);Control<TextBox>(editor,"ConditionNameEditor").Text="sau rang";
+            Assert(Control<TextBlock>(editor,"ConditionRecommendation").Text.Contains("nhs.uk"),"Không tự hiện nguồn/đề xuất khi nhập không dấu");
+            Click(editor,"UseRecommendationButton");Assert(Control<TabControl>(editor,"ClinicalTabs").SelectedIndex==2,"Không mở kế hoạch");Assert(Control<TextBox>(editor,"PlanNote").Text.Contains("Sâu răng"),"Không tạo nháp theo tình trạng");
+            Control<TextBox>(editor,"PlanNote").Text="Bác sĩ đang soạn";Click(editor,"UseRecommendationButton");Assert(Control<TextBox>(editor,"PlanNote").Text=="Bác sĩ đang soạn","Ghi đè nháp");
+            Control<TextBox>(editor,"ConditionNameEditor").Text="Không sâu răng";Assert(!Control<Button>(editor,"UseRecommendationButton").IsEnabled,"Ghép nhầm phủ định");
+            Assert(tx.Connection!.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.KE_HOACH_DIEU_TRI WHERE MaLS=N'TC_LS'",transaction:tx)==0,"Tự lưu kế hoạch khi chưa chọn dịch vụ");
+        }));
         Check("Lưu tình trạng không cần mức độ hoặc danh mục",()=>Tx(tx=>{Fixture(tx);var a=Login(tx);var bus=new BUS_KHAMDIEUTRI(tx);var s=bus.LayBanNhap("TC_LS",a);var saved=bus.LuuKham(new(){MaLS="TC_LS",DauVanTay=s.DauVanTay,TinhTrang=[new(){LoaiTinhTrang="Tình trạng mô phỏng"}]},a);Assert(saved.TinhTrang.Single().MoTaTinhTrang=="Tình trạng mô phỏng","Không tự dùng mô tả từ tên");Assert(saved.TinhTrang.Single().MaDMTT is null,"Tự gán danh mục");}));
         Check("Form thêm/sửa/xóa rõ ràng và lưu đọc lại đúng",()=>Tx(tx=>{
             Fixture(tx);var a=Login(tx);var editor=new KhamLamSang("TC_LS",a,tx);Fill(editor,"Tình trạng mô phỏng","Mô tả kiểm thử","Răng36");Click(editor,"AddConditionButton");
-            var list=Control<ListBox>(editor,"ConditionList");Assert(list.Items.Count==1,"Không thêm được tình trạng");Assert(editor.TrySave(out var e),e);var saved=new BUS_KHAMDIEUTRI(tx).LayBanNhap("TC_LS",a);Assert(saved.TinhTrang.Single().ViTriRang=="Răng36","Sai vị trí");
+            var list=Control<ListBox>(editor,"ConditionList");Assert(list.Items.Count==1,"Không thêm được tình trạng");Assert(editor.TrySave(out var e),e);var saved=new BUS_KHAMDIEUTRI(tx).LayBanNhap("TC_LS",a);Assert(saved.TinhTrang.Count==1,"Không lưu tình trạng");
             list.SelectedIndex=0;Control<TextBox>(editor,"ConditionDetailEditor").Text="Mô tả đã sửa";Click(editor,"UpdateConditionButton");Assert(editor.TrySave(out e),e);Assert(new BUS_KHAMDIEUTRI(tx).LayBanNhap("TC_LS",a).TinhTrang.Single().MoTaTinhTrang=="Mô tả đã sửa","Không lưu bản sửa");
             list.SelectedIndex=0;Click(editor,"DeleteConditionButton");Assert(editor.TrySave(out e),e);Assert(new BUS_KHAMDIEUTRI(tx).LayBanNhap("TC_LS",a).TinhTrang.Count==0,"Không xóa được");
         }));
@@ -71,7 +79,7 @@ internal static class Program
         });
         app.Shutdown();Console.WriteLine($"RESULT: {passed} passed, {failed} failed");return failed==0?0:1;
     }
-    static void Fill(KhamLamSang e,string name,string text,string location){Control<TextBox>(e,"ConditionNameEditor").Text=name;Control<TextBox>(e,"ConditionDetailEditor").Text=text;Control<TextBox>(e,"ConditionLocationEditor").Text=location;}
+    static void Fill(KhamLamSang e,string name,string text,string location){Control<TextBox>(e,"ConditionNameEditor").Text=name;Control<TextBox>(e,"ConditionDetailEditor").Text=text;}
     static T Control<T>(FrameworkElement e,string name) where T:class{var c=e.FindName(name) as T;Assert(c is not null,"Thiếu ô/nút "+name);return c!;}
     static void Click(FrameworkElement e,string name)=>Control<Button>(e,name).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
     static void Pump()=>System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(()=>{},System.Windows.Threading.DispatcherPriority.ApplicationIdle);

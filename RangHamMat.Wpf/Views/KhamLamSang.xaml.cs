@@ -46,6 +46,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
             PatientHeader.Text=$"{data.BenhNhan.HoTenBN} · {PatientId} · {data.BenhNhan.NgaySinh:dd/MM/yyyy}";
             SafetyHeader.Text=$"Dị ứng: {Known(data.BenhNhan.DiUng)} · Tiền sử: {Known(data.BenhNhan.TienSuBenh)}";
             PlanServiceColumn.ItemsSource=data.DichVu.Select(d=>new LuaChonDanhMuc(d.MaDV,d.TenDV+" ("+d.MaDV+")"+(d.TrangThai=="Đang hoạt động"?"":" · ngừng hoạt động"))).ToArray();
+            referenceConditions=data.DinhHuong;ConditionReferencePicker.ItemsSource=referenceConditions;
             FillClinical(data.BanNhap);SetPlans(data.KeHoach);ClearPlan();
         }
         finally{loading=false;dirty=planDirty=false;}
@@ -59,7 +60,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
             snapshot=saved;var v=saved.LanKham;ClinicalIdentity.Text=$"Lần khám {v.MaLS} · phiếu {v.MaPhieu} · bác sĩ {v.MaBS} · {v.TrangThai}";
             SymptomsEditor.Text=v.TrieuChung;DiagnosisEditor.Text=v.ChanDoan;TreatmentEditor.Text=v.KeHoachXuLy;ClinicalNote.Text=v.GhiChu??"";
             NoPrescription.IsChecked=v.KhongKeThuoc==1;NoPrescriptionReason.Text=v.LyDoKhongKeThuoc??"";conditions.Clear();
-            foreach(var t in saved.TinhTrang)conditions.Add(new(){MaTTB=t.MaTTB,LoaiTinhTrang=t.LoaiTinhTrang,MoTaTinhTrang=t.MoTaTinhTrang,ViTriRang=t.ViTriRang,GhiChu=t.GhiChu});
+            foreach(var t in saved.TinhTrang)conditions.Add(new(){MaTTB=t.MaTTB,LoaiTinhTrang=t.LoaiTinhTrang,MoTaTinhTrang=t.MoTaTinhTrang,GhiChu=t.GhiChu});
             ClearConditionInput();dirty=false;UpdateRights();
         }
         finally{loading=prior;}
@@ -86,7 +87,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
         var edit=Editable;ClinicalInputPanel.IsEnabled=PrescriptionDecision.IsEnabled=edit;UpdateConditionRights();
         SaveClinicalButton.IsEnabled=CompleteClinicalButton.IsEnabled=NewPlanButton.IsEnabled=edit;
         var planEdit=edit &&(plan is null||plan.KeHoach.TrangThai=="Nháp");PlanFields.IsEnabled=planEdit;PlanSteps.IsReadOnly=!planEdit;PlanSteps.CanUserAddRows=PlanSteps.CanUserDeleteRows=planEdit;CancelPlanButton.IsEnabled=planEdit;
-        SavePlanButton.IsEnabled=planEdit;ConfirmPlanButton.IsEnabled=planEdit&&plan is not null;OpenServicesButton.IsEnabled=allowed("DichVuThucHien");OpenPrescriptionButton.IsEnabled=allowed("DonThuoc");
+        SavePlanButton.IsEnabled=planEdit;ConfirmPlanButton.IsEnabled=planEdit&&plan is not null;OpenServicesButton.IsEnabled=allowed("DichVuThucHien");OpenPrescriptionButton.IsEnabled=allowed("DonThuoc");RefreshRecommendation();
     }
     private bool Run(Action action,out string error)
     {error="";ClinicalError.Text="";ClinicalFormInput.ClearErrors(this);try{action();return true;}catch(InvalidOperationException ex){error=ClinicalError.Text=ClinicalFormInput.Message(ex);ClinicalFormInput.ShowError(this,ex);return false;}}

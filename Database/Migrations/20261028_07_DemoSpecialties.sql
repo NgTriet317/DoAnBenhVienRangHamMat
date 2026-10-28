@@ -7,7 +7,7 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 IF COL_LENGTH(N'dbo.TINH_TRANG_BENH',N'MucDo') IS NOT NULL
     THROW 52140,N'Chạy migration 20261028_06 trước dữ liệu demo chuyên khoa.',1;
-IF COL_LENGTH(N'dbo.TINH_TRANG_BENH',N'ViTriRang') IS NULL
+IF OBJECT_ID(N'dbo.TINH_TRANG_BENH',N'U') IS NULL
     THROW 52140,N'Thiếu schema ClinicalWorkflow; không thể nạp dữ liệu demo.',1;
 
 DECLARE @Now datetime2(0)=SYSDATETIME();
@@ -178,8 +178,8 @@ BEGIN TRY
  SELECT x.MaLS,x.MaPhieu,x.MaBS,x.MaPhong,@Now,c.MoTa,N'DEMO: chưa kết luận chẩn đoán.',N'DEMO: đang nhập hồ sơ, chưa chỉ định điều trị.',N'Nháp',NULL,@Marker,0
  FROM @Cases x JOIN @NewCases n ON n.MaPhieu=x.MaPhieu JOIN @CK c ON c.MaCK=x.MaCK WHERE x.Loai=N'NHAP';
  SET @NewDrafts=@@ROWCOUNT;
- INSERT dbo.TINH_TRANG_BENH(MaTTB,MaLS,LoaiTinhTrang,MoTaTinhTrang,GhiChu,MaDMTT,ViTriRang)
- SELECT x.MaTTB,x.MaLS,c.TinhTrang,c.MoTa,@Marker,NULL,c.ViTri
+ INSERT dbo.TINH_TRANG_BENH(MaTTB,MaLS,LoaiTinhTrang,MoTaTinhTrang,GhiChu,MaDMTT)
+ SELECT x.MaTTB,x.MaLS,c.TinhTrang,c.MoTa,@Marker,NULL
  FROM @Cases x JOIN @NewCases n ON n.MaPhieu=x.MaPhieu JOIN @CK c ON c.MaCK=x.MaCK WHERE x.Loai=N'NHAP';
  SET @NewConditions=@@ROWCOUNT;
  -- Bất biến nguồn trên toàn bộ bộ demo; không ép trạng thái vì các lượt cũ có thể đã được xử lý.

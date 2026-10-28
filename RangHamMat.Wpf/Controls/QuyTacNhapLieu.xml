@@ -58,7 +58,6 @@
     <Cot Ten="MoTaTinhTrang" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
     <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
     <Cot Ten="MaDMTT" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
-    <Cot Ten="ViTriRang" Kieu="nvarchar" QuyCach="100" ChoTrong="true" Khoa="false" />
   </Bang>
   <Bang Ten="DICH_VU">
     <Cot Ten="MaDV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />

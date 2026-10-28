@@ -41,6 +41,8 @@ try {
         if($LASTEXITCODE -ne 0){throw 'Database chưa đồng bộ quyền Admin; chạy migration05.'}
         & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -Q "SET NOCOUNT ON; IF COL_LENGTH(N'dbo.TINH_TRANG_BENH',N'MucDo') IS NOT NULL OR NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N'RHM.SimpleConditions.Version' AND TRY_CONVERT(int,value)=1) THROW 52140,N'Chạy migration20261028_06_SimpleConditions để đồng bộ tình trạng bệnh.',1;"
         if($LASTEXITCODE -ne 0){throw 'Database chưa đồng bộ tình trạng đơn giản; chạy migration06.'}
+        & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -Q "IF COL_LENGTH(N'dbo.TINH_TRANG_BENH',N'ViTriRang') IS NOT NULL THROW 52146,N'Chạy migration08 để bỏ vị trí răng.',1;"
+        if($LASTEXITCODE -ne 0){throw 'Database chưa áp dụng migration08.'}
         Write-Output 'PASS: database khớp schema2; kiểm tra SQL chỉ đọc.'
     }
 } finally {Pop-Location}

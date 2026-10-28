@@ -60,7 +60,7 @@ public static class TruongDuLieu
         Add("BAN_GIAO_THUOC","MaDT MaHD MaPX TrangThai MaNVGiao ThoiGianGiao GhiChu");
         foreach(var pair in new Dictionary<string,string>
         {
-            ["TINH_TRANG_BENH"]="ViTriRang", ["KE_HOACH_DIEU_TRI"]="MaTTBNguon MaMauKH PhienBanMau",
+            ["KE_HOACH_DIEU_TRI"]="MaTTBNguon MaMauKH PhienBanMau",
             ["CHI_TIET_KE_HOACH"]="NoiDungBuoc", ["LICH_SU_KHAM_BENH"]="KhongKeThuoc LyDoKhongKeThuoc",
             ["DON_THUOC"]="MaDTThayThe", ["CHI_TIET_DON_THUOC"]="DuongDung TenThuocChot HamLuongChot DonViTinhChot PhienBanHuongDan",
             ["HOA_DON"]="PhienBanQuyTrinh MaYeuCau DauVanTayYeuCau", ["THANH_TOAN"]="SoTienKhachDua TienThua MaThamChieu"
@@ -81,7 +81,7 @@ public static class TruongDuLieu
     // AI bổ sung: tên cột kỹ thuật được đổi sang nhãn người dùng hiểu trong thông báo nhập sai.
     private static readonly Dictionary<string,string> CommonLabels=new()
     {
-        ["MaDMTT"]="Danh mục tình trạng", ["ViTriRang"]="Vị trí răng", ["MaTTBNguon"]="Tình trạng nguồn", ["MaMauKH"]="Mẫu kế hoạch",
+        ["MaDMTT"]="Danh mục tình trạng", ["MaTTBNguon"]="Tình trạng nguồn", ["MaMauKH"]="Mẫu kế hoạch",
         ["PhienBanMau"]="Phiên bản mẫu", ["NoiDungBuoc"]="Nội dung bước", ["KhongKeThuoc"]="Không kê thuốc", ["LyDoKhongKeThuoc"]="Lý do không kê thuốc",
         ["MaDTThayThe"]="Đơn thuốc được thay thế", ["DuongDung"]="Đường dùng", ["TenThuocChot"]="Tên thuốc lúc kê", ["HamLuongChot"]="Hàm lượng lúc kê",
         ["DonViTinhChot"]="Đơn vị lúc kê", ["PhienBanHuongDan"]="Phiên bản hướng dẫn", ["SoTienKhachDua"]="Tiền khách đưa", ["TienThua"]="Tiền thối", ["MaThamChieu"]="Mã giao dịch",

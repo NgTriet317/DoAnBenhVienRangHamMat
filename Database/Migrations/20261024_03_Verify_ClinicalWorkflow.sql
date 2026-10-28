@@ -43,7 +43,6 @@ INSERT @expected VALUES
 (N'BAN_GIAO_THUOC',N'ThoiGianGiao',N'datetime2',6,0,0,1),
 (N'BAN_GIAO_THUOC',N'GhiChu',N'nvarchar',-1,0,0,1),
 (N'TINH_TRANG_BENH',N'MaDMTT',N'nvarchar',100,0,0,1),
-(N'TINH_TRANG_BENH',N'ViTriRang',N'nvarchar',200,0,0,1),
 (N'KE_HOACH_DIEU_TRI',N'MaTTBNguon',N'nvarchar',100,0,0,1),
 (N'KE_HOACH_DIEU_TRI',N'MaMauKH',N'nvarchar',100,0,0,1),
 (N'KE_HOACH_DIEU_TRI',N'PhienBanMau',N'int',4,0,0,1),
