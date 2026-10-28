@@ -11,7 +11,7 @@ Trong `RangHamMat.Wpf/Views`, mỗi màn hình gồm `.xaml` và `.xaml.cs` đư
 
 ## 1. Chuẩn bị database
 
-**Cài mới:** mở `Database/QLBenhVienRangHamMat.sql` bằng SSMS và chạy toàn bộ file trên SQL Server. Script tạo database `QLBenhVienRangHamMat`,52 bảng và schema quy trình khám2; dữ liệu mẫu là hư cấu. Script từ chối database đã có bảng, không xóa/ghi đè dữ liệu cũ.
+**Cài mới:** mở `Database/QLBenhVienRangHamMat.sql` bằng SSMS và chạy toàn bộ file trên SQL Server. Script tạo database `QLBenhVienRangHamMat`,53 bảng và schema quy trình khám2; dữ liệu mẫu là hư cấu. Script từ chối database đã có bảng, không xóa/ghi đè dữ liệu cũ.
 
 **Đã có database bản cũ:** sao lưu trước, chọn đúng database trong SSMS rồi lần lượt chạy:
 
@@ -21,8 +21,9 @@ Trong `RangHamMat.Wpf/Views`, mỗi màn hình gồm `.xaml` và `.xaml.cs` đư
 4. `Database/Migrations/20261028_05_AdminFullAccess.sql`
 5. `Database/Migrations/20261028_06_SimpleConditions.sql`
 6. `Database/Migrations/20261028_07_DemoSpecialties.sql` — thêm dữ liệu hư cấu để chạy thử chuyên khoa.
+7. `Database/Migrations/20261028_08_ConditionReferences.sql` rồi `20261028_09_RelatedServices.sql` — tình trạng và dịch vụ liên quan.
 
-Database đã là v2 chỉ cần các bước 4–6 chưa áp dụng. Migration06 bỏ cột `TINH_TRANG_BENH.MucDo`; các dữ liệu khác được giữ. Migration07 bổ sung dữ liệu demo, chạy lại không đặt lại trạng thái khám, nội dung đã sửa hoặc mật khẩu. Nâng cấp giữ chứng từ/số tiền/tồn cũ, không thu hoặc xuất lại. Không dùng file cài mới để nâng cấp. Rollback04 chỉ dành cho trước khi có dữ liệu nghiệp vụ mới; sau đó cần quy trình restore/đối chiếu, xem [hướng dẫn](docs/clinical-workflow/HUONG_DAN_CHAY.md).
+Database đã là v2 chỉ cần các bước 4–7 chưa áp dụng. Migration06 bỏ cột `TINH_TRANG_BENH.MucDo`; các dữ liệu khác được giữ. Migration07 bổ sung dữ liệu demo, chạy lại không đặt lại trạng thái khám, nội dung đã sửa hoặc mật khẩu. Nâng cấp giữ chứng từ/số tiền/tồn cũ, không thu hoặc xuất lại. Không dùng file cài mới để nâng cấp. Rollback04 chỉ dành cho trước khi có dữ liệu nghiệp vụ mới; sau đó cần quy trình restore/đối chiếu, xem [hướng dẫn](docs/clinical-workflow/HUONG_DAN_CHAY.md).
 
 ## 2. Cấu hình và chạy
 
@@ -74,3 +75,5 @@ Phần SQL chỉ đọc/đối chiếu schema. Đóng gói bằng `dotnet publis
 Các project kiểm thử phát triển đã được chạy trước khi dọn khỏi bản bàn giao. [Báo cáo P12](docs/clinical-workflow/BAN_GIAO_P12.md) ghi lệnh/kết quả, ma trận AT01–AT34, checkpoint chứa source kiểm thử và giới hạn thiết bị thực. [Tiến độ](docs/clinical-workflow/TIEN_DO.md) và [kết quả các mốc](docs/clinical-workflow/KET_QUA_KIEM_THU.md) giữ lịch sử triển khai. Tài liệu trước đợt cải tổ nằm trong `docs/legacy` và có thể mô tả phiên bản cũ; dùng README này để cài/chạy hiện tại.
 
 Cập nhật tình trạng bệnh: chạy thêm migration08_ConditionReferences sau06/07. Đã bỏ Vị trí răng; chọn nhanh hoặc nhập tên tình trạng để tự hiện định hướng. Bấm Lập kế hoạch nháp từ đề xuất, bác sĩ chỉnh bước/chọn dịch vụ/giá rồi lưu và duyệt. Xem docs/clinical-workflow/KE_HOACH_THAM_KHAO.md. Danh mục tham khảo có nguồn; hồ sơ người thật và bảng giá cơ sở cần nguồn cung cấp, không lấy seed làm dữ liệu thực tế.
+
+Luồng điều trị hiện tại: nhập/chọn tình trạng → chọn dịch vụ liên quan có mã/tên/giá từ SQL → Lập kế hoạch → kiểm tra lượng/buổi → Lưu và Duyệt. Migration09 thêm bảng DICH_VU_TINH_TRANG với hai FK, tổng53 bảng. Giá tự điền, tổng dự kiến tự cập nhật; nếu SQL đổi giá thì dùng Cập nhật giá, giữ nguyên nháp. Bộ lọc nâng cao của hàng chờ được thu gọn. Xem [thiết kế, nguồn dữ liệu và kiểm chứng](docs/clinical-workflow/DICH_VU_THEO_TINH_TRANG.md).

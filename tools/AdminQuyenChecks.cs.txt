@@ -108,7 +108,7 @@ internal static class Program
     {
         Fixture(tx);var a=Login(tx,"NV001","TK001");var k=new BUS_KHAMDIEUTRI(tx);var v=k.LayBanNhap("AD_LS",a);
         v=k.LuuKham(new(){MaLS="AD_LS",DauVanTay=v.DauVanTay,TrieuChung="Mô phỏng",ChanDoan="Kiểm thử",KeHoachXuLy="Mô phỏng",TinhTrang=[new(){LoaiTinhTrang="Mô phỏng",MoTaTinhTrang="Kiểm thử"}]},a);
-        var p=k.LuuKeHoach(new(){MaLS="AD_LS",CacBuoc=[new(){MaDV="DV001",NoiDungBuoc="Kiểm thử"}]},a);
+        var p=k.LuuKeHoach(new(){MaLS="AD_LS",CacBuoc=[new(){MaDV="DV001",DonGiaDuKien=100000,NoiDungBuoc="Kiểm thử"}]},a);
         Assert(p.KeHoach.MaBS=="NV002","Sai bác sĩ kế hoạch");p=k.XacNhanKeHoach(p.KeHoach.MaKHDT,p.DauVanTay,a);
         var service=new BUS_DICHVUTHUCHIEN(tx);Assert(service.LayKhongGianThucHien("AD_LS",a).DuocTao,"Không được thực hiện");
         var s=service.LuuThucHien(new(){MaLS="AD_LS",MaDV="DV001",MaCTKH=p.CacBuoc[0].MaCTKH,MaNVThucHien="NV002",ThoiGianThucHien=DateTime.Now.AddSeconds(-1),SoLuong=1,DonGia=100000,KetQua="Kiểm thử"},a);

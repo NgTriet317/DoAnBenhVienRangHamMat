@@ -23,10 +23,10 @@ try {
     }
     $sql=Get-Content -LiteralPath 'Database/QLBenhVienRangHamMat.sql' -Raw
     $tableCount=[regex]::Matches($sql,'CREATE TABLE \[dbo\]\.\[\w+\]').Count
-    if($tableCount -ne 52 -or !$sql.Contains('RHM.ClinicalWorkflow.Version')){throw 'SQL chính phải có52 bảng/version2.'}
+    if($tableCount -ne 53 -or !$sql.Contains('RHM.ClinicalWorkflow.Version')){throw 'SQL chính phải có53 bảng/version2.'}
     $settings=Get-Content -LiteralPath 'RangHamMat.Wpf/appsettings.json' -Raw|ConvertFrom-Json
     if([string]::IsNullOrWhiteSpace($settings.ConnectionStrings.RangHamMat)){throw 'Thiếu cấu hình kết nối.'}
-    Write-Output 'PASS: bốn project, Views XAML/code-behind, SQL52 bảng/version2 và cấu hình.'
+    Write-Output 'PASS: bốn project, Views XAML/code-behind, SQL53 bảng/version2 và cấu hình.'
     if(!$ChiCauTruc){
         foreach($configuration in @('Debug','Release')){
             & dotnet build 'BenhVienRangHamMat.sln' -c $configuration
@@ -43,6 +43,8 @@ try {
         if($LASTEXITCODE -ne 0){throw 'Database chưa đồng bộ tình trạng đơn giản; chạy migration06.'}
         & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -Q "IF COL_LENGTH(N'dbo.TINH_TRANG_BENH',N'ViTriRang') IS NOT NULL THROW 52146,N'Chạy migration08 để bỏ vị trí răng.',1;"
         if($LASTEXITCODE -ne 0){throw 'Database chưa áp dụng migration08.'}
+        & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -Q "IF OBJECT_ID(N'dbo.DICH_VU_TINH_TRANG',N'U') IS NULL OR (SELECT COUNT(*) FROM sys.foreign_keys WHERE name IN(N'FK_DVTT_TinhTrang',N'FK_DVTT_DichVu') AND is_disabled=0 AND is_not_trusted=0)<>2 THROW 52147,N'Chạy migration09 để liên kết tình trạng và dịch vụ.',1;"
+        if($LASTEXITCODE -ne 0){throw 'Database chưa áp dụng migration09.'}
         Write-Output 'PASS: database khớp schema2; kiểm tra SQL chỉ đọc.'
     }
 } finally {Pop-Location}

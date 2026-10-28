@@ -22,9 +22,10 @@ public static class ClinicalLayout
         foreach(var table in nodes.OfType<DataGrid>())
         {
             table.SetCurrentValue(DataGrid.RowHeightProperty,double.NaN);table.MinRowHeight=Math.Max(46,table.MinRowHeight);
-            table.EnableRowVirtualization=table.EnableColumnVirtualization=true;
+            table.EnableRowVirtualization=true;
+            if(table.ReadLocalValue(DataGrid.EnableColumnVirtualizationProperty)==DependencyProperty.UnsetValue)table.EnableColumnVirtualization=true;
             table.SetCurrentValue(VirtualizingPanel.ScrollUnitProperty,ScrollUnit.Pixel);
-            if(table.Columns.Count>1)table.FrozenColumnCount=1;
+            if(table.Columns.Count>1&&table.ReadLocalValue(DataGrid.FrozenColumnCountProperty)==DependencyProperty.UnsetValue)table.FrozenColumnCount=1;
             if(root.TryFindResource("ClinicalCell") is Style textStyle)
                 foreach(var column in table.Columns.OfType<DataGridTextColumn>())
                     if(column.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)==DependencyProperty.UnsetValue)column.ElementStyle=textStyle;

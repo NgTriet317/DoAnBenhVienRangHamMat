@@ -55,7 +55,9 @@ public sealed partial class DAL_KHAMDIEUTRI
             if(r is null)throw KhamError("CacBuoc","Dòng kế hoạch không hợp lệ.");
             var current=string.IsNullOrEmpty(r.MaCTKH)?null:old.SingleOrDefault(s=>s.MaCTKH==r.MaCTKH);
             if(!string.IsNullOrEmpty(r.MaCTKH)&&(current is null||!keys.Add(r.MaCTKH)))throw DAL_QUYENNGHIEPVU.TuChoi();
-            ActiveService(db,tx,r.MaDV);Required(r.NoiDungBuoc,"CacBuoc","Nhập nội dung từng bước.");
+            var active=ActiveService(db,tx,r.MaDV);Required(r.NoiDungBuoc,"CacBuoc","Nhập nội dung từng bước.");
+            if((current is null||current.MaDV!=r.MaDV||current.DonGiaDuKien!=r.DonGiaDuKien)&&r.DonGiaDuKien!=active.DonGia)
+                throw KhamError("CacBuoc","Giá dịch vụ đã thay đổi. Cập nhật giá từ danh mục trước khi lưu kế hoạch.");
             if(r.LanThu<=0||r.SoLuongDuKien<=0||r.DonGiaDuKien<0)throw KhamError("CacBuoc","Lần và lượng phải dương, giá không âm.");
             var row=new ET_CHITIETKEHOACH {MaCTKH=current?.MaCTKH??"",MaKHDT=header.MaKHDT,MaDV=r.MaDV,LanThu=r.LanThu,SoLuongDuKien=r.SoLuongDuKien,DonGiaDuKien=r.DonGiaDuKien,NoiDungBuoc=r.NoiDungBuoc,GhiChu=r.GhiChu,TrangThai=current?.TrangThai??"Dự kiến"};
             KiemTra(db,tx,"CHI_TIET_KE_HOACH",row,current,null);rows.Add(row);

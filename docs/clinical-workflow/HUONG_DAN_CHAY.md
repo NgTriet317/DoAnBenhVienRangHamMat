@@ -2,7 +2,7 @@
 
 Bản hiện tại chỉ còn RangHamMat.Wpf, ET, DAL, BUS. Hướng dẫn cài mới/nâng cấp, appsettings và chạy nằm tại [README](../../README.md); kiểm chứng và giới hạn tại [BAN_GIAO_P12.md](BAN_GIAO_P12.md).
 
-- Cài mới: chạy toàn bộ Database/QLBenhVienRangHamMat.sql, mặc định database QLBenhVienRangHamMat,52 bảng/version2.
+- Cài mới: chạy toàn bộ Database/QLBenhVienRangHamMat.sql, mặc định database QLBenhVienRangHamMat,53 bảng/version2.
 - Database đã có bảng: backup rồi chọn đúng database, chạy Migrations01_Preflight→02_ClinicalWorkflow→03_Verify→05_AdminFullAccess→06_SimpleConditions→07_DemoSpecialties. Database đã là v2 chỉ cần 05–07 chưa áp dụng. Migration06 bỏ cột MucDo của TINH_TRANG_BENH; 07 thêm dữ liệu hư cấu để thử chuyên khoa. Không chạy file cài mới để nâng cấp.
 - Sửa RangHamMat.Wpf/appsettings.json cho máy SQL của mình, mở solution và F5; hoặc chạy PhatHanh/RangHamMat.Wpf.exe sau khi sửa appsettings cạnh exe.
 - KiemTra.bat kiểm cấu trúc và build Debug/Release; thêm -KiemTraSql -MayChu . -Database TEN_DB để đối chiếu schema chỉ đọc.
@@ -247,3 +247,5 @@ Giữ DB riêng đến khi kiểm bất biến tiền/xuất/bàn giao rồi d�
 Ma trận dùng WPF HWND thật và WM_DPICHANGED, xác nhận scale100/125/150%; nguồn kỹ thuật: [Microsoft hướng dẫn High DPI](https://learn.microsoft.com/en-us/windows/win32/hidpi/high-dpi-desktop-application-development-on-windows) và [mã HwndTarget của WPF](https://raw.githubusercontent.com/dotnet/wpf/main/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/InterOp/HwndTarget.cs). Nghiệm thu nhiều màn hình/máy in/driver thực, AT01–AT34 và khôi phục thuộc P12. Kết quả cũ nói “thuộc P11” ở các mục lịch sử phía trên được cập nhật bằng phần này.
 
 Cập nhật tình trạng bệnh: chạy thêm migration08_ConditionReferences sau06/07. Đã bỏ Vị trí răng; chọn nhanh hoặc nhập tên tình trạng để tự hiện định hướng. Bấm Lập kế hoạch nháp từ đề xuất, bác sĩ chỉnh bước/chọn dịch vụ/giá rồi lưu và duyệt. Xem docs/clinical-workflow/KE_HOACH_THAM_KHAO.md. Danh mục tham khảo có nguồn; hồ sơ người thật và bảng giá cơ sở cần nguồn cung cấp, không lấy seed làm dữ liệu thực tế.
+
+Cập nhật mới: sau08 chạy09_RelatedServices. Màn khám có4 bước, dịch vụ theo tình trạng lấy từ bảng liên kết SQL; chọn dịch vụ rồi lập kế hoạch có sẵn mã và giá. Bác sĩ điều chỉnh lượng/buổi trước khi lưu/duyệt. Cập nhật giá giữ nháp khi danh mục thay đổi. Chi tiết hiện hành: [DICH_VU_THEO_TINH_TRANG.md](DICH_VU_THEO_TINH_TRANG.md); mô tả chỉ có định hướng chữ ở mốc08 bên trên là lịch sử.

@@ -27,10 +27,11 @@ public partial class KhamLamSang : UserControl,IPatientScoped
     {
         this.transaction=transaction;visitId=maLS;service=new(transaction);actor=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(user?.MaNV??PhienDangNhap.MaNV);
         InitializeComponent();ConditionList.ItemsSource=conditions;PlanSteps.ItemsSource=steps;
+        Loaded+=(_,_)=>{PlanSteps.FrozenColumnCount=0;PlanSteps.EnableColumnVirtualization=false;};
         PlanSteps.BeginningEdit+=(_,_)=>{if(!loading)planDirty=true;};
         PlanStart.AddHandler(TextBox.TextChangedEvent,new TextChangedEventHandler(PlanDate_TextChanged));
         PlanEnd.AddHandler(TextBox.TextChangedEvent,new TextChangedEventHandler(PlanDate_TextChanged));
-        conditions.CollectionChanged+=(_,_)=>{if(!loading)dirty=true;};steps.CollectionChanged+=(_,_)=>{if(!loading)planDirty=true;};
+        conditions.CollectionChanged+=(_,_)=>{if(!loading)dirty=true;};steps.CollectionChanged+=(_,e)=>{if(!loading)planDirty=true;if(e.NewItems is not null)foreach(BuocKeHoachNhap row in e.NewItems)row.PropertyChanged+=(_,_)=>UpdatePlanTotal();UpdatePlanTotal();};
         LoadWorkspace();
     }
     public void ConfigureAccess(Func<string,bool> access){allowed=access;UpdateRights();}
@@ -45,8 +46,8 @@ public partial class KhamLamSang : UserControl,IPatientScoped
             var data=service.LayKhongGianKham(visitId,actor);PatientId=data.BenhNhan.MaBN;
             PatientHeader.Text=$"{data.BenhNhan.HoTenBN} · {PatientId} · {data.BenhNhan.NgaySinh:dd/MM/yyyy}";
             SafetyHeader.Text=$"Dị ứng: {Known(data.BenhNhan.DiUng)} · Tiền sử: {Known(data.BenhNhan.TienSuBenh)}";
-            PlanServiceColumn.ItemsSource=data.DichVu.Select(d=>new LuaChonDanhMuc(d.MaDV,d.TenDV+" ("+d.MaDV+")"+(d.TrangThai=="Đang hoạt động"?"":" · ngừng hoạt động"))).ToArray();
-            referenceConditions=data.DinhHuong;ConditionReferencePicker.ItemsSource=referenceConditions;
+            PlanServiceColumn.ItemsSource=data.DichVu.Select(d=>new LuaChonDanhMuc(d.MaDV,d.TenDV+(d.TrangThai=="Đang hoạt động"?"":" · ngừng hoạt động"))).ToArray();
+            relatedServices=data.DichVuTheoTinhTrang;serviceCatalog=data.DichVu;referenceConditions=data.DinhHuong;ConditionReferencePicker.ItemsSource=referenceConditions;
             FillClinical(data.BanNhap);SetPlans(data.KeHoach);ClearPlan();
         }
         finally{loading=false;dirty=planDirty=false;}
@@ -72,7 +73,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
         var prior=loading;loading=true;
         try
         {
-            plan=saved;PlanIdentity.Text=$"{saved.KeHoach.MaKHDT} · {saved.KeHoach.TrangThai}";
+            plan=saved;planSourceCondition=saved.KeHoach.MaTTBNguon;PlanIdentity.Text=$"{saved.KeHoach.MaKHDT} · {saved.KeHoach.TrangThai}";
             PlanStart.SelectedDate=saved.KeHoach.NgayBatDau;PlanEnd.SelectedDate=saved.KeHoach.NgayDuKienKetThuc;PlanNote.Text=saved.KeHoach.GhiChu??"";
             steps.Clear();foreach(var s in saved.CacBuoc)steps.Add(new(){MaCTKH=s.MaCTKH,MaDV=s.MaDV,LanThu=s.LanThu,SoLuongDuKien=s.SoLuongDuKien,DonGiaDuKien=s.DonGiaDuKien,NoiDungBuoc=s.NoiDungBuoc??"",GhiChu=s.GhiChu});
             var items=PlanPicker.Items.OfType<LuaChonDanhMuc>().Where(p=>p.Value!=saved.KeHoach.MaKHDT).Append(new(saved.KeHoach.MaKHDT,$"{saved.KeHoach.MaKHDT} · {saved.KeHoach.TrangThai}")).ToArray();PlanPicker.ItemsSource=items;PlanPicker.SelectedValue=saved.KeHoach.MaKHDT;planDirty=false;UpdateRights();
@@ -80,14 +81,14 @@ public partial class KhamLamSang : UserControl,IPatientScoped
         finally{loading=prior;}
     }
     private void ClearPlan()
-    {plan=null;PlanIdentity.Text="Kế hoạch thủ công mới; chưa lưu";PlanStart.SelectedDate=PlanEnd.SelectedDate=null;PlanNote.Clear();steps.Clear();PlanPicker.SelectedIndex=-1;planDirty=false;UpdateRights();}
+    {plan=null;planSourceCondition=null;PlanIdentity.Text="Kế hoạch mới · chưa lưu";PlanStart.SelectedDate=PlanEnd.SelectedDate=null;PlanNote.Clear();steps.Clear();PlanPicker.SelectedIndex=-1;planDirty=false;UpdateRights();}
     private void UpdateRights()
     {
         if(snapshot is null)return;
         var edit=Editable;ClinicalInputPanel.IsEnabled=PrescriptionDecision.IsEnabled=edit;UpdateConditionRights();
         SaveClinicalButton.IsEnabled=CompleteClinicalButton.IsEnabled=NewPlanButton.IsEnabled=edit;
-        var planEdit=edit &&(plan is null||plan.KeHoach.TrangThai=="Nháp");PlanFields.IsEnabled=planEdit;PlanSteps.IsReadOnly=!planEdit;PlanSteps.CanUserAddRows=PlanSteps.CanUserDeleteRows=planEdit;CancelPlanButton.IsEnabled=planEdit;
-        SavePlanButton.IsEnabled=planEdit;ConfirmPlanButton.IsEnabled=planEdit&&plan is not null;OpenServicesButton.IsEnabled=allowed("DichVuThucHien");OpenPrescriptionButton.IsEnabled=allowed("DonThuoc");RefreshRecommendation();
+        var planEdit=edit &&(plan is null||plan.KeHoach.TrangThai=="Nháp");PlanFields.IsEnabled=planEdit;PlanSteps.IsReadOnly=!planEdit;PlanSteps.CanUserAddRows=PlanSteps.CanUserDeleteRows=planEdit;CancelPlanButton.IsEnabled=RefreshPlanPricesButton.IsEnabled=planEdit;
+        SavePlanButton.IsEnabled=planEdit;ConfirmPlanButton.IsEnabled=planEdit&&plan is not null;OpenServicesButton.IsEnabled=allowed("DichVuThucHien");OpenPrescriptionButton.IsEnabled=allowed("DonThuoc");RefreshRecommendation();UpdatePlanTotal();
     }
     private bool Run(Action action,out string error)
     {error="";ClinicalError.Text="";ClinicalFormInput.ClearErrors(this);try{action();return true;}catch(InvalidOperationException ex){error=ClinicalError.Text=ClinicalFormInput.Message(ex);ClinicalFormInput.ShowError(this,ex);return false;}}
@@ -113,7 +114,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
     public bool TrySavePlan(out string error)=>Run(()=>
     {
         RequireEditable();
-        ClinicalFormInput.Commit(PlanSteps,"CacBuoc");var request=new YeuCauLuuKeHoach {MaLS=visitId,MaKHDT=plan?.KeHoach.MaKHDT,DauVanTay=plan?.DauVanTay,MaTTBNguon=plan?.KeHoach.MaTTBNguon,NgayBatDau=ClinicalFormInput.ReadDate(PlanStart),NgayDuKienKetThuc=ClinicalFormInput.ReadDate(PlanEnd),GhiChu=PlanNote.Text,CacBuoc=steps.ToArray()};
+        ClinicalFormInput.Commit(PlanSteps,"CacBuoc");var request=new YeuCauLuuKeHoach {MaLS=visitId,MaKHDT=plan?.KeHoach.MaKHDT,DauVanTay=plan?.DauVanTay,MaTTBNguon=plan?.KeHoach.MaTTBNguon??planSourceCondition,NgayBatDau=ClinicalFormInput.ReadDate(PlanStart),NgayDuKienKetThuc=ClinicalFormInput.ReadDate(PlanEnd),GhiChu=PlanNote.Text,CacBuoc=steps.ToArray()};
         FillPlan(service.LuuKeHoach(request,actor));ClinicalStatus.Text="Đã lưu kế hoạch nháp; chưa ghi dịch vụ thực hiện.";SyncCache();
     },out error);
     public bool TryConfirmPlan(out string error)=>Run(()=>
@@ -131,7 +132,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
     private void NewPlan_Click(object sender,RoutedEventArgs e)=>Run(()=>{if(planDirty)throw new LoiKhamException("KeHoach","Lưu nháp hoặc tải lại trước khi lập kế hoạch khác.");loading=true;try{ClearPlan();}finally{loading=false;}},out _);
     private void Reload_Click(object sender,RoutedEventArgs e)=>Run(()=>{LoadWorkspace();ClinicalStatus.Text="Đã tải lại dữ liệu; các thay đổi chưa lưu đã bỏ.";},out _);
     private void Clinical_Changed(object sender,RoutedEventArgs e){if(!loading)dirty=true;}
-    private void Plan_Edit(object sender,DataGridCellEditEndingEventArgs e){if(!loading)planDirty=true;}
+    private void Plan_Edit(object sender,DataGridCellEditEndingEventArgs e){if(!loading){planDirty=true;Dispatcher.BeginInvoke(new Action(UpdatePlanTotal));}}
     private void Plan_FieldChanged(object sender,RoutedEventArgs e){if(!loading)planDirty=true;}
     private void Plan_TextChanged(object sender,TextChangedEventArgs e){if(!loading)planDirty=true;}
     private void PlanDate_TextChanged(object sender,TextChangedEventArgs e){if(!loading && sender is DatePicker picker && picker.IsKeyboardFocusWithin)planDirty=true;}

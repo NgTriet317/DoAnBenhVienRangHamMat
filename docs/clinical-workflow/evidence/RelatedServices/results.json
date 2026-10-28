@@ -1,0 +1,39 @@
+{
+    "SourceBase":  "14e1cfb",
+    "Date":  "2026-10-28T23:50:52",
+    "ProductProjects":  4,
+    "Database":  "QLBenhVienRangHamMat",
+    "Tables":  53,
+    "AddedServices":  8,
+    "ConditionServiceLinks":  14,
+    "OriginalTablesCompared":  52,
+    "AllOriginalRowsPreserved":  true,
+    "BackupVerified":  true,
+    "Tests":  {
+                  "FreshPublishedDlls":  "29/29",
+                  "Upgrade":  "29/29",
+                  "AdminPublishedDlls":  "12/12",
+                  "QueuePublishedDlls":  "16/16",
+                  "DefaultUiReadOnly":  "1/1",
+                  "DebugReleaseBuildAndSql":  "PASS"
+              },
+    "Review":  "Two P2 findings fixed and re-reviewed: duplicate source condition identity; stale catalog price recovery.",
+    "Assemblies":  [
+                       {
+                           "Name":  "ET",
+                           "SHA256":  "F4BECD82A762632F3DCF9BEA9B98430AECA84950DC5104EA8D752429E3B64115"
+                       },
+                       {
+                           "Name":  "DAL",
+                           "SHA256":  "057146E078E7A84B4D56B7AD1CCDD5BDF40D0AE633CD691D2A78E32851E28E7B"
+                       },
+                       {
+                           "Name":  "BUS",
+                           "SHA256":  "683AF1E0FB884D2DF79AE2CC259EC00485230F206BEFFEA5E23160D03A1AB443"
+                       },
+                       {
+                           "Name":  "RangHamMat.Wpf",
+                           "SHA256":  "D65FF20E4DA8AB3D5B16249B1A48A331CEA481C8286BD1FD94A5F07C300D37D3"
+                       }
+                   ]
+}
