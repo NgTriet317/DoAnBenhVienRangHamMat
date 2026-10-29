@@ -163,7 +163,7 @@
                                     <StackPanel><StackPanel>
                                             <TextBlock Text="Ngày khám *" Style="{StaticResource LKLabel}"/>
                                             <ContentControl Style="{StaticResource TruongNhapLieu}">
-                                             <DatePicker x:Name="dpNgayKham" Tag="DB:LICH_KHAM.NgayGioKham"
+                                            <DatePicker x:Name="dpNgayKham" Language="vi-VN" Tag="DB:LICH_KHAM.NgayGioKham"
                                                         Style="{StaticResource LKDatePicker}"/>
                                             </ContentControl>
                                         </StackPanel>
