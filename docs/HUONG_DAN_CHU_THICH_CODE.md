@@ -40,4 +40,4 @@ File `Database/QLBenhVienRangHamMat.sql` được bảo toàn theo SHA-256:
 8FFA08075C88C4534080A78BE8B9C8B3CE5CAA48483F62FF3270A501905F86D1
 ```
 
-Các thay đổi SQL, bảo trì và công cụ xuất dữ liệu đã có trước đợt cập nhật được giữ để đưa vào commit bàn giao. File `Database/QLBenhVienRangHamMat_new.sql` đến từ nhánh `tan` mới nhất được giữ cùng lịch sử Git; hướng dẫn cài/chạy vẫn dùng file SQL chính theo README. Không chạy file SQL mới để thay dữ liệu hiện tại trong đợt cập nhật này.
+Các thay đổi SQL, bảo trì và công cụ xuất dữ liệu đã có trước đợt cập nhật được giữ để đưa vào commit bàn giao. File `Database/QLBenhVienRangHamMat_new.sql` từng được kéo từ nhánh `tan`; sau khi xác nhận các cập nhật nghiệp vụ đã có đầy đủ trong file chính, đã xóa file phụ theo yêu cầu của chủ dự án. Thư mục Database chỉ giữ một file SQL `QLBenhVienRangHamMat.sql`; chi tiết đối chiếu tại [HOP_NHAT_V9.md](database/HOP_NHAT_V9.md).

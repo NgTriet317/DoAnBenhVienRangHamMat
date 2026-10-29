@@ -38,7 +38,7 @@
 ## Ghi nhận thực hiện
 
 - Thực hiện trực tiếp tại workspace được người dùng yêu cầu để cập nhật chính dự án hiện tại; không tạo worktree hoặc thêm commit phụ.
-- SQL mới `Database/QLBenhVienRangHamMat_new.sql` do remote bổ sung được giữ như tài liệu nguồn; không chạy SQL hoặc thay SQL chính bằng file này.
+- SQL phụ `Database/QLBenhVienRangHamMat_new.sql` do remote bổ sung ban đầu được giữ để đối chiếu. Sau khi xác nhận file chính đã chứa đầy đủ cập nhật nghiệp vụ, đã xóa file phụ theo yêu cầu tiếp theo của chủ dự án; không chạy SQL hoặc thay SQL chính bằng file này.
 - Hoàn thành 2.976 khai báo thiếu chú thích trên 219/305 file C# và mã kiểm chứng; 1.206 comment trên 73 file XAML; giải thích bốn csproj, bảy script PowerShell và batch bàn giao.
 - Đối chiếu token C# bằng Roslyn: 0 khai báo còn thiếu, token thực thi trùng bản sau cập nhật Git/trước chú thích. Đối chiếu XAML và PowerShell đều đạt.
 - `tools/KiemTraBanGiao.ps1`: Debug và Release thành công, 0 lỗi mỗi cấu hình. Có 123 cảnh báo mã nguồn đã tồn tại; bốn cảnh báo NU1900 do không truy cập được nguồn audit NuGet trong môi trường kiểm tra.

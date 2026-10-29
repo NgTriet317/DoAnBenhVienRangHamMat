@@ -19,6 +19,27 @@ Các quy tắc khám, kê đơn, hoàn tất và hóa đơn của bản chính �
 
 Phần dữ liệu mẫu V9 không được nhập từ file đối chiếu. Các lịch nghỉ trong file thử cũng không tự áp cho bệnh viện; nhập lịch đã duyệt vào NGAY_NGHI_LE trước khi tính kỳ tương ứng. Từ bản phục hồi ngày30/10, cài mới có snapshot dữ liệu cũ cùng danh mục; xem [nguồn dữ liệu và cách cập nhật](PHUC_HOI_VA_DU_LIEU_SQL.md).
 
+## Đối chiếu với QLBenhVienRangHamMat_new.sql ngày 30/10/2026
+
+Đã đối chiếu trực tiếp hai file trong workspace. Toàn bộ cập nhật nghiệp vụ của file `_new.sql` đã hiện diện trong file SQL chính; không còn phần lịch khám/chấm công/lương V9 cần chép bổ sung. Tên `_new` không thể hiện rằng file đó đầy đủ hơn bản chính hiện tại.
+
+| Thành phần | Kết quả đối chiếu |
+| --- | --- |
+| Thiết lập đầu script: máy chủ tối thiểu, database đích, session context, các tùy chọn SQL | Nội dung thực thi giống hệt. |
+| Các pha nghiệp vụ chung: nền, quy trình khám, kê đơn/danh mục thuốc và V9 | 4.714 dòng không rỗng giống hệt sau khi tách khối dọn DEMO28 riêng của `_new`; không thay tên, kiểu cột hoặc nội dung SQL khi so sánh. |
+| Pha 5 V9: lịch khám, chấm công, lương, thủ tục, view, trigger và kiểm schema | Toàn bộ nội dung pha giống hệt, kể cả quy tắc bảo toàn tiền lương cũ. |
+| Khối dọn DEMO28 | Chỉ có ở `_new.sql`: kiểm tra quyền sở hữu/tham chiếu rồi có thể DELETE các bản ghi demo theo danh sách. Bản chính chủ động bỏ khối này để giữ dữ liệu hiện tại; không đưa trở lại khi đối chiếu. |
+| Snapshot dữ liệu phục hồi | Chỉ có ở bản chính; giữ nguyên vùng snapshot và điều kiện chỉ nạp khi database chưa có bảng. |
+| Pha 6 bảo trì theo serial | Chỉ có ở bản chính, gồm bảo vệ vòng đời phiếu/serial và bổ sung kiểm tra vào `usp_RHM_KiemTraSchema`; giữ nguyên. |
+
+Vì các cập nhật cần dùng đã được tích hợp, không ghi đè hoặc nối lặp các pha từ `_new.sql` vào file chính. Trong lượt đối chiếu, không chạy script cài đặt trên database đang dùng và giữ nguyên từng byte của hai file SQL.
+
+Sau khi đối chiếu, đã xóa `Database/QLBenhVienRangHamMat_new.sql` theo yêu cầu của chủ dự án. Thư mục Database chỉ còn một file SQL: `QLBenhVienRangHamMat.sql`; nội dung file chính được giữ nguyên. File đã xóa vẫn có thể tra cứu trong lịch sử Git, từ commit nguồn `aef4460`.
+
+Bằng chứng: đối chiếu phần chung theo chuỗi ký tự sau khi chuẩn hóa CRLF/LF và bỏ dòng trống; pha V9 được so khớp đầy đủ sau khi chuẩn hóa xuống dòng. SHA-256 của phần pha V9 chung là `9323154188F43ECC1B205EBD9B3B88037097448BD3AC679DC291E963773ABACE`.
+
+Đã chạy lại `tools/KiemTraBanGiao.ps1 -ChiCauTruc -KiemTraSql`: đạt kiểm tra cấu trúc bốn tầng và schema60 bảng/HospitalWorkflow3/PrescriptionFlow1/SqlV9/BaoTriSerial. Kiểm tra chỉ đọc; không cập nhật hồ sơ, chứng từ hoặc dữ liệu snapshot.
+
 ## Bảo toàn dữ liệu khi nâng cấp
 
 - Sao lưu database và đóng phiên ứng dụng trước khi chạy script.
