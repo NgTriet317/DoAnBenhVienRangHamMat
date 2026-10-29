@@ -93,7 +93,8 @@
                                                       DisplayMemberPath="HoTenBN" SelectedValuePath="MaBN"/>
                                             </ContentControl>
                                         </StackPanel>
-                                    </Grid>
+                                    </StackPanel>
+
 
                                     <TextBlock Text="Dịch vụ khám (không bắt buộc)"
                                                Style="{StaticResource LKLabel}" Margin="0,16,0,7"/>
@@ -139,7 +140,7 @@
                                                       Style="{StaticResource LKComboBox}"/>
                                             </ContentControl>
                                         </StackPanel>
-                                    </Grid>
+                                    </StackPanel>
                                     <TextBlock Text="Ca khám *" Style="{StaticResource LKLabel}" Margin="0,16,0,7"/>
                                     <ContentControl Style="{StaticResource TruongNhapLieu}">
                                      <ComboBox x:Name="cboCa" Tag="DB:LICH_KHAM.MaCa"
