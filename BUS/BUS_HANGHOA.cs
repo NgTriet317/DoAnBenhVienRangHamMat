@@ -34,6 +34,23 @@ namespace BUS
             return XuLyLoi.ThucHien(() => dalHangHoa.layToanBoHangHoa());
         }
 
+        public DataTable layDanhMucChiTiet()
+        {
+            return XuLyLoi.ThucHien(() => dalHangHoa.layDanhMucChiTiet());
+        }
+
+        public bool luuDanhMucChiTiet(ET_HANGHOA duLieu, ET_HANGHOA? banGoc,
+            string nhom, decimal mucTon, string hamLuong, decimal giaBan, bool dangThem)
+        {
+            return XuLyLoi.ThucHien(() => dalHangHoa.luuDanhMucChiTiet(
+                duLieu, banGoc, nhom, mucTon, hamLuong, giaBan, dangThem));
+        }
+
+        public bool xoaDanhMucChiTiet(string ma, ET_HANGHOA? banGoc)
+        {
+            return XuLyLoi.ThucHien(() => dalHangHoa.xoaDanhMucChiTiet(ma, banGoc));
+        }
+
         /// <summary>
         /// Gọi DAL_HANGHOA.layHangHoaTheoMa với ma để tra hàng hóa theo khóa; trả ET tương ứng hoặc null nếu không tìm thấy.
         /// XuLyLoi chuyển lỗi SQL sang thông báo tiếng Việt và giữ lỗi gốc trong InnerException.

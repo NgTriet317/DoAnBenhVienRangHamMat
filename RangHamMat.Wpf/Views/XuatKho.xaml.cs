@@ -26,7 +26,7 @@ namespace RangHamMat.Views
         public bool CoDongDonThuoc { get; set; }
         public DateTime NgayXuat { get; set; }
         public List<HangXuatHienThi> HangHoa { get; set; } = new List<HangXuatHienThi>();
-        public string NgayHienThi { get { return NgayXuat.ToString("dd/MM/yyyy"); } }
+        public string NgayHienThi { get { return NgayXuat.ToString("dd/MM/yyyy HH:mm"); } }
     }
 
     public class HangXuatHienThi
@@ -79,11 +79,12 @@ namespace RangHamMat.Views
         private bool duocSua;
         private string maDangSua = "";
         private string maKhoDangDung = "";
+        private DateTime? ngayXuatDaTao;
 
         public XuatKho()
         {
             InitializeComponent();
-            dpNgayXuat.SelectedDate = DateTime.Today;
+            lblNgayXuatMoi.Text = "Tự động lấy khi lưu phiếu mới";
             Loaded += XuatKho_Loaded;
         }
 
@@ -124,7 +125,8 @@ namespace RangHamMat.Views
                 foreach (ET_NHANVIEN n in new BUS_NHANVIEN().layToanBoNhanVien())
                 {
                     tenNguoi[n.MaNV] = n.HoTen;
-                    if (n.TrangThai == "Đang làm việc") luaChonNhanVien.Add(new LuaChonXuat { Ma = n.MaNV, Ten = n.HoTen });
+                    if (n.TrangThai == "Đang làm việc" || n.MaNV == PhienDangNhap.MaNV)
+                        luaChonNhanVien.Add(new LuaChonXuat { Ma = n.MaNV, Ten = n.HoTen });
                 }
                 foreach (ET_KHOA k in new BUS_KHOA().layToanBoKhoa())
                 {
@@ -153,7 +155,8 @@ namespace RangHamMat.Views
                 cboKhoMoi.ItemsSource = luaChonKho;
                 cboNguoiLap.ItemsSource = luaChonNhanVien;
                 if (cboKhoMoi.SelectedIndex < 0 && luaChonKho.Count > 0) cboKhoMoi.SelectedIndex = 0;
-                if (cboNguoiLap.SelectedIndex < 0 && luaChonNhanVien.Count > 0) cboNguoiLap.SelectedIndex = 0;
+                if (cboNguoiLap.SelectedIndex < 0 && !string.IsNullOrWhiteSpace(PhienDangNhap.MaNV))
+                    cboNguoiLap.SelectedValue = PhienDangNhap.MaNV;
 
                 danhSach.Clear();
                 Dictionary<string, PhieuXuatHienThi> theoMa = new Dictionary<string, PhieuXuatHienThi>();
@@ -266,9 +269,10 @@ namespace RangHamMat.Views
                 lblTrangThai.Text = "—";
                 cboKhoMoi.SelectedIndex = -1;
                 maKhoDangDung = "";
-                cboNguoiLap.SelectedIndex = -1;
+                cboNguoiLap.SelectedValue = PhienDangNhap.MaNV;
                 cboLoaiNhan.SelectedIndex = 0;
-                dpNgayXuat.SelectedDate = DateTime.Today;
+                ngayXuatDaTao = null;
+                lblNgayXuatMoi.Text = "Tự động lấy khi lưu phiếu mới";
                 txtLyDoMoi.Text = "";
                 txtGhiChuMoi.Text = "";
             }
@@ -279,13 +283,14 @@ namespace RangHamMat.Views
                 cboKhoMoi.SelectedValue = phieu.MaKho;
                 maKhoDangDung = phieu.MaKho;
                 cboNguoiLap.SelectedValue = phieu.MaNV;
+                ngayXuatDaTao = phieu.NgayXuat;
+                lblNgayXuatMoi.Text = phieu.NgayHienThi;
                 if (!string.IsNullOrEmpty(phieu.MaPhong)) cboLoaiNhan.SelectedIndex = 2;
                 else if (!string.IsNullOrEmpty(phieu.MaKhoa)) cboLoaiNhan.SelectedIndex = 1;
                 else cboLoaiNhan.SelectedIndex = 0;
                 CapNhatNoiNhan();
                 if (!string.IsNullOrEmpty(phieu.MaPhong)) cboNoiNhan.SelectedValue = phieu.MaPhong;
                 if (!string.IsNullOrEmpty(phieu.MaKhoa)) cboNoiNhan.SelectedValue = phieu.MaKhoa;
-                dpNgayXuat.SelectedDate = phieu.NgayXuat.Date;
                 txtLyDoMoi.Text = phieu.LyDo;
                 txtGhiChuMoi.Text = phieu.GhiChu;
                 foreach (HangXuatHienThi h in phieu.HangHoa)
@@ -314,10 +319,9 @@ namespace RangHamMat.Views
         {
             duocSua = choPhep;
             cboKhoMoi.IsEnabled = choPhep;
-            cboNguoiLap.IsEnabled = choPhep;
+            cboNguoiLap.IsEnabled = false;
             cboLoaiNhan.IsEnabled = choPhep;
             cboNoiNhan.IsEnabled = choPhep && cboLoaiNhan.SelectedIndex > 0;
-            dpNgayXuat.IsEnabled = choPhep;
             txtLyDoMoi.IsReadOnly = !choPhep;
             txtGhiChuMoi.IsReadOnly = !choPhep;
             cboHangMoi.IsEnabled = choPhep;
@@ -343,7 +347,6 @@ namespace RangHamMat.Views
             cboKhoMoi.SelectedIndex = 0;
             maKhoDangDung = cboKhoMoi.SelectedValue as string;
             cboNguoiLap.SelectedValue = PhienDangNhap.MaNV;
-            if (cboNguoiLap.SelectedIndex < 0 && cboNguoiLap.Items.Count > 0) cboNguoiLap.SelectedIndex = 0;
             dangTai = false;
             BatCheDoSua(true);
             CapNhatTonKho();
@@ -355,6 +358,7 @@ namespace RangHamMat.Views
             if (lstPhieuXuat.SelectedItem is not PhieuXuatHienThi p) return;
             if (p.TrangThai != "Nháp" || !string.IsNullOrEmpty(p.MaLS) || p.CoDongDonThuoc) return;
             maDangSua = p.MaPhieu;
+            cboNguoiLap.SelectedValue = PhienDangNhap.MaNV;
             BatCheDoSua(true);
             CapNhatTonKho();
             lblHuongDan.Text = "Đang sửa phiếu Nháp. Lưu lại trước khi rời màn hình.";
@@ -554,15 +558,16 @@ namespace RangHamMat.Views
             try
             {
                 string maKho = cboKhoMoi.SelectedValue as string;
-                string maNV = cboNguoiLap.SelectedValue as string;
+                string maNV = PhienDangNhap.MaNV;
+                if (string.IsNullOrWhiteSpace(maNV))
+                    throw new InvalidOperationException("Không xác định được nhân viên đang đăng nhập.");
                 string? maKhoa = null;
                 string? maPhong = null;
                 if (cboLoaiNhan.SelectedIndex == 1) maKhoa = cboNoiNhan.SelectedValue as string;
                 if (cboLoaiNhan.SelectedIndex == 2) maPhong = cboNoiNhan.SelectedValue as string;
                 if (cboLoaiNhan.SelectedIndex > 0 && string.IsNullOrWhiteSpace(maKhoa) && string.IsNullOrWhiteSpace(maPhong))
                     throw new InvalidOperationException("Hãy chọn khoa/phòng tiếp nhận.");
-                if (!dpNgayXuat.SelectedDate.HasValue) throw new InvalidOperationException("Hãy chọn ngày xuất.");
-                DateTime ngay = dpNgayXuat.SelectedDate.Value.Date.Add(DateTime.Now.TimeOfDay);
+                DateTime ngay = maDangSua.Length > 0 && ngayXuatDaTao.HasValue ? ngayXuatDaTao.Value : DateTime.Now;
                 List<ET_DONGXUATMOI> dong = new List<ET_DONGXUATMOI>();
                 foreach (DongXuatTam d in cacDongMoi)
                     dong.Add(new ET_DONGXUATMOI { MaHH = d.MaHH, MaLo = d.MaLo, SoLuong = d.SoLuong, GhiChu = d.GhiChu });

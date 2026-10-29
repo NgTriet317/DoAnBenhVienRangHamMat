@@ -79,5 +79,25 @@ namespace BUS
         {
             return XuLyLoi.ThucHien(() => dalKho.xoaKho(ma, banGoc));
         }
+
+        public DataTable layTonKhoTheoKho(string maKho)
+        {
+            return XuLyLoi.ThucHien(() => dalKho.layTonKhoTheoKho(maKho));
+        }
+
+        public DataTable layLoTonTheoKho(string maKho)
+        {
+            return XuLyLoi.ThucHien(() => dalKho.layLoTonTheoKho(maKho));
+        }
+
+        public ET_HANGHOA layTenHHTheoMa(string MaHH)
+        {
+            return dalKho.layTenHHTheoMa(MaHH);
+        }
+
+        public ET_LOAIHANGHOA layTenLHHTheoMa(string MaLHH)
+        {
+            return dalKho.layTenLHHTheoMa(MaLHH);
+        }
     }
 }

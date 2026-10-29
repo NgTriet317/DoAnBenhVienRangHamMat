@@ -174,6 +174,73 @@ namespace DAL
             });
         }
 
+        // Đăng ký nhanh các ca còn hợp lệ trong tuần, lưu trong một giao dịch.
+        // Không thay đổi quy tắc nghỉ phép / nghỉ việc của hệ thống.
+        public (int ThanhCong, int DaCo, int TrungGio, int DangNghi) dangKyTuan(string maNV, DateTime dauTuan)
+        {
+            return ThucHien((connection, transaction) =>
+            {
+                KhoaPhanCong(connection, transaction);
+                int thanhCong = 0, daCo = 0, trungGio = 0, dangNghi = 0;
+                var danhSachCa = connection.Query<ET_CA_THEO_NGAY>(@"
+                    SELECT DISTINCT NgayLam, MaCa FROM dbo.CA_THEO_NGAY
+                    WHERE NgayLam >= @TuNgay AND NgayLam < @DenNgay AND NgayLam >= @HomNay
+                    ORDER BY NgayLam, MaCa",
+                    new { TuNgay = dauTuan.Date, DenNgay = dauTuan.Date.AddDays(7), HomNay = DateTime.Today },
+                    transaction).ToList();
+
+                foreach (ET_CA_THEO_NGAY ca in danhSachCa)
+                {
+                    var thamSo = new { MaNV = maNV, ca.MaCa, NgayLam = ca.NgayLam.Date };
+                    // Chỉ ca bị từ chối mới cho phép đăng ký lại.
+                    if (connection.ExecuteScalar<int>(@"
+                        SELECT COUNT(*) FROM dbo.LICH_LAM_VIEC WITH(UPDLOCK,HOLDLOCK)
+                        WHERE MaNV=@MaNV AND MaCa=@MaCa AND NgayLam=@NgayLam
+                          AND TrangThai<>N'Từ chối'", thamSo, transaction) > 0)
+                    {
+                        daCo++;
+                        continue;
+                    }
+
+                    // Giữ đúng nguyên tắc đơn nghỉ đang sử dụng trong đăng ký một ca:
+                    // nghỉ phép chỉ chặn trong khoảng ngày, nghỉ việc chặn từ ngày hiệu lực.
+                    if (connection.ExecuteScalar<int>(@"
+                        SELECT COUNT(*) FROM dbo.DON_XIN_NGHI WITH(UPDLOCK,HOLDLOCK)
+                        WHERE MaNV=@MaNV AND TrangThaiDuyet=N'Đã duyệt' AND TuNgay<=@NgayLam
+                          AND (DenNgay>=@NgayLam OR GhiChu LIKE N'%Loại đơn: Nghỉ việc%')",
+                        thamSo, transaction) > 0)
+                    {
+                        dangNghi++;
+                        continue;
+                    }
+
+                    // Tránh đăng ký nhiều ca giao nhau trong cùng ngày (cả ca đang chờ duyệt).
+                    if (connection.ExecuteScalar<int>(@"
+                        SELECT COUNT(*) FROM dbo.LICH_LAM_VIEC lich WITH(UPDLOCK,HOLDLOCK)
+                        JOIN dbo.CA_LAM caKhac ON caKhac.MaCa=lich.MaCa
+                        JOIN dbo.CA_LAM caMoi ON caMoi.MaCa=@MaCa
+                        WHERE lich.MaNV=@MaNV AND lich.NgayLam=@NgayLam
+                          AND lich.TrangThai IN (N'Chờ xác nhận',N'Đã xác nhận')
+                          AND caKhac.GioBatDau < caMoi.GioKetThuc
+                          AND caMoi.GioBatDau < caKhac.GioKetThuc", thamSo, transaction) > 0)
+                    {
+                        trungGio++;
+                        continue;
+                    }
+
+                    string maLLV = TaoMa(connection, transaction, "LICH_LAM_VIEC", "MaLLV");
+                    thanhCong += connection.Execute(@"
+                        INSERT INTO dbo.LICH_LAM_VIEC
+                            (MaLLV, MaNV, MaCa, NgayLam, MaPhong, TrangThai,
+                             TrangThaiHienDien, GioVao, GioRa, GhiChu)
+                        VALUES (@MaLLV, @MaNV, @MaCa, @NgayLam, NULL, N'Chờ xác nhận',
+                                N'Chưa chấm công', NULL, NULL, NULL)",
+                        new { MaLLV = maLLV, MaNV = maNV, ca.MaCa, NgayLam = ca.NgayLam.Date }, transaction);
+                }
+                return (thanhCong, daCo, trungGio, dangNghi);
+            });
+        }
+
         public bool duyetCa(string maLLV, string maPhong)
         {
             return ThucHien((connection, transaction) =>

@@ -88,9 +88,9 @@
                     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                     <StackPanel Margin="0,0,0,13">
                         <TextBlock Text="DANH SÁCH HÓA ĐƠN" Foreground="#708397" FontSize="11" FontWeight="Bold"/>
-                        <TextBlock Text="Tra cứu theo nhà cung cấp" Foreground="{StaticResource HdInk}" FontSize="17" FontWeight="SemiBold" Margin="0,4,0,9"/>
-                        <TextBox x:Name="txtTim" Style="{StaticResource HdNhap}" ToolTip="Tìm số hóa đơn hoặc tên nhà cung cấp" TextChanged="BoLoc_Changed"/>
-                        <TextBlock Text="Tìm số hóa đơn, nhà cung cấp hoặc người lập" Foreground="#8C9BA9" FontSize="11" Margin="0,5,0,0"/>
+                        <TextBlock Text="Tra cứu theo số hoặc mã hóa đơn" Foreground="{StaticResource HdInk}" FontSize="17" FontWeight="SemiBold" Margin="0,4,0,9"/>
+                        <TextBox x:Name="txtTim" Style="{StaticResource HdNhap}" ToolTip="Chỉ tìm theo số hóa đơn hoặc mã hóa đơn nội bộ" TextChanged="BoLoc_Changed"/>
+                        <TextBlock Text="Tìm số hóa đơn hoặc mã hóa đơn; chọn nhà cung cấp ở bộ lọc" Foreground="#8C9BA9" FontSize="11" Margin="0,5,0,0"/>
                     </StackPanel>
                     <Grid Grid.Row="1" Margin="0,0,0,12">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>

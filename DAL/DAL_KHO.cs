@@ -108,5 +108,107 @@ namespace DAL
                 return true;
             });
         }
+
+        // Tổng tồn theo loại kho (thuốc, vật tư, thiết bị); mặt hàng chưa có lô vẫn hiện tồn bằng 0.
+        public DataTable layTonKhoTheoKho(string maKho)
+        {
+            return ThucHien((connection, transaction) =>
+            {
+                using var reader = connection.ExecuteReader(@"
+                    SELECT h.MaHH, h.TenHH,
+                        COALESCE(lhh.TenLoaiHH, N'Chưa phân loại') AS LoaiHang,
+                        h.DonViTinh,
+                        COALESCE(v.MucTonToiThieu, th.MucTonToiThieu, 0) AS MucTonToiThieu,
+                        COALESCE(SUM(t.SoLuongTon), 0) AS SoLuongTon,
+                        CASE
+                            WHEN COALESCE(SUM(t.SoLuongTon), 0) <= 0 THEN N'Hết hàng'
+                            WHEN COALESCE(SUM(t.SoLuongTon), 0) <= COALESCE(v.MucTonToiThieu, th.MucTonToiThieu, 0) THEN N'Sắp hết'
+                            ELSE N'Còn hàng'
+                        END AS TrangThaiTon
+                    FROM dbo.KHO k
+                    CROSS JOIN dbo.HANG_HOA h
+                    LEFT JOIN dbo.LOAI_HANG_HOA lhh ON lhh.MaLoaiHH = h.MaLoaiHH
+                    LEFT JOIN dbo.VAT_TU v ON v.MaHH = h.MaHH
+                    LEFT JOIN dbo.THUOC th ON th.MaHH = h.MaHH
+                    LEFT JOIN dbo.VW_TON_KHO t ON t.MaKho = k.MaKho AND t.MaHH = h.MaHH
+                        AND NOT EXISTS (
+                            SELECT 1 FROM dbo.LO_HANG_HOA l
+                            WHERE l.MaLo = t.MaLo AND l.MaKho = t.MaKho
+                                AND l.TrangThai = N'Chờ nhập'
+                        )
+                    WHERE k.MaKho = @MaKho
+                        AND ((k.LoaiKho = N'Thuốc' AND th.MaHH IS NOT NULL)
+                             OR (k.LoaiKho = N'Vật tư' AND v.MaHH IS NOT NULL)
+                             OR (k.LoaiKho = N'Thiết bị' AND
+                                 (lhh.TenLoaiHH LIKE N'Thiết bị%'
+                                  OR h.MaLoaiHH IN ('LHH008', 'LHH009', 'LHH010'))))
+                    GROUP BY h.MaHH, h.TenHH, lhh.TenLoaiHH, h.DonViTinh,
+                        v.MucTonToiThieu, th.MucTonToiThieu
+                    ORDER BY h.TenHH",
+                    new { MaKho = maKho }, transaction);
+                var table = new DataTable();
+                table.Load(reader);
+                return table;
+            });
+        }
+
+        // Dữ liệu từng lô để xem chi tiết mặt hàng trong kho.
+        public DataTable layLoTonTheoKho(string maKho)
+        {
+            return ThucHien((connection, transaction) =>
+            {
+                using var reader = connection.ExecuteReader(@"
+                    SELECT t.MaHH,
+                        COALESCE(NULLIF(l.SoLo, N''), t.MaLo, N'Chưa gán lô') AS SoLo,
+                        t.SoLuongTon AS SoLuongLo,
+                        COALESCE(ncc.TenNCC, N'Chưa có nhà cung cấp') AS TenNCC,
+                        CASE
+                            WHEN t.SoLuongTon <= 0 OR l.HanSuDung IS NULL THEN N''
+                            WHEN l.HanSuDung < CAST(GETDATE() AS date) THEN N'Đã hết hạn'
+                            WHEN l.HanSuDung <= DATEADD(day, 30, CAST(GETDATE() AS date)) THEN N'Sắp hết hạn'
+                            ELSE N''
+                        END AS CanhBaoHan,
+                        CASE
+                            WHEN l.HanSuDung IS NULL THEN N'Không có'
+                            WHEN l.HanSuDung < CAST(GETDATE() AS date)
+                                THEN CONVERT(nvarchar(10), l.HanSuDung, 103) + N' (Hết hạn)'
+                            ELSE CONVERT(nvarchar(10), l.HanSuDung, 103)
+                        END AS HanDungHienThi
+                    FROM dbo.VW_TON_KHO t
+                    JOIN dbo.KHO k ON k.MaKho = t.MaKho
+                    JOIN dbo.HANG_HOA h ON h.MaHH = t.MaHH
+                    LEFT JOIN dbo.LOAI_HANG_HOA lhh ON lhh.MaLoaiHH = h.MaLoaiHH
+                    LEFT JOIN dbo.LO_HANG_HOA l ON l.MaLo = t.MaLo AND l.MaKho = t.MaKho
+                    LEFT JOIN dbo.NHA_CUNG_CAP ncc ON ncc.MaNCC = l.MaNCC
+                    WHERE t.MaKho = @MaKho
+                        AND (l.MaLo IS NULL OR l.TrangThai <> N'Chờ nhập')
+                        AND ((k.LoaiKho = N'Thuốc'
+                              AND EXISTS (SELECT 1 FROM dbo.THUOC th WHERE th.MaHH = t.MaHH))
+                             OR (k.LoaiKho = N'Vật tư'
+                              AND EXISTS (SELECT 1 FROM dbo.VAT_TU v WHERE v.MaHH = t.MaHH))
+                             OR (k.LoaiKho = N'Thiết bị' AND
+                                 (lhh.TenLoaiHH LIKE N'Thiết bị%'
+                                  OR h.MaLoaiHH IN ('LHH008', 'LHH009', 'LHH010'))))
+                    ORDER BY t.MaHH, l.HanSuDung, t.MaLo",
+                    new { MaKho = maKho }, transaction);
+                var table = new DataTable();
+                table.Load(reader);
+                return table;
+            });
+        }
+
+        public ET_HANGHOA layTenHHTheoMa(string maHH)
+        {
+            using var connection = CreateConnection();
+
+            return connection.Query<ET_HANGHOA>("SELECT * FROM dbo.[HANG_HOA] WHERE [MaHH]=@Ma", new {Ma = maHH}).FirstOrDefault();
+        }
+
+        public ET_LOAIHANGHOA layTenLHHTheoMa(string maLHH)
+        {
+            using var connection = CreateConnection();
+
+            return connection.Query<ET_LOAIHANGHOA>("SELECT * from dbo.[LOAI_HANG_HOA] where [MaLoaiHH]=@ma", new { ma = maLHH }).FirstOrDefault();
+        }
     }
 }

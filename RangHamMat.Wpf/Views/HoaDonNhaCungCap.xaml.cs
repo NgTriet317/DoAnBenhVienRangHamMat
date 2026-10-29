@@ -162,7 +162,7 @@ namespace RangHamMat.Views
             {
                 if (maNcc.Length > 0 && d.DuLieu.MaNCC != maNcc) continue;
                 if (trangThai != "Tất cả" && d.TrangThai != trangThai) continue;
-                string noiDung = d.SoHoaDonNCC + " " + d.TenNCC + " " + d.TenNhanVien;
+                string noiDung = d.SoHoaDonNCC + " " + d.DuLieu.MaHDN;
                 if (tim.Length > 0 && noiDung.IndexOf(tim, StringComparison.OrdinalIgnoreCase) < 0) continue;
                 ketQua.Add(d);
             }

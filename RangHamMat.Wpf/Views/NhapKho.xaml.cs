@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -45,6 +46,7 @@ namespace RangHamMat.Views
     {
         public string Ma { get; set; } = "";
         public string Ten { get; set; } = "";
+        public string NhomHang { get; set; } = "";
     }
 
     public class DongNhapTam
@@ -66,6 +68,7 @@ namespace RangHamMat.Views
         private bool daTai;
         private readonly List<PhieuNhapHienThi> danhSach = new List<PhieuNhapHienThi>();
         private readonly List<DongNhapTam> dongNhapMoi = new List<DongNhapTam>();
+        private readonly List<LuaChonNhap> danhSachHangChon = new List<LuaChonNhap>();
         private readonly Dictionary<string, ET_HOADONNHAP> hoaDon = new Dictionary<string, ET_HOADONNHAP>();
         private readonly Dictionary<string, string> nhaCungCap = new Dictionary<string, string>();
         private readonly Dictionary<string, string> tenHang = new Dictionary<string, string>();
@@ -74,11 +77,12 @@ namespace RangHamMat.Views
         private readonly Dictionary<string, string> tenNhanVien = new Dictionary<string, string>();
         private string maDangXem = "";
         private string maDangSua = "";
+        private DateTime? ngayNhapDaTao;
 
         public NhapKho()
         {
             InitializeComponent();
-            dpNgayNhap.SelectedDate = DateTime.Today;
+            lblNgayNhapMoi.Text = "Tự động lấy khi lưu phiếu mới";
             txtLyDo.Text = "Nhập hàng từ nhà cung cấp";
             Loaded += NhapKho_Loaded;
         }
@@ -122,15 +126,28 @@ namespace RangHamMat.Views
                 }
                 foreach (ET_NHANVIEN n in new BUS_NHANVIEN().layToanBoNhanVien()) tenNhanVien[n.MaNV] = n.HoTen;
                 foreach (ET_NHACUNGCAP n in new BUS_NHACUNGCAP().layToanBoNhaCungCap()) nhaCungCap[n.MaNCC] = n.TenNCC;
-                HashSet<string> maVatTu = new HashSet<string>();
-                foreach (ET_VATTU vt in new BUS_VATTU().layToanBoVatTu()) maVatTu.Add(vt.MaHH);
-                foreach (ET_THUOC thuoc in new BUS_THUOC().layToanBoThuoc()) maVatTu.Add(thuoc.MaHH);
+                // Danh mục hàng dùng chung ba loại, theo cách phân nhóm ở màn hình Danh mục hàng hóa.
+                // Ưu tiên nhóm từ HANG_HOA; vẫn nhận các dòng thuốc/vật tư cũ theo bảng nghiệp vụ.
+                Dictionary<string, string> nhomHangTheoMa = new Dictionary<string, string>();
+                foreach (ET_VATTU vt in new BUS_VATTU().layToanBoVatTu()) nhomHangTheoMa[vt.MaHH] = "VatTu";
+                foreach (ET_THUOC thuoc in new BUS_THUOC().layToanBoThuoc()) nhomHangTheoMa[thuoc.MaHH] = "Thuoc";
+                DataTable danhMuc = new BUS_HANGHOA().layDanhMucChiTiet();
+                foreach (DataRow hang in danhMuc.Rows)
+                {
+                    string nhom = hang["NhomHang"].ToString() ?? "";
+                    if (nhom != "Thuoc" && nhom != "VatTu" && nhom != "ThietBi") continue;
+                    string maHH = hang["MaHH"].ToString() ?? "";
+                    if (maHH.Length > 0) nhomHangTheoMa[maHH] = nhom;
+                }
                 foreach (ET_HANGHOA h in new BUS_HANGHOA().layToanBoHangHoa())
                 {
                     tenHang[h.MaHH] = h.TenHH;
                     donVi[h.MaHH] = h.DonViTinh;
-                    if (maVatTu.Contains(h.MaHH))
-                        hangChon.Add(new LuaChonNhap { Ma = h.MaHH, Ten = h.TenHH + " · " + h.DonViTinh });
+                    if (nhomHangTheoMa.TryGetValue(h.MaHH, out string? nhom))
+                    {
+                        string tenChon = h.TenHH + " · " + h.DonViTinh;
+                        hangChon.Add(new LuaChonNhap { Ma = h.MaHH, Ten = tenChon, NhomHang = nhom });
+                    }
                 }
                 foreach (ET_LOHANGHOA l in new BUS_LOHANGHOA().layToanBoLoHangHoa())
                 {
@@ -152,15 +169,15 @@ namespace RangHamMat.Views
                 cboKhoLoc.ItemsSource = khoLoc;
                 cboKhoMoi.ItemsSource = khoChon;
                 cboHoaDon.ItemsSource = hoaDonChon;
-                cboHangMoi.ItemsSource = hangChon;
+                danhSachHangChon.Clear();
+                danhSachHangChon.AddRange(hangChon);
+                LocHangMoi(maHangMoi);
                 cboKhoLoc.SelectedValue = maKhoLoc;
                 cboKhoMoi.SelectedValue = maKhoMoi;
                 cboHoaDon.SelectedValue = maHoaDonMoi;
-                cboHangMoi.SelectedValue = maHangMoi;
                 if (cboKhoLoc.SelectedIndex < 0) cboKhoLoc.SelectedIndex = 0;
                 if (cboKhoMoi.SelectedIndex < 0 && khoChon.Count > 0) cboKhoMoi.SelectedIndex = 0;
                 if (cboHoaDon.SelectedIndex < 0 && hoaDonChon.Count > 0) cboHoaDon.SelectedIndex = 0;
-                if (cboHangMoi.SelectedIndex < 0 && hangChon.Count > 0) cboHangMoi.SelectedIndex = 0;
 
                 danhSach.Clear();
                 Dictionary<string, PhieuNhapHienThi> phieuTheoMa = new Dictionary<string, PhieuNhapHienThi>();
@@ -326,7 +343,8 @@ namespace RangHamMat.Views
             formTaoMoi.Visibility = Visibility.Visible;
             panelXemPhieu.Visibility = Visibility.Collapsed;
             btnGhiSoCu.Visibility = Visibility.Collapsed;
-            dpNgayNhap.SelectedDate = DateTime.Today;
+            ngayNhapDaTao = null;
+            lblNgayNhapMoi.Text = "Tự động lấy khi lưu phiếu mới";
             txtLyDo.Text = "Nhập hàng từ nhà cung cấp";
             txtGhiChu.Text = "";
             txtSoLo.Text = "";
@@ -340,6 +358,25 @@ namespace RangHamMat.Views
             CapNhatNguoiLap();
         }
 
+        private void LocHangMoi(string? maDaChon = null)
+        {
+            string nhom = (cboLoaiHangMoi.SelectedItem as ComboBoxItem)?.Tag as string ?? "Thuoc";
+            List<LuaChonNhap> ketQua = new List<LuaChonNhap>();
+            foreach (LuaChonNhap hang in danhSachHangChon)
+            {
+                if (hang.NhomHang == nhom) ketQua.Add(hang);
+            }
+            cboHangMoi.ItemsSource = ketQua;
+            if (!string.IsNullOrEmpty(maDaChon)) cboHangMoi.SelectedValue = maDaChon;
+            if (cboHangMoi.SelectedIndex < 0 && ketQua.Count > 0) cboHangMoi.SelectedIndex = 0;
+        }
+
+        private void LoaiHangMoi_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (dangTai || !daTai) return;
+            LocHangMoi();
+        }
+
         private static bool DocSo(string text, out decimal so)
         {
             if (decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, out so)) return true;
@@ -351,7 +388,7 @@ namespace RangHamMat.Views
             string maHH = cboHangMoi.SelectedValue as string;
             if (string.IsNullOrWhiteSpace(maHH))
             {
-                MessageBox.Show("Vui lòng chọn vật tư hoặc thuốc.");
+                MessageBox.Show("Vui lòng chọn vật tư, thuốc hoặc thiết bị.");
                 return;
             }
             string soLo = txtSoLo.Text.Trim();
@@ -372,8 +409,7 @@ namespace RangHamMat.Views
                 MessageBox.Show("Đơn giá không hợp lệ (tối đa 2 chữ số thập phân).");
                 return;
             }
-            DateTime ngayNhap = DateTime.Today;
-            if (dpNgayNhap.SelectedDate.HasValue) ngayNhap = dpNgayNhap.SelectedDate.Value;
+            DateTime ngayNhap = ngayNhapDaTao ?? DateTime.Today;
             if (dpHanSuDung.SelectedDate.HasValue && dpHanSuDung.SelectedDate.Value.Date < ngayNhap.Date)
             {
                 MessageBox.Show("Hạn sử dụng không được trước ngày nhập.");
@@ -423,10 +459,9 @@ namespace RangHamMat.Views
         {
             string maHDN = cboHoaDon.SelectedValue as string;
             string maKho = cboKhoMoi.SelectedValue as string;
-            DateTime? ngay = dpNgayNhap.SelectedDate;
-            if (string.IsNullOrWhiteSpace(maHDN) || string.IsNullOrWhiteSpace(maKho) || !ngay.HasValue)
+            if (string.IsNullOrWhiteSpace(maHDN) || string.IsNullOrWhiteSpace(maKho))
             {
-                MessageBox.Show("Chọn hóa đơn, kho nhận và ngày nhập.");
+                MessageBox.Show("Chọn hóa đơn và kho nhận.");
                 return;
             }
             if (string.IsNullOrWhiteSpace(PhienDangNhap.MaNV))
@@ -436,7 +471,7 @@ namespace RangHamMat.Views
             }
             if (dongNhapMoi.Count == 0)
             {
-                MessageBox.Show("Vui lòng thêm ít nhất một dòng vật tư có lô mới.");
+                MessageBox.Show("Vui lòng thêm ít nhất một mặt hàng có lô mới.");
                 return;
             }
             if (ghiSo)
@@ -462,16 +497,17 @@ namespace RangHamMat.Views
             try
             {
                 string maPN = "";
+                DateTime ngay = maDangSua.Length > 0 && ngayNhapDaTao.HasValue ? ngayNhapDaTao.Value : DateTime.Now;
                 if (maDangSua.Length > 0)
                 {
                     maPN = maDangSua;
                     new BUS_NHAPKHO().CapNhatPhieu(maPN, maHDN, maKho, PhienDangNhap.MaNV,
-                        ngay.Value, txtLyDo.Text, txtGhiChu.Text, cacDong, ghiSo);
+                        ngay, txtLyDo.Text, txtGhiChu.Text, cacDong, ghiSo);
                 }
                 else
                 {
                     maPN = new BUS_NHAPKHO().TaoPhieu(maHDN, maKho, PhienDangNhap.MaNV,
-                        ngay.Value, txtLyDo.Text, txtGhiChu.Text, cacDong, ghiSo);
+                        ngay, txtLyDo.Text, txtGhiChu.Text, cacDong, ghiSo);
                 }
                 string thaoTac = "lưu nháp";
                 if (ghiSo) thaoTac = "ghi sổ";
@@ -533,7 +569,8 @@ namespace RangHamMat.Views
             btnGhiSoCu.Visibility = Visibility.Collapsed;
             cboHoaDon.SelectedValue = phieu.MaHDN;
             cboKhoMoi.SelectedValue = phieu.MaKho;
-            dpNgayNhap.SelectedDate = phieu.ThoiGianNhap.Date;
+            ngayNhapDaTao = phieu.ThoiGianNhap;
+            lblNgayNhapMoi.Text = phieu.ThoiGianNhap.ToString("dd/MM/yyyy HH:mm");
             txtLyDo.Text = phieu.LyDo;
             txtGhiChu.Text = phieu.GhiChu;
             lblNguoiLapMoi.Text = phieu.TenNhanVien;
