@@ -24,5 +24,15 @@ namespace ET
         public string TenTinhTrang { get => tenTinhTrang; set => tenTinhTrang = value; }
         public string? MoTa { get => moTa; set => moTa = value; }
         public string TrangThai { get => trangThai; set => trangThai = value; }
+        [Write(false)]
+        public string Nhom
+        {
+            get
+            {
+                if(MoTa?.StartsWith("Nhóm: ",StringComparison.Ordinal)==true)
+                {var end=MoTa.IndexOf('.',6);if(end>6)return MoTa[6..end].Trim();}
+                return MaDMTT.StartsWith("REF28_",StringComparison.Ordinal)?"Răng và mô quanh răng":"Khác";
+            }
+        }
     }
 }

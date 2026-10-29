@@ -9,13 +9,6 @@ public partial class KhamLamSang:IClinicalPendingWork
     {error="";if((dirty||conditionInputDirty)&&!TrySave(out error))return false;return !planDirty||TrySavePlan(out error);}
     bool IClinicalPendingWork.DiscardBeforeLeave(out string error)=>Run(LoadWorkspace,out error);
 }
-public partial class ThucHienDichVuEditor:IClinicalPendingWork
-{
-    string IClinicalPendingWork.WorkTitle=>"Dịch vụ thực hiện";
-    bool IClinicalPendingWork.HasChanges=>dirty;
-    bool IClinicalPendingWork.SaveBeforeLeave(out string error)=>TrySave(out error);
-    bool IClinicalPendingWork.DiscardBeforeLeave(out string error)=>Run(()=>Reload(saved?.DichVu.MaDVThucHien),out error);
-}
 public partial class KeDonThuocEditor:IClinicalPendingWork
 {
     string IClinicalPendingWork.WorkTitle=>"Đơn thuốc";

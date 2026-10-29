@@ -1,3 +1,5 @@
+> LỊCH SỬ: dữ liệu demo và các bước Migrations dưới đây đã ngừng sử dụng từ29/10/2026. Dùng [README hiện tại](../../README.md) và duy nhất QLBenhVienRangHamMat.sql; tài liệu này chỉ lưu bằng chứng mốc trước.
+
 # Toàn quyền Admin — 28/10/2026
 
 Yêu cầu: tài khoản Admin được sử dụng mọi mục chức năng để kiểm tra dự án.

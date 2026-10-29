@@ -1,58 +1,22 @@
-/*
-NHÓM 4 - BỆNH VIỆN RĂNG HÀM MẶT - DATABASE V8, MÃ CHUỖI
-Schema ClinicalWorkflow v2 đồng bộ ứng dụng ngày 28/10/2026; 52 bảng. Dữ liệu mô phỏng gốc ngày 13/10/2026 được giữ nguyên.
-Tên người, doanh nghiệp, liên hệ, số chứng nhận và bệnh án đều hư cấu;
-không phải hồ sơ thật hay dữ liệu của doanh nghiệp/bệnh viện có thật.
-Giá dịch vụ, thuốc và lương là giá nội bộ minh họa, không phải giá thị trường.
-46 bảng nền và 6 bảng quy trình khám; cuối file tích hợp06 bỏ MucDo và07 thêm dữ liệu demo chuyên khoa.
-46 bảng nền: 44 bảng gốc (VAI_TRO=2, HANG_HOA=30, 42 bảng còn lại=10),
-2 bảng bổ sung (CA_THEO_NGAY=5, XAC_NHAN_DOI_LICH_KHAM=0); tổng 457 dòng.
-Giữ nguyên cấu trúc, mã NVARCHAR(50), khóa ngoại, trigger và view.
-
-TÀI KHOẢN: TK001/admin001/Admin; TK002..TK010/user002..user010/User.
-Cả 10 tài khoản liên kết 10 nhân viên, trạng thái Đang hoạt động,
-MaKhoa=NULL, MaPhong=NULL. Mật khẩu đăng nhập của cả 10 là 123456.
-MatKhauHash lưu PBKDF2-HMAC-SHA256: pbkdf2_sha256$210000$base64(salt)$base64(hash).
-Salt ngẫu nhiên 16 byte, hash 32 byte; mật khẩu UTF-8. C# cần xác minh theo
-định dạng này; không so sánh trực tiếp MatKhauHash với chuỗi nhập 123456.
-Admin có toàn quyền nghiệp vụ và phạm vi mọi bác sĩ; User theo chức vụ. Chức vụ vẫn
-lưu ở NHAN_VIEN, không thay chức vụ bác sĩ/dược sĩ bằng vai trò tài khoản.
-
-CÁCH CHẠY: mở toàn bộ file bằng SQL Server Management Studio, kết nối SQL
-Server 2016 trở lên, nhấn F5. File dùng GO; không gửi nguyên file qua Dapper.
-Tên database: QLBenhVienRangHamMat. Chạy trên database trống. Nếu đã có bảng,
-script dừng, không DROP/xóa/sửa dữ liệu cũ. Đây là bản cài mới, không phải
-migration. Nếu đổi tên, sửa đồng thời DB_ID, CREATE DATABASE và USE.
-
-QUY ƯỚC: mã NVARCHAR(50) tương ứng string C#; ứng dụng cấp mã duy nhất trước
-INSERT. DECIMAL(18,2) cho tiền, DECIMAL(18,3) cho lượng; giờ địa phương bệnh
-viện tại DATETIME2(0). C# đặt thao tác nhiều bảng trong transaction.
-Thành tiền nguồn dùng computed PERSISTED; thành tiền hóa đơn lưu thường,
-trigger tính từ nguồn, đồng bộ tổng và khóa chứng từ khi đã xác nhận.
-Dịch vụ/điều trị không có đơn vị tính. Thuốc dùng đơn vị cấp phát cơ sở
-(viên/chai/tuýp); kê đơn không trừ kho; chỉ phiếu xuất ghi sổ mới trừ kho.
-Mỗi đơn xác nhận phải cấp đủ toàn đơn, không cấp thiếu/cấp lại.
-
-Dữ liệu: 5 lượt đặt lịch điện thoại + 5 lượt đến trực tiếp, 5 lịch tái khám
-điện thoại đang chờ xác nhận ca. Bác sĩ Lê Thu Hà thay 5 ca của Trần Quốc Bảo.
-8 đơn xác nhận đã cấp đủ, 2 đơn hủy do không có chỉ định thuốc; không trừ kho.
-3 hóa đơn đã gom đủ dịch vụ và thuốc, xác nhận và thu đủ. HD004/HD005 đang
-nháp vì chưa bổ sung thuốc đã cấp vào hóa đơn; HD006..HD010 chờ lập khoản thu.
-Giữ đúng 10 chi tiết hóa đơn nên các nguồn chưa đưa vào hóa đơn là công việc
-thu phí đang chờ xử lý, không được xem là đã thu hoặc đã thanh toán.
-HD001: dịch vụ 100.000 + thuốc 105.000 - giảm 15.000 = phải thu 190.000.
-HD002 phải thu 180.000; HD003 phải thu 97.500. Thu/hoàn nháp hoặc hủy không
-được tính vào số dư. Bảng lương BL003 chốt 5 ca; 9 bảng khác chờ chấm công,
-giữ nháp để không khẳng định nhân viên không được nhận lương.
-Thiết bị đã bàn giao thuộc tài sản sử dụng; vật tư chỉ có danh mục, chưa
-có nhập/xuất trong kỳ, không tự tạo tồn đầu kỳ khi không có chứng từ.
-Nội dung đơn thuốc chỉ mô phỏng cấp phát, không phải hướng dẫn điều trị.
+/* NHÓM 4 - QUẢN LÝ BỆNH VIỆN RĂNG HÀM MẶT
+   File độc lập khởi tạo hoặc đồng bộ SQL Server 2016 SP1 trở lên.
+   Ứng dụng kết nối SQL Server; ứng dụng không đọc file SQL này khi chạy.
+   Chạy toàn bộ bằng SSMS hoặc sqlcmd -b -f65001. Sao lưu database trước đồng bộ.
+   Hỗ trợ database trống hoặc ClinicalWorkflow v2 đã kiểm chứng; giữ dữ liệu người dùng.
+   Cài mới: 53 bảng, một admin hệ thống, danh mục tham khảo; không tạo bệnh nhân,
+   bác sĩ hư cấu, lịch phân công, bệnh án, thuốc tồn kho hoặc chứng từ tài chính.
+   admin001 / 123456 là tài khoản khởi tạo. Đổi mật khẩu sau khi đăng nhập.
+   Đồng bộ không đặt lại tài khoản/mật khẩu/giá đã có. Demo DEMO28 chỉ được xóa
+   khi còn nguyên bản và không được dữ liệu người dùng/chứng từ tham chiếu.
+   Các pha có cờ thành công riêng để lỗi ở một batch không mở pha ghi tiếp theo.
+   Nguồn tham khảo và ngày đối chiếu được lưu cùng từng mục danh mục.
 */
 USE [master];
-EXEC sys.sp_set_session_context @key=N'RHM.ClinicalFreshCompleted',@value=0;
+EXEC sys.sp_set_session_context @key=N'RHM.ReadyBaseline',@value=0;
+EXEC sys.sp_set_session_context @key=N'RHM.ReadyV2',@value=0;
+EXEC sys.sp_set_session_context @key=N'RHM.HospitalWorkflow.Completed',@value=0;
 GO
-IF DB_ID(N'QLBenhVienRangHamMat') IS NULL
-    EXEC(N'CREATE DATABASE [QLBenhVienRangHamMat]');
+IF DB_ID(N'QLBenhVienRangHamMat') IS NULL EXEC(N'CREATE DATABASE [QLBenhVienRangHamMat]');
 GO
 USE [QLBenhVienRangHamMat];
 GO
@@ -65,12 +29,12 @@ SET ANSI_WARNINGS ON;
 SET ARITHABORT ON;
 SET CONCAT_NULL_YIELDS_NULL ON;
 SET NUMERIC_ROUNDABORT OFF;
-IF EXISTS (SELECT 1 FROM sys.tables WHERE is_ms_shipped=0)
+-- PHA 1: NỀN TRỐNG HOẶC KIỂM TRA DATABASE V2 ĐANG CÓ.
+IF @@TRANCOUNT<>0 THROW 52270,N'Chạy toàn bộ file trong phiên không có giao dịch đang mở.',1;
+IF NOT EXISTS(SELECT 1 FROM sys.tables WHERE is_ms_shipped=0)
 BEGIN
-    THROW 50001, N'Database đã có bảng. Hãy chọn database trống; script không xóa dữ liệu cũ.', 1;
-END;
-BEGIN TRY
-BEGIN TRANSACTION;
+ BEGIN TRY
+ BEGIN TRANSACTION;
 
 -- 01. BENH_NHAN
 CREATE TABLE [dbo].[BENH_NHAN] (
@@ -141,8 +105,7 @@ CREATE TABLE [dbo].[TINH_TRANG_BENH] (
     [LoaiTinhTrang] NVARCHAR(255) NOT NULL,
     [MoTaTinhTrang] NVARCHAR(MAX) NOT NULL,
     [GhiChu] NVARCHAR(MAX) NULL,
-    [MaDMTT] NVARCHAR(50) NULL,
-    [ViTriRang] NVARCHAR(100) NULL
+    [MaDMTT] NVARCHAR(50) NULL
 );
 
 -- 06. DICH_VU
@@ -1142,15 +1105,13 @@ BEGIN
   THROW 51040,N''Hồ sơ đã tiếp nhận không chuyển sang bệnh nhân khác; giữ nguyên nguồn bệnh án và hóa đơn.'',1;
 END;';
 
--- DỮ LIỆU MẪU: nhập theo thứ tự phụ thuộc, nguồn ban đầu là nháp.
 
--- VAI_TRO: 2 dòng (Admin, User)
+
 INSERT INTO [dbo].[VAI_TRO] ([MaVaiTro], [TenVaiTro], [MoTa])
 VALUES
     (N'VTRO001', N'Admin', N'Quản trị tài khoản, danh mục và cấu hình hệ thống.'),
     (N'VTRO002', N'User', N'Nhân viên sử dụng chức năng nghiệp vụ; chức vụ lưu tại NHAN_VIEN.');
 
--- CHUC_VU: 10 dòng
 INSERT INTO [dbo].[CHUC_VU] ([MaChucVu], [TenChucVu], [MoTa])
 VALUES
     (N'CV001', N'Quản trị hệ thống', N'Quản lý tài khoản, sao lưu và hỗ trợ hệ thống thông tin.'),
@@ -1164,21 +1125,19 @@ VALUES
     (N'CV009', N'Nhân viên nhân sự', N'Quản lý hồ sơ nhân viên, ca làm việc và tổng hợp tiền lương.'),
     (N'CV010', N'Trưởng phòng hành chính', N'Điều hành công tác hành chính và kiểm tra chứng từ nội bộ.');
 
--- KHOA: 10 dòng
 INSERT INTO [dbo].[KHOA] ([MaKhoa], [TenKhoa], [DienThoai], [MoTa], [TrangThai])
 VALUES
-    (N'KHOA001', N'Khám tổng hợp', N'02838256010', N'Khám, tư vấn và tiếp nhận điều trị ngoại trú răng hàm mặt.', N'Đang hoạt động'),
-    (N'KHOA002', N'Điều trị răng', N'02838256011', N'Điều trị bảo tồn và các bệnh lý răng, mô quanh răng.', N'Đang hoạt động'),
-    (N'KHOA003', N'Phẫu thuật hàm mặt', N'02838256012', N'Khám và xử trí bệnh lý, chấn thương vùng hàm mặt.', N'Đang hoạt động'),
-    (N'KHOA004', N'Chẩn đoán hình ảnh', N'02838256013', N'Thực hiện chẩn đoán hình ảnh theo chỉ định.', N'Đang hoạt động'),
-    (N'KHOA005', N'Xét nghiệm', N'02838256014', N'Thực hiện xét nghiệm phục vụ chẩn đoán và theo dõi.', N'Đang hoạt động'),
-    (N'KHOA006', N'Gây mê hồi sức', N'02838256015', N'Đánh giá trước gây mê, hồi sức và theo dõi sau thủ thuật.', N'Đang hoạt động'),
-    (N'KHOA007', N'Chăm sóc và phục hồi', N'02838256016', N'Chăm sóc vết thương và hướng dẫn phục hồi chức năng.', N'Đang hoạt động'),
-    (N'KHOA008', N'Dược', N'02838256017', N'Quản lý thuốc, kiểm tra đơn và cấp phát tại bệnh viện.', N'Đang hoạt động'),
-    (N'KHOA009', N'Kiểm soát nhiễm khuẩn', N'02838256018', N'Quản lý vô khuẩn, tiệt khuẩn và vật tư kiểm soát nhiễm khuẩn.', N'Đang hoạt động'),
-    (N'KHOA010', N'Hành chính quản trị', N'02838256019', N'Quản lý nhân sự, tài chính và hệ thống thông tin.', N'Đang hoạt động');
+    (N'KHOA001', N'Khám tổng hợp', N'', N'Khám, tư vấn và tiếp nhận điều trị ngoại trú răng hàm mặt.', N'Đang hoạt động'),
+    (N'KHOA002', N'Điều trị răng', N'', N'Điều trị bảo tồn và các bệnh lý răng, mô quanh răng.', N'Đang hoạt động'),
+    (N'KHOA003', N'Phẫu thuật hàm mặt', N'', N'Khám và xử trí bệnh lý, chấn thương vùng hàm mặt.', N'Đang hoạt động'),
+    (N'KHOA004', N'Chẩn đoán hình ảnh', N'', N'Thực hiện chẩn đoán hình ảnh theo chỉ định.', N'Đang hoạt động'),
+    (N'KHOA005', N'Xét nghiệm', N'', N'Thực hiện xét nghiệm phục vụ chẩn đoán và theo dõi.', N'Đang hoạt động'),
+    (N'KHOA006', N'Gây mê hồi sức', N'', N'Đánh giá trước gây mê, hồi sức và theo dõi sau thủ thuật.', N'Đang hoạt động'),
+    (N'KHOA007', N'Chăm sóc và phục hồi', N'', N'Chăm sóc vết thương và hướng dẫn phục hồi chức năng.', N'Đang hoạt động'),
+    (N'KHOA008', N'Dược', N'', N'Quản lý thuốc, kiểm tra đơn và cấp phát tại bệnh viện.', N'Đang hoạt động'),
+    (N'KHOA009', N'Kiểm soát nhiễm khuẩn', N'', N'Quản lý vô khuẩn, tiệt khuẩn và vật tư kiểm soát nhiễm khuẩn.', N'Đang hoạt động'),
+    (N'KHOA010', N'Hành chính quản trị', N'', N'Quản lý nhân sự, tài chính và hệ thống thông tin.', N'Đang hoạt động');
 
--- CHUYEN_KHOA: 10 dòng
 INSERT INTO [dbo].[CHUYEN_KHOA] ([MaCK], [MaKhoa], [TenCK], [MoTa], [TrangThai])
 VALUES
     (N'CK001', N'KHOA001', N'Khám răng hàm mặt tổng quát', N'Đánh giá toàn diện triệu chứng và tình trạng răng hàm mặt.', N'Đang hoạt động'),
@@ -1192,633 +1151,16 @@ VALUES
     (N'CK009', N'KHOA009', N'Kiểm soát nhiễm khuẩn', N'Giám sát vệ sinh, khử khuẩn và tiệt khuẩn.', N'Đang hoạt động'),
     (N'CK010', N'KHOA010', N'Quản lý y tế', N'Quản lý quy trình hành chính và vận hành bệnh viện.', N'Đang hoạt động');
 
--- PHONG: 10 dòng
-INSERT INTO [dbo].[PHONG] ([MaPhong], [TenPhong], [MaKhoa], [LoaiPhong], [TinhTrang], [TrangThai])
-VALUES
-    (N'PH001', N'Phòng 101 - Khám răng hàm mặt', N'KHOA001', N'Phòng khám', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH002', N'Phòng 102 - Điều trị bảo tồn', N'KHOA002', N'Phòng điều trị', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH003', N'Phòng 201 - Khám và tiểu phẫu hàm mặt', N'KHOA003', N'Phòng khám và thủ thuật', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH004', N'Phòng 202 - Chẩn đoán hình ảnh', N'KHOA004', N'Phòng chẩn đoán', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH005', N'Phòng 203 - Xét nghiệm', N'KHOA005', N'Phòng xét nghiệm', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH006', N'Phòng 204 - Theo dõi và hồi sức', N'KHOA006', N'Phòng theo dõi', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH007', N'Phòng 205 - Chăm sóc và thay băng', N'KHOA007', N'Phòng chăm sóc', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH008', N'Phòng 103 - Cấp phát thuốc', N'KHOA008', N'Phòng cấp phát', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH009', N'Phòng 206 - Tiệt khuẩn dụng cụ', N'KHOA009', N'Phòng tiệt khuẩn', N'Sẵn sàng', N'Đang hoạt động'),
-    (N'PH010', N'Phòng 301 - Hành chính và nhân sự', N'KHOA010', N'Phòng hành chính', N'Sẵn sàng', N'Đang hoạt động');
+INSERT dbo.NHAN_VIEN(MaNV,HoTen,GioiTinh,NgaySinh,SDT,DiaChi,MaChucVu,MaCK,BangCap,NgayVaoLam,TrangThai)
+VALUES(N'NV001',N'Quản trị hệ thống',NULL,NULL,NULL,NULL,N'CV001',NULL,NULL,CONVERT(date,SYSDATETIME()),N'Đang làm việc');
+INSERT dbo.TAI_KHOAN(MaTK,TenDangNhap,MatKhauHash,MaVaiTro,MaNV,MaKhoa,MaPhong,TrangThai)
+VALUES(N'TK001',N'admin001',N'pbkdf2_sha256$210000$ySuolQNsbz9U0BKJXyRbdg==$kUN94Gb5yQWin2GY8bV997yDKFahhZQ66+LQOekQkIQ=',N'VTRO001',N'NV001',NULL,NULL,N'Đang hoạt động');
+INSERT dbo.DICH_VU(MaDV,TenDV,NhomDV,MaCK,DonGia,ThoiGianDuKien,MoTa,NgayApDung,TrangThai)
+VALUES(N'DV001',N'Khám răng hàm mặt tổng quát',N'Khám và tư vấn',N'CK001',100000,30,N'Dịch vụ cơ bản; bệnh viện quản lý giá áp dụng.',CONVERT(date,SYSDATETIME()),N'Đang hoạt động'),
+(N'DV006',N'Chụp X-quang hàm mặt',N'Chẩn đoán hình ảnh',N'CK004',200000,20,N'Dịch vụ cơ bản; thực hiện theo chỉ định bác sĩ.',CONVERT(date,SYSDATETIME()),N'Đang hoạt động');
 
--- NHAN_VIEN: 10 dòng
-INSERT INTO [dbo].[NHAN_VIEN] ([MaNV], [HoTen], [GioiTinh], [NgaySinh], [SDT], [DiaChi], [MaChucVu], [MaCK], [BangCap], [NgayVaoLam], [TrangThai])
-VALUES
-    (N'NV001', N'Nguyễn Minh Quang', N'Nam', N'1979-04-18', N'0903764281', N'18 Nguyễn Đình Chiểu, TP. Hồ Chí Minh', N'CV001', NULL, N'Kỹ sư công nghệ thông tin', N'2018-03-05', N'Đang làm việc'),
-    (N'NV002', N'Trần Quốc Bảo', N'Nam', N'1982-11-06', N'0918426735', N'52 Võ Thị Sáu, TP. Hồ Chí Minh', N'CV002', N'CK001', N'Bác sĩ răng hàm mặt', N'2017-09-11', N'Đang làm việc'),
-    (N'NV003', N'Lê Thu Hà', N'Nữ', N'1986-07-22', N'0935271864', N'27 Lê Văn Sỹ, TP. Hồ Chí Minh', N'CV002', N'CK001', N'Bác sĩ chuyên khoa I răng hàm mặt', N'2019-04-15', N'Đang làm việc'),
-    (N'NV004', N'Phạm Ngọc Mai', N'Nữ', N'1990-02-15', N'0986142357', N'96 Phan Đăng Lưu, TP. Hồ Chí Minh', N'CV003', N'CK001', N'Cử nhân điều dưỡng', N'2020-07-06', N'Đang làm việc'),
-    (N'NV005', N'Võ Thảo Vy', N'Nữ', N'1993-09-08', N'0973284615', N'14 Hoàng Hoa Thám, TP. Hồ Chí Minh', N'CV004', NULL, N'Cử nhân quản trị văn phòng', N'2022-02-14', N'Đang làm việc'),
-    (N'NV006', N'Đặng Thanh Lan', N'Nữ', N'1988-12-03', N'0908423167', N'63 Nguyễn Văn Đậu, TP. Hồ Chí Minh', N'CV005', N'CK008', N'Dược sĩ đại học', N'2020-11-02', N'Đang làm việc'),
-    (N'NV007', N'Bùi Minh Tuấn', N'Nam', N'1985-06-27', N'0915368742', N'81 Lý Thường Kiệt, TP. Hồ Chí Minh', N'CV006', NULL, N'Cử nhân quản lý kho và cung ứng', N'2018-06-18', N'Đang làm việc'),
-    (N'NV008', N'Hoàng Khánh Linh', N'Nữ', N'1994-05-19', N'0938146725', N'45 Trần Hưng Đạo, TP. Hồ Chí Minh', N'CV007', NULL, N'Cử nhân kế toán', N'2022-08-08', N'Đang làm việc'),
-    (N'NV009', N'Đỗ Văn Hưng', N'Nam', N'1987-10-11', N'0983257146', N'32 Nguyễn Tri Phương, TP. Hồ Chí Minh', N'CV008', N'CK004', N'Cử nhân kỹ thuật hình ảnh y học', N'2019-10-21', N'Đang làm việc'),
-    (N'NV010', N'Nguyễn Gia Hân', N'Nữ', N'1991-08-24', N'0976421835', N'70 Điện Biên Phủ, TP. Hồ Chí Minh', N'CV009', NULL, N'Cử nhân quản trị nhân lực', N'2021-05-10', N'Đang làm việc');
-
--- TAI_KHOAN: 10 dòng
-INSERT INTO [dbo].[TAI_KHOAN] ([MaTK], [TenDangNhap], [MatKhauHash], [MaVaiTro], [MaNV], [MaKhoa], [MaPhong], [TrangThai])
-VALUES
-    (N'TK001', N'admin001', N'pbkdf2_sha256$210000$ySuolQNsbz9U0BKJXyRbdg==$kUN94Gb5yQWin2GY8bV997yDKFahhZQ66+LQOekQkIQ=', N'VTRO001', N'NV001', NULL, NULL, N'Đang hoạt động'),
-    (N'TK002', N'user002', N'pbkdf2_sha256$210000$/EzMpN8Zle1enHuKF8iRbg==$UbiXNcDloKUtErucAi771pq1q8r6PyYrttT1DmntZKc=', N'VTRO002', N'NV002', NULL, NULL, N'Đang hoạt động'),
-    (N'TK003', N'user003', N'pbkdf2_sha256$210000$UbT1x/u+PIdfsXb9RlHyZA==$jngv/FY5fY9WmHL1MejTO7f6s8DvbApx3W7LNm1ChwA=', N'VTRO002', N'NV003', NULL, NULL, N'Đang hoạt động'),
-    (N'TK004', N'user004', N'pbkdf2_sha256$210000$PE6JbVdw34HDrGfnnUuNiQ==$k/wfTkvdAjGoU2XbtciF4CVN7cvW2EPoO2LOzGF8p1M=', N'VTRO002', N'NV004', NULL, NULL, N'Đang hoạt động'),
-    (N'TK005', N'user005', N'pbkdf2_sha256$210000$cK+vxMJLLD68yvadN+jbbw==$Y4Y6S2U9PZbHcKqFGptNPD4ReJrtRPCrdCtzH8AhkKU=', N'VTRO002', N'NV005', NULL, NULL, N'Đang hoạt động'),
-    (N'TK006', N'user006', N'pbkdf2_sha256$210000$Lm/sjBztWCuTTxe/NJxOaA==$q1jtS0KaIuhvT+32BLKSfJjzl1ZedQkrryn0OjhV8cY=', N'VTRO002', N'NV006', NULL, NULL, N'Đang hoạt động'),
-    (N'TK007', N'user007', N'pbkdf2_sha256$210000$DQlO0johQCwWyDlnxHArYw==$ThJayvriBNy4LVDrEhiXKnc6unN6byEtHLaHY0798eg=', N'VTRO002', N'NV007', NULL, NULL, N'Đang hoạt động'),
-    (N'TK008', N'user008', N'pbkdf2_sha256$210000$LiC31Bm7kqa6VkBk9OeUKA==$39aBjqsGoks0HaB7yN8++H4Fzctg2la9IN1q4tXaY4M=', N'VTRO002', N'NV008', NULL, NULL, N'Đang hoạt động'),
-    (N'TK009', N'user009', N'pbkdf2_sha256$210000$RyAkMqy7zUllGmiXFw071Q==$o7sbwqOBmcBObjUBcwb1CO1obYWZFEI/XsWFm5FyzRs=', N'VTRO002', N'NV009', NULL, NULL, N'Đang hoạt động'),
-    (N'TK010', N'user010', N'pbkdf2_sha256$210000$jDi/FV0/u6DskkZW/ziRJg==$axus2cbl2BLjVYO9dqsx+XGd+EU3XT5X/KclyNRnPZE=', N'VTRO002', N'NV010', NULL, NULL, N'Đang hoạt động');
-
--- CHUNG_CHI_NHAN_VIEN: 10 dòng
-INSERT INTO [dbo].[CHUNG_CHI_NHAN_VIEN] ([MaCC], [MaNV], [SoChungChi], [TenChungChi], [NgayCap], [NoiCap], [HanChungChi], [TrangThai], [GhiChu])
-VALUES
-    (N'CC001', N'NV001', N'CN-ATTT-2023-014', N'Bồi dưỡng an toàn thông tin hệ thống', N'2023-06-20', N'Trung tâm đào tạo công nghệ thông tin', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
-    (N'CC002', N'NV002', N'CCHN-RHM-2016-082', N'Chứng chỉ hành nghề khám chữa bệnh răng hàm mặt', N'2016-08-15', N'Cơ quan quản lý y tế', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
-    (N'CC003', N'NV003', N'CCHN-RHM-2018-127', N'Chứng chỉ hành nghề khám chữa bệnh răng hàm mặt', N'2018-11-12', N'Cơ quan quản lý y tế', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
-    (N'CC004', N'NV004', N'CCHN-DD-2019-236', N'Chứng chỉ hành nghề điều dưỡng', N'2019-10-07', N'Cơ quan quản lý y tế', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
-    (N'CC005', N'NV005', N'CN-TN-2024-038', N'Bồi dưỡng tiếp nhận và chăm sóc người bệnh', N'2024-03-18', N'Trung tâm đào tạo nghiệp vụ bệnh viện', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
-    (N'CC006', N'NV006', N'CCHN-D-2019-054', N'Chứng chỉ hành nghề dược', N'2019-07-22', N'Cơ quan quản lý y tế', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
-    (N'CC007', N'NV007', N'CN-GSP-2024-016', N'Đào tạo bảo quản thuốc và quản lý lô', N'2024-05-06', N'Trung tâm đào tạo nghiệp vụ dược', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
-    (N'CC008', N'NV008', N'CN-KT-2023-071', N'Bồi dưỡng nghiệp vụ kế toán và đối chiếu thu phí', N'2023-09-15', N'Trung tâm đào tạo kế toán', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
-    (N'CC009', N'NV009', N'CN-ATBX-2025-024', N'Đào tạo an toàn bức xạ cho nhân viên chẩn đoán hình ảnh', N'2025-02-17', N'Trung tâm đào tạo an toàn bức xạ', N'2028-02-17', N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.'),
-    (N'CC010', N'NV010', N'CN-NS-2024-059', N'Bồi dưỡng quản lý nhân sự và chấm công', N'2024-08-12', N'Trung tâm đào tạo quản trị nhân lực', NULL, N'Còn hiệu lực', N'Lưu bản chứng nhận trong hồ sơ nhân viên.');
-
--- NHA_CUNG_CAP: 10 dòng
-INSERT INTO [dbo].[NHA_CUNG_CAP] ([MaNCC], [TenNCC], [SDT], [Email], [DiaChi], [NguoiLienHe], [TrangThai])
-VALUES
-    (N'NCC001', N'Công ty TNHH Dược phẩm An Phúc', N'02838241762', N'kinhdoanh@anphuc.example', N'70 Điện Biên Phủ, TP. Hồ Chí Minh', N'Nguyễn Hoàng Phúc', N'Đang hoạt động'),
-    (N'NCC002', N'Công ty TNHH Dược phẩm Minh Hòa', N'02838652914', N'kinhdoanh@minhhoa.example', N'32 Nguyễn Tri Phương, TP. Hồ Chí Minh', N'Trần Minh Hòa', N'Đang hoạt động'),
-    (N'NCC003', N'Công ty TNHH Dược và Vật tư Hải An', N'02838164825', N'kinhdoanh@haian.example', N'45 Trần Hưng Đạo, TP. Hồ Chí Minh', N'Lê Hải Yến', N'Đang hoạt động'),
-    (N'NCC004', N'Công ty TNHH Dược phẩm Nam Thành', N'02838571436', N'kinhdoanh@namthanh.example', N'81 Lý Thường Kiệt, TP. Hồ Chí Minh', N'Phạm Thành Đạt', N'Đang hoạt động'),
-    (N'NCC005', N'Công ty TNHH Dược phẩm Tâm Việt', N'02838362951', N'kinhdoanh@tamviet.example', N'63 Nguyễn Văn Đậu, TP. Hồ Chí Minh', N'Võ Thanh Tâm', N'Đang hoạt động'),
-    (N'NCC006', N'Công ty TNHH Dược phẩm Bình Minh', N'02838741623', N'kinhdoanh@binhminh.example', N'14 Hoàng Hoa Thám, TP. Hồ Chí Minh', N'Đặng Nhật Minh', N'Đang hoạt động'),
-    (N'NCC007', N'Công ty TNHH Dược phẩm Đông An', N'02838915274', N'kinhdoanh@dongan.example', N'96 Phan Đăng Lưu, TP. Hồ Chí Minh', N'Bùi Đông Anh', N'Đang hoạt động'),
-    (N'NCC008', N'Công ty TNHH Vật tư Y tế Gia Khang', N'02838426718', N'kinhdoanh@giakhang.example', N'27 Lê Văn Sỹ, TP. Hồ Chí Minh', N'Hoàng Gia Khang', N'Đang hoạt động'),
-    (N'NCC009', N'Công ty TNHH Dược và Thiết bị Y tế Hồng Phúc', N'02838853146', N'kinhdoanh@hongphuc.example', N'52 Võ Thị Sáu, TP. Hồ Chí Minh', N'Đỗ Hồng Nhung', N'Đang hoạt động'),
-    (N'NCC010', N'Công ty TNHH Dược và Thiết bị Y tế Phương Nam', N'02838297615', N'kinhdoanh@phuongnam.example', N'18 Nguyễn Đình Chiểu, TP. Hồ Chí Minh', N'Nguyễn Phương Thảo', N'Đang hoạt động');
-
--- KHO: 10 dòng
-INSERT INTO [dbo].[KHO] ([MaKho], [TenKho], [MaNV], [LoaiKho], [TrangThai])
-VALUES
-    (N'KHO001', N'Kho thuốc ngoại trú', N'NV007', N'Thuốc', N'Đang hoạt động'),
-    (N'KHO002', N'Kho thuốc dự trữ', N'NV007', N'Thuốc', N'Đang hoạt động'),
-    (N'KHO003', N'Kho thuốc theo dõi đặc biệt', N'NV007', N'Thuốc', N'Đang hoạt động'),
-    (N'KHO004', N'Kho vật tư bảo hộ', N'NV007', N'Vật tư', N'Đang hoạt động'),
-    (N'KHO005', N'Kho băng gạc và chăm sóc', N'NV007', N'Vật tư', N'Đang hoạt động'),
-    (N'KHO006', N'Kho dụng cụ vô khuẩn', N'NV007', N'Vật tư', N'Đang hoạt động'),
-    (N'KHO007', N'Kho vật tư xét nghiệm', N'NV007', N'Vật tư', N'Đang hoạt động'),
-    (N'KHO008', N'Kho thiết bị chờ bàn giao', N'NV007', N'Thiết bị', N'Đang hoạt động'),
-    (N'KHO009', N'Kho thiết bị dự phòng', N'NV007', N'Thiết bị', N'Đang hoạt động'),
-    (N'KHO010', N'Kho thiết bị chờ bảo trì', N'NV007', N'Thiết bị', N'Đang hoạt động');
-
--- LOAI_HANG_HOA: 10 dòng
-INSERT INTO [dbo].[LOAI_HANG_HOA] ([MaLoaiHH], [TenLoaiHH], [MoTa], [TrangThai])
-VALUES
-    (N'LHH001', N'Thuốc dạng viên', N'Phân nhóm thuốc dạng viên để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
-    (N'LHH002', N'Thuốc dạng dung dịch', N'Phân nhóm thuốc dạng dung dịch để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
-    (N'LHH003', N'Thuốc dùng ngoài', N'Phân nhóm thuốc dùng ngoài để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
-    (N'LHH004', N'Vật tư bảo hộ', N'Phân nhóm vật tư bảo hộ để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
-    (N'LHH005', N'Vật tư băng gạc', N'Phân nhóm vật tư băng gạc để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
-    (N'LHH006', N'Vật tư vô khuẩn', N'Phân nhóm vật tư vô khuẩn để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
-    (N'LHH007', N'Vật tư xét nghiệm', N'Phân nhóm vật tư xét nghiệm để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
-    (N'LHH008', N'Thiết bị theo dõi', N'Phân nhóm thiết bị theo dõi để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
-    (N'LHH009', N'Thiết bị chẩn đoán', N'Phân nhóm thiết bị chẩn đoán để quản lý danh mục và tồn kho.', N'Đang hoạt động'),
-    (N'LHH010', N'Thiết bị hỗ trợ điều trị', N'Phân nhóm thiết bị hỗ trợ điều trị để quản lý danh mục và tồn kho.', N'Đang hoạt động');
-
--- HANG_HOA: 30 dòng
-INSERT INTO [dbo].[HANG_HOA] ([MaHH], [TenHH], [MaLoaiHH], [DonViTinh], [MoTa], [TrangThai])
-VALUES
-    (N'HH001', N'Paracetamol 500 mg', N'LHH001', N'Viên', N'Thuốc dạng viên, đường uống.', N'Đang hoạt động'),
-    (N'HH002', N'Amoxicillin 500 mg', N'LHH001', N'Viên', N'Thuốc kháng sinh dạng viên, cấp theo đơn bác sĩ.', N'Đang hoạt động'),
-    (N'HH003', N'Chlorhexidine 0,12% - chai 100 ml', N'LHH002', N'Chai', N'Dung dịch súc miệng, quản lý theo chai 100 ml.', N'Đang hoạt động'),
-    (N'HH004', N'Ibuprofen 200 mg', N'LHH001', N'Viên', N'Thuốc dạng viên, đường uống.', N'Đang hoạt động'),
-    (N'HH005', N'Cetirizine 10 mg', N'LHH001', N'Viên', N'Thuốc dạng viên, đường uống.', N'Đang hoạt động'),
-    (N'HH006', N'Triamcinolone acetonide 0,1% - tuýp 5 g', N'LHH003', N'Tuýp', N'Thuốc dùng tại chỗ trong khoang miệng, quản lý theo tuýp 5 g.', N'Đang hoạt động'),
-    (N'HH007', N'Cefalexin 500 mg', N'LHH001', N'Viên', N'Thuốc kháng sinh dạng viên, cấp theo đơn bác sĩ.', N'Đang hoạt động'),
-    (N'HH008', N'Natri clorid 0,9% - chai 500 ml', N'LHH002', N'Chai', N'Dung dịch rửa dùng ngoài, quản lý theo chai 500 ml.', N'Đang hoạt động'),
-    (N'HH009', N'Povidone iodine 10% - chai 100 ml', N'LHH003', N'Chai', N'Dung dịch sát khuẩn ngoài da, quản lý theo chai 100 ml.', N'Đang hoạt động'),
-    (N'HH010', N'Loratadine 10 mg', N'LHH001', N'Viên', N'Thuốc dạng viên, đường uống.', N'Đang hoạt động'),
-    (N'HH011', N'Găng tay y tế không bột cỡ M', N'LHH004', N'Đôi', N'Bảo hộ khi khám và chăm sóc người bệnh.', N'Đang hoạt động'),
-    (N'HH012', N'Khẩu trang y tế 3 lớp', N'LHH004', N'Cái', N'Bảo hộ đường hô hấp cho nhân viên.', N'Đang hoạt động'),
-    (N'HH013', N'Gạc vô khuẩn 10 x 10 cm', N'LHH005', N'Miếng', N'Chăm sóc và che phủ vết thương.', N'Đang hoạt động'),
-    (N'HH014', N'Băng cuộn y tế 5 cm', N'LHH005', N'Cuộn', N'Cố định băng gạc trong chăm sóc.', N'Đang hoạt động'),
-    (N'HH015', N'Bông y tế thấm nước 100 g', N'LHH005', N'Gói', N'Vật tư làm sạch trong chăm sóc.', N'Đang hoạt động'),
-    (N'HH016', N'Áo choàng bảo hộ dùng một lần', N'LHH004', N'Cái', N'Bảo hộ trong thủ thuật.', N'Đang hoạt động'),
-    (N'HH017', N'Ống lấy máu chân không EDTA', N'LHH007', N'Ống', N'Vật tư lấy mẫu xét nghiệm huyết học.', N'Đang hoạt động'),
-    (N'HH018', N'Túi ép tiệt khuẩn 10 x 20 cm', N'LHH006', N'Túi', N'Đóng gói dụng cụ trước tiệt khuẩn.', N'Đang hoạt động'),
-    (N'HH019', N'Băng dán vết thương vô khuẩn', N'LHH005', N'Miếng', N'Che phủ vết thương nhỏ.', N'Đang hoạt động'),
-    (N'HH020', N'Ống nghiệm lấy mẫu 10 ml', N'LHH007', N'Ống', N'Vật tư lưu mẫu xét nghiệm.', N'Đang hoạt động'),
-    (N'HH021', N'Máy theo dõi sinh hiệu', N'LHH008', N'Cái', N'Theo dõi huyết áp, nhịp tim và SpO2 tại phòng hồi sức.', N'Đang hoạt động'),
-    (N'HH022', N'Máy đo huyết áp', N'LHH008', N'Cái', N'Đo huyết áp trong khám và đánh giá trước điều trị.', N'Đang hoạt động'),
-    (N'HH023', N'Máy đo SpO2', N'LHH008', N'Cái', N'Theo dõi độ bão hòa oxy khi xử trí thủ thuật.', N'Đang hoạt động'),
-    (N'HH024', N'Máy điện tim', N'LHH008', N'Cái', N'Ghi điện tim phục vụ đánh giá người bệnh.', N'Đang hoạt động'),
-    (N'HH025', N'Máy chụp X-quang', N'LHH009', N'Cái', N'Chụp X-quang vùng hàm mặt theo chỉ định.', N'Đang hoạt động'),
-    (N'HH026', N'Máy siêu âm', N'LHH009', N'Cái', N'Hỗ trợ khảo sát mô mềm vùng hàm mặt.', N'Đang hoạt động'),
-    (N'HH027', N'Máy hấp tiệt trùng', N'LHH010', N'Cái', N'Tiệt khuẩn dụng cụ trước sử dụng.', N'Đang hoạt động'),
-    (N'HH028', N'Máy hút dịch', N'LHH010', N'Cái', N'Hút dịch trong chăm sóc và thủ thuật.', N'Đang hoạt động'),
-    (N'HH029', N'Đèn khám', N'LHH010', N'Cái', N'Chiếu sáng vùng khám tại phòng khám.', N'Đang hoạt động'),
-    (N'HH030', N'Máy lọc không khí', N'LHH010', N'Cái', N'Lọc không khí tại khu vực chăm sóc.', N'Đang hoạt động');
-
--- VAT_TU: 10 dòng
-INSERT INTO [dbo].[VAT_TU] ([MaVT], [MaHH], [MucTonToiThieu])
-VALUES
-    (N'VT001', N'HH011', 200),
-    (N'VT002', N'HH012', 300),
-    (N'VT003', N'HH013', 100),
-    (N'VT004', N'HH014', 30),
-    (N'VT005', N'HH015', 20),
-    (N'VT006', N'HH016', 30),
-    (N'VT007', N'HH017', 100),
-    (N'VT008', N'HH018', 100),
-    (N'VT009', N'HH019', 50),
-    (N'VT010', N'HH020', 100);
-
--- THUOC: 10 dòng
-INSERT INTO [dbo].[THUOC] ([MaThuoc], [MaHH], [HamLuong], [MucTonToiThieu], [DonGiaBan])
-VALUES
-    (N'TH001', N'HH001', N'500 mg', 100, 2000),
-    (N'TH002', N'HH002', N'500 mg', 100, 3000),
-    (N'TH003', N'HH003', N'0,12%', 10, 40000),
-    (N'TH004', N'HH004', N'200 mg', 100, 5000),
-    (N'TH005', N'HH005', N'10 mg', 100, 3500),
-    (N'TH006', N'HH006', N'0,1%', 10, 30000),
-    (N'TH007', N'HH007', N'500 mg', 100, 4500),
-    (N'TH008', N'HH008', N'0,9%', 10, 12000),
-    (N'TH009', N'HH009', N'10%', 10, 25000),
-    (N'TH010', N'HH010', N'10 mg', 100, 2500);
-
--- THIET_BI: 10 dòng
-INSERT INTO [dbo].[THIET_BI] ([MaTB], [MaHH], [SoSerial], [NgayMua], [MaNCC], [MaPhong], [TinhTrang], [HanBaoHanh], [TrangThai], [GhiChu])
-VALUES
-    (N'TB001', N'HH021', N'MON-240315-1082', N'2024-03-10', N'NCC009', N'PH006', N'Hoạt động tốt', N'2027-03-10', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
-    (N'TB002', N'HH022', N'BPM-240318-2564', N'2024-03-11', N'NCC009', N'PH001', N'Hoạt động tốt', N'2027-03-11', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
-    (N'TB003', N'HH023', N'OXI-240402-1735', N'2024-03-12', N'NCC009', N'PH003', N'Hoạt động tốt', N'2027-03-12', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
-    (N'TB004', N'HH024', N'ECG-240410-0681', N'2024-04-13', N'NCC009', N'PH006', N'Hoạt động tốt', N'2027-04-13', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
-    (N'TB005', N'HH025', N'XR-240422-0319', N'2024-04-14', N'NCC009', N'PH004', N'Hoạt động tốt', N'2027-04-14', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
-    (N'TB006', N'HH026', N'US-240506-0842', N'2024-04-15', N'NCC009', N'PH004', N'Hoạt động tốt', N'2027-04-15', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
-    (N'TB007', N'HH027', N'AC-240513-1468', N'2024-05-16', N'NCC010', N'PH009', N'Hoạt động tốt', N'2027-05-16', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
-    (N'TB008', N'HH028', N'SU-240527-2156', N'2024-05-17', N'NCC010', N'PH003', N'Hoạt động tốt', N'2027-05-17', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
-    (N'TB009', N'HH029', N'EXL-240603-3512', N'2024-05-18', N'NCC010', N'PH001', N'Hoạt động tốt', N'2027-05-18', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.'),
-    (N'TB010', N'HH030', N'AIR-240617-4295', N'2024-06-19', N'NCC010', N'PH007', N'Hoạt động tốt', N'2027-06-19', N'Đang sử dụng', N'Tài sản đã nghiệm thu và bàn giao sử dụng; không còn trong kho hàng chờ cấp.');
-
--- BAO_TRI_THIET_BI: 10 dòng
-INSERT INTO [dbo].[BAO_TRI_THIET_BI] ([MaBT], [MaTB], [MaNV], [NgayBatDau], [NgayKetThuc], [NoiDung], [ChiPhi], [NgayBaoTriTiepTheo], [TrangThai], [GhiChu])
-VALUES
-    (N'BT001', N'TB001', N'NV009', N'2026-09-01T08:00:00', N'2026-09-01T10:00:00', N'Kiểm tra cảm biến, vệ sinh máy và kiểm tra cảnh báo sinh hiệu.', 450000, N'2027-03-01', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
-    (N'BT002', N'TB002', N'NV009', N'2026-09-02T08:00:00', N'2026-09-02T10:00:00', N'Kiểm tra vòng bít, ống dẫn và đối chiếu độ chính xác đo.', 180000, N'2027-03-02', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
-    (N'BT003', N'TB003', N'NV009', N'2026-09-03T08:00:00', N'2026-09-03T10:00:00', N'Vệ sinh cảm biến SpO2, kiểm tra pin và tín hiệu đo.', 150000, N'2027-03-03', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
-    (N'BT004', N'TB004', N'NV009', N'2026-09-04T08:00:00', N'2026-09-04T10:00:00', N'Kiểm tra điện cực, dây dẫn và chất lượng bản ghi điện tim.', 350000, N'2027-03-04', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
-    (N'BT005', N'TB005', N'NV009', N'2026-09-05T08:00:00', N'2026-09-05T10:00:00', N'Kiểm tra bộ phát tia, chất lượng ảnh và cơ cấu an toàn.', 1500000, N'2027-03-05', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
-    (N'BT006', N'TB006', N'NV009', N'2026-09-06T08:00:00', N'2026-09-06T10:00:00', N'Kiểm tra đầu dò, vệ sinh máy và chất lượng hình ảnh.', 850000, N'2027-03-06', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
-    (N'BT007', N'TB007', N'NV009', N'2026-09-07T08:00:00', N'2026-09-07T10:00:00', N'Kiểm tra gioăng cửa, áp suất và chu trình tiệt khuẩn.', 650000, N'2027-03-07', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
-    (N'BT008', N'TB008', N'NV009', N'2026-09-08T08:00:00', N'2026-09-08T10:00:00', N'Vệ sinh bình chứa, kiểm tra lực hút và đường ống.', 280000, N'2027-03-08', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
-    (N'BT009', N'TB009', N'NV009', N'2026-09-09T08:00:00', N'2026-09-09T10:00:00', N'Vệ sinh đèn, kiểm tra độ sáng và khớp điều chỉnh.', 120000, N'2027-03-09', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.'),
-    (N'BT010', N'TB010', N'NV009', N'2026-09-10T08:00:00', N'2026-09-10T10:00:00', N'Thay bộ lọc, vệ sinh quạt và kiểm tra lưu lượng khí.', 480000, N'2027-03-10', N'Đã xác nhận', N'Đã bàn giao lại cho phòng sử dụng sau kiểm tra; chi phí nội bộ.');
-
--- CA_LAM: 10 dòng
-INSERT INTO [dbo].[CA_LAM] ([MaCa], [GioBatDau], [GioKetThuc], [TrangThai], [GhiChu])
-VALUES
-    (N'CA001', N'08:00:00', N'12:00:00', N'Đang hoạt động', N'Ca khám sáng.'),
-    (N'CA002', N'13:00:00', N'17:00:00', N'Đang hoạt động', N'Ca khám chiều.'),
-    (N'CA003', N'17:00:00', N'21:00:00', N'Đang hoạt động', N'Ca khám ngoài giờ.'),
-    (N'CA004', N'07:00:00', N'11:00:00', N'Đang hoạt động', N'Ca hỗ trợ tiếp nhận sáng.'),
-    (N'CA005', N'11:00:00', N'15:00:00', N'Đang hoạt động', N'Ca hỗ trợ tiếp nhận trưa.'),
-    (N'CA006', N'15:00:00', N'19:00:00', N'Đang hoạt động', N'Ca hỗ trợ tiếp nhận chiều.'),
-    (N'CA007', N'07:00:00', N'15:00:00', N'Đang hoạt động', N'Ca điều dưỡng ngày.'),
-    (N'CA008', N'15:00:00', N'23:00:00', N'Đang hoạt động', N'Ca điều dưỡng tối.'),
-    (N'CA009', N'23:00:00', N'07:00:00', N'Đang hoạt động', N'Ca trực qua đêm (kết thúc vào ngày kế tiếp).'),
-    (N'CA010', N'08:00:00', N'17:00:00', N'Đang hoạt động', N'Ca hành chính.');
-
--- BENH_NHAN: 10 dòng
-INSERT INTO [dbo].[BENH_NHAN] ([MaBN], [HoTenBN], [GioiTinh], [NgaySinh], [SDT], [DiaChi], [MaBHYT], [NhomMau], [TienSuBenh], [DiUng], [TrangThai])
-VALUES
-    (N'BN001', N'Nguyễn Văn An', N'Nam', N'1981-03-15', N'0905824176', N'24 Nguyễn Văn Cừ, TP. Hồ Chí Minh', NULL, NULL, N'Chưa ghi nhận bệnh nền.', N'Chưa ghi nhận', N'Đang theo dõi'),
-    (N'BN002', N'Trần Thị Bình', N'Nữ', N'1988-09-24', N'0913672854', N'57 Cách Mạng Tháng Tám, TP. Hồ Chí Minh', NULL, NULL, N'Chưa ghi nhận bệnh nền; nghiến răng về đêm.', N'Chưa ghi nhận', N'Đang theo dõi'),
-    (N'BN003', N'Lê Quốc Cường', N'Nam', N'1992-12-08', N'0938465127', N'39 Phan Xích Long, TP. Hồ Chí Minh', NULL, NULL, N'Có tiền sử dị ứng mỹ phẩm tiếp xúc.', N'Kích ứng sau tiếp xúc mỹ phẩm', N'Đang theo dõi'),
-    (N'BN004', N'Phạm Ngọc Dung', N'Nữ', N'1976-06-17', N'0982736145', N'112 Nguyễn Kiệm, TP. Hồ Chí Minh', NULL, NULL, N'Đã từng loét niêm mạc miệng tái phát.', N'Chưa ghi nhận', N'Đang theo dõi'),
-    (N'BN005', N'Võ Minh Đức', N'Nam', N'1985-01-29', N'0975143286', N'68 Hoàng Văn Thụ, TP. Hồ Chí Minh', NULL, NULL, N'Đã khâu vết thương má tại cơ sở y tế ngày 28/09/2026.', N'Chưa ghi nhận', N'Đang theo dõi'),
-    (N'BN006', N'Đặng Thị Hạnh', N'Nữ', N'1996-08-13', N'0906281374', N'43 Lê Quang Định, TP. Hồ Chí Minh', NULL, NULL, N'Đau vùng hàm sau va chạm nhẹ ngày 30/09/2026.', N'Chưa ghi nhận', N'Đang theo dõi'),
-    (N'BN007', N'Bùi Gia Huy', N'Nam', N'1967-11-05', N'0918746523', N'85 Xô Viết Nghệ Tĩnh, TP. Hồ Chí Minh', NULL, NULL, N'Đã xử trí vết thương ngoài da vùng má ngày 29/09/2026.', N'Chưa ghi nhận', N'Đang theo dõi'),
-    (N'BN008', N'Hoàng Thị Lan', N'Nữ', N'1990-04-21', N'0932178465', N'17 Nguyễn Thị Minh Khai, TP. Hồ Chí Minh', NULL, NULL, N'Có tiền sử kích ứng da khi tiếp xúc chất tẩy rửa.', N'Kích ứng sau tiếp xúc chất tẩy rửa', N'Đang theo dõi'),
-    (N'BN009', N'Đỗ Thành Nam', N'Nam', N'1983-07-09', N'0986423157', N'76 Trần Bình Trọng, TP. Hồ Chí Minh', NULL, NULL, N'Đang theo dõi vết thương vùng cằm sau xử trí ban đầu.', N'Chưa ghi nhận', N'Đang theo dõi'),
-    (N'BN010', N'Nguyễn Khánh Vy', N'Nữ', N'2001-10-26', N'0973864215', N'29 Tô Hiến Thành, TP. Hồ Chí Minh', NULL, NULL, N'Đã điều trị hạn chế há miệng; đến đánh giá vận động hàm.', N'Chưa ghi nhận', N'Đang theo dõi');
-
--- HO_SO_BENH_AN: 10 dòng
-INSERT INTO [dbo].[HO_SO_BENH_AN] ([MaHS], [MaBN], [NgayLap], [LyDoKhamBanDau], [GhiChu], [TrangThai])
-VALUES
-    (N'HS001', N'BN001', N'2026-09-25T08:00:00', N'Sưng đau trong khoang miệng 2 ngày, khó chịu khi ăn.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
-    (N'HS002', N'BN002', N'2026-09-25T08:00:00', N'Đau vùng khớp hàm khi nhai, há miệng còn thực hiện được.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
-    (N'HS003', N'BN003', N'2026-09-25T08:00:00', N'Ngứa và sưng nhẹ môi sau tiếp xúc mỹ phẩm.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
-    (N'HS004', N'BN004', N'2026-09-25T08:00:00', N'Đau rát do loét nhỏ niêm mạc miệng, ăn uống giảm.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
-    (N'HS005', N'BN005', N'2026-09-25T08:00:00', N'Vết thương má sau khâu còn đỏ và đau quanh mép.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
-    (N'HS006', N'BN006', N'2026-10-01T09:00:00', N'Đau vùng hàm sau va chạm, sưng nhẹ.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
-    (N'HS007', N'BN007', N'2026-10-02T09:00:00', N'Vết trầy vùng má sau ngã, còn đau khi chạm vùng gò má.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
-    (N'HS008', N'BN008', N'2026-10-03T09:00:00', N'Ngứa da vùng mặt sau tiếp xúc chất tẩy rửa.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
-    (N'HS009', N'BN009', N'2026-10-04T09:00:00', N'Đến thay băng vùng cằm sau xử trí vết thương.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi'),
-    (N'HS010', N'BN010', N'2026-10-05T09:00:00', N'Còn hạn chế há miệng nhẹ sau đợt điều trị.', N'Thông tin liên hệ và tiền sử đã đối chiếu khi tiếp nhận.', N'Đang theo dõi');
-
--- DICH_VU: 10 dòng
-INSERT INTO [dbo].[DICH_VU] ([MaDV], [TenDV], [NhomDV], [MaCK], [DonGia], [ThoiGianDuKien], [MoTa], [NgayApDung], [TrangThai])
-VALUES
-    (N'DV001', N'Khám răng hàm mặt tổng quát', N'Khám và tư vấn', N'CK001', 100000, 30, N'Thăm khám và đánh giá tổng quát vùng răng hàm mặt.', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV002', N'Khám khớp thái dương hàm', N'Khám và tư vấn', N'CK001', 120000, 30, N'Đánh giá đau và khả năng vận động khớp hàm.', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV003', N'Khám bệnh lý niêm mạc và vùng môi', N'Khám và tư vấn', N'CK001', 80000, 25, N'Đánh giá tổn thương niêm mạc, vùng môi và yếu tố tiếp xúc.', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV004', N'Khám theo dõi loét niêm mạc miệng', N'Khám và tư vấn', N'CK001', 100000, 25, N'Đánh giá tiến triển tổn thương và hướng dẫn chăm sóc.', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV005', N'Khám theo dõi vết thương hàm mặt', N'Khám và tư vấn', N'CK001', 150000, 30, N'Đánh giá vết thương vùng hàm mặt sau xử trí.', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV006', N'Chụp X-quang hàm mặt', N'Chẩn đoán hình ảnh', N'CK004', 200000, 20, N'Thực hiện hình ảnh theo vùng khảo sát được bác sĩ chỉ định.', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV007', N'Chụp X-quang hàm mặt bổ sung', N'Chẩn đoán hình ảnh', N'CK004', 180000, 20, N'Bổ sung hình ảnh để khảo sát tổn thương vùng hàm mặt.', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV008', N'Chăm sóc vùng da bị tổn thương', N'Chăm sóc điều trị', N'CK007', 160000, 20, N'Làm sạch và chăm sóc vùng da tổn thương theo chỉ định.', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV009', N'Thay băng và đánh giá vết thương', N'Chăm sóc điều trị', N'CK007', 90000, 20, N'Thay băng và ghi nhận tình trạng liền thương.', N'2026-01-01', N'Đang hoạt động'),
-    (N'DV010', N'Tư vấn phục hồi vận động hàm', N'Khám và tư vấn', N'CK001', 250000, 30, N'Đánh giá vận động hàm và tư vấn kế hoạch theo dõi.', N'2026-01-01', N'Đang hoạt động');
-
--- LICH_LAM_VIEC: 10 dòng
-INSERT INTO [dbo].[LICH_LAM_VIEC] ([MaLLV], [MaNV], [MaCa], [NgayLam], [MaPhong], [TrangThai], [TrangThaiHienDien], [GioVao], [GioRa], [GhiChu])
-VALUES
-    (N'LLV001', N'NV002', N'CA001', N'2026-10-01', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Ca khám đã hủy do bác sĩ Trần Quốc Bảo nghỉ; đã phân công Lê Thu Hà thay thế.'),
-    (N'LLV002', N'NV002', N'CA001', N'2026-10-02', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Ca khám đã hủy do bác sĩ Trần Quốc Bảo nghỉ; đã phân công Lê Thu Hà thay thế.'),
-    (N'LLV003', N'NV002', N'CA001', N'2026-10-03', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Ca khám đã hủy do bác sĩ Trần Quốc Bảo nghỉ; đã phân công Lê Thu Hà thay thế.'),
-    (N'LLV004', N'NV002', N'CA001', N'2026-10-04', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Ca khám đã hủy do bác sĩ Trần Quốc Bảo nghỉ; đã phân công Lê Thu Hà thay thế.'),
-    (N'LLV005', N'NV002', N'CA001', N'2026-10-05', N'PH001', N'Hủy', N'Nghỉ phép', NULL, NULL, N'Ca khám đã hủy do bác sĩ Trần Quốc Bảo nghỉ; đã phân công Lê Thu Hà thay thế.'),
-    (N'LLV006', N'NV003', N'CA001', N'2026-10-01', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-01T08:00:00', N'2026-10-01T12:00:00', N'Bác sĩ Lê Thu Hà thay ca tại phòng khám 101; đã đối chiếu giờ vào/ra.'),
-    (N'LLV007', N'NV003', N'CA001', N'2026-10-02', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-02T08:00:00', N'2026-10-02T12:00:00', N'Bác sĩ Lê Thu Hà thay ca tại phòng khám 101; đã đối chiếu giờ vào/ra.'),
-    (N'LLV008', N'NV003', N'CA001', N'2026-10-03', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-03T08:00:00', N'2026-10-03T12:00:00', N'Bác sĩ Lê Thu Hà thay ca tại phòng khám 101; đã đối chiếu giờ vào/ra.'),
-    (N'LLV009', N'NV003', N'CA001', N'2026-10-04', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-04T08:00:00', N'2026-10-04T12:00:00', N'Bác sĩ Lê Thu Hà thay ca tại phòng khám 101; đã đối chiếu giờ vào/ra.'),
-    (N'LLV010', N'NV003', N'CA001', N'2026-10-05', N'PH001', N'Đã xác nhận', N'Có mặt', N'2026-10-05T08:00:00', N'2026-10-05T12:00:00', N'Bác sĩ Lê Thu Hà thay ca tại phòng khám 101; đã đối chiếu giờ vào/ra.');
-
--- CA_THEO_NGAY: 5 ca theo ngày khác nhau trong 10 lịch làm việc mẫu.
--- Nạp sau LICH_LAM_VIEC để không tạo bảng trống vì chạy quá sớm.
-INSERT INTO [dbo].[CA_THEO_NGAY] ([NgayLam], [MaCa])
-SELECT DISTINCT l.NgayLam, l.MaCa
-FROM [dbo].[LICH_LAM_VIEC] AS l
-INNER JOIN [dbo].[CA_LAM] AS c ON c.MaCa = l.MaCa;
-
--- DON_XIN_NGHI: 10 dòng
-INSERT INTO [dbo].[DON_XIN_NGHI] ([MaDonNghi], [MaNV], [TuNgay], [DenNgay], [LyDo], [NgayGui], [TrangThaiDuyet], [MaNVDuyet], [NgayDuyet], [GhiChu])
-VALUES
-    (N'DN001', N'NV002', N'2026-10-01', N'2026-10-01', N'Nghỉ phép chăm sóc người thân', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', N'Đã chuyển bộ phận điều phối để bố trí bác sĩ thay ca.'),
-    (N'DN002', N'NV002', N'2026-10-02', N'2026-10-02', N'Nghỉ phép giải quyết thủ tục gia đình', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', N'Đã chuyển bộ phận điều phối để bố trí bác sĩ thay ca.'),
-    (N'DN003', N'NV002', N'2026-10-03', N'2026-10-03', N'Nghỉ phép theo kế hoạch cá nhân', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', N'Đã chuyển bộ phận điều phối để bố trí bác sĩ thay ca.'),
-    (N'DN004', N'NV002', N'2026-10-04', N'2026-10-04', N'Nghỉ phép giải quyết việc gia đình', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', N'Đã chuyển bộ phận điều phối để bố trí bác sĩ thay ca.'),
-    (N'DN005', N'NV002', N'2026-10-05', N'2026-10-05', N'Nghỉ phép chăm sóc người thân', N'2026-09-20T09:00:00', N'Đã duyệt', N'NV001', N'2026-09-21T09:00:00', N'Đã chuyển bộ phận điều phối để bố trí bác sĩ thay ca.'),
-    (N'DN006', N'NV004', N'2026-10-21', N'2026-10-21', N'Xin nghỉ giải quyết thủ tục hành chính', N'2026-10-10T09:00:00', N'Chờ duyệt', NULL, NULL, N'Chờ xét duyệt và sắp xếp nhân sự thay ca.'),
-    (N'DN007', N'NV004', N'2026-10-22', N'2026-10-22', N'Xin nghỉ chăm sóc con', N'2026-10-10T09:00:00', N'Chờ duyệt', NULL, NULL, N'Chờ xét duyệt và sắp xếp nhân sự thay ca.'),
-    (N'DN008', N'NV004', N'2026-10-23', N'2026-10-23', N'Xin nghỉ theo kế hoạch cá nhân', N'2026-10-10T09:00:00', N'Chờ duyệt', NULL, NULL, N'Chờ xét duyệt và sắp xếp nhân sự thay ca.'),
-    (N'DN009', N'NV004', N'2026-10-24', N'2026-10-24', N'Xin nghỉ dự việc gia đình', N'2026-10-10T09:00:00', N'Chờ duyệt', NULL, NULL, N'Chờ xét duyệt và sắp xếp nhân sự thay ca.'),
-    (N'DN010', N'NV004', N'2026-10-25', N'2026-10-25', N'Xin nghỉ khám sức khỏe cá nhân', N'2026-10-10T09:00:00', N'Chờ duyệt', NULL, NULL, N'Chờ xét duyệt và sắp xếp nhân sự thay ca.');
-
--- PHAN_CONG_THAY_THE: 10 dòng
-INSERT INTO [dbo].[PHAN_CONG_THAY_THE] ([MaPCTT], [MaDonNghi], [MaLLVThayThe], [NgayXuLy], [TrangThai], [GhiChu])
-VALUES
-    (N'PCTT001', N'DN001', N'LLV006', N'2026-09-21T09:30:00', N'Hủy', N'Đề xuất thay ca được rút trước khi áp dụng; dùng phương án xác nhận sau.'),
-    (N'PCTT002', N'DN002', N'LLV007', N'2026-09-21T09:30:00', N'Hủy', N'Đề xuất thay ca được rút trước khi áp dụng; dùng phương án xác nhận sau.'),
-    (N'PCTT003', N'DN003', N'LLV008', N'2026-09-21T09:30:00', N'Hủy', N'Đề xuất thay ca được rút trước khi áp dụng; dùng phương án xác nhận sau.'),
-    (N'PCTT004', N'DN004', N'LLV009', N'2026-09-21T09:30:00', N'Hủy', N'Đề xuất thay ca được rút trước khi áp dụng; dùng phương án xác nhận sau.'),
-    (N'PCTT005', N'DN005', N'LLV010', N'2026-09-21T09:30:00', N'Hủy', N'Đề xuất thay ca được rút trước khi áp dụng; dùng phương án xác nhận sau.'),
-    (N'PCTT006', N'DN001', N'LLV006', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức: Lê Thu Hà thay Trần Quốc Bảo, ca sáng tại phòng 101.'),
-    (N'PCTT007', N'DN002', N'LLV007', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức: Lê Thu Hà thay Trần Quốc Bảo, ca sáng tại phòng 101.'),
-    (N'PCTT008', N'DN003', N'LLV008', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức: Lê Thu Hà thay Trần Quốc Bảo, ca sáng tại phòng 101.'),
-    (N'PCTT009', N'DN004', N'LLV009', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức: Lê Thu Hà thay Trần Quốc Bảo, ca sáng tại phòng 101.'),
-    (N'PCTT010', N'DN005', N'LLV010', N'2026-09-22T10:00:00', N'Đã xác nhận', N'Phương án chính thức: Lê Thu Hà thay Trần Quốc Bảo, ca sáng tại phòng 101.');
-
--- LICH_KHAM: 10 dòng
-INSERT INTO [dbo].[LICH_KHAM] ([MaLich], [MaBN], [MaBS], [MaCa], [MaPhong], [MaDV], [NgayGioKham], [ThoiLuongDuKien], [UuTien], [LyDoKham], [LyDoThayDoi], [TrangThai], [GhiChu], [NgayTao], [NgayCapNhat])
-VALUES
-    (N'LK001', N'BN001', N'NV003', N'CA001', N'PH001', N'DV001', N'2026-10-01T08:15:00', 30, N'Bình thường', N'Sưng đau trong khoang miệng 2 ngày, khó chịu khi ăn.', NULL, N'Đã khám', N'Đặt lịch qua điện thoại; người bệnh đã đến và hoàn tất khám.', N'2026-09-25T10:00:00', N'2026-10-01T08:45:00'),
-    (N'LK002', N'BN002', N'NV003', N'CA001', N'PH001', N'DV002', N'2026-10-02T08:15:00', 30, N'Bình thường', N'Đau vùng khớp hàm khi nhai, há miệng còn thực hiện được.', NULL, N'Đã khám', N'Đặt lịch qua điện thoại; người bệnh đã đến và hoàn tất khám.', N'2026-09-25T10:00:00', N'2026-10-02T08:45:00'),
-    (N'LK003', N'BN003', N'NV003', N'CA001', N'PH001', N'DV003', N'2026-10-03T08:15:00', 30, N'Bình thường', N'Ngứa và sưng nhẹ môi sau tiếp xúc mỹ phẩm.', NULL, N'Đã khám', N'Đặt lịch qua điện thoại; người bệnh đã đến và hoàn tất khám.', N'2026-09-25T10:00:00', N'2026-10-03T08:45:00'),
-    (N'LK004', N'BN004', N'NV003', N'CA001', N'PH001', N'DV004', N'2026-10-04T08:15:00', 30, N'Bình thường', N'Đau rát do loét nhỏ niêm mạc miệng, ăn uống giảm.', NULL, N'Đã khám', N'Đặt lịch qua điện thoại; người bệnh đã đến và hoàn tất khám.', N'2026-09-25T10:00:00', N'2026-10-04T08:45:00'),
-    (N'LK005', N'BN005', N'NV003', N'CA001', N'PH001', N'DV005', N'2026-10-05T08:15:00', 30, N'Bình thường', N'Vết thương má sau khâu còn đỏ và đau quanh mép.', NULL, N'Đã khám', N'Đặt lịch qua điện thoại; người bệnh đã đến và hoàn tất khám.', N'2026-09-25T10:00:00', N'2026-10-05T08:45:00'),
-    (N'LK006', N'BN006', N'NV002', N'CA002', N'PH001', N'DV001', N'2026-10-15T14:00:00', 30, N'Bình thường', N'Tái khám và đánh giá tiến triển: Chấn thương phần mềm vùng hàm mặt; cần đánh giá hình ảnh.', NULL, N'Nháp', N'Bệnh nhân gọi điện đặt lịch tái khám; đang chờ xác nhận ca chiều.', N'2026-10-01T11:00:00', NULL),
-    (N'LK007', N'BN007', N'NV002', N'CA002', N'PH001', N'DV001', N'2026-10-16T14:00:00', 30, N'Bình thường', N'Tái khám và đánh giá tiến triển: Chấn thương vùng gò má kèm vết trầy ngoài da.', NULL, N'Nháp', N'Bệnh nhân gọi điện đặt lịch tái khám; đang chờ xác nhận ca chiều.', N'2026-10-02T11:00:00', NULL),
-    (N'LK008', N'BN008', N'NV002', N'CA002', N'PH001', N'DV001', N'2026-10-17T14:00:00', 30, N'Bình thường', N'Tái khám và đánh giá tiến triển: Kích ứng da vùng mặt do tiếp xúc.', NULL, N'Nháp', N'Bệnh nhân gọi điện đặt lịch tái khám; đang chờ xác nhận ca chiều.', N'2026-10-03T11:00:00', NULL),
-    (N'LK009', N'BN009', N'NV002', N'CA002', N'PH001', N'DV001', N'2026-10-18T14:00:00', 30, N'Bình thường', N'Tái khám và đánh giá tiến triển: Vết thương vùng cằm đang liền.', NULL, N'Nháp', N'Bệnh nhân gọi điện đặt lịch tái khám; đang chờ xác nhận ca chiều.', N'2026-10-04T11:00:00', NULL),
-    (N'LK010', N'BN010', N'NV002', N'CA002', N'PH001', N'DV001', N'2026-10-19T14:00:00', 30, N'Bình thường', N'Tái khám và đánh giá tiến triển: Theo dõi phục hồi vận động hàm.', NULL, N'Nháp', N'Bệnh nhân gọi điện đặt lịch tái khám; đang chờ xác nhận ca chiều.', N'2026-10-05T11:00:00', NULL);
-
--- PHIEU_KHAM_BENH: 10 dòng
-INSERT INTO [dbo].[PHIEU_KHAM_BENH] ([MaPhieu], [MaHS], [MaLich], [MaPhong], [MaBS], [MaNVTiepNhan], [MaDV], [SoThuTu], [ThoiGianTiepNhan], [LyDoKham], [TrangThai], [GhiChu])
-VALUES
-    (N'PKB001', N'HS001', N'LK001', N'PH001', N'NV003', N'NV005', N'DV001', 1, N'2026-10-01T08:05:00', N'Sưng đau trong khoang miệng 2 ngày, khó chịu khi ăn.', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
-    (N'PKB002', N'HS002', N'LK002', N'PH001', N'NV003', N'NV005', N'DV002', 1, N'2026-10-02T08:05:00', N'Đau vùng khớp hàm khi nhai, há miệng còn thực hiện được.', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
-    (N'PKB003', N'HS003', N'LK003', N'PH001', N'NV003', N'NV005', N'DV003', 1, N'2026-10-03T08:05:00', N'Ngứa và sưng nhẹ môi sau tiếp xúc mỹ phẩm.', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
-    (N'PKB004', N'HS004', N'LK004', N'PH001', N'NV003', N'NV005', N'DV004', 1, N'2026-10-04T08:05:00', N'Đau rát do loét nhỏ niêm mạc miệng, ăn uống giảm.', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
-    (N'PKB005', N'HS005', N'LK005', N'PH001', N'NV003', N'NV005', N'DV005', 1, N'2026-10-05T08:05:00', N'Vết thương má sau khâu còn đỏ và đau quanh mép.', N'Đã khám', N'Tiếp nhận bệnh nhân có lịch điện thoại'),
-    (N'PKB006', N'HS006', NULL, N'PH001', N'NV003', N'NV005', N'DV006', 2, N'2026-10-01T09:05:00', N'Đau vùng hàm sau va chạm, sưng nhẹ.', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
-    (N'PKB007', N'HS007', NULL, N'PH001', N'NV003', N'NV005', N'DV007', 2, N'2026-10-02T09:05:00', N'Vết trầy vùng má sau ngã, còn đau khi chạm vùng gò má.', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
-    (N'PKB008', N'HS008', NULL, N'PH001', N'NV003', N'NV005', N'DV008', 2, N'2026-10-03T09:05:00', N'Ngứa da vùng mặt sau tiếp xúc chất tẩy rửa.', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
-    (N'PKB009', N'HS009', NULL, N'PH001', N'NV003', N'NV005', N'DV009', 2, N'2026-10-04T09:05:00', N'Đến thay băng vùng cằm sau xử trí vết thương.', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu'),
-    (N'PKB010', N'HS010', NULL, N'PH001', N'NV003', N'NV005', N'DV010', 2, N'2026-10-05T09:05:00', N'Còn hạn chế há miệng nhẹ sau đợt điều trị.', N'Đã khám', N'Bệnh nhân đến trực tiếp, không có lịch ban đầu');
-
--- LICH_SU_KHAM_BENH: 10 dòng
-INSERT INTO [dbo].[LICH_SU_KHAM_BENH] ([MaLS], [MaPhieu], [MaBS], [MaPhong], [ThoiGianKham], [TrieuChung], [ChanDoan], [KeHoachXuLy], [TrangThai], [NgayXacNhan], [GhiChu])
-VALUES
-    (N'LS001', N'PKB001', N'NV003', N'PH001', N'2026-10-01T08:15:00', N'Sưng đau trong khoang miệng 2 ngày, khó chịu khi ăn.', N'Viêm mô mềm khoang miệng.', N'Đánh giá mức độ viêm, xử trí hỗ trợ và theo dõi đáp ứng.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
-    (N'LS002', N'PKB002', N'NV003', N'PH001', N'2026-10-02T08:15:00', N'Đau vùng khớp hàm khi nhai, há miệng còn thực hiện được.', N'Đau vùng khớp thái dương hàm.', N'Đánh giá vận động hàm và theo dõi đau trong sinh hoạt.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
-    (N'LS003', N'PKB003', N'NV003', N'PH001', N'2026-10-03T08:15:00', N'Ngứa và sưng nhẹ môi sau tiếp xúc mỹ phẩm.', N'Kích ứng vùng môi liên quan tiếp xúc.', N'Ghi nhận yếu tố tiếp xúc, theo dõi triệu chứng và tư vấn phòng tái phát.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
-    (N'LS004', N'PKB004', N'NV003', N'PH001', N'2026-10-04T08:15:00', N'Đau rát do loét nhỏ niêm mạc miệng, ăn uống giảm.', N'Loét niêm mạc miệng.', N'Theo dõi tổn thương niêm mạc và hướng dẫn chăm sóc tại chỗ.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
-    (N'LS005', N'PKB005', N'NV003', N'PH001', N'2026-10-05T08:15:00', N'Vết thương má sau khâu còn đỏ và đau quanh mép.', N'Theo dõi vết thương phần mềm vùng má sau xử trí.', N'Đánh giá vết thương và theo dõi dấu hiệu nhiễm trùng.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
-    (N'LS006', N'PKB006', N'NV003', N'PH001', N'2026-10-01T09:15:00', N'Đau vùng hàm sau va chạm, sưng nhẹ.', N'Chấn thương phần mềm vùng hàm mặt; cần đánh giá hình ảnh.', N'Chụp X-quang theo chỉ định và hướng dẫn chăm sóc vùng tổn thương.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
-    (N'LS007', N'PKB007', N'NV003', N'PH001', N'2026-10-02T09:15:00', N'Vết trầy vùng má sau ngã, còn đau khi chạm vùng gò má.', N'Chấn thương vùng gò má kèm vết trầy ngoài da.', N'Khảo sát hình ảnh vùng gò má theo chỉ định và đánh giá tổn thương.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
-    (N'LS008', N'PKB008', N'NV003', N'PH001', N'2026-10-03T09:15:00', N'Ngứa da vùng mặt sau tiếp xúc chất tẩy rửa.', N'Kích ứng da vùng mặt do tiếp xúc.', N'Làm sạch vùng tổn thương, theo dõi triệu chứng và tư vấn tránh tiếp xúc.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
-    (N'LS009', N'PKB009', N'NV003', N'PH001', N'2026-10-04T09:15:00', N'Đến thay băng vùng cằm sau xử trí vết thương.', N'Vết thương vùng cằm đang liền.', N'Thay băng và đánh giá tiến triển liền thương.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.'),
-    (N'LS010', N'PKB010', N'NV003', N'PH001', N'2026-10-05T09:15:00', N'Còn hạn chế há miệng nhẹ sau đợt điều trị.', N'Theo dõi phục hồi vận động hàm.', N'Đánh giá chức năng hàm và tư vấn kế hoạch theo dõi.', N'Nháp', NULL, N'Đã đối chiếu tiền sử, dị ứng và kết quả khám trước khi xác nhận.');
-UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận', NgayXacNhan=DATEADD(MINUTE,30,ThoiGianKham);
-
--- TINH_TRANG_BENH: 10 dòng
-INSERT INTO [dbo].[TINH_TRANG_BENH] ([MaTTB], [MaLS], [LoaiTinhTrang], [MoTaTinhTrang], [GhiChu])
-VALUES
-    (N'TTB001', N'LS001', N'Đánh giá lâm sàng', N'Chưa ghi nhận sốt, người bệnh tỉnh, tổn thương khu trú.', N'Ghi nhận cho lần khám LS001.'),
-    (N'TTB002', N'LS002', N'Đánh giá lâm sàng', N'Đau khi vận động, chưa ghi nhận khóa khớp.', N'Ghi nhận cho lần khám LS002.'),
-    (N'TTB003', N'LS003', N'Đánh giá lâm sàng', N'Sưng nhẹ khu trú vùng môi, chưa ghi nhận khó thở.', N'Ghi nhận cho lần khám LS003.'),
-    (N'TTB004', N'LS004', N'Đánh giá lâm sàng', N'Tổn thương loét nhỏ, chưa ghi nhận dấu hiệu nhiễm trùng lan rộng.', N'Ghi nhận cho lần khám LS004.'),
-    (N'TTB005', N'LS005', N'Đánh giá lâm sàng', N'Vết thương còn đỏ nhẹ, cần theo dõi diễn tiến.', N'Ghi nhận cho lần khám LS005.'),
-    (N'TTB006', N'LS006', N'Đánh giá lâm sàng', N'Sưng nhẹ, chưa ghi nhận biến dạng mặt trên thăm khám.', N'Ghi nhận cho lần khám LS006.'),
-    (N'TTB007', N'LS007', N'Đánh giá lâm sàng', N'Vết thương khô, còn đau nhẹ khi chạm.', N'Ghi nhận cho lần khám LS007.'),
-    (N'TTB008', N'LS008', N'Đánh giá lâm sàng', N'Kích ứng da nhẹ, chưa ghi nhận tổn thương sâu.', N'Ghi nhận cho lần khám LS008.'),
-    (N'TTB009', N'LS009', N'Đánh giá lâm sàng', N'Vết thương khô, không ghi nhận dịch mủ.', N'Ghi nhận cho lần khám LS009.'),
-    (N'TTB010', N'LS010', N'Đánh giá lâm sàng', N'Vận động hàm cải thiện so với ghi nhận trước.', N'Ghi nhận cho lần khám LS010.');
-
--- KE_HOACH_DIEU_TRI: 10 dòng
-INSERT INTO [dbo].[KE_HOACH_DIEU_TRI] ([MaKHDT], [MaLS], [MaBS], [NgayLap], [NgayBatDau], [NgayDuKienKetThuc], [TongTienDuKien], [TrangThai], [GhiChu])
-VALUES
-    (N'KHDT001', N'LS001', N'NV003', N'2026-10-01T08:25:00', N'2026-10-01', N'2026-10-01', 0, N'Đã hoàn thành', N'Đánh giá mức độ viêm, xử trí hỗ trợ và theo dõi đáp ứng. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
-    (N'KHDT002', N'LS002', N'NV003', N'2026-10-02T08:25:00', N'2026-10-02', N'2026-10-02', 0, N'Đã hoàn thành', N'Đánh giá vận động hàm và theo dõi đau trong sinh hoạt. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
-    (N'KHDT003', N'LS003', N'NV003', N'2026-10-03T08:25:00', N'2026-10-03', N'2026-10-03', 0, N'Đã hoàn thành', N'Ghi nhận yếu tố tiếp xúc, theo dõi triệu chứng và tư vấn phòng tái phát. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
-    (N'KHDT004', N'LS004', N'NV003', N'2026-10-04T08:25:00', N'2026-10-04', N'2026-10-04', 0, N'Đã hoàn thành', N'Theo dõi tổn thương niêm mạc và hướng dẫn chăm sóc tại chỗ. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
-    (N'KHDT005', N'LS005', N'NV003', N'2026-10-05T08:25:00', N'2026-10-05', N'2026-10-05', 0, N'Đã hoàn thành', N'Đánh giá vết thương và theo dõi dấu hiệu nhiễm trùng. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
-    (N'KHDT006', N'LS006', N'NV003', N'2026-10-01T09:25:00', N'2026-10-01', N'2026-10-01', 0, N'Đã hoàn thành', N'Chụp X-quang theo chỉ định và hướng dẫn chăm sóc vùng tổn thương. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
-    (N'KHDT007', N'LS007', N'NV003', N'2026-10-02T09:25:00', N'2026-10-02', N'2026-10-02', 0, N'Đã hoàn thành', N'Khảo sát hình ảnh vùng gò má theo chỉ định và đánh giá tổn thương. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
-    (N'KHDT008', N'LS008', N'NV003', N'2026-10-03T09:25:00', N'2026-10-03', N'2026-10-03', 0, N'Đã hoàn thành', N'Làm sạch vùng tổn thương, theo dõi triệu chứng và tư vấn tránh tiếp xúc. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
-    (N'KHDT009', N'LS009', N'NV003', N'2026-10-04T09:25:00', N'2026-10-04', N'2026-10-04', 0, N'Đã hoàn thành', N'Thay băng và đánh giá tiến triển liền thương. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.'),
-    (N'KHDT010', N'LS010', N'NV003', N'2026-10-05T09:25:00', N'2026-10-05', N'2026-10-05', 0, N'Đã hoàn thành', N'Đánh giá chức năng hàm và tư vấn kế hoạch theo dõi. Các dịch vụ trong kế hoạch này đã thực hiện trong ngày.');
-
--- CHI_TIET_KE_HOACH: 10 dòng
-INSERT INTO [dbo].[CHI_TIET_KE_HOACH] ([MaCTKH], [MaKHDT], [MaDV], [LanThu], [SoLuongDuKien], [DonGiaDuKien], [TrangThai], [GhiChu])
-VALUES
-    (N'CTKH001', N'KHDT001', N'DV001', 1, 1, 100000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
-    (N'CTKH002', N'KHDT002', N'DV002', 1, 1, 120000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
-    (N'CTKH003', N'KHDT003', N'DV003', 1, 1, 80000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
-    (N'CTKH004', N'KHDT004', N'DV004', 1, 1, 100000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
-    (N'CTKH005', N'KHDT005', N'DV005', 1, 1, 150000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
-    (N'CTKH006', N'KHDT006', N'DV006', 1, 1, 200000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
-    (N'CTKH007', N'KHDT007', N'DV007', 1, 1, 180000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
-    (N'CTKH008', N'KHDT008', N'DV008', 1, 1, 160000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
-    (N'CTKH009', N'KHDT009', N'DV009', 1, 1, 90000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.'),
-    (N'CTKH010', N'KHDT010', N'DV010', 1, 1, 250000, N'Đã hoàn thành', N'Thực hiện theo chỉ định đã ghi nhận của bác sĩ.');
-
--- DICH_VU_THUC_HIEN: 10 dòng
-INSERT INTO [dbo].[DICH_VU_THUC_HIEN] ([MaDVThucHien], [MaLS], [MaCTKH], [MaDV], [MaNVThucHien], [ThoiGianThucHien], [SoLuong], [DonGia], [KetQua], [TrangThai])
-VALUES
-    (N'DVTH001', N'LS001', N'CTKH001', N'DV001', N'NV003', N'2026-10-01T08:30:00', 1, 100000, N'Đã hoàn tất đánh giá tình trạng khoang miệng và ghi nhận hướng theo dõi.', N'Nháp'),
-    (N'DVTH002', N'LS002', N'CTKH002', N'DV002', N'NV003', N'2026-10-02T08:30:00', 1, 120000, N'Đã đánh giá vận động khớp hàm, ghi nhận khả năng há miệng.', N'Nháp'),
-    (N'DVTH003', N'LS003', N'CTKH003', N'DV003', N'NV003', N'2026-10-03T08:30:00', 1, 80000, N'Đã ghi nhận tổn thương vùng môi và yếu tố tiếp xúc.', N'Nháp'),
-    (N'DVTH004', N'LS004', N'CTKH004', N'DV004', N'NV003', N'2026-10-04T08:30:00', 1, 100000, N'Đã đánh giá tổn thương loét niêm mạc và hướng dẫn chăm sóc.', N'Nháp'),
-    (N'DVTH005', N'LS005', N'CTKH005', N'DV005', N'NV003', N'2026-10-05T08:30:00', 1, 150000, N'Đã kiểm tra mép vết thương, ghi nhận dấu hiệu cần theo dõi.', N'Nháp'),
-    (N'DVTH006', N'LS006', N'CTKH006', N'DV006', N'NV009', N'2026-10-01T09:30:00', 1, 200000, N'Đã lưu hình ảnh khảo sát hàm mặt vào hồ sơ lần khám.', N'Nháp'),
-    (N'DVTH007', N'LS007', N'CTKH007', N'DV007', N'NV009', N'2026-10-02T09:30:00', 1, 180000, N'Đã hoàn thành hình ảnh bổ sung và chuyển bác sĩ đánh giá.', N'Nháp'),
-    (N'DVTH008', N'LS008', N'CTKH008', N'DV008', N'NV004', N'2026-10-03T09:30:00', 1, 160000, N'Đã làm sạch vùng da tổn thương theo chỉ định.', N'Nháp'),
-    (N'DVTH009', N'LS009', N'CTKH009', N'DV009', N'NV004', N'2026-10-04T09:30:00', 1, 90000, N'Đã thay băng, vết thương khô và không có dịch mủ.', N'Nháp'),
-    (N'DVTH010', N'LS010', N'CTKH010', N'DV010', N'NV003', N'2026-10-05T09:30:00', 1, 250000, N'Đã ghi nhận mức vận động hàm và tư vấn lịch theo dõi.', N'Nháp');
-UPDATE dbo.DICH_VU_THUC_HIEN SET TrangThai=N'Đã xác nhận';
-
--- DON_THUOC: 10 dòng
-INSERT INTO [dbo].[DON_THUOC] ([MaDT], [MaLS], [MaBS], [NgayKe], [LyDoThayThe], [TrangThai], [GhiChu])
-VALUES
-    (N'DT001', N'LS001', N'NV003', N'2026-10-01T08:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
-    (N'DT002', N'LS002', N'NV003', N'2026-10-02T08:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
-    (N'DT003', N'LS003', N'NV003', N'2026-10-03T08:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
-    (N'DT004', N'LS004', N'NV003', N'2026-10-04T08:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
-    (N'DT005', N'LS005', N'NV003', N'2026-10-05T08:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
-    (N'DT006', N'LS006', N'NV003', N'2026-10-01T09:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
-    (N'DT007', N'LS007', N'NV003', N'2026-10-02T09:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
-    (N'DT008', N'LS008', N'NV003', N'2026-10-03T09:40:00', NULL, N'Nháp', N'Đơn thuốc lập sau khám; đã đối chiếu tiền sử và dị ứng.'),
-    (N'DT009', N'LS009', N'NV003', N'2026-10-04T09:40:00', NULL, N'Hủy', N'Không có chỉ định thuốc tại lần khám này; hủy đơn nháp chưa xác nhận.'),
-    (N'DT010', N'LS010', N'NV003', N'2026-10-05T09:40:00', NULL, N'Hủy', N'Không có chỉ định thuốc tại lần khám này; hủy đơn nháp chưa xác nhận.');
-
--- CHI_TIET_DON_THUOC: 10 dòng
-INSERT INTO [dbo].[CHI_TIET_DON_THUOC] ([MaCTDT], [MaDT], [MaThuoc], [LieuDung], [SoLuong], [SoNgayDung], [HuongDan])
-VALUES
-    (N'CTDT001', N'DT001', N'TH001', N'Đường uống; liều theo chỉ định đã xác nhận trong hồ sơ.', 10, 3, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
-    (N'CTDT002', N'DT001', N'TH002', N'Đường uống; liều theo chỉ định đã xác nhận trong hồ sơ.', 15, 5, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
-    (N'CTDT003', N'DT001', N'TH003', N'Súc miệng theo chỉ định; không nuốt dung dịch.', 1, 5, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
-    (N'CTDT004', N'DT002', N'TH004', N'Đường uống; liều theo chỉ định đã xác nhận trong hồ sơ.', 12, 3, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
-    (N'CTDT005', N'DT003', N'TH005', N'Đường uống; liều theo chỉ định đã xác nhận trong hồ sơ.', 5, 5, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
-    (N'CTDT006', N'DT004', N'TH006', N'Dùng tại chỗ theo chỉ định tại vùng niêm mạc.', 1, 5, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
-    (N'CTDT007', N'DT005', N'TH007', N'Đường uống; liều theo chỉ định đã xác nhận trong hồ sơ.', 15, 5, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
-    (N'CTDT008', N'DT006', N'TH008', N'Dung dịch rửa dùng ngoài theo chỉ định.', 1, 3, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
-    (N'CTDT009', N'DT007', N'TH009', N'Sát khuẩn ngoài da theo chỉ định; không dùng để uống.', 1, 3, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.'),
-    (N'CTDT010', N'DT008', N'TH010', N'Đường uống; liều theo chỉ định đã xác nhận trong hồ sơ.', 5, 5, N'Đối chiếu hướng dẫn bác sĩ và tiền sử dị ứng trước khi sử dụng; liên hệ bệnh viện nếu có bất thường.');
-UPDATE dbo.DON_THUOC SET TrangThai=N'Đã xác nhận' WHERE MaDT IN (N'DT001', N'DT002', N'DT003', N'DT004', N'DT005', N'DT006', N'DT007', N'DT008');
-
--- LO_HANG_HOA: 10 dòng
-INSERT INTO [dbo].[LO_HANG_HOA] ([MaLo], [MaHH], [MaNCC], [MaKho], [SoLo], [NgayNhap], [HanSuDung], [TrangThai])
-VALUES
-    (N'LO001', N'HH001', N'NCC001', N'KHO001', N'PCM260601', N'2026-09-15T08:00:00', N'2028-06-28', N'Còn sử dụng'),
-    (N'LO002', N'HH002', N'NCC002', N'KHO001', N'AMX260615', N'2026-09-15T08:00:00', N'2028-07-28', N'Còn sử dụng'),
-    (N'LO003', N'HH003', N'NCC003', N'KHO001', N'CHX260701', N'2026-09-16T08:00:00', N'2028-08-28', N'Còn sử dụng'),
-    (N'LO004', N'HH004', N'NCC004', N'KHO001', N'IBU260610', N'2026-09-16T08:00:00', N'2028-09-28', N'Còn sử dụng'),
-    (N'LO005', N'HH005', N'NCC005', N'KHO001', N'CET260705', N'2026-09-17T08:00:00', N'2028-10-28', N'Còn sử dụng'),
-    (N'LO006', N'HH006', N'NCC006', N'KHO001', N'TRI260720', N'2026-09-17T08:00:00', N'2028-11-28', N'Còn sử dụng'),
-    (N'LO007', N'HH007', N'NCC007', N'KHO001', N'CEF260625', N'2026-09-18T08:00:00', N'2028-06-28', N'Còn sử dụng'),
-    (N'LO008', N'HH008', N'NCC008', N'KHO001', N'NAC260801', N'2026-09-18T08:00:00', N'2028-07-28', N'Còn sử dụng'),
-    (N'LO009', N'HH009', N'NCC009', N'KHO001', N'PVI260715', N'2026-09-19T08:00:00', N'2028-08-28', N'Còn sử dụng'),
-    (N'LO010', N'HH010', N'NCC010', N'KHO001', N'LOR260730', N'2026-09-19T08:00:00', N'2028-09-28', N'Còn sử dụng');
-
--- HOA_DON_NHAP: 10 dòng
-INSERT INTO [dbo].[HOA_DON_NHAP] ([MaHDN], [SoHoaDonNCC], [MaNCC], [MaNV], [NgayHoaDon], [TongTien], [TrangThai], [GhiChu])
-VALUES
-    (N'HDN001', N'HD-ANPHUC-260901', N'NCC001', N'NV007', N'2026-09-15T07:30:00', 1200000.00, N'Đã xác nhận', N'Hóa đơn mua Paracetamol 500 mg; đã đối chiếu đủ phiếu nhập PN001.'),
-    (N'HDN002', N'HD-MINHHOA-260902', N'NCC002', N'NV007', N'2026-09-15T07:30:00', 1620000.00, N'Đã xác nhận', N'Hóa đơn mua Amoxicillin 500 mg; đã đối chiếu đủ phiếu nhập PN002.'),
-    (N'HDN003', N'HD-HAIAN-260903', N'NCC003', N'NV007', N'2026-09-16T07:30:00', 960000.00, N'Đã xác nhận', N'Hóa đơn mua Chlorhexidine 0,12% - chai 100 ml; đã đối chiếu đủ phiếu nhập PN003.'),
-    (N'HDN004', N'HD-NAMTHANH-260904', N'NCC004', N'NV007', N'2026-09-16T07:30:00', 1800000.00, N'Đã xác nhận', N'Hóa đơn mua Ibuprofen 200 mg; đã đối chiếu đủ phiếu nhập PN004.'),
-    (N'HDN005', N'HD-TAMVIET-260905', N'NCC005', N'NV007', N'2026-09-17T07:30:00', 630000.00, N'Đã xác nhận', N'Hóa đơn mua Cetirizine 10 mg; đã đối chiếu đủ phiếu nhập PN005.'),
-    (N'HDN006', N'HD-BINHMINH-260906', N'NCC006', N'NV007', N'2026-09-17T07:30:00', 540000.00, N'Đã xác nhận', N'Hóa đơn mua Triamcinolone acetonide 0,1% - tuýp 5 g; đã đối chiếu đủ phiếu nhập PN006.'),
-    (N'HDN007', N'HD-DONGAN-260907', N'NCC007', N'NV007', N'2026-09-18T07:30:00', 2160000.00, N'Đã xác nhận', N'Hóa đơn mua Cefalexin 500 mg; đã đối chiếu đủ phiếu nhập PN007.'),
-    (N'HDN008', N'HD-GIAKHANG-260908', N'NCC008', N'NV007', N'2026-09-18T07:30:00', 432000.00, N'Đã xác nhận', N'Hóa đơn mua Natri clorid 0,9% - chai 500 ml; đã đối chiếu đủ phiếu nhập PN008.'),
-    (N'HDN009', N'HD-HONGPHUC-260909', N'NCC009', N'NV007', N'2026-09-19T07:30:00', 750000.00, N'Đã xác nhận', N'Hóa đơn mua Povidone iodine 10% - chai 100 ml; đã đối chiếu đủ phiếu nhập PN009.'),
-    (N'HDN010', N'HD-PHUONGNAM-260910', N'NCC010', N'NV007', N'2026-09-19T07:30:00', 450000.00, N'Đã xác nhận', N'Hóa đơn mua Loratadine 10 mg; đã đối chiếu đủ phiếu nhập PN010.');
-
--- PHIEU_NHAP: 10 dòng
-INSERT INTO [dbo].[PHIEU_NHAP] ([MaPN], [MaHDN], [MaKho], [MaNV], [NgayNhap], [TongTien], [TrangThai], [LyDo], [GhiChu])
-VALUES
-    (N'PN001', N'HDN001', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập Paracetamol 500 mg vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
-    (N'PN002', N'HDN002', N'KHO001', N'NV007', N'2026-09-15T08:00:00', 0, N'Nháp', N'Nhập Amoxicillin 500 mg vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
-    (N'PN003', N'HDN003', N'KHO001', N'NV007', N'2026-09-16T08:00:00', 0, N'Nháp', N'Nhập Chlorhexidine 0,12% - chai 100 ml vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
-    (N'PN004', N'HDN004', N'KHO001', N'NV007', N'2026-09-16T08:00:00', 0, N'Nháp', N'Nhập Ibuprofen 200 mg vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
-    (N'PN005', N'HDN005', N'KHO001', N'NV007', N'2026-09-17T08:00:00', 0, N'Nháp', N'Nhập Cetirizine 10 mg vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
-    (N'PN006', N'HDN006', N'KHO001', N'NV007', N'2026-09-17T08:00:00', 0, N'Nháp', N'Nhập Triamcinolone acetonide 0,1% - tuýp 5 g vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
-    (N'PN007', N'HDN007', N'KHO001', N'NV007', N'2026-09-18T08:00:00', 0, N'Nháp', N'Nhập Cefalexin 500 mg vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
-    (N'PN008', N'HDN008', N'KHO001', N'NV007', N'2026-09-18T08:00:00', 0, N'Nháp', N'Nhập Natri clorid 0,9% - chai 500 ml vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
-    (N'PN009', N'HDN009', N'KHO001', N'NV007', N'2026-09-19T08:00:00', 0, N'Nháp', N'Nhập Povidone iodine 10% - chai 100 ml vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.'),
-    (N'PN010', N'HDN010', N'KHO001', N'NV007', N'2026-09-19T08:00:00', 0, N'Nháp', N'Nhập Loratadine 10 mg vào kho thuốc ngoại trú', N'Đã đối chiếu hóa đơn nhà cung cấp, số lô và hạn sử dụng.');
-
--- CHI_TIET_PHIEU_NHAP: 10 dòng
-INSERT INTO [dbo].[CHI_TIET_PHIEU_NHAP] ([MaCTPN], [MaPN], [MaHH], [MaLo], [SoLuong], [DonGia], [GhiChu])
-VALUES
-    (N'CTPN001', N'PN001', N'HH001', N'LO001', 1000, 1200.00, N'Kiểm đếm 1000 viên; đúng số lô và bao bì nguyên vẹn.'),
-    (N'CTPN002', N'PN002', N'HH002', N'LO002', 900, 1800.00, N'Kiểm đếm 900 viên; đúng số lô và bao bì nguyên vẹn.'),
-    (N'CTPN003', N'PN003', N'HH003', N'LO003', 40, 24000.00, N'Kiểm đếm 40 chai; đúng số lô và bao bì nguyên vẹn.'),
-    (N'CTPN004', N'PN004', N'HH004', N'LO004', 600, 3000.00, N'Kiểm đếm 600 viên; đúng số lô và bao bì nguyên vẹn.'),
-    (N'CTPN005', N'PN005', N'HH005', N'LO005', 300, 2100.00, N'Kiểm đếm 300 viên; đúng số lô và bao bì nguyên vẹn.'),
-    (N'CTPN006', N'PN006', N'HH006', N'LO006', 30, 18000.00, N'Kiểm đếm 30 tuýp; đúng số lô và bao bì nguyên vẹn.'),
-    (N'CTPN007', N'PN007', N'HH007', N'LO007', 800, 2700.00, N'Kiểm đếm 800 viên; đúng số lô và bao bì nguyên vẹn.'),
-    (N'CTPN008', N'PN008', N'HH008', N'LO008', 60, 7200.00, N'Kiểm đếm 60 chai; đúng số lô và bao bì nguyên vẹn.'),
-    (N'CTPN009', N'PN009', N'HH009', N'LO009', 50, 15000.00, N'Kiểm đếm 50 chai; đúng số lô và bao bì nguyên vẹn.'),
-    (N'CTPN010', N'PN010', N'HH010', N'LO010', 300, 1500.00, N'Kiểm đếm 300 viên; đúng số lô và bao bì nguyên vẹn.');
-UPDATE dbo.PHIEU_NHAP SET TrangThai=N'Đã ghi sổ';
-
--- PHIEU_XUAT: 10 dòng
-INSERT INTO [dbo].[PHIEU_XUAT] ([MaPX], [MaKho], [MaNV], [MaKhoa], [MaPhong], [MaLS], [NgayXuat], [LyDo], [TrangThai], [GhiChu])
-VALUES
-    (N'PX001', N'KHO001', N'NV006', NULL, NULL, N'LS001', N'2026-10-01T08:50:00', N'Cấp thuốc theo đơn DT001', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
-    (N'PX002', N'KHO001', N'NV006', NULL, NULL, N'LS002', N'2026-10-02T08:50:00', N'Cấp thuốc theo đơn DT002', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
-    (N'PX003', N'KHO001', N'NV006', NULL, NULL, N'LS003', N'2026-10-03T08:50:00', N'Cấp thuốc theo đơn DT003', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
-    (N'PX004', N'KHO001', N'NV006', NULL, NULL, N'LS004', N'2026-10-04T08:50:00', N'Cấp thuốc theo đơn DT004', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
-    (N'PX005', N'KHO001', N'NV006', NULL, NULL, N'LS005', N'2026-10-05T08:50:00', N'Cấp thuốc theo đơn DT005', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
-    (N'PX006', N'KHO001', N'NV006', NULL, NULL, N'LS006', N'2026-10-01T09:50:00', N'Cấp thuốc theo đơn DT006', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
-    (N'PX007', N'KHO001', N'NV006', NULL, NULL, N'LS007', N'2026-10-02T09:50:00', N'Cấp thuốc theo đơn DT007', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
-    (N'PX008', N'KHO001', N'NV006', NULL, NULL, N'LS008', N'2026-10-03T09:50:00', N'Cấp thuốc theo đơn DT008', N'Nháp', N'Dược sĩ đối chiếu thuốc, đơn vị và cấp đủ toàn đơn.'),
-    (N'PX009', N'KHO001', N'NV006', NULL, NULL, N'LS009', N'2026-10-04T09:50:00', N'Hủy phiếu cấp phát chưa phát sinh chỉ định thuốc', N'Hủy', N'Đơn DT009 đã hủy; chưa có chi tiết, không giảm tồn kho.'),
-    (N'PX010', N'KHO001', N'NV006', NULL, NULL, N'LS010', N'2026-10-05T09:50:00', N'Hủy phiếu cấp phát chưa phát sinh chỉ định thuốc', N'Hủy', N'Đơn DT010 đã hủy; chưa có chi tiết, không giảm tồn kho.');
-
--- CHI_TIET_PHIEU_XUAT: 10 dòng
-INSERT INTO [dbo].[CHI_TIET_PHIEU_XUAT] ([MaCTPX], [MaPX], [MaHH], [MaLo], [MaCTDT], [SoLuong], [GhiChu])
-VALUES
-    (N'CTPX001', N'PX001', N'HH001', N'LO001', N'CTDT001', 10, N'Đã đối chiếu CTDT001; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
-    (N'CTPX002', N'PX001', N'HH002', N'LO002', N'CTDT002', 15, N'Đã đối chiếu CTDT002; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
-    (N'CTPX003', N'PX001', N'HH003', N'LO003', N'CTDT003', 1, N'Đã đối chiếu CTDT003; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
-    (N'CTPX004', N'PX002', N'HH004', N'LO004', N'CTDT004', 12, N'Đã đối chiếu CTDT004; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
-    (N'CTPX005', N'PX003', N'HH005', N'LO005', N'CTDT005', 5, N'Đã đối chiếu CTDT005; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
-    (N'CTPX006', N'PX004', N'HH006', N'LO006', N'CTDT006', 1, N'Đã đối chiếu CTDT006; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
-    (N'CTPX007', N'PX005', N'HH007', N'LO007', N'CTDT007', 15, N'Đã đối chiếu CTDT007; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
-    (N'CTPX008', N'PX006', N'HH008', N'LO008', N'CTDT008', 1, N'Đã đối chiếu CTDT008; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
-    (N'CTPX009', N'PX007', N'HH009', N'LO009', N'CTDT009', 1, N'Đã đối chiếu CTDT009; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.'),
-    (N'CTPX010', N'PX008', N'HH010', N'LO010', N'CTDT010', 5, N'Đã đối chiếu CTDT010; cấp đủ số lượng theo đơn, cùng đơn vị cơ sở.');
-UPDATE dbo.PHIEU_XUAT SET TrangThai=N'Đã ghi sổ' WHERE MaPX IN (N'PX001', N'PX002', N'PX003', N'PX004', N'PX005', N'PX006', N'PX007', N'PX008');
-
--- HOA_DON: 10 dòng
-INSERT INTO [dbo].[HOA_DON] ([MaHD], [MaLS], [MaNV], [NgayLap], [NgayXacNhan], [TongTien], [GiamGia], [TrangThai])
-VALUES
-    (N'HD001', N'LS001', N'NV008', N'2026-10-01T09:00:00', NULL, 0, 0, N'Nháp'),
-    (N'HD002', N'LS002', N'NV008', N'2026-10-02T09:00:00', NULL, 0, 0, N'Nháp'),
-    (N'HD003', N'LS003', N'NV008', N'2026-10-03T09:00:00', NULL, 0, 0, N'Nháp'),
-    (N'HD004', N'LS004', N'NV008', N'2026-10-04T09:00:00', NULL, 0, 0, N'Nháp'),
-    (N'HD005', N'LS005', N'NV008', N'2026-10-05T09:00:00', NULL, 0, 0, N'Nháp'),
-    (N'HD006', N'LS006', N'NV008', N'2026-10-01T10:00:00', NULL, 0, 0, N'Nháp'),
-    (N'HD007', N'LS007', N'NV008', N'2026-10-02T10:00:00', NULL, 0, 0, N'Nháp'),
-    (N'HD008', N'LS008', N'NV008', N'2026-10-03T10:00:00', NULL, 0, 0, N'Nháp'),
-    (N'HD009', N'LS009', N'NV008', N'2026-10-04T10:00:00', NULL, 0, 0, N'Nháp'),
-    (N'HD010', N'LS010', N'NV008', N'2026-10-05T10:00:00', NULL, 0, 0, N'Nháp');
-
--- CHI_TIET_HOA_DON: 10 dòng
-INSERT INTO [dbo].[CHI_TIET_HOA_DON] ([MaCTHD], [MaHD], [MaDVThucHien], [MaCTPX], [NoiDung], [DonGia], [ThanhTien])
-VALUES
-    (N'CTHD001', N'HD001', N'DVTH001', NULL, N'Khám răng hàm mặt tổng quát', NULL, 0),
-    (N'CTHD002', N'HD002', N'DVTH002', NULL, N'Khám khớp thái dương hàm', NULL, 0),
-    (N'CTHD003', N'HD003', N'DVTH003', NULL, N'Khám bệnh lý niêm mạc và vùng môi', NULL, 0),
-    (N'CTHD004', N'HD004', N'DVTH004', NULL, N'Khám theo dõi loét niêm mạc miệng', NULL, 0),
-    (N'CTHD005', N'HD005', N'DVTH005', NULL, N'Khám theo dõi vết thương hàm mặt', NULL, 0),
-    (N'CTHD006', N'HD001', NULL, N'CTPX001', N'Paracetamol 500 mg', 2000, 0),
-    (N'CTHD007', N'HD001', NULL, N'CTPX002', N'Amoxicillin 500 mg', 3000, 0),
-    (N'CTHD008', N'HD001', NULL, N'CTPX003', N'Chlorhexidine 0,12% - chai 100 ml', 40000, 0),
-    (N'CTHD009', N'HD002', NULL, N'CTPX004', N'Ibuprofen 200 mg', 5000, 0),
-    (N'CTHD010', N'HD003', NULL, N'CTPX005', N'Cetirizine 10 mg', 3500, 0);
-UPDATE dbo.HOA_DON SET GiamGia=15000 WHERE MaHD=N'HD001';
-UPDATE dbo.HOA_DON SET TrangThai=N'Đã xác nhận', NgayXacNhan=DATEADD(MINUTE,5,NgayLap) WHERE MaHD IN (N'HD001', N'HD002', N'HD003');
-
--- THANH_TOAN: 10 dòng
-INSERT INTO [dbo].[THANH_TOAN] ([MaTT], [MaHD], [MaNV], [NgayThanhToan], [SoTien], [LoaiGiaoDich], [PhuongThuc], [LyDo], [TrangThai])
-VALUES
-    (N'TT001', N'HD001', N'NV008', N'2026-10-01T09:11:00', 100000, N'Thu', N'Tiền mặt', NULL, N'Đã xác nhận'),
-    (N'TT002', N'HD001', N'NV008', N'2026-10-01T09:12:00', 90000, N'Thu', N'Chuyển khoản', NULL, N'Đã xác nhận'),
-    (N'TT003', N'HD001', N'NV008', N'2026-10-01T09:13:00', 20000, N'Hoàn', N'Tiền mặt', N'Hoàn phần ghi nhận nhầm phương thức thu, sau đó thu lại đúng thông tin.', N'Đã xác nhận'),
-    (N'TT004', N'HD001', N'NV008', N'2026-10-01T09:14:00', 20000, N'Thu', N'Tiền mặt', N'Thu lại sau khi đã hoàn và đối chiếu thông tin thanh toán.', N'Đã xác nhận'),
-    (N'TT005', N'HD002', N'NV008', N'2026-10-02T09:15:00', 100000, N'Thu', N'Tiền mặt', NULL, N'Đã xác nhận'),
-    (N'TT006', N'HD002', N'NV008', N'2026-10-02T09:16:00', 80000, N'Thu', N'Chuyển khoản', NULL, N'Đã xác nhận'),
-    (N'TT007', N'HD003', N'NV008', N'2026-10-03T09:17:00', 50000, N'Thu', N'Tiền mặt', NULL, N'Đã xác nhận'),
-    (N'TT008', N'HD003', N'NV008', N'2026-10-03T09:18:00', 47500, N'Thu', N'Chuyển khoản', NULL, N'Đã xác nhận'),
-    (N'TT009', N'HD002', N'NV008', N'2026-10-02T09:19:00', 1000, N'Thu', N'Chuyển khoản', N'Giao dịch chờ đối soát; chưa xác nhận nên chưa tính vào số dư.', N'Nháp'),
-    (N'TT010', N'HD001', N'NV008', N'2026-10-01T09:20:00', 20000, N'Thu', N'Tiền mặt', N'Hủy giao dịch nhập trùng trước khi xác nhận.', N'Hủy');
-
--- CHINH_SACH_LUONG: 10 dòng
-INSERT INTO [dbo].[CHINH_SACH_LUONG] ([MaCSL], [MaChucVu], [TenChinhSach], [PhienBan], [NgayHieuLuc], [NgayHetHieuLuc], [LuongCoBan], [SoCaDinhMuc], [CoSoHoaHong], [TyLeHoaHong], [MaNVDuyet], [NgayDuyet], [TrangThai])
-VALUES
-    (N'CSL001', N'CV001', N'Lương quản trị hệ thống - năm 2026', 1, N'2026-01-01', NULL, 15000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL002', N'CV002', N'Lương bác sĩ răng hàm mặt - năm 2026', 1, N'2026-01-01', NULL, 22000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0.05, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL003', N'CV003', N'Lương điều dưỡng - năm 2026', 1, N'2026-01-01', NULL, 9500000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL004', N'CV004', N'Lương nhân viên tiếp nhận - năm 2026', 1, N'2026-01-01', NULL, 8000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL005', N'CV005', N'Lương dược sĩ - năm 2026', 1, N'2026-01-01', NULL, 12000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL006', N'CV006', N'Lương thủ kho - năm 2026', 1, N'2026-01-01', NULL, 9000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL007', N'CV007', N'Lương nhân viên thu ngân - năm 2026', 1, N'2026-01-01', NULL, 8500000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL008', N'CV008', N'Lương kỹ thuật viên y học - năm 2026', 1, N'2026-01-01', NULL, 11000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL009', N'CV009', N'Lương nhân viên nhân sự - năm 2026', 1, N'2026-01-01', NULL, 10000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt'),
-    (N'CSL010', N'CV010', N'Lương trưởng phòng hành chính - năm 2026', 1, N'2026-01-01', NULL, 18000000, 26, N'Dịch vụ đã xác nhận trước giảm giá', 0, N'NV001', N'2025-12-20T08:00:00', N'Đã duyệt');
-
--- BANG_LUONG: 10 dòng
-INSERT INTO [dbo].[BANG_LUONG] ([MaBL], [MaNV], [MaCSL], [TuNgay], [DenNgay], [SoCaTinh], [LuongCoBan], [SoCaDinhMuc], [TienHoaHong], [TrangThai], [NgayChot], [GhiChu])
-VALUES
-    (N'BL001', N'NV001', N'CSL001', N'2026-10-01', N'2026-10-10', 0, 15000000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
-    (N'BL002', N'NV002', N'CSL002', N'2026-10-01', N'2026-10-10', 0, 22000000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
-    (N'BL003', N'NV003', N'CSL002', N'2026-10-01', N'2026-10-10', 5, 22000000, 26, 40000.00, N'Đã chốt', N'2026-10-11T08:00:00', N'Đã chốt theo 5 ca sáng có mặt và dịch vụ thực hiện trong kỳ 01-10/10; chưa bao gồm phần còn lại của tháng.'),
-    (N'BL004', N'NV004', N'CSL003', N'2026-10-01', N'2026-10-10', 0, 9500000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
-    (N'BL005', N'NV005', N'CSL004', N'2026-10-01', N'2026-10-10', 0, 8000000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
-    (N'BL006', N'NV006', N'CSL005', N'2026-10-01', N'2026-10-10', 0, 12000000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
-    (N'BL007', N'NV007', N'CSL006', N'2026-10-01', N'2026-10-10', 0, 9000000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
-    (N'BL008', N'NV008', N'CSL007', N'2026-10-01', N'2026-10-10', 0, 8500000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
-    (N'BL009', N'NV009', N'CSL008', N'2026-10-01', N'2026-10-10', 0, 11000000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.'),
-    (N'BL010', N'NV010', N'CSL009', N'2026-10-01', N'2026-10-10', 0, 10000000, 26, 0, N'Nháp', NULL, N'Bảng lương đang chờ bổ sung chấm công kỳ 01-10/10; chưa chốt, chưa phải số lương phải trả.');
-
--- NHAT_KY_THAO_TAC: 10 dòng
-INSERT INTO [dbo].[NHAT_KY_THAO_TAC] ([MaNK], [MaTK], [ThoiGian], [HanhDong], [LoaiDoiTuong], [MaDoiTuong], [KetQua], [DuLieuTruoc], [DuLieuSau])
-VALUES
-    (N'NK001', N'TK008', N'2026-10-01T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD001', N'Thành công', N'{"MaHD": "HD001", "TrangThai": "Nháp"}', N'{"MaHD": "HD001", "TrangThai": "Đã xác nhận"}'),
-    (N'NK002', N'TK008', N'2026-10-02T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD002', N'Thành công', N'{"MaHD": "HD002", "TrangThai": "Nháp"}', N'{"MaHD": "HD002", "TrangThai": "Đã xác nhận"}'),
-    (N'NK003', N'TK008', N'2026-10-03T09:05:00', N'Xác nhận hóa đơn', N'HOA_DON', N'HD003', N'Thành công', N'{"MaHD": "HD003", "TrangThai": "Nháp"}', N'{"MaHD": "HD003", "TrangThai": "Đã xác nhận"}'),
-    (N'NK004', N'TK008', N'2026-10-04T09:00:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD004', N'Thành công', NULL, N'{"MaHD": "HD004", "TrangThai": "Nháp"}'),
-    (N'NK005', N'TK008', N'2026-10-05T09:00:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD005', N'Thành công', NULL, N'{"MaHD": "HD005", "TrangThai": "Nháp"}'),
-    (N'NK006', N'TK008', N'2026-10-01T10:00:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD006', N'Thành công', NULL, N'{"MaHD": "HD006", "TrangThai": "Nháp"}'),
-    (N'NK007', N'TK008', N'2026-10-02T10:00:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD007', N'Thành công', NULL, N'{"MaHD": "HD007", "TrangThai": "Nháp"}'),
-    (N'NK008', N'TK008', N'2026-10-03T10:00:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD008', N'Thành công', NULL, N'{"MaHD": "HD008", "TrangThai": "Nháp"}'),
-    (N'NK009', N'TK008', N'2026-10-04T10:00:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD009', N'Thành công', NULL, N'{"MaHD": "HD009", "TrangThai": "Nháp"}'),
-    (N'NK010', N'TK008', N'2026-10-05T10:00:00', N'Lưu nháp hóa đơn', N'HOA_DON', N'HD010', N'Thành công', NULL, N'{"MaHD": "HD010", "TrangThai": "Nháp"}');
--- Nếu bất kỳ kiểm tra nào không đạt, rollback toàn bộ cài đặt.
-DECLARE @Table SYSNAME,@Expected INT,@Actual BIGINT,@Query NVARCHAR(MAX),@Total BIGINT=0;
-DECLARE CountTables CURSOR LOCAL FAST_FORWARD FOR SELECT name FROM sys.tables WHERE is_ms_shipped=0 ORDER BY name;
-OPEN CountTables;
-FETCH NEXT FROM CountTables INTO @Table;
-WHILE @@FETCH_STATUS=0
-BEGIN
- SET @Expected=CASE WHEN @Table=N'VAI_TRO' THEN 2 WHEN @Table=N'HANG_HOA' THEN 30 WHEN @Table=N'CA_THEO_NGAY' THEN 5 WHEN @Table=N'XAC_NHAN_DOI_LICH_KHAM' THEN 0 ELSE 10 END;
- SET @Query=N'SELECT @n=COUNT_BIG(*) FROM dbo.'+QUOTENAME(@Table);
- EXEC sys.sp_executesql @Query,N'@n BIGINT OUTPUT',@n=@Actual OUTPUT;
- IF @Actual<>@Expected THROW 51101,N'Số dòng dữ liệu mẫu không đúng: 44 bảng gốc 452 dòng, CA_THEO_NGAY 5, XAC_NHAN_DOI_LICH_KHAM 0.',1;
- SET @Total+=@Actual;
- FETCH NEXT FROM CountTables INTO @Table;
-END;
-CLOSE CountTables;
-DEALLOCATE CountTables;
-IF @Total<>457 OR (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0)<>46
- THROW 51102,N'Phải có 46 bảng và 457 dòng dữ liệu mẫu.',1;
-IF EXISTS(SELECT 1 FROM dbo.HOA_DON h WHERE h.TongTien<>COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0))
- THROW 51103,N'Tổng hóa đơn lệch chi tiết.',1;
-IF EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
- WHERE c.ThanhTien<>CASE WHEN c.MaDVThucHien IS NOT NULL THEN s.ThanhTien ELSE CAST(ROUND(x.SoLuong*c.DonGia,2) AS DECIMAL(18,2)) END)
- THROW 51104,N'Thành tiền hóa đơn sai công thức nguồn.',1;
-IF EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c WHERE c.SoLuong<>COALESCE((SELECT SUM(x.SoLuong) FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX WHERE x.MaCTDT=c.MaCTDT AND p.TrangThai=N'Đã ghi sổ'),0))
- THROW 51105,N'Dữ liệu mẫu phải cấp đủ mỗi dòng của 8 đơn xác nhận.',1;
-IF (SELECT TongTien FROM dbo.HOA_DON WHERE MaHD=N'HD001')<>205000 OR (SELECT SoTienPhaiThu FROM dbo.HOA_DON WHERE MaHD=N'HD001')<>190000
- THROW 51106,N'Hóa đơn HD001 phải có dịch vụ 100.000 + thuốc 105.000 - giảm 15.000.',1;
-IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG b WHERE b.SoCaTinh<>(SELECT COUNT(*) FROM dbo.LICH_LAM_VIEC l WHERE l.MaNV=b.MaNV AND l.NgayLam BETWEEN b.TuNgay AND b.DenNgay AND l.TrangThai=N'Đã xác nhận' AND l.TrangThaiHienDien=N'Có mặt'))
- THROW 51107,N'Số ca tính lương không khớp hiện diện.',1;
-IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG b JOIN dbo.CHINH_SACH_LUONG cs ON cs.MaCSL=b.MaCSL WHERE b.TienHoaHong<>CAST(ROUND(COALESCE((SELECT SUM(s.ThanhTien) FROM dbo.DICH_VU_THUC_HIEN s WHERE s.MaNVThucHien=b.MaNV AND CAST(s.ThoiGianThucHien AS DATE) BETWEEN b.TuNgay AND b.DenNgay AND s.TrangThai=N'Đã xác nhận'),0)*cs.TyLeHoaHong,2) AS DECIMAL(18,2)))
- THROW 51108,N'Hoa hồng không khớp dịch vụ thực hiện.',1;
-DBCC CHECKCONSTRAINTS WITH ALL_CONSTRAINTS;
 EXEC sys.sp_executesql N'-- Các VIEW chỉ truy vấn, không tạo thêm bảng hoặc lặp tổng thanh toán.
-CREATE VIEW dbo.VW_CHI_TIET_HOA_DON AS
+CREATE OR ALTER VIEW dbo.VW_CHI_TIET_HOA_DON AS
 SELECT c.MaCTHD,c.MaHD,c.MaDVThucHien,c.MaCTPX,c.NoiDung,
  CASE WHEN c.MaDVThucHien IS NOT NULL THEN N''Dịch vụ'' ELSE N''Thuốc'' END AS LoaiKhoanThu,
  CASE WHEN c.MaDVThucHien IS NOT NULL THEN s.SoLuong ELSE x.SoLuong END AS SoLuong,
@@ -1829,7 +1171,7 @@ FROM dbo.CHI_TIET_HOA_DON c
 LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
 LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
 LEFT JOIN dbo.HANG_HOA hh ON hh.MaHH=x.MaHH;';
-EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_HOA_DON_THANH_TOAN AS
+EXEC sys.sp_executesql N'CREATE OR ALTER VIEW dbo.VW_HOA_DON_THANH_TOAN AS
 SELECT h.MaHD,h.MaLS,b.MaBN,b.HoTenBN,h.NgayLap,h.NgayXacNhan,h.TrangThai,
  h.TongTien,h.GiamGia,h.SoTienPhaiThu,COALESCE(t.DaThuRong,0) AS DaThuRong,
  h.SoTienPhaiThu-COALESCE(t.DaThuRong,0) AS ConPhaiTra,
@@ -1841,7 +1183,7 @@ JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN hs ON h
 JOIN dbo.BENH_NHAN b ON b.MaBN=hs.MaBN
 LEFT JOIN(SELECT MaHD,SUM(CASE WHEN LoaiGiaoDich=N''Thu'' THEN SoTien ELSE -SoTien END) AS DaThuRong
  FROM dbo.THANH_TOAN WHERE TrangThai=N''Đã xác nhận'' GROUP BY MaHD) t ON t.MaHD=h.MaHD;';
-EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_TIEN_THUOC_THEO_DON AS
+EXEC sys.sp_executesql N'CREATE OR ALTER VIEW dbo.VW_TIEN_THUOC_THEO_DON AS
 SELECT d.MaDT,d.MaLS,d.TrangThai,a.TongTienThuocDaChot
 FROM dbo.DON_THUOC d LEFT JOIN
 (SELECT ct.MaDT,SUM(hdct.ThanhTien) AS TongTienThuocDaChot
@@ -1849,7 +1191,7 @@ FROM dbo.DON_THUOC d LEFT JOIN
  JOIN dbo.CHI_TIET_HOA_DON hdct ON hdct.MaCTPX=x.MaCTPX
  JOIN dbo.HOA_DON h ON h.MaHD=hdct.MaHD AND h.TrangThai=N''Đã xác nhận''
  GROUP BY ct.MaDT) a ON a.MaDT=d.MaDT;';
-EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_TON_KHO AS
+EXEC sys.sp_executesql N'CREATE OR ALTER VIEW dbo.VW_TON_KHO AS
 SELECT z.MaKho,z.MaHH,hh.TenHH,z.MaLo,hh.DonViTinh,
  SUM(z.Nhap) AS TongNhap,SUM(z.Xuat) AS TongXuat,SUM(z.Nhap-z.Xuat) AS SoLuongTon
 FROM(
@@ -1860,7 +1202,7 @@ FROM(
  UNION ALL SELECT MaKho,MaHH,MaLo,CAST(0 AS DECIMAL(18,3)),CAST(0 AS DECIMAL(18,3)) FROM dbo.LO_HANG_HOA
 ) z JOIN dbo.HANG_HOA hh ON hh.MaHH=z.MaHH
 GROUP BY z.MaKho,z.MaHH,hh.TenHH,z.MaLo,hh.DonViTinh;';
-EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_LICH_SU_KHAM_BENH_NHAN AS
+EXEC sys.sp_executesql N'CREATE OR ALTER VIEW dbo.VW_LICH_SU_KHAM_BENH_NHAN AS
 SELECT b.MaBN,b.HoTenBN,hs.MaHS,p.MaPhieu,p.MaLich,
  CASE WHEN p.MaLich IS NULL THEN N''Đến trực tiếp'' ELSE N''Có lịch hẹn'' END AS HinhThucTiepNhan,
  l.MaLS,l.ThoiGianKham,l.TrieuChung,l.ChanDoan,l.KeHoachXuLy,l.TrangThai,
@@ -1871,7 +1213,7 @@ SELECT b.MaBN,b.HoTenBN,hs.MaHS,p.MaPhieu,p.MaLich,
 FROM dbo.LICH_SU_KHAM_BENH l JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
 JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS JOIN dbo.BENH_NHAN b ON b.MaBN=hs.MaBN
 JOIN dbo.NHAN_VIEN nv ON nv.MaNV=l.MaBS JOIN dbo.PHONG ph ON ph.MaPhong=l.MaPhong;';
-EXEC sys.sp_executesql N'CREATE VIEW dbo.VW_THONG_KE_SO_DONG AS
+EXEC sys.sp_executesql N'CREATE OR ALTER VIEW dbo.VW_THONG_KE_SO_DONG AS
 SELECT N''BENH_NHAN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[BENH_NHAN]
 UNION ALL
 SELECT N''HO_SO_BENH_AN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[HO_SO_BENH_AN]
@@ -1964,25 +1306,29 @@ SELECT N''CA_THEO_NGAY'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CA_THEO_NGA
 UNION ALL
 SELECT N''XAC_NHAN_DOI_LICH_KHAM'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[XAC_NHAN_DOI_LICH_KHAM];';
 
-COMMIT TRANSACTION;
-EXEC sys.sp_set_session_context @key=N'RHM.ClinicalFreshCompleted',@value=1;
-PRINT N'Hoàn tất: 46 bảng, 457 dòng; 44 bảng gốc giữ nguyên dữ liệu, 2 bảng bổ sung đã được tạo.';
-END TRY
-BEGIN CATCH
- IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+
+
+ COMMIT;
+ END TRY
+ BEGIN CATCH
+ IF XACT_STATE()<>0 ROLLBACK;
  THROW;
-END CATCH;
-GO
+ END CATCH;
+END
+ELSE
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N'RHM.ClinicalWorkflow.Version' AND TRY_CONVERT(int,value)=2)
+ THROW 52270,N'Database đang có bảng phải là ClinicalWorkflow v2 được hỗ trợ; giữ nguyên để đối chiếu.',1;
 
--- KẾT QUẢ KIỂM TRA / TRA CỨU SAU CÀI ĐẶT
-SELECT N'46 bảng, 457 dòng' AS KetQua, COUNT(*) AS SoBang FROM sys.tables WHERE is_ms_shipped=0;
-SELECT * FROM dbo.VW_THONG_KE_SO_DONG ORDER BY TenBang;
-SELECT * FROM dbo.VW_HOA_DON_THANH_TOAN ORDER BY MaHD;
-SELECT * FROM dbo.VW_TIEN_THUOC_THEO_DON ORDER BY MaDT;
-SELECT * FROM dbo.VW_TON_KHO ORDER BY MaKho,MaHH,MaLo;
+IF EXISTS(SELECT 1 FROM(VALUES (N'BENH_NHAN'),(N'HO_SO_BENH_AN'),(N'PHIEU_KHAM_BENH'),(N'LICH_SU_KHAM_BENH'),(N'TINH_TRANG_BENH'),(N'DICH_VU'),(N'KE_HOACH_DIEU_TRI'),(N'CHI_TIET_KE_HOACH'),(N'DICH_VU_THUC_HIEN'),(N'DON_THUOC'),(N'CHI_TIET_DON_THUOC'),(N'VAI_TRO'),(N'CHUC_VU'),(N'TAI_KHOAN'),(N'NHAN_VIEN'),(N'CHUNG_CHI_NHAN_VIEN'),(N'KHOA'),(N'CHUYEN_KHOA'),(N'PHONG'),(N'THIET_BI'),(N'BAO_TRI_THIET_BI'),(N'NHA_CUNG_CAP'),(N'KHO'),(N'LOAI_HANG_HOA'),(N'HANG_HOA'),(N'VAT_TU'),(N'THUOC'),(N'LO_HANG_HOA'),(N'HOA_DON_NHAP'),(N'PHIEU_NHAP'),(N'CHI_TIET_PHIEU_NHAP'),(N'PHIEU_XUAT'),(N'CHI_TIET_PHIEU_XUAT'),(N'CA_LAM'),(N'LICH_LAM_VIEC'),(N'DON_XIN_NGHI'),(N'PHAN_CONG_THAY_THE'),(N'LICH_KHAM'),(N'HOA_DON'),(N'CHI_TIET_HOA_DON'),(N'THANH_TOAN'),(N'CHINH_SACH_LUONG'),(N'BANG_LUONG'),(N'NHAT_KY_THAO_TAC'),(N'XAC_NHAN_DOI_LICH_KHAM'),(N'CA_THEO_NGAY')) expected(T) WHERE OBJECT_ID(N'dbo.'+T,N'U') IS NULL)
+THROW 52270,N'Thiếu bảng nền; không hỗ trợ tự sửa database tùy ý.',1;
 
+END;
+EXEC sys.sp_set_session_context @key=N'RHM.ReadyBaseline',@value=1;
 GO
-IF COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.ClinicalFreshCompleted')),0)<>1 THROW 52100,N'Cài mới baseline chưa hoàn tất; không chạy phần nâng cấp.',1;
+-- PHA 2: HỢP ĐỒNG CLINICALWORKFLOW V2.
+IF COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.ReadyBaseline')),0)<>1 THROW 52270,N'Pha nền chưa hoàn tất; không chạy pha v2.',1;
+
 -- Nâng cấp cộng thêm, chỉ chạy trên database đã xác nhận/backup. Không có USE hoặc xóa lịch sử.
 SET NOCOUNT ON; SET XACT_ABORT ON; SET ANSI_NULLS ON; SET QUOTED_IDENTIFIER ON;
 IF DB_NAME() IN(N'master',N'model',N'msdb',N'tempdb') THROW 52100,N'Chọn database bệnh viện trước nâng cấp.',1;
@@ -2036,7 +1382,6 @@ INSERT @expected VALUES
 (N'BAN_GIAO_THUOC',N'ThoiGianGiao',N'datetime2',6,0,0,1),
 (N'BAN_GIAO_THUOC',N'GhiChu',N'nvarchar',-1,0,0,1),
 (N'TINH_TRANG_BENH',N'MaDMTT',N'nvarchar',100,0,0,1),
-(N'TINH_TRANG_BENH',N'ViTriRang',N'nvarchar',200,0,0,1),
 (N'KE_HOACH_DIEU_TRI',N'MaTTBNguon',N'nvarchar',100,0,0,1),
 (N'KE_HOACH_DIEU_TRI',N'MaMauKH',N'nvarchar',100,0,0,1),
 (N'KE_HOACH_DIEU_TRI',N'PhienBanMau',N'int',4,0,0,1),
@@ -2071,7 +1416,7 @@ IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.DON_THUO
 IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.MAU_KE_HOACH_DIEU_TRI') AND name=N'IX_CW_Mau_TinhTrang' AND is_disabled=0) THROW 52102,N'Thiếu index IX_CW_Mau_TinhTrang.',1;
 IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.CAU_HINH_THUOC_KE_DON') AND name=N'IX_CW_CauHinh_Nhom' AND is_disabled=0) THROW 52102,N'Thiếu index IX_CW_CauHinh_Nhom.',1;
 IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.BAN_GIAO_THUOC') AND name=N'IX_CW_BanGiao_HD' AND is_disabled=0) THROW 52102,N'Thiếu index IX_CW_BanGiao_HD.',1;
-COMMIT; PRINT N'ClinicalWorkflow v2 đã có; không thay đổi đối tượng.'; RETURN; END;
+COMMIT; EXEC sys.sp_set_session_context @key=N'RHM.ReadyV2',@value=1; PRINT N'ClinicalWorkflow v2 đã có; hợp đồng được kiểm tra.'; RETURN; END;
 IF OBJECT_ID(N'dbo.DM_TINH_TRANG_BENH',N'U') IS NULL
 EXEC sys.sp_executesql N'CREATE TABLE [dbo].[DM_TINH_TRANG_BENH] (
     [MaDMTT] NVARCHAR(50) NOT NULL CONSTRAINT [PK_CW_DMTT] PRIMARY KEY,
@@ -2150,8 +1495,6 @@ EXEC sys.sp_executesql N'CREATE TABLE [dbo].[BAN_GIAO_THUOC] (
 );';
 IF COL_LENGTH(N'dbo.TINH_TRANG_BENH',N'MaDMTT') IS NULL
 EXEC sys.sp_executesql N'ALTER TABLE dbo.[TINH_TRANG_BENH] ADD [MaDMTT] NVARCHAR(50) NULL;';
-IF COL_LENGTH(N'dbo.TINH_TRANG_BENH',N'ViTriRang') IS NULL
-EXEC sys.sp_executesql N'ALTER TABLE dbo.[TINH_TRANG_BENH] ADD [ViTriRang] NVARCHAR(100) NULL;';
 IF COL_LENGTH(N'dbo.KE_HOACH_DIEU_TRI',N'MaTTBNguon') IS NULL
 EXEC sys.sp_executesql N'ALTER TABLE dbo.[KE_HOACH_DIEU_TRI] ADD [MaTTBNguon] NVARCHAR(50) NULL;';
 IF COL_LENGTH(N'dbo.KE_HOACH_DIEU_TRI',N'MaMauKH') IS NULL
@@ -2432,389 +1775,1168 @@ IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.MAU_KE_H
 IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.CAU_HINH_THUOC_KE_DON') AND name=N'IX_CW_CauHinh_Nhom' AND is_disabled=0) THROW 52102,N'Thiếu index IX_CW_CauHinh_Nhom.',1;
 IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.BAN_GIAO_THUOC') AND name=N'IX_CW_BanGiao_HD' AND is_disabled=0) THROW 52102,N'Thiếu index IX_CW_BanGiao_HD.',1;EXEC sys.sp_addextendedproperty @name=N'RHM.ClinicalWorkflow.Version',@value=2;
 COMMIT;
-PRINT N'ClinicalWorkflow v2: nâng cấp thành công; lịch sử được giữ nguyên.';
+EXEC sys.sp_set_session_context @key=N'RHM.ReadyV2',@value=1;
+PRINT N'ClinicalWorkflow v2 sẵn sàng.';
 END TRY
 BEGIN CATCH
 IF @@TRANCOUNT>0 ROLLBACK; THROW;
 END CATCH;
 
 GO
--- Chỉ đọc, kiểm chứng hợp đồng sau nâng cấp.
+-- PHA 3: ĐỒNG BỘ TRONG MỘT GIAO DỊCH.
+IF COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.ReadyBaseline')),0)<>1 OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.ReadyV2')),0)<>1
+THROW 52272,N'Pha trước chưa hoàn tất; không thay đổi dữ liệu.',1;
+DECLARE @hospitalPreviousActor sql_variant=SESSION_CONTEXT(N'RHM.MaTK');
+BEGIN TRY
+ BEGIN TRANSACTION;
+ DECLARE @hospitalLock int;
+ EXEC @hospitalLock=sys.sp_getapplock @Resource=N'RHM:HospitalWorkflow:Schema',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=30000;
+ IF @hospitalLock<0 THROW 52272,N'Không lấy được khóa đồng bộ bệnh viện.',1;
+ IF EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N'RHM.HospitalWorkflow.Version' AND COALESCE(TRY_CONVERT(int,value),-1)<>3)
+ THROW 52272,N'Phiên bản đồng bộ bệnh viện không được hỗ trợ.',1;
+
+EXEC sys.sp_executesql N'-- Chỉ đọc, kiểm chứng hợp đồng sau nâng cấp.
 SET NOCOUNT ON;
 DECLARE @expected TABLE(T sysname,C sysname,TypeName sysname,MaxLength smallint,PrecisionValue tinyint,ScaleValue tinyint,Nullable bit);
 INSERT @expected VALUES
-(N'DM_TINH_TRANG_BENH',N'MaDMTT',N'nvarchar',100,0,0,0),
-(N'DM_TINH_TRANG_BENH',N'TenTinhTrang',N'nvarchar',510,0,0,0),
-(N'DM_TINH_TRANG_BENH',N'MoTa',N'nvarchar',-1,0,0,1),
-(N'DM_TINH_TRANG_BENH',N'TrangThai',N'nvarchar',100,0,0,0),
-(N'MAU_KE_HOACH_DIEU_TRI',N'MaMauKH',N'nvarchar',100,0,0,0),
-(N'MAU_KE_HOACH_DIEU_TRI',N'MaDMTT',N'nvarchar',100,0,0,0),
-(N'MAU_KE_HOACH_DIEU_TRI',N'MucDo',N'nvarchar',510,0,0,1),
-(N'MAU_KE_HOACH_DIEU_TRI',N'TenMau',N'nvarchar',510,0,0,0),
-(N'MAU_KE_HOACH_DIEU_TRI',N'PhienBan',N'int',4,0,0,0),
-(N'MAU_KE_HOACH_DIEU_TRI',N'TrangThai',N'nvarchar',100,0,0,0),
-(N'MAU_KE_HOACH_DIEU_TRI',N'MaBSDuyet',N'nvarchar',100,0,0,1),
-(N'MAU_KE_HOACH_DIEU_TRI',N'NgayDuyet',N'datetime2',6,0,0,1),
-(N'CHI_TIET_MAU_KE_HOACH',N'MaCTMau',N'nvarchar',100,0,0,0),
-(N'CHI_TIET_MAU_KE_HOACH',N'MaMauKH',N'nvarchar',100,0,0,0),
-(N'CHI_TIET_MAU_KE_HOACH',N'MaDV',N'nvarchar',100,0,0,0),
-(N'CHI_TIET_MAU_KE_HOACH',N'ThuTu',N'int',4,0,0,0),
-(N'CHI_TIET_MAU_KE_HOACH',N'LanThu',N'int',4,0,0,0),
-(N'CHI_TIET_MAU_KE_HOACH',N'SoLuongDuKien',N'decimal',9,18,3,0),
-(N'CHI_TIET_MAU_KE_HOACH',N'NoiDung',N'nvarchar',-1,0,0,0),
-(N'NHOM_THUOC_KE_DON',N'MaNhomThuoc',N'nvarchar',100,0,0,0),
-(N'NHOM_THUOC_KE_DON',N'TenNhom',N'nvarchar',510,0,0,0),
-(N'NHOM_THUOC_KE_DON',N'MoTa',N'nvarchar',-1,0,0,1),
-(N'NHOM_THUOC_KE_DON',N'TrangThai',N'nvarchar',100,0,0,0),
-(N'CAU_HINH_THUOC_KE_DON',N'MaThuoc',N'nvarchar',100,0,0,0),
-(N'CAU_HINH_THUOC_KE_DON',N'MaNhomThuoc',N'nvarchar',100,0,0,1),
-(N'CAU_HINH_THUOC_KE_DON',N'DoiTuongApDung',N'nvarchar',510,0,0,1),
-(N'CAU_HINH_THUOC_KE_DON',N'DuongDung',N'nvarchar',200,0,0,1),
-(N'CAU_HINH_THUOC_KE_DON',N'LieuDungGoiY',N'nvarchar',510,0,0,1),
-(N'CAU_HINH_THUOC_KE_DON',N'HuongDanGoiY',N'nvarchar',-1,0,0,1),
-(N'CAU_HINH_THUOC_KE_DON',N'PhienBan',N'int',4,0,0,0),
-(N'CAU_HINH_THUOC_KE_DON',N'TrangThai',N'nvarchar',100,0,0,0),
-(N'CAU_HINH_THUOC_KE_DON',N'MaNguoiDuyet',N'nvarchar',100,0,0,1),
-(N'CAU_HINH_THUOC_KE_DON',N'NgayDuyet',N'datetime2',6,0,0,1),
-(N'BAN_GIAO_THUOC',N'MaDT',N'nvarchar',100,0,0,0),
-(N'BAN_GIAO_THUOC',N'MaHD',N'nvarchar',100,0,0,0),
-(N'BAN_GIAO_THUOC',N'MaPX',N'nvarchar',100,0,0,0),
-(N'BAN_GIAO_THUOC',N'TrangThai',N'nvarchar',100,0,0,0),
-(N'BAN_GIAO_THUOC',N'MaNVGiao',N'nvarchar',100,0,0,1),
-(N'BAN_GIAO_THUOC',N'ThoiGianGiao',N'datetime2',6,0,0,1),
-(N'BAN_GIAO_THUOC',N'GhiChu',N'nvarchar',-1,0,0,1),
-(N'TINH_TRANG_BENH',N'MaDMTT',N'nvarchar',100,0,0,1),
-(N'TINH_TRANG_BENH',N'ViTriRang',N'nvarchar',200,0,0,1),
-(N'KE_HOACH_DIEU_TRI',N'MaTTBNguon',N'nvarchar',100,0,0,1),
-(N'KE_HOACH_DIEU_TRI',N'MaMauKH',N'nvarchar',100,0,0,1),
-(N'KE_HOACH_DIEU_TRI',N'PhienBanMau',N'int',4,0,0,1),
-(N'CHI_TIET_KE_HOACH',N'NoiDungBuoc',N'nvarchar',-1,0,0,1),
-(N'LICH_SU_KHAM_BENH',N'KhongKeThuoc',N'int',4,0,0,0),
-(N'LICH_SU_KHAM_BENH',N'LyDoKhongKeThuoc',N'nvarchar',1000,0,0,1),
-(N'DON_THUOC',N'MaDTThayThe',N'nvarchar',100,0,0,1),
-(N'CHI_TIET_DON_THUOC',N'DuongDung',N'nvarchar',200,0,0,1),
-(N'CHI_TIET_DON_THUOC',N'TenThuocChot',N'nvarchar',510,0,0,1),
-(N'CHI_TIET_DON_THUOC',N'HamLuongChot',N'nvarchar',510,0,0,1),
-(N'CHI_TIET_DON_THUOC',N'DonViTinhChot',N'nvarchar',510,0,0,1),
-(N'CHI_TIET_DON_THUOC',N'PhienBanHuongDan',N'int',4,0,0,1),
-(N'HOA_DON',N'PhienBanQuyTrinh',N'int',4,0,0,0),
-(N'HOA_DON',N'MaYeuCau',N'nvarchar',100,0,0,1),
-(N'HOA_DON',N'DauVanTayYeuCau',N'nvarchar',128,0,0,1),
-(N'THANH_TOAN',N'SoTienKhachDua',N'decimal',9,18,2,1),
-(N'THANH_TOAN',N'TienThua',N'decimal',9,18,2,1),
-(N'THANH_TOAN',N'MaThamChieu',N'nvarchar',200,0,0,1);
-IF EXISTS(SELECT 1 FROM @expected e LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N'dbo.'+e.T) AND c.name=e.C LEFT JOIN sys.types t ON t.user_type_id=c.user_type_id WHERE c.column_id IS NULL OR (c.column_id IS NOT NULL AND (t.name<>e.TypeName OR c.max_length<>e.MaxLength OR c.is_nullable<>e.Nullable OR (e.TypeName=N'decimal' AND(c.precision<>e.PrecisionValue OR c.scale<>e.ScaleValue)) OR (e.TypeName=N'datetime2' AND c.scale<>e.ScaleValue)))) THROW 52101,N'Cấu trúc cột không khớp hợp đồng quy trình khám; không tự sửa kiểu dữ liệu.',1;
-IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N'RHM.ClinicalWorkflow.Version' AND TRY_CONVERT(int,value)=2) THROW 52102,N'Chưa ghi phiên bản quy trình khám 2.',1;
-IF EXISTS(SELECT 1 FROM (VALUES (N'FK_CW_TTB_DMTT'),(N'FK_CW_KH_TTB'),(N'FK_CW_KH_Mau'),(N'FK_CW_DT_ThayThe'),(N'CK_CW_LS_NoRx'),(N'CK_CW_KH_Source'),(N'CK_CW_CTDT_Version'),(N'CK_CW_HD_Request'),(N'CK_CW_TT_Cash'),(N'PK_CW_DMTT'),(N'CK_CW_DMTT'),(N'PK_CW_MauKH'),(N'FK_CW_MauKH_DMTT'),(N'FK_CW_MauKH_BS'),(N'CK_CW_MauKH'),(N'PK_CW_CTMau'),(N'FK_CW_CTMau_MauKH'),(N'FK_CW_CTMau_DV'),(N'UQ_CW_CTMau_ThuTu'),(N'CK_CW_CTMau'),(N'PK_CW_NhomThuoc'),(N'CK_CW_NhomThuoc'),(N'PK_CW_CauHinhThuoc'),(N'FK_CW_CauHinh_Thuoc'),(N'FK_CW_CauHinh_Nhom'),(N'FK_CW_CauHinh_Duyet'),(N'CK_CW_CauHinh'),(N'PK_CW_BanGiao'),(N'FK_CW_BanGiao_DT'),(N'FK_CW_BanGiao_HD'),(N'FK_CW_BanGiao_PX'),(N'FK_CW_BanGiao_NV'),(N'CK_CW_BanGiao'),(N'TR_CW_LS_BaoVe'),(N'TR_CW_TTB_BaoVe'),(N'TR_CW_Phieu_BacSi'),(N'TR_CW_KH_BaoVe'),(N'TR_CW_CTKH_BaoVe'),(N'TR_CW_DT_ThayThe'),(N'TR_CW_MauKH_BaoVe'),(N'TR_CW_CTMau_BaoVe'),(N'TR_CW_CauHinh_BaoVe'),(N'TR_CW_HD_Request'),(N'TR_CW_TT_ThuDu'),(N'TR_CW_BanGiao_BaoVe'),(N'TR_CW_Audit_DM_TINH_TRANG_BENH'),(N'TR_CW_Audit_MAU_KE_HOACH_DIEU_TRI'),(N'TR_CW_Audit_CHI_TIET_MAU_KE_HOACH'),(N'TR_CW_Audit_NHOM_THUOC_KE_DON'),(N'TR_CW_Audit_CAU_HINH_THUOC_KE_DON')) expected(Name) WHERE OBJECT_ID(N'dbo.'+Name) IS NULL) THROW 52102,N'Thiếu FK/CHECK/trigger của migration.',1;
-IF EXISTS(SELECT 1 FROM sys.triggers WHERE name LIKE N'TR[_]CW[_]%' AND is_disabled=1) OR EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name LIKE N'FK[_]CW[_]%' AND(is_disabled=1 OR is_not_trusted=1)) OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE name LIKE N'CK[_]CW[_]%' AND(is_disabled=1 OR is_not_trusted=1)) THROW 52102,N'Trigger hoặc ràng buộc mới bị tắt/chưa kiểm chứng.',1;
-IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.PHIEU_KHAM_BENH') AND name=N'IX_CW_Phieu_BacSi' AND is_disabled=0) THROW 52102,N'Thiếu index IX_CW_Phieu_BacSi.',1;
-IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.LICH_SU_KHAM_BENH') AND name=N'IX_CW_LS_BacSi' AND is_disabled=0) THROW 52102,N'Thiếu index IX_CW_LS_BacSi.',1;
-IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.HOA_DON') AND name=N'UX_CW_HD_YeuCau' AND is_disabled=0) THROW 52102,N'Thiếu index UX_CW_HD_YeuCau.',1;
-IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.HOA_DON') AND name=N'UX_CW_HD_LuotV2' AND is_disabled=0) THROW 52102,N'Thiếu index UX_CW_HD_LuotV2.',1;
-IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.KE_HOACH_DIEU_TRI') AND name=N'UX_CW_KH_Source' AND is_disabled=0) THROW 52102,N'Thiếu index UX_CW_KH_Source.',1;
-IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.TINH_TRANG_BENH') AND name=N'IX_CW_TTB_DMTT' AND is_disabled=0) THROW 52102,N'Thiếu index IX_CW_TTB_DMTT.',1;
-IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.KE_HOACH_DIEU_TRI') AND name=N'IX_CW_KH_Mau' AND is_disabled=0) THROW 52102,N'Thiếu index IX_CW_KH_Mau.',1;
-IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.DON_THUOC') AND name=N'IX_CW_DT_ThayThe' AND is_disabled=0) THROW 52102,N'Thiếu index IX_CW_DT_ThayThe.',1;
-IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.MAU_KE_HOACH_DIEU_TRI') AND name=N'IX_CW_Mau_TinhTrang' AND is_disabled=0) THROW 52102,N'Thiếu index IX_CW_Mau_TinhTrang.',1;
-IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.CAU_HINH_THUOC_KE_DON') AND name=N'IX_CW_CauHinh_Nhom' AND is_disabled=0) THROW 52102,N'Thiếu index IX_CW_CauHinh_Nhom.',1;
-IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.BAN_GIAO_THUOC') AND name=N'IX_CW_BanGiao_HD' AND is_disabled=0) THROW 52102,N'Thiếu index IX_CW_BanGiao_HD.',1;IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name LIKE N'FK[_]CW[_]%' AND(is_disabled=1 OR is_not_trusted=1)) THROW 52102,N'FK mới chưa được kiểm chứng.',1;
-SELECT N'ClinicalWorkflow v2' AS SchemaVersion,COUNT(*) AS TableCount FROM sys.tables WHERE is_ms_shipped=0;
-SELECT MaHD,MaLS,SoTienPhaiThu,DaThuRong,ConPhaiTra FROM dbo.VW_HOA_DON_THANH_TOAN WHERE ConPhaiTra<>0;
+(N''DM_TINH_TRANG_BENH'',N''MaDMTT'',N''nvarchar'',100,0,0,0),
+(N''DM_TINH_TRANG_BENH'',N''TenTinhTrang'',N''nvarchar'',510,0,0,0),
+(N''DM_TINH_TRANG_BENH'',N''MoTa'',N''nvarchar'',-1,0,0,1),
+(N''DM_TINH_TRANG_BENH'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''MaMauKH'',N''nvarchar'',100,0,0,0),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''MaDMTT'',N''nvarchar'',100,0,0,0),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''MucDo'',N''nvarchar'',510,0,0,1),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''TenMau'',N''nvarchar'',510,0,0,0),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''PhienBan'',N''int'',4,0,0,0),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''MaBSDuyet'',N''nvarchar'',100,0,0,1),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''NgayDuyet'',N''datetime2'',6,0,0,1),
+(N''CHI_TIET_MAU_KE_HOACH'',N''MaCTMau'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_MAU_KE_HOACH'',N''MaMauKH'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_MAU_KE_HOACH'',N''MaDV'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_MAU_KE_HOACH'',N''ThuTu'',N''int'',4,0,0,0),
+(N''CHI_TIET_MAU_KE_HOACH'',N''LanThu'',N''int'',4,0,0,0),
+(N''CHI_TIET_MAU_KE_HOACH'',N''SoLuongDuKien'',N''decimal'',9,18,3,0),
+(N''CHI_TIET_MAU_KE_HOACH'',N''NoiDung'',N''nvarchar'',-1,0,0,0),
+(N''NHOM_THUOC_KE_DON'',N''MaNhomThuoc'',N''nvarchar'',100,0,0,0),
+(N''NHOM_THUOC_KE_DON'',N''TenNhom'',N''nvarchar'',510,0,0,0),
+(N''NHOM_THUOC_KE_DON'',N''MoTa'',N''nvarchar'',-1,0,0,1),
+(N''NHOM_THUOC_KE_DON'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''CAU_HINH_THUOC_KE_DON'',N''MaThuoc'',N''nvarchar'',100,0,0,0),
+(N''CAU_HINH_THUOC_KE_DON'',N''MaNhomThuoc'',N''nvarchar'',100,0,0,1),
+(N''CAU_HINH_THUOC_KE_DON'',N''DoiTuongApDung'',N''nvarchar'',510,0,0,1),
+(N''CAU_HINH_THUOC_KE_DON'',N''DuongDung'',N''nvarchar'',200,0,0,1),
+(N''CAU_HINH_THUOC_KE_DON'',N''LieuDungGoiY'',N''nvarchar'',510,0,0,1),
+(N''CAU_HINH_THUOC_KE_DON'',N''HuongDanGoiY'',N''nvarchar'',-1,0,0,1),
+(N''CAU_HINH_THUOC_KE_DON'',N''PhienBan'',N''int'',4,0,0,0),
+(N''CAU_HINH_THUOC_KE_DON'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''CAU_HINH_THUOC_KE_DON'',N''MaNguoiDuyet'',N''nvarchar'',100,0,0,1),
+(N''CAU_HINH_THUOC_KE_DON'',N''NgayDuyet'',N''datetime2'',6,0,0,1),
+(N''BAN_GIAO_THUOC'',N''MaDT'',N''nvarchar'',100,0,0,0),
+(N''BAN_GIAO_THUOC'',N''MaHD'',N''nvarchar'',100,0,0,0),
+(N''BAN_GIAO_THUOC'',N''MaPX'',N''nvarchar'',100,0,0,0),
+(N''BAN_GIAO_THUOC'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''BAN_GIAO_THUOC'',N''MaNVGiao'',N''nvarchar'',100,0,0,1),
+(N''BAN_GIAO_THUOC'',N''ThoiGianGiao'',N''datetime2'',6,0,0,1),
+(N''BAN_GIAO_THUOC'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''TINH_TRANG_BENH'',N''MaDMTT'',N''nvarchar'',100,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''MaTTBNguon'',N''nvarchar'',100,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''MaMauKH'',N''nvarchar'',100,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''PhienBanMau'',N''int'',4,0,0,1),
+(N''CHI_TIET_KE_HOACH'',N''NoiDungBuoc'',N''nvarchar'',-1,0,0,1),
+(N''LICH_SU_KHAM_BENH'',N''KhongKeThuoc'',N''int'',4,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''LyDoKhongKeThuoc'',N''nvarchar'',1000,0,0,1),
+(N''DON_THUOC'',N''MaDTThayThe'',N''nvarchar'',100,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''DuongDung'',N''nvarchar'',200,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''TenThuocChot'',N''nvarchar'',510,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''HamLuongChot'',N''nvarchar'',510,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''DonViTinhChot'',N''nvarchar'',510,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''PhienBanHuongDan'',N''int'',4,0,0,1),
+(N''HOA_DON'',N''PhienBanQuyTrinh'',N''int'',4,0,0,0),
+(N''HOA_DON'',N''MaYeuCau'',N''nvarchar'',100,0,0,1),
+(N''HOA_DON'',N''DauVanTayYeuCau'',N''nvarchar'',128,0,0,1),
+(N''THANH_TOAN'',N''SoTienKhachDua'',N''decimal'',9,18,2,1),
+(N''THANH_TOAN'',N''TienThua'',N''decimal'',9,18,2,1),
+(N''THANH_TOAN'',N''MaThamChieu'',N''nvarchar'',200,0,0,1);
+IF EXISTS(SELECT 1 FROM @expected e LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+e.T) AND c.name=e.C LEFT JOIN sys.types t ON t.user_type_id=c.user_type_id WHERE c.column_id IS NULL OR (c.column_id IS NOT NULL AND (t.name<>e.TypeName OR c.max_length<>e.MaxLength OR c.is_nullable<>e.Nullable OR (e.TypeName=N''decimal'' AND(c.precision<>e.PrecisionValue OR c.scale<>e.ScaleValue)) OR (e.TypeName=N''datetime2'' AND c.scale<>e.ScaleValue)))) THROW 52101,N''Cấu trúc cột không khớp hợp đồng quy trình khám; không tự sửa kiểu dữ liệu.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.ClinicalWorkflow.Version'' AND TRY_CONVERT(int,value)=2) THROW 52102,N''Chưa ghi phiên bản quy trình khám 2.'',1;
+IF EXISTS(SELECT 1 FROM (VALUES (N''FK_CW_TTB_DMTT''),(N''FK_CW_KH_TTB''),(N''FK_CW_KH_Mau''),(N''FK_CW_DT_ThayThe''),(N''CK_CW_LS_NoRx''),(N''CK_CW_KH_Source''),(N''CK_CW_CTDT_Version''),(N''CK_CW_HD_Request''),(N''CK_CW_TT_Cash''),(N''PK_CW_DMTT''),(N''CK_CW_DMTT''),(N''PK_CW_MauKH''),(N''FK_CW_MauKH_DMTT''),(N''FK_CW_MauKH_BS''),(N''CK_CW_MauKH''),(N''PK_CW_CTMau''),(N''FK_CW_CTMau_MauKH''),(N''FK_CW_CTMau_DV''),(N''UQ_CW_CTMau_ThuTu''),(N''CK_CW_CTMau''),(N''PK_CW_NhomThuoc''),(N''CK_CW_NhomThuoc''),(N''PK_CW_CauHinhThuoc''),(N''FK_CW_CauHinh_Thuoc''),(N''FK_CW_CauHinh_Nhom''),(N''FK_CW_CauHinh_Duyet''),(N''CK_CW_CauHinh''),(N''PK_CW_BanGiao''),(N''FK_CW_BanGiao_DT''),(N''FK_CW_BanGiao_HD''),(N''FK_CW_BanGiao_PX''),(N''FK_CW_BanGiao_NV''),(N''CK_CW_BanGiao''),(N''TR_CW_LS_BaoVe''),(N''TR_CW_TTB_BaoVe''),(N''TR_CW_Phieu_BacSi''),(N''TR_CW_KH_BaoVe''),(N''TR_CW_CTKH_BaoVe''),(N''TR_CW_DT_ThayThe''),(N''TR_CW_MauKH_BaoVe''),(N''TR_CW_CTMau_BaoVe''),(N''TR_CW_CauHinh_BaoVe''),(N''TR_CW_HD_Request''),(N''TR_CW_TT_ThuDu''),(N''TR_CW_BanGiao_BaoVe''),(N''TR_CW_Audit_DM_TINH_TRANG_BENH''),(N''TR_CW_Audit_MAU_KE_HOACH_DIEU_TRI''),(N''TR_CW_Audit_CHI_TIET_MAU_KE_HOACH''),(N''TR_CW_Audit_NHOM_THUOC_KE_DON''),(N''TR_CW_Audit_CAU_HINH_THUOC_KE_DON'')) expected(Name) WHERE OBJECT_ID(N''dbo.''+Name) IS NULL) THROW 52102,N''Thiếu FK/CHECK/trigger của migration.'',1;
+IF EXISTS(SELECT 1 FROM sys.triggers WHERE name LIKE N''TR[_]CW[_]%'' AND is_disabled=1) OR EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name LIKE N''FK[_]CW[_]%'' AND(is_disabled=1 OR is_not_trusted=1)) OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE name LIKE N''CK[_]CW[_]%'' AND(is_disabled=1 OR is_not_trusted=1)) THROW 52102,N''Trigger hoặc ràng buộc mới bị tắt/chưa kiểm chứng.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.PHIEU_KHAM_BENH'') AND name=N''IX_CW_Phieu_BacSi'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_Phieu_BacSi.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.LICH_SU_KHAM_BENH'') AND name=N''IX_CW_LS_BacSi'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_LS_BacSi.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.HOA_DON'') AND name=N''UX_CW_HD_YeuCau'' AND is_disabled=0) THROW 52102,N''Thiếu index UX_CW_HD_YeuCau.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.HOA_DON'') AND name=N''UX_CW_HD_LuotV2'' AND is_disabled=0) THROW 52102,N''Thiếu index UX_CW_HD_LuotV2.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.KE_HOACH_DIEU_TRI'') AND name=N''UX_CW_KH_Source'' AND is_disabled=0) THROW 52102,N''Thiếu index UX_CW_KH_Source.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.TINH_TRANG_BENH'') AND name=N''IX_CW_TTB_DMTT'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_TTB_DMTT.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.KE_HOACH_DIEU_TRI'') AND name=N''IX_CW_KH_Mau'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_KH_Mau.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.DON_THUOC'') AND name=N''IX_CW_DT_ThayThe'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_DT_ThayThe.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.MAU_KE_HOACH_DIEU_TRI'') AND name=N''IX_CW_Mau_TinhTrang'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_Mau_TinhTrang.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.CAU_HINH_THUOC_KE_DON'') AND name=N''IX_CW_CauHinh_Nhom'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_CauHinh_Nhom.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.BAN_GIAO_THUOC'') AND name=N''IX_CW_BanGiao_HD'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_BanGiao_HD.'',1;IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name LIKE N''FK[_]CW[_]%'' AND(is_disabled=1 OR is_not_trusted=1)) THROW 52102,N''FK mới chưa được kiểm chứng.'',1;
+SELECT N''ClinicalWorkflow v2'' AS SchemaVersion,COUNT(*) AS TableCount FROM sys.tables WHERE is_ms_shipped=0;
+SELECT MaHD,MaLS,SoTienPhaiThu,DaThuRong,ConPhaiTra FROM dbo.VW_HOA_DON_THANH_TOAN WHERE ConPhaiTra<>0;';
 
-GO
-IF COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.ClinicalFreshCompleted')),0)<>1 THROW 52140,N'Baseline cài mới chưa hoàn tất; không chạy phần tình trạng đơn giản.',1;
--- Đơn giản hóa tình trạng bệnh: bỏ cột MucDo theo yêu cầu.
+EXEC sys.sp_executesql N'DECLARE @core TABLE(T sysname,C sysname,TypeName sysname,L smallint,P tinyint,S tinyint,N bit);
+INSERT @core VALUES
+(N''BENH_NHAN'',N''MaBN'',N''nvarchar'',100,0,0,0),
+(N''BENH_NHAN'',N''HoTenBN'',N''nvarchar'',510,0,0,0),
+(N''BENH_NHAN'',N''GioiTinh'',N''nvarchar'',100,0,0,1),
+(N''BENH_NHAN'',N''NgaySinh'',N''date'',3,0,0,1),
+(N''BENH_NHAN'',N''SDT'',N''nvarchar'',100,0,0,1),
+(N''BENH_NHAN'',N''DiaChi'',N''nvarchar'',510,0,0,1),
+(N''BENH_NHAN'',N''MaBHYT'',N''nvarchar'',100,0,0,1),
+(N''BENH_NHAN'',N''NhomMau'',N''nvarchar'',100,0,0,1),
+(N''BENH_NHAN'',N''TienSuBenh'',N''nvarchar'',-1,0,0,1),
+(N''BENH_NHAN'',N''DiUng'',N''nvarchar'',-1,0,0,1),
+(N''BENH_NHAN'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''HO_SO_BENH_AN'',N''MaHS'',N''nvarchar'',100,0,0,0),
+(N''HO_SO_BENH_AN'',N''MaBN'',N''nvarchar'',100,0,0,0),
+(N''HO_SO_BENH_AN'',N''NgayLap'',N''datetime2'',6,0,0,0),
+(N''HO_SO_BENH_AN'',N''LyDoKhamBanDau'',N''nvarchar'',-1,0,0,0),
+(N''HO_SO_BENH_AN'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''HO_SO_BENH_AN'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''MaPhieu'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''MaHS'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''MaLich'',N''nvarchar'',100,0,0,1),
+(N''PHIEU_KHAM_BENH'',N''MaPhong'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''MaBS'',N''nvarchar'',100,0,0,1),
+(N''PHIEU_KHAM_BENH'',N''MaNVTiepNhan'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''MaDV'',N''nvarchar'',100,0,0,1),
+(N''PHIEU_KHAM_BENH'',N''SoThuTu'',N''int'',4,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''ThoiGianTiepNhan'',N''datetime2'',6,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''LyDoKham'',N''nvarchar'',-1,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''LICH_SU_KHAM_BENH'',N''MaLS'',N''nvarchar'',100,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''MaPhieu'',N''nvarchar'',100,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''MaBS'',N''nvarchar'',100,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''MaPhong'',N''nvarchar'',100,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''ThoiGianKham'',N''datetime2'',6,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''TrieuChung'',N''nvarchar'',-1,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''ChanDoan'',N''nvarchar'',-1,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''KeHoachXuLy'',N''nvarchar'',-1,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''NgayXacNhan'',N''datetime2'',6,0,0,1),
+(N''LICH_SU_KHAM_BENH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''LICH_SU_KHAM_BENH'',N''KhongKeThuoc'',N''int'',4,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''LyDoKhongKeThuoc'',N''nvarchar'',1000,0,0,1),
+(N''TINH_TRANG_BENH'',N''MaTTB'',N''nvarchar'',100,0,0,0),
+(N''TINH_TRANG_BENH'',N''MaLS'',N''nvarchar'',100,0,0,0),
+(N''TINH_TRANG_BENH'',N''LoaiTinhTrang'',N''nvarchar'',510,0,0,0),
+(N''TINH_TRANG_BENH'',N''MoTaTinhTrang'',N''nvarchar'',-1,0,0,0),
+(N''TINH_TRANG_BENH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''TINH_TRANG_BENH'',N''MaDMTT'',N''nvarchar'',100,0,0,1),
+(N''DICH_VU'',N''MaDV'',N''nvarchar'',100,0,0,0),
+(N''DICH_VU'',N''TenDV'',N''nvarchar'',510,0,0,0),
+(N''DICH_VU'',N''NhomDV'',N''nvarchar'',510,0,0,0),
+(N''DICH_VU'',N''MaCK'',N''nvarchar'',100,0,0,0),
+(N''DICH_VU'',N''DonGia'',N''decimal'',9,18,2,0),
+(N''DICH_VU'',N''ThoiGianDuKien'',N''int'',4,0,0,0),
+(N''DICH_VU'',N''MoTa'',N''nvarchar'',-1,0,0,1),
+(N''DICH_VU'',N''NgayApDung'',N''date'',3,0,0,0),
+(N''DICH_VU'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''KE_HOACH_DIEU_TRI'',N''MaKHDT'',N''nvarchar'',100,0,0,0),
+(N''KE_HOACH_DIEU_TRI'',N''MaLS'',N''nvarchar'',100,0,0,0),
+(N''KE_HOACH_DIEU_TRI'',N''MaBS'',N''nvarchar'',100,0,0,0),
+(N''KE_HOACH_DIEU_TRI'',N''NgayLap'',N''datetime2'',6,0,0,0),
+(N''KE_HOACH_DIEU_TRI'',N''NgayBatDau'',N''date'',3,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''NgayDuKienKetThuc'',N''date'',3,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''TongTienDuKien'',N''decimal'',9,18,2,0),
+(N''KE_HOACH_DIEU_TRI'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''KE_HOACH_DIEU_TRI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''MaTTBNguon'',N''nvarchar'',100,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''MaMauKH'',N''nvarchar'',100,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''PhienBanMau'',N''int'',4,0,0,1),
+(N''CHI_TIET_KE_HOACH'',N''MaCTKH'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_KE_HOACH'',N''MaKHDT'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_KE_HOACH'',N''MaDV'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_KE_HOACH'',N''LanThu'',N''int'',4,0,0,0),
+(N''CHI_TIET_KE_HOACH'',N''SoLuongDuKien'',N''decimal'',9,18,3,0),
+(N''CHI_TIET_KE_HOACH'',N''DonGiaDuKien'',N''decimal'',9,18,2,0),
+(N''CHI_TIET_KE_HOACH'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_KE_HOACH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''CHI_TIET_KE_HOACH'',N''NoiDungBuoc'',N''nvarchar'',-1,0,0,1),
+(N''DICH_VU_THUC_HIEN'',N''MaDVThucHien'',N''nvarchar'',100,0,0,0),
+(N''DICH_VU_THUC_HIEN'',N''MaLS'',N''nvarchar'',100,0,0,0),
+(N''DICH_VU_THUC_HIEN'',N''MaCTKH'',N''nvarchar'',100,0,0,1),
+(N''DICH_VU_THUC_HIEN'',N''MaDV'',N''nvarchar'',100,0,0,0),
+(N''DICH_VU_THUC_HIEN'',N''MaNVThucHien'',N''nvarchar'',100,0,0,0),
+(N''DICH_VU_THUC_HIEN'',N''ThoiGianThucHien'',N''datetime2'',6,0,0,0),
+(N''DICH_VU_THUC_HIEN'',N''SoLuong'',N''decimal'',9,18,3,0),
+(N''DICH_VU_THUC_HIEN'',N''DonGia'',N''decimal'',9,18,2,0),
+(N''DICH_VU_THUC_HIEN'',N''KetQua'',N''nvarchar'',-1,0,0,1),
+(N''DICH_VU_THUC_HIEN'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''DON_THUOC'',N''MaDT'',N''nvarchar'',100,0,0,0),
+(N''DON_THUOC'',N''MaLS'',N''nvarchar'',100,0,0,0),
+(N''DON_THUOC'',N''MaBS'',N''nvarchar'',100,0,0,0),
+(N''DON_THUOC'',N''NgayKe'',N''datetime2'',6,0,0,0),
+(N''DON_THUOC'',N''LyDoThayThe'',N''nvarchar'',-1,0,0,1),
+(N''DON_THUOC'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''DON_THUOC'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''DON_THUOC'',N''MaDTThayThe'',N''nvarchar'',100,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''MaCTDT'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_DON_THUOC'',N''MaDT'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_DON_THUOC'',N''MaThuoc'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_DON_THUOC'',N''LieuDung'',N''nvarchar'',510,0,0,0),
+(N''CHI_TIET_DON_THUOC'',N''SoLuong'',N''decimal'',9,18,3,0),
+(N''CHI_TIET_DON_THUOC'',N''SoNgayDung'',N''int'',4,0,0,0),
+(N''CHI_TIET_DON_THUOC'',N''HuongDan'',N''nvarchar'',-1,0,0,0),
+(N''CHI_TIET_DON_THUOC'',N''DuongDung'',N''nvarchar'',200,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''TenThuocChot'',N''nvarchar'',510,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''HamLuongChot'',N''nvarchar'',510,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''DonViTinhChot'',N''nvarchar'',510,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''PhienBanHuongDan'',N''int'',4,0,0,1),
+(N''VAI_TRO'',N''MaVaiTro'',N''nvarchar'',100,0,0,0),
+(N''VAI_TRO'',N''TenVaiTro'',N''nvarchar'',510,0,0,0),
+(N''VAI_TRO'',N''MoTa'',N''nvarchar'',-1,0,0,0),
+(N''CHUC_VU'',N''MaChucVu'',N''nvarchar'',100,0,0,0),
+(N''CHUC_VU'',N''TenChucVu'',N''nvarchar'',510,0,0,0),
+(N''CHUC_VU'',N''MoTa'',N''nvarchar'',-1,0,0,0),
+(N''TAI_KHOAN'',N''MaTK'',N''nvarchar'',100,0,0,0),
+(N''TAI_KHOAN'',N''TenDangNhap'',N''nvarchar'',200,0,0,0),
+(N''TAI_KHOAN'',N''MatKhauHash'',N''nvarchar'',1024,0,0,0),
+(N''TAI_KHOAN'',N''MaVaiTro'',N''nvarchar'',100,0,0,0),
+(N''TAI_KHOAN'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''TAI_KHOAN'',N''MaKhoa'',N''nvarchar'',100,0,0,1),
+(N''TAI_KHOAN'',N''MaPhong'',N''nvarchar'',100,0,0,1),
+(N''TAI_KHOAN'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''NHAN_VIEN'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''NHAN_VIEN'',N''HoTen'',N''nvarchar'',510,0,0,0),
+(N''NHAN_VIEN'',N''GioiTinh'',N''nvarchar'',100,0,0,1),
+(N''NHAN_VIEN'',N''NgaySinh'',N''date'',3,0,0,1),
+(N''NHAN_VIEN'',N''SDT'',N''nvarchar'',100,0,0,1),
+(N''NHAN_VIEN'',N''DiaChi'',N''nvarchar'',510,0,0,1),
+(N''NHAN_VIEN'',N''MaChucVu'',N''nvarchar'',100,0,0,0),
+(N''NHAN_VIEN'',N''MaCK'',N''nvarchar'',100,0,0,1),
+(N''NHAN_VIEN'',N''BangCap'',N''nvarchar'',510,0,0,1),
+(N''NHAN_VIEN'',N''NgayVaoLam'',N''date'',3,0,0,0),
+(N''NHAN_VIEN'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''MaCC'',N''nvarchar'',100,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''SoChungChi'',N''nvarchar'',510,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''TenChungChi'',N''nvarchar'',510,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''NgayCap'',N''date'',3,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''NoiCap'',N''nvarchar'',510,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''HanChungChi'',N''date'',3,0,0,1),
+(N''CHUNG_CHI_NHAN_VIEN'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''KHOA'',N''MaKhoa'',N''nvarchar'',100,0,0,0),
+(N''KHOA'',N''TenKhoa'',N''nvarchar'',510,0,0,0),
+(N''KHOA'',N''DienThoai'',N''nvarchar'',100,0,0,0),
+(N''KHOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),
+(N''KHOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''CHUYEN_KHOA'',N''MaCK'',N''nvarchar'',100,0,0,0),
+(N''CHUYEN_KHOA'',N''MaKhoa'',N''nvarchar'',100,0,0,0),
+(N''CHUYEN_KHOA'',N''TenCK'',N''nvarchar'',510,0,0,0),
+(N''CHUYEN_KHOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),
+(N''CHUYEN_KHOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''PHONG'',N''MaPhong'',N''nvarchar'',100,0,0,0),
+(N''PHONG'',N''TenPhong'',N''nvarchar'',510,0,0,0),
+(N''PHONG'',N''MaKhoa'',N''nvarchar'',100,0,0,0),
+(N''PHONG'',N''LoaiPhong'',N''nvarchar'',510,0,0,0),
+(N''PHONG'',N''TinhTrang'',N''nvarchar'',510,0,0,0),
+(N''PHONG'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''THIET_BI'',N''MaTB'',N''nvarchar'',100,0,0,0),
+(N''THIET_BI'',N''MaHH'',N''nvarchar'',100,0,0,0),
+(N''THIET_BI'',N''SoSerial'',N''nvarchar'',510,0,0,0),
+(N''THIET_BI'',N''NgayMua'',N''date'',3,0,0,1),
+(N''THIET_BI'',N''MaNCC'',N''nvarchar'',100,0,0,1),
+(N''THIET_BI'',N''MaPhong'',N''nvarchar'',100,0,0,1),
+(N''THIET_BI'',N''TinhTrang'',N''nvarchar'',510,0,0,0),
+(N''THIET_BI'',N''HanBaoHanh'',N''date'',3,0,0,1),
+(N''THIET_BI'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''THIET_BI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''BAO_TRI_THIET_BI'',N''MaBT'',N''nvarchar'',100,0,0,0),
+(N''BAO_TRI_THIET_BI'',N''MaTB'',N''nvarchar'',100,0,0,0),
+(N''BAO_TRI_THIET_BI'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''BAO_TRI_THIET_BI'',N''NgayBatDau'',N''date'',3,0,0,0),
+(N''BAO_TRI_THIET_BI'',N''NgayKetThuc'',N''datetime2'',6,0,0,1),
+(N''BAO_TRI_THIET_BI'',N''NoiDung'',N''nvarchar'',-1,0,0,0),
+(N''BAO_TRI_THIET_BI'',N''ChiPhi'',N''decimal'',9,18,2,0),
+(N''BAO_TRI_THIET_BI'',N''NgayBaoTriTiepTheo'',N''date'',3,0,0,1),
+(N''BAO_TRI_THIET_BI'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''BAO_TRI_THIET_BI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''NHA_CUNG_CAP'',N''MaNCC'',N''nvarchar'',100,0,0,0),
+(N''NHA_CUNG_CAP'',N''TenNCC'',N''nvarchar'',510,0,0,0),
+(N''NHA_CUNG_CAP'',N''SDT'',N''nvarchar'',100,0,0,1),
+(N''NHA_CUNG_CAP'',N''Email'',N''nvarchar'',510,0,0,0),
+(N''NHA_CUNG_CAP'',N''DiaChi'',N''nvarchar'',510,0,0,1),
+(N''NHA_CUNG_CAP'',N''NguoiLienHe'',N''nvarchar'',510,0,0,0),
+(N''NHA_CUNG_CAP'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''KHO'',N''MaKho'',N''nvarchar'',100,0,0,0),
+(N''KHO'',N''TenKho'',N''nvarchar'',510,0,0,0),
+(N''KHO'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''KHO'',N''LoaiKho'',N''nvarchar'',510,0,0,0),
+(N''KHO'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''LOAI_HANG_HOA'',N''MaLoaiHH'',N''nvarchar'',100,0,0,0),
+(N''LOAI_HANG_HOA'',N''TenLoaiHH'',N''nvarchar'',510,0,0,0),
+(N''LOAI_HANG_HOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),
+(N''LOAI_HANG_HOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''HANG_HOA'',N''MaHH'',N''nvarchar'',100,0,0,0),
+(N''HANG_HOA'',N''TenHH'',N''nvarchar'',510,0,0,0),
+(N''HANG_HOA'',N''MaLoaiHH'',N''nvarchar'',100,0,0,0),
+(N''HANG_HOA'',N''DonViTinh'',N''nvarchar'',510,0,0,0),
+(N''HANG_HOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),
+(N''HANG_HOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''VAT_TU'',N''MaVT'',N''nvarchar'',100,0,0,0),
+(N''VAT_TU'',N''MaHH'',N''nvarchar'',100,0,0,0),
+(N''VAT_TU'',N''MucTonToiThieu'',N''decimal'',9,18,3,0),
+(N''THUOC'',N''MaThuoc'',N''nvarchar'',100,0,0,0),
+(N''THUOC'',N''MaHH'',N''nvarchar'',100,0,0,0),
+(N''THUOC'',N''HamLuong'',N''nvarchar'',510,0,0,0),
+(N''THUOC'',N''MucTonToiThieu'',N''decimal'',9,18,3,0),
+(N''THUOC'',N''DonGiaBan'',N''decimal'',9,18,2,0),
+(N''LO_HANG_HOA'',N''MaLo'',N''nvarchar'',100,0,0,0),
+(N''LO_HANG_HOA'',N''MaHH'',N''nvarchar'',100,0,0,0),
+(N''LO_HANG_HOA'',N''MaNCC'',N''nvarchar'',100,0,0,0),
+(N''LO_HANG_HOA'',N''MaKho'',N''nvarchar'',100,0,0,0),
+(N''LO_HANG_HOA'',N''SoLo'',N''nvarchar'',510,0,0,1),
+(N''LO_HANG_HOA'',N''NgayNhap'',N''datetime2'',6,0,0,0),
+(N''LO_HANG_HOA'',N''HanSuDung'',N''date'',3,0,0,1),
+(N''LO_HANG_HOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON_NHAP'',N''MaHDN'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON_NHAP'',N''SoHoaDonNCC'',N''nvarchar'',510,0,0,0),
+(N''HOA_DON_NHAP'',N''MaNCC'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON_NHAP'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON_NHAP'',N''NgayHoaDon'',N''datetime2'',6,0,0,0),
+(N''HOA_DON_NHAP'',N''TongTien'',N''decimal'',9,18,2,0),
+(N''HOA_DON_NHAP'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON_NHAP'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''PHIEU_NHAP'',N''MaPN'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_NHAP'',N''MaHDN'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_NHAP'',N''MaKho'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_NHAP'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_NHAP'',N''NgayNhap'',N''datetime2'',6,0,0,0),
+(N''PHIEU_NHAP'',N''TongTien'',N''decimal'',9,18,2,0),
+(N''PHIEU_NHAP'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_NHAP'',N''LyDo'',N''nvarchar'',-1,0,0,0),
+(N''PHIEU_NHAP'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''CHI_TIET_PHIEU_NHAP'',N''MaCTPN'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_PHIEU_NHAP'',N''MaPN'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_PHIEU_NHAP'',N''MaHH'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_PHIEU_NHAP'',N''MaLo'',N''nvarchar'',100,0,0,1),
+(N''CHI_TIET_PHIEU_NHAP'',N''SoLuong'',N''decimal'',9,18,3,0),
+(N''CHI_TIET_PHIEU_NHAP'',N''DonGia'',N''decimal'',9,18,2,0),
+(N''CHI_TIET_PHIEU_NHAP'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''PHIEU_XUAT'',N''MaPX'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_XUAT'',N''MaKho'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_XUAT'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_XUAT'',N''MaKhoa'',N''nvarchar'',100,0,0,1),
+(N''PHIEU_XUAT'',N''MaPhong'',N''nvarchar'',100,0,0,1),
+(N''PHIEU_XUAT'',N''MaLS'',N''nvarchar'',100,0,0,1),
+(N''PHIEU_XUAT'',N''NgayXuat'',N''datetime2'',6,0,0,0),
+(N''PHIEU_XUAT'',N''LyDo'',N''nvarchar'',-1,0,0,0),
+(N''PHIEU_XUAT'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_XUAT'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''CHI_TIET_PHIEU_XUAT'',N''MaCTPX'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_PHIEU_XUAT'',N''MaPX'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_PHIEU_XUAT'',N''MaHH'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_PHIEU_XUAT'',N''MaLo'',N''nvarchar'',100,0,0,1),
+(N''CHI_TIET_PHIEU_XUAT'',N''MaCTDT'',N''nvarchar'',100,0,0,1),
+(N''CHI_TIET_PHIEU_XUAT'',N''SoLuong'',N''decimal'',9,18,3,0),
+(N''CHI_TIET_PHIEU_XUAT'',N''GhiChu'',N''nvarchar'',-1,0,0,0),
+(N''CA_LAM'',N''MaCa'',N''nvarchar'',100,0,0,0),
+(N''CA_LAM'',N''GioBatDau'',N''time'',3,0,0,0),
+(N''CA_LAM'',N''GioKetThuc'',N''time'',3,0,0,0),
+(N''CA_LAM'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''CA_LAM'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''LICH_LAM_VIEC'',N''MaLLV'',N''nvarchar'',100,0,0,0),
+(N''LICH_LAM_VIEC'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''LICH_LAM_VIEC'',N''MaCa'',N''nvarchar'',100,0,0,0),
+(N''LICH_LAM_VIEC'',N''NgayLam'',N''date'',3,0,0,0),
+(N''LICH_LAM_VIEC'',N''MaPhong'',N''nvarchar'',100,0,0,1),
+(N''LICH_LAM_VIEC'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''LICH_LAM_VIEC'',N''TrangThaiHienDien'',N''nvarchar'',100,0,0,0),
+(N''LICH_LAM_VIEC'',N''GioVao'',N''datetime2'',6,0,0,1),
+(N''LICH_LAM_VIEC'',N''GioRa'',N''datetime2'',6,0,0,1),
+(N''LICH_LAM_VIEC'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''DON_XIN_NGHI'',N''MaDonNghi'',N''nvarchar'',100,0,0,0),
+(N''DON_XIN_NGHI'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''DON_XIN_NGHI'',N''TuNgay'',N''date'',3,0,0,0),
+(N''DON_XIN_NGHI'',N''DenNgay'',N''date'',3,0,0,0),
+(N''DON_XIN_NGHI'',N''LyDo'',N''nvarchar'',-1,0,0,0),
+(N''DON_XIN_NGHI'',N''NgayGui'',N''datetime2'',6,0,0,0),
+(N''DON_XIN_NGHI'',N''TrangThaiDuyet'',N''nvarchar'',100,0,0,0),
+(N''DON_XIN_NGHI'',N''MaNVDuyet'',N''nvarchar'',100,0,0,1),
+(N''DON_XIN_NGHI'',N''NgayDuyet'',N''datetime2'',6,0,0,1),
+(N''DON_XIN_NGHI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''PHAN_CONG_THAY_THE'',N''MaPCTT'',N''nvarchar'',100,0,0,0),
+(N''PHAN_CONG_THAY_THE'',N''MaDonNghi'',N''nvarchar'',100,0,0,0),
+(N''PHAN_CONG_THAY_THE'',N''MaLLVThayThe'',N''nvarchar'',100,0,0,0),
+(N''PHAN_CONG_THAY_THE'',N''NgayXuLy'',N''datetime2'',6,0,0,0),
+(N''PHAN_CONG_THAY_THE'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''PHAN_CONG_THAY_THE'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''LICH_KHAM'',N''MaLich'',N''nvarchar'',100,0,0,0),
+(N''LICH_KHAM'',N''MaBN'',N''nvarchar'',100,0,0,0),
+(N''LICH_KHAM'',N''MaBS'',N''nvarchar'',100,0,0,0),
+(N''LICH_KHAM'',N''MaCa'',N''nvarchar'',100,0,0,0),
+(N''LICH_KHAM'',N''MaPhong'',N''nvarchar'',100,0,0,0),
+(N''LICH_KHAM'',N''MaDV'',N''nvarchar'',100,0,0,1),
+(N''LICH_KHAM'',N''NgayGioKham'',N''datetime2'',6,0,0,0),
+(N''LICH_KHAM'',N''ThoiLuongDuKien'',N''int'',4,0,0,0),
+(N''LICH_KHAM'',N''UuTien'',N''nvarchar'',100,0,0,0),
+(N''LICH_KHAM'',N''LyDoKham'',N''nvarchar'',-1,0,0,0),
+(N''LICH_KHAM'',N''LyDoThayDoi'',N''nvarchar'',-1,0,0,1),
+(N''LICH_KHAM'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''LICH_KHAM'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''LICH_KHAM'',N''NgayTao'',N''datetime2'',6,0,0,0),
+(N''LICH_KHAM'',N''NgayCapNhat'',N''datetime2'',6,0,0,1),
+(N''HOA_DON'',N''MaHD'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON'',N''MaLS'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON'',N''NgayLap'',N''datetime2'',6,0,0,0),
+(N''HOA_DON'',N''NgayXacNhan'',N''datetime2'',6,0,0,1),
+(N''HOA_DON'',N''TongTien'',N''decimal'',9,18,2,0),
+(N''HOA_DON'',N''GiamGia'',N''decimal'',9,18,2,0),
+(N''HOA_DON'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON'',N''PhienBanQuyTrinh'',N''int'',4,0,0,0),
+(N''HOA_DON'',N''MaYeuCau'',N''nvarchar'',100,0,0,1),
+(N''HOA_DON'',N''DauVanTayYeuCau'',N''nvarchar'',128,0,0,1),
+(N''CHI_TIET_HOA_DON'',N''MaCTHD'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_HOA_DON'',N''MaHD'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_HOA_DON'',N''MaDVThucHien'',N''nvarchar'',100,0,0,1),
+(N''CHI_TIET_HOA_DON'',N''MaCTPX'',N''nvarchar'',100,0,0,1),
+(N''CHI_TIET_HOA_DON'',N''NoiDung'',N''nvarchar'',-1,0,0,0),
+(N''CHI_TIET_HOA_DON'',N''DonGia'',N''decimal'',9,18,2,1),
+(N''CHI_TIET_HOA_DON'',N''ThanhTien'',N''decimal'',9,18,2,0),
+(N''THANH_TOAN'',N''MaTT'',N''nvarchar'',100,0,0,0),
+(N''THANH_TOAN'',N''MaHD'',N''nvarchar'',100,0,0,0),
+(N''THANH_TOAN'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''THANH_TOAN'',N''NgayThanhToan'',N''datetime2'',6,0,0,0),
+(N''THANH_TOAN'',N''SoTien'',N''decimal'',9,18,2,0),
+(N''THANH_TOAN'',N''LoaiGiaoDich'',N''nvarchar'',100,0,0,0),
+(N''THANH_TOAN'',N''PhuongThuc'',N''nvarchar'',100,0,0,0),
+(N''THANH_TOAN'',N''LyDo'',N''nvarchar'',-1,0,0,1),
+(N''THANH_TOAN'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''THANH_TOAN'',N''SoTienKhachDua'',N''decimal'',9,18,2,1),
+(N''THANH_TOAN'',N''TienThua'',N''decimal'',9,18,2,1),
+(N''THANH_TOAN'',N''MaThamChieu'',N''nvarchar'',200,0,0,1),
+(N''CHINH_SACH_LUONG'',N''MaCSL'',N''nvarchar'',100,0,0,0),
+(N''CHINH_SACH_LUONG'',N''MaChucVu'',N''nvarchar'',100,0,0,0),
+(N''CHINH_SACH_LUONG'',N''TenChinhSach'',N''nvarchar'',510,0,0,0),
+(N''CHINH_SACH_LUONG'',N''PhienBan'',N''int'',4,0,0,0),
+(N''CHINH_SACH_LUONG'',N''NgayHieuLuc'',N''date'',3,0,0,0),
+(N''CHINH_SACH_LUONG'',N''NgayHetHieuLuc'',N''date'',3,0,0,1),
+(N''CHINH_SACH_LUONG'',N''LuongCoBan'',N''decimal'',9,18,2,0),
+(N''CHINH_SACH_LUONG'',N''SoCaDinhMuc'',N''int'',4,0,0,0),
+(N''CHINH_SACH_LUONG'',N''CoSoHoaHong'',N''nvarchar'',510,0,0,0),
+(N''CHINH_SACH_LUONG'',N''TyLeHoaHong'',N''decimal'',5,9,6,0),
+(N''CHINH_SACH_LUONG'',N''MaNVDuyet'',N''nvarchar'',100,0,0,1),
+(N''CHINH_SACH_LUONG'',N''NgayDuyet'',N''datetime2'',6,0,0,1),
+(N''CHINH_SACH_LUONG'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''BANG_LUONG'',N''MaBL'',N''nvarchar'',100,0,0,0),
+(N''BANG_LUONG'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''BANG_LUONG'',N''MaCSL'',N''nvarchar'',100,0,0,0),
+(N''BANG_LUONG'',N''TuNgay'',N''date'',3,0,0,0),
+(N''BANG_LUONG'',N''DenNgay'',N''date'',3,0,0,0),
+(N''BANG_LUONG'',N''SoCaTinh'',N''int'',4,0,0,0),
+(N''BANG_LUONG'',N''LuongCoBan'',N''decimal'',9,18,2,0),
+(N''BANG_LUONG'',N''SoCaDinhMuc'',N''int'',4,0,0,0),
+(N''BANG_LUONG'',N''TienHoaHong'',N''decimal'',9,18,2,0),
+(N''BANG_LUONG'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''BANG_LUONG'',N''NgayChot'',N''datetime2'',6,0,0,1),
+(N''BANG_LUONG'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''NHAT_KY_THAO_TAC'',N''MaNK'',N''nvarchar'',100,0,0,0),
+(N''NHAT_KY_THAO_TAC'',N''MaTK'',N''nvarchar'',100,0,0,0),
+(N''NHAT_KY_THAO_TAC'',N''ThoiGian'',N''datetime2'',6,0,0,0),
+(N''NHAT_KY_THAO_TAC'',N''HanhDong'',N''nvarchar'',510,0,0,0),
+(N''NHAT_KY_THAO_TAC'',N''LoaiDoiTuong'',N''nvarchar'',510,0,0,0),
+(N''NHAT_KY_THAO_TAC'',N''MaDoiTuong'',N''nvarchar'',100,0,0,0),
+(N''NHAT_KY_THAO_TAC'',N''KetQua'',N''nvarchar'',-1,0,0,0),
+(N''NHAT_KY_THAO_TAC'',N''DuLieuTruoc'',N''nvarchar'',-1,0,0,1),
+(N''NHAT_KY_THAO_TAC'',N''DuLieuSau'',N''nvarchar'',-1,0,0,1),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaDonNghi'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaLich'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaBSCu'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaPhongCu'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaBSMoi'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaPhongMoi'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaLLVThayThe'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaCa'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''NgayGioKham'',N''datetime2'',6,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''ThoiLuongDuKien'',N''int'',4,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaNVXacNhan'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''NgayXacNhan'',N''datetime2'',6,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''TrangThai'',N''nvarchar'',60,0,0,0),
+(N''CA_THEO_NGAY'',N''NgayLam'',N''date'',3,0,0,0),
+(N''CA_THEO_NGAY'',N''MaCa'',N''nvarchar'',100,0,0,0);
+IF EXISTS(SELECT 1 FROM @core e LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+e.T) AND c.name=e.C LEFT JOIN sys.types t ON t.user_type_id=c.user_type_id
+WHERE c.column_id IS NULL OR t.name<>e.TypeName OR c.max_length<>e.L OR c.is_nullable<>e.N OR(e.TypeName=N''decimal'' AND(c.precision<>e.P OR c.scale<>e.S)) OR(e.TypeName IN(N''datetime2'',N''time'') AND c.scale<>e.S))
+THROW 52271,N''Cấu trúc nền không khớp hợp đồng; dừng đồng bộ để bảo toàn dữ liệu.'',1;';
+
+EXEC sys.sp_executesql N'-- TỰ TÍNH THÀNH TIỀN HÓA ĐƠN, ĐỒNG BỘ TỔNG VÀ KHÓA CHỨNG TỪ.
+CREATE OR ALTER TRIGGER dbo.TR_CTHD_TinhTien ON dbo.CHI_TIET_HOA_DON
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF TRIGGER_NESTLEVEL(OBJECT_ID(N''dbo.TR_CTHD_TinhTien'')) > 1 RETURN;
+ DECLARE @Lock NVARCHAR(50);
+ SELECT @Lock=h.MaHD FROM dbo.HOA_DON h WITH(UPDLOCK,HOLDLOCK)
+ WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted);
+ IF EXISTS(SELECT 1 FROM dbo.HOA_DON h JOIN (SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted) x ON x.MaHD=h.MaHD WHERE h.TrangThai<>N''Nháp'')
+  THROW 51001,N''Chỉ được thay đổi chi tiết của hóa đơn nháp.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD
+  LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=i.MaDVThucHien
+  LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=i.MaCTPX
+  LEFT JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX
+  LEFT JOIN dbo.CHI_TIET_DON_THUOC d ON d.MaCTDT=x.MaCTDT
+  LEFT JOIN dbo.DON_THUOC r ON r.MaDT=d.MaDT
+  WHERE (i.MaDVThucHien IS NOT NULL AND(s.MaLS<>h.MaLS OR s.TrangThai<>N''Đã xác nhận''))
+     OR (i.MaCTPX IS NOT NULL AND(x.MaCTDT IS NULL OR p.MaLS<>h.MaLS OR r.MaLS<>h.MaLS OR p.TrangThai<>N''Đã ghi sổ'')))
+  THROW 51002,N''Nguồn thu phải là dịch vụ xác nhận/thuốc đã cấp cùng lần khám; không thu vật tư nội bộ.'',1;
+ UPDATE c SET ThanhTien=CASE WHEN c.MaDVThucHien IS NOT NULL THEN s.ThanhTien ELSE CAST(ROUND(x.SoLuong*c.DonGia,2) AS DECIMAL(18,2)) END
+ FROM dbo.CHI_TIET_HOA_DON c JOIN inserted i ON i.MaCTHD=c.MaCTHD
+ LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
+ LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX;
+ IF EXISTS(SELECT 1 FROM dbo.HOA_DON h WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted)
+ AND h.GiamGia>COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0))
+  THROW 51003,N''Tổng mới thấp hơn giảm giá. Giảm hoặc bỏ giảm giá trước khi gỡ khoản thu nháp.'',1;
+ UPDATE h SET TongTien=COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0)
+ FROM dbo.HOA_DON h WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted);
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_HD_XacNhan ON dbo.HOA_DON
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted WHERE TrangThai=N''Đã xác nhận'')
+  THROW 51004,N''Hóa đơn đã xác nhận giữ nguyên; không sửa, hủy hay xóa.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã xác nhận'' AND NOT EXISTS(SELECT 1 FROM deleted d WHERE d.MaHD=i.MaHD))
+  THROW 51005,N''Tạo hóa đơn nháp và chi tiết trước khi xác nhận.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Hủy'' AND EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=i.MaHD))
+  THROW 51006,N''Gỡ chi tiết hóa đơn nháp trước khi hủy để giải phóng nguồn.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TongTien<>COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=i.MaHD),0))
+  THROW 51007,N''TongTien phải bằng tổng ThanhTien chi tiết; không nhập tổng độc lập.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã xác nhận'' AND
+ (NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=i.MaHD)
+ OR EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaLS=i.MaLS AND(l.TrangThai<>N''Đã xác nhận'' OR i.NgayLap<l.ThoiGianKham))
+ OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c
+ LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
+ LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
+ LEFT JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX
+ WHERE c.MaHD=i.MaHD AND((c.MaDVThucHien IS NOT NULL AND(s.TrangThai<>N''Đã xác nhận'' OR s.MaLS<>i.MaLS OR s.ThanhTien<>c.ThanhTien OR s.ThoiGianThucHien>i.NgayXacNhan))
+ OR(c.MaCTPX IS NOT NULL AND(p.TrangThai<>N''Đã ghi sổ'' OR p.MaLS<>i.MaLS OR x.MaCTDT IS NULL OR CAST(ROUND(x.SoLuong*c.DonGia,2) AS DECIMAL(18,2))<>c.ThanhTien OR p.NgayXuat>i.NgayXacNhan))))))
+  THROW 51008,N''Không xác nhận hóa đơn rỗng, nguồn sai, thời gian sai hoặc thành tiền chưa khớp.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_TT_KiemTraSoDu ON dbo.THANH_TOAN
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ DECLARE @Lock NVARCHAR(50);
+ SELECT @Lock=h.MaHD FROM dbo.HOA_DON h WITH(UPDLOCK,HOLDLOCK)
+ WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted);
+ IF EXISTS(SELECT 1 FROM deleted WHERE TrangThai=N''Đã xác nhận'')
+  THROW 51009,N''Giao dịch đã xác nhận không sửa/xóa; lập giao dịch điều chỉnh mới.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD WHERE i.TrangThai=N''Đã xác nhận'' AND(h.TrangThai<>N''Đã xác nhận'' OR i.NgayThanhToan<h.NgayXacNhan))
+  THROW 51010,N''Chỉ thu/hoàn sau khi hóa đơn đã xác nhận.'',1;
+ IF EXISTS(SELECT 1 FROM dbo.HOA_DON h JOIN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted) z ON z.MaHD=h.MaHD
+ OUTER APPLY(SELECT SUM(CASE WHEN t.LoaiGiaoDich=N''Thu'' THEN t.SoTien ELSE -t.SoTien END) ThuRong FROM dbo.THANH_TOAN t WHERE t.MaHD=h.MaHD AND t.TrangThai=N''Đã xác nhận'') a
+ WHERE COALESCE(a.ThuRong,0)<0 OR COALESCE(a.ThuRong,0)>h.SoTienPhaiThu)
+  THROW 51011,N''Thu vượt tiền phải trả hoặc hoàn vượt tiền đang giữ.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CTDT_KhoaDon ON dbo.CHI_TIET_DON_THUOC
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM dbo.DON_THUOC r JOIN(SELECT MaDT FROM inserted UNION SELECT MaDT FROM deleted) x ON x.MaDT=r.MaDT WHERE r.TrangThai<>N''Nháp'')
+  THROW 51012,N''Chỉ sửa chi tiết đơn thuốc nháp; đơn xác nhận giữ nguyên.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_DT_XacNhan ON dbo.DON_THUOC
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaDT=d.MaDT WHERE d.TrangThai<>N''Nháp'' AND(i.MaDT IS NULL OR i.TrangThai=N''Nháp'' OR EXISTS(SELECT i.MaLS,i.MaBS,i.NgayKe,i.LyDoThayThe,i.GhiChu EXCEPT SELECT d.MaLS,d.MaBS,d.NgayKe,d.LyDoThayThe,d.GhiChu)))
+  THROW 51013,N''Đơn đã xác nhận chỉ được đổi trạng thái nghiệp vụ; thay chỉ định bằng đơn mới.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã xác nhận'' AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c WHERE c.MaDT=i.MaDT))
+  THROW 51014,N''Không xác nhận đơn thuốc rỗng.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_DVTH_KhoaNguon ON dbo.DICH_VU_THUC_HIEN
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted WHERE TrangThai=N''Đã xác nhận'')
+  THROW 51015,N''Dịch vụ đã xác nhận không sửa hoặc xóa nguồn thu.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.CHI_TIET_KE_HOACH c ON c.MaCTKH=i.MaCTKH JOIN dbo.KE_HOACH_DIEU_TRI k ON k.MaKHDT=c.MaKHDT
+ JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=i.MaLS JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
+ JOIN dbo.LICH_SU_KHAM_BENH l0 ON l0.MaLS=k.MaLS JOIN dbo.PHIEU_KHAM_BENH p0 ON p0.MaPhieu=l0.MaPhieu
+ WHERE c.MaDV<>i.MaDV OR p.MaHS<>p0.MaHS OR c.TrangThai=N''Hủy'')
+  THROW 51016,N''Dịch vụ phải khớp kế hoạch và cùng hồ sơ bệnh án; không thực hiện dòng đã hủy.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CTKH_TongDuKien ON dbo.CHI_TIET_KE_HOACH
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ UPDATE k SET TongTienDuKien=COALESCE((SELECT SUM(c.ThanhTienDuKien) FROM dbo.CHI_TIET_KE_HOACH c WHERE c.MaKHDT=k.MaKHDT AND c.TrangThai<>N''Hủy''),0)
+ FROM dbo.KE_HOACH_DIEU_TRI k WITH(UPDLOCK) WHERE k.MaKHDT IN(SELECT MaKHDT FROM inserted UNION SELECT MaKHDT FROM deleted);
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_KHDT_Tong ON dbo.KE_HOACH_DIEU_TRI
+AFTER INSERT, UPDATE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TongTienDuKien<>COALESCE((SELECT SUM(c.ThanhTienDuKien) FROM dbo.CHI_TIET_KE_HOACH c WHERE c.MaKHDT=i.MaKHDT AND c.TrangThai<>N''Hủy''),0))
+  THROW 51017,N''Tổng dự kiến phải bằng chi tiết chưa hủy.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CTPN_TongVaNguon ON dbo.CHI_TIET_PHIEU_NHAP
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM dbo.PHIEU_NHAP p WITH(UPDLOCK,HOLDLOCK) JOIN(SELECT MaPN FROM inserted UNION SELECT MaPN FROM deleted) z ON z.MaPN=p.MaPN WHERE p.TrangThai<>N''Nháp'')
+  THROW 51018,N''Chỉ thay đổi chi tiết phiếu nhập nháp.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.PHIEU_NHAP p ON p.MaPN=i.MaPN JOIN dbo.HOA_DON_NHAP h ON h.MaHDN=p.MaHDN JOIN dbo.LO_HANG_HOA l ON l.MaLo=i.MaLo
+ WHERE l.MaHH<>i.MaHH OR l.MaKho<>p.MaKho OR l.MaNCC<>h.MaNCC)
+  THROW 51019,N''Lô nhập phải khớp hàng hóa, kho và nhà cung cấp.'',1;
+ UPDATE p SET TongTien=COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_PHIEU_NHAP c WHERE c.MaPN=p.MaPN),0)
+ FROM dbo.PHIEU_NHAP p WHERE p.MaPN IN(SELECT MaPN FROM inserted UNION SELECT MaPN FROM deleted);
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_PN_GhiSo ON dbo.PHIEU_NHAP
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ DECLARE @Lock NVARCHAR(50);
+ SELECT @Lock=h.MaHH FROM dbo.HANG_HOA h WITH(UPDLOCK,HOLDLOCK)
+ JOIN dbo.CHI_TIET_PHIEU_NHAP c ON c.MaHH=h.MaHH JOIN inserted i ON i.MaPN=c.MaPN;
+ IF EXISTS(SELECT 1 FROM deleted WHERE TrangThai=N''Đã ghi sổ'')
+  THROW 51020,N''Phiếu nhập đã ghi sổ giữ nguyên.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.CHI_TIET_PHIEU_NHAP c ON c.MaPN=i.MaPN JOIN dbo.HOA_DON_NHAP h ON h.MaHDN=i.MaHDN JOIN dbo.LO_HANG_HOA l ON l.MaLo=c.MaLo
+ WHERE l.MaHH<>c.MaHH OR l.MaKho<>i.MaKho OR l.MaNCC<>h.MaNCC)
+  THROW 51019,N''Nguồn phiếu nhập phải khớp hàng hóa, kho và nhà cung cấp của các lô chi tiết.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TongTien<>COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_PHIEU_NHAP c WHERE c.MaPN=i.MaPN),0))
+  THROW 51021,N''Tổng nhập phải bằng chi tiết.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã ghi sổ'' AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_NHAP c WHERE c.MaPN=i.MaPN))
+  THROW 51022,N''Không ghi sổ phiếu nhập rỗng.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CTPX_Nguon ON dbo.CHI_TIET_PHIEU_XUAT
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM dbo.PHIEU_XUAT p WITH(UPDLOCK,HOLDLOCK) JOIN(SELECT MaPX FROM inserted UNION SELECT MaPX FROM deleted) z ON z.MaPX=p.MaPX WHERE p.TrangThai<>N''Nháp'')
+  THROW 51023,N''Chỉ thay đổi chi tiết phiếu xuất nháp.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.PHIEU_XUAT p ON p.MaPX=i.MaPX
+ LEFT JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=i.MaCTDT LEFT JOIN dbo.DON_THUOC d ON d.MaDT=c.MaDT
+ LEFT JOIN dbo.THUOC t ON t.MaThuoc=c.MaThuoc LEFT JOIN dbo.LO_HANG_HOA l ON l.MaLo=i.MaLo
+ WHERE (p.MaLS IS NOT NULL AND(i.MaCTDT IS NULL OR p.MaLS<>d.MaLS OR i.MaHH<>t.MaHH OR i.MaLo IS NULL))
+ OR (p.MaLS IS NULL AND i.MaCTDT IS NOT NULL) OR(i.MaLo IS NOT NULL AND(l.MaHH<>i.MaHH OR l.MaKho<>p.MaKho)))
+  THROW 51024,N''Dòng xuất phải đúng thuốc của đơn/lần khám và đúng lô, kho; xuất nội bộ không dùng MaCTDT.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_PX_GhiSoDuDon ON dbo.PHIEU_XUAT
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ DECLARE @Lock NVARCHAR(50);
+ -- Khóa mặt hàng dùng chung cho nhập/xuất để tránh hai quầy cùng dùng tồn.
+ SELECT @Lock=h.MaHH FROM dbo.HANG_HOA h WITH(UPDLOCK,HOLDLOCK)
+ JOIN dbo.CHI_TIET_PHIEU_XUAT c ON c.MaHH=h.MaHH JOIN inserted i ON i.MaPX=c.MaPX;
+ SELECT @Lock=d.MaDT FROM dbo.DON_THUOC d WITH(UPDLOCK,HOLDLOCK) JOIN dbo.CHI_TIET_DON_THUOC ct ON ct.MaDT=d.MaDT
+ JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTDT=ct.MaCTDT JOIN inserted i ON i.MaPX=x.MaPX;
+ IF EXISTS(SELECT 1 FROM deleted WHERE TrangThai=N''Đã ghi sổ'')
+  THROW 51025,N''Phiếu xuất đã ghi sổ giữ nguyên; không giảm lượng hoặc cấp lại.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaPX=i.MaPX
+ LEFT JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT LEFT JOIN dbo.DON_THUOC d ON d.MaDT=c.MaDT
+ LEFT JOIN dbo.THUOC t ON t.MaThuoc=c.MaThuoc LEFT JOIN dbo.LO_HANG_HOA l ON l.MaLo=x.MaLo
+ WHERE(i.MaLS IS NOT NULL AND(x.MaCTDT IS NULL OR i.MaLS<>d.MaLS OR x.MaHH<>t.MaHH OR x.MaLo IS NULL))
+ OR(i.MaLS IS NULL AND x.MaCTDT IS NOT NULL) OR(x.MaLo IS NOT NULL AND(l.MaHH<>x.MaHH OR l.MaKho<>i.MaKho)))
+  THROW 51024,N''Nguồn phiếu xuất phải khớp đơn thuốc, bệnh nhân, lô và kho của mọi chi tiết.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã ghi sổ'' AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT c WHERE c.MaPX=i.MaPX))
+  THROW 51026,N''Không ghi sổ phiếu xuất rỗng.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaPX=i.MaPX
+ LEFT JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT LEFT JOIN dbo.DON_THUOC d ON d.MaDT=c.MaDT
+ LEFT JOIN dbo.LO_HANG_HOA l ON l.MaLo=x.MaLo
+ WHERE i.TrangThai=N''Đã ghi sổ'' AND((x.MaCTDT IS NOT NULL AND(d.TrangThai<>N''Đã xác nhận'' OR d.NgayKe>i.NgayXuat))
+ OR (x.MaLo IS NOT NULL AND(l.TrangThai<>N''Còn sử dụng'' OR l.NgayNhap>i.NgayXuat OR(l.HanSuDung IS NOT NULL AND l.HanSuDung<CAST(i.NgayXuat AS DATE))))))
+  THROW 51027,N''Đơn chưa xác nhận/ngừng áp dụng hoặc lô không hợp lệ, hết hạn.'',1;
+ -- Mọi dòng của các đơn đang cấp phải đã xuất đủ trong cùng transaction.
+ IF EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c WHERE c.MaDT IN
+ (SELECT ct.MaDT FROM inserted i JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaPX=i.MaPX JOIN dbo.CHI_TIET_DON_THUOC ct ON ct.MaCTDT=x.MaCTDT WHERE i.TrangThai=N''Đã ghi sổ'')
+ AND c.SoLuong<>COALESCE((SELECT SUM(x.SoLuong) FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX WHERE x.MaCTDT=c.MaCTDT AND p.TrangThai=N''Đã ghi sổ''),0))
+  THROW 51028,N''Phải cấp đủ toàn bộ đơn trong một lần xác nhận; không cấp một phần hoặc cấp lại.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaPX=i.MaPX WHERE i.TrangThai=N''Đã ghi sổ'' AND
+ COALESCE((SELECT SUM(n.SoLuong) FROM dbo.CHI_TIET_PHIEU_NHAP n JOIN dbo.PHIEU_NHAP p ON p.MaPN=n.MaPN WHERE p.TrangThai=N''Đã ghi sổ'' AND p.MaKho=i.MaKho AND n.MaHH=x.MaHH AND(n.MaLo=x.MaLo OR(n.MaLo IS NULL AND x.MaLo IS NULL))),0)
+ < COALESCE((SELECT SUM(e.SoLuong) FROM dbo.CHI_TIET_PHIEU_XUAT e JOIN dbo.PHIEU_XUAT p ON p.MaPX=e.MaPX WHERE p.TrangThai=N''Đã ghi sổ'' AND p.MaKho=i.MaKho AND e.MaHH=x.MaHH AND(e.MaLo=x.MaLo OR(e.MaLo IS NULL AND x.MaLo IS NULL))),0))
+  THROW 51029,N''Không đủ tồn kho/lô; rollback toàn bộ lần cấp.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_LO_KhoaNguon ON dbo.LO_HANG_HOA
+AFTER UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted d WHERE EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_NHAP c JOIN dbo.PHIEU_NHAP p ON p.MaPN=c.MaPN WHERE c.MaLo=d.MaLo AND p.TrangThai=N''Đã ghi sổ'') OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT c JOIN dbo.PHIEU_XUAT p ON p.MaPX=c.MaPX WHERE c.MaLo=d.MaLo AND p.TrangThai=N''Đã ghi sổ''))
+  THROW 51030,N''Lô đã có chứng từ ghi sổ giữ nguyên thuộc tính nguồn.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_HH_KhoaDonVi ON dbo.HANG_HOA
+AFTER UPDATE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaHH=i.MaHH WHERE i.DonViTinh<>d.DonViTinh AND
+ (EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_NHAP c WHERE c.MaHH=i.MaHH) OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT c WHERE c.MaHH=i.MaHH) OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c JOIN dbo.THUOC t ON t.MaThuoc=c.MaThuoc WHERE t.MaHH=i.MaHH)))
+  THROW 51031,N''Không đổi đơn vị cơ sở sau khi đã kê/nhập/xuất.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_THUOC_KhoaHangHoa ON dbo.THUOC
+AFTER UPDATE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaThuoc=i.MaThuoc WHERE i.MaHH<>d.MaHH AND EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c WHERE c.MaThuoc=i.MaThuoc))
+  THROW 51032,N''Thuốc đã kê đơn không đổi hàng hóa nguồn; DonGiaBan hiện hành vẫn được cập nhật.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_PHIEU_LienKet ON dbo.PHIEU_KHAM_BENH
+AFTER INSERT, UPDATE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HO_SO_BENH_AN h ON h.MaHS=i.MaHS JOIN dbo.LICH_KHAM l ON l.MaLich=i.MaLich WHERE l.MaBN<>h.MaBN OR l.MaPhong<>i.MaPhong OR(i.MaBS IS NOT NULL AND l.MaBS<>i.MaBS))
+  THROW 51033,N''Phiếu tiếp nhận có lịch phải khớp bệnh nhân, phòng và bác sĩ.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaPhieu=i.MaPhieu WHERE EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaPhieu=i.MaPhieu) AND EXISTS(SELECT i.MaHS,i.MaLich EXCEPT SELECT d.MaHS,d.MaLich))
+  THROW 51034,N''Phiếu đã phát sinh lần khám không đổi hồ sơ/lịch nguồn.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_LS_LienKet ON dbo.LICH_SU_KHAM_BENH
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaLS=i.MaLS WHERE d.TrangThai=N''Đã xác nhận'' AND EXISTS(SELECT i.MaPhieu,i.MaBS,i.MaPhong,i.ThoiGianKham,i.TrangThai,i.NgayXacNhan EXCEPT SELECT d.MaPhieu,d.MaBS,d.MaPhong,d.ThoiGianKham,d.TrangThai,d.NgayXacNhan))
+  THROW 51035,N''Lần khám đã xác nhận giữ nguyên liên kết và thời gian nguồn.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=i.MaPhieu WHERE i.ThoiGianKham<p.ThoiGianTiepNhan OR i.MaPhong<>p.MaPhong OR(p.MaBS IS NOT NULL AND i.MaBS<>p.MaBS))
+  THROW 51036,N''Lần khám phải khớp phiếu tiếp nhận và không trước giờ tiếp nhận.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CSL_KhoaChinhSach ON dbo.CHINH_SACH_LUONG
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted WHERE TrangThai=N''Đã duyệt'')
+  THROW 51037,N''Chính sách đã duyệt giữ nguyên; thay đổi bằng phiên bản mới.'',1;
+ IF EXISTS(SELECT 1 FROM inserted WHERE TrangThai=N''Đã duyệt'' AND(MaNVDuyet IS NULL OR NgayDuyet IS NULL))
+  THROW 51037,N''Chính sách đã duyệt phải ghi người và ngày duyệt.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_BL_ChotLuong ON dbo.BANG_LUONG
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted WHERE TrangThai=N''Đã chốt'')
+  THROW 51038,N''Bảng lương đã chốt không sửa hoặc xóa các thành phần.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.NHAN_VIEN n ON n.MaNV=i.MaNV JOIN dbo.CHINH_SACH_LUONG cs ON cs.MaCSL=i.MaCSL
+ WHERE i.TrangThai=N''Đã chốt'' AND(i.NgayChot IS NULL OR CAST(i.NgayChot AS DATE)<i.DenNgay OR cs.TrangThai<>N''Đã duyệt'' OR n.MaChucVu<>cs.MaChucVu OR i.TuNgay<cs.NgayHieuLuc OR(cs.NgayHetHieuLuc IS NOT NULL AND i.DenNgay>cs.NgayHetHieuLuc)
+ OR i.LuongCoBan<>cs.LuongCoBan OR i.SoCaDinhMuc<>cs.SoCaDinhMuc
+ OR i.SoCaTinh<>(SELECT COUNT(*) FROM dbo.LICH_LAM_VIEC l WHERE l.MaNV=i.MaNV AND l.NgayLam BETWEEN i.TuNgay AND i.DenNgay AND l.TrangThai=N''Đã xác nhận'' AND l.TrangThaiHienDien=N''Có mặt'')
+ OR i.TienHoaHong<>CAST(ROUND(COALESCE((SELECT SUM(s.ThanhTien) FROM dbo.DICH_VU_THUC_HIEN s WHERE s.MaNVThucHien=i.MaNV AND CAST(s.ThoiGianThucHien AS DATE) BETWEEN i.TuNgay AND i.DenNgay AND s.TrangThai=N''Đã xác nhận''),0)*cs.TyLeHoaHong,2) AS DECIMAL(18,2))))
+  THROW 51039,N''Chốt lương phải khớp chính sách, hiện diện và hoa hồng dịch vụ trong kỳ.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_HS_KhoaBenhNhanNguon ON dbo.HO_SO_BENH_AN
+AFTER UPDATE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaHS=i.MaHS WHERE i.MaBN<>d.MaBN AND EXISTS(SELECT 1 FROM dbo.PHIEU_KHAM_BENH p WHERE p.MaHS=i.MaHS))
+  THROW 51040,N''Hồ sơ đã tiếp nhận không chuyển sang bệnh nhân khác; giữ nguyên nguồn bệnh án và hóa đơn.'',1;
+END;';
+
+
+
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_LS_BaoVe ON dbo.LICH_SU_KHAM_BENH AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaLS=d.MaLS WHERE d.TrangThai=N''Đã xác nhận'' AND
+ (i.MaLS IS NULL OR EXISTS(SELECT i.TrieuChung,i.ChanDoan,i.KeHoachXuLy,i.GhiChu,i.KhongKeThuoc,i.LyDoKhongKeThuoc
+ EXCEPT SELECT d.TrieuChung,d.ChanDoan,d.KeHoachXuLy,d.GhiChu,d.KhongKeThuoc,d.LyDoKhongKeThuoc)))
+  THROW 52110,N''Nội dung lần khám đã ký được giữ nguyên; ghi bổ sung bằng nhật ký.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.KhongKeThuoc=1 AND EXISTS(SELECT 1 FROM dbo.DON_THUOC d WHERE d.MaLS=i.MaLS AND d.TrangThai IN(N''Nháp'',N''Đã xác nhận'')))
+  THROW 52110,N''Đã chọn không kê thuốc thì không có đơn nháp hoặc đơn hiệu lực.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_TTB_BaoVe ON dbo.TINH_TRANG_BENH AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WITH(UPDLOCK,HOLDLOCK) JOIN(SELECT MaLS FROM inserted UNION SELECT MaLS FROM deleted) x ON x.MaLS=l.MaLS WHERE l.TrangThai=N''Đã xác nhận'')
+  THROW 52111,N''Không sửa hoặc bổ sung tình trạng vào lượt đã ký.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_Phieu_BacSi ON dbo.PHIEU_KHAM_BENH AFTER UPDATE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaPhieu=i.MaPhieu WHERE EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaPhieu=i.MaPhieu)
+ AND EXISTS(SELECT i.MaBS,i.MaPhong EXCEPT SELECT d.MaBS,d.MaPhong))
+  THROW 52112,N''Phiếu đã bắt đầu khám không thay bác sĩ hoặc phòng.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_KH_BaoVe ON dbo.KE_HOACH_DIEU_TRI AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaKHDT=d.MaKHDT WHERE d.TrangThai<>N''Nháp'' AND
+ (i.MaKHDT IS NULL OR i.TrangThai=N''Nháp'' OR EXISTS(SELECT i.MaLS,i.MaBS,i.NgayLap,i.NgayBatDau,i.NgayDuKienKetThuc,i.GhiChu,i.MaTTBNguon,i.MaMauKH,i.PhienBanMau
+ EXCEPT SELECT d.MaLS,d.MaBS,d.NgayLap,d.NgayBatDau,d.NgayDuKienKetThuc,d.GhiChu,d.MaTTBNguon,d.MaMauKH,d.PhienBanMau)))
+  THROW 52113,N''Kế hoạch đã duyệt chỉ cập nhật trạng thái tiến độ.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i LEFT JOIN dbo.TINH_TRANG_BENH t ON t.MaTTB=i.MaTTBNguon
+ LEFT JOIN dbo.MAU_KE_HOACH_DIEU_TRI m ON m.MaMauKH=i.MaMauKH WHERE
+ (i.MaTTBNguon IS NOT NULL AND(t.MaTTB IS NULL OR t.MaLS<>i.MaLS)) OR
+ (i.MaMauKH IS NOT NULL AND(m.MaDMTT<>t.MaDMTT OR t.MaDMTT IS NULL OR m.PhienBan<>i.PhienBanMau)))
+  THROW 52113,N''Nguồn tình trạng và mẫu phải khớp lượt, danh mục và phiên bản.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i LEFT JOIN deleted d ON d.MaKHDT=i.MaKHDT JOIN dbo.MAU_KE_HOACH_DIEU_TRI m ON m.MaMauKH=i.MaMauKH
+ WHERE (d.MaKHDT IS NULL OR EXISTS(SELECT i.MaMauKH,i.PhienBanMau EXCEPT SELECT d.MaMauKH,d.PhienBanMau)) AND m.TrangThai<>N''Đã duyệt'')
+  THROW 52113,N''Chỉ sao chép mẫu đã duyệt.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_CTKH_BaoVe ON dbo.CHI_TIET_KE_HOACH AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM dbo.KE_HOACH_DIEU_TRI k WITH(UPDLOCK,HOLDLOCK) JOIN(SELECT MaKHDT FROM inserted UNION SELECT MaKHDT FROM deleted) x ON x.MaKHDT=k.MaKHDT
+ WHERE k.TrangThai<>N''Nháp'' AND EXISTS(SELECT 1 FROM inserted i FULL JOIN deleted d ON d.MaCTKH=i.MaCTKH
+ WHERE (i.MaKHDT=k.MaKHDT OR d.MaKHDT=k.MaKHDT) AND(i.MaCTKH IS NULL OR d.MaCTKH IS NULL OR EXISTS(
+ SELECT i.MaKHDT,i.MaDV,i.LanThu,i.SoLuongDuKien,i.DonGiaDuKien,i.GhiChu,i.NoiDungBuoc
+ EXCEPT SELECT d.MaKHDT,d.MaDV,d.LanThu,d.SoLuongDuKien,d.DonGiaDuKien,d.GhiChu,d.NoiDungBuoc))))
+  THROW 52114,N''Không thay nội dung/định lượng bước thuộc kế hoạch đã duyệt.'',1;
+ IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaCTKH=d.MaCTKH WHERE EXISTS(SELECT 1 FROM dbo.DICH_VU_THUC_HIEN s WHERE s.MaCTKH=d.MaCTKH AND s.TrangThai=N''Đã xác nhận'')
+ AND(i.MaCTKH IS NULL OR EXISTS(SELECT i.MaKHDT,i.MaDV,i.SoLuongDuKien,i.DonGiaDuKien,i.NoiDungBuoc EXCEPT SELECT d.MaKHDT,d.MaDV,d.SoLuongDuKien,d.DonGiaDuKien,d.NoiDungBuoc)))
+  THROW 52114,N''Bước đã thực hiện không sửa nguồn.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_DT_ThayThe ON dbo.DON_THUOC AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted d JOIN inserted i ON i.MaDT=d.MaDT WHERE d.TrangThai<>N''Nháp'' AND EXISTS(SELECT i.MaDTThayThe EXCEPT SELECT d.MaDTThayThe))
+  THROW 52116,N''Đơn đã ký giữ nguyên nguồn thay thế.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=i.MaLS WHERE l.KhongKeThuoc=1 AND i.TrangThai IN(N''Nháp'',N''Đã xác nhận''))
+  THROW 52116,N''Lượt đã chọn không kê thuốc.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.DON_THUOC old ON old.MaDT=i.MaDTThayThe WHERE i.MaDT=old.MaDT OR i.MaLS<>old.MaLS OR i.MaBS<>old.MaBS)
+  THROW 52116,N''Đơn thay thế phải cùng lượt và bác sĩ, không tự trỏ chính nó.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i LEFT JOIN deleted d ON d.MaDT=i.MaDT WHERE i.MaDTThayThe IS NOT NULL AND (d.MaDT IS NULL OR d.TrangThai=N''Nháp'') AND
+ (EXISTS(SELECT 1 FROM dbo.HOA_DON h WHERE h.MaLS=i.MaLS) OR EXISTS(SELECT 1 FROM dbo.PHIEU_XUAT p WHERE p.MaLS=i.MaLS AND p.TrangThai=N''Đã ghi sổ'')))
+  THROW 52116,N''Không thay đơn của lượt đã lập hóa đơn hoặc đã xuất thuốc.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaDT=i.MaDT WHERE i.TrangThai=N''Ngừng áp dụng'' AND d.TrangThai<>N''Ngừng áp dụng'' AND
+ EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTDT=c.MaCTDT JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX WHERE c.MaDT=i.MaDT AND p.TrangThai=N''Đã ghi sổ''))
+  THROW 52116,N''Đơn đã xuất thuốc giữ nguyên hiệu lực lịch sử.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_MauKH_BaoVe ON dbo.MAU_KE_HOACH_DIEU_TRI AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaMauKH=d.MaMauKH WHERE d.TrangThai<>N''Nháp'' AND
+ (i.MaMauKH IS NULL OR i.TrangThai=N''Nháp'' OR EXISTS(SELECT i.MaDMTT,i.MucDo,i.TenMau,i.PhienBan,i.MaBSDuyet,i.NgayDuyet EXCEPT SELECT d.MaDMTT,d.MucDo,d.TenMau,d.PhienBan,d.MaBSDuyet,d.NgayDuyet)))
+  THROW 52115,N''Mẫu đã duyệt giữ nguyên nội dung; tạo mã/phiên bản mới.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã duyệt'' AND
+ (NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_MAU_KE_HOACH c WHERE c.MaMauKH=i.MaMauKH) OR
+ NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaBSDuyet AND (n.MaChucVu=N''CV002'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động'')))
+  THROW 52115,N''Mẫu cần các bước và bác sĩ hoặc Admin đang hoạt động duyệt.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_CTMau_BaoVe ON dbo.CHI_TIET_MAU_KE_HOACH AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM dbo.MAU_KE_HOACH_DIEU_TRI m WITH(UPDLOCK,HOLDLOCK) JOIN(SELECT MaMauKH FROM inserted UNION SELECT MaMauKH FROM deleted) x ON x.MaMauKH=m.MaMauKH WHERE m.TrangThai<>N''Nháp'')
+  THROW 52115,N''Chỉ sửa bước của mẫu nháp.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_CauHinh_BaoVe ON dbo.CAU_HINH_THUOC_KE_DON AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaThuoc=d.MaThuoc WHERE d.TrangThai<>N''Nháp'' AND
+ (i.MaThuoc IS NULL OR NOT((i.PhienBan=d.PhienBan AND i.TrangThai<>N''Nháp'' AND NOT EXISTS(
+ SELECT i.MaNhomThuoc,i.DoiTuongApDung,i.DuongDung,i.LieuDungGoiY,i.HuongDanGoiY,i.MaNguoiDuyet,i.NgayDuyet
+ EXCEPT SELECT d.MaNhomThuoc,d.DoiTuongApDung,d.DuongDung,d.LieuDungGoiY,d.HuongDanGoiY,d.MaNguoiDuyet,d.NgayDuyet))
+ OR(i.PhienBan=d.PhienBan+1 AND i.TrangThai=N''Nháp'' AND i.MaNguoiDuyet IS NULL AND i.NgayDuyet IS NULL))))
+  THROW 52117,N''Đổi hướng dẫn đã duyệt phải lập phiên bản nháp tiếp theo và giữ lịch sử.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã duyệt'' AND NOT EXISTS(
+ SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNguoiDuyet AND (n.MaChucVu IN(N''CV002'',N''CV005'') OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
+  THROW 52117,N''Người duyệt hướng dẫn cần quyền chuyên môn đang hoạt động.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_HD_Request ON dbo.HOA_DON AFTER UPDATE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaHD=i.MaHD WHERE d.TrangThai=N''Đã xác nhận'' AND EXISTS(
+ SELECT i.PhienBanQuyTrinh,i.MaYeuCau,i.DauVanTayYeuCau EXCEPT SELECT d.PhienBanQuyTrinh,d.MaYeuCau,d.DauVanTayYeuCau))
+  THROW 52118,N''Hóa đơn đã xác nhận giữ nguyên khóa yêu cầu/phiên bản.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_TT_ThuDu ON dbo.THANH_TOAN AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ DECLARE @id nvarchar(50); SELECT @id=h.MaHD FROM dbo.HOA_DON h WITH(UPDLOCK,HOLDLOCK) JOIN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted) x ON x.MaHD=h.MaHD;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD WHERE h.PhienBanQuyTrinh=2 AND
+ (i.TrangThai<>N''Đã xác nhận'' OR i.LoaiGiaoDich<>N''Thu'' OR i.SoTien<>h.SoTienPhaiThu OR i.SoTienKhachDua IS NULL OR i.TienThua IS NULL))
+  THROW 52119,N''Quy trình 2 chỉ ghi một giao dịch Thu đủ có tiền đưa và tiền thối.'',1;
+ IF EXISTS(SELECT 1 FROM dbo.HOA_DON h JOIN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted) x ON x.MaHD=h.MaHD WHERE h.PhienBanQuyTrinh=2 AND
+ (SELECT COUNT(*) FROM dbo.THANH_TOAN t WHERE t.MaHD=h.MaHD AND t.TrangThai=N''Đã xác nhận'' AND t.LoaiGiaoDich=N''Thu'')<>1)
+  THROW 52119,N''Hóa đơn quy trình 2 có đúng một lần Thu đủ.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_BanGiao_BaoVe ON dbo.BAN_GIAO_THUOC AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaDT=d.MaDT WHERE i.MaDT IS NULL OR d.TrangThai=N''Đã giao'' OR EXISTS(
+ SELECT i.MaHD,i.MaPX EXCEPT SELECT d.MaHD,d.MaPX)) THROW 52121,N''Không xóa/đổi nguồn bàn giao hoặc sửa bản đã giao.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.DON_THUOC d ON d.MaDT=i.MaDT JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD JOIN dbo.PHIEU_XUAT p ON p.MaPX=i.MaPX
+ JOIN dbo.VW_HOA_DON_THANH_TOAN v ON v.MaHD=h.MaHD WHERE h.PhienBanQuyTrinh<>2 OR h.TrangThai<>N''Đã xác nhận'' OR v.ConPhaiTra<>0 OR d.MaLS<>h.MaLS OR p.MaLS<>h.MaLS OR p.TrangThai<>N''Đã ghi sổ'' OR
+ NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT WHERE x.MaPX=i.MaPX AND c.MaDT=i.MaDT) OR
+ EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT x LEFT JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT WHERE x.MaPX=i.MaPX AND(c.MaDT IS NULL OR c.MaDT<>i.MaDT)))
+ THROW 52121,N''Bàn giao cần hóa đơn đã thu đủ, xuất ghi sổ và đơn cùng lượt.'',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã giao'' AND NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNVGiao AND (n.MaChucVu=N''CV005'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
+ THROW 52121,N''Người giao phải là dược sĩ hoặc Admin đang hoạt động.'',1;
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.[TR_CW_Audit_DM_TINH_TRANG_BENH] ON dbo.[DM_TINH_TRANG_BENH] AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+SET NOCOUNT ON;
+DECLARE @actor nvarchar(50)=TRY_CONVERT(nvarchar(50),SESSION_CONTEXT(N''RHM.MaTK''));
+IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.NHAN_VIEN n ON n.MaNV=t.MaNV WHERE t.MaTK=@actor AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'')
+  THROW 52120,N''Cấu hình chuyên môn cần người sửa đã xác thực để lưu nhật ký.'',1;
+INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)
+SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),N''Cập nhật cấu hình hỗ trợ'',N''DM_TINH_TRANG_BENH'',COALESCE(i.[MaDMTT],d.[MaDMTT]),N''Thành công'',
+  CASE WHEN d.[MaDMTT] IS NOT NULL THEN (SELECT d.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END,
+  CASE WHEN i.[MaDMTT] IS NOT NULL THEN (SELECT i.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END
+FROM inserted i FULL JOIN deleted d ON d.[MaDMTT]=i.[MaDMTT];
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.[TR_CW_Audit_MAU_KE_HOACH_DIEU_TRI] ON dbo.[MAU_KE_HOACH_DIEU_TRI] AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+SET NOCOUNT ON;
+DECLARE @actor nvarchar(50)=TRY_CONVERT(nvarchar(50),SESSION_CONTEXT(N''RHM.MaTK''));
+IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.NHAN_VIEN n ON n.MaNV=t.MaNV WHERE t.MaTK=@actor AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'')
+  THROW 52120,N''Cấu hình chuyên môn cần người sửa đã xác thực để lưu nhật ký.'',1;
+INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)
+SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),N''Cập nhật cấu hình hỗ trợ'',N''MAU_KE_HOACH_DIEU_TRI'',COALESCE(i.[MaMauKH],d.[MaMauKH]),N''Thành công'',
+  CASE WHEN d.[MaMauKH] IS NOT NULL THEN (SELECT d.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END,
+  CASE WHEN i.[MaMauKH] IS NOT NULL THEN (SELECT i.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END
+FROM inserted i FULL JOIN deleted d ON d.[MaMauKH]=i.[MaMauKH];
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.[TR_CW_Audit_CHI_TIET_MAU_KE_HOACH] ON dbo.[CHI_TIET_MAU_KE_HOACH] AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+SET NOCOUNT ON;
+DECLARE @actor nvarchar(50)=TRY_CONVERT(nvarchar(50),SESSION_CONTEXT(N''RHM.MaTK''));
+IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.NHAN_VIEN n ON n.MaNV=t.MaNV WHERE t.MaTK=@actor AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'')
+  THROW 52120,N''Cấu hình chuyên môn cần người sửa đã xác thực để lưu nhật ký.'',1;
+INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)
+SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),N''Cập nhật cấu hình hỗ trợ'',N''CHI_TIET_MAU_KE_HOACH'',COALESCE(i.[MaCTMau],d.[MaCTMau]),N''Thành công'',
+  CASE WHEN d.[MaCTMau] IS NOT NULL THEN (SELECT d.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END,
+  CASE WHEN i.[MaCTMau] IS NOT NULL THEN (SELECT i.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END
+FROM inserted i FULL JOIN deleted d ON d.[MaCTMau]=i.[MaCTMau];
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.[TR_CW_Audit_NHOM_THUOC_KE_DON] ON dbo.[NHOM_THUOC_KE_DON] AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+SET NOCOUNT ON;
+DECLARE @actor nvarchar(50)=TRY_CONVERT(nvarchar(50),SESSION_CONTEXT(N''RHM.MaTK''));
+IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.NHAN_VIEN n ON n.MaNV=t.MaNV WHERE t.MaTK=@actor AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'')
+  THROW 52120,N''Cấu hình chuyên môn cần người sửa đã xác thực để lưu nhật ký.'',1;
+INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)
+SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),N''Cập nhật cấu hình hỗ trợ'',N''NHOM_THUOC_KE_DON'',COALESCE(i.[MaNhomThuoc],d.[MaNhomThuoc]),N''Thành công'',
+  CASE WHEN d.[MaNhomThuoc] IS NOT NULL THEN (SELECT d.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END,
+  CASE WHEN i.[MaNhomThuoc] IS NOT NULL THEN (SELECT i.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END
+FROM inserted i FULL JOIN deleted d ON d.[MaNhomThuoc]=i.[MaNhomThuoc];
+END;';
+EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.[TR_CW_Audit_CAU_HINH_THUOC_KE_DON] ON dbo.[CAU_HINH_THUOC_KE_DON] AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+SET NOCOUNT ON;
+DECLARE @actor nvarchar(50)=TRY_CONVERT(nvarchar(50),SESSION_CONTEXT(N''RHM.MaTK''));
+IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.NHAN_VIEN n ON n.MaNV=t.MaNV WHERE t.MaTK=@actor AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'')
+  THROW 52120,N''Cấu hình chuyên môn cần người sửa đã xác thực để lưu nhật ký.'',1;
+INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)
+SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),N''Cập nhật cấu hình hỗ trợ'',N''CAU_HINH_THUOC_KE_DON'',COALESCE(i.[MaThuoc],d.[MaThuoc]),N''Thành công'',
+  CASE WHEN d.[MaThuoc] IS NOT NULL THEN (SELECT d.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END,
+  CASE WHEN i.[MaThuoc] IS NOT NULL THEN (SELECT i.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END
+FROM inserted i FULL JOIN deleted d ON d.[MaThuoc]=i.[MaThuoc];
+END;';
+
+
+EXEC sys.sp_executesql N'-- Các VIEW chỉ truy vấn, không tạo thêm bảng hoặc lặp tổng thanh toán.
+CREATE OR ALTER VIEW dbo.VW_CHI_TIET_HOA_DON AS
+SELECT c.MaCTHD,c.MaHD,c.MaDVThucHien,c.MaCTPX,c.NoiDung,
+ CASE WHEN c.MaDVThucHien IS NOT NULL THEN N''Dịch vụ'' ELSE N''Thuốc'' END AS LoaiKhoanThu,
+ CASE WHEN c.MaDVThucHien IS NOT NULL THEN s.SoLuong ELSE x.SoLuong END AS SoLuong,
+ CASE WHEN c.MaDVThucHien IS NOT NULL THEN s.DonGia ELSE c.DonGia END AS DonGia,
+ CASE WHEN c.MaCTPX IS NOT NULL THEN hh.DonViTinh ELSE NULL END AS DonViTinhThuoc,
+ c.ThanhTien
+FROM dbo.CHI_TIET_HOA_DON c
+LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
+LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
+LEFT JOIN dbo.HANG_HOA hh ON hh.MaHH=x.MaHH;';
+EXEC sys.sp_executesql N'CREATE OR ALTER VIEW dbo.VW_HOA_DON_THANH_TOAN AS
+SELECT h.MaHD,h.MaLS,b.MaBN,b.HoTenBN,h.NgayLap,h.NgayXacNhan,h.TrangThai,
+ h.TongTien,h.GiamGia,h.SoTienPhaiThu,COALESCE(t.DaThuRong,0) AS DaThuRong,
+ h.SoTienPhaiThu-COALESCE(t.DaThuRong,0) AS ConPhaiTra,
+ CASE WHEN h.TrangThai<>N''Đã xác nhận'' THEN N''Chưa xác nhận''
+ WHEN h.SoTienPhaiThu=COALESCE(t.DaThuRong,0) THEN N''Đã thanh toán''
+ WHEN COALESCE(t.DaThuRong,0)=0 THEN N''Chưa thanh toán'' ELSE N''Thanh toán một phần'' END AS TinhTrangThanhToan
+FROM dbo.HOA_DON h JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=h.MaLS
+JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS
+JOIN dbo.BENH_NHAN b ON b.MaBN=hs.MaBN
+LEFT JOIN(SELECT MaHD,SUM(CASE WHEN LoaiGiaoDich=N''Thu'' THEN SoTien ELSE -SoTien END) AS DaThuRong
+ FROM dbo.THANH_TOAN WHERE TrangThai=N''Đã xác nhận'' GROUP BY MaHD) t ON t.MaHD=h.MaHD;';
+EXEC sys.sp_executesql N'CREATE OR ALTER VIEW dbo.VW_TIEN_THUOC_THEO_DON AS
+SELECT d.MaDT,d.MaLS,d.TrangThai,a.TongTienThuocDaChot
+FROM dbo.DON_THUOC d LEFT JOIN
+(SELECT ct.MaDT,SUM(hdct.ThanhTien) AS TongTienThuocDaChot
+ FROM dbo.CHI_TIET_DON_THUOC ct JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTDT=ct.MaCTDT
+ JOIN dbo.CHI_TIET_HOA_DON hdct ON hdct.MaCTPX=x.MaCTPX
+ JOIN dbo.HOA_DON h ON h.MaHD=hdct.MaHD AND h.TrangThai=N''Đã xác nhận''
+ GROUP BY ct.MaDT) a ON a.MaDT=d.MaDT;';
+EXEC sys.sp_executesql N'CREATE OR ALTER VIEW dbo.VW_TON_KHO AS
+SELECT z.MaKho,z.MaHH,hh.TenHH,z.MaLo,hh.DonViTinh,
+ SUM(z.Nhap) AS TongNhap,SUM(z.Xuat) AS TongXuat,SUM(z.Nhap-z.Xuat) AS SoLuongTon
+FROM(
+ SELECT p.MaKho,c.MaHH,c.MaLo,c.SoLuong AS Nhap,CAST(0 AS DECIMAL(18,3)) AS Xuat
+ FROM dbo.CHI_TIET_PHIEU_NHAP c JOIN dbo.PHIEU_NHAP p ON p.MaPN=c.MaPN AND p.TrangThai=N''Đã ghi sổ''
+ UNION ALL SELECT p.MaKho,c.MaHH,c.MaLo,CAST(0 AS DECIMAL(18,3)),c.SoLuong
+ FROM dbo.CHI_TIET_PHIEU_XUAT c JOIN dbo.PHIEU_XUAT p ON p.MaPX=c.MaPX AND p.TrangThai=N''Đã ghi sổ''
+ UNION ALL SELECT MaKho,MaHH,MaLo,CAST(0 AS DECIMAL(18,3)),CAST(0 AS DECIMAL(18,3)) FROM dbo.LO_HANG_HOA
+) z JOIN dbo.HANG_HOA hh ON hh.MaHH=z.MaHH
+GROUP BY z.MaKho,z.MaHH,hh.TenHH,z.MaLo,hh.DonViTinh;';
+EXEC sys.sp_executesql N'CREATE OR ALTER VIEW dbo.VW_LICH_SU_KHAM_BENH_NHAN AS
+SELECT b.MaBN,b.HoTenBN,hs.MaHS,p.MaPhieu,p.MaLich,
+ CASE WHEN p.MaLich IS NULL THEN N''Đến trực tiếp'' ELSE N''Có lịch hẹn'' END AS HinhThucTiepNhan,
+ l.MaLS,l.ThoiGianKham,l.TrieuChung,l.ChanDoan,l.KeHoachXuLy,l.TrangThai,
+ l.MaBS,nv.HoTen AS TenBacSi,l.MaPhong,ph.TenPhong,
+ (SELECT COUNT(*) FROM dbo.KE_HOACH_DIEU_TRI k WHERE k.MaLS=l.MaLS) AS SoKeHoach,
+ (SELECT COUNT(*) FROM dbo.DON_THUOC d WHERE d.MaLS=l.MaLS) AS SoDonThuoc,
+ (SELECT COUNT(*) FROM dbo.HOA_DON h WHERE h.MaLS=l.MaLS) AS SoHoaDon
+FROM dbo.LICH_SU_KHAM_BENH l JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
+JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS JOIN dbo.BENH_NHAN b ON b.MaBN=hs.MaBN
+JOIN dbo.NHAN_VIEN nv ON nv.MaNV=l.MaBS JOIN dbo.PHONG ph ON ph.MaPhong=l.MaPhong;';
+EXEC sys.sp_executesql N'CREATE OR ALTER VIEW dbo.VW_THONG_KE_SO_DONG AS
+SELECT N''BENH_NHAN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[BENH_NHAN]
+UNION ALL
+SELECT N''HO_SO_BENH_AN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[HO_SO_BENH_AN]
+UNION ALL
+SELECT N''PHIEU_KHAM_BENH'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[PHIEU_KHAM_BENH]
+UNION ALL
+SELECT N''LICH_SU_KHAM_BENH'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[LICH_SU_KHAM_BENH]
+UNION ALL
+SELECT N''TINH_TRANG_BENH'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[TINH_TRANG_BENH]
+UNION ALL
+SELECT N''DICH_VU'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[DICH_VU]
+UNION ALL
+SELECT N''KE_HOACH_DIEU_TRI'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[KE_HOACH_DIEU_TRI]
+UNION ALL
+SELECT N''CHI_TIET_KE_HOACH'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHI_TIET_KE_HOACH]
+UNION ALL
+SELECT N''DICH_VU_THUC_HIEN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[DICH_VU_THUC_HIEN]
+UNION ALL
+SELECT N''DON_THUOC'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[DON_THUOC]
+UNION ALL
+SELECT N''CHI_TIET_DON_THUOC'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHI_TIET_DON_THUOC]
+UNION ALL
+SELECT N''VAI_TRO'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[VAI_TRO]
+UNION ALL
+SELECT N''CHUC_VU'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHUC_VU]
+UNION ALL
+SELECT N''TAI_KHOAN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[TAI_KHOAN]
+UNION ALL
+SELECT N''NHAN_VIEN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[NHAN_VIEN]
+UNION ALL
+SELECT N''CHUNG_CHI_NHAN_VIEN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHUNG_CHI_NHAN_VIEN]
+UNION ALL
+SELECT N''KHOA'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[KHOA]
+UNION ALL
+SELECT N''CHUYEN_KHOA'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHUYEN_KHOA]
+UNION ALL
+SELECT N''PHONG'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[PHONG]
+UNION ALL
+SELECT N''THIET_BI'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[THIET_BI]
+UNION ALL
+SELECT N''BAO_TRI_THIET_BI'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[BAO_TRI_THIET_BI]
+UNION ALL
+SELECT N''NHA_CUNG_CAP'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[NHA_CUNG_CAP]
+UNION ALL
+SELECT N''KHO'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[KHO]
+UNION ALL
+SELECT N''LOAI_HANG_HOA'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[LOAI_HANG_HOA]
+UNION ALL
+SELECT N''HANG_HOA'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[HANG_HOA]
+UNION ALL
+SELECT N''VAT_TU'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[VAT_TU]
+UNION ALL
+SELECT N''THUOC'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[THUOC]
+UNION ALL
+SELECT N''LO_HANG_HOA'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[LO_HANG_HOA]
+UNION ALL
+SELECT N''HOA_DON_NHAP'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[HOA_DON_NHAP]
+UNION ALL
+SELECT N''PHIEU_NHAP'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[PHIEU_NHAP]
+UNION ALL
+SELECT N''CHI_TIET_PHIEU_NHAP'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHI_TIET_PHIEU_NHAP]
+UNION ALL
+SELECT N''PHIEU_XUAT'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[PHIEU_XUAT]
+UNION ALL
+SELECT N''CHI_TIET_PHIEU_XUAT'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHI_TIET_PHIEU_XUAT]
+UNION ALL
+SELECT N''CA_LAM'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CA_LAM]
+UNION ALL
+SELECT N''LICH_LAM_VIEC'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[LICH_LAM_VIEC]
+UNION ALL
+SELECT N''DON_XIN_NGHI'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[DON_XIN_NGHI]
+UNION ALL
+SELECT N''PHAN_CONG_THAY_THE'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[PHAN_CONG_THAY_THE]
+UNION ALL
+SELECT N''LICH_KHAM'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[LICH_KHAM]
+UNION ALL
+SELECT N''HOA_DON'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[HOA_DON]
+UNION ALL
+SELECT N''CHI_TIET_HOA_DON'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHI_TIET_HOA_DON]
+UNION ALL
+SELECT N''THANH_TOAN'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[THANH_TOAN]
+UNION ALL
+SELECT N''CHINH_SACH_LUONG'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CHINH_SACH_LUONG]
+UNION ALL
+SELECT N''BANG_LUONG'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[BANG_LUONG]
+UNION ALL
+SELECT N''NHAT_KY_THAO_TAC'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[NHAT_KY_THAO_TAC]
+UNION ALL
+SELECT N''CA_THEO_NGAY'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[CA_THEO_NGAY]
+UNION ALL
+SELECT N''XAC_NHAN_DOI_LICH_KHAM'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[XAC_NHAN_DOI_LICH_KHAM];';
+
+
+
+ DECLARE @hospitalAdmin nvarchar(50)=(SELECT TOP(1) t.MaTK FROM dbo.TAI_KHOAN t JOIN dbo.NHAN_VIEN n ON n.MaNV=t.MaNV JOIN dbo.VAI_TRO v ON v.MaVaiTro=t.MaVaiTro
+ WHERE t.TrangThai=N'Đang hoạt động' AND n.TrangThai=N'Đang làm việc' AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N'ADMIN',N'QUẢN TRỊ')
+ ORDER BY CASE WHEN t.TenDangNhap=N'admin001' THEN 0 ELSE 1 END,t.MaTK);
+ IF @hospitalAdmin IS NULL THROW 52272,N'Cần quản trị đang hoạt động để ghi nhật ký danh mục.',1;
+ EXEC sys.sp_set_session_context @key=N'RHM.MaTK',@value=@hospitalAdmin;
+
+EXEC sys.sp_executesql N'-- Đơn giản hóa tình trạng bệnh: bỏ cột MucDo theo yêu cầu.
 -- Sao lưu database trước khi chạy. Không thay nội dung khám, chứng từ hoặc tồn kho.
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
-IF DB_NAME() IN(N'master',N'model',N'msdb',N'tempdb')
-    THROW 52140,N'Chọn database bệnh viện trước khi nâng cấp tình trạng.',1;
-IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N'RHM.ClinicalWorkflow.Version' AND TRY_CONVERT(int,value)=2)
-    THROW 52140,N'Cần ClinicalWorkflow v2 trước khi chạy migration06.',1;
-BEGIN TRANSACTION;
+IF DB_NAME() IN(N''master'',N''model'',N''msdb'',N''tempdb'')
+    THROW 52140,N''Chọn database bệnh viện trước khi nâng cấp tình trạng.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.ClinicalWorkflow.Version'' AND TRY_CONVERT(int,value)=2)
+    THROW 52140,N''Cần ClinicalWorkflow v2 trước khi chạy migration06.'',1;
 DECLARE @lock int;
-EXEC @lock=sys.sp_getapplock @Resource=N'RHM:Schema:SimpleConditions',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000;
-IF @lock<0 THROW 52140,N'Không lấy được khóa nâng cấp tình trạng bệnh.',1;
-IF COL_LENGTH(N'dbo.TINH_TRANG_BENH',N'MucDo') IS NOT NULL
+EXEC @lock=sys.sp_getapplock @Resource=N''RHM:Schema:SimpleConditions'',@LockMode=''Exclusive'',@LockOwner=''Transaction'',@LockTimeout=15000;
+IF @lock<0 THROW 52140,N''Không lấy được khóa nâng cấp tình trạng bệnh.'',1;
+IF COL_LENGTH(N''dbo.TINH_TRANG_BENH'',N''MucDo'') IS NOT NULL
 BEGIN
-    IF EXISTS(SELECT 1 FROM sys.index_columns WHERE object_id=OBJECT_ID(N'dbo.TINH_TRANG_BENH') AND column_id=COLUMNPROPERTY(OBJECT_ID(N'dbo.TINH_TRANG_BENH'),N'MucDo','ColumnId'))
-        THROW 52140,N'Cột MucDo đang được index tùy chỉnh sử dụng; đối chiếu trước khi bỏ cột.',1;
-    DECLARE @default sysname=(SELECT name FROM sys.default_constraints WHERE parent_object_id=OBJECT_ID(N'dbo.TINH_TRANG_BENH') AND parent_column_id=COLUMNPROPERTY(OBJECT_ID(N'dbo.TINH_TRANG_BENH'),N'MucDo','ColumnId'));
+    IF EXISTS(SELECT 1 FROM sys.index_columns WHERE object_id=OBJECT_ID(N''dbo.TINH_TRANG_BENH'') AND column_id=COLUMNPROPERTY(OBJECT_ID(N''dbo.TINH_TRANG_BENH''),N''MucDo'',''ColumnId''))
+        THROW 52140,N''Cột MucDo đang được index tùy chỉnh sử dụng; đối chiếu trước khi bỏ cột.'',1;
+    DECLARE @default sysname=(SELECT name FROM sys.default_constraints WHERE parent_object_id=OBJECT_ID(N''dbo.TINH_TRANG_BENH'') AND parent_column_id=COLUMNPROPERTY(OBJECT_ID(N''dbo.TINH_TRANG_BENH''),N''MucDo'',''ColumnId''));
     IF @default IS NOT NULL
     BEGIN
-        DECLARE @sql nvarchar(max)=N'ALTER TABLE dbo.TINH_TRANG_BENH DROP CONSTRAINT '+QUOTENAME(@default);
+        DECLARE @sql nvarchar(max)=N''ALTER TABLE dbo.TINH_TRANG_BENH DROP CONSTRAINT ''+QUOTENAME(@default);
         EXEC sys.sp_executesql @sql;
     END;
-    EXEC sys.sp_executesql N'ALTER TABLE dbo.TINH_TRANG_BENH DROP COLUMN MucDo;';
+    EXEC sys.sp_executesql N''ALTER TABLE dbo.TINH_TRANG_BENH DROP COLUMN MucDo;'';
 END;
-IF EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N'RHM.SimpleConditions.Version')
-    EXEC sys.sp_updateextendedproperty @name=N'RHM.SimpleConditions.Version',@value=1;
+IF EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.SimpleConditions.Version'')
+    EXEC sys.sp_updateextendedproperty @name=N''RHM.SimpleConditions.Version'',@value=1;
 ELSE
-    EXEC sys.sp_addextendedproperty @name=N'RHM.SimpleConditions.Version',@value=1;
-COMMIT;
-PRINT N'Đã bỏ MucDo; SimpleConditions v1. Dữ liệu các cột còn lại được giữ nguyên.';
+    EXEC sys.sp_addextendedproperty @name=N''RHM.SimpleConditions.Version'',@value=1;
+PRINT N''Đã bỏ MucDo; SimpleConditions v1. Dữ liệu các cột còn lại được giữ nguyên.'';';
 
-GO
-IF COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.ClinicalFreshCompleted')),0)<>1 THROW 52140,N'Baseline cài mới chưa hoàn tất; không nạp dữ liệu demo.',1;
-/* DỮ LIỆU DEMO HƯ CẤU. Chạy sau 20261028_06; không phải hướng dẫn chuyên môn.
-   Không USE/CREATE DATABASE: người chạy phải chọn đúng database demo đã sao lưu.
-   Không cập nhật/xóa dữ liệu đã có. Mã DEMO28_* dành riêng cho bộ dữ liệu này.
-   Chạy lại chỉ thêm lịch còn thiếu trong cửa sổ mới, giữ trạng thái đã xử lý.
-   SQL Server 2016+. Chạy toàn bộ batch; lỗi bất kỳ rollback toàn bộ lần chạy. */
+EXEC sys.sp_executesql N'-- Danh mục tình trạng thực tế và định hướng tham khảo, không phải hồ sơ người thật.
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
-IF COL_LENGTH(N'dbo.TINH_TRANG_BENH',N'MucDo') IS NOT NULL
-    THROW 52140,N'Chạy migration 20261028_06 trước dữ liệu demo chuyên khoa.',1;
-IF OBJECT_ID(N'dbo.TINH_TRANG_BENH',N'U') IS NULL
-    THROW 52140,N'Thiếu schema ClinicalWorkflow; không thể nạp dữ liệu demo.',1;
-
-DECLARE @Now datetime2(0)=SYSDATETIME();
-DECLARE @Today date=CONVERT(date,@Now);
-DECLARE @Marker nvarchar(200)=N'DEMO28: dữ liệu hư cấu để thử giao diện, không dùng điều trị.';
-DECLARE @Lock int, @NewDoctors int=0,@NewRooms int=0,@NewServices int=0,@NewSchedules int=0,
-    @NewPatients int=0,@NewReceipts int=0,@NewDrafts int=0,@NewConditions int=0;
-BEGIN TRY
- BEGIN TRANSACTION;
- EXEC @Lock=sys.sp_getapplock @Resource=N'RHM:DemoSpecialties:20261028',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000;
- IF @Lock<0 THROW 52140,N'Bộ dữ liệu demo đang được nạp bởi phiên khác.',1;
- -- Cùng cổng ghi với DAL_TIEPNHAN: giữ số thứ tự theo ngày/phòng không đụng quầy tiếp nhận.
- EXEC @Lock=sys.sp_getapplock @Resource=N'RHM:TiepNhan:Write',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000;
- IF @Lock<0 THROW 52140,N'Quầy tiếp nhận đang bận; thử nạp demo lại sau.',1;
-
- DECLARE @CK TABLE(MaCK nvarchar(50) PRIMARY KEY,MaKhoa nvarchar(50),Ten nvarchar(255),MaDV nvarchar(50),TenDV nvarchar(255),TinhTrang nvarchar(255),MoTa nvarchar(1000),ViTri nvarchar(100));
- INSERT @CK VALUES
- (N'CK001',N'KHOA001',N'Tổng quát',N'DV001',N'Khám răng hàm mặt tổng quát',N'Khó chịu vùng răng miệng',N'Bệnh nhân hư cấu mô tả khó chịu khi nhai, cần ghi nhận khi khám tổng quát.',N'16'),
- (N'CK002',N'KHOA002',N'Bảo tồn',N'DEMO28_DV_CK002',N'Khám tư vấn điều trị bảo tồn (demo)',N'Ê buốt răng',N'Bệnh nhân hư cấu mô tả ê buốt răng khi ăn uống; chưa kết luận chẩn đoán.',N'36'),
- (N'CK003',N'KHOA003',N'Hàm mặt',N'DEMO28_DV_CK003',N'Khám tư vấn phẫu thuật hàm mặt (demo)',N'Khó chịu vùng hàm',N'Bệnh nhân hư cấu mô tả khó chịu vùng hàm; đang chờ bác sĩ đánh giá.',NULL),
- (N'CK004',N'KHOA004',N'Hình ảnh',N'DV006',N'Chụp X-quang hàm mặt',N'Khảo sát vùng hàm mặt',N'Hồ sơ mô phỏng chờ đối chiếu thông tin khảo sát; chưa có kết quả hình ảnh.',NULL),
- (N'CK005',N'KHOA005',N'Xét nghiệm',N'DEMO28_DV_CK005',N'Khám tư vấn xét nghiệm (demo)',N'Trao đổi thông tin xét nghiệm',N'Hồ sơ hư cấu chờ bác sĩ trao đổi thông tin xét nghiệm; chưa lấy mẫu, chưa có kết quả.',NULL),
- (N'CK006',N'KHOA006',N'Gây mê',N'DEMO28_DV_CK006',N'Khám đánh giá trước gây mê (demo)',N'Thu thập tiền sử trước gây mê',N'Hồ sơ hư cấu dùng thử phần ghi nhận tiền sử; chưa đánh giá nguy cơ, chưa có chỉ định.',NULL),
- (N'CK007',N'KHOA007',N'Phục hồi',N'DV008',N'Chăm sóc vùng da bị tổn thương',N'Theo dõi vùng da và vận động hàm',N'Bệnh nhân hư cấu đến trao đổi tình trạng vùng da và vận động hàm; chưa thực hiện dịch vụ.',NULL);
- IF EXISTS(SELECT 1 FROM @CK x LEFT JOIN dbo.CHUYEN_KHOA c WITH(UPDLOCK,HOLDLOCK) ON c.MaCK=x.MaCK LEFT JOIN dbo.KHOA k ON k.MaKhoa=x.MaKhoa
-   WHERE c.MaCK IS NULL OR c.MaKhoa<>x.MaKhoa OR c.TrangThai<>N'Đang hoạt động' OR k.TrangThai<>N'Đang hoạt động')
-   THROW 52140,N'Cần các chuyên khoa CK001..CK007 đang hoạt động, đúng khoa gốc; không tự sửa dữ liệu hiện có.',1;
- IF NOT EXISTS(SELECT 1 FROM dbo.CHUC_VU WHERE MaChucVu=N'CV002') OR NOT EXISTS(SELECT 1 FROM dbo.VAI_TRO WHERE MaVaiTro=N'VTRO002')
-   THROW 52140,N'Thiếu chức vụ bác sĩ CV002 hoặc vai trò User VTRO002.',1;
- IF NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV
-   WHERE n.MaNV=N'NV005' AND n.MaChucVu=N'CV004' AND n.TrangThai=N'Đang làm việc' AND t.TrangThai=N'Đang hoạt động')
-   THROW 52140,N'Cần nhân viên tiếp nhận NV005 đang hoạt động; không tự đổi nhân sự hiện có.',1;
-
- DECLARE @Doctors TABLE(MaCK nvarchar(50),Buoi nvarchar(10),MatKhau nvarchar(512),PRIMARY KEY(MaCK,Buoi));
- INSERT @Doctors VALUES
- (N'CK002',N'ngay',N'pbkdf2_sha256$210000$bxiYXsBICN+JKz4/Zv7/4Q==$AHbwkMFstwwMUmyTLCpaNNBwGZFvADoDDSQJkf4F5/c='),
- (N'CK002',N'dem',N'pbkdf2_sha256$210000$FVdm/PvdQ9ob1QAf/qy4nw==$LrXDpekeif/utP9wMTjopty7uOYWXoTr3cCcUjIY/Jc='),
- (N'CK003',N'ngay',N'pbkdf2_sha256$210000$juB531vLj+5TTs1O6Hdsbg==$lS59OFVJKeu0UaCNAFPesRZ+4nFFldis+rqPW3l7RzU='),
- (N'CK003',N'dem',N'pbkdf2_sha256$210000$qvcGZXSOJYSulhAUFItZIQ==$9Q/wv2v5SczgV0zqJDdcO7JQdSy+p3YCsnqWxKpBN1o='),
- (N'CK004',N'ngay',N'pbkdf2_sha256$210000$oVQM3tk4x5hheuVeO25EKg==$89+Ro3TNg8NUwEoYseQDWPO7dxXTlVDQ23u99uJ3l3k='),
- (N'CK004',N'dem',N'pbkdf2_sha256$210000$5ipFHGE3E7MEea/v+vCYFA==$kn9124wqypmq5wAJVpfao+OL8KmOQp6nZwMrEHtggHU='),
- (N'CK005',N'ngay',N'pbkdf2_sha256$210000$TkpPf1aBIgIo/0ibXdVggw==$ixj/qXkCXcEpH1Q8mcD1klgxaG27JlhcxXV2i2l+hMY='),
- (N'CK005',N'dem',N'pbkdf2_sha256$210000$iBW4GRPDPBgvOlNzG1tTCA==$4IhBlz4fXapGAx2mKyLfGhQ8AbHw5M0fnoq3r9VEQyU='),
- (N'CK006',N'ngay',N'pbkdf2_sha256$210000$hm55xyiW2GX005lCGOCuKg==$pK3Kb2lEP5rLRBh3I+HHjkJFDn1oQIUOhGC0QfnfRAE='),
- (N'CK006',N'dem',N'pbkdf2_sha256$210000$vR2o9J2V8UlDGfXG5tR8aA==$kho9vsgTwkeHt4soUKETPCDfBXOqEPfxJtTmJuUBVdc='),
- (N'CK007',N'ngay',N'pbkdf2_sha256$210000$kUEEKd+LjWw2YdJr7WO1Rg==$Xl7yD/PwxzdGtXoX1r69fR1ShfvkumgMqNULPAwzeYw='),
- (N'CK007',N'dem',N'pbkdf2_sha256$210000$qrOSy9GxQH92lUbxayvtjw==$Jklc6gG2SpHqkgAmvfdIhIYmXl3reZilL08JtnF7Opc=');
- -- Kiểm tra mã dành riêng trước INSERT; tuyệt đối không MERGE/UPDATE các dòng hiện có.
- IF EXISTS(SELECT 1 FROM @Doctors d JOIN dbo.NHAN_VIEN n WITH(UPDLOCK,HOLDLOCK) ON n.MaNV=N'DEMO28_NV_'+d.MaCK+N'_'+d.Buoi
-   WHERE n.MaCK<>d.MaCK OR n.MaChucVu<>N'CV002' OR n.DiaChi<>@Marker OR n.DiaChi IS NULL)
-   THROW 52141,N'Xung đột mã nhân viên DEMO28; dừng để đối chiếu, không ghi đè.',1;
- INSERT dbo.NHAN_VIEN(MaNV,HoTen,GioiTinh,NgaySinh,SDT,DiaChi,MaChucVu,MaCK,BangCap,NgayVaoLam,TrangThai)
- SELECT N'DEMO28_NV_'+d.MaCK+N'_'+d.Buoi,N'BS Hư Cấu '+c.Ten+CASE d.Buoi WHEN N'ngay' THEN N' Ngày' ELSE N' Đêm' END,NULL,'1985-01-01',NULL,@Marker,N'CV002',d.MaCK,N'Bác sĩ (hư cấu để demo)','2026-01-01',N'Đang làm việc'
- FROM @Doctors d JOIN @CK c ON c.MaCK=d.MaCK WHERE NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n WITH(UPDLOCK,HOLDLOCK) WHERE n.MaNV=N'DEMO28_NV_'+d.MaCK+N'_'+d.Buoi);
- SET @NewDoctors=@@ROWCOUNT;
- IF EXISTS(SELECT 1 FROM @Doctors d JOIN dbo.TAI_KHOAN t WITH(UPDLOCK,HOLDLOCK)
-   ON t.MaTK=N'DEMO28_TK_'+d.MaCK+N'_'+d.Buoi OR t.TenDangNhap=N'demo_'+LOWER(d.MaCK)+N'_'+d.Buoi OR t.MaNV=N'DEMO28_NV_'+d.MaCK+N'_'+d.Buoi
-   WHERE t.MaTK<>N'DEMO28_TK_'+d.MaCK+N'_'+d.Buoi OR t.MaNV<>N'DEMO28_NV_'+d.MaCK+N'_'+d.Buoi OR t.TenDangNhap<>N'demo_'+LOWER(d.MaCK)+N'_'+d.Buoi)
-   THROW 52141,N'Xung đột mã/tên đăng nhập/liên kết tài khoản DEMO28; không ghi đè.',1;
- INSERT dbo.TAI_KHOAN(MaTK,TenDangNhap,MatKhauHash,MaVaiTro,MaNV,MaKhoa,MaPhong,TrangThai)
- SELECT N'DEMO28_TK_'+MaCK+N'_'+Buoi,N'demo_'+LOWER(MaCK)+N'_'+Buoi,MatKhau,N'VTRO002',N'DEMO28_NV_'+MaCK+N'_'+Buoi,NULL,NULL,N'Đang hoạt động'
- FROM @Doctors d WHERE NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t WITH(UPDLOCK,HOLDLOCK) WHERE t.MaTK=N'DEMO28_TK_'+d.MaCK+N'_'+d.Buoi);
-
- IF EXISTS(SELECT 1 FROM @CK c JOIN dbo.PHONG p WITH(UPDLOCK,HOLDLOCK) ON p.MaPhong=N'DEMO28_PH_'+c.MaCK WHERE p.MaKhoa<>c.MaKhoa OR p.TenPhong<>N'Phòng khám demo - '+c.Ten)
-   THROW 52141,N'Xung đột mã phòng DEMO28; không ghi đè.',1;
- INSERT dbo.PHONG(MaPhong,TenPhong,MaKhoa,LoaiPhong,TinhTrang,TrangThai)
- SELECT N'DEMO28_PH_'+c.MaCK,N'Phòng khám demo - '+c.Ten,c.MaKhoa,N'Phòng khám chuyên khoa',N'Sẵn sàng',N'Đang hoạt động'
- FROM @CK c WHERE NOT EXISTS(SELECT 1 FROM dbo.PHONG p WITH(UPDLOCK,HOLDLOCK) WHERE p.MaPhong=N'DEMO28_PH_'+c.MaCK);
- SET @NewRooms=@@ROWCOUNT;
- IF EXISTS(SELECT 1 FROM @CK c JOIN dbo.DICH_VU d WITH(UPDLOCK,HOLDLOCK) ON d.MaDV=c.MaDV WHERE d.MaCK<>c.MaCK OR (c.MaDV LIKE N'DEMO28[_]%' AND (d.MoTa<>@Marker OR d.MoTa IS NULL)))
-   THROW 52141,N'Dịch vụ không khớp chuyên khoa hoặc xung đột mã dịch vụ DEMO28; không thay chuyên khoa lịch sử.',1;
- INSERT dbo.DICH_VU(MaDV,TenDV,NhomDV,MaCK,DonGia,ThoiGianDuKien,MoTa,NgayApDung,TrangThai)
- SELECT MaDV,TenDV,N'Khám và tư vấn',MaCK,100000,30,@Marker,'2026-01-01',N'Đang hoạt động'
- FROM @CK c WHERE c.MaDV LIKE N'DEMO28[_]%' AND NOT EXISTS(SELECT 1 FROM dbo.DICH_VU d WITH(UPDLOCK,HOLDLOCK) WHERE d.MaDV=c.MaDV);
- SET @NewServices=@@ROWCOUNT;
- IF EXISTS(SELECT 1 FROM @CK c LEFT JOIN dbo.DICH_VU d ON d.MaDV=c.MaDV WHERE d.MaDV IS NULL OR d.TrangThai<>N'Đang hoạt động')
-   THROW 52140,N'Dịch vụ demo hoặc dịch vụ gốc đang ngừng hoạt động; không tự bật lại.',1;
-
- DECLARE @Shifts TABLE(MaCa nvarchar(50) PRIMARY KEY,Buoi nvarchar(10),BatDau time(0),KetThuc time(0));
- INSERT @Shifts VALUES(N'DEMO28_CA_NGAY',N'ngay','07:00','19:00'),(N'DEMO28_CA_DEM',N'dem','19:00','07:00');
- IF EXISTS(SELECT 1 FROM @Shifts s JOIN dbo.CA_LAM c WITH(UPDLOCK,HOLDLOCK) ON c.MaCa=s.MaCa WHERE c.GioBatDau<>s.BatDau OR c.GioKetThuc<>s.KetThuc OR c.GhiChu<>@Marker OR c.GhiChu IS NULL)
-   THROW 52141,N'Xung đột mã ca DEMO28; không ghi đè.',1;
- INSERT dbo.CA_LAM(MaCa,GioBatDau,GioKetThuc,TrangThai,GhiChu)
- SELECT s.MaCa,s.BatDau,s.KetThuc,N'Đang hoạt động',@Marker FROM @Shifts s WHERE NOT EXISTS(SELECT 1 FROM dbo.CA_LAM c WITH(UPDLOCK,HOLDLOCK) WHERE c.MaCa=s.MaCa);
- DECLARE @Roster TABLE(MaNV nvarchar(50),MaCK nvarchar(50),Buoi nvarchar(10),PRIMARY KEY(MaNV));
- INSERT @Roster SELECT N'DEMO28_NV_'+MaCK+N'_'+Buoi,MaCK,Buoi FROM @Doctors;
- -- Chỉ thêm lịch cho bác sĩ gốc nếu đúng chuyên khoa/chức vụ và tài khoản còn hoạt động.
- INSERT @Roster SELECT n.MaNV,N'CK001',CASE n.MaNV WHEN N'NV002' THEN N'ngay' ELSE N'dem' END
- FROM dbo.NHAN_VIEN n WHERE n.MaNV IN(N'NV002',N'NV003') AND n.MaCK=N'CK001' AND n.MaChucVu=N'CV002';
- DECLARE @Schedule TABLE(MaLLV nvarchar(50) PRIMARY KEY,MaNV nvarchar(50),MaCa nvarchar(50),Ngay date,MaPhong nvarchar(50),BatDau datetime2(0),KetThuc datetime2(0));
- ;WITH Days AS(SELECT -1 n UNION ALL SELECT n+1 FROM Days WHERE n<14)
- INSERT @Schedule
- SELECT N'DEMO28_L_'+CONVERT(nvarchar(8),DATEADD(day,d.n,@Today),112)+N'_'+r.MaNV,r.MaNV,s.MaCa,DATEADD(day,d.n,@Today),N'DEMO28_PH_'+r.MaCK,
-   DATEADD(hour,CASE r.Buoi WHEN N'ngay' THEN 7 ELSE 19 END,CONVERT(datetime2(0),DATEADD(day,d.n,@Today))),
-   DATEADD(hour,CASE r.Buoi WHEN N'ngay' THEN 19 ELSE 31 END,CONVERT(datetime2(0),DATEADD(day,d.n,@Today)))
- FROM Days d CROSS JOIN @Roster r JOIN @Shifts s ON s.Buoi=r.Buoi;
- IF EXISTS(SELECT 1 FROM @Schedule s JOIN dbo.LICH_LAM_VIEC l WITH(UPDLOCK,HOLDLOCK) ON l.MaLLV=s.MaLLV WHERE l.MaNV<>s.MaNV OR l.NgayLam<>s.Ngay OR l.GhiChu<>@Marker OR l.GhiChu IS NULL)
-   THROW 52141,N'Xung đột mã lịch DEMO28; không ghi đè.',1;
- -- Không đè lịch (kể cả nháp/hủy), phòng đã có lịch hoặc đơn nghỉ đã duyệt.
- -- So sánh khoảng nửa mở [bắt đầu,kết thúc), bao gồm ca qua nửa đêm.
- INSERT dbo.LICH_LAM_VIEC(MaLLV,MaNV,MaCa,NgayLam,MaPhong,TrangThai,TrangThaiHienDien,GhiChu)
- SELECT s.MaLLV,s.MaNV,s.MaCa,s.Ngay,s.MaPhong,N'Đã xác nhận',N'Có mặt',@Marker
- FROM @Schedule s JOIN dbo.NHAN_VIEN n ON n.MaNV=s.MaNV AND n.TrangThai=N'Đang làm việc'
- JOIN dbo.CA_LAM ca ON ca.MaCa=s.MaCa AND ca.TrangThai=N'Đang hoạt động'
- JOIN dbo.PHONG p ON p.MaPhong=s.MaPhong AND p.TrangThai=N'Đang hoạt động' AND p.LoaiPhong LIKE N'Phòng khám%'
- WHERE EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t WHERE t.MaNV=s.MaNV AND t.TrangThai=N'Đang hoạt động')
- AND NOT EXISTS(SELECT 1 FROM dbo.LICH_LAM_VIEC l WITH(UPDLOCK,HOLDLOCK) WHERE l.MaLLV=s.MaLLV)
- AND NOT EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI d WITH(UPDLOCK,HOLDLOCK) WHERE d.MaNV=s.MaNV AND d.TrangThaiDuyet=N'Đã duyệt'
-   AND d.TuNgay<=CONVERT(date,DATEADD(second,-1,s.KetThuc)) AND d.DenNgay>=s.Ngay)
- AND NOT EXISTS(SELECT 1 FROM dbo.LICH_LAM_VIEC l WITH(UPDLOCK,HOLDLOCK) JOIN dbo.CA_LAM c ON c.MaCa=l.MaCa
-   CROSS APPLY(SELECT DATEADD(second,DATEDIFF(second,CAST('00:00' AS time),c.GioBatDau),CONVERT(datetime2(0),l.NgayLam)) B,
-     DATEADD(day,CASE WHEN c.GioKetThuc<=c.GioBatDau THEN 1 ELSE 0 END,DATEADD(second,DATEDIFF(second,CAST('00:00' AS time),c.GioKetThuc),CONVERT(datetime2(0),l.NgayLam))) E) t
-   WHERE (l.MaNV=s.MaNV OR l.MaPhong=s.MaPhong) AND t.B<s.KetThuc AND t.E>s.BatDau);
- SET @NewSchedules=@@ROWCOUNT;
- INSERT dbo.CA_THEO_NGAY(NgayLam,MaCa)
- SELECT DISTINCT l.NgayLam,l.MaCa FROM dbo.LICH_LAM_VIEC l JOIN @Schedule s ON s.MaLLV=l.MaLLV
- WHERE NOT EXISTS(SELECT 1 FROM dbo.CA_THEO_NGAY c WITH(UPDLOCK,HOLDLOCK) WHERE c.NgayLam=l.NgayLam AND c.MaCa=l.MaCa);
-
- DECLARE @Cases TABLE(MaCK nvarchar(50),Loai nvarchar(10),MaBN nvarchar(50) PRIMARY KEY,MaHS nvarchar(50),MaPhieu nvarchar(50),MaLS nvarchar(50),MaTTB nvarchar(50),MaBS nvarchar(50),MaPhong nvarchar(50),MaDV nvarchar(50));
- INSERT @Cases(MaCK,Loai,MaBN,MaHS,MaPhieu,MaLS,MaTTB,MaDV)
- SELECT c.MaCK,v.Loai,N'DEMO28_BN_'+c.MaCK+N'_'+v.Loai,N'DEMO28_HS_'+c.MaCK+N'_'+v.Loai,N'DEMO28_PK_'+c.MaCK+N'_'+v.Loai,
-   CASE WHEN v.Loai=N'NHAP' THEN N'DEMO28_LS_'+c.MaCK END,CASE WHEN v.Loai=N'NHAP' THEN N'DEMO28_TTB_'+c.MaCK END,c.MaDV
- FROM @CK c CROSS JOIN(VALUES(N'CHO'),(N'NHAP'))v(Loai);
- -- Các neo định danh nguồn bất biến được kiểm tra cả khi lượt đã ký/đã thanh toán.
- IF EXISTS(SELECT 1 FROM @Cases x JOIN dbo.BENH_NHAN b WITH(UPDLOCK,HOLDLOCK) ON b.MaBN=x.MaBN WHERE b.DiaChi<>@Marker OR b.DiaChi IS NULL)
- OR EXISTS(SELECT 1 FROM @Cases x JOIN dbo.HO_SO_BENH_AN h WITH(UPDLOCK,HOLDLOCK) ON h.MaHS=x.MaHS OR h.MaBN=x.MaBN WHERE h.MaHS<>x.MaHS OR h.MaBN<>x.MaBN)
- OR EXISTS(SELECT 1 FROM @Cases x JOIN dbo.PHIEU_KHAM_BENH p WITH(UPDLOCK,HOLDLOCK) ON p.MaPhieu=x.MaPhieu WHERE p.MaHS<>x.MaHS)
- OR EXISTS(SELECT 1 FROM @Cases x JOIN dbo.LICH_SU_KHAM_BENH l WITH(UPDLOCK,HOLDLOCK) ON l.MaLS=x.MaLS OR (x.MaLS IS NOT NULL AND l.MaPhieu=x.MaPhieu) WHERE l.MaLS<>x.MaLS OR l.MaPhieu<>x.MaPhieu)
- OR EXISTS(SELECT 1 FROM @Cases x JOIN dbo.TINH_TRANG_BENH t WITH(UPDLOCK,HOLDLOCK) ON t.MaTTB=x.MaTTB WHERE t.MaLS<>x.MaLS)
-   THROW 52141,N'Xung đột mã/nguồn bệnh nhân, hồ sơ, phiếu hoặc tình trạng DEMO28; không ghi đè.',1;
- -- Phục hồi tự động sau khi ai đó xóa một phần hồ sơ có thể tạo trạng thái sai: dừng để đối chiếu.
- IF EXISTS(SELECT 1 FROM @Cases x JOIN dbo.BENH_NHAN b ON b.MaBN=x.MaBN LEFT JOIN dbo.HO_SO_BENH_AN h ON h.MaHS=x.MaHS LEFT JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=x.MaPhieu
-   WHERE h.MaHS IS NULL OR p.MaPhieu IS NULL)
-   THROW 52141,N'Bộ hồ sơ demo đã bị xóa một phần; dừng để đối chiếu, không tự tái tạo.',1;
- -- Dùng lịch thật bao phủ thời điểm tiếp nhận, cùng tiêu chí DAL_TIEPNHAN.Candidates.
- UPDATE x SET MaBS=a.MaNV,MaPhong=a.MaPhong FROM @Cases x OUTER APPLY(
-   SELECT TOP(1) n.MaNV,l.MaPhong FROM dbo.NHAN_VIEN n JOIN dbo.CHUYEN_KHOA ck ON ck.MaCK=n.MaCK
-   CROSS APPLY(SELECT TOP(1) s.MaPhong,s.MaLLV FROM dbo.LICH_LAM_VIEC s JOIN dbo.CA_LAM c ON c.MaCa=s.MaCa
-     CROSS APPLY(SELECT DATEADD(second,DATEDIFF(second,CAST('00:00' AS time),c.GioBatDau),CONVERT(datetime2(0),s.NgayLam)) B,
-       DATEADD(day,CASE WHEN c.GioKetThuc<=c.GioBatDau THEN 1 ELSE 0 END,DATEADD(second,DATEDIFF(second,CAST('00:00' AS time),c.GioKetThuc),CONVERT(datetime2(0),s.NgayLam))) E) t
-     WHERE s.MaNV=n.MaNV AND s.TrangThai=N'Đã xác nhận' AND s.TrangThaiHienDien NOT IN(N'Vắng mặt',N'Nghỉ phép') AND c.TrangThai=N'Đang hoạt động'
-       AND @Now>=t.B AND @Now<t.E AND s.NgayLam BETWEEN DATEADD(day,-1,@Today) AND @Today
-     ORDER BY s.MaLLV) l
-   JOIN dbo.PHONG p ON p.MaPhong=l.MaPhong AND p.MaKhoa=ck.MaKhoa AND p.TrangThai=N'Đang hoạt động' AND p.LoaiPhong LIKE N'Phòng khám%'
-   WHERE n.MaCK=x.MaCK AND n.MaChucVu=N'CV002' AND n.TrangThai=N'Đang làm việc'
-     AND EXISTS(SELECT 1 FROM dbo.TAI_KHOAN tk WHERE tk.MaNV=n.MaNV AND tk.TrangThai=N'Đang hoạt động')
-     AND NOT EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI d WHERE d.MaNV=n.MaNV AND d.TrangThaiDuyet=N'Đã duyệt' AND @Today BETWEEN d.TuNgay AND d.DenNgay)
-   ORDER BY CASE WHEN n.MaNV LIKE N'DEMO28[_]%' THEN 0 ELSE 1 END,n.MaNV,l.MaLLV) a
- WHERE NOT EXISTS(SELECT 1 FROM dbo.PHIEU_KHAM_BENH p WHERE p.MaPhieu=x.MaPhieu);
- IF EXISTS(SELECT 1 FROM @Cases x WHERE x.MaBS IS NULL AND NOT EXISTS(SELECT 1 FROM dbo.PHIEU_KHAM_BENH p WHERE p.MaPhieu=x.MaPhieu))
-   THROW 52142,N'Có chuyên khoa chưa có bác sĩ/phòng/ca hợp lệ lúc này. Lịch hoặc nghỉ phép hiện có được giữ nguyên; đối chiếu trước khi thử lại.',1;
-
- INSERT dbo.BENH_NHAN(MaBN,HoTenBN,GioiTinh,NgaySinh,DiaChi,TienSuBenh,DiUng,TrangThai)
- SELECT x.MaBN,N'BN Hư Cấu '+c.Ten+CASE x.Loai WHEN N'CHO' THEN N' Chờ' ELSE N' Nháp' END,NULL,'1990-01-01',@Marker,N'Dữ liệu demo; chưa xác minh tiền sử.',N'Dữ liệu demo; chưa xác minh dị ứng.',N'Đang theo dõi'
- FROM @Cases x JOIN @CK c ON c.MaCK=x.MaCK WHERE NOT EXISTS(SELECT 1 FROM dbo.BENH_NHAN b WHERE b.MaBN=x.MaBN);
- SET @NewPatients=@@ROWCOUNT;
- INSERT dbo.HO_SO_BENH_AN(MaHS,MaBN,NgayLap,LyDoKhamBanDau,GhiChu,TrangThai)
- SELECT x.MaHS,x.MaBN,@Now,c.MoTa,@Marker,N'Đang theo dõi' FROM @Cases x JOIN @CK c ON c.MaCK=x.MaCK WHERE NOT EXISTS(SELECT 1 FROM dbo.HO_SO_BENH_AN h WHERE h.MaHS=x.MaHS);
- DECLARE @NewCases TABLE(MaPhieu nvarchar(50) PRIMARY KEY);
- ;WITH Missing AS(SELECT x.*,ROW_NUMBER() OVER(PARTITION BY x.MaPhong ORDER BY x.MaCK,x.Loai) rn FROM @Cases x WHERE NOT EXISTS(SELECT 1 FROM dbo.PHIEU_KHAM_BENH p WHERE p.MaPhieu=x.MaPhieu))
- INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaLich,MaPhong,MaBS,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai,GhiChu)
- OUTPUT inserted.MaPhieu INTO @NewCases
- SELECT x.MaPhieu,x.MaHS,NULL,x.MaPhong,x.MaBS,N'NV005',x.MaDV,CONVERT(int,q.MaxOrder+x.rn),@Now,c.MoTa,CASE x.Loai WHEN N'CHO' THEN N'Chờ khám' ELSE N'Đang khám' END,@Marker
- FROM Missing x JOIN @CK c ON c.MaCK=x.MaCK CROSS APPLY(SELECT COALESCE(MAX(p.SoThuTu),0) MaxOrder FROM dbo.PHIEU_KHAM_BENH p WITH(UPDLOCK,HOLDLOCK) WHERE p.MaPhong=x.MaPhong AND p.ThoiGianTiepNhan>=@Today AND p.ThoiGianTiepNhan<DATEADD(day,1,@Today)) q;
- SET @NewReceipts=@@ROWCOUNT;
- -- Chỉ tạo lần khám/tình trạng cho phiếu vừa tạo; không điền thêm vào lượt đã được người dùng xử lý.
- INSERT dbo.LICH_SU_KHAM_BENH(MaLS,MaPhieu,MaBS,MaPhong,ThoiGianKham,TrieuChung,ChanDoan,KeHoachXuLy,TrangThai,NgayXacNhan,GhiChu,KhongKeThuoc)
- SELECT x.MaLS,x.MaPhieu,x.MaBS,x.MaPhong,@Now,c.MoTa,N'DEMO: chưa kết luận chẩn đoán.',N'DEMO: đang nhập hồ sơ, chưa chỉ định điều trị.',N'Nháp',NULL,@Marker,0
- FROM @Cases x JOIN @NewCases n ON n.MaPhieu=x.MaPhieu JOIN @CK c ON c.MaCK=x.MaCK WHERE x.Loai=N'NHAP';
- SET @NewDrafts=@@ROWCOUNT;
- INSERT dbo.TINH_TRANG_BENH(MaTTB,MaLS,LoaiTinhTrang,MoTaTinhTrang,GhiChu,MaDMTT)
- SELECT x.MaTTB,x.MaLS,c.TinhTrang,c.MoTa,@Marker,NULL
- FROM @Cases x JOIN @NewCases n ON n.MaPhieu=x.MaPhieu JOIN @CK c ON c.MaCK=x.MaCK WHERE x.Loai=N'NHAP';
- SET @NewConditions=@@ROWCOUNT;
- -- Bất biến nguồn trên toàn bộ bộ demo; không ép trạng thái vì các lượt cũ có thể đã được xử lý.
- IF (SELECT COUNT(*) FROM @Cases x JOIN dbo.BENH_NHAN b ON b.MaBN=x.MaBN JOIN dbo.HO_SO_BENH_AN h ON h.MaHS=x.MaHS AND h.MaBN=x.MaBN JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=x.MaPhieu AND p.MaHS=x.MaHS)<>14
-   THROW 52143,N'Kiểm tra đủ 14 bệnh nhân/hồ sơ/phiếu demo thất bại.',1;
- IF EXISTS(SELECT 1 FROM @NewCases n JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=n.MaPhieu JOIN dbo.DICH_VU d ON d.MaDV=p.MaDV JOIN dbo.NHAN_VIEN bs ON bs.MaNV=p.MaBS WHERE bs.MaCK<>d.MaCK)
- OR EXISTS(SELECT 1 FROM @NewCases n JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaPhieu=n.MaPhieu WHERE l.TrangThai<>N'Nháp' OR l.NgayXacNhan IS NOT NULL)
-   THROW 52143,N'Kiểm tra bác sĩ/chuyên khoa hoặc lần khám nháp thất bại.',1;
- COMMIT TRANSACTION;
- SELECT @NewDoctors BacSiThem,@NewRooms PhongThem,@NewServices DichVuThem,@NewSchedules LichThem,
-   (SELECT COUNT(*) FROM @Schedule)-@NewSchedules LichDaCoHoacBoQua,@NewPatients BenhNhanThem,@NewReceipts PhieuThem,@NewDrafts LanKhamNhapThem,@NewConditions TinhTrangThem;
- SELECT x.MaCK,x.Loai,x.MaBN,p.MaPhieu,p.TrangThai,p.MaBS,t.TenDangNhap,p.MaPhong,p.MaDV,p.ThoiGianTiepNhan,l.MaLS,l.TrangThai TrangThaiLanKham
- FROM @Cases x JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=x.MaPhieu LEFT JOIN dbo.TAI_KHOAN t ON t.MaNV=p.MaBS LEFT JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaPhieu=p.MaPhieu ORDER BY x.MaCK,x.Loai;
- PRINT N'Đã nạp demo hư cấu; giữ nguyên dữ liệu cũ. Không tạo đơn thuốc, thu tiền, hóa đơn hoặc xuất kho.';
-END TRY
-BEGIN CATCH
- IF XACT_STATE()<>0 ROLLBACK TRANSACTION;
- THROW;
-END CATCH;
-
-GO
-IF TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.ClinicalFreshCompleted'))=1
-BEGIN
--- Danh mục tình trạng thực tế và định hướng tham khảo, không phải hồ sơ người thật.
-SET NOCOUNT ON;
-SET XACT_ABORT ON;
-IF DB_NAME() IN(N'master',N'model',N'msdb',N'tempdb') THROW 52146,N'Chọn database bệnh viện.',1;
-IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N'RHM.SimpleConditions.Version' AND TRY_CONVERT(int,value)=1) THROW 52146,N'Chạy migration06 trước.',1;
-DECLARE @previousActor nvarchar(128)=TRY_CONVERT(nvarchar(128),SESSION_CONTEXT(N'RHM.MaTK'));
-BEGIN TRY
- BEGIN TRANSACTION;
+IF DB_NAME() IN(N''master'',N''model'',N''msdb'',N''tempdb'') THROW 52146,N''Chọn database bệnh viện.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.SimpleConditions.Version'' AND TRY_CONVERT(int,value)=1) THROW 52146,N''Chạy migration06 trước.'',1;
+DECLARE @previousActor nvarchar(128)=TRY_CONVERT(nvarchar(128),SESSION_CONTEXT(N''RHM.MaTK''));
  DECLARE @lock int;
- EXEC @lock=sys.sp_getapplock @Resource=N'RHM:Schema:SimpleConditions',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000;
- IF @lock<0 THROW 52146,N'Không lấy được khóa nâng cấp.',1;
- IF COL_LENGTH(N'dbo.TINH_TRANG_BENH',N'ViTriRang') IS NOT NULL
+ EXEC @lock=sys.sp_getapplock @Resource=N''RHM:Schema:SimpleConditions'',@LockMode=''Exclusive'',@LockOwner=''Transaction'',@LockTimeout=15000;
+ IF @lock<0 THROW 52146,N''Không lấy được khóa nâng cấp.'',1;
+ IF COL_LENGTH(N''dbo.TINH_TRANG_BENH'',N''ViTriRang'') IS NOT NULL
      ALTER TABLE dbo.TINH_TRANG_BENH DROP COLUMN ViTriRang;
  DECLARE @ref TABLE(Id nvarchar(50),Name nvarchar(255),PlanText nvarchar(max));
  INSERT @ref VALUES
- (N'REF28_CARIES',N'Sâu răng',N'Khám đánh giá tổn thương và khả năng bảo tồn. Tùy kết quả, bác sĩ cân nhắc fluor cho tổn thương sớm, trám khi có lỗ sâu hoặc đánh giá nội nha khi liên quan tủy. Chưa đủ thông tin để chọn thủ thuật chỉ từ tên bệnh. Nguồn: https://www.nhs.uk/conditions/tooth-decay/'),
- (N'REF28_CAVITY',N'Sâu răng có lỗ',N'Đánh giá độ sâu, tủy và khả năng phục hồi; cân nhắc phục hồi bằng trám nếu phù hợp. Bác sĩ xác định vật liệu và chỉ định sau khám. Nguồn: https://www.nhs.uk/conditions/tooth-decay/'),
- (N'REF28_PULP',N'Viêm tủy răng',N'Khám xác định tình trạng tủy và khả năng giữ răng; đánh giá chỉ định nội nha và phục hồi sau nội nha nếu phù hợp. Bác sĩ quyết định sau khám, không tự chỉ định nhổ răng hoặc thuốc. Nguồn: https://www.nhs.uk/tests-and-treatments/root-canal-treatment/'),
- (N'REF28_GINGIVITIS',N'Viêm nướu',N'Khám mô nha chu, đánh giá mảng bám và cao răng; hướng dẫn vệ sinh, cân nhắc làm sạch chuyên môn và đánh giá lại theo bác sĩ. Nguồn: https://www.nhs.uk/conditions/gum-disease/'),
- (N'REF28_TARTAR',N'Cao răng',N'Đánh giá nướu và nha chu; cân nhắc lấy cao răng, làm sạch mảng bám và hướng dẫn vệ sinh theo kết quả khám. Nguồn: https://www.nhs.uk/live-well/healthy-teeth-and-gums/dental-treatments/'),
- (N'REF28_ORTHO',N'Răng lệch lạc',N'Khám đánh giá khớp cắn và nhu cầu chỉnh nha, trao đổi lựa chọn phù hợp. Chưa xác định khí cụ, số buổi hoặc thời gian điều trị từ tên tình trạng. Nguồn: https://www.nhs.uk/live-well/healthy-teeth-and-gums/dental-treatments/');
- IF EXISTS(SELECT 1 FROM @ref r JOIN dbo.DM_TINH_TRANG_BENH d ON d.MaDMTT=r.Id WHERE d.TenTinhTrang<>r.Name) THROW 52146,N'Mã tham khảo trùng dữ liệu hiện có.',1;
- DECLARE @admin nvarchar(50)=(SELECT TOP(1) t.MaTK FROM dbo.TAI_KHOAN t JOIN dbo.NHAN_VIEN n ON n.MaNV=t.MaNV WHERE t.TenDangNhap=N'admin001' AND t.TrangThai=N'Đang hoạt động' AND n.TrangThai=N'Đang làm việc');
- IF @admin IS NULL THROW 52146,N'Cần tài khoản admin001 hoạt động để ghi nhật ký nạp danh mục.',1;
- EXEC sys.sp_set_session_context @key=N'RHM.MaTK',@value=@admin;
+ (N''REF28_CARIES'',N''Sâu răng'',N''Khám đánh giá tổn thương và khả năng bảo tồn. Tùy kết quả, bác sĩ cân nhắc fluor cho tổn thương sớm, trám khi có lỗ sâu hoặc đánh giá nội nha khi liên quan tủy. Chưa đủ thông tin để chọn thủ thuật chỉ từ tên bệnh. Nguồn: https://www.nhs.uk/conditions/tooth-decay/''),
+ (N''REF28_CAVITY'',N''Sâu răng có lỗ'',N''Đánh giá độ sâu, tủy và khả năng phục hồi; cân nhắc phục hồi bằng trám nếu phù hợp. Bác sĩ xác định vật liệu và chỉ định sau khám. Nguồn: https://www.nhs.uk/conditions/tooth-decay/''),
+ (N''REF28_PULP'',N''Viêm tủy răng'',N''Khám xác định tình trạng tủy và khả năng giữ răng; đánh giá chỉ định nội nha và phục hồi sau nội nha nếu phù hợp. Bác sĩ quyết định sau khám, không tự chỉ định nhổ răng hoặc thuốc. Nguồn: https://www.nhs.uk/tests-and-treatments/root-canal-treatment/''),
+ (N''REF28_GINGIVITIS'',N''Viêm nướu'',N''Khám mô nha chu, đánh giá mảng bám và cao răng; hướng dẫn vệ sinh, cân nhắc làm sạch chuyên môn và đánh giá lại theo bác sĩ. Nguồn: https://www.nhs.uk/conditions/gum-disease/''),
+ (N''REF28_TARTAR'',N''Cao răng'',N''Đánh giá nướu và nha chu; cân nhắc lấy cao răng, làm sạch mảng bám và hướng dẫn vệ sinh theo kết quả khám. Nguồn: https://www.nhs.uk/live-well/healthy-teeth-and-gums/dental-treatments/''),
+ (N''REF28_ORTHO'',N''Răng lệch lạc'',N''Khám đánh giá khớp cắn và nhu cầu chỉnh nha, trao đổi lựa chọn phù hợp. Chưa xác định khí cụ, số buổi hoặc thời gian điều trị từ tên tình trạng. Nguồn: https://www.nhs.uk/live-well/healthy-teeth-and-gums/dental-treatments/'');
+ IF EXISTS(SELECT 1 FROM @ref r JOIN dbo.DM_TINH_TRANG_BENH d ON d.MaDMTT=r.Id WHERE d.TenTinhTrang<>r.Name) THROW 52146,N''Mã tham khảo trùng dữ liệu hiện có.'',1;
+ DECLARE @admin nvarchar(50)=TRY_CONVERT(nvarchar(50),SESSION_CONTEXT(N''RHM.MaTK''));
+ IF @admin IS NULL THROW 52146,N''Cần tài khoản quản trị hoạt động để ghi nhật ký danh mục.'',1;
+ EXEC sys.sp_set_session_context @key=N''RHM.MaTK'',@value=@admin;
  INSERT dbo.DM_TINH_TRANG_BENH(MaDMTT,TenTinhTrang,MoTa,TrangThai)
- SELECT Id,Name,PlanText,N'Đang áp dụng' FROM @ref r WHERE NOT EXISTS(SELECT 1 FROM dbo.DM_TINH_TRANG_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaDMTT=r.Id);
- EXEC sys.sp_set_session_context @key=N'RHM.MaTK',@value=@previousActor;
- COMMIT;
- PRINT N'Đã bỏ vị trí răng; nạp 6 tình trạng và định hướng có nguồn. Không tạo người thật, bảng giá hoặc chứng từ.';
-END TRY
-BEGIN CATCH
- IF XACT_STATE()<>0 ROLLBACK;
- EXEC sys.sp_set_session_context @key=N'RHM.MaTK',@value=@previousActor;
- THROW;
-END CATCH;
+ SELECT Id,Name,PlanText,N''Đang áp dụng'' FROM @ref r WHERE NOT EXISTS(SELECT 1 FROM dbo.DM_TINH_TRANG_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaDMTT=r.Id);
+ EXEC sys.sp_set_session_context @key=N''RHM.MaTK'',@value=@previousActor;
+ PRINT N''Đã bỏ vị trí răng; nạp 6 tình trạng và định hướng có nguồn. Không tạo người thật, bảng giá hoặc chứng từ.'';';
 
-END;
-GO
-
-GO
-IF TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.ClinicalFreshCompleted'))=1
-BEGIN
--- Nâng cấp sau08. Insert-only: không đặt lại giá/dịch vụ/liên kết đã có.
+EXEC sys.sp_executesql N'-- Nâng cấp sau08. Insert-only: không đặt lại giá/dịch vụ/liên kết đã có.
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
-IF DB_NAME() IN(N'master',N'model',N'msdb',N'tempdb') THROW 52147,N'Chọn database bệnh viện.',1;
-IF COL_LENGTH(N'dbo.TINH_TRANG_BENH',N'ViTriRang') IS NOT NULL OR OBJECT_ID(N'dbo.DM_TINH_TRANG_BENH') IS NULL THROW 52147,N'Chạy migration08 trước.',1;
-BEGIN TRY
- BEGIN TRANSACTION;
+IF DB_NAME() IN(N''master'',N''model'',N''msdb'',N''tempdb'') THROW 52147,N''Chọn database bệnh viện.'',1;
+IF COL_LENGTH(N''dbo.TINH_TRANG_BENH'',N''ViTriRang'') IS NOT NULL OR OBJECT_ID(N''dbo.DM_TINH_TRANG_BENH'') IS NULL THROW 52147,N''Chạy migration08 trước.'',1;
  DECLARE @lock int;
- EXEC @lock=sys.sp_getapplock @Resource=N'RHM:Schema:RelatedServices',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000;
- IF @lock<0 THROW 52147,N'Không lấy được khóa nâng cấp.',1;
- IF OBJECT_ID(N'dbo.DICH_VU_TINH_TRANG',N'U') IS NULL
+ EXEC @lock=sys.sp_getapplock @Resource=N''RHM:Schema:RelatedServices'',@LockMode=''Exclusive'',@LockOwner=''Transaction'',@LockTimeout=15000;
+ IF @lock<0 THROW 52147,N''Không lấy được khóa nâng cấp.'',1;
+ IF OBJECT_ID(N''dbo.DICH_VU_TINH_TRANG'',N''U'') IS NULL
  CREATE TABLE [dbo].[DICH_VU_TINH_TRANG](
   MaDMTT nvarchar(50) NOT NULL,MaDV nvarchar(50) NOT NULL,
   NoiDungDeXuat nvarchar(500) NOT NULL,ThuTu int NOT NULL,
@@ -2823,48 +2945,1021 @@ BEGIN TRY
   CONSTRAINT FK_DVTT_DichVu FOREIGN KEY(MaDV) REFERENCES dbo.DICH_VU(MaDV),
   CONSTRAINT CK_DVTT_NoiDung CHECK(ThuTu>0 AND LEN(LTRIM(RTRIM(NoiDungDeXuat)))>0)
  );
- DECLARE @source nvarchar(max)=N'Giá dịch vụ tham khảo BVĐK Bình Định, hiệu lực 15/6/2026; số thứ tự trong tên ghi chú. Nguồn: https://benhvienbinhdinh.com.vn/wp-content/uploads/2026/06/BANG-GIA-BENH-VIEN-hieu-luc-ngay-15.6.2026_W.pdf';
+ DECLARE @source nvarchar(max)=N''Giá dịch vụ tham khảo BVĐK Bình Định, hiệu lực 15/6/2026; số thứ tự trong tên ghi chú. Nguồn: https://benhvienbinhdinh.com.vn/wp-content/uploads/2026/06/BANG-GIA-BENH-VIEN-hieu-luc-ngay-15.6.2026_W.pdf'';
  DECLARE @svc TABLE(Id nvarchar(50),Name nvarchar(255),CK nvarchar(50),Price decimal(18,2),Minutes int,STT int);
  INSERT @svc VALUES
- (N'REF_DV_COMPOSITE',N'Điều trị sâu ngà răng phục hồi bằng Composite',N'CK002',560000,30,1730),
- (N'REF_DV_GIC',N'Điều trị sâu ngà răng phục hồi bằng GlassIonomer Cement',N'CK002',360000,30,1731),
- (N'REF_DV_SCALING1',N'Lấy cao răng (1 hàm)',N'CK001',220000,30,1727),
- (N'REF_DV_SCALING2',N'Lấy cao răng (2 hàm)',N'CK001',440000,45,1726),
- (N'REF_DV_ENDO123',N'Điều trị tủy, hàn kín bằng Gutta percha nóng chảy (răng 1, 2, 3)',N'CK002',2110000,60,3984),
- (N'REF_DV_ENDO45',N'Điều trị tủy, hàn kín bằng Gutta percha nóng chảy (răng 4, 5)',N'CK002',2280000,60,3980),
- (N'REF_DV_ENDO67D',N'Điều trị tủy, hàn kín bằng Gutta percha nóng chảy (răng 6, 7 hàm dưới)',N'CK002',2540000,90,3982),
- (N'REF_DV_ENDO67T',N'Điều trị tủy, hàn kín bằng Gutta percha nóng chảy (răng 6, 7 hàm trên)',N'CK002',2690000,90,3986);
- IF EXISTS(SELECT 1 FROM @svc s JOIN dbo.DICH_VU d ON d.MaDV=s.Id WHERE d.TenDV<>s.Name OR d.MaCK<>s.CK) THROW 52147,N'Mã dịch vụ tham khảo trùng dữ liệu khác; cần đối chiếu.',1;
+ (N''REF_DV_COMPOSITE'',N''Điều trị sâu ngà răng phục hồi bằng Composite'',N''CK002'',560000,30,1730),
+ (N''REF_DV_GIC'',N''Điều trị sâu ngà răng phục hồi bằng GlassIonomer Cement'',N''CK002'',360000,30,1731),
+ (N''REF_DV_SCALING1'',N''Lấy cao răng (1 hàm)'',N''CK001'',220000,30,1727),
+ (N''REF_DV_SCALING2'',N''Lấy cao răng (2 hàm)'',N''CK001'',440000,45,1726),
+ (N''REF_DV_ENDO123'',N''Điều trị tủy, hàn kín bằng Gutta percha nóng chảy (răng 1, 2, 3)'',N''CK002'',2110000,60,3984),
+ (N''REF_DV_ENDO45'',N''Điều trị tủy, hàn kín bằng Gutta percha nóng chảy (răng 4, 5)'',N''CK002'',2280000,60,3980),
+ (N''REF_DV_ENDO67D'',N''Điều trị tủy, hàn kín bằng Gutta percha nóng chảy (răng 6, 7 hàm dưới)'',N''CK002'',2540000,90,3982),
+ (N''REF_DV_ENDO67T'',N''Điều trị tủy, hàn kín bằng Gutta percha nóng chảy (răng 6, 7 hàm trên)'',N''CK002'',2690000,90,3986);
+ IF EXISTS(SELECT 1 FROM @svc s JOIN dbo.DICH_VU d ON d.MaDV=s.Id WHERE d.TenDV<>s.Name OR d.MaCK<>s.CK) THROW 52147,N''Mã dịch vụ tham khảo trùng dữ liệu khác; cần đối chiếu.'',1;
  INSERT dbo.DICH_VU(MaDV,TenDV,NhomDV,MaCK,DonGia,ThoiGianDuKien,MoTa,NgayApDung,TrangThai)
- SELECT s.Id,s.Name,N'Điều trị răng miệng',s.CK,s.Price,s.Minutes,@source+N'; STT '+CONVERT(nvarchar(10),s.STT),CONVERT(date,'20260615'),N'Đang hoạt động'
+ SELECT s.Id,s.Name,N''Điều trị răng miệng'',s.CK,s.Price,s.Minutes,@source+N''; STT ''+CONVERT(nvarchar(10),s.STT),CONVERT(date,''20260615''),N''Đang hoạt động''
  FROM @svc s WHERE NOT EXISTS(SELECT 1 FROM dbo.DICH_VU WITH(UPDLOCK,HOLDLOCK) WHERE MaDV=s.Id);
  DECLARE @map TABLE(C nvarchar(50),D nvarchar(50),Note nvarchar(500),Seq int);
  INSERT @map VALUES
- (N'REF28_CARIES',N'REF_DV_COMPOSITE',N'Lựa chọn phục hồi bằng Composite khi bác sĩ xác định có chỉ định trám.',1),
- (N'REF28_CARIES',N'REF_DV_GIC',N'Lựa chọn phục hồi bằng GIC khi bác sĩ xác định phù hợp.',2),
- (N'REF28_CAVITY',N'REF_DV_COMPOSITE',N'Phục hồi lỗ sâu bằng Composite sau đánh giá tủy và khả năng bảo tồn.',1),
- (N'REF28_CAVITY',N'REF_DV_GIC',N'Lựa chọn thay thế bằng GIC theo đánh giá của bác sĩ.',2),
- (N'REF28_PULP',N'REF_DV_ENDO123',N'Lựa chọn nội nha cho răng 1, 2, 3 nếu có chỉ định và giữ được răng.',1),
- (N'REF28_PULP',N'REF_DV_ENDO45',N'Lựa chọn nội nha cho răng 4, 5 nếu có chỉ định.',2),
- (N'REF28_PULP',N'REF_DV_ENDO67D',N'Lựa chọn nội nha cho răng 6, 7 hàm dưới nếu có chỉ định.',3),
- (N'REF28_PULP',N'REF_DV_ENDO67T',N'Lựa chọn nội nha cho răng 6, 7 hàm trên nếu có chỉ định.',4),
- (N'REF28_GINGIVITIS',N'REF_DV_SCALING1',N'Làm sạch cao răng 1 hàm nếu phù hợp sau khám nha chu.',1),
- (N'REF28_GINGIVITIS',N'REF_DV_SCALING2',N'Lựa chọn làm sạch cao răng 2 hàm khi có chỉ định.',2),
- (N'REF28_TARTAR',N'REF_DV_SCALING1',N'Lấy cao răng 1 hàm theo phạm vi cần điều trị.',1),
- (N'REF28_TARTAR',N'REF_DV_SCALING2',N'Lựa chọn lấy cao răng 2 hàm theo phạm vi cần điều trị.',2),
- (N'REF28_ORTHO',N'DV001',N'Khám đánh giá khớp cắn và nhu cầu chỉnh nha trước khi lập liệu trình.',1),
- (N'REF28_ORTHO',N'DV006',N'Chụp hình ảnh hàm mặt chỉ khi bác sĩ thấy cần thiết để đánh giá.',2);
- IF (SELECT COUNT(*) FROM dbo.DM_TINH_TRANG_BENH WHERE MaDMTT IN(SELECT C FROM @map))<>6 THROW 52147,N'Thiếu tình trạng tham khảo từ08.',1;
+ (N''REF28_CARIES'',N''REF_DV_COMPOSITE'',N''Lựa chọn phục hồi bằng Composite khi bác sĩ xác định có chỉ định trám.'',1),
+ (N''REF28_CARIES'',N''REF_DV_GIC'',N''Lựa chọn phục hồi bằng GIC khi bác sĩ xác định phù hợp.'',2),
+ (N''REF28_CAVITY'',N''REF_DV_COMPOSITE'',N''Phục hồi lỗ sâu bằng Composite sau đánh giá tủy và khả năng bảo tồn.'',1),
+ (N''REF28_CAVITY'',N''REF_DV_GIC'',N''Lựa chọn thay thế bằng GIC theo đánh giá của bác sĩ.'',2),
+ (N''REF28_PULP'',N''REF_DV_ENDO123'',N''Lựa chọn nội nha cho răng 1, 2, 3 nếu có chỉ định và giữ được răng.'',1),
+ (N''REF28_PULP'',N''REF_DV_ENDO45'',N''Lựa chọn nội nha cho răng 4, 5 nếu có chỉ định.'',2),
+ (N''REF28_PULP'',N''REF_DV_ENDO67D'',N''Lựa chọn nội nha cho răng 6, 7 hàm dưới nếu có chỉ định.'',3),
+ (N''REF28_PULP'',N''REF_DV_ENDO67T'',N''Lựa chọn nội nha cho răng 6, 7 hàm trên nếu có chỉ định.'',4),
+ (N''REF28_GINGIVITIS'',N''REF_DV_SCALING1'',N''Làm sạch cao răng 1 hàm nếu phù hợp sau khám nha chu.'',1),
+ (N''REF28_GINGIVITIS'',N''REF_DV_SCALING2'',N''Lựa chọn làm sạch cao răng 2 hàm khi có chỉ định.'',2),
+ (N''REF28_TARTAR'',N''REF_DV_SCALING1'',N''Lấy cao răng 1 hàm theo phạm vi cần điều trị.'',1),
+ (N''REF28_TARTAR'',N''REF_DV_SCALING2'',N''Lựa chọn lấy cao răng 2 hàm theo phạm vi cần điều trị.'',2),
+ (N''REF28_ORTHO'',N''DV001'',N''Khám đánh giá khớp cắn và nhu cầu chỉnh nha trước khi lập liệu trình.'',1),
+ (N''REF28_ORTHO'',N''DV006'',N''Chụp hình ảnh hàm mặt chỉ khi bác sĩ thấy cần thiết để đánh giá.'',2);
+ IF (SELECT COUNT(*) FROM dbo.DM_TINH_TRANG_BENH WHERE MaDMTT IN(SELECT C FROM @map))<>6 THROW 52147,N''Thiếu tình trạng tham khảo từ08.'',1;
  INSERT dbo.DICH_VU_TINH_TRANG(MaDMTT,MaDV,NoiDungDeXuat,ThuTu)
  SELECT C,D,Note,Seq FROM @map m WHERE NOT EXISTS(SELECT 1 FROM dbo.DICH_VU_TINH_TRANG WITH(UPDLOCK,HOLDLOCK) WHERE MaDMTT=m.C AND MaDV=m.D);
- IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N'RHM.RelatedServices.Version') EXEC sys.sp_addextendedproperty @name=N'RHM.RelatedServices.Version',@value=1;
+ IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.RelatedServices.Version'') EXEC sys.sp_addextendedproperty @name=N''RHM.RelatedServices.Version'',@value=1;
+ PRINT N''Đã đồng bộ 8 dịch vụ tham khảo và 14 liên kết; giữ nguyên dữ liệu đã có.'';';
+
+EXEC sys.sp_executesql N'IF COL_LENGTH(N''dbo.HOA_DON'',N''TaoKhiHoanTat'') IS NULL EXEC sys.sp_executesql N''ALTER TABLE dbo.HOA_DON ADD TaoKhiHoanTat bit NOT NULL CONSTRAINT DF_HD_TaoKhiHoanTat DEFAULT(0);'';
+IF COL_LENGTH(N''dbo.CHI_TIET_HOA_DON'',N''MaCTDT'') IS NULL EXEC sys.sp_executesql N''ALTER TABLE dbo.CHI_TIET_HOA_DON ADD MaCTDT nvarchar(50) NULL;'';
+IF NOT EXISTS(SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID(N''dbo.HOA_DON'') AND name=N''TaoKhiHoanTat'' AND system_type_id=104 AND is_nullable=0) THROW 52230,N''Sai cấu trúc cột hóa đơn hoàn tất.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID(N''dbo.CHI_TIET_HOA_DON'') AND name=N''MaCTDT'' AND system_type_id=231 AND max_length=100 AND is_nullable=1) THROW 52230,N''Sai cấu trúc nguồn đơn thuốc hóa đơn.'',1;
+IF OBJECT_ID(N''dbo.FK_CTHD_DonDaKy'') IS NULL EXEC sys.sp_executesql N''ALTER TABLE dbo.CHI_TIET_HOA_DON WITH CHECK ADD CONSTRAINT FK_CTHD_DonDaKy FOREIGN KEY(MaCTDT) REFERENCES dbo.CHI_TIET_DON_THUOC(MaCTDT);'';
+IF OBJECT_ID(N''dbo.CK_CHI_TIET_HOA_DON_3'') IS NOT NULL ALTER TABLE dbo.CHI_TIET_HOA_DON DROP CONSTRAINT CK_CHI_TIET_HOA_DON_3;
+EXEC sys.sp_executesql N''ALTER TABLE dbo.CHI_TIET_HOA_DON WITH CHECK ADD CONSTRAINT CK_CHI_TIET_HOA_DON_3 CHECK
+ ((MaDVThucHien IS NOT NULL AND MaCTPX IS NULL AND MaCTDT IS NULL AND DonGia IS NULL)
+ OR(MaDVThucHien IS NULL AND MaCTPX IS NOT NULL AND MaCTDT IS NULL AND DonGia IS NOT NULL AND DonGia>=0)
+ OR(MaDVThucHien IS NULL AND MaCTPX IS NULL AND MaCTDT IS NOT NULL AND DonGia IS NOT NULL AND DonGia>=0));'';
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.HOA_DON'') AND name=N''UX_HD_HoanTat_Luot'') EXEC sys.sp_executesql N''CREATE UNIQUE INDEX UX_HD_HoanTat_Luot ON dbo.HOA_DON(MaLS) WHERE TaoKhiHoanTat=1;'';
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.CHI_TIET_HOA_DON'') AND name=N''UX_CTHD_DonDaKy'') EXEC sys.sp_executesql N''CREATE UNIQUE INDEX UX_CTHD_DonDaKy ON dbo.CHI_TIET_HOA_DON(MaCTDT) WHERE MaCTDT IS NOT NULL;'';
+EXEC sys.sp_executesql N''CREATE OR ALTER TRIGGER dbo.TR_RHM_DichVu_ChiTrongKham ON dbo.DICH_VU_THUC_HIEN AFTER INSERT,UPDATE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=i.MaLS WHERE l.TrangThai<>N''''Nháp'''') THROW 52234,N''''Không thêm/sửa dịch vụ sau khi hoàn tất khám.'''',1;
+END;'';
+EXEC sys.sp_executesql N''CREATE OR ALTER VIEW dbo.VW_CHI_TIET_HOA_DON AS
+SELECT c.MaCTHD,c.MaHD,c.MaDVThucHien,c.MaCTPX,c.NoiDung,
+ CASE WHEN c.MaDVThucHien IS NOT NULL THEN N''''Dịch vụ'''' ELSE N''''Thuốc'''' END LoaiKhoanThu,
+ COALESCE(s.SoLuong,x.SoLuong,d.SoLuong) SoLuong,
+ COALESCE(s.DonGia,c.DonGia) DonGia,
+ COALESCE(d.DonViTinhChot,hh.DonViTinh) DonViTinhThuoc,c.ThanhTien
+FROM dbo.CHI_TIET_HOA_DON c
+LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
+LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
+LEFT JOIN dbo.CHI_TIET_DON_THUOC d ON d.MaCTDT=COALESCE(c.MaCTDT,x.MaCTDT)
+LEFT JOIN dbo.HANG_HOA hh ON hh.MaHH=x.MaHH;'';
+
+EXEC sys.sp_executesql N''CREATE OR ALTER TRIGGER dbo.TR_CTHD_TinhTien ON dbo.CHI_TIET_HOA_DON
+AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF TRIGGER_NESTLEVEL(OBJECT_ID(N''''dbo.TR_CTHD_TinhTien''''))>1 RETURN;
+ DECLARE @lock nvarchar(50);
+ SELECT @lock=h.MaHD FROM dbo.HOA_DON h WITH(UPDLOCK,HOLDLOCK)
+ WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted);
+ IF EXISTS(SELECT 1 FROM dbo.HOA_DON h JOIN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted) z ON z.MaHD=h.MaHD WHERE h.TrangThai<>N''''Nháp'''')
+  THROW 51001,N''''Chỉ thay đổi chi tiết hóa đơn nháp.'''',1;
+ -- Once sealed, the only permitted mutation is signed prescription -> actual export lots.
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD
+  LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=i.MaCTPX
+  WHERE h.TaoKhiHoanTat=1 AND (i.MaCTPX IS NULL OR NOT EXISTS(
+   SELECT 1 FROM dbo.CHI_TIET_HOA_DON pending WHERE pending.MaHD=i.MaHD AND pending.MaCTDT=x.MaCTDT
+    AND pending.DonGia=i.DonGia AND pending.NoiDung=i.NoiDung)))
+  THROW 52231,N''''Hóa đơn đã chốt nguồn; chỉ thay thuốc theo đơn bằng đúng phần xuất kho.'''',1;
+ IF EXISTS(SELECT 1 FROM deleted d JOIN dbo.HOA_DON h ON h.MaHD=d.MaHD
+  LEFT JOIN dbo.CHI_TIET_DON_THUOC rx ON rx.MaCTDT=d.MaCTDT
+  OUTER APPLY(SELECT SUM(x.SoLuong) Qty,SUM(c.ThanhTien) Amount FROM dbo.CHI_TIET_HOA_DON c
+   JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX WHERE c.MaHD=d.MaHD AND x.MaCTDT=d.MaCTDT) a
+  WHERE h.TaoKhiHoanTat=1 AND (d.MaCTDT IS NULL OR EXISTS(SELECT 1 FROM inserted i WHERE i.MaCTHD=d.MaCTHD)
+   OR COALESCE(a.Qty,0)<>rx.SoLuong OR COALESCE(a.Amount,0)<>d.ThanhTien))
+  THROW 52232,N''''Không xóa/sửa khoản đã chốt; phần xuất phải khớp toàn bộ lượng và tiền đơn thuốc.'''',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD
+  LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=i.MaDVThucHien
+  LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=i.MaCTPX
+  LEFT JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX
+  LEFT JOIN dbo.CHI_TIET_DON_THUOC d ON d.MaCTDT=COALESCE(i.MaCTDT,x.MaCTDT)
+  LEFT JOIN dbo.DON_THUOC r ON r.MaDT=d.MaDT
+  WHERE (i.MaDVThucHien IS NOT NULL AND(s.MaLS<>h.MaLS OR s.TrangThai<>N''''Đã xác nhận''''))
+   OR(i.MaCTPX IS NOT NULL AND(x.MaCTDT IS NULL OR p.MaLS<>h.MaLS OR r.MaLS<>h.MaLS OR p.TrangThai<>N''''Đã ghi sổ''''))
+   OR(i.MaCTDT IS NOT NULL AND(r.MaLS<>h.MaLS OR r.TrangThai<>N''''Đã xác nhận'''' OR r.NgayKe>h.NgayLap
+     OR NULLIF(LTRIM(RTRIM(d.TenThuocChot)),N'''''''') IS NULL OR NULLIF(LTRIM(RTRIM(d.HamLuongChot)),N'''''''') IS NULL
+     OR NULLIF(LTRIM(RTRIM(d.DonViTinhChot)),N'''''''') IS NULL)))
+  THROW 51002,N''''Nguồn thu phải cùng lượt: dịch vụ xác nhận, đơn đã ký hoặc thuốc đã xuất.'''',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD
+  JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=i.MaCTPX
+  JOIN dbo.CHI_TIET_DON_THUOC rx ON rx.MaCTDT=x.MaCTDT
+  WHERE h.TaoKhiHoanTat=1 AND(SELECT SUM(y.SoLuong) FROM dbo.CHI_TIET_HOA_DON c
+   JOIN dbo.CHI_TIET_PHIEU_XUAT y ON y.MaCTPX=c.MaCTPX WHERE c.MaHD=i.MaHD AND y.MaCTDT=x.MaCTDT)>rx.SoLuong)
+  THROW 52233,N''''Phần xuất vượt lượng đã chốt.'''',1;
+ UPDATE c SET ThanhTien=CASE WHEN c.MaDVThucHien IS NOT NULL THEN s.ThanhTien
+  ELSE CAST(ROUND(COALESCE(x.SoLuong,d.SoLuong)*c.DonGia,2) AS decimal(18,2)) END
+ FROM dbo.CHI_TIET_HOA_DON c JOIN inserted i ON i.MaCTHD=c.MaCTHD
+ LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
+ LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
+ LEFT JOIN dbo.CHI_TIET_DON_THUOC d ON d.MaCTDT=c.MaCTDT;
+ IF EXISTS(SELECT 1 FROM dbo.HOA_DON h WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted)
+  AND h.GiamGia>COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0))
+  THROW 51003,N''''Tổng mới thấp hơn giảm giá.'''',1;
+ UPDATE h SET TongTien=COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0)
+ FROM dbo.HOA_DON h WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted);
+END;'';
+
+EXEC sys.sp_executesql N''CREATE OR ALTER TRIGGER dbo.TR_HD_ChotHoanTat ON dbo.HOA_DON
+AFTER INSERT,UPDATE,DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaHD=d.MaHD WHERE d.TaoKhiHoanTat=1
+  AND(i.MaHD IS NULL OR EXISTS(SELECT i.MaLS,i.MaNV,i.NgayLap,i.GiamGia,i.TaoKhiHoanTat EXCEPT SELECT d.MaLS,d.MaNV,d.NgayLap,d.GiamGia,d.TaoKhiHoanTat)
+   OR i.TrangThai=N''''Hủy''''))
+  THROW 52234,N''''Hóa đơn hoàn tất giữ nguyên danh tính, nguồn và giảm giá.'''',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON other ON other.MaLS=i.MaLS AND other.MaHD<>i.MaHD
+  WHERE i.TaoKhiHoanTat=1 OR other.TaoKhiHoanTat=1)
+  THROW 52235,N''''Lượt hoàn tất chỉ có một hóa đơn.'''',1;
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''''Đã xác nhận''''
+  AND EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=i.MaHD AND c.MaCTDT IS NOT NULL))
+  THROW 52236,N''''Xuất đủ thuốc và đối chiếu hóa đơn trước xác nhận thu.'''',1;
+ IF EXISTS(SELECT 1 FROM inserted i LEFT JOIN deleted old ON old.MaHD=i.MaHD
+  WHERE i.TaoKhiHoanTat=1 AND COALESCE(old.TaoKhiHoanTat,0)=0 AND
+  (i.TrangThai<>N''''Nháp'''' OR i.PhienBanQuyTrinh<>1 OR i.GiamGia<>0
+   OR NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=i.MaHD)
+   OR EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaLS=i.MaLS AND l.TrangThai<>N''''Đã xác nhận'''')
+   OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=i.MaHD AND c.MaCTPX IS NOT NULL)
+   OR EXISTS(SELECT 1 FROM dbo.DICH_VU_THUC_HIEN s WHERE s.MaLS=i.MaLS AND s.TrangThai=N''''Đã xác nhận''''
+     AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=i.MaHD AND c.MaDVThucHien=s.MaDVThucHien))
+   OR EXISTS(SELECT 1 FROM dbo.DON_THUOC r JOIN dbo.CHI_TIET_DON_THUOC d ON d.MaDT=r.MaDT
+     WHERE r.MaLS=i.MaLS AND r.TrangThai=N''''Đã xác nhận'''' AND NOT EXISTS(
+      SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=i.MaHD AND c.MaCTDT=d.MaCTDT))))
+  THROW 52237,N''''Hóa đơn hoàn tất phải chốt đủ dịch vụ và thuốc đã ký của lượt.'''',1;
+END;'';
+';
+
+EXEC sys.sp_executesql N'/* Remove only untouched records owned by the 20261028 specialty demo.
+   Caller owns the transaction and backup. No financial rows are deleted.
+   All guards run before the first DELETE; rerunning after success deletes zero rows. */
+IF @@TRANCOUNT=0 THROW 52260,N''Demo cleanup requires the caller transaction.'',1;
+IF XACT_STATE()<>1 THROW 52260,N''Demo cleanup requires a committable transaction.'',1;
+DECLARE @demoMarker nvarchar(200)=N''DEMO28: dữ liệu hư cấu để thử giao diện, không dùng điều trị.'';
+DECLARE @demoLock int;
+EXEC @demoLock=sys.sp_getapplock @Resource=N''RHM:DemoSpecialties:20261028'',@LockMode=''Exclusive'',@LockOwner=''Transaction'',@LockTimeout=15000;
+IF @demoLock<0 THROW 52260,N''Không lấy được khóa dọn dữ liệu demo.'',1;
+EXEC @demoLock=sys.sp_getapplock @Resource=N''RHM:TiepNhan:Write'',@LockMode=''Exclusive'',@LockOwner=''Transaction'',@LockTimeout=15000;
+IF @demoLock<0 THROW 52260,N''Quầy tiếp nhận đang bận; chưa dọn demo.'',1;
+
+CREATE TABLE #RhmDemoSpecialty(CK nvarchar(50) PRIMARY KEY,Khoa nvarchar(50),Ten nvarchar(255),DV nvarchar(50),TenDV nvarchar(255),TinhTrang nvarchar(255),MoTa nvarchar(1000));
+INSERT #RhmDemoSpecialty VALUES
+(N''CK001'',N''KHOA001'',N''Tổng quát'',N''DV001'',N''Khám răng hàm mặt tổng quát'',N''Khó chịu vùng răng miệng'',N''Bệnh nhân hư cấu mô tả khó chịu khi nhai, cần ghi nhận khi khám tổng quát.''),
+(N''CK002'',N''KHOA002'',N''Bảo tồn'',N''DEMO28_DV_CK002'',N''Khám tư vấn điều trị bảo tồn (demo)'',N''Ê buốt răng'',N''Bệnh nhân hư cấu mô tả ê buốt răng khi ăn uống; chưa kết luận chẩn đoán.''),
+(N''CK003'',N''KHOA003'',N''Hàm mặt'',N''DEMO28_DV_CK003'',N''Khám tư vấn phẫu thuật hàm mặt (demo)'',N''Khó chịu vùng hàm'',N''Bệnh nhân hư cấu mô tả khó chịu vùng hàm; đang chờ bác sĩ đánh giá.''),
+(N''CK004'',N''KHOA004'',N''Hình ảnh'',N''DV006'',N''Chụp X-quang hàm mặt'',N''Khảo sát vùng hàm mặt'',N''Hồ sơ mô phỏng chờ đối chiếu thông tin khảo sát; chưa có kết quả hình ảnh.''),
+(N''CK005'',N''KHOA005'',N''Xét nghiệm'',N''DEMO28_DV_CK005'',N''Khám tư vấn xét nghiệm (demo)'',N''Trao đổi thông tin xét nghiệm'',N''Hồ sơ hư cấu chờ bác sĩ trao đổi thông tin xét nghiệm; chưa lấy mẫu, chưa có kết quả.''),
+(N''CK006'',N''KHOA006'',N''Gây mê'',N''DEMO28_DV_CK006'',N''Khám đánh giá trước gây mê (demo)'',N''Thu thập tiền sử trước gây mê'',N''Hồ sơ hư cấu dùng thử phần ghi nhận tiền sử; chưa đánh giá nguy cơ, chưa có chỉ định.''),
+(N''CK007'',N''KHOA007'',N''Phục hồi'',N''DV008'',N''Chăm sóc vùng da bị tổn thương'',N''Theo dõi vùng da và vận động hàm'',N''Bệnh nhân hư cấu đến trao đổi tình trạng vùng da và vận động hàm; chưa thực hiện dịch vụ.'');
+CREATE TABLE #RhmDemoCases(CK nvarchar(50),Loai nvarchar(10),BN nvarchar(50),HS nvarchar(50),Phieu nvarchar(50),LS nvarchar(50),TTB nvarchar(50));
+INSERT #RhmDemoCases
+SELECT CK,v.Loai,N''DEMO28_BN_''+CK+N''_''+v.Loai,N''DEMO28_HS_''+CK+N''_''+v.Loai,N''DEMO28_PK_''+CK+N''_''+v.Loai,
+CASE WHEN v.Loai=N''NHAP'' THEN N''DEMO28_LS_''+CK END,CASE WHEN v.Loai=N''NHAP'' THEN N''DEMO28_TTB_''+CK END
+FROM #RhmDemoSpecialty CROSS JOIN(VALUES(N''CHO''),(N''NHAP''))v(Loai);
+CREATE TABLE #RhmDemoRoster(NV nvarchar(50) PRIMARY KEY,CK nvarchar(50),Buoi nvarchar(10));
+INSERT #RhmDemoRoster SELECT N''DEMO28_NV_''+CK+N''_''+b.Buoi,CK,b.Buoi FROM #RhmDemoSpecialty CROSS JOIN(VALUES(N''ngay''),(N''dem''))b(Buoi) WHERE CK<>N''CK001'';
+INSERT #RhmDemoRoster VALUES(N''NV002'',N''CK001'',N''ngay''),(N''NV003'',N''CK001'',N''dem'');
+CREATE TABLE #RhmDemoTargets(T sysname PRIMARY KEY,K sysname NOT NULL,DeleteOrder int NOT NULL);
+INSERT #RhmDemoTargets VALUES
+(N''TINH_TRANG_BENH'',N''MaTTB'',10),(N''LICH_SU_KHAM_BENH'',N''MaLS'',20),(N''PHIEU_KHAM_BENH'',N''MaPhieu'',30),
+(N''HO_SO_BENH_AN'',N''MaHS'',40),(N''BENH_NHAN'',N''MaBN'',50),(N''LICH_LAM_VIEC'',N''MaLLV'',60),
+(N''CA_THEO_NGAY'',N''MaCa'',70),(N''TAI_KHOAN'',N''MaTK'',80),(N''NHAN_VIEN'',N''MaNV'',90),
+(N''PHONG'',N''MaPhong'',100),(N''DICH_VU'',N''MaDV'',110),(N''CA_LAM'',N''MaCa'',120);
+CREATE TABLE #RhmDemoKeys(T sysname NOT NULL,V nvarchar(50) NOT NULL,PRIMARY KEY(T,V));
+INSERT #RhmDemoKeys SELECT N''BENH_NHAN'',BN FROM #RhmDemoCases;
+INSERT #RhmDemoKeys SELECT N''HO_SO_BENH_AN'',HS FROM #RhmDemoCases;
+INSERT #RhmDemoKeys SELECT N''PHIEU_KHAM_BENH'',Phieu FROM #RhmDemoCases;
+INSERT #RhmDemoKeys SELECT N''LICH_SU_KHAM_BENH'',LS FROM #RhmDemoCases WHERE LS IS NOT NULL;
+INSERT #RhmDemoKeys SELECT N''TINH_TRANG_BENH'',TTB FROM #RhmDemoCases WHERE TTB IS NOT NULL;
+INSERT #RhmDemoKeys SELECT N''NHAN_VIEN'',NV FROM #RhmDemoRoster WHERE CK<>N''CK001'';
+INSERT #RhmDemoKeys SELECT N''TAI_KHOAN'',N''DEMO28_TK_''+CK+N''_''+Buoi FROM #RhmDemoRoster WHERE CK<>N''CK001'';
+INSERT #RhmDemoKeys SELECT N''PHONG'',N''DEMO28_PH_''+CK FROM #RhmDemoSpecialty;
+INSERT #RhmDemoKeys SELECT N''DICH_VU'',DV FROM #RhmDemoSpecialty WHERE DV LIKE N''DEMO28[_]%'';
+INSERT #RhmDemoKeys VALUES(N''CA_LAM'',N''DEMO28_CA_NGAY''),(N''CA_LAM'',N''DEMO28_CA_DEM''),(N''CA_THEO_NGAY'',N''DEMO28_CA_NGAY''),(N''CA_THEO_NGAY'',N''DEMO28_CA_DEM'');
+INSERT #RhmDemoKeys SELECT N''LICH_LAM_VIEC'',l.MaLLV FROM dbo.LICH_LAM_VIEC l WITH(UPDLOCK,HOLDLOCK)
+JOIN #RhmDemoRoster r ON r.NV=l.MaNV
+WHERE l.MaLLV=N''DEMO28_L_''+CONVERT(nvarchar(8),l.NgayLam,112)+N''_''+r.NV;
+
+/* Lock every deletion candidate and reject unexpected identifiers using the reserved prefix. */
+DECLARE @demoT sysname,@demoK sysname,@demoSql nvarchar(max),@demoError nvarchar(2048),@demoCount bigint;
+DECLARE DemoOwnership CURSOR LOCAL FAST_FORWARD FOR SELECT T,K FROM #RhmDemoTargets;
+OPEN DemoOwnership;
+FETCH NEXT FROM DemoOwnership INTO @demoT,@demoK;
+WHILE @@FETCH_STATUS=0
+BEGIN
+ SET @demoError=N''Demo ownership conflict in ''+@demoT+N''; giữ nguyên dữ liệu để đối chiếu.'';
+ SET @demoSql=N''IF EXISTS(SELECT 1 FROM dbo.''+QUOTENAME(@demoT)+N'' x WITH(UPDLOCK,HOLDLOCK) WHERE x.''+QUOTENAME(@demoK)+N'' LIKE N''''DEMO28[_]%'''' AND NOT EXISTS(SELECT 1 FROM #RhmDemoKeys k WHERE k.T=@t AND k.V=x.''+QUOTENAME(@demoK)+N'')) THROW 52261,@msg,1; SELECT @n=COUNT_BIG(*) FROM dbo.''+QUOTENAME(@demoT)+N'' x WITH(UPDLOCK,HOLDLOCK) JOIN #RhmDemoKeys k ON k.T=@t AND k.V=x.''+QUOTENAME(@demoK)+N'';'';
+ EXEC sys.sp_executesql @demoSql,N''@t sysname,@msg nvarchar(2048),@n bigint OUTPUT'',@t=@demoT,@msg=@demoError,@n=@demoCount OUTPUT;
+ FETCH NEXT FROM DemoOwnership INTO @demoT,@demoK;
+END;
+CLOSE DemoOwnership;
+DEALLOCATE DemoOwnership;
+
+/* EXCEPT compares NULLs as values, so removed markers or changed optional fields also fail. */
+IF EXISTS(SELECT 1 FROM dbo.BENH_NHAN b JOIN #RhmDemoCases x ON x.BN=b.MaBN JOIN #RhmDemoSpecialty c ON c.CK=x.CK
+WHERE EXISTS(SELECT b.HoTenBN,b.GioiTinh,b.NgaySinh,b.SDT,b.DiaChi,b.MaBHYT,b.NhomMau,b.TienSuBenh,b.DiUng,b.TrangThai
+EXCEPT SELECT N''BN Hư Cấu ''+c.Ten+CASE x.Loai WHEN N''CHO'' THEN N'' Chờ'' ELSE N'' Nháp'' END,CAST(NULL AS nvarchar(50)),CONVERT(date,''19900101''),CAST(NULL AS nvarchar(50)),@demoMarker,CAST(NULL AS nvarchar(50)),CAST(NULL AS nvarchar(50)),N''Dữ liệu demo; chưa xác minh tiền sử.'',N''Dữ liệu demo; chưa xác minh dị ứng.'',N''Đang theo dõi''))
+THROW 52262,N''Bệnh nhân demo đã được sửa; không tự xóa.'',1;
+IF EXISTS(SELECT 1 FROM dbo.HO_SO_BENH_AN h JOIN #RhmDemoCases x ON x.HS=h.MaHS JOIN #RhmDemoSpecialty c ON c.CK=x.CK
+WHERE EXISTS(SELECT h.MaBN,h.LyDoKhamBanDau,h.GhiChu,h.TrangThai EXCEPT SELECT x.BN,c.MoTa,@demoMarker,N''Đang theo dõi''))
+THROW 52262,N''Hồ sơ demo đã được sửa; không tự xóa.'',1;
+IF EXISTS(SELECT 1 FROM dbo.PHIEU_KHAM_BENH p JOIN #RhmDemoCases x ON x.Phieu=p.MaPhieu JOIN #RhmDemoSpecialty c ON c.CK=x.CK
+WHERE EXISTS(SELECT p.MaHS,p.MaLich,p.MaPhong,p.MaNVTiepNhan,p.MaDV,p.LyDoKham,p.TrangThai,p.GhiChu
+EXCEPT SELECT x.HS,CAST(NULL AS nvarchar(50)),N''DEMO28_PH_''+x.CK,N''NV005'',c.DV,c.MoTa,CASE x.Loai WHEN N''CHO'' THEN N''Chờ khám'' ELSE N''Đang khám'' END,@demoMarker)
+OR NOT EXISTS(SELECT 1 FROM #RhmDemoRoster r WHERE r.NV=p.MaBS AND r.CK=x.CK))
+THROW 52262,N''Phiếu demo đã được xử lý hoặc đổi nguồn; không tự xóa.'',1;
+IF EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l JOIN #RhmDemoCases x ON x.LS=l.MaLS JOIN #RhmDemoSpecialty c ON c.CK=x.CK
+WHERE EXISTS(SELECT l.MaPhieu,l.MaPhong,l.TrieuChung,l.ChanDoan,l.KeHoachXuLy,l.TrangThai,l.NgayXacNhan,l.GhiChu,l.KhongKeThuoc,l.LyDoKhongKeThuoc
+EXCEPT SELECT x.Phieu,N''DEMO28_PH_''+x.CK,c.MoTa,N''DEMO: chưa kết luận chẩn đoán.'',N''DEMO: đang nhập hồ sơ, chưa chỉ định điều trị.'',N''Nháp'',CAST(NULL AS datetime2(0)),@demoMarker,0,CAST(NULL AS nvarchar(500)))
+OR NOT EXISTS(SELECT 1 FROM dbo.PHIEU_KHAM_BENH p WHERE p.MaPhieu=x.Phieu AND p.MaBS=l.MaBS AND p.ThoiGianTiepNhan=l.ThoiGianKham))
+THROW 52262,N''Lần khám demo đã được sửa hoặc ký; không tự xóa.'',1;
+IF EXISTS(SELECT 1 FROM dbo.TINH_TRANG_BENH t JOIN #RhmDemoCases x ON x.TTB=t.MaTTB JOIN #RhmDemoSpecialty c ON c.CK=x.CK
+WHERE EXISTS(SELECT t.MaLS,t.LoaiTinhTrang,t.MoTaTinhTrang,t.GhiChu,t.MaDMTT EXCEPT SELECT x.LS,c.TinhTrang,c.MoTa,@demoMarker,CAST(NULL AS nvarchar(50))))
+THROW 52262,N''Tình trạng demo đã được sửa; không tự xóa.'',1;
+IF EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN #RhmDemoRoster r ON r.NV=n.MaNV JOIN #RhmDemoSpecialty c ON c.CK=r.CK WHERE r.CK<>N''CK001'' AND
+EXISTS(SELECT n.HoTen,n.GioiTinh,n.NgaySinh,n.SDT,n.DiaChi,n.MaChucVu,n.MaCK,n.BangCap,n.NgayVaoLam,n.TrangThai
+EXCEPT SELECT N''BS Hư Cấu ''+c.Ten+CASE r.Buoi WHEN N''ngay'' THEN N'' Ngày'' ELSE N'' Đêm'' END,CAST(NULL AS nvarchar(50)),CONVERT(date,''19850101''),CAST(NULL AS nvarchar(50)),@demoMarker,N''CV002'',r.CK,N''Bác sĩ (hư cấu để demo)'',CONVERT(date,''20260101''),N''Đang làm việc''))
+THROW 52262,N''Nhân viên demo đã được sửa; không tự xóa.'',1;
+IF EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN #RhmDemoRoster r ON t.MaTK=N''DEMO28_TK_''+r.CK+N''_''+r.Buoi WHERE r.CK<>N''CK001'' AND
+EXISTS(SELECT t.TenDangNhap,t.MaVaiTro,t.MaNV,t.MaKhoa,t.MaPhong,t.TrangThai
+EXCEPT SELECT N''demo_''+LOWER(r.CK)+N''_''+r.Buoi,N''VTRO002'',r.NV,CAST(NULL AS nvarchar(50)),CAST(NULL AS nvarchar(50)),N''Đang hoạt động''))
+THROW 52262,N''Tài khoản demo đã đổi quyền hoặc liên kết; không tự xóa.'',1;
+IF EXISTS(SELECT 1 FROM dbo.PHONG p JOIN #RhmDemoSpecialty c ON p.MaPhong=N''DEMO28_PH_''+c.CK WHERE
+EXISTS(SELECT p.TenPhong,p.MaKhoa,p.LoaiPhong,p.TinhTrang,p.TrangThai EXCEPT SELECT N''Phòng khám demo - ''+c.Ten,c.Khoa,N''Phòng khám chuyên khoa'',N''Sẵn sàng'',N''Đang hoạt động''))
+THROW 52262,N''Phòng demo đã được sửa; không tự xóa.'',1;
+IF EXISTS(SELECT 1 FROM dbo.DICH_VU d JOIN #RhmDemoSpecialty c ON d.MaDV=c.DV WHERE c.DV LIKE N''DEMO28[_]%'' AND
+EXISTS(SELECT d.TenDV,d.NhomDV,d.MaCK,d.DonGia,d.ThoiGianDuKien,d.MoTa,d.NgayApDung,d.TrangThai
+EXCEPT SELECT c.TenDV,N''Khám và tư vấn'',c.CK,CONVERT(decimal(18,2),100000),30,@demoMarker,CONVERT(date,''20260101''),N''Đang hoạt động''))
+THROW 52262,N''Dịch vụ demo đã được sửa; không tự xóa.'',1;
+IF EXISTS(SELECT 1 FROM dbo.CA_LAM c JOIN #RhmDemoKeys k ON k.T=N''CA_LAM'' AND k.V=c.MaCa WHERE
+EXISTS(SELECT c.GioBatDau,c.GioKetThuc,c.TrangThai,c.GhiChu EXCEPT SELECT CONVERT(time(0),CASE c.MaCa WHEN N''DEMO28_CA_NGAY'' THEN ''07:00'' ELSE ''19:00'' END),CONVERT(time(0),CASE c.MaCa WHEN N''DEMO28_CA_NGAY'' THEN ''19:00'' ELSE ''07:00'' END),N''Đang hoạt động'',@demoMarker))
+THROW 52262,N''Ca demo đã được sửa; không tự xóa.'',1;
+IF EXISTS(SELECT 1 FROM dbo.LICH_LAM_VIEC l JOIN #RhmDemoKeys k ON k.T=N''LICH_LAM_VIEC'' AND k.V=l.MaLLV JOIN #RhmDemoRoster r ON r.NV=l.MaNV WHERE
+EXISTS(SELECT l.MaCa,l.MaPhong,l.TrangThai,l.TrangThaiHienDien,l.GioVao,l.GioRa,l.GhiChu
+EXCEPT SELECT CASE r.Buoi WHEN N''ngay'' THEN N''DEMO28_CA_NGAY'' ELSE N''DEMO28_CA_DEM'' END,N''DEMO28_PH_''+r.CK,N''Đã xác nhận'',N''Có mặt'',CAST(NULL AS datetime2(0)),CAST(NULL AS datetime2(0)),@demoMarker))
+THROW 52262,N''Lịch demo đã được sửa/chấm công; không tự xóa.'',1;
+
+/* Every inbound FK must originate in another explicitly validated deletion row.
+   Financial, prescription, treatment, appointment and audit tables are never in the manifest. */
+IF EXISTS(SELECT 1 FROM sys.foreign_keys f JOIN #RhmDemoTargets t ON f.referenced_object_id=OBJECT_ID(N''dbo.''+t.T)
+WHERE (SELECT COUNT(*) FROM sys.foreign_key_columns c WHERE c.constraint_object_id=f.object_id)<>1)
+THROW 52263,N''Có FK tổng hợp tùy chỉnh trỏ vào demo; cần đối chiếu thủ công.'',1;
+DECLARE @demoChildSchema sysname,@demoChild sysname,@demoChildCol sysname,@demoParentCol sysname,@demoChildKey sysname;
+DECLARE DemoReferences CURSOR LOCAL FAST_FORWARD FOR
+SELECT OBJECT_SCHEMA_NAME(f.parent_object_id),OBJECT_NAME(f.parent_object_id),COL_NAME(fc.parent_object_id,fc.parent_column_id),t.T,t.K,
+COL_NAME(fc.referenced_object_id,fc.referenced_column_id),ct.K
+FROM sys.foreign_keys f JOIN sys.foreign_key_columns fc ON fc.constraint_object_id=f.object_id
+JOIN #RhmDemoTargets t ON f.referenced_object_id=OBJECT_ID(N''dbo.''+t.T)
+LEFT JOIN #RhmDemoTargets ct ON f.parent_object_id=OBJECT_ID(N''dbo.''+ct.T);
+OPEN DemoReferences;
+FETCH NEXT FROM DemoReferences INTO @demoChildSchema,@demoChild,@demoChildCol,@demoT,@demoK,@demoParentCol,@demoChildKey;
+WHILE @@FETCH_STATUS=0
+BEGIN
+ SET @demoError=N''Không dọn demo: ''+@demoChildSchema+N''.''+@demoChild+N'' còn tham chiếu ''+@demoT+N''. Dữ liệu được giữ nguyên.'';
+ SET @demoSql=N''IF EXISTS(SELECT 1 FROM ''+QUOTENAME(@demoChildSchema)+N''.''+QUOTENAME(@demoChild)+N'' c WITH(UPDLOCK,HOLDLOCK) JOIN dbo.''+QUOTENAME(@demoT)+N'' p WITH(UPDLOCK,HOLDLOCK) ON p.''+QUOTENAME(@demoParentCol)+N''=c.''+QUOTENAME(@demoChildCol)+N'' JOIN #RhmDemoKeys k ON k.T=@parent AND k.V=p.''+QUOTENAME(@demoK)
+ +CASE WHEN @demoChildKey IS NULL THEN N'''' ELSE N'' WHERE NOT EXISTS(SELECT 1 FROM #RhmDemoKeys ownRow WHERE ownRow.T=@child AND ownRow.V=c.''+QUOTENAME(@demoChildKey)+N'')'' END
+ +N'') THROW 52263,@msg,1;'';
+ EXEC sys.sp_executesql @demoSql,N''@parent sysname,@child sysname,@msg nvarchar(2048)'',@parent=@demoT,@child=@demoChild,@msg=@demoError;
+ FETCH NEXT FROM DemoReferences INTO @demoChildSchema,@demoChild,@demoChildCol,@demoT,@demoK,@demoParentCol,@demoChildKey;
+END;
+CLOSE DemoReferences;
+DEALLOCATE DemoReferences;
+/* Historical confirmation snapshots contain identifiers without corresponding FKs. */
+IF EXISTS(SELECT 1 FROM dbo.XAC_NHAN_DOI_LICH_KHAM x WITH(UPDLOCK,HOLDLOCK) WHERE
+EXISTS(SELECT 1 FROM #RhmDemoKeys k WHERE (k.T=N''NHAN_VIEN'' AND k.V IN(x.MaBSCu,x.MaBSMoi,x.MaNVXacNhan))
+OR(k.T=N''PHONG'' AND k.V IN(x.MaPhongCu,x.MaPhongMoi)) OR(k.T=N''LICH_LAM_VIEC'' AND k.V=x.MaLLVThayThe) OR(k.T=N''CA_LAM'' AND k.V=x.MaCa)))
+THROW 52263,N''Có lịch sử đổi lịch sử dụng demo; không tự xóa.'',1;
+-- Keep the immutable read-only lookup audit; it has no change payload and its actor remains.
+IF EXISTS(SELECT 1 FROM dbo.NHAT_KY_THAO_TAC a WITH(UPDLOCK,HOLDLOCK) JOIN #RhmDemoKeys k ON a.MaDoiTuong=k.V OR(k.T=N''TAI_KHOAN'' AND a.MaTK=k.V)
+OR CHARINDEX(k.V,COALESCE(a.DuLieuTruoc,N''''))>0 OR CHARINDEX(k.V,COALESCE(a.DuLieuSau,N''''))>0
+WHERE NOT(a.HanhDong=N''Tra cứu dịch vụ'' AND a.LoaiDoiTuong=N''DICH_VU_THUC_HIEN'' AND a.DuLieuTruoc IS NULL AND a.DuLieuSau IS NULL
+ AND NOT EXISTS(SELECT 1 FROM #RhmDemoKeys actorToDelete WHERE actorToDelete.T=N''TAI_KHOAN'' AND actorToDelete.V=a.MaTK)))
+THROW 52263,N''Có nhật ký thay đổi dữ liệu demo; không tự xóa.'',1;
+
+CREATE TABLE #RhmDemoDeleted(TableName sysname PRIMARY KEY,DeletedRows bigint NOT NULL);
+DECLARE DemoDelete CURSOR LOCAL FAST_FORWARD FOR SELECT T,K FROM #RhmDemoTargets ORDER BY DeleteOrder;
+OPEN DemoDelete;
+FETCH NEXT FROM DemoDelete INTO @demoT,@demoK;
+WHILE @@FETCH_STATUS=0
+BEGIN
+ SET @demoSql=N''DELETE x FROM dbo.''+QUOTENAME(@demoT)+N'' x JOIN #RhmDemoKeys k ON k.T=@t AND k.V=x.''+QUOTENAME(@demoK)+N''; SET @n=@@ROWCOUNT;'';
+ EXEC sys.sp_executesql @demoSql,N''@t sysname,@n bigint OUTPUT'',@t=@demoT,@n=@demoCount OUTPUT;
+ INSERT #RhmDemoDeleted VALUES(@demoT,@demoCount);
+ FETCH NEXT FROM DemoDelete INTO @demoT,@demoK;
+END;
+CLOSE DemoDelete;
+DEALLOCATE DemoDelete;
+SELECT TableName,DeletedRows FROM #RhmDemoDeleted ORDER BY TableName;
+DROP TABLE #RhmDemoDeleted;
+DROP TABLE #RhmDemoKeys;
+DROP TABLE #RhmDemoTargets;
+DROP TABLE #RhmDemoRoster;
+DROP TABLE #RhmDemoCases;
+DROP TABLE #RhmDemoSpecialty;
+';
+
+EXEC sys.sp_executesql N'-- Danh mục tham khảo RHM; đối chiếu nguồn công khai ngày 2026-10-29.
+-- Fragment INSERT-only: caller quản lý transaction và SESSION_CONTEXT(N''RHM.MaTK'').
+-- Các dịch vụ liên quan là lựa chọn, bác sĩ phải xác nhận chỉ định.
+-- Phụ thuộc: schema DM_TINH_TRANG_BENH, DICH_VU_TINH_TRANG; CK001/002/003/004/007.
+DECLARE @RhmCatalogConditions TABLE(Id nvarchar(50),Name nvarchar(255),Description nvarchar(max));
+INSERT @RhmCatalogConditions VALUES
+(N''RHM_TT_MANDIBLE_FX'',N''Gãy xương hàm dưới'',N''Nhóm: Chấn thương. Đánh giá cấp cứu, khớp cắn và hình ảnh; chọn phương pháp cố định sau xác định kiểu gãy. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_MAXILLA_FX'',N''Gãy xương hàm trên'',N''Nhóm: Chấn thương. Đánh giá toàn thân và chấn thương phối hợp; hội chẩn phẫu thuật theo mức độ tổn thương. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_ZYGOMA_FX'',N''Gãy xương gò má - cung tiếp'',N''Nhóm: Chấn thương. Khám biến dạng, chức năng mắt và há miệng; lựa chọn điều trị sau xác định tổn thương. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_FACIAL_WOUND'',N''Vết thương phần mềm vùng hàm mặt'',N''Nhóm: Phần mềm hàm mặt. Khám độ sâu, mất tổ chức, mạch máu và thần kinh; xử trí theo đánh giá trực tiếp. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_FOREIGN_BODY'',N''Dị vật vùng hàm mặt'',N''Nhóm: Phần mềm hàm mặt. Xác định vị trí, độ sâu và liên quan giải phẫu trước khi cân nhắc lấy dị vật. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_TOOTH_AVULSION'',N''Răng vĩnh viễn bật khỏi ổ do chấn thương'',N''Nhóm: Chấn thương. Khám cấp cứu; khả năng cấy lại tùy răng, thời gian ngoài ổ và điều kiện bảo quản; không áp dụng cấy lại răng sữa. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_TMD'',N''Rối loạn chức năng khớp thái dương hàm'',N''Nhóm: Khớp và cơ nhai. Đánh giá đau, tiếng kêu và biên độ vận động; lựa chọn điều trị theo nguyên nhân, tránh mặc định phẫu thuật. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_TMJ_DISLOCATION'',N''Trật khớp thái dương hàm'',N''Nhóm: Khớp và cơ nhai. Xác nhận trật khớp và loại trừ tổn thương phối hợp trước khi chọn phương pháp nắn. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_TMJ_ANKYLOSIS'',N''Dính khớp thái dương hàm'',N''Nhóm: Khớp và cơ nhai. Đánh giá hạn chế vận động; hội chẩn phẫu thuật và phục hồi chức năng theo mức độ dính. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://www.benhviendakhoatinhquangninh.vn/phac-do-dieu-tri-rang-ham-mat/dinh-khop-thai-duong-ham.1852.html; đối chiếu 29/10/2026.''),
+(N''RHM_TT_TRISMUS'',N''Hạn chế há miệng sau chấn thương hoặc phẫu thuật'',N''Nhóm: Khớp và cơ nhai. Khám tìm nguyên nhân hạn chế vận động; bác sĩ xác định thời điểm và chương trình phục hồi phù hợp. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_ORAL_ULCER'',N''Loét niêm mạc miệng'',N''Nhóm: Niêm mạc miệng. Khám nguyên nhân và diễn tiến; tổn thương dai dẳng cần đánh giá chuyên khoa, không tự gán là loét lành tính. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://www.nhs.uk/conditions/mouth-ulcers/; đối chiếu 29/10/2026.''),
+(N''RHM_TT_LEUKOPLAKIA'',N''Tổn thương trắng niêm mạc miệng nghi bạch sản'',N''Nhóm: Niêm mạc miệng. Khám chuyên khoa; bác sĩ quyết định theo dõi hoặc lấy mẫu nếu cần, chưa kết luận ung thư từ mảng trắng. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://www.nhs.uk/conditions/leukoplakia/; đối chiếu 29/10/2026.''),
+(N''RHM_TT_ORAL_LICHEN'',N''Lichen phẳng niêm mạc miệng'',N''Nhóm: Niêm mạc miệng. Đánh giá tổn thương, triệu chứng và chẩn đoán phân biệt; theo dõi theo bác sĩ. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://www.nhs.uk/conditions/lichen-planus/; đối chiếu 29/10/2026.''),
+(N''RHM_TT_RANULA'',N''Nang nhái vùng sàn miệng'',N''Nhóm: Tuyến nước bọt. Xác định phạm vi tổn thương và tuyến liên quan trước khi cân nhắc can thiệp. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_SALIVARY_STONE'',N''Sỏi tuyến nước bọt dưới hàm'',N''Nhóm: Tuyến nước bọt. Đánh giá vị trí sỏi và tắc nghẽn; dịch vụ lấy sỏi chỉ phù hợp khi xác định sỏi ống Wharton. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://www.nhs.uk/conditions/salivary-gland-stones/; đối chiếu 29/10/2026.''),
+(N''RHM_TT_SIALADENITIS'',N''Viêm tuyến nước bọt'',N''Nhóm: Tuyến nước bọt. Khám tìm nguyên nhân viêm, tắc nghẽn hoặc nhiễm trùng; chỉ định điều trị sau đánh giá. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://www.nhs.uk/conditions/salivary-gland-stones/; đối chiếu 29/10/2026.''),
+(N''RHM_TT_SALIVARY_TUMOR'',N''Khối u tuyến nước bọt dưới hàm'',N''Nhóm: Tuyến nước bọt. Đánh giá khối u và thăm dò cần thiết; lựa chọn phẫu thuật sau xác định vị trí, bản chất tổn thương. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_APICAL_ABSCESS'',N''Áp xe quanh chóp răng'',N''Nhóm: Nhiễm trùng. Đánh giá nguồn nhiễm, khả năng bảo tồn và lan rộng; nội nha hoặc dẫn lưu tùy kết quả khám. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_FACIAL_CELLULITIS'',N''Viêm tấy lan tỏa vùng hàm mặt'',N''Nhóm: Nhiễm trùng. Đánh giá cấp cứu đường thở, toàn thân và phạm vi nhiễm trùng; hội chẩn xử trí nguồn nhiễm. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_JAW_OSTEOMYELITIS'',N''Viêm xương hàm'',N''Nhóm: Nhiễm trùng. Đánh giá xương và nguồn nhiễm, phối hợp thăm dò theo chỉ định; không chọn thủ thuật từ tên bệnh đơn lẻ. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_RADICULAR_CYST'',N''Nang quanh chân răng'',N''Nhóm: Nang và u. Phân biệt tổn thương quanh chóp, đánh giá răng nguyên nhân và kích thước trước lựa chọn bảo tồn hoặc phẫu thuật. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_DENTIGEROUS_CYST'',N''Nang thân răng'',N''Nhóm: Nang và u. Đánh giá quan hệ với răng ngầm, kích thước và cấu trúc lân cận trước lựa chọn can thiệp. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_JAW_TUMOR'',N''Khối u xương hàm cần đánh giá'',N''Nhóm: Nang và u. Khám chuyên khoa, xác định bản chất tổn thương; không mặc định lành tính hoặc chọn cắt nang thay cắt u. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_GINGIVAL_MASS'',N''Khối u lợi'',N''Nhóm: Nang và u. Đánh giá kích thước và bản chất; chỉ cân nhắc dịch vụ dưới hoặc bằng 2 cm khi phù hợp thực tế. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_LIP_TUMOR'',N''U môi lành tính'',N''Nhóm: Nang và u. Đánh giá tổn thương và nhu cầu tạo hình; bác sĩ xác nhận chẩn đoán và chỉ định trước can thiệp. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_VASCULAR_LESION'',N''Tổn thương u máu - bạch mạch vùng hàm mặt'',N''Nhóm: Nang và u. Đánh giá loại tổn thương, độ lan rộng và nguy cơ chảy máu trước hội chẩn phương án điều trị. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_CLEFT_LIP'',N''Khe hở môi bẩm sinh'',N''Nhóm: Dị tật bẩm sinh. Khám lập kế hoạch phối hợp theo tuổi, dinh dưỡng và chức năng; thời điểm can thiệp do ê kíp quyết định. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_CLEFT_PALATE'',N''Khe hở vòm miệng bẩm sinh'',N''Nhóm: Dị tật bẩm sinh. Đánh giá phối hợp phẫu thuật, ăn uống, nghe và phát âm; lập kế hoạch theo từng giai đoạn. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_TONGUE_TIE'',N''Dính phanh lưỡi'',N''Nhóm: Dị tật bẩm sinh. Đánh giá ảnh hưởng chức năng trước khi cân nhắc cắt phanh; không chỉ định chỉ vì hình thái. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://www.nhs.uk/conditions/tongue-tie/; đối chiếu 29/10/2026.''),
+(N''RHM_TT_TRIGEMINAL_PAIN'',N''Đau vùng mặt nghi đau dây thần kinh sinh ba'',N''Nhóm: Đau và thần kinh. Khám phân biệt đau do răng và nguyên nhân thần kinh; phối hợp chuyên khoa thần kinh khi phù hợp. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://www.nhs.uk/conditions/trigeminal-neuralgia/; đối chiếu 29/10/2026.''),
+(N''RHM_TT_POSTOP_PARESTHESIA'',N''Tê môi hoặc lưỡi sau thủ thuật răng hàm mặt'',N''Nhóm: Đau và thần kinh. Ghi nhận thời điểm, vùng cảm giác và diễn tiến; khám lại để đánh giá tổn thương và kế hoạch theo dõi. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://www.nhs.uk/tests-and-treatments/wisdom-tooth-removal/; đối chiếu 29/10/2026.''),
+(N''RHM_TT_EXTRACTION_REVIEW'',N''Theo dõi sau nhổ răng'',N''Nhóm: Sau điều trị. Khám diễn tiến ổ nhổ, đau, chảy máu và liền thương; cắt chỉ nếu có chỉ định và phù hợp loại chỉ. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_FIXATION_REVIEW'',N''Theo dõi sau kết hợp xương hàm mặt'',N''Nhóm: Sau điều trị. Đánh giá liền thương, khớp cắn và vận động; quyết định hình ảnh hoặc phục hồi theo diễn tiến. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_FACIAL_SCAR'',N''Sẹo vùng hàm mặt sau chấn thương'',N''Nhóm: Sau điều trị. Đánh giá sẹo, co kéo và ảnh hưởng chức năng trước tư vấn theo dõi hoặc tạo hình. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_PERIODONTITIS'',N''Viêm nha chu'',N''Nhóm: Răng và nha chu. Khám nha chu, đánh giá mức độ tổn thương và lựa chọn làm sạch hoặc can thiệp túi lợi theo chỉ định. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_PRIMARY_CARIES'',N''Sâu ngà răng sữa'',N''Nhóm: Răng và nha chu. Đánh giá độ sâu, tủy và khả năng giữ răng; phục hồi GIC là lựa chọn khi bác sĩ xác định phù hợp. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_PULP_NECROSIS'',N''Hoại tử tủy răng vĩnh viễn'',N''Nhóm: Răng và nha chu. Đánh giá khả năng bảo tồn và tổn thương quanh chóp trước lập kế hoạch nội nha theo nhóm răng. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_IMPACTED_TOOTH'',N''Răng ngầm'',N''Nhóm: Răng và nha chu. Đánh giá vị trí, triệu chứng và liên quan giải phẫu trước lựa chọn theo dõi hoặc nhổ phẫu thuật. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_PERICORONITIS'',N''Viêm quanh thân răng khôn hàm dưới'',N''Nhóm: Răng và nha chu. Đánh giá viêm cấp và vị trí răng; cân nhắc xử trí tại chỗ hoặc nhổ ở thời điểm phù hợp. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://www.nhs.uk/tests-and-treatments/wisdom-tooth-removal/; đối chiếu 29/10/2026.''),
+(N''RHM_TT_TOOTH_WEAR'',N''Mòn cổ răng'',N''Nhóm: Răng và nha chu. Đánh giá nguyên nhân, ê buốt và mất mô răng; phục hồi chỉ khi có chỉ định phù hợp. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://bvranghammat.com/wp-content/uploads/2023/04/PHAC-DO-DIEU-TRI-BV-RHM-2023.pdf; đối chiếu 29/10/2026.''),
+(N''RHM_TT_ENDO_REVIEW'',N''Tổn thương răng đã điều trị tủy cần đánh giá lại'',N''Nhóm: Răng và nha chu. Kiểm tra điều trị trước, triệu chứng và hình ảnh; điều trị tủy lại là một lựa chọn khi bác sĩ xác định phù hợp. Đây là định hướng tham khảo, bác sĩ xác nhận sau khám. Nguồn: https://www.nhs.uk/tests-and-treatments/root-canal-treatment/; đối chiếu 29/10/2026.'');
+IF EXISTS(SELECT 1 FROM @RhmCatalogConditions c JOIN dbo.DM_TINH_TRANG_BENH d ON d.MaDMTT=c.Id WHERE d.TenTinhTrang<>c.Name)
+ THROW 52148,N''Mã tình trạng RHM tham khảo đã được dùng cho nội dung khác.'',1;
+INSERT dbo.DM_TINH_TRANG_BENH(MaDMTT,TenTinhTrang,MoTa,TrangThai)
+SELECT c.Id,c.Name,c.Description,N''Đang áp dụng'' FROM @RhmCatalogConditions c
+WHERE NOT EXISTS(SELECT 1 FROM dbo.DM_TINH_TRANG_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaDMTT=c.Id);
+
+DECLARE @RhmCatalogServices TABLE(Id nvarchar(50),Name nvarchar(255),CK nvarchar(50),Price decimal(18,2),Minutes int,STT int,GroupName nvarchar(255),SourceNote nvarchar(max));
+INSERT @RhmCatalogServices VALUES
+(N''RHM_DV_EXAM'',N''Khám Răng hàm mặt'',N''CK001'',100000,30,107,N''Khám và tư vấn'',N''''),
+(N''RHM_DV_EMERGENCY'',N''Khám cấp cứu - RHM'',N''CK001'',160000,30,108,N''Khám và tư vấn'',N''''),
+(N''RHM_DV_REEXAM'',N''Khám Răng hàm mặt (Lần 2)'',N''CK001'',160000,30,109,N''Khám và tư vấn'',N''''),
+(N''RHM_DV_REHAB'',N''Khám Phục hồi chức năng'',N''CK007'',100000,30,113,N''Khám và tư vấn'',N''''),
+(N''RHM_DV_PERIAPICAL'',N''Chụp Xquang răng cận chóp (Periapical) [1 phim]'',N''CK004'',90000,15,850,N''Chẩn đoán hình ảnh'',N''''),
+(N''RHM_DV_PANORAMA'',N''Chụp Xquang răng toàn cảnh [1 phim]'',N''CK004'',100000,15,852,N''Chẩn đoán hình ảnh'',N''''),
+(N''RHM_DV_TMJ_XR'',N''Chụp Xquang khớp thái dương hàm [số hóa 1 phim]'',N''CK004'',130000,15,849,N''Chẩn đoán hình ảnh'',N''''),
+(N''RHM_DV_FIX_FIRST'',N''Cố định tạm thời sơ cứu gãy xương hàm'',N''CK003'',1020000,30,1745,N''Phẫu thuật hàm mặt'',N''''),
+(N''RHM_DV_TMJ_REDUCE'',N''Nắn sai khớp thái dương hàm'',N''CK003'',650000,30,1746,N''Phẫu thuật hàm mặt'',N''''),
+(N''RHM_DV_JAW_PLATE'',N''Phẫu thuật điều trị gãy xương hàm dưới bằng nẹp vít hợp kim'',N''CK003'',12230000,120,4057,N''Phẫu thuật hàm mặt'',N''Chưa bao gồm nẹp, vít.''),
+(N''RHM_DV_ZYGOMA'',N''Phẫu thuật điều trị gãy xương gò má bằng nẹp vít hợp kim'',N''CK003'',9610000,120,4060,N''Phẫu thuật hàm mặt'',N''''),
+(N''RHM_DV_MULTITRAUMA'',N''Phẫu thuật điều trị đa chấn thương vùng hàm mặt'',N''CK003'',14980000,180,4071,N''Phẫu thuật hàm mặt'',N''Chưa bao gồm nẹp, vít.''),
+(N''RHM_DV_FOREIGN_BODY'',N''Phẫu thuật lấy dị vật vùng hàm mặt'',N''CK003'',9880000,60,4072,N''Phẫu thuật hàm mặt'',N''''),
+(N''RHM_DV_SOFT_DEFECT'',N''Phẫu thuật điều trị vết thương phần mềm vùng hàm mặt có thiếu hổng tổ chức'',N''CK003'',10040000,90,4074,N''Phẫu thuật hàm mặt'',N''''),
+(N''RHM_DV_WHARTON'',N''Phẫu thuật lấy sỏi ống Wharton tuyến dưới hàm'',N''CK003'',8110000,60,4076,N''Phẫu thuật hàm mặt'',N''''),
+(N''RHM_DV_CELLULITIS'',N''Phẫu thuật rạch dẫn lưu viêm tấy lan tỏa vùng hàm mặt'',N''CK003'',9510000,90,4078,N''Phẫu thuật hàm mặt'',N''Nguồn in: viêm tẩy; chuẩn hóa chính tả hiển thị thành viêm tấy.''),
+(N''RHM_DV_FLOOR_CYST'',N''Cắt nang vùng sàn miệng'',N''CK003'',10260000,90,3933,N''Phẫu thuật hàm mặt'',N''''),
+(N''RHM_DV_JAW_CYST_S'',N''Cắt bỏ nang xương hàm dưới 2 cm'',N''CK003'',6790000,60,3937,N''Phẫu thuật hàm mặt'',N''''),
+(N''RHM_DV_JAW_CYST_M'',N''Cắt bỏ nang xương hàm từ 2-5 cm'',N''CK003'',12260000,90,3938,N''Phẫu thuật hàm mặt'',N''''),
+(N''RHM_DV_LIP_TUMOR'',N''Cắt u môi lành tính có tạo hình'',N''CK003'',9320000,90,3940,N''Phẫu thuật hàm mặt'',N''''),
+(N''RHM_DV_GINGIVAL_MASS'',N''Cắt u lợi đường kính dưới hoặc bằng 2 cm [phòng khám]'',N''CK003'',1160000,45,3942,N''Phẫu thuật hàm mặt'',N''''),
+(N''RHM_DV_SALIVARY_TUMOR'',N''Cắt u tuyến nước bọt dưới hàm'',N''CK003'',12410000,120,3945,N''Phẫu thuật hàm mặt'',N''Chưa bao gồm dao siêu âm.''),
+(N''RHM_DV_VASCULAR'',N''Cắt u máu - bạch mạch vùng hàm mặt'',N''CK003'',10640000,120,3931,N''Phẫu thuật hàm mặt'',N''''),
+(N''RHM_DV_PERIO_CURET'',N''Phẫu thuật nạo túi lợi'',N''CK002'',570000,45,3962,N''Điều trị bảo tồn'',N''''),
+(N''RHM_DV_IMPACTED'',N''Phẫu thuật nhổ răng ngầm [phòng khám]'',N''CK003'',2890000,60,4017,N''Phẫu thuật trong miệng'',N''''),
+(N''RHM_DV_WISDOM_L'',N''Phẫu thuật nhổ răng khôn mọc lệch hàm dưới [phòng khám]'',N''CK003'',1730000,60,4021,N''Phẫu thuật trong miệng'',N''''),
+(N''RHM_DV_TONGUE_TIE'',N''Phẫu thuật cắt phanh lưỡi [phòng khám]'',N''CK003'',2900000,45,4031,N''Phẫu thuật trong miệng'',N''''),
+(N''RHM_DV_REIMPLANT'',N''Cấy lại răng bị bật khỏi ổ răng [phòng khám]'',N''CK003'',1160000,60,4037,N''Phẫu thuật trong miệng'',N''''),
+(N''RHM_DV_PRIMARY_GIC'',N''Điều trị răng sữa sâu ngà phục hồi bằng GIC [Nhi]'',N''CK002'',330000,30,1716,N''Điều trị bảo tồn'',N''''),
+(N''RHM_DV_CERVICAL_COMP'',N''Phục hồi cổ răng bằng Composite'',N''CK002'',450000,30,1733,N''Điều trị bảo tồn'',N''''),
+(N''RHM_DV_SUTURE_REMOVE'',N''Cắt chỉ sau phẫu thuật [Áp dụng ngoại trú]'',N''CK007'',130000,20,1323,N''Chăm sóc sau phẫu thuật'',N''''),
+(N''RHM_DV_ENDO_REDO'',N''Điều trị tủy lại'',N''CK002'',2490000,60,4012,N''Điều trị bảo tồn'',N'''');
+IF EXISTS(SELECT 1 FROM @RhmCatalogServices s LEFT JOIN dbo.CHUYEN_KHOA c ON c.MaCK=s.CK WHERE c.MaCK IS NULL)
+ THROW 52148,N''Thiếu chuyên khoa cho danh mục RHM tham khảo.'',1;
+IF EXISTS(SELECT 1 FROM @RhmCatalogServices s JOIN dbo.DICH_VU d ON d.MaDV=s.Id WHERE d.TenDV<>s.Name OR d.MaCK<>s.CK)
+ THROW 52148,N''Mã dịch vụ RHM tham khảo đã được dùng cho nội dung khác.'',1;
+INSERT dbo.DICH_VU(MaDV,TenDV,NhomDV,MaCK,DonGia,ThoiGianDuKien,MoTa,NgayApDung,TrangThai)
+SELECT s.Id,s.Name,s.GroupName,s.CK,s.Price,s.Minutes,
+ N''Giá dịch vụ tham khảo BVĐK Bình Định, hiệu lực 15/6/2026; Quyết định 177/QĐ-CTCPBVĐKBĐ ngày 09/6/2026. Nguồn: https://benhvienbinhdinh.com.vn/wp-content/uploads/2026/06/BANG-GIA-BENH-VIEN-hieu-luc-ngay-15.6.2026_W.pdf; STT ''
+ +CONVERT(nvarchar(10),s.STT)+N''. ''+s.SourceNote
+ +N'' Giá lấy từ cột Giá dịch vụ, không phải tổng chi phí ca điều trị. Thời gian dự kiến là cấu hình vận hành tham khảo của ứng dụng, không lấy từ bảng giá. Đối chiếu 29/10/2026.'',
+ CONVERT(date,''20260615''),N''Đang hoạt động''
+FROM @RhmCatalogServices s
+WHERE NOT EXISTS(SELECT 1 FROM dbo.DICH_VU WITH(UPDLOCK,HOLDLOCK) WHERE MaDV=s.Id);
+
+DECLARE @RhmCatalogLinks TABLE(C nvarchar(50),D nvarchar(50),Note nvarchar(500),Seq int);
+INSERT @RhmCatalogLinks VALUES
+(N''RHM_TT_MANDIBLE_FX'',N''RHM_DV_EMERGENCY'',N''Khám cấp cứu, đánh giá mức độ khẩn và ưu tiên xử trí theo tình trạng thực tế.'',1),
+(N''RHM_TT_MANDIBLE_FX'',N''RHM_DV_FIX_FIRST'',N''Cố định tạm sơ cứu khi có chỉ định; không phải lựa chọn cố định cuối cùng.'',2),
+(N''RHM_TT_MANDIBLE_FX'',N''RHM_DV_PANORAMA'',N''Hình ảnh toàn cảnh khi bác sĩ thấy cần; không thay mọi phương tiện chẩn đoán khác.'',3),
+(N''RHM_TT_MANDIBLE_FX'',N''RHM_DV_JAW_PLATE'',N''Một phương án khi bác sĩ xác định đúng tổn thương, phạm vi và đủ điều kiện; không tự thêm cùng các phương án khác.'',4),
+(N''RHM_TT_MAXILLA_FX'',N''RHM_DV_EMERGENCY'',N''Khám cấp cứu, đánh giá mức độ khẩn và ưu tiên xử trí theo tình trạng thực tế.'',1),
+(N''RHM_TT_MAXILLA_FX'',N''RHM_DV_MULTITRAUMA'',N''Một phương án khi bác sĩ xác định đúng tổn thương, phạm vi và đủ điều kiện; không tự thêm cùng các phương án khác.'',2),
+(N''RHM_TT_ZYGOMA_FX'',N''RHM_DV_EMERGENCY'',N''Khám cấp cứu, đánh giá mức độ khẩn và ưu tiên xử trí theo tình trạng thực tế.'',1),
+(N''RHM_TT_ZYGOMA_FX'',N''RHM_DV_ZYGOMA'',N''Một phương án khi bác sĩ xác định đúng tổn thương, phạm vi và đủ điều kiện; không tự thêm cùng các phương án khác.'',2),
+(N''RHM_TT_FACIAL_WOUND'',N''RHM_DV_EMERGENCY'',N''Khám cấp cứu, đánh giá mức độ khẩn và ưu tiên xử trí theo tình trạng thực tế.'',1),
+(N''RHM_TT_FACIAL_WOUND'',N''RHM_DV_SOFT_DEFECT'',N''Chỉ cân nhắc kỹ thuật này khi vết thương có thiếu hổng tổ chức theo đánh giá phẫu thuật.'',2),
+(N''RHM_TT_FOREIGN_BODY'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_FOREIGN_BODY'',N''RHM_DV_FOREIGN_BODY'',N''Một phương án khi bác sĩ xác định đúng tổn thương, phạm vi và đủ điều kiện; không tự thêm cùng các phương án khác.'',2),
+(N''RHM_TT_TOOTH_AVULSION'',N''RHM_DV_EMERGENCY'',N''Khám cấp cứu, đánh giá mức độ khẩn và ưu tiên xử trí theo tình trạng thực tế.'',1),
+(N''RHM_TT_TOOTH_AVULSION'',N''RHM_DV_PERIAPICAL'',N''Hình ảnh cận chóp khi bác sĩ chỉ định và phù hợp vùng khảo sát.'',2),
+(N''RHM_TT_TOOTH_AVULSION'',N''RHM_DV_REIMPLANT'',N''Lựa chọn cấp cứu cho răng vĩnh viễn khi đáp ứng điều kiện cấy lại; bác sĩ quyết định.'',3),
+(N''RHM_TT_TMD'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_TMD'',N''RHM_DV_REHAB'',N''Khám phục hồi chức năng nếu bác sĩ xác định cần đánh giá hoặc tập vận động.'',2),
+(N''RHM_TT_TMJ_DISLOCATION'',N''RHM_DV_EMERGENCY'',N''Khám cấp cứu, đánh giá mức độ khẩn và ưu tiên xử trí theo tình trạng thực tế.'',1),
+(N''RHM_TT_TMJ_DISLOCATION'',N''RHM_DV_TMJ_REDUCE'',N''Một phương án khi bác sĩ xác định đúng tổn thương, phạm vi và đủ điều kiện; không tự thêm cùng các phương án khác.'',2),
+(N''RHM_TT_TMJ_ANKYLOSIS'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_TMJ_ANKYLOSIS'',N''RHM_DV_TMJ_XR'',N''X-quang khớp chỉ khi phù hợp câu hỏi chẩn đoán; bác sĩ chọn phương tiện khảo sát.'',2),
+(N''RHM_TT_TMJ_ANKYLOSIS'',N''RHM_DV_REHAB'',N''Khám phục hồi chức năng nếu bác sĩ xác định cần đánh giá hoặc tập vận động.'',3),
+(N''RHM_TT_TRISMUS'',N''RHM_DV_REEXAM'',N''Lựa chọn khám lại theo lịch và diễn tiến; thời điểm do bác sĩ xác định.'',1),
+(N''RHM_TT_TRISMUS'',N''RHM_DV_REHAB'',N''Khám phục hồi chức năng nếu bác sĩ xác định cần đánh giá hoặc tập vận động.'',2),
+(N''RHM_TT_ORAL_ULCER'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_ORAL_ULCER'',N''RHM_DV_REEXAM'',N''Lựa chọn khám lại theo lịch và diễn tiến; thời điểm do bác sĩ xác định.'',2),
+(N''RHM_TT_LEUKOPLAKIA'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_LEUKOPLAKIA'',N''RHM_DV_REEXAM'',N''Lựa chọn khám lại theo lịch và diễn tiến; thời điểm do bác sĩ xác định.'',2),
+(N''RHM_TT_ORAL_LICHEN'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_ORAL_LICHEN'',N''RHM_DV_REEXAM'',N''Lựa chọn khám lại theo lịch và diễn tiến; thời điểm do bác sĩ xác định.'',2),
+(N''RHM_TT_RANULA'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_RANULA'',N''RHM_DV_FLOOR_CYST'',N''Một phương án khi bác sĩ xác định đúng tổn thương, phạm vi và đủ điều kiện; không tự thêm cùng các phương án khác.'',2),
+(N''RHM_TT_SALIVARY_STONE'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_SALIVARY_STONE'',N''RHM_DV_WHARTON'',N''Lựa chọn khi xác định sỏi ống Wharton và có chỉ định lấy sỏi; không áp cho mọi viêm tuyến.'',2),
+(N''RHM_TT_SIALADENITIS'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_SIALADENITIS'',N''RHM_DV_REEXAM'',N''Lựa chọn khám lại theo lịch và diễn tiến; thời điểm do bác sĩ xác định.'',2),
+(N''RHM_TT_SALIVARY_TUMOR'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_SALIVARY_TUMOR'',N''RHM_DV_SALIVARY_TUMOR'',N''Lựa chọn phẫu thuật u tuyến dưới hàm sau xác định tổn thương và đánh giá chuyên khoa.'',2),
+(N''RHM_TT_APICAL_ABSCESS'',N''RHM_DV_EMERGENCY'',N''Khám cấp cứu, đánh giá mức độ khẩn và ưu tiên xử trí theo tình trạng thực tế.'',1),
+(N''RHM_TT_APICAL_ABSCESS'',N''RHM_DV_PERIAPICAL'',N''Hình ảnh cận chóp khi bác sĩ chỉ định và phù hợp vùng khảo sát.'',2),
+(N''RHM_TT_FACIAL_CELLULITIS'',N''RHM_DV_EMERGENCY'',N''Khám cấp cứu, đánh giá mức độ khẩn và ưu tiên xử trí theo tình trạng thực tế.'',1),
+(N''RHM_TT_FACIAL_CELLULITIS'',N''RHM_DV_CELLULITIS'',N''Một phương án khi bác sĩ xác định đúng tổn thương, phạm vi và đủ điều kiện; không tự thêm cùng các phương án khác.'',2),
+(N''RHM_TT_JAW_OSTEOMYELITIS'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_JAW_OSTEOMYELITIS'',N''RHM_DV_PANORAMA'',N''Hình ảnh toàn cảnh khi bác sĩ thấy cần; không thay mọi phương tiện chẩn đoán khác.'',2),
+(N''RHM_TT_RADICULAR_CYST'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_RADICULAR_CYST'',N''RHM_DV_PERIAPICAL'',N''Hình ảnh cận chóp khi bác sĩ chỉ định và phù hợp vùng khảo sát.'',2),
+(N''RHM_TT_RADICULAR_CYST'',N''RHM_DV_JAW_CYST_S'',N''Phương án cắt nang nếu đã xác định nang dưới 2 cm và có chỉ định; không áp dụng đồng thời mọi cỡ.'',3),
+(N''RHM_TT_RADICULAR_CYST'',N''RHM_DV_JAW_CYST_M'',N''Phương án thay thế nếu nang từ 2 đến 5 cm và có chỉ định; bác sĩ chọn theo kích thước thực tế.'',4),
+(N''RHM_TT_DENTIGEROUS_CYST'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_DENTIGEROUS_CYST'',N''RHM_DV_PANORAMA'',N''Hình ảnh toàn cảnh khi bác sĩ thấy cần; không thay mọi phương tiện chẩn đoán khác.'',2),
+(N''RHM_TT_DENTIGEROUS_CYST'',N''RHM_DV_JAW_CYST_S'',N''Phương án cắt nang nếu đã xác định nang dưới 2 cm và có chỉ định; không áp dụng đồng thời mọi cỡ.'',3),
+(N''RHM_TT_DENTIGEROUS_CYST'',N''RHM_DV_JAW_CYST_M'',N''Phương án thay thế nếu nang từ 2 đến 5 cm và có chỉ định; bác sĩ chọn theo kích thước thực tế.'',4),
+(N''RHM_TT_JAW_TUMOR'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_JAW_TUMOR'',N''RHM_DV_PANORAMA'',N''Hình ảnh toàn cảnh khi bác sĩ thấy cần; không thay mọi phương tiện chẩn đoán khác.'',2),
+(N''RHM_TT_GINGIVAL_MASS'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_GINGIVAL_MASS'',N''RHM_DV_GINGIVAL_MASS'',N''Lựa chọn khi khối u lợi dưới hoặc bằng 2 cm, có chỉ định và phù hợp điều kiện phòng khám.'',2),
+(N''RHM_TT_LIP_TUMOR'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_LIP_TUMOR'',N''RHM_DV_LIP_TUMOR'',N''Một phương án khi bác sĩ xác định đúng tổn thương, phạm vi và đủ điều kiện; không tự thêm cùng các phương án khác.'',2),
+(N''RHM_TT_VASCULAR_LESION'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_VASCULAR_LESION'',N''RHM_DV_VASCULAR'',N''Một phương án khi bác sĩ xác định đúng tổn thương, phạm vi và đủ điều kiện; không tự thêm cùng các phương án khác.'',2),
+(N''RHM_TT_CLEFT_LIP'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_CLEFT_LIP'',N''RHM_DV_REEXAM'',N''Lựa chọn khám lại theo lịch và diễn tiến; thời điểm do bác sĩ xác định.'',2),
+(N''RHM_TT_CLEFT_PALATE'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_CLEFT_PALATE'',N''RHM_DV_REHAB'',N''Khám phục hồi chức năng nếu bác sĩ xác định cần đánh giá hoặc tập vận động.'',2),
+(N''RHM_TT_TONGUE_TIE'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_TONGUE_TIE'',N''RHM_DV_TONGUE_TIE'',N''Một phương án khi bác sĩ xác định đúng tổn thương, phạm vi và đủ điều kiện; không tự thêm cùng các phương án khác.'',2),
+(N''RHM_TT_TRIGEMINAL_PAIN'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_POSTOP_PARESTHESIA'',N''RHM_DV_REEXAM'',N''Lựa chọn khám lại theo lịch và diễn tiến; thời điểm do bác sĩ xác định.'',1),
+(N''RHM_TT_EXTRACTION_REVIEW'',N''RHM_DV_REEXAM'',N''Lựa chọn khám lại theo lịch và diễn tiến; thời điểm do bác sĩ xác định.'',1),
+(N''RHM_TT_EXTRACTION_REVIEW'',N''RHM_DV_SUTURE_REMOVE'',N''Cắt chỉ nếu loại chỉ, liền thương và thời điểm phù hợp sau kiểm tra.'',2),
+(N''RHM_TT_FIXATION_REVIEW'',N''RHM_DV_REEXAM'',N''Lựa chọn khám lại theo lịch và diễn tiến; thời điểm do bác sĩ xác định.'',1),
+(N''RHM_TT_FIXATION_REVIEW'',N''RHM_DV_PANORAMA'',N''Hình ảnh toàn cảnh khi bác sĩ thấy cần; không thay mọi phương tiện chẩn đoán khác.'',2),
+(N''RHM_TT_FIXATION_REVIEW'',N''RHM_DV_REHAB'',N''Khám phục hồi chức năng nếu bác sĩ xác định cần đánh giá hoặc tập vận động.'',3),
+(N''RHM_TT_FACIAL_SCAR'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_FACIAL_SCAR'',N''RHM_DV_REHAB'',N''Khám phục hồi chức năng nếu bác sĩ xác định cần đánh giá hoặc tập vận động.'',2),
+(N''RHM_TT_PERIODONTITIS'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_PERIODONTITIS'',N''RHM_DV_PERIO_CURET'',N''Một phương án khi bác sĩ xác định đúng tổn thương, phạm vi và đủ điều kiện; không tự thêm cùng các phương án khác.'',2),
+(N''RHM_TT_PRIMARY_CARIES'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_PRIMARY_CARIES'',N''RHM_DV_PRIMARY_GIC'',N''Một phương án khi bác sĩ xác định đúng tổn thương, phạm vi và đủ điều kiện; không tự thêm cùng các phương án khác.'',2),
+(N''RHM_TT_PULP_NECROSIS'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_PULP_NECROSIS'',N''RHM_DV_PERIAPICAL'',N''Hình ảnh cận chóp khi bác sĩ chỉ định và phù hợp vùng khảo sát.'',2),
+(N''RHM_TT_IMPACTED_TOOTH'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_IMPACTED_TOOTH'',N''RHM_DV_PANORAMA'',N''Hình ảnh toàn cảnh khi bác sĩ thấy cần; không thay mọi phương tiện chẩn đoán khác.'',2),
+(N''RHM_TT_IMPACTED_TOOTH'',N''RHM_DV_IMPACTED'',N''Một phương án khi bác sĩ xác định đúng tổn thương, phạm vi và đủ điều kiện; không tự thêm cùng các phương án khác.'',3),
+(N''RHM_TT_PERICORONITIS'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_PERICORONITIS'',N''RHM_DV_PANORAMA'',N''Hình ảnh toàn cảnh khi bác sĩ thấy cần; không thay mọi phương tiện chẩn đoán khác.'',2),
+(N''RHM_TT_PERICORONITIS'',N''RHM_DV_WISDOM_L'',N''Lựa chọn nhổ răng khôn hàm dưới nếu vị trí, chỉ định và thời điểm phù hợp.'',3),
+(N''RHM_TT_TOOTH_WEAR'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_TOOTH_WEAR'',N''RHM_DV_CERVICAL_COMP'',N''Một phương án khi bác sĩ xác định đúng tổn thương, phạm vi và đủ điều kiện; không tự thêm cùng các phương án khác.'',2),
+(N''RHM_TT_ENDO_REVIEW'',N''RHM_DV_EXAM'',N''Khám đánh giá và xác nhận tình trạng trước khi lập kế hoạch điều trị.'',1),
+(N''RHM_TT_ENDO_REVIEW'',N''RHM_DV_PERIAPICAL'',N''Hình ảnh cận chóp khi bác sĩ chỉ định và phù hợp vùng khảo sát.'',2),
+(N''RHM_TT_ENDO_REVIEW'',N''RHM_DV_ENDO_REDO'',N''Lựa chọn điều trị tủy lại nếu có chỉ định sau đánh giá điều trị trước và khả năng bảo tồn.'',3),
+(N''RHM_TT_PULP_NECROSIS'',N''REF_DV_ENDO123'',N''Nội nha răng 1, 2, 3 khi bảo tồn được và có chỉ định.'',3),
+(N''RHM_TT_PULP_NECROSIS'',N''REF_DV_ENDO45'',N''Phương án nội nha răng 4, 5 khi có chỉ định; chọn đúng nhóm răng.'',4),
+(N''RHM_TT_PULP_NECROSIS'',N''REF_DV_ENDO67D'',N''Phương án nội nha răng 6, 7 hàm dưới khi có chỉ định.'',5),
+(N''RHM_TT_PULP_NECROSIS'',N''REF_DV_ENDO67T'',N''Phương án nội nha răng 6, 7 hàm trên khi có chỉ định.'',6),
+(N''RHM_TT_PERIODONTITIS'',N''REF_DV_SCALING1'',N''Làm sạch cao răng 1 hàm nếu phù hợp sau đánh giá nha chu.'',3),
+(N''RHM_TT_PERIODONTITIS'',N''REF_DV_SCALING2'',N''Phương án làm sạch 2 hàm khi đúng phạm vi chỉ định.'',4);
+IF EXISTS(SELECT 1 FROM @RhmCatalogLinks m LEFT JOIN dbo.DM_TINH_TRANG_BENH c ON c.MaDMTT=m.C LEFT JOIN dbo.DICH_VU s ON s.MaDV=m.D WHERE c.MaDMTT IS NULL OR s.MaDV IS NULL)
+ THROW 52148,N''Thiếu tình trạng hoặc dịch vụ; cần nạp danh mục tham khảo trước đó trước danh mục RHM mở rộng.'',1;
+INSERT dbo.DICH_VU_TINH_TRANG(MaDMTT,MaDV,NoiDungDeXuat,ThuTu)
+SELECT m.C,m.D,m.Note,m.Seq FROM @RhmCatalogLinks m
+WHERE NOT EXISTS(SELECT 1 FROM dbo.DICH_VU_TINH_TRANG WITH(UPDLOCK,HOLDLOCK) WHERE MaDMTT=m.C AND MaDV=m.D);
+
+';
+
+EXEC sys.sp_executesql N'CREATE OR ALTER PROCEDURE dbo.usp_RHM_KiemTraSchema AS BEGIN SET NOCOUNT ON;
+DECLARE @core TABLE(T sysname,C sysname,TypeName sysname,L smallint,P tinyint,S tinyint,N bit);
+INSERT @core VALUES
+(N''BENH_NHAN'',N''MaBN'',N''nvarchar'',100,0,0,0),
+(N''BENH_NHAN'',N''HoTenBN'',N''nvarchar'',510,0,0,0),
+(N''BENH_NHAN'',N''GioiTinh'',N''nvarchar'',100,0,0,1),
+(N''BENH_NHAN'',N''NgaySinh'',N''date'',3,0,0,1),
+(N''BENH_NHAN'',N''SDT'',N''nvarchar'',100,0,0,1),
+(N''BENH_NHAN'',N''DiaChi'',N''nvarchar'',510,0,0,1),
+(N''BENH_NHAN'',N''MaBHYT'',N''nvarchar'',100,0,0,1),
+(N''BENH_NHAN'',N''NhomMau'',N''nvarchar'',100,0,0,1),
+(N''BENH_NHAN'',N''TienSuBenh'',N''nvarchar'',-1,0,0,1),
+(N''BENH_NHAN'',N''DiUng'',N''nvarchar'',-1,0,0,1),
+(N''BENH_NHAN'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''HO_SO_BENH_AN'',N''MaHS'',N''nvarchar'',100,0,0,0),
+(N''HO_SO_BENH_AN'',N''MaBN'',N''nvarchar'',100,0,0,0),
+(N''HO_SO_BENH_AN'',N''NgayLap'',N''datetime2'',6,0,0,0),
+(N''HO_SO_BENH_AN'',N''LyDoKhamBanDau'',N''nvarchar'',-1,0,0,0),
+(N''HO_SO_BENH_AN'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''HO_SO_BENH_AN'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''MaPhieu'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''MaHS'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''MaLich'',N''nvarchar'',100,0,0,1),
+(N''PHIEU_KHAM_BENH'',N''MaPhong'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''MaBS'',N''nvarchar'',100,0,0,1),
+(N''PHIEU_KHAM_BENH'',N''MaNVTiepNhan'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''MaDV'',N''nvarchar'',100,0,0,1),
+(N''PHIEU_KHAM_BENH'',N''SoThuTu'',N''int'',4,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''ThoiGianTiepNhan'',N''datetime2'',6,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''LyDoKham'',N''nvarchar'',-1,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_KHAM_BENH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''LICH_SU_KHAM_BENH'',N''MaLS'',N''nvarchar'',100,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''MaPhieu'',N''nvarchar'',100,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''MaBS'',N''nvarchar'',100,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''MaPhong'',N''nvarchar'',100,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''ThoiGianKham'',N''datetime2'',6,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''TrieuChung'',N''nvarchar'',-1,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''ChanDoan'',N''nvarchar'',-1,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''KeHoachXuLy'',N''nvarchar'',-1,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''NgayXacNhan'',N''datetime2'',6,0,0,1),
+(N''LICH_SU_KHAM_BENH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''LICH_SU_KHAM_BENH'',N''KhongKeThuoc'',N''int'',4,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''LyDoKhongKeThuoc'',N''nvarchar'',1000,0,0,1),
+(N''TINH_TRANG_BENH'',N''MaTTB'',N''nvarchar'',100,0,0,0),
+(N''TINH_TRANG_BENH'',N''MaLS'',N''nvarchar'',100,0,0,0),
+(N''TINH_TRANG_BENH'',N''LoaiTinhTrang'',N''nvarchar'',510,0,0,0),
+(N''TINH_TRANG_BENH'',N''MoTaTinhTrang'',N''nvarchar'',-1,0,0,0),
+(N''TINH_TRANG_BENH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''TINH_TRANG_BENH'',N''MaDMTT'',N''nvarchar'',100,0,0,1),
+(N''DICH_VU'',N''MaDV'',N''nvarchar'',100,0,0,0),
+(N''DICH_VU'',N''TenDV'',N''nvarchar'',510,0,0,0),
+(N''DICH_VU'',N''NhomDV'',N''nvarchar'',510,0,0,0),
+(N''DICH_VU'',N''MaCK'',N''nvarchar'',100,0,0,0),
+(N''DICH_VU'',N''DonGia'',N''decimal'',9,18,2,0),
+(N''DICH_VU'',N''ThoiGianDuKien'',N''int'',4,0,0,0),
+(N''DICH_VU'',N''MoTa'',N''nvarchar'',-1,0,0,1),
+(N''DICH_VU'',N''NgayApDung'',N''date'',3,0,0,0),
+(N''DICH_VU'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''KE_HOACH_DIEU_TRI'',N''MaKHDT'',N''nvarchar'',100,0,0,0),
+(N''KE_HOACH_DIEU_TRI'',N''MaLS'',N''nvarchar'',100,0,0,0),
+(N''KE_HOACH_DIEU_TRI'',N''MaBS'',N''nvarchar'',100,0,0,0),
+(N''KE_HOACH_DIEU_TRI'',N''NgayLap'',N''datetime2'',6,0,0,0),
+(N''KE_HOACH_DIEU_TRI'',N''NgayBatDau'',N''date'',3,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''NgayDuKienKetThuc'',N''date'',3,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''TongTienDuKien'',N''decimal'',9,18,2,0),
+(N''KE_HOACH_DIEU_TRI'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''KE_HOACH_DIEU_TRI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''MaTTBNguon'',N''nvarchar'',100,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''MaMauKH'',N''nvarchar'',100,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''PhienBanMau'',N''int'',4,0,0,1),
+(N''CHI_TIET_KE_HOACH'',N''MaCTKH'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_KE_HOACH'',N''MaKHDT'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_KE_HOACH'',N''MaDV'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_KE_HOACH'',N''LanThu'',N''int'',4,0,0,0),
+(N''CHI_TIET_KE_HOACH'',N''SoLuongDuKien'',N''decimal'',9,18,3,0),
+(N''CHI_TIET_KE_HOACH'',N''DonGiaDuKien'',N''decimal'',9,18,2,0),
+(N''CHI_TIET_KE_HOACH'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_KE_HOACH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''CHI_TIET_KE_HOACH'',N''NoiDungBuoc'',N''nvarchar'',-1,0,0,1),
+(N''DICH_VU_THUC_HIEN'',N''MaDVThucHien'',N''nvarchar'',100,0,0,0),
+(N''DICH_VU_THUC_HIEN'',N''MaLS'',N''nvarchar'',100,0,0,0),
+(N''DICH_VU_THUC_HIEN'',N''MaCTKH'',N''nvarchar'',100,0,0,1),
+(N''DICH_VU_THUC_HIEN'',N''MaDV'',N''nvarchar'',100,0,0,0),
+(N''DICH_VU_THUC_HIEN'',N''MaNVThucHien'',N''nvarchar'',100,0,0,0),
+(N''DICH_VU_THUC_HIEN'',N''ThoiGianThucHien'',N''datetime2'',6,0,0,0),
+(N''DICH_VU_THUC_HIEN'',N''SoLuong'',N''decimal'',9,18,3,0),
+(N''DICH_VU_THUC_HIEN'',N''DonGia'',N''decimal'',9,18,2,0),
+(N''DICH_VU_THUC_HIEN'',N''KetQua'',N''nvarchar'',-1,0,0,1),
+(N''DICH_VU_THUC_HIEN'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''DON_THUOC'',N''MaDT'',N''nvarchar'',100,0,0,0),
+(N''DON_THUOC'',N''MaLS'',N''nvarchar'',100,0,0,0),
+(N''DON_THUOC'',N''MaBS'',N''nvarchar'',100,0,0,0),
+(N''DON_THUOC'',N''NgayKe'',N''datetime2'',6,0,0,0),
+(N''DON_THUOC'',N''LyDoThayThe'',N''nvarchar'',-1,0,0,1),
+(N''DON_THUOC'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''DON_THUOC'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''DON_THUOC'',N''MaDTThayThe'',N''nvarchar'',100,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''MaCTDT'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_DON_THUOC'',N''MaDT'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_DON_THUOC'',N''MaThuoc'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_DON_THUOC'',N''LieuDung'',N''nvarchar'',510,0,0,0),
+(N''CHI_TIET_DON_THUOC'',N''SoLuong'',N''decimal'',9,18,3,0),
+(N''CHI_TIET_DON_THUOC'',N''SoNgayDung'',N''int'',4,0,0,0),
+(N''CHI_TIET_DON_THUOC'',N''HuongDan'',N''nvarchar'',-1,0,0,0),
+(N''CHI_TIET_DON_THUOC'',N''DuongDung'',N''nvarchar'',200,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''TenThuocChot'',N''nvarchar'',510,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''HamLuongChot'',N''nvarchar'',510,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''DonViTinhChot'',N''nvarchar'',510,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''PhienBanHuongDan'',N''int'',4,0,0,1),
+(N''VAI_TRO'',N''MaVaiTro'',N''nvarchar'',100,0,0,0),
+(N''VAI_TRO'',N''TenVaiTro'',N''nvarchar'',510,0,0,0),
+(N''VAI_TRO'',N''MoTa'',N''nvarchar'',-1,0,0,0),
+(N''CHUC_VU'',N''MaChucVu'',N''nvarchar'',100,0,0,0),
+(N''CHUC_VU'',N''TenChucVu'',N''nvarchar'',510,0,0,0),
+(N''CHUC_VU'',N''MoTa'',N''nvarchar'',-1,0,0,0),
+(N''TAI_KHOAN'',N''MaTK'',N''nvarchar'',100,0,0,0),
+(N''TAI_KHOAN'',N''TenDangNhap'',N''nvarchar'',200,0,0,0),
+(N''TAI_KHOAN'',N''MatKhauHash'',N''nvarchar'',1024,0,0,0),
+(N''TAI_KHOAN'',N''MaVaiTro'',N''nvarchar'',100,0,0,0),
+(N''TAI_KHOAN'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''TAI_KHOAN'',N''MaKhoa'',N''nvarchar'',100,0,0,1),
+(N''TAI_KHOAN'',N''MaPhong'',N''nvarchar'',100,0,0,1),
+(N''TAI_KHOAN'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''NHAN_VIEN'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''NHAN_VIEN'',N''HoTen'',N''nvarchar'',510,0,0,0),
+(N''NHAN_VIEN'',N''GioiTinh'',N''nvarchar'',100,0,0,1),
+(N''NHAN_VIEN'',N''NgaySinh'',N''date'',3,0,0,1),
+(N''NHAN_VIEN'',N''SDT'',N''nvarchar'',100,0,0,1),
+(N''NHAN_VIEN'',N''DiaChi'',N''nvarchar'',510,0,0,1),
+(N''NHAN_VIEN'',N''MaChucVu'',N''nvarchar'',100,0,0,0),
+(N''NHAN_VIEN'',N''MaCK'',N''nvarchar'',100,0,0,1),
+(N''NHAN_VIEN'',N''BangCap'',N''nvarchar'',510,0,0,1),
+(N''NHAN_VIEN'',N''NgayVaoLam'',N''date'',3,0,0,0),
+(N''NHAN_VIEN'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''MaCC'',N''nvarchar'',100,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''SoChungChi'',N''nvarchar'',510,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''TenChungChi'',N''nvarchar'',510,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''NgayCap'',N''date'',3,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''NoiCap'',N''nvarchar'',510,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''HanChungChi'',N''date'',3,0,0,1),
+(N''CHUNG_CHI_NHAN_VIEN'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''CHUNG_CHI_NHAN_VIEN'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''KHOA'',N''MaKhoa'',N''nvarchar'',100,0,0,0),
+(N''KHOA'',N''TenKhoa'',N''nvarchar'',510,0,0,0),
+(N''KHOA'',N''DienThoai'',N''nvarchar'',100,0,0,0),
+(N''KHOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),
+(N''KHOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''CHUYEN_KHOA'',N''MaCK'',N''nvarchar'',100,0,0,0),
+(N''CHUYEN_KHOA'',N''MaKhoa'',N''nvarchar'',100,0,0,0),
+(N''CHUYEN_KHOA'',N''TenCK'',N''nvarchar'',510,0,0,0),
+(N''CHUYEN_KHOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),
+(N''CHUYEN_KHOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''PHONG'',N''MaPhong'',N''nvarchar'',100,0,0,0),
+(N''PHONG'',N''TenPhong'',N''nvarchar'',510,0,0,0),
+(N''PHONG'',N''MaKhoa'',N''nvarchar'',100,0,0,0),
+(N''PHONG'',N''LoaiPhong'',N''nvarchar'',510,0,0,0),
+(N''PHONG'',N''TinhTrang'',N''nvarchar'',510,0,0,0),
+(N''PHONG'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''THIET_BI'',N''MaTB'',N''nvarchar'',100,0,0,0),
+(N''THIET_BI'',N''MaHH'',N''nvarchar'',100,0,0,0),
+(N''THIET_BI'',N''SoSerial'',N''nvarchar'',510,0,0,0),
+(N''THIET_BI'',N''NgayMua'',N''date'',3,0,0,1),
+(N''THIET_BI'',N''MaNCC'',N''nvarchar'',100,0,0,1),
+(N''THIET_BI'',N''MaPhong'',N''nvarchar'',100,0,0,1),
+(N''THIET_BI'',N''TinhTrang'',N''nvarchar'',510,0,0,0),
+(N''THIET_BI'',N''HanBaoHanh'',N''date'',3,0,0,1),
+(N''THIET_BI'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''THIET_BI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''BAO_TRI_THIET_BI'',N''MaBT'',N''nvarchar'',100,0,0,0),
+(N''BAO_TRI_THIET_BI'',N''MaTB'',N''nvarchar'',100,0,0,0),
+(N''BAO_TRI_THIET_BI'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''BAO_TRI_THIET_BI'',N''NgayBatDau'',N''date'',3,0,0,0),
+(N''BAO_TRI_THIET_BI'',N''NgayKetThuc'',N''datetime2'',6,0,0,1),
+(N''BAO_TRI_THIET_BI'',N''NoiDung'',N''nvarchar'',-1,0,0,0),
+(N''BAO_TRI_THIET_BI'',N''ChiPhi'',N''decimal'',9,18,2,0),
+(N''BAO_TRI_THIET_BI'',N''NgayBaoTriTiepTheo'',N''date'',3,0,0,1),
+(N''BAO_TRI_THIET_BI'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''BAO_TRI_THIET_BI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''NHA_CUNG_CAP'',N''MaNCC'',N''nvarchar'',100,0,0,0),
+(N''NHA_CUNG_CAP'',N''TenNCC'',N''nvarchar'',510,0,0,0),
+(N''NHA_CUNG_CAP'',N''SDT'',N''nvarchar'',100,0,0,1),
+(N''NHA_CUNG_CAP'',N''Email'',N''nvarchar'',510,0,0,0),
+(N''NHA_CUNG_CAP'',N''DiaChi'',N''nvarchar'',510,0,0,1),
+(N''NHA_CUNG_CAP'',N''NguoiLienHe'',N''nvarchar'',510,0,0,0),
+(N''NHA_CUNG_CAP'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''KHO'',N''MaKho'',N''nvarchar'',100,0,0,0),
+(N''KHO'',N''TenKho'',N''nvarchar'',510,0,0,0),
+(N''KHO'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''KHO'',N''LoaiKho'',N''nvarchar'',510,0,0,0),
+(N''KHO'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''LOAI_HANG_HOA'',N''MaLoaiHH'',N''nvarchar'',100,0,0,0),
+(N''LOAI_HANG_HOA'',N''TenLoaiHH'',N''nvarchar'',510,0,0,0),
+(N''LOAI_HANG_HOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),
+(N''LOAI_HANG_HOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''HANG_HOA'',N''MaHH'',N''nvarchar'',100,0,0,0),
+(N''HANG_HOA'',N''TenHH'',N''nvarchar'',510,0,0,0),
+(N''HANG_HOA'',N''MaLoaiHH'',N''nvarchar'',100,0,0,0),
+(N''HANG_HOA'',N''DonViTinh'',N''nvarchar'',510,0,0,0),
+(N''HANG_HOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),
+(N''HANG_HOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''VAT_TU'',N''MaVT'',N''nvarchar'',100,0,0,0),
+(N''VAT_TU'',N''MaHH'',N''nvarchar'',100,0,0,0),
+(N''VAT_TU'',N''MucTonToiThieu'',N''decimal'',9,18,3,0),
+(N''THUOC'',N''MaThuoc'',N''nvarchar'',100,0,0,0),
+(N''THUOC'',N''MaHH'',N''nvarchar'',100,0,0,0),
+(N''THUOC'',N''HamLuong'',N''nvarchar'',510,0,0,0),
+(N''THUOC'',N''MucTonToiThieu'',N''decimal'',9,18,3,0),
+(N''THUOC'',N''DonGiaBan'',N''decimal'',9,18,2,0),
+(N''LO_HANG_HOA'',N''MaLo'',N''nvarchar'',100,0,0,0),
+(N''LO_HANG_HOA'',N''MaHH'',N''nvarchar'',100,0,0,0),
+(N''LO_HANG_HOA'',N''MaNCC'',N''nvarchar'',100,0,0,0),
+(N''LO_HANG_HOA'',N''MaKho'',N''nvarchar'',100,0,0,0),
+(N''LO_HANG_HOA'',N''SoLo'',N''nvarchar'',510,0,0,1),
+(N''LO_HANG_HOA'',N''NgayNhap'',N''datetime2'',6,0,0,0),
+(N''LO_HANG_HOA'',N''HanSuDung'',N''date'',3,0,0,1),
+(N''LO_HANG_HOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON_NHAP'',N''MaHDN'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON_NHAP'',N''SoHoaDonNCC'',N''nvarchar'',510,0,0,0),
+(N''HOA_DON_NHAP'',N''MaNCC'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON_NHAP'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON_NHAP'',N''NgayHoaDon'',N''datetime2'',6,0,0,0),
+(N''HOA_DON_NHAP'',N''TongTien'',N''decimal'',9,18,2,0),
+(N''HOA_DON_NHAP'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON_NHAP'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''PHIEU_NHAP'',N''MaPN'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_NHAP'',N''MaHDN'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_NHAP'',N''MaKho'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_NHAP'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_NHAP'',N''NgayNhap'',N''datetime2'',6,0,0,0),
+(N''PHIEU_NHAP'',N''TongTien'',N''decimal'',9,18,2,0),
+(N''PHIEU_NHAP'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_NHAP'',N''LyDo'',N''nvarchar'',-1,0,0,0),
+(N''PHIEU_NHAP'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''CHI_TIET_PHIEU_NHAP'',N''MaCTPN'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_PHIEU_NHAP'',N''MaPN'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_PHIEU_NHAP'',N''MaHH'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_PHIEU_NHAP'',N''MaLo'',N''nvarchar'',100,0,0,1),
+(N''CHI_TIET_PHIEU_NHAP'',N''SoLuong'',N''decimal'',9,18,3,0),
+(N''CHI_TIET_PHIEU_NHAP'',N''DonGia'',N''decimal'',9,18,2,0),
+(N''CHI_TIET_PHIEU_NHAP'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''PHIEU_XUAT'',N''MaPX'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_XUAT'',N''MaKho'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_XUAT'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_XUAT'',N''MaKhoa'',N''nvarchar'',100,0,0,1),
+(N''PHIEU_XUAT'',N''MaPhong'',N''nvarchar'',100,0,0,1),
+(N''PHIEU_XUAT'',N''MaLS'',N''nvarchar'',100,0,0,1),
+(N''PHIEU_XUAT'',N''NgayXuat'',N''datetime2'',6,0,0,0),
+(N''PHIEU_XUAT'',N''LyDo'',N''nvarchar'',-1,0,0,0),
+(N''PHIEU_XUAT'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''PHIEU_XUAT'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''CHI_TIET_PHIEU_XUAT'',N''MaCTPX'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_PHIEU_XUAT'',N''MaPX'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_PHIEU_XUAT'',N''MaHH'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_PHIEU_XUAT'',N''MaLo'',N''nvarchar'',100,0,0,1),
+(N''CHI_TIET_PHIEU_XUAT'',N''MaCTDT'',N''nvarchar'',100,0,0,1),
+(N''CHI_TIET_PHIEU_XUAT'',N''SoLuong'',N''decimal'',9,18,3,0),
+(N''CHI_TIET_PHIEU_XUAT'',N''GhiChu'',N''nvarchar'',-1,0,0,0),
+(N''CA_LAM'',N''MaCa'',N''nvarchar'',100,0,0,0),
+(N''CA_LAM'',N''GioBatDau'',N''time'',3,0,0,0),
+(N''CA_LAM'',N''GioKetThuc'',N''time'',3,0,0,0),
+(N''CA_LAM'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''CA_LAM'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''LICH_LAM_VIEC'',N''MaLLV'',N''nvarchar'',100,0,0,0),
+(N''LICH_LAM_VIEC'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''LICH_LAM_VIEC'',N''MaCa'',N''nvarchar'',100,0,0,0),
+(N''LICH_LAM_VIEC'',N''NgayLam'',N''date'',3,0,0,0),
+(N''LICH_LAM_VIEC'',N''MaPhong'',N''nvarchar'',100,0,0,1),
+(N''LICH_LAM_VIEC'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''LICH_LAM_VIEC'',N''TrangThaiHienDien'',N''nvarchar'',100,0,0,0),
+(N''LICH_LAM_VIEC'',N''GioVao'',N''datetime2'',6,0,0,1),
+(N''LICH_LAM_VIEC'',N''GioRa'',N''datetime2'',6,0,0,1),
+(N''LICH_LAM_VIEC'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''DON_XIN_NGHI'',N''MaDonNghi'',N''nvarchar'',100,0,0,0),
+(N''DON_XIN_NGHI'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''DON_XIN_NGHI'',N''TuNgay'',N''date'',3,0,0,0),
+(N''DON_XIN_NGHI'',N''DenNgay'',N''date'',3,0,0,0),
+(N''DON_XIN_NGHI'',N''LyDo'',N''nvarchar'',-1,0,0,0),
+(N''DON_XIN_NGHI'',N''NgayGui'',N''datetime2'',6,0,0,0),
+(N''DON_XIN_NGHI'',N''TrangThaiDuyet'',N''nvarchar'',100,0,0,0),
+(N''DON_XIN_NGHI'',N''MaNVDuyet'',N''nvarchar'',100,0,0,1),
+(N''DON_XIN_NGHI'',N''NgayDuyet'',N''datetime2'',6,0,0,1),
+(N''DON_XIN_NGHI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''PHAN_CONG_THAY_THE'',N''MaPCTT'',N''nvarchar'',100,0,0,0),
+(N''PHAN_CONG_THAY_THE'',N''MaDonNghi'',N''nvarchar'',100,0,0,0),
+(N''PHAN_CONG_THAY_THE'',N''MaLLVThayThe'',N''nvarchar'',100,0,0,0),
+(N''PHAN_CONG_THAY_THE'',N''NgayXuLy'',N''datetime2'',6,0,0,0),
+(N''PHAN_CONG_THAY_THE'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''PHAN_CONG_THAY_THE'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''LICH_KHAM'',N''MaLich'',N''nvarchar'',100,0,0,0),
+(N''LICH_KHAM'',N''MaBN'',N''nvarchar'',100,0,0,0),
+(N''LICH_KHAM'',N''MaBS'',N''nvarchar'',100,0,0,0),
+(N''LICH_KHAM'',N''MaCa'',N''nvarchar'',100,0,0,0),
+(N''LICH_KHAM'',N''MaPhong'',N''nvarchar'',100,0,0,0),
+(N''LICH_KHAM'',N''MaDV'',N''nvarchar'',100,0,0,1),
+(N''LICH_KHAM'',N''NgayGioKham'',N''datetime2'',6,0,0,0),
+(N''LICH_KHAM'',N''ThoiLuongDuKien'',N''int'',4,0,0,0),
+(N''LICH_KHAM'',N''UuTien'',N''nvarchar'',100,0,0,0),
+(N''LICH_KHAM'',N''LyDoKham'',N''nvarchar'',-1,0,0,0),
+(N''LICH_KHAM'',N''LyDoThayDoi'',N''nvarchar'',-1,0,0,1),
+(N''LICH_KHAM'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''LICH_KHAM'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''LICH_KHAM'',N''NgayTao'',N''datetime2'',6,0,0,0),
+(N''LICH_KHAM'',N''NgayCapNhat'',N''datetime2'',6,0,0,1),
+(N''HOA_DON'',N''MaHD'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON'',N''MaLS'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON'',N''NgayLap'',N''datetime2'',6,0,0,0),
+(N''HOA_DON'',N''NgayXacNhan'',N''datetime2'',6,0,0,1),
+(N''HOA_DON'',N''TongTien'',N''decimal'',9,18,2,0),
+(N''HOA_DON'',N''GiamGia'',N''decimal'',9,18,2,0),
+(N''HOA_DON'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''HOA_DON'',N''PhienBanQuyTrinh'',N''int'',4,0,0,0),
+(N''HOA_DON'',N''MaYeuCau'',N''nvarchar'',100,0,0,1),
+(N''HOA_DON'',N''DauVanTayYeuCau'',N''nvarchar'',128,0,0,1),
+(N''CHI_TIET_HOA_DON'',N''MaCTHD'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_HOA_DON'',N''MaHD'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_HOA_DON'',N''MaDVThucHien'',N''nvarchar'',100,0,0,1),
+(N''CHI_TIET_HOA_DON'',N''MaCTPX'',N''nvarchar'',100,0,0,1),
+(N''CHI_TIET_HOA_DON'',N''NoiDung'',N''nvarchar'',-1,0,0,0),
+(N''CHI_TIET_HOA_DON'',N''DonGia'',N''decimal'',9,18,2,1),
+(N''CHI_TIET_HOA_DON'',N''ThanhTien'',N''decimal'',9,18,2,0),
+(N''THANH_TOAN'',N''MaTT'',N''nvarchar'',100,0,0,0),
+(N''THANH_TOAN'',N''MaHD'',N''nvarchar'',100,0,0,0),
+(N''THANH_TOAN'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''THANH_TOAN'',N''NgayThanhToan'',N''datetime2'',6,0,0,0),
+(N''THANH_TOAN'',N''SoTien'',N''decimal'',9,18,2,0),
+(N''THANH_TOAN'',N''LoaiGiaoDich'',N''nvarchar'',100,0,0,0),
+(N''THANH_TOAN'',N''PhuongThuc'',N''nvarchar'',100,0,0,0),
+(N''THANH_TOAN'',N''LyDo'',N''nvarchar'',-1,0,0,1),
+(N''THANH_TOAN'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''THANH_TOAN'',N''SoTienKhachDua'',N''decimal'',9,18,2,1),
+(N''THANH_TOAN'',N''TienThua'',N''decimal'',9,18,2,1),
+(N''THANH_TOAN'',N''MaThamChieu'',N''nvarchar'',200,0,0,1),
+(N''CHINH_SACH_LUONG'',N''MaCSL'',N''nvarchar'',100,0,0,0),
+(N''CHINH_SACH_LUONG'',N''MaChucVu'',N''nvarchar'',100,0,0,0),
+(N''CHINH_SACH_LUONG'',N''TenChinhSach'',N''nvarchar'',510,0,0,0),
+(N''CHINH_SACH_LUONG'',N''PhienBan'',N''int'',4,0,0,0),
+(N''CHINH_SACH_LUONG'',N''NgayHieuLuc'',N''date'',3,0,0,0),
+(N''CHINH_SACH_LUONG'',N''NgayHetHieuLuc'',N''date'',3,0,0,1),
+(N''CHINH_SACH_LUONG'',N''LuongCoBan'',N''decimal'',9,18,2,0),
+(N''CHINH_SACH_LUONG'',N''SoCaDinhMuc'',N''int'',4,0,0,0),
+(N''CHINH_SACH_LUONG'',N''CoSoHoaHong'',N''nvarchar'',510,0,0,0),
+(N''CHINH_SACH_LUONG'',N''TyLeHoaHong'',N''decimal'',5,9,6,0),
+(N''CHINH_SACH_LUONG'',N''MaNVDuyet'',N''nvarchar'',100,0,0,1),
+(N''CHINH_SACH_LUONG'',N''NgayDuyet'',N''datetime2'',6,0,0,1),
+(N''CHINH_SACH_LUONG'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''BANG_LUONG'',N''MaBL'',N''nvarchar'',100,0,0,0),
+(N''BANG_LUONG'',N''MaNV'',N''nvarchar'',100,0,0,0),
+(N''BANG_LUONG'',N''MaCSL'',N''nvarchar'',100,0,0,0),
+(N''BANG_LUONG'',N''TuNgay'',N''date'',3,0,0,0),
+(N''BANG_LUONG'',N''DenNgay'',N''date'',3,0,0,0),
+(N''BANG_LUONG'',N''SoCaTinh'',N''int'',4,0,0,0),
+(N''BANG_LUONG'',N''LuongCoBan'',N''decimal'',9,18,2,0),
+(N''BANG_LUONG'',N''SoCaDinhMuc'',N''int'',4,0,0,0),
+(N''BANG_LUONG'',N''TienHoaHong'',N''decimal'',9,18,2,0),
+(N''BANG_LUONG'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''BANG_LUONG'',N''NgayChot'',N''datetime2'',6,0,0,1),
+(N''BANG_LUONG'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''NHAT_KY_THAO_TAC'',N''MaNK'',N''nvarchar'',100,0,0,0),
+(N''NHAT_KY_THAO_TAC'',N''MaTK'',N''nvarchar'',100,0,0,0),
+(N''NHAT_KY_THAO_TAC'',N''ThoiGian'',N''datetime2'',6,0,0,0),
+(N''NHAT_KY_THAO_TAC'',N''HanhDong'',N''nvarchar'',510,0,0,0),
+(N''NHAT_KY_THAO_TAC'',N''LoaiDoiTuong'',N''nvarchar'',510,0,0,0),
+(N''NHAT_KY_THAO_TAC'',N''MaDoiTuong'',N''nvarchar'',100,0,0,0),
+(N''NHAT_KY_THAO_TAC'',N''KetQua'',N''nvarchar'',-1,0,0,0),
+(N''NHAT_KY_THAO_TAC'',N''DuLieuTruoc'',N''nvarchar'',-1,0,0,1),
+(N''NHAT_KY_THAO_TAC'',N''DuLieuSau'',N''nvarchar'',-1,0,0,1),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaDonNghi'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaLich'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaBSCu'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaPhongCu'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaBSMoi'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaPhongMoi'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaLLVThayThe'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaCa'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''NgayGioKham'',N''datetime2'',6,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''ThoiLuongDuKien'',N''int'',4,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaNVXacNhan'',N''nvarchar'',100,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''NgayXacNhan'',N''datetime2'',6,0,0,0),
+(N''XAC_NHAN_DOI_LICH_KHAM'',N''TrangThai'',N''nvarchar'',60,0,0,0),
+(N''CA_THEO_NGAY'',N''NgayLam'',N''date'',3,0,0,0),
+(N''CA_THEO_NGAY'',N''MaCa'',N''nvarchar'',100,0,0,0);
+IF EXISTS(SELECT 1 FROM @core e LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+e.T) AND c.name=e.C LEFT JOIN sys.types t ON t.user_type_id=c.user_type_id
+WHERE c.column_id IS NULL OR t.name<>e.TypeName OR c.max_length<>e.L OR c.is_nullable<>e.N OR(e.TypeName=N''decimal'' AND(c.precision<>e.P OR c.scale<>e.S)) OR(e.TypeName IN(N''datetime2'',N''time'') AND c.scale<>e.S))
+THROW 52271,N''Cấu trúc nền không khớp hợp đồng; dừng đồng bộ để bảo toàn dữ liệu.'',1;
+-- Chỉ đọc, kiểm chứng hợp đồng sau nâng cấp.
+SET NOCOUNT ON;
+DECLARE @expected TABLE(T sysname,C sysname,TypeName sysname,MaxLength smallint,PrecisionValue tinyint,ScaleValue tinyint,Nullable bit);
+INSERT @expected VALUES
+(N''DM_TINH_TRANG_BENH'',N''MaDMTT'',N''nvarchar'',100,0,0,0),
+(N''DM_TINH_TRANG_BENH'',N''TenTinhTrang'',N''nvarchar'',510,0,0,0),
+(N''DM_TINH_TRANG_BENH'',N''MoTa'',N''nvarchar'',-1,0,0,1),
+(N''DM_TINH_TRANG_BENH'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''MaMauKH'',N''nvarchar'',100,0,0,0),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''MaDMTT'',N''nvarchar'',100,0,0,0),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''MucDo'',N''nvarchar'',510,0,0,1),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''TenMau'',N''nvarchar'',510,0,0,0),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''PhienBan'',N''int'',4,0,0,0),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''MaBSDuyet'',N''nvarchar'',100,0,0,1),
+(N''MAU_KE_HOACH_DIEU_TRI'',N''NgayDuyet'',N''datetime2'',6,0,0,1),
+(N''CHI_TIET_MAU_KE_HOACH'',N''MaCTMau'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_MAU_KE_HOACH'',N''MaMauKH'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_MAU_KE_HOACH'',N''MaDV'',N''nvarchar'',100,0,0,0),
+(N''CHI_TIET_MAU_KE_HOACH'',N''ThuTu'',N''int'',4,0,0,0),
+(N''CHI_TIET_MAU_KE_HOACH'',N''LanThu'',N''int'',4,0,0,0),
+(N''CHI_TIET_MAU_KE_HOACH'',N''SoLuongDuKien'',N''decimal'',9,18,3,0),
+(N''CHI_TIET_MAU_KE_HOACH'',N''NoiDung'',N''nvarchar'',-1,0,0,0),
+(N''NHOM_THUOC_KE_DON'',N''MaNhomThuoc'',N''nvarchar'',100,0,0,0),
+(N''NHOM_THUOC_KE_DON'',N''TenNhom'',N''nvarchar'',510,0,0,0),
+(N''NHOM_THUOC_KE_DON'',N''MoTa'',N''nvarchar'',-1,0,0,1),
+(N''NHOM_THUOC_KE_DON'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''CAU_HINH_THUOC_KE_DON'',N''MaThuoc'',N''nvarchar'',100,0,0,0),
+(N''CAU_HINH_THUOC_KE_DON'',N''MaNhomThuoc'',N''nvarchar'',100,0,0,1),
+(N''CAU_HINH_THUOC_KE_DON'',N''DoiTuongApDung'',N''nvarchar'',510,0,0,1),
+(N''CAU_HINH_THUOC_KE_DON'',N''DuongDung'',N''nvarchar'',200,0,0,1),
+(N''CAU_HINH_THUOC_KE_DON'',N''LieuDungGoiY'',N''nvarchar'',510,0,0,1),
+(N''CAU_HINH_THUOC_KE_DON'',N''HuongDanGoiY'',N''nvarchar'',-1,0,0,1),
+(N''CAU_HINH_THUOC_KE_DON'',N''PhienBan'',N''int'',4,0,0,0),
+(N''CAU_HINH_THUOC_KE_DON'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''CAU_HINH_THUOC_KE_DON'',N''MaNguoiDuyet'',N''nvarchar'',100,0,0,1),
+(N''CAU_HINH_THUOC_KE_DON'',N''NgayDuyet'',N''datetime2'',6,0,0,1),
+(N''BAN_GIAO_THUOC'',N''MaDT'',N''nvarchar'',100,0,0,0),
+(N''BAN_GIAO_THUOC'',N''MaHD'',N''nvarchar'',100,0,0,0),
+(N''BAN_GIAO_THUOC'',N''MaPX'',N''nvarchar'',100,0,0,0),
+(N''BAN_GIAO_THUOC'',N''TrangThai'',N''nvarchar'',100,0,0,0),
+(N''BAN_GIAO_THUOC'',N''MaNVGiao'',N''nvarchar'',100,0,0,1),
+(N''BAN_GIAO_THUOC'',N''ThoiGianGiao'',N''datetime2'',6,0,0,1),
+(N''BAN_GIAO_THUOC'',N''GhiChu'',N''nvarchar'',-1,0,0,1),
+(N''TINH_TRANG_BENH'',N''MaDMTT'',N''nvarchar'',100,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''MaTTBNguon'',N''nvarchar'',100,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''MaMauKH'',N''nvarchar'',100,0,0,1),
+(N''KE_HOACH_DIEU_TRI'',N''PhienBanMau'',N''int'',4,0,0,1),
+(N''CHI_TIET_KE_HOACH'',N''NoiDungBuoc'',N''nvarchar'',-1,0,0,1),
+(N''LICH_SU_KHAM_BENH'',N''KhongKeThuoc'',N''int'',4,0,0,0),
+(N''LICH_SU_KHAM_BENH'',N''LyDoKhongKeThuoc'',N''nvarchar'',1000,0,0,1),
+(N''DON_THUOC'',N''MaDTThayThe'',N''nvarchar'',100,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''DuongDung'',N''nvarchar'',200,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''TenThuocChot'',N''nvarchar'',510,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''HamLuongChot'',N''nvarchar'',510,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''DonViTinhChot'',N''nvarchar'',510,0,0,1),
+(N''CHI_TIET_DON_THUOC'',N''PhienBanHuongDan'',N''int'',4,0,0,1),
+(N''HOA_DON'',N''PhienBanQuyTrinh'',N''int'',4,0,0,0),
+(N''HOA_DON'',N''MaYeuCau'',N''nvarchar'',100,0,0,1),
+(N''HOA_DON'',N''DauVanTayYeuCau'',N''nvarchar'',128,0,0,1),
+(N''THANH_TOAN'',N''SoTienKhachDua'',N''decimal'',9,18,2,1),
+(N''THANH_TOAN'',N''TienThua'',N''decimal'',9,18,2,1),
+(N''THANH_TOAN'',N''MaThamChieu'',N''nvarchar'',200,0,0,1);
+IF EXISTS(SELECT 1 FROM @expected e LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+e.T) AND c.name=e.C LEFT JOIN sys.types t ON t.user_type_id=c.user_type_id WHERE c.column_id IS NULL OR (c.column_id IS NOT NULL AND (t.name<>e.TypeName OR c.max_length<>e.MaxLength OR c.is_nullable<>e.Nullable OR (e.TypeName=N''decimal'' AND(c.precision<>e.PrecisionValue OR c.scale<>e.ScaleValue)) OR (e.TypeName=N''datetime2'' AND c.scale<>e.ScaleValue)))) THROW 52101,N''Cấu trúc cột không khớp hợp đồng quy trình khám; không tự sửa kiểu dữ liệu.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.ClinicalWorkflow.Version'' AND TRY_CONVERT(int,value)=2) THROW 52102,N''Chưa ghi phiên bản quy trình khám 2.'',1;
+IF EXISTS(SELECT 1 FROM (VALUES (N''FK_CW_TTB_DMTT''),(N''FK_CW_KH_TTB''),(N''FK_CW_KH_Mau''),(N''FK_CW_DT_ThayThe''),(N''CK_CW_LS_NoRx''),(N''CK_CW_KH_Source''),(N''CK_CW_CTDT_Version''),(N''CK_CW_HD_Request''),(N''CK_CW_TT_Cash''),(N''PK_CW_DMTT''),(N''CK_CW_DMTT''),(N''PK_CW_MauKH''),(N''FK_CW_MauKH_DMTT''),(N''FK_CW_MauKH_BS''),(N''CK_CW_MauKH''),(N''PK_CW_CTMau''),(N''FK_CW_CTMau_MauKH''),(N''FK_CW_CTMau_DV''),(N''UQ_CW_CTMau_ThuTu''),(N''CK_CW_CTMau''),(N''PK_CW_NhomThuoc''),(N''CK_CW_NhomThuoc''),(N''PK_CW_CauHinhThuoc''),(N''FK_CW_CauHinh_Thuoc''),(N''FK_CW_CauHinh_Nhom''),(N''FK_CW_CauHinh_Duyet''),(N''CK_CW_CauHinh''),(N''PK_CW_BanGiao''),(N''FK_CW_BanGiao_DT''),(N''FK_CW_BanGiao_HD''),(N''FK_CW_BanGiao_PX''),(N''FK_CW_BanGiao_NV''),(N''CK_CW_BanGiao''),(N''TR_CW_LS_BaoVe''),(N''TR_CW_TTB_BaoVe''),(N''TR_CW_Phieu_BacSi''),(N''TR_CW_KH_BaoVe''),(N''TR_CW_CTKH_BaoVe''),(N''TR_CW_DT_ThayThe''),(N''TR_CW_MauKH_BaoVe''),(N''TR_CW_CTMau_BaoVe''),(N''TR_CW_CauHinh_BaoVe''),(N''TR_CW_HD_Request''),(N''TR_CW_TT_ThuDu''),(N''TR_CW_BanGiao_BaoVe''),(N''TR_CW_Audit_DM_TINH_TRANG_BENH''),(N''TR_CW_Audit_MAU_KE_HOACH_DIEU_TRI''),(N''TR_CW_Audit_CHI_TIET_MAU_KE_HOACH''),(N''TR_CW_Audit_NHOM_THUOC_KE_DON''),(N''TR_CW_Audit_CAU_HINH_THUOC_KE_DON'')) expected(Name) WHERE OBJECT_ID(N''dbo.''+Name) IS NULL) THROW 52102,N''Thiếu FK/CHECK/trigger của migration.'',1;
+IF EXISTS(SELECT 1 FROM sys.triggers WHERE name LIKE N''TR[_]CW[_]%'' AND is_disabled=1) OR EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name LIKE N''FK[_]CW[_]%'' AND(is_disabled=1 OR is_not_trusted=1)) OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE name LIKE N''CK[_]CW[_]%'' AND(is_disabled=1 OR is_not_trusted=1)) THROW 52102,N''Trigger hoặc ràng buộc mới bị tắt/chưa kiểm chứng.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.PHIEU_KHAM_BENH'') AND name=N''IX_CW_Phieu_BacSi'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_Phieu_BacSi.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.LICH_SU_KHAM_BENH'') AND name=N''IX_CW_LS_BacSi'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_LS_BacSi.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.HOA_DON'') AND name=N''UX_CW_HD_YeuCau'' AND is_disabled=0) THROW 52102,N''Thiếu index UX_CW_HD_YeuCau.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.HOA_DON'') AND name=N''UX_CW_HD_LuotV2'' AND is_disabled=0) THROW 52102,N''Thiếu index UX_CW_HD_LuotV2.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.KE_HOACH_DIEU_TRI'') AND name=N''UX_CW_KH_Source'' AND is_disabled=0) THROW 52102,N''Thiếu index UX_CW_KH_Source.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.TINH_TRANG_BENH'') AND name=N''IX_CW_TTB_DMTT'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_TTB_DMTT.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.KE_HOACH_DIEU_TRI'') AND name=N''IX_CW_KH_Mau'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_KH_Mau.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.DON_THUOC'') AND name=N''IX_CW_DT_ThayThe'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_DT_ThayThe.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.MAU_KE_HOACH_DIEU_TRI'') AND name=N''IX_CW_Mau_TinhTrang'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_Mau_TinhTrang.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.CAU_HINH_THUOC_KE_DON'') AND name=N''IX_CW_CauHinh_Nhom'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_CauHinh_Nhom.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.BAN_GIAO_THUOC'') AND name=N''IX_CW_BanGiao_HD'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_BanGiao_HD.'',1;IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name LIKE N''FK[_]CW[_]%'' AND(is_disabled=1 OR is_not_trusted=1)) THROW 52102,N''FK mới chưa được kiểm chứng.'',1;
+SELECT N''ClinicalWorkflow v2'' AS SchemaVersion,COUNT(*) AS TableCount FROM sys.tables WHERE is_ms_shipped=0;
+SELECT MaHD,MaLS,SoTienPhaiThu,DaThuRong,ConPhaiTra FROM dbo.VW_HOA_DON_THANH_TOAN WHERE ConPhaiTra<>0;IF COL_LENGTH(N''dbo.HOA_DON'',N''TaoKhiHoanTat'') IS NULL OR COL_LENGTH(N''dbo.CHI_TIET_HOA_DON'',N''MaCTDT'') IS NULL THROW 52272,N''Thiếu cột hóa đơn hoàn tất; chạy toàn bộ QLBenhVienRangHamMat.sql.'',1;
+IF COL_LENGTH(N''dbo.TINH_TRANG_BENH'',N''MucDo'') IS NOT NULL OR COL_LENGTH(N''dbo.TINH_TRANG_BENH'',N''ViTriRang'') IS NOT NULL THROW 52272,N''Schema tình trạng không khớp ứng dụng.'',1;
+IF OBJECT_ID(N''dbo.DICH_VU_TINH_TRANG'') IS NULL OR OBJECT_ID(N''dbo.TR_RHM_DichVu_ChiTrongKham'') IS NULL OR OBJECT_ID(N''dbo.TR_HD_ChotHoanTat'') IS NULL THROW 52272,N''Thiếu liên kết hoặc bảo vệ hoàn tất.'',1;
+IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.HospitalWorkflow.Version'' AND TRY_CONVERT(int,value)=3) THROW 52272,N''Chưa đồng bộ HospitalWorkflow3.'',1;
+IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0)<>53 THROW 52272,N''Số bảng không đúng schema53.'',1;
+IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.triggers WHERE parent_class=1 AND is_disabled=1) THROW 52272,N''Ràng buộc hoặc trigger chưa hợp lệ.'',1;
+END;';
+
+ IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0)<>53 THROW 52272,N'Số bảng khác schema 53 bảng đã hỗ trợ; cần đối chiếu trước khi hoàn tất.',1;
+ IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.triggers WHERE parent_class=1 AND is_disabled=1)
+ THROW 52272,N'Có ràng buộc hoặc trigger bị tắt/chưa kiểm chứng.',1;
+ IF EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N'RHM.HospitalWorkflow.Version')
+ EXEC sys.sp_updateextendedproperty @name=N'RHM.HospitalWorkflow.Version',@value=3;
+ ELSE EXEC sys.sp_addextendedproperty @name=N'RHM.HospitalWorkflow.Version',@value=3;
+ EXEC sys.sp_set_session_context @key=N'RHM.MaTK',@value=@hospitalPreviousActor;
  COMMIT;
- PRINT N'Đã đồng bộ 8 dịch vụ tham khảo và 14 liên kết; giữ nguyên dữ liệu đã có.';
+ EXEC sys.sp_set_session_context @key=N'RHM.HospitalWorkflow.Completed',@value=1;
+ PRINT N'Hoàn tất khởi tạo/đồng bộ HospitalWorkflow v3; dữ liệu người dùng và lịch sử tài chính được giữ nguyên.';
 END TRY
 BEGIN CATCH
  IF XACT_STATE()<>0 ROLLBACK;
+ EXEC sys.sp_set_session_context @key=N'RHM.MaTK',@value=@hospitalPreviousActor;
  THROW;
 END CATCH;
-
-END;
 GO

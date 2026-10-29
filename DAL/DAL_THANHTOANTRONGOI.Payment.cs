@@ -81,10 +81,12 @@ public sealed partial class DAL_THANHTOANTRONGOI
             if (fee.TongTien == 0 && r.SoTienKhachDua != 0) throw Error("SoTienKhachDua", "Hóa đơn 0 không nhận tiền khách đưa.");
 
             var exports = new DAL_PHIEUXUAT(tx);
+            var pending = db.QuerySingleOrDefault<ET_HOADON>("SELECT * FROM dbo.HOA_DON WITH(UPDLOCK,HOLDLOCK) WHERE MaLS=@MaLS AND TaoKhiHoanTat=1 AND PhienBanQuyTrinh=1 AND TrangThai=N'Nháp'", r, tx);
             var orders = fee.Thuoc.Select(d => d.MaDT).Distinct().ToArray(); // Thứ tự SQL MaDT/MaCTDT của preview.
             var deliveries = orders.Select(id => new DonThuocDaThu(id, exports.DispenseCoordinatedPrescription(id, fee.MaKhoCapThuoc!, actor.MaNV))).ToArray();
             var invoices = new DAL_HOADON(tx);
-            var invoiceId = invoices.CreateInvoice(r.MaLS, actor.MaNV, 0);
+            var invoiceId = pending?.MaHD ?? invoices.CreateInvoice(r.MaLS, actor.MaNV, 0);
+            if (pending is not null) AttachPrescriptionExports(db, tx, invoiceId, deliveries);
             db.Execute("UPDATE dbo.HOA_DON SET PhienBanQuyTrinh=2,MaYeuCau=@requestId,DauVanTayYeuCau=@requestHash WHERE MaHD=@invoiceId AND TrangThai=N'Nháp'", new { invoiceId, requestId = r.MaYeuCau.ToString("D"), requestHash }, tx);
             var total = db.ExecuteScalar<decimal>("SELECT SoTienPhaiThu FROM dbo.HOA_DON WHERE MaHD=@invoiceId", new { invoiceId }, tx);
             if (total != fee.TongTien) throw Error("ThanhToan", "Tổng SQL không khớp bảng tính; giao dịch được hủy để đối chiếu.");
@@ -149,6 +151,24 @@ public sealed partial class DAL_THANHTOANTRONGOI
             .OrderBy(l => l.MaCTDT, StringComparer.Ordinal).ThenBy(l => l.MaLo, StringComparer.Ordinal).ToArray();
         if (!actual.OrderBy(l=>l.MaCTDT,StringComparer.Ordinal).ThenBy(l=>l.MaLo,StringComparer.Ordinal).SequenceEqual(expected))
             throw Error("ThanhToan", "Nguồn thuốc hoặc từng phần lô không khớp bảng tính.");
+    }
+    private static void AttachPrescriptionExports(IDbConnection db, IDbTransaction? tx, string invoiceId, DonThuocDaThu[] deliveries)
+    {
+        var pending = db.Query<ET_CHITIETHOADON>("SELECT * FROM dbo.CHI_TIET_HOA_DON WITH(UPDLOCK,HOLDLOCK) WHERE MaHD=@invoiceId AND MaCTDT IS NOT NULL ORDER BY MaCTDT", new { invoiceId }, tx).ToArray();
+        foreach (var source in pending)
+        {
+            var exported = db.Query<ET_CHITIETHOADON>("""
+                SELECT x.MaCTPX,@content NoiDung,@price DonGia,
+                    CAST(ROUND(x.SoLuong*@price,2) AS decimal(18,2)) ThanhTien
+                FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX
+                WHERE x.MaCTDT=@MaCTDT AND p.TrangThai=N'Đã ghi sổ' AND x.MaPX IN @exportIds ORDER BY x.MaCTPX
+                """, new { source.MaCTDT, content = source.NoiDung, price = source.DonGia, exportIds = deliveries.Select(d => d.MaPX).ToArray() }, tx).ToArray();
+            if (exported.Length == 0 || exported.Sum(c => c.ThanhTien) != source.ThanhTien)
+                throw Error("MaHD", "Thuốc xuất không khớp khoản đã chốt; giao dịch được hủy.");
+            // Giữ nguồn đơn đến khi đủ mọi phần lô; trigger chỉ cho thay thế đúng nguồn, lượng và giá.
+            foreach (var part in exported) DAL_CHITIETHOADON.ThemChiTiet(db, tx, invoiceId, part);
+            db.Execute("DELETE dbo.CHI_TIET_HOA_DON WHERE MaCTHD=@MaCTHD AND MaHD=@invoiceId", new { source.MaCTHD, invoiceId }, tx);
+        }
     }
     private sealed record PhanThuDaChot(string MaCTDT, string MaLo, decimal SoLuong, decimal DonGia, decimal ThanhTien);
     private sealed record RequestAlias(string MaLS,string MaHD,string DauVanTayYeuCau);

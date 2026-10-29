@@ -47,8 +47,8 @@ public partial class KhamLamSang : UserControl,IPatientScoped
             PatientHeader.Text=$"{data.BenhNhan.HoTenBN} · {PatientId} · {data.BenhNhan.NgaySinh:dd/MM/yyyy}";
             SafetyHeader.Text=$"Dị ứng: {Known(data.BenhNhan.DiUng)} · Tiền sử: {Known(data.BenhNhan.TienSuBenh)}";
             PlanServiceColumn.ItemsSource=data.DichVu.Select(d=>new LuaChonDanhMuc(d.MaDV,d.TenDV+(d.TrangThai=="Đang hoạt động"?"":" · ngừng hoạt động"))).ToArray();
-            relatedServices=data.DichVuTheoTinhTrang;serviceCatalog=data.DichVu;referenceConditions=data.DinhHuong;ConditionReferencePicker.ItemsSource=referenceConditions;
-            FillClinical(data.BanNhap);SetPlans(data.KeHoach);ClearPlan();
+            relatedServices=data.DichVuTheoTinhTrang;serviceCatalog=data.DichVu;referenceConditions=data.DinhHuong;ConfigureConditionPicker();
+            FillClinical(data.BanNhap);SetPlans(data.KeHoach);ClearPlan();FillCompletionOverview(data);
         }
         finally{loading=false;dirty=planDirty=false;}
     }
@@ -109,19 +109,19 @@ public partial class KhamLamSang : UserControl,IPatientScoped
         RequireEditable();
         CommitConditionInput();ClinicalFormInput.Commit(PlanSteps,"CacBuoc");
         if(CoThayDoiChuaLuu)throw new LoiKhamException("BanNhap","Có thay đổi chưa lưu. Lưu nháp hoặc tải lại để đối chiếu trước khi ký.");
-        FillClinical(service.HoanTatKham(visitId,snapshot.DauVanTay,actor));ClinicalStatus.Text="Đã hoàn tất chuyên môn. Phiếu chờ thanh toán; nội dung đã khóa.";SyncCache();
+        FillClinical(service.HoanTatKham(visitId,snapshot.DauVanTay,actor));FillCompletionOverview(service.LayKhongGianKham(visitId,actor));ClinicalStatus.Text=$"Đã hoàn tất và lập hóa đơn {snapshot.MaHD}; chờ thanh toán.";SyncCache();
     },out error);
     public bool TrySavePlan(out string error)=>Run(()=>
     {
         RequireEditable();
         ClinicalFormInput.Commit(PlanSteps,"CacBuoc");var request=new YeuCauLuuKeHoach {MaLS=visitId,MaKHDT=plan?.KeHoach.MaKHDT,DauVanTay=plan?.DauVanTay,MaTTBNguon=plan?.KeHoach.MaTTBNguon??planSourceCondition,NgayBatDau=ClinicalFormInput.ReadDate(PlanStart),NgayDuKienKetThuc=ClinicalFormInput.ReadDate(PlanEnd),GhiChu=PlanNote.Text,CacBuoc=steps.ToArray()};
-        FillPlan(service.LuuKeHoach(request,actor));ClinicalStatus.Text="Đã lưu kế hoạch nháp; chưa ghi dịch vụ thực hiện.";SyncCache();
+        FillPlan(service.LuuKeHoach(request,actor));FillCompletionOverview(service.LayKhongGianKham(visitId,actor));ClinicalStatus.Text="Đã lưu kế hoạch nháp. Duyệt kế hoạch trước khi hoàn tất.";SyncCache();
     },out error);
     public bool TryConfirmPlan(out string error)=>Run(()=>
     {
         RequireEditable();
         ClinicalFormInput.Commit(PlanSteps,"CacBuoc");if(plan is null||planDirty)throw new LoiKhamException("KeHoach","Lưu nháp kế hoạch trước khi duyệt.");
-        FillPlan(service.XacNhanKeHoach(plan.KeHoach.MaKHDT,plan.DauVanTay,actor));ClinicalStatus.Text="Đã duyệt kế hoạch; các bước dự kiến chưa phải khoản thu.";SyncCache();
+        FillPlan(service.XacNhanKeHoach(plan.KeHoach.MaKHDT,plan.DauVanTay,actor));FillCompletionOverview(service.LayKhongGianKham(visitId,actor));ClinicalStatus.Text="Đã duyệt kế hoạch. Khi điều trị xong, Hoàn tất để chốt dịch vụ và lập hóa đơn.";SyncCache();
     },out error);
     private void Plan_Changed(object sender,SelectionChangedEventArgs e)
     {
@@ -144,7 +144,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
         Run(()=>{if(plan is null){loading=true;try{ClearPlan();}finally{loading=false;}}else FillPlan(service.HuyKeHoach(plan.KeHoach.MaKHDT,plan.DauVanTay,actor));ClinicalStatus.Text="Đã hủy kế hoạch nháp.";SyncCache();},out _);
     }
     private void Complete_Click(object sender,RoutedEventArgs e)
-    {if(CoThayDoiChuaLuu){TryComplete(out _);return;}if(MessageBox.Show("Hoàn tất chuyên môn và khóa nội dung lần khám này?","Xác nhận chuyên môn",MessageBoxButton.YesNo,MessageBoxImage.Question)==MessageBoxResult.Yes)TryComplete(out _);}
+    {if(CoThayDoiChuaLuu){TryComplete(out _);return;}if(MessageBox.Show("Xác nhận đã làm xong toàn bộ dịch vụ trong kế hoạch? Hệ thống sẽ chốt dịch vụ, khóa lần khám và lập hóa đơn chờ thu.","Xác nhận chuyên môn",MessageBoxButton.YesNo,MessageBoxImage.Question)==MessageBoxResult.Yes)TryComplete(out _);}
     private void ConfirmPlan_Click(object sender,RoutedEventArgs e)
     {if(planDirty){TryConfirmPlan(out _);return;}if(MessageBox.Show("Xác nhận kế hoạch đã được bác sĩ kiểm tra?","Duyệt kế hoạch",MessageBoxButton.YesNo,MessageBoxImage.Question)==MessageBoxResult.Yes)TryConfirmPlan(out _);}
     private void OpenModule(string module)=>Run(()=>{if(CoThayDoiChuaLuu)throw new LoiKhamException("BanNhap","Lưu nháp trước khi chuyển chức năng.");if(allowed(module)&&PatientId is not null)DieuHuongHoSo.Open(this,module,PatientId,visitId);},out _);

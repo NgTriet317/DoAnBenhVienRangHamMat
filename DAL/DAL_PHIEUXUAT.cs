@@ -139,7 +139,7 @@ public sealed class DAL_PHIEUXUAT : dbconnect
             }
 
             db.ExecuteScalar<string>("SELECT MaLS FROM dbo.LICH_SU_KHAM_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaLS=@visitId", new { visitId }, tx);
-            DAL_HOADON.KiemTraLuotLegacy(db, tx, visitId);
+            if(!coordinated) DAL_HOADON.KiemTraLuotLegacy(db, tx, visitId);
             // Khóa hàng hóa trước đầu đơn theo cùng thứ tự mà trigger tồn kho sử dụng để hạn chế tranh chấp khóa.
             db.Query<string>("""
             SELECT h.MaHH FROM dbo.HANG_HOA h WITH(UPDLOCK,HOLDLOCK)

@@ -97,9 +97,16 @@ public sealed partial class DAL_KHAMDIEUTRI
         if(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DICH_VU_THUC_HIEN WITH(UPDLOCK,HOLDLOCK) WHERE MaLS=@maLS AND TrangThai=N'Nháp'",new{maLS},tx)>0)throw KhamError("DichVu","Còn dịch vụ nháp cần xử lý.");
         if(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.KE_HOACH_DIEU_TRI WITH(UPDLOCK,HOLDLOCK) WHERE MaLS=@maLS AND TrangThai=N'Nháp'",new{maLS},tx)>0)throw KhamError("KeHoach","Duyệt hoặc hủy kế hoạch nháp trước khi hoàn tất.");
         var now=ClinicalNow(db,tx);if(now<visit.ThoiGianKham)throw KhamError("ThoiGianKham","Giờ hệ thống trước thời gian bắt đầu khám.");
+        db.Execute("SAVE TRANSACTION RhmCompleteVisit",transaction:tx);
+        try
+        {
+        ChotDichVuDieuTri(db,tx,visit,now);
         db.Execute("UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận',NgayXacNhan=@now WHERE MaLS=@maLS; UPDATE dbo.PHIEU_KHAM_BENH SET TrangThai=N'Chờ thanh toán' WHERE MaPhieu=@receipt",new{maLS,now,receipt=visit.MaPhieu},tx);
         visit.TrangThai="Đã xác nhận";visit.NgayXacNhan=now;visit.TrangThaiPhieu="Chờ thanh toán";
-        var saved=ClinicalSnapshot(db,tx,visit);ClinicalAudit(db,tx,actor,"Hoàn tất chuyên môn","LICH_SU_KHAM_BENH",maLS,s.DauVanTay,saved.DauVanTay);return saved;
+        new DAL_HOADON(tx).TaoTuKhamHoanTat(maLS,actor.MaNV);
+        var saved=ClinicalSnapshot(db,tx,visit);ClinicalAudit(db,tx,actor,"Hoàn tất khám và lập hóa đơn","LICH_SU_KHAM_BENH",maLS,s.DauVanTay,saved.DauVanTay);return saved;
+        }
+        catch{if(db.ExecuteScalar<int>("SELECT XACT_STATE()",transaction:tx)==1)db.Execute("ROLLBACK TRANSACTION RhmCompleteVisit",transaction:tx);throw;}
     });
 
     private static NguCanhNghiepVu Doctor(IDbConnection db,IDbTransaction? tx,NguCanhNghiepVu user)
@@ -114,7 +121,8 @@ public sealed partial class DAL_KHAMDIEUTRI
     private static BanNhapKham ClinicalSnapshot(IDbConnection db,IDbTransaction? tx,VisitRead v)
     {
         var conditions=db.Query<ET_TINHTRANGBENH>("SELECT * FROM dbo.TINH_TRANG_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaLS=@MaLS ORDER BY MaTTB",v,tx).ToArray();
-        return new(v,conditions,Fingerprint(new{Visit=(ET_LICHSUKHAMBENH)v,Conditions=conditions}),Editable(v),v.MaBN,v.MaHS);
+        var invoice=db.QuerySingleOrDefault<string>("SELECT MaHD FROM dbo.HOA_DON WHERE MaLS=@MaLS AND TaoKhiHoanTat=1",v,tx);
+        return new(v,conditions,Fingerprint(new{Visit=(ET_LICHSUKHAMBENH)v,Conditions=conditions}),Editable(v),v.MaBN,v.MaHS,invoice);
     }
     private static string Fingerprint<T>(T value)=>Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value))));
     private static void RequireFingerprint(string? supplied,string expected){if(string.IsNullOrEmpty(supplied)||!string.Equals(supplied,expected,StringComparison.Ordinal))throw new XungDotDuLieuKhamException();}

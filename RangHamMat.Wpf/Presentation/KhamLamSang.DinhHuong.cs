@@ -15,6 +15,14 @@ public partial class KhamLamSang
  private IReadOnlyList<DichVuTinhTrang> relatedServices=Array.Empty<DichVuTinhTrang>();
  private IReadOnlyList<ET_DICHVU> serviceCatalog=Array.Empty<ET_DICHVU>();
  private ET_DMTINHTRANGBENH? recommendation;
+ private void ConfigureConditionPicker()
+ {
+  var view=new System.Windows.Data.ListCollectionView(referenceConditions.ToArray());
+  view.GroupDescriptions.Add(new System.Windows.Data.PropertyGroupDescription(nameof(ET_DMTINHTRANGBENH.Nhom)));
+  view.SortDescriptions.Add(new System.ComponentModel.SortDescription(nameof(ET_DMTINHTRANGBENH.Nhom),System.ComponentModel.ListSortDirection.Ascending));
+  view.SortDescriptions.Add(new System.ComponentModel.SortDescription(nameof(ET_DMTINHTRANGBENH.TenTinhTrang),System.ComponentModel.ListSortDirection.Ascending));
+  ConditionReferencePicker.ItemsSource=view;
+ }
  private string? shownReference,planSourceCondition;
  private void RefreshRecommendation()
  {

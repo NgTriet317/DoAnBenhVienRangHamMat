@@ -1,3 +1,5 @@
+> LỊCH SỬ: dữ liệu demo và các bước Migrations dưới đây đã ngừng sử dụng từ29/10/2026. Dùng [README hiện tại](../../README.md) và duy nhất QLBenhVienRangHamMat.sql; tài liệu này chỉ lưu bằng chứng mốc trước.
+
 # Dữ liệu demo chuyên khoa
 
 [Migration 07](../../Database/Migrations/20261028_07_DemoSpecialties.sql) tạo dữ liệu **hư cấu** để thử tiếp nhận, hàng chờ và nhập tình trạng bệnh. Nội dung chưa kết luận chẩn đoán, không chứa liều thuốc hay hướng dẫn điều trị. Giá dịch vụ chỉ minh họa.

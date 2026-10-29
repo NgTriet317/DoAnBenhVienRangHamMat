@@ -55,6 +55,8 @@ namespace ET
         /// Mã dòng chi tiết phiếu xuất; ánh xạ cột MaCTPX của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
         /// </summary>
         public string? MaCTPX { get => maCTPX; set => maCTPX = value; }
+        /// <summary>Dòng đơn đã ký, chưa xuất kho; được thay bằng các dòng xuất khi thu.</summary>
+        public string? MaCTDT { get; set; }
         /// <summary>
         /// Nội dung chứng từ hoặc khoản thu; ánh xạ cột NoiDung của bảng trong TableAttribute.
         /// </summary>

@@ -1,0 +1,15 @@
+Changed database context to 'master'.
+Changed database context to 'RHM_SimpleConditions_Test_20261028'.
+ClinicalWorkflow v2 đã có; hợp đồng được kiểm tra.
+SchemaVersion       TableCount
+------------------- -----------
+ClinicalWorkflow v2          53
+MaHD                                               MaLS                                               SoTienPhaiThu        DaThuRong                                ConPhaiTra
+-------------------------------------------------- -------------------------------------------------- -------------------- ---------------------------------------- ----------------------------------------
+HD004                                              LS004                                                         100000.00                                      .00                                100000.00
+HD005                                              LS005                                                         150000.00                                      .00                                150000.00
+Đã bỏ MucDo; SimpleConditions v1. Dữ liệu các cột còn lại được giữ nguyên.
+Đã bỏ vị trí răng; nạp 6 tình trạng và định hướng có nguồn. Không tạo người thật, bảng giá hoặc chứng từ.
+Đã đồng bộ 8 dịch vụ tham khảo và 14 liên kết; giữ nguyên dữ liệu đã có.
+Msg 52262, Level 16, State 1, Server DESKTOP-C9VCE8A, Line 78
+Phiếu demo đã được xử lý hoặc đổi nguồn; không tự xóa.

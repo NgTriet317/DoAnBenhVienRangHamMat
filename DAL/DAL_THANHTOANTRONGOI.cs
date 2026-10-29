@@ -42,7 +42,10 @@ public sealed partial class DAL_THANHTOANTRONGOI : dbconnect
                     JOIN dbo.CHI_TIET_DON_THUOC c WITH(HOLDLOCK) ON c.MaCTDT=x.MaCTDT
                     JOIN dbo.DON_THUOC d WITH(HOLDLOCK) ON d.MaDT=c.MaDT WHERE x.MaPX=p.MaPX AND d.MaLS=@maLS)
                 """, new { maLS }, tx) > 0;
-            if (old.Length > 0 || hasExports)
+            var pending = db.QuerySingleOrDefault<ET_HOADON>("SELECT * FROM dbo.HOA_DON WITH(HOLDLOCK) WHERE MaLS=@maLS AND TaoKhiHoanTat=1 AND PhienBanQuyTrinh=1 AND TrangThai=N'Nháp'", new { maLS }, tx);
+            if (pending is not null && db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.THANH_TOAN WITH(HOLDLOCK) WHERE MaHD=@MaHD", pending, tx) != 0)
+                throw Error("MaHD", "Hóa đơn chờ thu đã có giao dịch; cần đối chiếu lịch sử.");
+            if ((old.Length > 0 && !(old.Length == 1 && pending is not null)) || hasExports)
             {
                 DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db, tx, actor, "LICH_SU_KHAM_BENH", maLS);
                 var paid = old.Length == 1 && old[0].PhienBanQuyTrinh == 2 && old[0].TrangThai == "Đã xác nhận" && old[0].ConPhaiThu == 0;
@@ -56,17 +59,27 @@ public sealed partial class DAL_THANHTOANTRONGOI : dbconnect
                 SELECT s.MaDVThucHien,s.MaDV,d.TenDV NoiDung,s.SoLuong,s.DonGia,s.ThanhTien
                 FROM dbo.DICH_VU_THUC_HIEN s WITH(HOLDLOCK) JOIN dbo.DICH_VU d WITH(HOLDLOCK) ON d.MaDV=s.MaDV
                 WHERE s.MaLS=@maLS AND s.TrangThai=N'Đã xác nhận'
-                    AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WITH(HOLDLOCK) WHERE c.MaDVThucHien=s.MaDVThucHien)
+                    AND (NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WITH(HOLDLOCK) WHERE c.MaDVThucHien=s.MaDVThucHien)
+                        OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WITH(HOLDLOCK) WHERE c.MaDVThucHien=s.MaDVThucHien AND c.MaHD=@pendingId))
                 ORDER BY s.MaDVThucHien
-                """, new { maLS }, tx).ToArray();
+                """, new { maLS, pendingId = pending?.MaHD }, tx).ToArray();
             var orders = db.Query<DonPhi>("SELECT MaDT,NgayKe,MaDTThayThe FROM dbo.DON_THUOC WITH(HOLDLOCK) WHERE MaLS=@maLS AND TrangThai=N'Đã xác nhận' ORDER BY MaDT", new { maLS }, tx).ToArray();
             var lines = db.Query<ThuocPhi>("""
-                SELECT c.MaDT,c.MaCTDT,c.MaThuoc,t.MaHH,c.SoLuong,t.DonGiaBan DonGia,
+                SELECT c.MaDT,c.MaCTDT,c.MaThuoc,t.MaHH,c.SoLuong,COALESCE(bill.DonGia,t.DonGiaBan) DonGia,
                     c.TenThuocChot,c.HamLuongChot,c.DonViTinhChot,h.TrangThai TrangThaiHang
                 FROM dbo.DON_THUOC d WITH(HOLDLOCK) JOIN dbo.CHI_TIET_DON_THUOC c WITH(HOLDLOCK) ON c.MaDT=d.MaDT
                 JOIN dbo.THUOC t WITH(HOLDLOCK) ON t.MaThuoc=c.MaThuoc JOIN dbo.HANG_HOA h WITH(HOLDLOCK) ON h.MaHH=t.MaHH
+                LEFT JOIN dbo.CHI_TIET_HOA_DON bill WITH(HOLDLOCK) ON bill.MaCTDT=c.MaCTDT AND bill.MaHD=@pendingId
                 WHERE d.MaLS=@maLS AND d.TrangThai=N'Đã xác nhận' ORDER BY d.MaDT,c.MaCTDT
-                """, new { maLS }, tx).ToArray();
+                """, new { maLS, pendingId = pending?.MaHD }, tx).ToArray();
+            if (pending is not null)
+            {
+                var sources = db.Query<ET_CHITIETHOADON>("SELECT * FROM dbo.CHI_TIET_HOA_DON WITH(HOLDLOCK) WHERE MaHD=@MaHD", pending, tx).ToArray();
+                if (sources.Length != services.Length + lines.Length || sources.Any(c => c.MaCTPX is not null) ||
+                    !sources.Where(c => c.MaDVThucHien is not null).Select(c => c.MaDVThucHien).Order().SequenceEqual(services.Select(c => c.MaDVThucHien).Order()) ||
+                    !sources.Where(c => c.MaCTDT is not null).Select(c => c.MaCTDT).Order().SequenceEqual(lines.Select(c => c.MaCTDT).Order()))
+                    throw Error("MaHD", "Nguồn phí khác hóa đơn đã chốt khi hoàn tất; không tự thêm khoản thu.");
+            }
             if (lines.Any(l => string.IsNullOrWhiteSpace(l.TenThuocChot) || string.IsNullOrWhiteSpace(l.HamLuongChot) || string.IsNullOrWhiteSpace(l.DonViTinhChot)))
                 return new BangTinhPhi(maLS, visit.MaBN, visit.HoTenBN, null, [], [], [], null, false,
                     "Đơn thuốc lịch sử chưa có thông tin chốt. Cần đối chiếu trước khi xử lý tài chính.");
@@ -100,9 +113,11 @@ public sealed partial class DAL_THANHTOANTRONGOI : dbconnect
             var hash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { maLS, maKhoCapThuoc,
                 visit.TrangThai, visit.TrangThaiPhieu, visit.NgayXacNhan, services, orders, lines, lots, drugs })));
             var fractional = services.Any(s => s.ThanhTien != decimal.Truncate(s.ThanhTien)) || drugs.Any(d => d.ThanhTien != decimal.Truncate(d.ThanhTien));
+            if (pending is not null && services.Sum(s => s.ThanhTien) + drugs.Sum(d => d.ThanhTien) != pending.SoTienPhaiThu)
+                throw Error("MaHD", "Tổng phân bổ thuốc khác hóa đơn đã chốt; cần đối chiếu trước thu.");
             return new BangTinhPhi(maLS, visit.MaBN, visit.HoTenBN, maKhoCapThuoc, services, drugs, [], hash, !fractional,
                 fractional ? "Nguồn phí có số lẻ đồng. Cần điều chỉnh giá phù hợp trước thu; bảng tính giữ đúng tổng theo từng lô." :
-                "Bảng tính chưa phải hóa đơn. Giá và tồn sẽ được kiểm tra lại khi thanh toán.");
+                pending is null ? "Giá và tồn sẽ được kiểm tra lại khi thanh toán." : "Hóa đơn đã lập khi hoàn tất khám. Thu đúng khoản đã chốt; tồn thuốc được kiểm tra khi thanh toán.", pending?.MaHD);
         });
 
     private static LoiKhamException Error(string field, string text) => new(field, text);

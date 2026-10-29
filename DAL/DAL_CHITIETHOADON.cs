@@ -76,14 +76,15 @@ public sealed class DAL_CHITIETHOADON : dbconnect
     public DataTable GetInvoiceDetails(string invoiceId)
     {
         return Query("""
-        SELECT c.*,COALESCE(s.SoLuong,x.SoLuong) SoLuong,
+        SELECT c.MaCTHD,c.MaHD,c.MaDVThucHien,c.MaCTPX,COALESCE(c.MaCTDT,x.MaCTDT) MaCTDT,c.NoiDung,c.DonGia,c.ThanhTien,
+            COALESCE(s.SoLuong,x.SoLuong,d.SoLuong) SoLuong,
             COALESCE(s.DonGia,c.DonGia) DonGiaChot,
-            CASE WHEN c.MaDVThucHien IS NOT NULL THEN N'Dịch vụ' ELSE N'Thuốc đã cấp' END Loai,
-            d.MaDT,d.MaCTDT,l.SoLo,hh.DonViTinh
+            CASE WHEN c.MaDVThucHien IS NOT NULL THEN N'Dịch vụ' WHEN c.MaCTDT IS NOT NULL THEN N'Thuốc theo đơn' ELSE N'Thuốc đã cấp' END Loai,
+            d.MaDT,l.SoLo,COALESCE(d.DonViTinhChot,hh.DonViTinh) DonViTinh
         FROM dbo.CHI_TIET_HOA_DON c
         LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
         LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
-        LEFT JOIN dbo.CHI_TIET_DON_THUOC d ON d.MaCTDT=x.MaCTDT
+        LEFT JOIN dbo.CHI_TIET_DON_THUOC d ON d.MaCTDT=COALESCE(c.MaCTDT,x.MaCTDT)
         LEFT JOIN dbo.HANG_HOA hh ON hh.MaHH=x.MaHH
         LEFT JOIN dbo.LO_HANG_HOA l ON l.MaLo=x.MaLo
         WHERE c.MaHD=@invoiceId ORDER BY c.MaCTHD
@@ -93,6 +94,21 @@ public sealed class DAL_CHITIETHOADON : dbconnect
     /// <summary>
     /// SQL hợp nhất dịch vụ đã xác nhận và thuốc đã xuất của cùng lần khám; NOT EXISTS loại nguồn đã có chi tiết hóa đơn. HOLDLOCK giữ ổn định giá thuốc khi đọc; dòng thuốc tính thành tiền bằng lượng xuất nhân giá bán và làm tròn hai chữ số.
     /// </summary>
+    internal const string CompletionChargesSql = """
+        SELECT s.MaDVThucHien,CAST(NULL AS nvarchar(50)) MaCTPX,CAST(NULL AS nvarchar(50)) MaCTDT,
+            d.TenDV NoiDung,CAST(NULL AS decimal(18,2)) DonGia,s.ThanhTien
+        FROM dbo.DICH_VU_THUC_HIEN s WITH(HOLDLOCK) JOIN dbo.DICH_VU d ON d.MaDV=s.MaDV
+        WHERE s.MaLS=@visitId AND s.TrangThai=N'Đã xác nhận'
+          AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WITH(HOLDLOCK) WHERE c.MaDVThucHien=s.MaDVThucHien)
+        UNION ALL
+        SELECT NULL,NULL,c.MaCTDT,c.TenThuocChot+N' '+c.HamLuongChot,t.DonGiaBan,
+            CAST(ROUND(c.SoLuong*t.DonGiaBan,2) AS decimal(18,2))
+        FROM dbo.DON_THUOC r WITH(HOLDLOCK) JOIN dbo.CHI_TIET_DON_THUOC c WITH(HOLDLOCK) ON c.MaDT=r.MaDT
+        JOIN dbo.THUOC t WITH(HOLDLOCK) ON t.MaThuoc=c.MaThuoc
+        WHERE r.MaLS=@visitId AND r.TrangThai=N'Đã xác nhận'
+          AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON h WITH(HOLDLOCK) WHERE h.MaCTDT=c.MaCTDT)
+        """;
+
     internal const string EligibleChargesSql = """
         SELECT s.MaDVThucHien,CAST(NULL AS nvarchar(50)) MaCTPX,d.TenDV NoiDung,s.SoLuong,
             s.DonGia DonGiaChot,CAST(NULL AS decimal(18,2)) DonGia,s.ThanhTien,N'Dịch vụ' Loai
@@ -129,7 +145,7 @@ public sealed class DAL_CHITIETHOADON : dbconnect
     internal static void ThemChiTiet(IDbConnection db, IDbTransaction? tx, string invoiceId, ET_CHITIETHOADON charge)
     {
         var detailId = TaoMa(db, tx, "CHI_TIET_HOA_DON", "MaCTHD");
-        db.Execute("INSERT dbo.CHI_TIET_HOA_DON(MaCTHD,MaHD,MaDVThucHien,MaCTPX,NoiDung,DonGia) VALUES(@detailId,@invoiceId,@MaDVThucHien,@MaCTPX,@NoiDung,@DonGia)", new { detailId, invoiceId, charge.MaDVThucHien, charge.MaCTPX, charge.NoiDung, charge.DonGia }, tx);
+        db.Execute("INSERT dbo.CHI_TIET_HOA_DON(MaCTHD,MaHD,MaDVThucHien,MaCTPX,MaCTDT,NoiDung,DonGia) VALUES(@detailId,@invoiceId,@MaDVThucHien,@MaCTPX,@MaCTDT,@NoiDung,@DonGia)", new { detailId, invoiceId, charge.MaDVThucHien, charge.MaCTPX, charge.MaCTDT, charge.NoiDung, charge.DonGia }, tx);
     }
 
     /// <summary>

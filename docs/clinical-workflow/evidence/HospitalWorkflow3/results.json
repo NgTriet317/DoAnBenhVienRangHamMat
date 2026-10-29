@@ -1,0 +1,88 @@
+{
+    "VerifiedAtUtc":  "2026-10-29T04:18:00.8238265Z",
+    "BaseRevision":  "19305d8628144fe59a8095ba5699eebd662159db",
+    "SourceTests":  {
+                        "Passed":  34,
+                        "Failed":  0
+                    },
+    "PublishedTests":  {
+                           "Passed":  34,
+                           "Failed":  0
+                       },
+    "AdminUi":  {
+                    "Modules":  26,
+                    "FreshPassed":  2,
+                    "CurrentPassed":  2
+                },
+    "Build":  {
+                  "Debug":  "passed",
+                  "ExistingNullableWarnings":  true,
+                  "Publish":  "passed",
+                  "Release":  "passed"
+              },
+    "Sql":  {
+                "Repeat":  "passed",
+                "CanonicalFile":  "Database/QLBenhVienRangHamMat.sql",
+                "PublishedMatches":  true,
+                "ProcessedDemoRollback":  "passed",
+                "MigrationsRequired":  false,
+                "HospitalWorkflowVersion":  3,
+                "Files":  1,
+                "SHA256":  "6DA5093D265C6DFD8711263DC32DD19A61FD9E5DC3E5EBC924C060DA5BDEC630",
+                "FreshInstall":  "passed",
+                "Tables":  53
+            },
+    "Fresh":  {
+                  "Staff":  1,
+                  "Doctors":  0,
+                  "Services":  42,
+                  "Invoices":  0,
+                  "ConditionServiceLinks":  112,
+                  "Patients":  0,
+                  "Accounts":  1,
+                  "Conditions":  47
+              },
+    "Current":  {
+                    "LegacySeedPatientsRetained":  10,
+                    "UserAddedPatientsRetained":  1,
+                    "NonDemoRowsPreservedTables":  53,
+                    "Patients":  11,
+                    "ConditionServiceLinks":  112,
+                    "RemovedValidatedDemoRows":  349,
+                    "Doctors":  2,
+                    "Conditions":  47,
+                    "Services":  50
+                },
+    "Backup":  {
+                   "Verify":  "RESTORE VERIFYONLY WITH CHECKSUM passed",
+                   "Mode":  "COPY_ONLY CHECKSUM",
+                   "PathFile":  "backup-path.txt"
+               },
+    "Cleanup":  {
+                    "CurrentDatabaseRetained":  true,
+                    "OwnedFixtureDatabasesRemoved":  4
+                },
+    "Assemblies":  [
+                       {
+                           "File":  "PhatHanh/ET.dll",
+                           "SHA256":  "922E21D20C397A20DBD9E35BA9B3992326775D794251B7EA898A86AE72262D6E",
+                           "MatchesRelease":  true
+                       },
+                       {
+                           "File":  "PhatHanh/DAL.dll",
+                           "SHA256":  "39B47F73FC9F427F20FACEEDE065D5C70981C1FF2324071D9ED2979DDE4F70A8",
+                           "MatchesRelease":  true
+                       },
+                       {
+                           "File":  "PhatHanh/BUS.dll",
+                           "SHA256":  "C819EF275E0E6E9842C33C9EC18DF25EBB4C8DFDBFCD3429A6187EF9EAF0DA17",
+                           "MatchesRelease":  true
+                       },
+                       {
+                           "File":  "PhatHanh/RangHamMat.Wpf.dll",
+                           "SHA256":  "F7C9172C6D2193639973C422D1A8A90F75A6E2D554E63C413A0643DFD602D648",
+                           "MatchesRelease":  true
+                       }
+                   ],
+    "TestSourceSHA256":  "1F64BD7683A710E09FDF5D970DDA2C8A19C00811E9F1EEEB637C756C6D72D19F"
+}

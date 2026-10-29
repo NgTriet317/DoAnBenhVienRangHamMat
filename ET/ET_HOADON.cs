@@ -88,6 +88,7 @@ namespace ET
 
         // Cột bổ sung P03; constructor cũ được giữ để tương thích mã gọi hiện có.
         public int PhienBanQuyTrinh { get => phienBanQuyTrinh; set => phienBanQuyTrinh = value; }
+        public bool TaoKhiHoanTat { get; set; }
         public string? MaYeuCau { get => maYeuCau; set => maYeuCau = value; }
         public string? DauVanTayYeuCau { get => dauVanTayYeuCau; set => dauVanTayYeuCau = value; }
         public ET_HOADON(string maHD, string maLS, string maNV, DateTime ngayLap, DateTime? ngayXacNhan, decimal tongTien, decimal giamGia, decimal soTienPhaiThu, string trangThai, int phienBanQuyTrinh, string? maYeuCau, string? dauVanTayYeuCau)

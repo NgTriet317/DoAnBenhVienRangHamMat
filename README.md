@@ -1,79 +1,53 @@
 # Quản lý Bệnh viện Răng Hàm Mặt
 
-Ứng dụng WPF .NET8, SQL Server2016SP1 trở lên. Solution bàn giao có đúng bốn project:
+WPF .NET8 + SQL Server2016SP1 trở lên. Solution có đúng bốn project: RangHamMat.Wpf (giao diện), ET, DAL và BUS. Views chỉ có các cặp XAML/code-behind; C# phụ trợ ở Presentation/Controls.
 
-- `RangHamMat.Wpf`: giao diện, điều hướng, phiên đăng nhập.
-- `ET`: thực thể và hợp đồng dữ liệu.
-- `BUS`: quy tắc và các đầu mối nghiệp vụ.
-- `DAL`: SQL, transaction, kiểm tra quyền và kết nối.
+## Database: một file SQL duy nhất
 
-Trong `RangHamMat.Wpf/Views`, mỗi màn hình gồm `.xaml` và `.xaml.cs` được Visual Studio lồng cùng nhau. File C# phụ trợ/partial đã chuyển sang `Presentation` hoặc `Controls`. Không xóa `.xaml.cs`: đây là code-behind xử lý sự kiện của XAML.
-
-## 1. Chuẩn bị database
-
-**Cài mới:** mở `Database/QLBenhVienRangHamMat.sql` bằng SSMS và chạy toàn bộ file trên SQL Server. Script tạo database `QLBenhVienRangHamMat`,53 bảng và schema quy trình khám2; dữ liệu mẫu là hư cấu. Script từ chối database đã có bảng, không xóa/ghi đè dữ liệu cũ.
-
-**Đã có database bản cũ:** sao lưu trước, chọn đúng database trong SSMS rồi lần lượt chạy:
-
-1. `Database/Migrations/20261024_01_Preflight_ClinicalWorkflow.sql`
-2. `Database/Migrations/20261024_02_ClinicalWorkflow.sql`
-3. `Database/Migrations/20261024_03_Verify_ClinicalWorkflow.sql`
-4. `Database/Migrations/20261028_05_AdminFullAccess.sql`
-5. `Database/Migrations/20261028_06_SimpleConditions.sql`
-6. `Database/Migrations/20261028_07_DemoSpecialties.sql` — thêm dữ liệu hư cấu để chạy thử chuyên khoa.
-7. `Database/Migrations/20261028_08_ConditionReferences.sql` rồi `20261028_09_RelatedServices.sql` — tình trạng và dịch vụ liên quan.
-
-Database đã là v2 chỉ cần các bước 4–7 chưa áp dụng. Migration06 bỏ cột `TINH_TRANG_BENH.MucDo`; các dữ liệu khác được giữ. Migration07 bổ sung dữ liệu demo, chạy lại không đặt lại trạng thái khám, nội dung đã sửa hoặc mật khẩu. Nâng cấp giữ chứng từ/số tiền/tồn cũ, không thu hoặc xuất lại. Không dùng file cài mới để nâng cấp. Rollback04 chỉ dành cho trước khi có dữ liệu nghiệp vụ mới; sau đó cần quy trình restore/đối chiếu, xem [hướng dẫn](docs/clinical-workflow/HUONG_DAN_CHAY.md).
-
-## 2. Cấu hình và chạy
-
-Cài Visual Studio2022 với .NET desktop development và .NET8 SDK. Mở `BenhVienRangHamMat.sln`, chọn `RangHamMat.Wpf` làm Startup Project rồi F5.
-
-Sửa `RangHamMat.Wpf/appsettings.json` theo SQL Server của máy. Mặc định Windows Authentication, server `.` và database `QLBenhVienRangHamMat`:
-
-```json
-{
-  "ConnectionStrings": {
-    "RangHamMat": "Data Source=.;Initial Catalog=QLBenhVienRangHamMat;Integrated Security=True;TrustServerCertificate=True;"
-  }
-}
-```
-
-File này được chép cạnh executable khi build/publish. Có thể ưu tiên cấu hình bằng biến môi trường:
+Dùng SSMS hoặc sqlcmd chạy **toàn bộ** [Database/QLBenhVienRangHamMat.sql](Database/QLBenhVienRangHamMat.sql). Không còn thư mục hay bước chạy Migrations.
 
 ```powershell
-$env:RHM_CONNECTION_STRING='Data Source=TEN_SERVER;Initial Catalog=QLBenhVienRangHamMat;Integrated Security=True;TrustServerCertificate=True;'
-dotnet run --project RangHamMat.Wpf -c Release
+sqlcmd -S . -E -C -b -f65001 -i Database/QLBenhVienRangHamMat.sql
 ```
 
-Nếu SQL Server dùng instance có tên, dùng dạng `TEN_MAY\SQLEXPRESS` trong chuỗi kết nối; trong JSON phải viết `TEN_MAY\\SQLEXPRESS`. Máy đích cần database đã cài/nâng cấp và .NET8 Desktop Runtime khi chạy bản publish phụ thuộc framework.
+File tạo database trống hoặc đồng bộ database ClinicalWorkflow v2/v3 được hỗ trợ, tổng53 bảng. Sao lưu trước khi đồng bộ. Script kiểm tra schema, giữ mật khẩu/giá/hồ sơ và chứng từ cũ; chỉ dọn bộ DEMO28 còn nguyên bản, không bị nghiệp vụ người dùng tham chiếu. Nhật ký tra cứu chỉ đọc được giữ nguyên. Dữ liệu demo đã được sửa/ký hoặc có chứng từ khiến thao tác dừng để đối chiếu, không ép xóa bằng cách tắt trigger.
 
-Tài khoản mẫu `admin001` và `user002`…`user010`, mật khẩu mẫu `123456`. **Admin có toàn quyền ở mọi mục chức năng**, gồm tiếp nhận, khám/kế hoạch, xác nhận dịch vụ, ký đơn, thu tiền và giao thuốc cho mọi bác sĩ. Trong **Đơn thuốc**, dùng nút **Bàn giao thuốc** để chuyển sang quầy giao. User vẫn theo chức vụ và phạm vi được phân trong SQL. Các chứng từ đã chốt, kiểm tra dữ liệu bắt buộc, tiền và tồn kho vẫn được bảo vệ. Database v2 đã cài trước ngày28/10 cần chạy migration05 để đồng bộ quyền duyệt/giao; bản cài mới đã tích hợp. Không dùng tài khoản mẫu cho dữ liệu thật. Xem [thay đổi quyền Admin](docs/clinical-workflow/QUYEN_ADMIN.md) và [hướng dẫn chạy](docs/clinical-workflow/HUONG_DAN_CHAY.md).
+Cài mới chỉ có **admin001 / 123456** và danh mục cơ sở; không tạo bệnh nhân, bác sĩ, lịch trực, bệnh án, tồn kho hoặc chứng từ giả. Đổi mật khẩu sau đăng nhập. Nhập nhân sự/phòng/lịch làm việc, hàng hóa/thuốc và chứng từ nhập kho thực tế trước khi sử dụng các nghiệp vụ liên quan. Không tự tạo danh tính người thật khi chưa có nguồn được phép sử dụng.
 
-Dữ liệu mới có 12 bác sĩ thuộc CK002–CK007, thêm vào 2 bác sĩ tổng quát có sẵn: tổng 14 bác sĩ ở 7 chuyên khoa. Các tài khoản `demo_ck002_ngay`, `demo_ck002_dem`…`demo_ck007_dem` có mật khẩu ban đầu `123456`. Xem [danh sách tài khoản, dịch vụ và lịch trực](docs/clinical-workflow/DU_LIEU_MAU_CHUYEN_KHOA.md). Trên máy hiện tại, các phiếu mẫu được phân ca đêm lúc nạp dữ liệu; có thể dùng `demo_ck002_dem` hoặc Admin để xem thử.
+Danh mục khởi tạo có47 tình trạng,42 dịch vụ,112 liên kết; gồm chấn thương, khớp thái dương hàm, niêm mạc, tuyến nước bọt, nhiễm trùng, nang/u, khe hở, thần kinh, hậu phẫu và bệnh răng. Nguồn/giá/ngày đối chiếu tại [DANH_MUC_RHM.md](docs/clinical-workflow/DANH_MUC_RHM.md). Giá công khai của cơ sở nguồn là mức tham khảo ban đầu; bệnh viện quản lý giá áp dụng trong DICH_VU.
 
-## 3. Luồng khám mới
+## Cấu hình và chạy
 
-**Bệnh nhân →Hồ sơ →Tiếp nhận →Khám/kế hoạch →Dịch vụ đã làm/đơn ký →Thu đủ →Bàn giao thuốc →In lại.**
+Mở BenhVienRangHamMat.sln bằng Visual Studio2022 có .NET desktop development/.NET8 SDK, chọn RangHamMat.Wpf làm startup rồi F5. Hoặc mở PhatHanh/RangHamMat.Wpf.exe với .NET8 Desktop Runtime trên Windows.
 
-Trong **Khám điều trị**, tab mặc định **Hàng chờ khám** lấy các phiếu tiếp nhận được phân cho bác sĩ đăng nhập, xếp theo giờ tiếp nhận từ trước đến sau. Chọn người bệnh để kiểm tra thông tin rồi bấm **Bắt đầu khám** hoặc **Khám tiếp**. Hàng chờ giữ cả phiếu chưa khám từ ngày trước, tự cập nhật mỗi10 giây khi không có nháp đang nhập. Admin xem tất cả hoặc lọc theo bác sĩ. Các lượt đã hoàn tất nằm trong tab **Lịch sử khám**, chỉ xem. Xem [luồng hàng chờ bác sĩ](docs/clinical-workflow/HANG_CHO_BAC_SI.md).
+Ứng dụng kết nối **SQL Server**, không kết nối trực tiếp vào file .sql. File SQL là nguồn khởi tạo/đồng bộ duy nhất. Sửa RangHamMat.Wpf/appsettings.json (hoặc bản cạnh exe):
 
-Tab **Tình trạng bệnh** dùng form tên tình trạng, mô tả, ghi chú, với nút **Thêm/Cập nhật/Xóa**. Chỉ tên tình trạng bắt buộc; bấm **Lưu nháp** cũng nhận nội dung đang gõ dù chưa bấm Thêm. Không còn Mức độ, chọn danh mục, Gợi ý mẫu hoặc Cấu hình hỗ trợ của Khám điều trị. Kế hoạch được lập trực tiếp từ dịch vụ. Có 14 phiếu mẫu chờ/đang khám và 7 bản nháp để thử nhập; xem [thiết kế và kết quả kiểm tra](docs/clinical-workflow/TINH_TRANG_BENH_DON_GIAN.md).
+```json
+{"ConnectionStrings":{"RangHamMat":"Data Source=.;Initial Catalog=QLBenhVienRangHamMat;Integrated Security=True;TrustServerCertificate=True;"}}
+```
 
-Ký đơn chưa trừ kho; thu đủ mới ghi xuất và chờ giao trong cùng transaction. Bàn giao/in lại không thu hay trừ tồn lần nữa. Khi rời trang có nhập liệu, chọn Lưu nháp/Bỏ thay đổi/Hủy; Lưu nháp không ký hoặc thu tiền. Yêu cầu thu/giao chưa rõ kết quả giữ nguyên mã để đối chiếu khi thử lại.
+Biến môi trường RHM_CONNECTION_STRING được ưu tiên hơn file. Instance có tên cần viết hai dấu gạch chéo trong JSON, ví dụ TEN_MAY\\SQLEXPRESS. Giữ toàn bộ thư mục PhatHanh khi chuyển máy, không chỉ chép exe.
 
-## 4. Kiểm tra và đóng gói
+## Luồng khám và thu tiền
 
-Chạy `KiemTra.bat` để kiểm cấu trúc bốn project và build Debug/Release. Kiểm thêm SQL bằng Windows Authentication:
+1. Tiếp nhận chọn bác sĩ/phòng/dịch vụ; bác sĩ mở Hàng chờ khám theo giờ tiếp nhận, ai đến trước hiện trước. Admin xem được tất cả, User theo chức vụ và phạm vi SQL.
+2. Bác sĩ ghi chẩn đoán/tình trạng, chọn nhanh theo nhóm bệnh và chọn dịch vụ liên quan. Kế hoạch có sẵn mã/giá từ SQL; chỉnh lượng/buổi rồi lưu và duyệt. Không có Mức độ hoặc Vị trí răng trong tình trạng bệnh.
+3. Ký đơn thuốc hoặc ghi lý do Không kê thuốc. Khi **toàn bộ dịch vụ điều trị đã làm xong**, xác nhận **Hoàn tất và lập hóa đơn**. Hệ thống chốt các bước đã duyệt, ghi nhận dịch vụ khám một lần, khóa lần khám và tạo hóa đơn chờ thu trong cùng transaction. Không hoàn tất sớm nếu kế hoạch nhiều buổi còn chưa làm xong.
+4. Quầy thu dùng lại chính hóa đơn đó; giá đã chốt được giữ, thu tiền/xuất thuốc phối hợp theo giao dịch. Không thêm dịch vụ sau khi hoàn tất. Thử lại cùng yêu cầu không sinh hóa đơn hoặc khoản thu thứ hai.
+5. Dịch vụ thực hiện chỉ là **Lịch sử dịch vụ đã thực hiện** của lượt hoàn tất. Không có thêm/sửa/xác nhận hoặc dịch vụ phát sinh. Điều dưỡng chỉ xem phần được giao; thu ngân không xem kết quả lâm sàng.
+
+Admin toàn quyền chức năng nhưng vẫn tuân thủ trạng thái chứng từ, kiểm tra dữ liệu, tiền và tồn kho. Đơn thuốc có nút Bàn giao thuốc cho đơn đã thu đủ. Xem [thay đổi luồng và kiểm chứng](docs/clinical-workflow/CHOT_KHAM_VA_SQL_THONG_NHAT.md).
+
+## Kiểm tra và đóng gói
 
 ```powershell
 .\KiemTra.bat -KiemTraSql -MayChu . -Database QLBenhVienRangHamMat
+# Dựng/chạy bộ kiểm trên database thử riêng; mọi dữ liệu nghiệp vụ fixture rollback:
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraQuyTrinhBenhVien.ps1 -TaoDatabaseKiemThu
+# Chỉ kiểm đăng nhập Admin/mở26 phân hệ, không ghi hồ sơ khám:
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraQuyTrinhBenhVien.ps1 -ChiGiaoDien -Database QLBenhVienRangHamMat
+
+dotnet publish RangHamMat.Wpf -c Release -o PhatHanh
 ```
 
-Phần SQL chỉ đọc/đối chiếu schema. Đóng gói bằng `dotnet publish RangHamMat.Wpf -c Release -o PhatHanh`; sao chép toàn bộ thư mục kết quả và sửa appsettings cạnh exe. Không chỉ chép một fileexe.
-
-Các project kiểm thử phát triển đã được chạy trước khi dọn khỏi bản bàn giao. [Báo cáo P12](docs/clinical-workflow/BAN_GIAO_P12.md) ghi lệnh/kết quả, ma trận AT01–AT34, checkpoint chứa source kiểm thử và giới hạn thiết bị thực. [Tiến độ](docs/clinical-workflow/TIEN_DO.md) và [kết quả các mốc](docs/clinical-workflow/KET_QUA_KIEM_THU.md) giữ lịch sử triển khai. Tài liệu trước đợt cải tổ nằm trong `docs/legacy` và có thể mô tả phiên bản cũ; dùng README này để cài/chạy hiện tại.
-
-Cập nhật tình trạng bệnh: chạy thêm migration08_ConditionReferences sau06/07. Đã bỏ Vị trí răng; chọn nhanh hoặc nhập tên tình trạng để tự hiện định hướng. Bấm Lập kế hoạch nháp từ đề xuất, bác sĩ chỉnh bước/chọn dịch vụ/giá rồi lưu và duyệt. Xem docs/clinical-workflow/KE_HOACH_THAM_KHAO.md. Danh mục tham khảo có nguồn; hồ sơ người thật và bảng giá cơ sở cần nguồn cung cấp, không lấy seed làm dữ liệu thực tế.
-
-Luồng điều trị hiện tại: nhập/chọn tình trạng → chọn dịch vụ liên quan có mã/tên/giá từ SQL → Lập kế hoạch → kiểm tra lượng/buổi → Lưu và Duyệt. Migration09 thêm bảng DICH_VU_TINH_TRANG với hai FK, tổng53 bảng. Giá tự điền, tổng dự kiến tự cập nhật; nếu SQL đổi giá thì dùng Cập nhật giá, giữ nguyên nháp. Bộ lọc nâng cao của hàng chờ được thu gọn. Xem [thiết kế, nguồn dữ liệu và kiểm chứng](docs/clinical-workflow/DICH_VU_THEO_TINH_TRANG.md).
+Kiểm SQL gọi thủ tục chỉ đọc được cài từ file SQL chính. Project kiểm tạm sinh trong obj, không thêm project sản phẩm. Bộ kiểm ghi chỉ nhận database tiền tố RHM_Hospital_Test_. Hướng dẫn và bằng chứng các mốc cũ có nhắc Migrations/dữ liệu demo là lịch sử đã ngừng sử dụng; dùng README và file SQL hiện tại để cài/chạy.

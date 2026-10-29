@@ -55,7 +55,8 @@ public partial class BangTinhPhiEditor : UserControl
             DrugsGrid.ItemsSource = s.Thuoc.Select(d => new { Nguon = $"{d.MaDT} / {d.MaCTDT}", d.NoiDung, d.DonViTinh, d.SoLuong, Gia = Money(d.DonGia), Tien = Money(d.ThanhTien) }).ToArray();
             LotsGrid.ItemsSource = s.Thuoc.SelectMany(d => d.CacLo.Select(l => new { d.MaCTDT, l.MaLo, l.SoLo, l.SoLuong, Tien = Money(l.ThanhTien) })).ToArray();
             HistoryGrid.ItemsSource = s.HoaDonCu.Select(h => new { h.MaHD, h.TrangThai, PhaiThu = Money(h.PhaiThu), DaThu = Money(h.DaThu), ConPhaiThu = Money(h.ConPhaiThu) }).ToArray();
-            TotalText.Text = s.DauVanTay is null ? "Đối chiếu chứng từ đã có" : $"Tổng dự kiến: {Money(s.TongTien)}";
+            TotalText.Text = s.MaHDChoThu is not null ? $"Hóa đơn chờ thu #{s.MaHDChoThu} · Phải thu: {Money(s.TongTien)}" :
+                s.DauVanTay is null ? "Đối chiếu chứng từ đã có" : $"Tổng dự kiến: {Money(s.TongTien)}";
             StatusText.Text = s.ThongBao; UpdatePaymentControls(); return true;
         }
         catch (Exception ex) { error = ClinicalFormInput.Message(ex); StatusText.Text = "Chưa lập được bảng tính: " + error; return false; }

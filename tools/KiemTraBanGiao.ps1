@@ -1,4 +1,4 @@
-﻿param(
+param(
     [switch]$ChiCauTruc,
     [switch]$KiemTraSql,
     [string]$MayChu='.',
@@ -23,10 +23,10 @@ try {
     }
     $sql=Get-Content -LiteralPath 'Database/QLBenhVienRangHamMat.sql' -Raw
     $tableCount=[regex]::Matches($sql,'CREATE TABLE \[dbo\]\.\[\w+\]').Count
-    if($tableCount -ne 53 -or !$sql.Contains('RHM.ClinicalWorkflow.Version')){throw 'SQL chính phải có53 bảng/version2.'}
+    if($tableCount -ne 53 -or !$sql.Contains('RHM.HospitalWorkflow.Version')){throw 'SQL chính phải có53 bảng/HospitalWorkflow3.'}
     $settings=Get-Content -LiteralPath 'RangHamMat.Wpf/appsettings.json' -Raw|ConvertFrom-Json
     if([string]::IsNullOrWhiteSpace($settings.ConnectionStrings.RangHamMat)){throw 'Thiếu cấu hình kết nối.'}
-    Write-Output 'PASS: bốn project, Views XAML/code-behind, SQL53 bảng/version2 và cấu hình.'
+    Write-Output 'PASS: bốn project, Views XAML/code-behind, SQL53 bảng/HospitalWorkflow3 và cấu hình.'
     if(!$ChiCauTruc){
         foreach($configuration in @('Debug','Release')){
             & dotnet build 'BenhVienRangHamMat.sln' -c $configuration
@@ -34,17 +34,9 @@ try {
         }
     }
     if($KiemTraSql){
-        if(!(Get-Command sqlcmd -ErrorAction SilentlyContinue)){throw 'Cần cài sqlcmd hoặc chạy Verify trong SSMS.'}
-        & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -i 'Database/Migrations/20261024_03_Verify_ClinicalWorkflow.sql'
-        if($LASTEXITCODE -ne 0){throw 'Database chưa khớp schema quy trình khám2.'}
-        & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -Q "SET NOCOUNT ON; IF (SELECT COUNT(*) FROM sys.triggers WHERE name IN(N'TR_CW_MauKH_BaoVe',N'TR_CW_CauHinh_BaoVe',N'TR_CW_BanGiao_BaoVe') AND is_disabled=0 AND OBJECT_DEFINITION(object_id) LIKE N'%QUẢN TRỊ%')<>3 THROW 52130,N'Chạy migration20261028_05_AdminFullAccess để đồng bộ quyền Admin.',1;"
-        if($LASTEXITCODE -ne 0){throw 'Database chưa đồng bộ quyền Admin; chạy migration05.'}
-        & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -Q "SET NOCOUNT ON; IF COL_LENGTH(N'dbo.TINH_TRANG_BENH',N'MucDo') IS NOT NULL OR NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N'RHM.SimpleConditions.Version' AND TRY_CONVERT(int,value)=1) THROW 52140,N'Chạy migration20261028_06_SimpleConditions để đồng bộ tình trạng bệnh.',1;"
-        if($LASTEXITCODE -ne 0){throw 'Database chưa đồng bộ tình trạng đơn giản; chạy migration06.'}
-        & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -Q "IF COL_LENGTH(N'dbo.TINH_TRANG_BENH',N'ViTriRang') IS NOT NULL THROW 52146,N'Chạy migration08 để bỏ vị trí răng.',1;"
-        if($LASTEXITCODE -ne 0){throw 'Database chưa áp dụng migration08.'}
-        & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -Q "IF OBJECT_ID(N'dbo.DICH_VU_TINH_TRANG',N'U') IS NULL OR (SELECT COUNT(*) FROM sys.foreign_keys WHERE name IN(N'FK_DVTT_TinhTrang',N'FK_DVTT_DichVu') AND is_disabled=0 AND is_not_trusted=0)<>2 THROW 52147,N'Chạy migration09 để liên kết tình trạng và dịch vụ.',1;"
-        if($LASTEXITCODE -ne 0){throw 'Database chưa áp dụng migration09.'}
-        Write-Output 'PASS: database khớp schema2; kiểm tra SQL chỉ đọc.'
+        if(!(Get-Command sqlcmd -ErrorAction SilentlyContinue)){throw 'Cần sqlcmd để kiểm tra SQL Server.'}
+        & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -Q "IF OBJECT_ID(N'dbo.usp_RHM_KiemTraSchema',N'P') IS NULL THROW 52272,N'Chạy toàn bộ Database/QLBenhVienRangHamMat.sql để đồng bộ.',1; EXEC dbo.usp_RHM_KiemTraSchema;"
+        if($LASTEXITCODE -ne 0){throw 'Database chưa khớp QLBenhVienRangHamMat.sql hiện tại.'}
+        Write-Output 'PASS: HospitalWorkflow3, schema53 bảng và ràng buộc đúng; kiểm tra SQL chỉ đọc.'
     }
 } finally {Pop-Location}

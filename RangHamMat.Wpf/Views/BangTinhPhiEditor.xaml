@@ -11,7 +11,7 @@
 
   <Border Style="{StaticResource HospitalPanel}" Margin="0,0,0,12" Padding="12">
    <StackPanel><TextBlock x:Name="TotalText" Text="Chưa có bảng tính" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
-    <TextBlock Text="Dịch vụ đã xác nhận và toàn bộ đơn còn hiệu lực. Bảng tính chưa phải hóa đơn." TextWrapping="Wrap" Margin="0,6,0,0" Style="{StaticResource HospitalMuted}" />
+    <TextBlock Text="Kiểm tra khoản phải thu của lượt khám. Với hóa đơn lập khi hoàn tất khám, thanh toán dùng lại đúng hóa đơn và các khoản đã chốt." TextWrapping="Wrap" Margin="0,6,0,0" Style="{StaticResource HospitalMuted}" />
    </StackPanel>
   </Border></StackPanel>
 
@@ -46,7 +46,7 @@
     <DataGridTextColumn Header="Thuốc đã chốt" Binding="{Binding NoiDung}" Width="*" />
     <DataGridTextColumn Header="ĐVT" Binding="{Binding DonViTinh}" Width="65" />
     <DataGridTextColumn Header="SL" Binding="{Binding SoLuong}" Width="65" />
-    <DataGridTextColumn Header="Giá hiện tại" Binding="{Binding Gia}" Width="110" />
+    <DataGridTextColumn Header="Đơn giá" Binding="{Binding Gia}" Width="110" />
     <DataGridTextColumn Header="Thành tiền" Binding="{Binding Tien}" Width="120" />
    </DataGrid.Columns></DataGrid>
    <TextBlock Text="Dự kiến cấp từ lô" Style="{StaticResource HospitalSection}" Margin="0,18,0,8" />

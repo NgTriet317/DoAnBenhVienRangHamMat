@@ -13,7 +13,8 @@ public sealed record HoaDonDoiChieu(string MaHD, string TrangThai, int PhienBanQ
     decimal TongTien, decimal GiamGia, decimal PhaiThu, decimal DaThu, decimal ConPhaiThu);
 public sealed record BangTinhPhi(string MaLS, string MaBN, string HoTenBN, string? MaKhoCapThuoc,
     IReadOnlyList<DongPhiDichVu> DichVu, IReadOnlyList<DongPhiThuoc> Thuoc,
-    IReadOnlyList<HoaDonDoiChieu> HoaDonCu, string? DauVanTay, bool DuocThanhToan, string ThongBao)
+    IReadOnlyList<HoaDonDoiChieu> HoaDonCu, string? DauVanTay, bool DuocThanhToan, string ThongBao,
+    string? MaHDChoThu = null)
 {
     public decimal TienDichVu => DichVu.Sum(d => d.ThanhTien);
     public decimal TienThuoc => Thuoc.Sum(d => d.ThanhTien);

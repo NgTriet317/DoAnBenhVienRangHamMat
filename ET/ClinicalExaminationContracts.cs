@@ -12,7 +12,7 @@ public sealed class XungDotDuLieuKhamException : InvalidOperationException
     public XungDotDuLieuKhamException(string message):base(message){}
 }
 
-public sealed record BanNhapKham(ET_LICHSUKHAMBENH LanKham,IReadOnlyList<ET_TINHTRANGBENH> TinhTrang,string DauVanTay,bool DuocSua,string? MaBN=null,string? MaHS=null);
+public sealed record BanNhapKham(ET_LICHSUKHAMBENH LanKham,IReadOnlyList<ET_TINHTRANGBENH> TinhTrang,string DauVanTay,bool DuocSua,string? MaBN=null,string? MaHS=null,string? MaHD=null);
 public sealed record DuLieuKhongGianKham(BanNhapKham BanNhap,ET_BENHNHAN BenhNhan,IReadOnlyList<ET_DICHVU> DichVu,IReadOnlyList<ET_KEHOACHDIEUTRI> KeHoach,IReadOnlyList<ET_DMTINHTRANGBENH> DinhHuong,IReadOnlyList<DichVuTinhTrang> DichVuTheoTinhTrang);
 public sealed class DichVuTinhTrang
 {

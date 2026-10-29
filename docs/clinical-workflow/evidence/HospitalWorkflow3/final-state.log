@@ -1,0 +1,29 @@
+Changed database context to 'QLBenhVienRangHamMat'.
+SchemaVersion       TableCount
+------------------- -----------
+ClinicalWorkflow v2          53
+MaHD                                               MaLS                                               SoTienPhaiThu        DaThuRong                                ConPhaiTra
+-------------------------------------------------- -------------------------------------------------- -------------------- ---------------------------------------- ----------------------------------------
+HD004                                              LS004                                                         100000.00                                      .00                                100000.00
+HD005                                              LS005                                                         150000.00                                      .00                                150000.00
+HospitalWorkflowVersion
+-----------------------
+                      3
+
+(1 rows affected)
+Tables      Patients    Doctors     Conditions  Services    ConditionServiceLinks DemoPatients DemoStaff   DemoReceipts
+----------- ----------- ----------- ----------- ----------- --------------------- ------------ ----------- ------------
+         53          11           2          47          50                   112            0           0            0
+
+(1 rows affected)
+Changed database context to 'RHM_Hospital_Test_Final_20261029'.
+SchemaVersion       TableCount
+------------------- -----------
+ClinicalWorkflow v2          53
+MaHD                                               MaLS                                               SoTienPhaiThu        DaThuRong                                ConPhaiTra
+-------------------------------------------------- -------------------------------------------------- -------------------- ---------------------------------------- ----------------------------------------
+Patients    Staff       Doctors     Accounts    Invoices    Conditions  Services    ConditionServiceLinks
+----------- ----------- ----------- ----------- ----------- ----------- ----------- ---------------------
+          0           1           0           1           0          47          42                   112
+
+(1 rows affected)
