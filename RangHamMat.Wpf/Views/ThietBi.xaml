@@ -81,7 +81,7 @@
                     <StackPanel>
                         <TextBlock Text="CHƯA PHÂN PHÒNG" Style="{StaticResource EquipLabel}" FontWeight="SemiBold"/>
                         <TextBlock x:Name="lblCanTheoDoi" Text="0" Style="{StaticResource EquipNumber}" Foreground="#B45309"/>
-                        <TextBlock Text="Thiết bị chờ bàn giao" FontSize="12" Foreground="{StaticResource EquipSubtle}"/>
+                        <TextBlock Text="Thiết bị chưa được phân phòng" FontSize="12" Foreground="{StaticResource EquipSubtle}"/>
                     </StackPanel>
                     <Border Grid.Column="1" Background="#FFF4E5" CornerRadius="12" Width="45" Height="45" VerticalAlignment="Top">
                         <TextBlock Text="!" Foreground="#B45309" FontSize="27" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -110,7 +110,7 @@
                     <TextBox x:Name="txtTimKiem" TextChanged="BoLoc_Changed" ToolTip="Tìm theo tên, số serial, phòng hoặc nhà cung cấp"/>
                 </StackPanel>
                 <StackPanel Grid.Column="2">
-                    <TextBlock Text="Trạng thái" Style="{StaticResource EquipLabel}"/>
+                    <TextBlock Text="Tình trạng" Style="{StaticResource EquipLabel}"/>
                     <ComboBox x:Name="cboTrangThaiLoc" SelectionChanged="BoLoc_Changed"/>
                 </StackPanel>
                 <StackPanel Grid.Column="4">
@@ -221,11 +221,9 @@
                             <TextBlock Text="Tình trạng &amp; bảo hành (chỉ xem)" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource EquipInk}" Margin="0,0,0,13"/>
                             <StackPanel Style="{StaticResource EquipField}">
                                 <TextBlock Text="Tình trạng thiết bị" Style="{StaticResource EquipLabel}"/>
-                                <ComboBox x:Name="cboTinhTrang" IsEditable="True" IsTextSearchEnabled="True"/>
-                            </StackPanel>
-                            <StackPanel Style="{StaticResource EquipField}">
-                                <TextBlock Text="Trạng thái quản lý" Style="{StaticResource EquipLabel}"/>
-                                <ComboBox x:Name="cboTrangThai" IsEditable="True" IsTextSearchEnabled="True"/>
+                                <Border CornerRadius="8" Background="#EEF4FC" Padding="12,9">
+                                    <TextBlock x:Name="lblTinhTrang" Text="Đang hoạt động" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource EquipInk}"/>
+                                </Border>
                             </StackPanel>
                             <Grid Margin="0,0,0,14">
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
@@ -246,10 +244,17 @@
                         </StackPanel>
                     </ScrollViewer>
                     <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="#E5ECF4" Padding="14">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button x:Name="btnHuy" Content="Hủy" Click="Huy_Click" Visibility="Collapsed"/>
-                            <Button x:Name="btnSua" Content="Phân phòng / Điều chuyển" Click="PhanPhong_Click"/>
-                            <Button x:Name="btnLuu" Content="Xác nhận phân phòng" Style="{StaticResource Primary}" Click="Luu_Click" Visibility="Collapsed" Margin="0"/>
+                        <StackPanel>
+                            <WrapPanel HorizontalAlignment="Right" Margin="0,0,0,8">
+                                <Button x:Name="btnHuHai" Content="Hư hại" Click="HuHai_Click" Visibility="Collapsed" Margin="0,0,8,0"/>
+                                <Button x:Name="btnNgungSuDung" Content="Ngưng sử dụng" Click="NgungSuDung_Click" Visibility="Collapsed"
+                                        Background="#B42318" Foreground="White" BorderBrush="#B42318" Margin="0"/>
+                            </WrapPanel>
+                            <WrapPanel HorizontalAlignment="Right">
+                                <Button x:Name="btnHuy" Content="Hủy" Click="Huy_Click" Visibility="Collapsed"/>
+                                <Button x:Name="btnSua" Content="Phân phòng / Điều chuyển" Click="PhanPhong_Click"/>
+                                <Button x:Name="btnLuu" Content="Xác nhận phân phòng" Style="{StaticResource Primary}" Click="Luu_Click" Visibility="Collapsed" Margin="0"/>
+                            </WrapPanel>
                         </StackPanel>
                     </Border>
                 </Grid>
