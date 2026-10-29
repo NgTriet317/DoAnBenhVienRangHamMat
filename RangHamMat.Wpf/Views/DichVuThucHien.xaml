@@ -11,7 +11,12 @@
     </ResourceDictionary>
   </UserControl.Resources>
   <Grid>
-    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+      <RowDefinition Height="3*" MinHeight="190"/>
+      <RowDefinition><RowDefinition.Style><Style TargetType="RowDefinition"><Setter Property="Height" Value="0"/><Style.Triggers><DataTrigger Binding="{Binding ElementName=ServiceDetail, Path=Visibility}" Value="Visible"><Setter Property="Height" Value="2*"/></DataTrigger></Style.Triggers></Style></RowDefinition.Style></RowDefinition>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
     <DockPanel Margin="0,0,0,16">
       <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Center"><!-- Thao tác Làm mới: gọi Reload_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
       <Button Content="Làm mới" Click="Reload_Click"/><!-- Thao tác Ghi nhận dịch vụ: gọi Add_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
@@ -35,37 +40,37 @@
           <!-- Bảng Grid_DICH_VU_THUC_HIEN: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. -->
           <DataGrid x:Name="Grid_DICH_VU_THUC_HIEN" SelectionChanged="Service_Changed" ScrollViewer.HorizontalScrollBarVisibility="Auto" FrozenColumnCount="1" AutomationProperties.Name="Danh sách dịch vụ thực hiện">
             <DataGrid.Columns>
-              <DataGridTextColumn Header="Mã" Binding="{Binding Code}" Width="65"/>
-              <DataGridTextColumn Header="Bệnh nhân" Binding="{Binding PatientId}" Width="85"/>
-              <DataGridTextColumn Header="Lần khám" Binding="{Binding VisitId}" Width="85"/>
-              <DataGridTextColumn Header="Dịch vụ" Binding="{Binding Service}" Width="2*" MinWidth="200"/>
-              <DataGridTextColumn Header="Người thực hiện" Binding="{Binding Doctor}" Width="180"/>
-              <DataGridTextColumn Header="Thời gian" Binding="{Binding When}" Width="150"/>
-              <DataGridTextColumn Header="Số lượng" Binding="{Binding Quantity, StringFormat={}{0:0.##}}" Width="85"/>
-              <DataGridTextColumn Header="Đơn giá" Binding="{Binding PriceText}" Width="115"/>
-              <DataGridTextColumn Header="Thành tiền" Binding="{Binding AmountText}" Width="125"/>
-              <DataGridTemplateColumn Header="Trạng thái" Width="145" CellTemplate="{StaticResource HospitalStatusTemplate}" SortMemberPath="Status"/>
+              <DataGridTextColumn Header="Mã" Binding="{Binding Code}" Width="100" MinWidth="100" ElementStyle="{StaticResource HospitalCellText}"/>
+              <DataGridTextColumn Header="Bệnh nhân" Binding="{Binding PatientId}" Width="100" MinWidth="100" ElementStyle="{StaticResource HospitalCellText}"/>
+              <DataGridTextColumn Header="Lần khám" Binding="{Binding VisitId}" Width="100" MinWidth="100" ElementStyle="{StaticResource HospitalCellText}"/>
+              <DataGridTextColumn Header="Dịch vụ" Binding="{Binding Service}" Width="2*" MinWidth="200" ElementStyle="{StaticResource HospitalCellText}"/>
+              <DataGridTextColumn Header="Người thực hiện" Binding="{Binding Doctor}" Width="180" MinWidth="180" ElementStyle="{StaticResource HospitalCellText}"/>
+              <DataGridTextColumn Header="Thời gian" Binding="{Binding When}" Width="160" MinWidth="160" ElementStyle="{StaticResource HospitalCellText}"/>
+              <DataGridTextColumn Header="Số lượng" Binding="{Binding Quantity, StringFormat={}{0:0.##}}" Width="85" MinWidth="85" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}"/>
+              <DataGridTextColumn Header="Đơn giá" Binding="{Binding PriceText}" Width="115" MinWidth="115" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}"/>
+              <DataGridTextColumn Header="Thành tiền" Binding="{Binding AmountText}" Width="125" MinWidth="125" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}"/>
+              <DataGridTemplateColumn Header="Trạng thái" Width="145" MinWidth="145" CellTemplate="{StaticResource HospitalStatusTemplate}" SortMemberPath="Status"/>
             </DataGrid.Columns>
           </DataGrid>
           <TextBlock x:Name="ListEmpty" Text="Chưa có dịch vụ phù hợp. Chọn lần khám rồi ghi nhận dịch vụ." Style="{StaticResource HospitalMuted}" Margin="24" MaxWidth="420" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" Visibility="Collapsed"/>
         </Grid>
       </Grid>
     </Border>
-    <Border x:Name="ServiceDetail" Grid.Row="3" Style="{StaticResource HospitalPanel}" Margin="0,12,0,0" Visibility="Collapsed">
-      <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="260"><StackPanel>
+    <Border x:Name="ServiceDetail" Grid.Row="3" Style="{StaticResource HospitalPanel}" Padding="12" Margin="0,12,0,0" Visibility="Collapsed">
+      <Grid><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
         <DockPanel><TextBlock Text="{Binding Service}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/><ContentControl DockPanel.Dock="Right" Content="{Binding}" ContentTemplate="{StaticResource HospitalStatusTemplate}" HorizontalAlignment="Right"/></DockPanel>
         <TextBlock x:Name="PatientContext" Style="{StaticResource HospitalMuted}" Margin="0,6,0,12"/>
         <WrapPanel><TextBlock Text="Bước kế hoạch: " Style="{StaticResource HospitalMuted}"/><TextBlock Text="{Binding Step}"/><TextBlock Text="Thành tiền: " Style="{StaticResource HospitalMuted}" Margin="20,0,0,0"/><TextBlock Text="{Binding AmountText}" FontWeight="SemiBold"/></WrapPanel>
         <TextBlock Text="Kết quả thực hiện" Style="{StaticResource FieldLabel}" Margin="0,12,0,5"/><TextBlock Text="{Binding Result}" TextWrapping="Wrap"/>
-        <WrapPanel Margin="0,14,0,0"><!-- Thao tác Sửa nháp: gọi Edit_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
+        <TextBlock x:Name="BillingNote" Style="{StaticResource HospitalMuted}" Margin="0,10,0,0"/></StackPanel></ScrollViewer><WrapPanel Grid.Row="1" Margin="0,8,0,0"><!-- Thao tác Sửa nháp: gọi Edit_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
         <Button x:Name="EditButton" Content="Sửa nháp" Click="Edit_Click" Margin="0,0,8,6"/><!-- Thao tác Xác nhận dịch vụ: gọi Confirm_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
         <Button x:Name="ConfirmButton" Content="Xác nhận dịch vụ" Click="Confirm_Click" Style="{StaticResource HospitalPrimary}" Margin="0,0,8,6"/><!-- Thao tác Hồ sơ bệnh nhân: gọi Patient_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
         <Button Content="Hồ sơ bệnh nhân" Click="Patient_Click" Margin="0,0,8,6"/><!-- Thao tác Mở lần khám: gọi Treatment_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
         <Button Content="Mở lần khám" Click="Treatment_Click" Margin="0,0,8,6"/><!-- Thao tác Đơn thuốc lần khám: gọi Prescription_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
         <Button Content="Đơn thuốc lần khám" Click="Prescription_Click" Margin="0,0,8,6"/><!-- Thao tác Hóa đơn / thanh toán: gọi Invoice_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
         <Button Content="Hóa đơn / thanh toán" Click="Invoice_Click" Margin="0,0,8,6"/></WrapPanel>
-        <TextBlock x:Name="BillingNote" Style="{StaticResource HospitalMuted}" Margin="0,10,0,0"/>
-      </StackPanel></ScrollViewer>
+
+      </Grid>
     </Border>
     <TextBlock x:Name="Feedback" Grid.Row="4" Foreground="#B42318" TextWrapping="Wrap" Margin="0,10,0,0"/>
   </Grid>

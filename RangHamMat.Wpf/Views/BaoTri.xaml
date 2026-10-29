@@ -1,118 +1,81 @@
-<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của BaoTri.xaml; các vùng liên quan: Bảo trì, Grid_BAO_TRI_THIET_BI. -->
-<!-- AI hỗ trợ: bổ sung chú thích cho bảo trì thiết bị. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.BaoTri">
+<UserControl x:Class="RangHamMat.Views.BaoTri"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Language="vi-VN">
+ <UserControl.Resources><ResourceDictionary>
+  <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/BaoTriStyles.xaml"/></ResourceDictionary.MergedDictionaries>
+  <Style x:Key="DetailValue" TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="Margin" Value="0,0,0,16"/></Style>
+ </ResourceDictionary></UserControl.Resources>
+ <Grid Background="{StaticResource HospitalCanvas}">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
+  <DockPanel Margin="0,0,0,18">
+   <Button DockPanel.Dock="Right" Content="Thêm lần bảo trì" Style="{StaticResource HospitalPrimary}" Click="Them_Click"/>
+   <StackPanel><TextBlock Text="Lịch sử bảo trì" Style="{StaticResource HospitalHeading}"/><TextBlock Text="Tra cứu thiết bị, theo dõi công việc và lịch bảo trì tiếp theo." Style="{StaticResource HospitalMuted}"/></StackPanel>
+  </DockPanel>
+  <!-- Thống kê toàn bộ lịch sử SQL; bộ lọc chỉ tác động danh sách bên dưới. -->
+  <Border Grid.Row="1" Style="{StaticResource HospitalPanel}" Padding="20,14" Margin="0,0,0,16">
+   <UniformGrid Columns="4">
+    <StackPanel><TextBlock Text="Tổng số lần" Style="{StaticResource HospitalMuted}"/><TextBlock x:Name="txtTongSo" Text="0" FontSize="26" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
+    <StackPanel><TextBlock Text="Đang thực hiện" Foreground="#1D5AAC" FontSize="12"/><TextBlock x:Name="txtDangThucHien" Text="0" Foreground="#1D5AAC" FontSize="26" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
+    <StackPanel><TextBlock Text="Đã hoàn tất" Foreground="#176344" FontSize="12"/><TextBlock x:Name="txtHoanThanh" Text="0" Foreground="#176344" FontSize="26" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
+    <StackPanel ToolTip="Theo ngày hẹn của lần mới nhất chưa hủy trên mỗi thiết bị."><TextBlock Text="Thiết bị đến / quá hạn" Foreground="#925312" FontSize="12"/><TextBlock x:Name="txtDenHan" Text="0" Foreground="#925312" FontSize="26" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
+   </UniformGrid>
+  </Border>
+  <Border Grid.Row="2" Style="{StaticResource HospitalPanel}" Padding="16,12" Margin="0,0,0,16">
+   <StackPanel>
+    <WrapPanel>
+     <StackPanel Width="250" Margin="0,0,12,8"><TextBlock Text="Tìm mã, thiết bị hoặc nhân viên" Style="{StaticResource FieldLabel}"/><TextBox x:Name="txtTimKiem" AutomationProperties.Name="Tìm lịch sử bảo trì" TextChanged="BoLoc_ThayDoi"/></StackPanel>
+     <StackPanel Width="130" Margin="0,0,12,8"><TextBlock Text="Bắt đầu từ ngày" Style="{StaticResource FieldLabel}"/><DatePicker x:Name="dpTuNgay" AutomationProperties.Name="Bắt đầu từ ngày" SelectedDateChanged="BoLoc_ThayDoi"/></StackPanel>
+     <StackPanel Width="130" Margin="0,0,12,8"><TextBlock Text="Đến ngày" Style="{StaticResource FieldLabel}"/><DatePicker x:Name="dpDenNgay" AutomationProperties.Name="Đến ngày" SelectedDateChanged="BoLoc_ThayDoi"/></StackPanel>
+     <StackPanel Width="175" Margin="0,0,12,8"><TextBlock Text="Trạng thái" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="cboTrangThai" AutomationProperties.Name="Lọc trạng thái bảo trì" SelectionChanged="BoLoc_ThayDoi"/></StackPanel>
+     <Button Content="Bỏ bộ lọc" Click="BoLoc_Click" VerticalAlignment="Bottom" Margin="0,0,8,8"/><Button Content="Tải lại" Click="TaiLai_Click" VerticalAlignment="Bottom" Margin="0,0,0,8"/>
+    </WrapPanel>
+    <CheckBox x:Name="chkDenHan" Content="Chỉ xem thiết bị đến / quá hạn bảo trì" Margin="0,2,0,4" Checked="BoLoc_ThayDoi" Unchecked="BoLoc_ThayDoi"/>
+    <TextBlock x:Name="txtLoi" Foreground="#B42318" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+   </StackPanel>
+  </Border>
+  <Grid Grid.Row="3" SizeChanged="NoiDung_SizeChanged">
+   <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="14"/><ColumnDefinition x:Name="CotChiTiet" Width="300"/></Grid.ColumnDefinitions>
+   <Grid.RowDefinitions><RowDefinition/><RowDefinition x:Name="HangCach" Height="0"/><RowDefinition x:Name="HangChiTiet" Height="0"/></Grid.RowDefinitions>
+   <Border x:Name="VungDanhSach" Grid.RowSpan="3" Style="{StaticResource HospitalPanel}" Padding="0">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <StackPanel>
-            <TextBlock Text="Bảo trì thiết bị" Style="{StaticResource Title}" />
-            <TextBlock Text="Nhấp đúp vào một dòng để xem chi tiết. Chọn Thêm để tạo mới." Style="{StaticResource Subtitle}" />
-        </StackPanel>
-        <WrapPanel Grid.Row="1" Margin="0,0,0,20" />
-        <TabControl Grid.Row="2">
-            <!-- Nhóm Bảo trì: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
-            <TabItem Header="Bảo trì">
-                <Grid Margin="0,20,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <!-- tiêu đề + nút -->
-                        <RowDefinition Height="Auto" />
-                        <!-- UniformGrid -->
-                        <RowDefinition Height="Auto" />
-                        <!-- bộ lọc -->
-                        <RowDefinition Height="Auto" />
-                        <!-- DataGrid -->
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <UniformGrid Grid.Row="1" Columns="3" Margin="0,0,0,18">
-                        <Border Style="{StaticResource Card}" Margin="0,0,12,0">
-                            <StackPanel>
-                                <TextBlock Text="Đến hạn" Foreground="{StaticResource Muted}"/>
-                                <TextBlock Text="04" FontSize="27" Foreground="{StaticResource Accent}" Margin="0,10,0,0"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Style="{StaticResource Card}" Margin="0,0,12,0">
-                            <StackPanel>
-                                <TextBlock Text="Đang xử lý" Foreground="{StaticResource Muted}"/>
-                                <TextBlock Text="02" FontSize="27" Foreground="{StaticResource Accent}" Margin="0,10,0,0"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Style="{StaticResource Card}">
-                            <StackPanel>
-                                <TextBlock Text="Hoàn tất tháng này" Foreground="{StaticResource Muted}"/>
-                                <TextBlock Text="18" FontSize="27" Foreground="{StaticResource Accent}" Margin="0,10,0,0"/>
-                            </StackPanel>
-                        </Border>
-                    </UniformGrid>
-                    <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,0,0,18">
-                        <WrapPanel>
-                            <StackPanel Width="155" Margin="0,0,12,0">
-                                <TextBlock Text="Từ ngày" Margin="0,0,0,4"/>
-                                <DatePicker Height="0"/>
-                            </StackPanel>
-                            <StackPanel Width="155" Margin="0,0,12,0">
-                                <TextBlock Text="Đến ngày" Margin="0,0,0,4"/>
-                                <DatePicker Height="0"/>
-                            </StackPanel>
-                            <StackPanel Width="150" Margin="0,0,18,0">
-                                <TextBlock Text="Trạng thái" Margin="0,0,0,4"/>
-                                <ComboBox Height="0"/>
-                            </StackPanel>
-                            <Button Content="Lọc danh sách" Style="{StaticResource Primary}" VerticalAlignment="Bottom" HorizontalAlignment="Right"/>
-                            <!-- Nút điều hướng MoCuaSo:BaoTri: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                            <Button Content="Thêm" Tag="MoCuaSo:BaoTri" VerticalAlignment="Bottom" HorizontalAlignment="Right" />
-                        </WrapPanel>
-                    </Border>
-                    <DockPanel Grid.Row="3" Margin="0,0,0,18">
-                        <WrapPanel DockPanel.Dock="Right">
-                            <!-- Nút điều hướng ToggleColumns: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                            <Button Content="Hiện đủ cột" Tag="ToggleColumns" CommandParameter="BAO_TRI_THIET_BI" />
-                            <!-- Nút điều hướng MoCuaSo:BaoTri: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                            <Button Content="Thêm bảo trì" Tag="MoCuaSo:BaoTri" CommandParameter="BAO_TRI_THIET_BI" Style="{StaticResource Primary}" />
-                        </WrapPanel>
-                        <TextBlock Text="Bảo trì" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-                    </DockPanel>
-                    <Border Style="{StaticResource Card}" Padding="0" Grid.Row="4" >
-                        <Grid >
-                            <!-- Bảng Grid_BAO_TRI_THIET_BI: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:BAO_TRI_THIET_BI cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
-                            <DataGrid Tag="Table:BAO_TRI_THIET_BI" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_BAO_TRI_THIET_BI" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Mã lần bảo trì" SortMemberPath="MaBT" Width="155" Binding="{Binding MaBT}" />
-                                    <DataGridTextColumn Header="Thiết bị" SortMemberPath="MaTB" Width="155" Binding="{Binding MaTB}" />
-                                    <DataGridTextColumn Header="Ngày bảo trì" SortMemberPath="NgayBaoTri" Width="155" Binding="{Binding NgayBaoTri}" />
-                                    <DataGridTextColumn Header="Loại bảo trì" SortMemberPath="LoaiBaoTri" Width="155" Binding="{Binding LoaiBaoTri}" />
-                                    <DataGridTextColumn Header="Nội dung" SortMemberPath="NoiDung" Width="155" Binding="{Binding NoiDung}" />
-                                    <DataGridTextColumn Header="Chi phí" SortMemberPath="ChiPhi" Width="155" Binding="{Binding ChiPhi}" />
-                                    <DataGridTextColumn Header="Người thực hiện" SortMemberPath="NguoiThucHien" Width="155" Visibility="Collapsed" Binding="{Binding NguoiThucHien}" />
-                                    <DataGridTextColumn Header="Ngày bảo trì tiếp theo" SortMemberPath="NgayBaoTriTiepTheo" Width="155" Visibility="Collapsed" Binding="{Binding NgayBaoTriTiepTheo}" />
-                                    <DataGridTextColumn Header="Trạng thái" SortMemberPath="TrangThai" Width="155" Visibility="Collapsed" Binding="{Binding TrangThai}" />
-                                    <DataGridTextColumn Header="Ghi chú" SortMemberPath="GhiChu" Width="155" Visibility="Collapsed" Binding="{Binding GhiChu}" />
-                                </DataGrid.Columns>
-                            </DataGrid>
-                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
-                                <StackPanel.Style>
-                                    <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
-                                    <Style TargetType="StackPanel">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasItems, ElementName=Grid_BAO_TRI_THIET_BI}" Value="False">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </StackPanel.Style>
-                                <TextBlock Text="Chưa có bảo trì" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
-                                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
-                                <!-- Nút điều hướng MoCuaSo:BaoTri: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                                <Button Content="Thêm mới" Tag="MoCuaSo:BaoTri" CommandParameter="BAO_TRI_THIET_BI" HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </Grid>
-            </TabItem>
-        </TabControl>
+     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <DockPanel Margin="16,14"><TextBlock Text="Các lần bảo trì" FontSize="16" FontWeight="SemiBold"/><TextBlock Text="Chọn một dòng để xem chi tiết" Style="{StaticResource HospitalMuted}" HorizontalAlignment="Right" VerticalAlignment="Center"/></DockPanel>
+     <DataGrid Grid.Row="1" x:Name="Grid_BAO_TRI_THIET_BI" RowHeight="62" SelectionChanged="DanhSach_SelectionChanged" AutomationProperties.Name="Danh sách lịch sử bảo trì">
+      <DataGrid.Columns>
+       <DataGridTextColumn Header="Mã lần" Binding="{Binding MaBT}" SortMemberPath="MaBT" Width="85" MinWidth="85" ElementStyle="{StaticResource HospitalCellText}"/>
+       <DataGridTemplateColumn Header="Thiết bị / phòng" SortMemberPath="TenThietBi" Width="*" MinWidth="190">
+        <DataGridTemplateColumn.CellTemplate><DataTemplate><StackPanel VerticalAlignment="Center" ToolTip="{Binding ThietBiDayDu}"><TextBlock Text="{Binding TenThietBi}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/><TextBlock Text="{Binding ViTri}" Style="{StaticResource HospitalMuted}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,4,0,0"/></StackPanel></DataTemplate></DataGridTemplateColumn.CellTemplate>
+       </DataGridTemplateColumn>
+       <DataGridTextColumn Header="Bắt đầu" Binding="{Binding NgayBatDau, StringFormat=dd/MM/yyyy}" SortMemberPath="NgayBatDau" Width="108" MinWidth="108" ElementStyle="{StaticResource HospitalCellText}"/>
+       <DataGridTextColumn Header="Chi phí (đ)" Binding="{Binding ChiPhi, StringFormat={}{0:N2}}" SortMemberPath="ChiPhi" Width="125" MinWidth="125" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}"/>
+       <DataGridTemplateColumn Header="Trạng thái" SortMemberPath="Status" Width="145" MinWidth="145" CellTemplate="{StaticResource HospitalStatusTemplate}"/>
+      </DataGrid.Columns>
+     </DataGrid>
+     <StackPanel x:Name="KhongCoDuLieu" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20" Visibility="Collapsed"><TextBlock Text="Không có lần bảo trì phù hợp" FontSize="17" FontWeight="SemiBold" TextAlignment="Center"/><TextBlock Text="Thử bỏ bộ lọc hoặc thêm một lần bảo trì mới." Style="{StaticResource HospitalMuted}" TextAlignment="Center" Margin="0,8,0,0"/></StackPanel>
+     <Border Grid.Row="2" BorderBrush="{StaticResource HospitalBorder}" BorderThickness="0,1,0,0" Padding="16,12"><TextBlock x:Name="txtSoDong" Style="{StaticResource HospitalMuted}"/></Border>
     </Grid>
+   </Border>
+   <Border x:Name="VungChiTiet" Grid.Column="2" Grid.RowSpan="3" Style="{StaticResource HospitalPanel}" Padding="18">
+    <Grid>
+     <TextBlock x:Name="ChuaChon" Text="Chọn một lần bảo trì để xem nội dung, người phụ trách và lịch hẹn tiếp theo." Style="{StaticResource HospitalMuted}" VerticalAlignment="Center" TextAlignment="Center"/>
+     <Grid x:Name="ChiTiet" Visibility="Collapsed">
+      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <DockPanel Margin="0,0,0,14"><ContentControl DockPanel.Dock="Right" Content="{Binding}" ContentTemplate="{StaticResource HospitalStatusTemplate}"/><StackPanel><TextBlock Text="Chi tiết bảo trì" FontSize="16" FontWeight="SemiBold"/><TextBlock Text="{Binding MaBT}" Style="{StaticResource HospitalMuted}" Margin="0,5,0,0"/></StackPanel></DockPanel>
+      <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+       <StackPanel Margin="0,0,8,0">
+        <TextBlock Text="Thiết bị" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding ThietBiDayDu}" Style="{StaticResource DetailValue}"/>
+        <TextBlock Text="Phòng sử dụng" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding TenPhong}" Style="{StaticResource DetailValue}"/>
+        <TextBlock Text="Nhân viên phụ trách" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding NhanVien}" Style="{StaticResource DetailValue}"/>
+        <TextBlock Text="Bắt đầu / kết thúc" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding ThoiGian}" Style="{StaticResource DetailValue}"/>
+        <TextBlock Text="Nội dung bảo trì" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding NoiDung}" Style="{StaticResource DetailValue}"/>
+        <TextBlock Text="Chi phí" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding ChiPhi, StringFormat={}{0:N2} đ}" Style="{StaticResource DetailValue}" FontWeight="SemiBold"/>
+        <TextBlock Text="Bảo trì tiếp theo" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding LichTiepTheo}" Style="{StaticResource DetailValue}"/>
+        <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding GhiChu}" Style="{StaticResource DetailValue}"/>
+       </StackPanel>
+      </ScrollViewer>
+      <StackPanel Grid.Row="2" Margin="0,12,0,0"><WrapPanel><Button Content="Cập nhật" IsEnabled="{Binding ChoSua}" Click="Sua_Click" Style="{StaticResource HospitalPrimary}"/><Button Content="Xóa bản nháp" IsEnabled="{Binding ChoXoa}" Click="Xoa_Click"/></WrapPanel><TextBlock Text="Chỉ sửa lần chưa kết thúc; chỉ xóa bản nháp." Style="{StaticResource HospitalMuted}" Margin="0,8,0,0"/></StackPanel>
+     </Grid>
+    </Grid>
+   </Border>
+  </Grid>
+ </Grid>
 </UserControl>

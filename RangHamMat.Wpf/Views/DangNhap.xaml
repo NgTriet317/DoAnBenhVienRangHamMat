@@ -24,9 +24,13 @@
         <TextBlock Text="Chào mừng trở lại" Style="{StaticResource Title}" />
         <TextBlock Text="Đăng nhập để mở không gian làm việc của bạn." Style="{StaticResource Subtitle}" />
         <TextBlock Text="Tên đăng nhập" Margin="0,10,0,8" />
-        <TextBox x:Name="UsernameBox" AutomationProperties.Name="Tên đăng nhập" Margin="0,0,0,20" MaxLength="100" />
+        <ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,20">
+         <TextBox x:Name="UsernameBox" AutomationProperties.Name="Tên đăng nhập" MaxLength="100" />
+        </ContentControl>
         <TextBlock Text="Mật khẩu" Margin="0,0,0,8" />
-        <PasswordBox x:Name="PasswordBox" AutomationProperties.Name="Mật khẩu" Margin="0,0,0,26" />
+        <ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,26">
+         <PasswordBox x:Name="PasswordBox" AutomationProperties.Name="Mật khẩu" />
+        </ContentControl>
         <!-- AI tạo: thông báo thiếu thông tin đăng nhập, vẫn giữ rõ trạng thái giao diện mẫu chưa xác thực SQL. -->
         <TextBlock x:Name="FormError" Foreground="#B42318" TextWrapping="Wrap" Margin="0,0,0,12" />
         <!-- Thao tác Vào không gian làm việc: gọi DangNhap_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->

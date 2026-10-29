@@ -36,27 +36,37 @@
           <StackPanel Margin="0,0,16,16">
             <TextBlock Text="Bệnh nhân" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Mã bệnh nhân (LICH_KHAM.MaBN): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-            <ComboBox x:Name="PatientPicker" Tag="DB:LICH_KHAM.MaBN" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Schedule_Changed"/>
+            <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <ComboBox x:Name="PatientPicker" Tag="DB:LICH_KHAM.MaBN" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Schedule_Changed"/>
+            </ContentControl>
           </StackPanel>
           <StackPanel Margin="0,0,16,16">
             <TextBlock Text="Bác sĩ" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Mã bác sĩ, liên kết danh mục nhân viên (LICH_KHAM.MaBS): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-            <ComboBox x:Name="DoctorPicker" Tag="DB:LICH_KHAM.MaBS" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Schedule_Changed"/>
+            <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <ComboBox x:Name="DoctorPicker" Tag="DB:LICH_KHAM.MaBS" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Schedule_Changed"/>
+            </ContentControl>
           </StackPanel>
           <StackPanel Margin="0,0,16,16">
             <TextBlock Text="Ca làm" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Mã ca làm việc (LICH_KHAM.MaCa): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-            <ComboBox x:Name="ShiftPicker" Tag="DB:LICH_KHAM.MaCa" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Schedule_Changed"/>
+            <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <ComboBox x:Name="ShiftPicker" Tag="DB:LICH_KHAM.MaCa" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Schedule_Changed"/>
+            </ContentControl>
           </StackPanel>
           <StackPanel Margin="0,0,16,16">
             <TextBlock Text="Phòng" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Mã phòng (LICH_KHAM.MaPhong): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-            <ComboBox x:Name="RoomPicker" Tag="DB:LICH_KHAM.MaPhong" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Schedule_Changed"/>
+            <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <ComboBox x:Name="RoomPicker" Tag="DB:LICH_KHAM.MaPhong" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Schedule_Changed"/>
+            </ContentControl>
           </StackPanel>
           <StackPanel Margin="0,0,16,16">
             <TextBlock Text="Dịch vụ dự kiến" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Mã dịch vụ (LICH_KHAM.MaDV): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-            <ComboBox Tag="DB:LICH_KHAM.MaDV" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Schedule_Changed"/>
+            <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <ComboBox Tag="DB:LICH_KHAM.MaDV" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Schedule_Changed"/>
+            </ContentControl>
           </StackPanel>
           <StackPanel Margin="0,0,16,16">
             <TextBlock Text="Ngày giờ khám" Style="{StaticResource FieldLabel}"/>
@@ -66,30 +76,42 @@
                 <ColumnDefinition Width="85"/>
               </Grid.ColumnDefinitions>
               <!-- Trường Ngày/giờ hẹn khám (LICH_KHAM.NgayGioKham): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-              <DatePicker x:Name="AppointmentDate" Tag="DB:LICH_KHAM.NgayGioKham" SelectedDateChanged="Schedule_Changed"/>
+              <ContentControl Style="{StaticResource TruongNhapLieu}">
+               <DatePicker x:Name="AppointmentDate" Tag="DB:LICH_KHAM.NgayGioKham" SelectedDateChanged="Schedule_Changed"/>
+              </ContentControl>
               <!-- Ô giờ LICH_KHAM.NgayGioKham: nhập HH:mm, ghép với ngày của trường DB cùng tên trong BieuMauHoSo.Read trước khi lưu. -->
-              <TextBox x:Name="StartTime" Tag="Time:LICH_KHAM.NgayGioKham" Grid.Column="1" Margin="8,0,0,0" TextChanged="Schedule_Changed"/>
+              <ContentControl Style="{StaticResource TruongNhapLieu}" Margin="8,0,0,0" Grid.Column="1">
+               <TextBox x:Name="StartTime" Tag="Time:LICH_KHAM.NgayGioKham" TextChanged="Schedule_Changed"/>
+              </ContentControl>
             </Grid>
           </StackPanel>
           <StackPanel Margin="0,0,16,16">
             <TextBlock Text="Thời lượng dự kiến (phút)" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Thời lượng dự kiến của lịch hẹn tính bằng phút (LICH_KHAM.ThoiLuongDuKien): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-            <TextBox x:Name="Duration" Tag="DB:LICH_KHAM.ThoiLuongDuKien" Text="30" TextChanged="Schedule_Changed"/>
+            <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <TextBox x:Name="Duration" Tag="DB:LICH_KHAM.ThoiLuongDuKien" Text="30" TextChanged="Schedule_Changed"/>
+            </ContentControl>
           </StackPanel>
           <StackPanel Margin="0,0,16,16">
             <TextBlock Text="Ưu tiên" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Mức ưu tiên lịch hẹn (LICH_KHAM.UuTien): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-            <TextBox x:Name="Priority" Tag="DB:LICH_KHAM.UuTien" Text="0"/>
+            <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <TextBox x:Name="Priority" Tag="DB:LICH_KHAM.UuTien" Text="0"/>
+            </ContentControl>
           </StackPanel>
           <StackPanel Margin="0,0,16,16">
             <TextBlock Text="Lý do khám" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Lý do đến khám (LICH_KHAM.LyDoKham): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-            <TextBox Tag="DB:LICH_KHAM.LyDoKham" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"/>
+            <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <TextBox Tag="DB:LICH_KHAM.LyDoKham" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"/>
+            </ContentControl>
           </StackPanel>
           <StackPanel Margin="0,0,16,16">
             <TextBlock Text="Lý do thay đổi" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Lý do thay đổi lịch hẹn (LICH_KHAM.LyDoThayDoi): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-            <TextBox x:Name="ChangeReason" Tag="DB:LICH_KHAM.LyDoThayDoi" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"/>
+            <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <TextBox x:Name="ChangeReason" Tag="DB:LICH_KHAM.LyDoThayDoi" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"/>
+            </ContentControl>
           </StackPanel>
           <StackPanel Margin="0,0,16,16">
             <TextBlock Text="Trạng thái" Style="{StaticResource FieldLabel}"/>
@@ -99,7 +121,9 @@
           <StackPanel Margin="0,0,16,16">
             <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Ghi chú bổ sung (LICH_KHAM.GhiChu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-            <TextBox x:Name="Notes" Tag="DB:LICH_KHAM.GhiChu" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"/>
+            <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <TextBox x:Name="Notes" Tag="DB:LICH_KHAM.GhiChu" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"/>
+            </ContentControl>
           </StackPanel>
         </ItemsControl>
         <Border x:Name="ConflictPanel" Visibility="Collapsed" Background="#FFF8EB" Padding="12" Margin="0,0,16,16">

@@ -1,5 +1,23 @@
 # Giao diện WPF cho hồ sơ và điều trị bệnh viện
 
+## Báo cáo và thống kê
+
+Màn hình báo cáo dùng danh mục 248 DIP, bốn nhóm nghiệp vụ thu gọn/mở rộng và tìm không dấu; đã bỏ Tổng hợp và Hệ thống theo yêu cầu. Chuyên đề đang chọn tự mở nhóm tương ứng. Nội dung gồm tiêu đề/hành động xuất cố định, bộ lọc, trạng thái tải, dải bốn KPI trắng, biểu đồ theo kỳ, cơ cấu trạng thái và bảng đối chiếu. Màu nền và xanh chính kế thừa HospitalStyles; xanh ngọc/tím/cam dùng cho chỉ số, không tô nền toàn bộ thẻ. Style riêng ở `Themes/BaoCaoStyles.xaml`. Dưới 820 DIP nội dung, KPI chuyển hai cột, hai biểu đồ xếp dọc; danh mục và nội dung cuộn riêng.
+
+18 chuyên đề đều đọc database thật, gồm các nguồn bổ sung qua `BUS_BAOCAO` / `DAL_BAOCAO`: lương đã chốt, dòng hàng nhập/xuất, hạn dùng từng lô và đơn nghỉ/thay thế. Mỗi điểm biểu đồ khớp đúng một ngày/tuần/tháng trong bảng; giữ cả kỳ không phát sinh, khoảng dài dùng cuộn ngang và không tự gộp kỳ. Lương, vật tư, hạn dùng và đơn nghỉ có bảng chi tiết; số lượng vật tư chỉ cộng cùng mã hàng/đơn vị. CSV chứa bộ lọc và chi tiết tương ứng, bao gồm ngày chốt/ngưỡng hạn dùng. Kết quả cũ bị xóa khi đổi chuyên đề/bộ lọc hoặc làm mới dữ liệu. Xem `HUONG_DAN_BAO_CAO_THONG_KE.md` và ảnh WPF thật ở `XemTruoc/bao-cao-thong-ke`.
+
+## Báo lỗi tại trường nhập
+
+Các ô nhập dùng validation chung được bọc bằng style `TruongNhapLieu` trong `Themes/KieuTruongNhapLieu.xaml`: dòng lỗi đỏ nằm ngay dưới ô, xuống dòng theo chiều rộng và chiếm chỗ trong bố cục. Không lặp lỗi của từng trường ở cuối form; vùng thông báo chung giữ cho lỗi hệ thống hoặc lỗi không xác định được trường. Khi lưu sai, focus và cuộn đưa cả ô cùng dòng lỗi vào vùng nhìn thấy; sửa đúng và rời ô thì thông báo biến mất. Áp dụng cho TextBox, ComboBox, DatePicker và PasswordBox, gồm cả ô ngày/giờ nằm cạnh nhau.
+
+## Nhà cung cấp
+
+Danh bạ nhà cung cấp dùng nền sáng và màu xanh chung; trạng thái hoạt động xanh lá, ngừng hoạt động đỏ nhạt, luôn có chữ. Danh sách hiển thị tên/mã, điện thoại/email và trạng thái; vùng chi tiết có người liên hệ, địa chỉ và số liên kết thiết bị/lô hàng/hóa đơn nhập. Thêm/sửa dùng form 850 DIP, báo lỗi cạnh trường và chân lưu/hủy cố định. Xóa bị khóa khi đã có dữ liệu liên kết. Tìm kiếm, lọc trạng thái, thống kê và dữ liệu liên kết đều lấy từ SQL. Ô nhập và ô bảng tái sử dụng `Themes/DanhMucStyles.xaml` cùng phân hệ bảo trì.
+
+## Lịch sử bảo trì thiết bị
+
+Phân hệ Bảo trì dùng nền, chữ và màu xanh hiện có; thống kê lấy từ SQL, bảng đi cùng panel chi tiết và bộ lọc ngày/trạng thái/từ khóa. Nháp màu vàng, đang thực hiện/xác nhận xanh dương, hoàn thành xanh lá, hủy đỏ nhạt; luôn có nhãn chữ. Cửa sổ 1024 vẫn giữ bảng và chi tiết cạnh nhau; dưới 900 DIP nội dung, chi tiết chuyển xuống dưới. Form dùng các trường đúng schema, cuộn nội dung, chân lưu/hủy cố định và thông báo lỗi tiếng Việt. Style riêng của bề mặt này nằm ở `Themes/BaoTriStyles.xaml`, kế thừa HospitalStyles.
+
 Phạm vi hiện tại: Bệnh nhân, Lịch khám, Khám điều trị, Đơn thuốc và các form/chi tiết liên quan. Thiết kế riêng theo database mới nhất, giữ màu xanh và cửa sổ ứng dụng gốc. Mục tiêu là thao tác thường xuyên, đọc dễ và xác định rõ bệnh nhân/lần khám đang xem.
 
 ## Bố cục

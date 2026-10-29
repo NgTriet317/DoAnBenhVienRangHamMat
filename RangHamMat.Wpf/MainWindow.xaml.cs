@@ -96,7 +96,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (tag is "BenhNhan" or "LichKham" or "KhamDieuTri" or "DichVuThucHien" or "DonThuoc" or "HoaDon")
+        if (tag is "BenhNhan" or "LichKham" or "KhamDieuTri" or "DichVuThucHien" or "DonThuoc" or "HoaDon" or "BaoTri" or "NhaCungCap")
         {
             try {DuLieuGiaoDien.EnsureLoaded();}
             catch(InvalidOperationException ex) {MessageBox.Show(ex.Message,"Kết nối database",MessageBoxButton.OK,MessageBoxImage.Error);return;}

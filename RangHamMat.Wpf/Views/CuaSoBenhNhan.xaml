@@ -40,45 +40,59 @@
                 <StackPanel Margin="0,0,18,16">
                   <TextBlock Text="Họ tên bệnh nhân *" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Họ tên bệnh nhân (BENH_NHAN.HoTenBN): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:BENH_NHAN.HoTenBN" MaxLength="255" AutomationProperties.Name="Họ tên bệnh nhân bắt buộc"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:BENH_NHAN.HoTenBN" MaxLength="255" AutomationProperties.Name="Họ tên bệnh nhân bắt buộc"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,18,16">
                   <TextBlock Text="Giới tính" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Giới tính được cung cấp (BENH_NHAN.GioiTinh): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <ComboBox Tag="DB:BENH_NHAN.GioiTinh" AutomationProperties.Name="Giới tính">
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <ComboBox Tag="DB:BENH_NHAN.GioiTinh" AutomationProperties.Name="Giới tính">
                     <ComboBoxItem Content="Nam"/>
                     <ComboBoxItem Content="Nữ"/>
                     <ComboBoxItem Content="Khác"/>
                   </ComboBox>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,18,16">
                   <TextBlock Text="Ngày sinh" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Ngày sinh được cung cấp (BENH_NHAN.NgaySinh): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <DatePicker x:Name="BirthDate" Tag="DB:BENH_NHAN.NgaySinh" AutomationProperties.Name="Ngày sinh" ToolTip="Có thể để trống khi chưa biết ngày sinh"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <DatePicker x:Name="BirthDate" Tag="DB:BENH_NHAN.NgaySinh" AutomationProperties.Name="Ngày sinh" ToolTip="Có thể để trống khi chưa biết ngày sinh"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,18,16">
                   <TextBlock Text="Số điện thoại" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Số điện thoại dạng chuỗi để giữ số 0 đầu (BENH_NHAN.SDT): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:BENH_NHAN.SDT" MaxLength="50" AutomationProperties.Name="Số điện thoại" ToolTip="Giữ nguyên số 0 đầu và mã vùng, ví dụ 0901234567 hoặc +84..."/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:BENH_NHAN.SDT" MaxLength="50" AutomationProperties.Name="Số điện thoại" ToolTip="Giữ nguyên số 0 đầu và mã vùng, ví dụ 0901234567 hoặc +84..."/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,18,16">
                   <TextBlock Text="Mã bảo hiểm y tế" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mã bảo hiểm y tế của bệnh nhân (BENH_NHAN.MaBHYT): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:BENH_NHAN.MaBHYT" MaxLength="50" AutomationProperties.Name="Mã bảo hiểm y tế"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:BENH_NHAN.MaBHYT" MaxLength="50" AutomationProperties.Name="Mã bảo hiểm y tế"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,18,16">
                   <TextBlock Text="Trạng thái *" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Trạng thái nghiệp vụ của bản ghi (BENH_NHAN.TrangThai): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <ComboBox Tag="DB:BENH_NHAN.TrangThai" SelectedIndex="0" AutomationProperties.Name="Trạng thái bệnh nhân">
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <ComboBox Tag="DB:BENH_NHAN.TrangThai" SelectedIndex="0" AutomationProperties.Name="Trạng thái bệnh nhân">
                     <ComboBoxItem Content="Đang theo dõi"/>
                     <ComboBoxItem Content="Ngừng theo dõi"/>
                   </ComboBox>
+                  </ContentControl>
                 </StackPanel>
               </ItemsControl>
                 <StackPanel Margin="0,0,18,16">
                   <TextBlock Text="Địa chỉ" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Địa chỉ liên hệ (BENH_NHAN.DiaChi): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:BENH_NHAN.DiaChi" MaxLength="255" MinHeight="72" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Địa chỉ"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:BENH_NHAN.DiaChi" MaxLength="255" MinHeight="72" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Địa chỉ"/>
+                  </ContentControl>
                 </StackPanel>
               </StackPanel>
             </ScrollViewer>
@@ -92,17 +106,23 @@
                 <StackPanel Margin="0,0,18,16">
                   <TextBlock Text="Nhóm máu" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Nhóm máu bệnh nhân (BENH_NHAN.NhomMau): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:BENH_NHAN.NhomMau" MaxLength="50" MaxWidth="300" HorizontalAlignment="Left" MinWidth="210" AutomationProperties.Name="Nhóm máu" ToolTip="Ví dụ A+, O−; để trống nếu chưa xác định"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}" MinWidth="210" MaxWidth="300" HorizontalAlignment="Left">
+                   <TextBox Tag="DB:BENH_NHAN.NhomMau" MaxLength="50" AutomationProperties.Name="Nhóm máu" ToolTip="Ví dụ A+, O−; để trống nếu chưa xác định"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,18,16">
                   <TextBlock Text="Tiền sử bệnh" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Tiền sử bệnh của bệnh nhân (BENH_NHAN.TienSuBenh): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:BENH_NHAN.TienSuBenh" MinHeight="110" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Tiền sử bệnh"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:BENH_NHAN.TienSuBenh" MinHeight="110" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Tiền sử bệnh"/>
+                  </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,18,16">
                   <TextBlock Text="Dị ứng" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Thông tin dị ứng của bệnh nhân (BENH_NHAN.DiUng): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <TextBox Tag="DB:BENH_NHAN.DiUng" MinHeight="110" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Dị ứng"/>
+                  <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <TextBox Tag="DB:BENH_NHAN.DiUng" MinHeight="110" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Dị ứng"/>
+                  </ContentControl>
                 </StackPanel>
               </StackPanel>
             </ScrollViewer>
@@ -126,30 +146,40 @@
             <StackPanel Margin="0,0,18,16">
               <TextBlock Text="Bệnh nhân" Style="{StaticResource FieldLabel}"/>
               <!-- Trường Mã bệnh nhân (HO_SO_BENH_AN.MaBN): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-              <ComboBox Tag="DB:HO_SO_BENH_AN.MaBN" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+              <ContentControl Style="{StaticResource TruongNhapLieu}">
+               <ComboBox Tag="DB:HO_SO_BENH_AN.MaBN" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+              </ContentControl>
             </StackPanel>
             <StackPanel Margin="0,0,18,16">
               <TextBlock Text="Ngày lập" Style="{StaticResource FieldLabel}"/>
               <!-- Trường Thời điểm lập bản ghi (HO_SO_BENH_AN.NgayLap): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-              <DatePicker Tag="DB:HO_SO_BENH_AN.NgayLap"/>
+              <ContentControl Style="{StaticResource TruongNhapLieu}">
+               <DatePicker Tag="DB:HO_SO_BENH_AN.NgayLap"/>
+              </ContentControl>
             </StackPanel>
             <StackPanel Margin="0,0,18,16">
               <TextBlock Text="Lý do khám ban đầu" Style="{StaticResource FieldLabel}"/>
               <!-- Trường Lý do khám ban đầu trên bệnh án (HO_SO_BENH_AN.LyDoKhamBanDau): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-              <TextBox Tag="DB:HO_SO_BENH_AN.LyDoKhamBanDau" MinHeight="72" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+              <ContentControl Style="{StaticResource TruongNhapLieu}">
+               <TextBox Tag="DB:HO_SO_BENH_AN.LyDoKhamBanDau" MinHeight="72" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+              </ContentControl>
             </StackPanel>
             <StackPanel Margin="0,0,18,16">
               <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}"/>
               <!-- Trường Ghi chú bổ sung (HO_SO_BENH_AN.GhiChu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-              <TextBox Tag="DB:HO_SO_BENH_AN.GhiChu" MinHeight="72" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+              <ContentControl Style="{StaticResource TruongNhapLieu}">
+               <TextBox Tag="DB:HO_SO_BENH_AN.GhiChu" MinHeight="72" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+              </ContentControl>
             </StackPanel>
             <StackPanel Margin="0,0,18,16">
               <TextBlock Text="Trạng thái" Style="{StaticResource FieldLabel}"/>
               <!-- Trường Trạng thái nghiệp vụ của bản ghi (HO_SO_BENH_AN.TrangThai): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-              <ComboBox Tag="DB:HO_SO_BENH_AN.TrangThai" SelectedIndex="0">
+              <ContentControl Style="{StaticResource TruongNhapLieu}">
+               <ComboBox Tag="DB:HO_SO_BENH_AN.TrangThai" SelectedIndex="0">
                 <ComboBoxItem Content="Đang theo dõi"/>
                 <ComboBoxItem Content="Ngừng theo dõi"/>
               </ComboBox>
+              </ContentControl>
             </StackPanel>
           </ItemsControl>
         </ScrollViewer>

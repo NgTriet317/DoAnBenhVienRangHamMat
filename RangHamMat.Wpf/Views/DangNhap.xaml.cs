@@ -75,7 +75,7 @@ public partial class DangNhap : Window
             error="Vui lòng nhập mật khẩu.";
             RangHamMat.Controls.KiemTraNhapLieu.SetError(PasswordBox,error); PasswordBox.Focus();
         }
-        FormError.Text=error; return error.Length==0;
+        RangHamMat.Controls.KiemTraNhapLieu.ShowError(this,error); return error.Length==0;
     }
 
     /// <summary>
