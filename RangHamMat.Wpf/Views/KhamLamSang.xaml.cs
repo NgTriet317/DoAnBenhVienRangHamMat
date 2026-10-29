@@ -110,7 +110,8 @@ public partial class KhamLamSang : UserControl,IPatientScoped
         RequireEditable();
         CommitConditionInput();ClinicalFormInput.Commit(PlanSteps,"CacBuoc");
         if(CoThayDoiChuaLuu)throw new LoiKhamException("BanNhap","Có thay đổi chưa lưu. Lưu nháp hoặc tải lại để đối chiếu trước khi ký.");
-        FillClinical(service.HoanTatKham(visitId,snapshot.DauVanTay,actor));FillCompletionOverview(service.LayKhongGianKham(visitId,actor));ClinicalStatus.Text=$"Đã hoàn tất và lập hóa đơn {snapshot.MaHD}; chờ thanh toán.";SyncCache();
+        var reviewed=clinicalSummary??throw new LoiKhamException("TongKet","Tải Tổng kết trước khi chốt.");
+        FillClinical(service.ChotKhamVaLapHoaDon(visitId,snapshot.DauVanTay,reviewed.DauVanTay,actor));FillCompletionOverview(service.LayKhongGianKham(visitId,actor));ClinicalStatus.Text=$"Đã chốt đơn và lập hóa đơn {snapshot.MaHD}; chờ thanh toán và nhận thuốc.";SyncCache();
     },out error);
     public bool TrySavePlan(out string error)=>Run(()=>
     {
@@ -145,7 +146,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
         Run(()=>{if(plan is null){loading=true;try{ClearPlan();}finally{loading=false;}}else FillPlan(service.HuyKeHoach(plan.KeHoach.MaKHDT,plan.DauVanTay,actor));ClinicalStatus.Text="Đã hủy kế hoạch nháp.";SyncCache();},out _);
     }
     private void Complete_Click(object sender,RoutedEventArgs e)
-    {if(CoThayDoiChuaLuu){TryComplete(out _);return;}if(MessageBox.Show("Đã kiểm tra dịch vụ thực hiện và thuốc đã ký ở Tổng kết? Hoàn tất sẽ khóa lần khám và lập hóa đơn chờ thu.","Tổng kết và lập hóa đơn",MessageBoxButton.YesNo,MessageBoxImage.Question)==MessageBoxResult.Yes)TryComplete(out _);}
+    {if(CoThayDoiChuaLuu){TryComplete(out _);return;}if(MessageBox.Show("Đã kiểm tra đủ dịch vụ và danh sách thuốc? Chốt sẽ ký đơn, khóa lần khám và lập hóa đơn để thanh toán, nhận thuốc tại quầy.","Chốt và lập hóa đơn",MessageBoxButton.YesNo,MessageBoxImage.Question)==MessageBoxResult.Yes)TryComplete(out _);}
     private void ConfirmPlan_Click(object sender,RoutedEventArgs e)
     {if(planDirty){TryConfirmPlan(out _);return;}if(MessageBox.Show("Xác nhận kế hoạch đã được bác sĩ kiểm tra?","Duyệt kế hoạch",MessageBoxButton.YesNo,MessageBoxImage.Question)==MessageBoxResult.Yes)TryConfirmPlan(out _);}
     private void OpenModule(string module)=>Run(()=>{if(CoThayDoiChuaLuu)throw new LoiKhamException("BanNhap","Lưu nháp trước khi chuyển chức năng.");if(allowed(module)&&PatientId is not null)DieuHuongHoSo.Open(this,module,PatientId,visitId);},out _);

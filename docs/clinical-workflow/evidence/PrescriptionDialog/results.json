@@ -1,0 +1,54 @@
+{
+    "VerifiedAtUtc":  "2026-10-29T09:39:47.9859619Z",
+    "BaseRevision":  "82210aab6af9c0b9ef2e4588ec8a272a59a1f6d7",
+    "SourceTests":  {
+                        "Passed":  47,
+                        "Failed":  0
+                    },
+    "PublishedTests":  {
+                           "Passed":  47,
+                           "Failed":  0
+                       },
+    "AdminUi":  {
+                    "Modules":  26,
+                    "Passed":  2
+                },
+    "Build":  {
+                  "Debug":  "passed",
+                  "Publish":  "passed",
+                  "Release":  "passed"
+              },
+    "Sql":  {
+                "SHA256":  "3FF956068430349618BDF7C9510AB28243DB5135E13358E1C64A0410823D997F",
+                "BusinessDataChanged":  false,
+                "Tables":  53,
+                "SchemaChanged":  false,
+                "MatchesPrescriptionFlow1":  true,
+                "PublishedMatches":  true
+            },
+    "Review":  "No actionable findings",
+    "OwnedFixtureDatabasesRemoved":  1,
+    "Assemblies":  [
+                       {
+                           "File":  "PhatHanh/ET.dll",
+                           "SHA256":  "182B86227E3D2AE26070FD77A43C51649B0CAE534800731DF2F5A282A7861F0B",
+                           "MatchesRelease":  true
+                       },
+                       {
+                           "File":  "PhatHanh/DAL.dll",
+                           "SHA256":  "D3E9D8BB612D120E8A855B2688AD58AD55EA47FB897D9D01A44F86200BAAD976",
+                           "MatchesRelease":  true
+                       },
+                       {
+                           "File":  "PhatHanh/BUS.dll",
+                           "SHA256":  "316A1470D23D58B356DF20675C7EB55D1DD49964FFE1C9032E03AA34CEF44D32",
+                           "MatchesRelease":  true
+                       },
+                       {
+                           "File":  "PhatHanh/RangHamMat.Wpf.dll",
+                           "SHA256":  "9AD6C4CD8E0A3724117737AA96DB44FA984BED3C4A76891382B2159BEE51795F",
+                           "MatchesRelease":  true
+                       }
+                   ],
+    "TestSourceSHA256":  "8D2C666F7C0CA44E8EFF8F51B6A9D5B750085334DAA78A759E6BDCDF76FE50CF"
+}

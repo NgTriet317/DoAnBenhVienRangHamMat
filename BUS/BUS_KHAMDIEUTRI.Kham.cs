@@ -2,6 +2,7 @@ using ET;
 namespace BUS;
 public sealed partial class BUS_KHAMDIEUTRI
 {
+    public BanNhapKham ChotKhamVaLapHoaDon(string maLS,string dauVanTay,string dauVanTayTongKet,NguCanhNghiepVu user)=>XuLyLoi.ThucHien(()=>dal.ChotKhamVaLapHoaDon(maLS,dauVanTay,dauVanTayTongKet,user));
     public TongKetKham LayTongKetKham(string maLS,NguCanhNghiepVu user)=>XuLyLoi.ThucHien(()=>dal.LayTongKetKham(maLS,user));
     public TongKetKham XacNhanThucHien(string maLS,string dauVanTay,NguCanhNghiepVu user)=>XuLyLoi.ThucHien(()=>dal.XacNhanThucHien(maLS,dauVanTay,user));
     public DuLieuKhongGianKham LayKhongGianKham(string maLS,NguCanhNghiepVu user)=>XuLyLoi.ThucHien(()=>dal.LayKhongGianKham(maLS,user));

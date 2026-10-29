@@ -6,6 +6,7 @@ namespace RangHamMat.Views;
 public partial class KhamLamSang
 {
     private KeDonThuocEditor? prescriptionEditor;
+    private KeDonThuocWindow? prescriptionWindow;
     private TongKetKham? clinicalSummary;
     private void RefreshClinicalSummary()
     {
@@ -15,7 +16,7 @@ public partial class KhamLamSang
         var noPrice=clinicalSummary.Thuoc.Any(x=>x.DonGia<=0);
         CompletionTotalText.Text=$"Dịch vụ: {clinicalSummary.TienDichVu:N0} đ · Thuốc: {clinicalSummary.TienThuoc:N0} đ"+
             (noPrice?" · Có thuốc chưa thiết lập giá":$" · Tổng: {clinicalSummary.TienDichVu+clinicalSummary.TienThuoc:N0} đ");
-        if(clinicalSummary.SoDonNhap>0)CompletionTotalText.Text+=$"\nCòn {clinicalSummary.SoDonNhap} đơn nháp cần ký hoặc hủy.";
+        if(clinicalSummary.SoDonNhap>0)CompletionTotalText.Text+=$"\nCó {clinicalSummary.SoDonNhap} đơn chờ chốt; chốt lần khám sẽ ký đơn và lập hóa đơn.";
         ExecutionStatusText.Text=clinicalSummary.DaThucHien?"Đã xác nhận thực hiện. Có thể kê thuốc hoặc lưu lý do không kê thuốc.":"Chưa xác nhận thực hiện khám/điều trị.";
         ExecutionAcknowledged.IsChecked=clinicalSummary.DaThucHien;
         ExecutionAcknowledged.IsEnabled=Editable&&!clinicalSummary.DaThucHien;
@@ -23,17 +24,45 @@ public partial class KhamLamSang
         if(prescriptionEditor is null)
         {
             prescriptionEditor=new(actor,transaction);PrescriptionHost.Content=prescriptionEditor;
-            ((FrameworkElement)prescriptionEditor.FindName("RxHeader")).Visibility=Visibility.Collapsed;
             prescriptionEditor.FocusContext(PatientId,visitId);
             prescriptionEditor.DonThuocThayDoi+=()=>Run(RefreshClinicalSummary,out _);
         }
         else prescriptionEditor.RefreshContext();
         if(historyReadOnly||!snapshot.DuocSua||!allowed("KhamDieuTri"))prescriptionEditor.RestrictToHistory();
-        PrescriptionHost.IsEnabled=(clinicalSummary.DaThucHien||!snapshot.DuocSua)&&NoPrescription.IsChecked!=true;
+        PrescriptionPreviewList.ItemsSource=clinicalSummary.Thuoc;
+        PrescribeButton.Content=clinicalSummary.Thuoc.Count==0?"Kê thuốc":"Sửa danh sách thuốc";
+        PrescribeButton.IsEnabled=Editable&&clinicalSummary.DaThucHien&&NoPrescription.IsChecked!=true;
+        ReviewPrescriptionButton.IsEnabled=clinicalSummary.DaThucHien;
+        PrescriptionPreviewHint.Text=clinicalSummary.Thuoc.Count==0?"Chưa chọn thuốc. Bấm Kê thuốc để lọc nhóm và lập danh sách, hoặc lưu lý do không kê thuốc.":
+            $"{clinicalSummary.Thuoc.Count} dòng thuốc · Kiểm tra lại danh sách; có thể mở sửa trước khi chốt lần khám.";
         PrescriptionStageText.Text=!clinicalSummary.DaThucHien?"Xác nhận đã thực hiện ở bước 4 trước khi kê thuốc.":
-            NoPrescription.IsChecked==true?"Lưu lý do không kê thuốc bằng nút Lưu khám, rồi chuyển Tổng kết.":"Chọn thuốc theo nhóm, nhập chỉ định, lưu nháp rồi ký đơn trước khi Tổng kết.";
+            NoPrescription.IsChecked==true?"Lưu lý do không kê thuốc bằng nút Lưu khám, rồi chuyển Tổng kết.":"Bấm Kê thuốc, chọn và nhập chỉ định trong cửa sổ; Xác nhận để đưa danh sách về lần khám.";
         UpdateClinicalFooter();
     }
+    public KeDonThuocWindow TaoCuaSoKeThuoc()
+    {
+        RequireEditable();
+        if(dirty||planDirty||conditionInputDirty)throw new LoiKhamException("BanNhap","Lưu nội dung khám và kế hoạch trước khi kê thuốc.");
+        if(NoPrescription.IsChecked==true||clinicalSummary?.DaThucHien!=true)throw new LoiKhamException("ThucHien","Xác nhận thực hiện và bỏ lựa chọn Không kê thuốc trước khi kê đơn.");
+        if(prescriptionWindow is not null)return prescriptionWindow;
+        var editor=prescriptionEditor??throw new LoiKhamException("DonThuoc","Chưa nạp được bộ soạn đơn.");
+        editor.RefreshContext();PrescriptionHost.Content=null;
+        try
+        {
+            var window=new KeDonThuocWindow(editor);
+            var owner=Window.GetWindow(this);if(owner?.IsVisible==true)window.Owner=owner;
+            prescriptionWindow=window;
+            window.Closed+=(_,_)=>
+            {
+                window.ReleaseEditor();PrescriptionHost.Content=editor;prescriptionWindow=null;
+                Run(RefreshClinicalSummary,out _);
+            };
+            return window;
+        }
+        catch{PrescriptionHost.Content=editor;throw;}
+    }
+    private void Prescribe_Click(object sender,RoutedEventArgs e)=>Run(()=>TaoCuaSoKeThuoc().ShowDialog(),out _);
+    private void ReviewPrescription_Click(object sender,RoutedEventArgs e)=>ClinicalTabs.SelectedIndex=5;
     public bool TryExecutePlan(out string error)=>Run(()=>
     {
         RequireEditable();
@@ -59,6 +88,7 @@ public partial class KhamLamSang
         var prescription=ClinicalTabs.SelectedItem==PrescriptionTab;
         CompleteClinicalButton.Visibility=ClinicalTabs.SelectedIndex==5?Visibility.Visible:Visibility.Collapsed;
         ReloadClinicalButton.Visibility=prescription?Visibility.Collapsed:Visibility.Visible;
-        SaveClinicalButton.Visibility=prescription&&NoPrescription.IsChecked!=true?Visibility.Collapsed:Visibility.Visible;
+        SaveClinicalButton.Visibility=prescription&&NoPrescription.IsChecked!=true&&!dirty&&!conditionInputDirty&&!planDirty?Visibility.Collapsed:Visibility.Visible;
+        PrescribeButton.IsEnabled=Editable&&clinicalSummary?.DaThucHien==true&&NoPrescription.IsChecked!=true&&!dirty&&!conditionInputDirty&&!planDirty;
     }
 }

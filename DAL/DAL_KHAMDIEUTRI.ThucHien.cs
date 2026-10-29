@@ -57,7 +57,7 @@ public sealed partial class DAL_KHAMDIEUTRI
         var drugs=db.Query<ThuocTongKetKham>("""
             SELECT d.MaDT,c.MaCTDT,c.MaThuoc,COALESCE(c.TenThuocChot,h.TenHH) TenThuoc,
                 COALESCE(c.HamLuongChot,t.HamLuong) HamLuong,COALESCE(c.DonViTinhChot,h.DonViTinh) DonViTinh,
-                c.SoLuong,c.LieuDung,c.DuongDung,c.SoNgayDung,c.HuongDan,COALESCE(bill.DonGia,t.DonGiaBan) DonGia
+                c.SoLuong,c.LieuDung,c.DuongDung,c.SoNgayDung,c.HuongDan,COALESCE(bill.DonGia,t.DonGiaBan) DonGia,d.TrangThai
             FROM dbo.DON_THUOC d WITH(HOLDLOCK) JOIN dbo.CHI_TIET_DON_THUOC c WITH(HOLDLOCK) ON c.MaDT=d.MaDT
             JOIN dbo.THUOC t WITH(HOLDLOCK) ON t.MaThuoc=c.MaThuoc JOIN dbo.HANG_HOA h WITH(HOLDLOCK) ON h.MaHH=t.MaHH
             OUTER APPLY(SELECT TOP(1) b.DonGia FROM dbo.CHI_TIET_HOA_DON b WITH(HOLDLOCK)
@@ -65,11 +65,15 @@ public sealed partial class DAL_KHAMDIEUTRI
                 LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x WITH(HOLDLOCK) ON x.MaCTPX=b.MaCTPX
                 WHERE hd.MaLS=@MaLS AND hd.TaoKhiHoanTat=1 AND(b.MaCTDT=c.MaCTDT OR x.MaCTDT=c.MaCTDT)
                 ORDER BY b.MaCTHD) bill
-            WHERE d.MaLS=@MaLS AND d.TrangThai=N'Đã xác nhận' ORDER BY d.NgayKe,d.MaDT,c.MaCTDT
+            WHERE d.MaLS=@MaLS AND d.TrangThai IN(N'Nháp',N'Đã xác nhận')
+                AND NOT EXISTS(SELECT 1 FROM dbo.DON_THUOC pending WITH(HOLDLOCK) WHERE pending.MaDTThayThe=d.MaDT AND pending.TrangThai=N'Nháp')
+            ORDER BY d.NgayKe,d.MaDT,c.MaCTDT
             """,visit,tx).ToArray();
         var plans=db.Query<ET_KEHOACHDIEUTRI>("SELECT * FROM dbo.KE_HOACH_DIEU_TRI WITH(HOLDLOCK) WHERE MaLS=@MaLS ORDER BY MaKHDT",visit,tx).ToArray();
         var steps=db.Query<ET_CHITIETKEHOACH>("SELECT c.* FROM dbo.CHI_TIET_KE_HOACH c WITH(HOLDLOCK) JOIN dbo.KE_HOACH_DIEU_TRI k WITH(HOLDLOCK) ON k.MaKHDT=c.MaKHDT WHERE k.MaLS=@MaLS ORDER BY c.MaCTKH",visit,tx).ToArray();
         var drafts=db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DON_THUOC WITH(HOLDLOCK) WHERE MaLS=@MaLS AND TrangThai=N'Nháp'",visit,tx);
-        return new(services,drugs,DaThucHienXong(db,tx,visit.MaLS),drafts,Fingerprint(new{Clinical=ClinicalSnapshot(db,tx,visit).DauVanTay,Plans=plans,Steps=steps,Services=services}));
+        var orders=db.Query<ET_DONTHUOC>("SELECT * FROM dbo.DON_THUOC WITH(HOLDLOCK) WHERE MaLS=@MaLS ORDER BY MaDT",visit,tx).ToArray();
+        var orderLines=db.Query<ET_CHITIETDONTHUOC>("SELECT c.* FROM dbo.CHI_TIET_DON_THUOC c WITH(HOLDLOCK) JOIN dbo.DON_THUOC d WITH(HOLDLOCK) ON d.MaDT=c.MaDT WHERE d.MaLS=@MaLS ORDER BY c.MaCTDT",visit,tx).ToArray();
+        return new(services,drugs,DaThucHienXong(db,tx,visit.MaLS),drafts,Fingerprint(new{Clinical=ClinicalSnapshot(db,tx,visit).DauVanTay,Plans=plans,Steps=steps,Services=services,Orders=orders,OrderLines=orderLines,Drugs=drugs}));
     }
 }

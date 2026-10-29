@@ -1,5 +1,7 @@
 # Kê thuốc trong khám và tra cứu/bàn giao đơn
 
+> Mốc nền tảng. Cách thao tác hiện tại đã đổi sang cửa sổ xác nhận đơn nháp rồi chốt ký/hóa đơn; xem [CUA_SO_KE_THUOC.md](CUA_SO_KE_THUOC.md).
+
 Yêu cầu29/10/2026: Đơn thuốc chỉ xem đơn bác sĩ đã kê và bàn giao. Soạn/ký đơn nằm trong khám, sau thực hiện kế hoạch, trước tổng kết dịch vụ/thuốc và hóa đơn. Bỏ mẫu/phiên bản/cấu hình hướng dẫn và nút tải lại bỏ nháp trùng chức năng. Thuốc có nhóm độc lập với mẫu và danh mục thực tế có nguồn.
 
 Chọn cách tái sử dụng bộ soạn đơn đã có ngay trong màn khám, giữ validation bác sĩ/thuốc/chỉ định và giao dịch tài chính. Thực hiện kế hoạch có xác nhận riêng trước kê thuốc; tổng kết đọc dịch vụ thực tế và đơn hiệu lực đã ký từ SQL. Hoàn tất chỉ khóa lượt/lập hóa đơn, không tự thực hiện phần kế hoạch còn thiếu. Không kê thuốc thì lưu lý do ở bước kê thuốc. Đơn thuốc bên ngoài dùng danh sách/chi tiết chỉ đọc và bàn giao theo quyền sau thu đủ.

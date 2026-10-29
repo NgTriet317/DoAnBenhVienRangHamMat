@@ -4,7 +4,7 @@ public sealed record DichVuTongKetKham(string MaDVThucHien,string MaDV,string Te
     decimal SoLuong,decimal DonGia,decimal ThanhTien,DateTime ThoiGianThucHien,string? KetQua);
 public sealed record ThuocTongKetKham(string MaDT,string MaCTDT,string MaThuoc,string TenThuoc,
     string HamLuong,string DonViTinh,decimal SoLuong,string LieuDung,string? DuongDung,
-    int SoNgayDung,string HuongDan,decimal DonGia)
+    int SoNgayDung,string HuongDan,decimal DonGia,string TrangThai)
 {
     public decimal ThanhTien=>decimal.Round(SoLuong*DonGia,2,MidpointRounding.AwayFromZero);
 }
