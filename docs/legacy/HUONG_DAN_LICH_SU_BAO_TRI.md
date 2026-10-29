@@ -1,5 +1,7 @@
 # Lịch sử bảo trì thiết bị
 
+> Tài liệu lịch sử. Luồng hiện tại theo serial và năm trạng thái nằm tại [BAO_TRI_SERIAL](../database/BAO_TRI_SERIAL.md); không dùng quy tắc sửa/xóa/hoàn thành của tài liệu cũ bên dưới.
+
 Mở phân hệ **Bảo trì** từ màn hình chính hoặc mục Thiết bị. Quyền mở phân hệ giữ theo tài khoản hiện có của dự án.
 
 ## Sử dụng

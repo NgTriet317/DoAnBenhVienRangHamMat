@@ -10,35 +10,135 @@ using RangHamMat.Controls;
 using RangHamMat.Controls.ClinicalWorkflow;
 namespace RangHamMat.Views;
 
+/// <summary>
+/// Phần xử lý kê đơn thuốc trình nhập liệu của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+/// </summary>
 public partial class KeDonThuocEditor:UserControl,IPatientScoped
 {
-    private readonly NguCanhNghiepVu actor;private readonly IDbTransaction? transaction;private readonly BUS_DONTHUOC service;
-    private readonly ObservableCollection<DongThuocKeDon> lines=new();private KhongGianKeDon? board;private BanNhapDon? saved;private string? replacement,patientScope;private bool loading=true,dirty;
+    /// <summary>
+    /// Ngữ cảnh định danh và quyền của người dùng đang thao tác.
+    /// </summary>
+    private readonly NguCanhNghiepVu actor;
+    /// <summary>
+    /// Giao dịch được giữ để các thao tác liên quan dùng cùng một phạm vi commit/rollback.
+    /// </summary>
+    private readonly IDbTransaction? transaction;
+    /// <summary>
+    /// Đối tượng nghiệp vụ đơn thuốc được màn hình dùng để đọc/ghi dữ liệu.
+    /// </summary>
+    private readonly BUS_DONTHUOC service;
+    /// <summary>
+    /// Các dòng được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    private readonly ObservableCollection<DongThuocKeDon> lines=new();
+    /// <summary>
+    /// Bảng tổng hợp được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    private KhongGianKeDon? board;
+    /// <summary>
+    /// Đã lưu được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    private BanNhapDon? saved;
+    /// <summary>
+    /// Thay thế phạm vi bệnh nhân được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    private string? replacement,patientScope;
+    /// <summary>
+    /// Cờ Cờ đang điền dữ liệu, dùng tránh xử lý lại sự kiện phát sinh do cập nhật giao diện, Cờ có nội dung thay đổi chưa lưu; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
+    private bool loading=true,dirty;
+    /// <summary>
+    /// Cờ Cờ mở màn hình ở chế độ chỉ xem lịch sử; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool historyReadOnly;
+    /// <summary>
+    /// Dòng thuốc đang chỉnh được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private DongThuocKeDon? editingLine;
+    /// <summary>
+    /// Cờ Đang nạp chi tiết; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool loadingDetails;
+    /// <summary>
+    /// Thông báo đơn thuốc thay đổi cho các thành phần đã đăng ký theo dõi.
+    /// </summary>
     public event Action? DonThuocThayDoi;
-    public string? PatientId{get;private set;}public bool CoThayDoiChuaLuu=>dirty;public FlowDocument? BanInDangMo{get;private set;}
+    /// <summary>
+    /// Mã bệnh nhân. Có thể để null khi dữ liệu chưa được cung cấp.
+    /// </summary>
+    public string? PatientId{get;private set;}
+    /// <summary>
+    /// Giá trị Có thay đổi chưa lưu; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
+    public bool CoThayDoiChuaLuu=>dirty;
+    /// <summary>
+    /// Bản in đang mở. Có thể để null khi dữ liệu chưa được cung cấp.
+    /// </summary>
+    public FlowDocument? BanInDangMo{get;private set;}
+    /// <summary>
+    /// Khởi tạo kê đơn thuốc trình nhập liệu. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+    /// </summary>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
     public KeDonThuocEditor(NguCanhNghiepVu? user=null,IDbTransaction? transaction=null)
     {
         this.transaction=transaction;service=new(transaction);actor=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(user?.MaNV??PhienDangNhap.MaNV);if(!actor.CoQuyen(QuyenLamViec.Kham))throw new TuChoiQuyenNghiepVuException();
         InitializeComponent();RxLines.ItemsSource=lines;lines.CollectionChanged+=(_,_)=>{if(!loading)dirty=true;};RxLines.BeginningEdit+=(_,_)=>{if(!loading)dirty=true;};LoadGroups();LoadVisits();Search();loading=false;UpdateRights();
     }
+    /// <summary>
+    /// Giá trị Được sửa; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     private bool Editable=>!historyReadOnly&&(saved?.DuocSua??(board?.DuocTao==true||replacement is not null));
+    /// <summary>
+    /// Đưa trình kê thuốc vào chế độ xác nhận bản nháp cho cửa sổ khám.
+    /// </summary>
     internal void UseDraftDialog()
     {
         SignButton.Visibility=PrintButton.Visibility=SaveButton.Visibility=Visibility.Collapsed;
     }
+    /// <summary>
+    /// Kiểm tra nội dung và xác nhận bản đơn nháp để chuyển lại cho màn hình khám.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>TrySave</c>.</remarks>
+    /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     internal bool TryConfirmDraft(out string error)
     {
         if(saved?.Don.TrangThai=="Đã xác nhận"&&!dirty){error="";return true;}
         return TrySave(out error);
     }
+    /// <summary>
+    /// Đưa màn hình về phạm vi tra cứu lịch sử và cập nhật quyền thao tác tương ứng.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>UpdateRights</c>.</remarks>
     public void RestrictToHistory(){historyReadOnly=true;UpdateRights();}
+    /// <summary>
+    /// Nạp lại ngữ cảnh lần khám và các đơn khi nguồn bệnh nhân/lần khám thay đổi.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>FocusContext</c>.</remarks>
     public void RefreshContext(){if(board is not null&&!dirty)FocusContext(patientScope,board.Luot.MaLS,saved?.Don.MaDT);}
+    /// <summary>
+    /// Nạp các lần khám có thể chọn trong phạm vi người dùng và bệnh nhân hiện tại.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>service.LayLuotKeDon</c>.</remarks>
     private void LoadVisits()=>VisitPicker.ItemsSource=service.LayLuotKeDon(actor,patientScope).Select(v=>new LuaChonDanhMuc(v.MaLS,$"{v.MaLS} · {v.HoTenBN} ({v.MaBN}) · {v.ThoiGianKham:dd/MM/yyyy}")).ToArray();
+    /// <summary>
+    /// Nạp các nhóm thuốc dùng lọc danh mục kê đơn.
+    /// </summary>
     private void LoadGroups(){GroupChoice.ItemsSource=new[]{new LuaChonDanhMuc("","Tất cả nhóm")}.Concat(new BUS_NHOMTHUOCKEDON(transaction).LayDanhSach(actor).Where(g=>g.TrangThai=="Đang áp dụng").Select(g=>new LuaChonDanhMuc(g.MaNhomThuoc,g.TenNhom))).ToArray();GroupChoice.SelectedIndex=0;}
+    /// <summary>
+    /// Áp dụng bệnh nhân được chỉ định làm phạm vi dữ liệu của màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>FocusContext</c>.</remarks>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
     public void SetPatient(string id)=>FocusContext(id);
+    /// <summary>
+    /// Chuyển màn hình tới đúng bệnh nhân/lần khám hoặc chứng từ theo ngữ cảnh được yêu cầu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>CanLeave</c>, <c>Run</c>, <c>service.LayBanNhapDon</c>, <c>service.LayKhongGianKeDon</c>.</remarks>
+    /// <param name="patientId">Giá trị mã bệnh nhân dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <param name="visitId">Giá trị mã lần khám dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <param name="prescriptionId">Giá trị đơn thuốc mã dùng khi thực hiện thao tác; kiểu string?.</param>
     public void FocusContext(string? patientId,string? visitId=null,string? prescriptionId=null)
     {
         if(!CanLeave())return;Run(()=>
@@ -50,6 +150,11 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
             loading=true;try{patientScope=patientId;PatientId=next?.Luot.MaBN??patientId;board=next;LoadVisits();VisitPicker.SelectedValue=visitId;RefreshOrders(requested?.Don.MaDT);Fill(requested);}finally{loading=false;}
         },out _);
     }
+    /// <summary>
+    /// Nạp lại danh sách đơn của lần khám và khôi phục lựa chọn phù hợp.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>.ToString</c>, <c>Age</c>, <c>Known</c>, <c>.CacDon.Select</c>.</remarks>
+    /// <param name="select">Giá trị chọn dùng khi thực hiện thao tác; kiểu string?.</param>
     private void RefreshOrders(string? select=null)
     {
         PatientHeader.Text=board is null?"Chọn lượt của bác sĩ để kê đơn.":$"{board.Luot.HoTenBN} · {board.Luot.MaBN}";
@@ -57,6 +162,11 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
         SafetyHeader.Text=board is null?"":$"Ngày sinh: {board.NgaySinh?.ToString("dd/MM/yyyy")??"chưa ghi nhận"} · Tuổi: {Age(board.NgaySinh)}\nDị ứng: {Known(board.DiUng)} · Tiền sử: {Known(board.TienSuBenh)}. Đối chiếu trước khi ký.";
         OrderChoice.ItemsSource=board?.CacDon.Select(d=>new LuaChonDanhMuc(d.MaDT,$"{d.MaDT} · {d.TrangThai} · {d.NgayKe:dd/MM/yyyy HH:mm}"));OrderChoice.SelectedValue=select;
     }
+    /// <summary>
+    /// Điền dữ liệu đã đọc vào các trường của biểu mẫu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>lines.Clear</c>, <c>lines.Add</c>, <c>Label</c>, <c>lines.FirstOrDefault</c>.</remarks>
+    /// <param name="s">Giá trị s dùng khi thực hiện thao tác; kiểu BanNhapDon?.</param>
     private void Fill(BanNhapDon? s)
     {
         var prior=loading;loading=true;
@@ -69,28 +179,136 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
         }
         finally{loading=prior;}
     }
+    /// <summary>
+    /// Tạo nhãn hiển thị từ dữ liệu của mục hiện tại.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>service.TimThuoc</c>.</remarks>
+    /// <param name="d">Giá trị d dùng khi thực hiện thao tác; kiểu ET_CHITIETDONTHUOC.</param>
+    /// <returns>Chuỗi kết quả của thao tác nhãn.</returns>
     private string Label(ET_CHITIETDONTHUOC d)
     {if(!string.IsNullOrWhiteSpace(d.TenThuocChot))return $"{d.TenThuocChot} · {d.HamLuongChot} · {d.DonViTinhChot} ({d.MaThuoc})";var drug=service.TimThuoc(new(TuKhoa:d.MaThuoc),actor).FirstOrDefault(t=>t.MaThuoc==d.MaThuoc);return drug is null?d.MaThuoc+" (ngừng hoạt động)":$"{drug.TenThuoc} · {drug.HamLuong} · {drug.DonViTinh} ({drug.MaThuoc})";}
+    /// <summary>
+    /// Cập nhật trạng thái cho phép thao tác theo quyền và dữ liệu đang hiển thị.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>board.CacDon.All</c>.</remarks>
     private void UpdateRights(){var edit=board is not null&&Editable;RxLines.IsReadOnly=true;RxLines.CanUserDeleteRows=edit;DetailForm.IsEnabled=RemoveLineButton.IsEnabled=edit&&editingLine is not null;AddSelectedButton.IsEnabled=SaveButton.IsEnabled=edit;ReplacementReason.IsEnabled=edit&&replacement is not null;NoteEditor.IsEnabled=edit;SignButton.IsEnabled=edit&&saved is not null;NewButton.IsEnabled=!historyReadOnly&&board?.DuocTao==true&&board.CacDon.All(x=>x.TrangThai!="Nháp");ReplaceButton.IsEnabled=!historyReadOnly&&saved?.DuocThay==true;CancelButton.IsEnabled=edit;PrintButton.IsEnabled=saved?.Don.TrangThai=="Đã xác nhận";}
+    /// <summary>
+    /// Thực thi thao tác được truyền vào và xử lý phản hồi theo quy tắc của màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ClinicalFormInput.ClearErrors</c>, <c>a</c>, <c>ClinicalFormInput.Message</c>, <c>ClinicalFormInput.ShowError</c>.</remarks>
+    /// <param name="a">Giá trị a dùng khi thực hiện thao tác; kiểu Action.</param>
+    /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     private bool Run(Action a,out string error){error="";ErrorText.Text="";ClinicalFormInput.ClearErrors(this);try{a();return true;}catch(InvalidOperationException ex){error=ErrorText.Text=ClinicalFormInput.Message(ex);ClinicalFormInput.ShowError(this,ex);return false;}}
+    /// <summary>
+    /// Kiểm tra nội dung chưa lưu và điều kiện cho phép rời trình nhập liệu.
+    /// </summary>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     private bool CanLeave(){if(CoThayDoiChuaLuu)ErrorText.Text="Lưu hoặc Hủy nháp trước khi chọn đơn khác.";return !CoThayDoiChuaLuu;}
+    /// <summary>
+    /// Tìm dữ liệu theo bộ lọc hiện tại và đưa kết quả lên giao diện.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>service.TimThuoc</c>.</remarks>
     private void Search()=>DrugGrid.ItemsSource=service.TimThuoc(new(GroupChoice.SelectedValue is string g&&g.Length>0?g:null,DrugSearch.Text,FormFilter.Text,StrengthFilter.Text),actor);
+    /// <summary>
+    /// Kiểm tra và thử lưu nội dung hiện tại; cập nhật trạng thái giao diện theo kết quả.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Run</c>, <c>CommitLineDetails</c>, <c>ClinicalFormInput.Commit</c>, <c>lines.ToArray</c>.</remarks>
+    /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     public bool TrySave(out string error)=>Run(()=>
     {if(board is null||!Editable)throw new TuChoiQuyenNghiepVuException();CommitLineDetails();ClinicalFormInput.Commit(RxLines,"CacDong");var r=new YeuCauLuuDon{MaDT=saved?.Don.MaDT,MaLS=board.Luot.MaLS,MaDTThayThe=replacement,LyDoThayThe=ReplacementReason.Text,GhiChu=NoteEditor.Text,DauVanTay=saved?.DauVanTay,CacDong=lines.ToArray()};AfterWrite(service.LuuDon(r,actor),"Đã lưu nháp; chưa ký và không trừ kho.");},out error);
+    /// <summary>
+    /// Kiểm tra và thử ký xác nhận đơn thuốc đang mở.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Run</c>, <c>CommitLineDetails</c>, <c>ClinicalFormInput.Commit</c>, <c>AfterWrite</c>.</remarks>
+    /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     public bool TrySign(out string error)=>Run(()=>{CommitLineDetails();ClinicalFormInput.Commit(RxLines,"CacDong");if(saved is null||!Editable)throw new TuChoiQuyenNghiepVuException();if(dirty)throw new LoiKhamException("BanNhap","Lưu mọi thay đổi trước khi ký.");AfterWrite(service.XacNhanDon(saved.Don.MaDT,saved.DauVanTay,actor),"Đã ký đơn. Chuyển Tổng kết để kiểm tra dịch vụ và thuốc trước khi lập hóa đơn.");},out error);
+    /// <summary>
+    /// Kiểm tra và thử hủy bản đơn thuốc đang mở.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Run</c>, <c>Fill</c>, <c>AfterWrite</c>, <c>service.HuyDonNhap</c>.</remarks>
+    /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     public bool TryCancel(out string error)=>Run(()=>{if(!Editable)throw new TuChoiQuyenNghiepVuException();if(saved is null){Fill(null);StatusText.Text="Đã hủy nội dung nháp chưa lưu.";return;}AfterWrite(service.HuyDonNhap(saved.Don.MaDT,saved.DauVanTay,actor),"Đã hủy nháp; đơn nguồn giữ nguyên hiệu lực.");},out error);
+    /// <summary>
+    /// Chuẩn bị nguồn in từ bản chứng từ được kiểm tra tại thời điểm in.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Run</c>, <c>BuildPrint</c>, <c>service.LayBanInDon</c>.</remarks>
+    /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     public bool TryPreparePrint(out string error)=>Run(()=>{if(saved is null)throw new LoiKhamException("MaDT","Chọn bản đã ký.");BanInDangMo=BuildPrint(service.LayBanInDon(saved.Don.MaDT,actor));},out error);
+    /// <summary>
+    /// Tạo bản dữ liệu riêng cho việc in để nội dung không thay đổi theo thao tác trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>service.LayBanInDon</c>.</remarks>
+    /// <returns>Kết quả kiểu Func&lt;BanInDonThuoc&gt; dùng cho bước xử lý tiếp theo.</returns>
     public Func<BanInDonThuoc> TaoNguonInCoDinh(){var id=saved?.Don.MaDT??throw new LoiKhamException("MaDT","Chọn bản đã ký.");service.LayBanInDon(id,actor);return ()=>service.LayBanInDon(id,actor);}
+    /// <summary>
+    /// Làm mới dữ liệu và mốc theo dõi sau thao tác ghi thành công.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Fill</c>, <c>service.LayKhongGianKeDon</c>, <c>RefreshOrders</c>, <c>UpdateRights</c>.</remarks>
+    /// <param name="s">Giá trị s dùng khi thực hiện thao tác; kiểu BanNhapDon.</param>
+    /// <param name="message">Nội dung thông báo được chuyển đến nơi gọi hoặc hiển thị cho người dùng.</param>
     private void AfterWrite(BanNhapDon s,string message)
     {Fill(s);StatusText.Text=message;loading=true;try{board=service.LayKhongGianKeDon(s.Don.MaLS,actor);RefreshOrders(s.Don.MaDT);}catch(InvalidOperationException){StatusText.Text+=$" Đã lưu {s.Don.MaDT}; tải lại danh sách khi kết nối ổn định.";}finally{loading=false;}UpdateRights();DonThuocThayDoi?.Invoke();if(transaction is null)try{DuLieuGiaoDien.RefreshFromDatabase();}catch(InvalidOperationException){StatusText.Text+=" Đã lưu dữ liệu; tải lại màn hình khi kết nối ổn định.";}}
+    /// <summary>
+    /// Xử lý thao tác thêm khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Run</c>, <c>CommitLineDetails</c>, <c>ClinicalFormInput.Commit</c>, <c>DrugGrid.SelectedItems.Cast&lt;ThuocKeDon&gt;</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Add_Click(object sender,RoutedEventArgs e)=>Run(()=>
     {if(!Editable)throw new TuChoiQuyenNghiepVuException();CommitLineDetails();ClinicalFormInput.Commit(RxLines,"CacDong");foreach(var drug in DrugGrid.SelectedItems.Cast<ThuocKeDon>().ToArray()){var existing=lines.FirstOrDefault(r=>r.MaThuoc==drug.MaThuoc);if(existing is not null){RxLines.SelectedItem=existing;RxLines.ScrollIntoView(existing);StatusText.Text="Thuốc đã có; chọn dòng hiện tại để chỉnh.";continue;}var row=new DongThuocKeDon{MaThuoc=drug.MaThuoc,TenHienThi=$"{drug.TenThuoc} · {drug.HamLuong} · {drug.DonViTinh} ({drug.MaThuoc})"};lines.Add(row);RxLines.SelectedItem=row;RxLines.ScrollIntoView(row);}},out _);
+    /// <summary>
+    /// Xử lý thao tác mới khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>CanLeave</c>, <c>Fill</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void New_Click(object sender,RoutedEventArgs e){if(CanLeave()&&NewButton.IsEnabled)Fill(null);}
+    /// <summary>
+    /// Xử lý thao tác thay thế khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Run</c>, <c>CanLeave</c>, <c>Fill</c>, <c>ReplacementReason.Clear</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Replace_Click(object sender,RoutedEventArgs e)=>Run(()=>{if(historyReadOnly||!CanLeave()||saved?.DuocThay!=true)return;var old=saved;Fill(old);loading=true;try{saved=null;replacement=old.Don.MaDT;foreach(var row in lines)row.MaCTDT=null;ReplacementReason.Clear();NoteEditor.Clear();OrderChoice.SelectedIndex=-1;OrderHeader.Text=$"Thay đơn {replacement} — đơn cũ vẫn hiệu lực tới khi ký mới";dirty=true;UpdateRights();}finally{loading=false;}},out _);
+    /// <summary>
+    /// Tiếp nhận thay đổi đơn và cập nhật trạng thái/dữ liệu phụ thuộc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>CanLeave</c>, <c>Run</c>, <c>Fill</c>, <c>service.LayBanNhapDon</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Order_Changed(object sender,SelectionChangedEventArgs e){if(loading)return;if(!CanLeave()){loading=true;OrderChoice.SelectedValue=saved?.Don.MaDT;loading=false;return;}if(OrderChoice.SelectedValue is string id&&!Run(()=>Fill(service.LayBanNhapDon(id,actor)),out _)){loading=true;OrderChoice.SelectedValue=saved?.Don.MaDT;loading=false;}}
+    /// <summary>
+    /// Tiếp nhận thay đổi lần khám và cập nhật trạng thái/dữ liệu phụ thuộc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>CanLeave</c>, <c>FocusContext</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Visit_Changed(object sender,SelectionChangedEventArgs e){if(loading)return;if(!CanLeave()){loading=true;VisitPicker.SelectedValue=board?.Luot.MaLS;loading=false;return;}if(VisitPicker.SelectedValue is string id){FocusContext(patientScope,id);loading=true;VisitPicker.SelectedValue=board?.Luot.MaLS;loading=false;}}
+    /// <summary>
+    /// Xử lý thao tác tìm kiếm khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Run</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Search_Click(object sender,RoutedEventArgs e)=>Run(Search,out _);
+    /// <summary>
+    /// Tiếp nhận thay đổi nhóm và cập nhật trạng thái/dữ liệu phụ thuộc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Run</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Group_Changed(object sender,SelectionChangedEventArgs e){if(!loading&&DrugGrid is not null)Run(Search,out _);}
+    /// <summary>
+    /// Phản ánh lựa chọn dòng vào dữ liệu và phần hiển thị liên quan.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>lines.Contains</c>, <c>Run</c>, <c>LoadLineDetails</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Line_Selected(object sender,SelectionChangedEventArgs e)
     {
         if(e.OriginalSource!=RxLines||loadingDetails)return;
@@ -102,6 +320,11 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
         }
         LoadLineDetails(RxLines.SelectedItem as DongThuocKeDon);
     }
+    /// <summary>
+    /// Điền dữ liệu dòng thuốc đang chọn vào vùng chỉnh chi tiết.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>.SoLuong.ToString</c>, <c>CultureInfo.GetCultureInfo</c>, <c>.SoNgayDung.ToString</c>, <c>UpdateRights</c>.</remarks>
+    /// <param name="row">Giá trị dòng thuốc kê đơn được truyền vào để đọc, kiểm tra hoặc cập nhật trong thao tác này.</param>
     private void LoadLineDetails(DongThuocKeDon? row)
     {
         loadingDetails=true;
@@ -116,6 +339,12 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
         }
         finally{loadingDetails=false;}
     }
+    /// <summary>
+    /// Tiếp nhận thay đổi chi tiết và cập nhật trạng thái/dữ liệu phụ thuộc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>CultureInfo.GetCultureInfo</c>, <c>decimal.TryParse</c>, <c>int.TryParse</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Detail_Changed(object sender,TextChangedEventArgs e)
     {
         if(loading||loadingDetails||editingLine is null||!Editable)return;
@@ -127,6 +356,10 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
         else if(sender==RouteEditor)editingLine.DuongDung=RouteEditor.Text;
         else if(sender==InstructionEditor)editingLine.HuongDan=InstructionEditor.Text;
     }
+    /// <summary>
+    /// Ghi nhận nội dung ô nhập vào dòng thuốc đang chỉnh trước khi thao tác tiếp.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>lines.Contains</c>, <c>CultureInfo.GetCultureInfo</c>, <c>decimal.TryParse</c>, <c>int.TryParse</c>.</remarks>
     private void CommitLineDetails()
     {
         if(editingLine is null||!lines.Contains(editingLine)||!Editable)return;
@@ -138,26 +371,89 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
         editingLine.SoLuong=quantity;editingLine.SoNgayDung=days;
         editingLine.LieuDung=DoseEditor.Text;editingLine.DuongDung=RouteEditor.Text;editingLine.HuongDan=InstructionEditor.Text;
     }
+    /// <summary>
+    /// Tiếp nhận nội dung chi tiết khi ô nhập mất tiêu điểm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>RxLines.Items.Refresh</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Detail_LostFocus(object sender,RoutedEventArgs e)
     {
         if(!loading&&!loadingDetails)RxLines.Items.Refresh();
     }
+    /// <summary>
+    /// Xử lý thao tác bỏ dòng khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>lines.Remove</c>, <c>lines.FirstOrDefault</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void RemoveLine_Click(object sender,RoutedEventArgs e)
     {
         if(!Editable||RxLines.SelectedItem is not DongThuocKeDon row)return;
         lines.Remove(row);RxLines.SelectedItem=lines.FirstOrDefault();
     }
+    /// <summary>
+    /// Tiếp nhận thay đổi đầu vào và cập nhật trạng thái/dữ liệu phụ thuộc.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Input_Changed(object sender,TextChangedEventArgs e){if(!loading)dirty=true;}
+    /// <summary>
+    /// Tiếp nhận sự kiện kết thúc sửa ô của dòng thuốc và cập nhật trạng thái thay đổi cần lưu.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Line_Edit(object sender,DataGridCellEditEndingEventArgs e){if(!loading)dirty=true;}
+    /// <summary>
+    /// Xử lý thao tác lưu khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>TrySave</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Save_Click(object sender,RoutedEventArgs e)=>TrySave(out _);
+    /// <summary>
+    /// Xử lý thao tác ký khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>TrySign</c>, <c>MessageBox.Show</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Sign_Click(object sender,RoutedEventArgs e){if(dirty){TrySign(out _);return;}if(MessageBox.Show("Bác sĩ đã kiểm tra toàn bộ chỉ định và xác nhận ký đơn?","Ký đơn",MessageBoxButton.YesNo,MessageBoxImage.Question)==MessageBoxResult.Yes)TrySign(out _);}
+    /// <summary>
+    /// Xử lý thao tác hủy khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>TryCancel</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Cancel_Click(object sender,RoutedEventArgs e){if(MessageBox.Show("Hủy bản nháp đang soạn?","Hủy đơn",MessageBoxButton.YesNo,MessageBoxImage.Question)==MessageBoxResult.Yes)TryCancel(out _);}
+    /// <summary>
+    /// Đọc bản chứng từ hợp lệ và dựng nguồn dữ liệu dùng in đơn thuốc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>DonThuocDocument.Tao</c>.</remarks>
+    /// <param name="p">Giá trị p dùng khi thực hiện thao tác; kiểu BanInDonThuoc.</param>
+    /// <returns>Kết quả kiểu FlowDocument dùng cho bước xử lý tiếp theo.</returns>
     private static FlowDocument BuildPrint(BanInDonThuoc p)
         =>DonThuocDocument.Tao(p);
+    /// <summary>
+    /// Xử lý thao tác in khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Run</c>, <c>TaoNguonInCoDinh</c>, <c>Window.GetWindow</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Print_Click(object sender,RoutedEventArgs e)
     {
         Run(()=>new XemTruocDonThuoc(TaoNguonInCoDinh()){Owner=Window.GetWindow(this)}.Show(),out _);
     }
+    /// <summary>
+    /// Kiểm tra hoặc lấy thông tin đã xác định của dữ liệu hiện tại.
+    /// </summary>
+    /// <param name="text">Giá trị nội dung dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <returns>Chuỗi kết quả của thao tác đã biết.</returns>
     private static string Known(string? text)=>string.IsNullOrWhiteSpace(text)?"chưa ghi nhận, cần đối chiếu":text;
+    /// <summary>
+    /// Tính tuổi hiển thị từ dữ liệu ngày sinh được cung cấp.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>birth.Date.AddYears</c>.</remarks>
+    /// <param name="dob">Giá trị ngày sinh dùng khi thực hiện thao tác; kiểu DateTime?.</param>
+    /// <returns>Chuỗi kết quả của thao tác tuổi.</returns>
     private static string Age(DateTime? dob){if(dob is not DateTime birth)return "chưa rõ";if(birth.Date>DateTime.Today)return "ngày sinh cần đối chiếu";var y=DateTime.Today.Year-birth.Year;if(birth.Date.AddYears(y)>DateTime.Today)y--;return y+" tuổi";}
 }

@@ -1,3 +1,11 @@
+<#
+.SYNOPSIS
+Kiểm tra cấu trúc bàn giao, build Debug/Release và tùy chọn kiểm tra SQL chỉ đọc.
+.DESCRIPTION
+ChiCauTruc bỏ bước build; KiemTraSql gọi các thủ tục kiểm tra trên MayChu/Database. Không chạy script khởi tạo SQL.
+.NOTES
+Các đường dẫn làm việc được tính từ vị trí script; lỗi được dừng và báo cho nơi gọi.
+#>
 param(
     [switch]$ChiCauTruc,
     [switch]$KiemTraSql,
@@ -22,11 +30,16 @@ try {
             !(Test-Path -LiteralPath ($view.FullName+'.cs'))){throw "Thiếu code-behind: $($view.Name)"}
     }
     $sql=Get-Content -LiteralPath 'Database/QLBenhVienRangHamMat.sql' -Raw
-    $tableCount=[regex]::Matches($sql,'CREATE TABLE \[dbo\]\.\[\w+\]').Count
-    if($tableCount -ne 53 -or !$sql.Contains('RHM.HospitalWorkflow.Version') -or !$sql.Contains('RHM.PrescriptionFlow.Version')){throw 'SQL chính phải có53 bảng/HospitalWorkflow3/PrescriptionFlow1.'}
+    # Bootstrap và các pha nâng cấp có thể cùng khai báo một bảng.
+    $tableCount=@([regex]::Matches($sql,'CREATE TABLE \[dbo\]\.\[(\w+)\]') | ForEach-Object {$_.Groups[1].Value} | Sort-Object -Unique).Count
+    $databaseTargets=@([regex]::Matches($sql,'(?i)CREATE DATABASE \[([^\]]+)\]') | ForEach-Object {$_.Groups[1].Value})
+    if($databaseTargets.Count -ne 1 -or $databaseTargets[0] -ne 'QLBenhVienRangHamMat' -or
+       !$sql.Contains('-- BEGIN RHM DATA SNAPSHOT:') -or !$sql.Contains('-- END RHM DATA SNAPSHOT') -or
+       !$sql.Contains('IF NOT EXISTS(SELECT 1 FROM sys.tables WHERE is_ms_shipped=0)')){throw 'SQL phải có snapshot cài mới và chỉ tạo QLBenhVienRangHamMat.'}
+    if($tableCount -ne 60 -or !$sql.Contains('RHM.HospitalWorkflow.Version') -or !$sql.Contains('RHM.PrescriptionFlow.Version') -or !$sql.Contains('RHM.SqlV9.Version') -or !$sql.Contains('RHM.MaintenanceSerial.Version')){throw 'SQL chính phải có60 bảng/HospitalWorkflow3/PrescriptionFlow1/SqlV9/BaoTriSerial.'}
     $settings=Get-Content -LiteralPath 'RangHamMat.Wpf/appsettings.json' -Raw|ConvertFrom-Json
     if([string]::IsNullOrWhiteSpace($settings.ConnectionStrings.RangHamMat)){throw 'Thiếu cấu hình kết nối.'}
-    Write-Output 'PASS: bốn project, Views XAML/code-behind, SQL53 bảng/HospitalWorkflow3/PrescriptionFlow1 và cấu hình.'
+    Write-Output 'PASS: bốn project, Views XAML/code-behind, SQL60 bảng/HospitalWorkflow3/PrescriptionFlow1/SqlV9/BaoTriSerial và cấu hình.'
     if(!$ChiCauTruc){
         foreach($configuration in @('Debug','Release')){
             & dotnet build 'BenhVienRangHamMat.sln' -c $configuration
@@ -35,8 +48,8 @@ try {
     }
     if($KiemTraSql){
         if(!(Get-Command sqlcmd -ErrorAction SilentlyContinue)){throw 'Cần sqlcmd để kiểm tra SQL Server.'}
-        & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -Q "IF OBJECT_ID(N'dbo.usp_RHM_KiemTraSchema',N'P') IS NULL OR OBJECT_ID(N'dbo.usp_RHM_KiemTraKeThuoc',N'P') IS NULL THROW 52272,N'Chạy toàn bộ Database/QLBenhVienRangHamMat.sql để đồng bộ.',1; EXEC dbo.usp_RHM_KiemTraSchema; EXEC dbo.usp_RHM_KiemTraKeThuoc;"
+        & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -Q "IF OBJECT_ID(N'dbo.usp_RHM_KiemTraSchema',N'P') IS NULL OR OBJECT_ID(N'dbo.usp_RHM_KiemTraKeThuoc',N'P') IS NULL OR OBJECT_ID(N'dbo.usp_RHM_KiemTraDongBoV9',N'P') IS NULL OR OBJECT_ID(N'dbo.usp_RHM_KiemTraBaoTriSerial',N'P') IS NULL THROW 52272,N'Chạy toàn bộ Database/QLBenhVienRangHamMat.sql để đồng bộ.',1; EXEC dbo.usp_RHM_KiemTraSchema; EXEC dbo.usp_RHM_KiemTraBaoTriSerial;"
         if($LASTEXITCODE -ne 0){throw 'Database chưa khớp QLBenhVienRangHamMat.sql hiện tại.'}
-        Write-Output 'PASS: HospitalWorkflow3/PrescriptionFlow1, schema53 bảng và ràng buộc đúng; kiểm tra SQL chỉ đọc.'
+        Write-Output 'PASS: HospitalWorkflow3/PrescriptionFlow1/SqlV9/BaoTriSerial, schema60 bảng và ràng buộc đúng; kiểm tra SQL chỉ đọc.'
     }
 } finally {Pop-Location}

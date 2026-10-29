@@ -8,20 +8,59 @@ using BUS;
 
 namespace RangHamMat.Views
 {
+    /// <summary>
+    /// Phần xử lý bảng lương của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public partial class BangLuong : UserControl
     {
+        /// <summary>
+        /// Đối tượng nghiệp vụ bảng lương được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private readonly BUS_BANGLUONG busBangLuong = new BUS_BANGLUONG();
+        /// <summary>
+        /// Danh sách lương dùng trong bảng lương được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private DataTable danhSachLuong = new DataTable();
+        /// <summary>
+        /// Danh sách đối soát dùng trong bảng lương được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private DataTable danhSachDoiSoat = new DataTable();
+        /// <summary>
+        /// Kỳ đã tính được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private DateTime? kyDaTinh;
+        /// <summary>
+        /// Ngày máy chủ được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private DateTime ngayMayChu;
+        /// <summary>
+        /// Cờ Đã cài tính lương; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool daCaiTinhLuong;
+        /// <summary>
+        /// Lọc tìm kiểm được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string locTimKiem = "";
+        /// <summary>
+        /// Lọc chức vụ được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string locChucVu = "";
+        /// <summary>
+        /// Lọc trạng thái được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string locTrangThai = "";
+        /// <summary>
+        /// Cờ Đang tải; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool dangTai;
+        /// <summary>
+        /// Cờ Đã tải; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool daTai;
 
+        /// <summary>
+        /// Khởi tạo bảng lương. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+        /// </summary>
         public BangLuong()
         {
             InitializeComponent();
@@ -109,7 +148,12 @@ namespace RangHamMat.Views
                     : danhSachLuong.Rows.Count == 0
                     ? "Không tìm thấy bảng lương của kỳ này trong SQL. Chọn kỳ có dữ liệu hoặc kiểm tra việc nạp SQL V9."
                     : !daCaiTinhLuong
-                    ? "Chưa cài SQL tính/chốt lương. Chạy file SQL/07_NANG_CAP_TINH_DOI_SOAT_CHOT_LUONG_V9.sql trên database đang kết nối."
+                    ? "Chưa cài SQL tính/chốt lương. Chạy toàn bộ Database/QLBenhVienRangHamMat.sql trên máy chủ đang kết nối."
+                    : danhSachLuong.AsEnumerable().Any(h => h.Field<int>("PhienBanTinhLuong") == 8
+                        && (h.Field<DateTime>("TuNgay") != tuNgay || h.Field<DateTime>("DenNgay") != denNgay))
+                    ? "Có phiếu cũ chưa đủ tháng hoặc chồng kỳ; tiền được giữ nguyên. Cần đối chiếu phiếu này trước khi lập/tính cả tháng để tránh chi trả trùng."
+                    : danhSachLuong.AsEnumerable().Any(h => h.Field<int>("PhienBanTinhLuong") == 8)
+                    ? "Có phiếu từ công thức cũ; số tiền trước đồng bộ được giữ nguyên. Tính lương sẽ cập nhật các phiếu Nháp theo V9; phiếu đã chốt được giữ nguyên."
                     : kyDaTinh==tuNgay
                     ? "Đã tính lại phiếu Nháp từ nguồn SQL. Chọn nhân viên, kiểm tra đối soát và chốt khi đủ điều kiện."
                     : "Chọn Tính lương để cập nhật phiếu Nháp từ công, phép và chứng từ; chỉ chốt sau khi kiểm tra đầy đủ.";
@@ -137,6 +181,10 @@ namespace RangHamMat.Views
             finally { dangTai = false; }
         }
 
+        /// <summary>
+        /// Lọc dữ liệu đã nạp theo từ khóa và các lựa chọn kỳ/trạng thái của màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>xoaChiTiet</c>.</remarks>
         private void locDuLieu()
         {
             if (danhSachLuong.Columns.Count == 0) return;
@@ -152,6 +200,12 @@ namespace RangHamMat.Views
             if (danhSachLuong.DefaultView.Count == 0) xoaChiTiet();
         }
 
+        /// <summary>
+        /// Tiếp nhận thay đổi ô nhập tìm kiểm và cập nhật trạng thái/dữ liệu phụ thuộc.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>Regex.Replace</c>, <c>noiDung.Trim</c>, <c>locDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void txtTimKiem_TextChanged(object sender, TextChangedEventArgs e)
         {
             string noiDung = Regex.Replace(txtTimKiem.Text, @"[^\p{L}\p{M}\p{N} ]", "");
@@ -167,6 +221,12 @@ namespace RangHamMat.Views
             if (daTai && !dangTai) locDuLieu();
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn hộp chọn chức vụ vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>.ToString</c>, <c>chucVu.Replace</c>, <c>locDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void cboChucVu_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string chucVu = (cboChucVu.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
@@ -174,6 +234,12 @@ namespace RangHamMat.Views
             if (daTai && !dangTai) locDuLieu();
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn hộp chọn trạng thái vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>.ToString</c>, <c>locDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void cboTrangThai_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string trangThai = (cboTrangThai.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
@@ -181,11 +247,23 @@ namespace RangHamMat.Views
             if (daTai && !dangTai) locDuLieu();
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn hộp chọn tháng vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>hienThiDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void cboThang_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (daTai && !dangTai) { kyDaTinh = null; hienThiDuLieu(); }
         }
 
+        /// <summary>
+        /// Tiếp nhận thay đổi ô nhập năm và cập nhật trạng thái/dữ liệu phụ thuộc.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>capNhatDoiSoat</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void txtNam_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (!IsLoaded) return;
@@ -193,12 +271,20 @@ namespace RangHamMat.Views
             capNhatDoiSoat();
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn bảng hiển thị bảng lương vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>xoaChiTiet</c>, <c>hang[&quot;HoTen&quot;].ToString</c>, <c>hang[&quot;TrangThai&quot;].ToString</c>, <c>capNhatDoiSoat</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void gridBangLuong_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (gridBangLuong.SelectedItem is not DataRowView hang) { xoaChiTiet(); return; }
             lblNhanVienChiTiet.Text = hang["HoTen"].ToString() + "  •  " + hang["MaNV"];
             lblMaPhieuChiTiet.Text = "Mã phiếu: " + hang["MaBL"] + "  •  " + hang["TenChucVu"];
-            lblKyChiTiet.Text = Convert.ToDateTime(hang["TuNgay"]).ToString("MM/yyyy");
+            lblKyChiTiet.Text = Convert.ToDateTime(hang["TuNgay"]).ToString("dd/MM/yyyy") + " – "
+                + Convert.ToDateTime(hang["DenNgay"]).ToString("dd/MM/yyyy")
+                + (Convert.ToInt32(hang["PhienBanTinhLuong"]) == 8 ? " • Công thức cũ" : "");
             lblCongChiTiet.Text = Convert.ToDecimal(hang["CongThucTe"]).ToString("N2") + " / "
                 + Convert.ToDecimal(hang["CongChuan"]).ToString("N2");
             lblTrangThaiPhieu.Text = hang["TrangThai"].ToString() ?? "—";
@@ -211,6 +297,9 @@ namespace RangHamMat.Views
             capNhatDoiSoat();
         }
 
+        /// <summary>
+        /// Xóa nội dung chi tiết và lựa chọn đang xem trên màn hình.
+        /// </summary>
         private void xoaChiTiet()
         {
             lblNhanVienChiTiet.Text = "Chọn nhân viên trong sổ lương";
@@ -229,11 +318,23 @@ namespace RangHamMat.Views
             btnChotLuong.Content = "Chọn phiếu cần chốt";
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút mở chấm công khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>Window.GetWindow</c>, <c>main.OpenApp</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnMoChamCong_Click(object sender, RoutedEventArgs e)
         {
             if (Window.GetWindow(this) is MainWindow main) main.OpenApp("ChamCong");
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút tải lại khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>hienThiDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnTaiLai_Click(object sender, RoutedEventArgs e)
         {
             // Tải lại cùng kỳ không xóa trạng thái đã tính của kỳ này.
@@ -241,6 +342,12 @@ namespace RangHamMat.Views
             hienThiDuLieu();
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút tính lương khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>int.TryParse</c>, <c>txtNam.Text.Trim</c>, <c>tuNgay.AddMonths</c>, <c>busBangLuong.tinhLuongTheoKy</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnTinhLuong_Click(object sender, RoutedEventArgs e)
         {
             if (!PhienDangNhap.IsAdmin || !daCaiTinhLuong) return;
@@ -300,6 +407,10 @@ namespace RangHamMat.Views
             finally { capNhatDoiSoat(); }
         }
 
+        /// <summary>
+        /// Tổng hợp hoặc hiển thị các chênh lệch cần đối soát trước khi tính/chốt lương.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>hang[&quot;TrangThai&quot;].ToString</c>, <c>dong[&quot;MaBL&quot;].ToString</c>, <c>hang[&quot;MaBL&quot;].ToString</c>, <c>int.TryParse</c>.</remarks>
         private void capNhatDoiSoat()
         {
             btnChotLuong.IsEnabled = false;
@@ -373,6 +484,12 @@ namespace RangHamMat.Views
                 "Chưa đến ngày được chốt" : "Cần hoàn tất đối soát";
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút xem chi tiết khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>hang[&quot;MaBL&quot;].ToString</c>, <c>hang[&quot;TenChucVu&quot;].ToString</c>, <c>hang[&quot;TrangThai&quot;].ToString</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnXemChiTiet_Click(object sender, RoutedEventArgs e)
         {
             if (gridBangLuong.SelectedItem is not DataRowView hang)
@@ -385,7 +502,9 @@ namespace RangHamMat.Views
             lblMaBLPhieu.Text = hang["MaBL"].ToString() ?? "—";
             lblTenPhieu.Text = hang["HoTen"] + "  •  " + hang["MaNV"];
             lblChucVuPhieu.Text = hang["TenChucVu"].ToString() ?? "—";
-            lblKyPhieu.Text = Convert.ToDateTime(hang["TuNgay"]).ToString("MM/yyyy");
+            lblKyPhieu.Text = Convert.ToDateTime(hang["TuNgay"]).ToString("dd/MM/yyyy") + " – "
+                + Convert.ToDateTime(hang["DenNgay"]).ToString("dd/MM/yyyy")
+                + (Convert.ToInt32(hang["PhienBanTinhLuong"]) == 8 ? " • Công thức cũ" : "");
             lblTrangThaiPhieuDayDu.Text = hang["TrangThai"].ToString() ?? "—";
             lblCongPhieu.Text = Convert.ToDecimal(hang["CongThucTe"]).ToString("N2");
             lblCongChuanPhieu.Text = Convert.ToDecimal(hang["CongChuan"]).ToString("N2");
@@ -403,6 +522,11 @@ namespace RangHamMat.Views
             PhieuLuongOverlay.Visibility = Visibility.Visible;
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút đóng phiếu lương khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnDongPhieuLuong_Click(object sender, RoutedEventArgs e)
         {
             PhieuLuongOverlay.Visibility = Visibility.Collapsed;

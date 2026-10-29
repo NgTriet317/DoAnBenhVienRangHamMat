@@ -5,14 +5,42 @@ using ET;
 
 namespace RangHamMat.Views;
 
+/// <summary>
+/// Phần xử lý bảng tính phí trình nhập liệu của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+/// </summary>
 public partial class BangTinhPhiEditor
 {
+    /// <summary>
+    /// Chờ xử lý thanh toán được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private YeuCauThanhToan? pendingPayment;
+    /// <summary>
+    /// Kết quả. Có thể để null khi dữ liệu chưa được cung cấp.
+    /// </summary>
     public KetQuaThanhToan? KetQua { get; private set; }
+    /// <summary>
+    /// Mã yêu cầu hiển thị tải.
+    /// </summary>
     public Guid MaYeuCauHienTai { get; private set; }
+    /// <summary>
+    /// Đang xử lý.
+    /// </summary>
     public bool DangXuLy { get; private set; }
+    /// <summary>
+    /// Giá trị Chờ đối chiếu; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public bool ChoDoiChieu => pendingPayment is not null && KetQua is null;
+    /// <summary>
+    /// Thông báo thanh toán hoàn tất cho các thành phần đã đăng ký theo dõi.
+    /// </summary>
     public event EventHandler? ThanhToanHoanTat;
+    /// <summary>
+    /// Kiểm tra hóa đơn hiện tại rồi mở nội dung in từ dữ liệu chứng từ đã đọc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>send</c>, <c>UpdatePaymentControls</c>.</remarks>
+    /// <param name="send">Giá trị gửi dùng khi thực hiện thao tác; kiểu Action&lt;BanInHoaDon&gt;.</param>
+    /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     public bool TryInHoaDon(Action<BanInHoaDon> send,out string? error)
     {
         error=null;try
@@ -24,6 +52,10 @@ public partial class BangTinhPhiEditor
         finally{UpdatePaymentControls();}
     }
 
+    /// <summary>
+    /// Thiết lập các trường và sự kiện của vùng thanh toán theo ngữ cảnh bảng tính hiện tại.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>UpdateChange</c>, <c>TryThanhToanAsync</c>, <c>OpenInvoicePrint</c>.</remarks>
     private void InitializePayment()
     {
         GivenText.TextChanged += (_, _) => UpdateChange();
@@ -31,6 +63,10 @@ public partial class BangTinhPhiEditor
         PayButton.Click += async (_, _) => {if(await TryThanhToanAsync())OpenInvoicePrint();};
         PrintAgainButton.Click += (_,_)=>OpenInvoicePrint();
     }
+    /// <summary>
+    /// Đặt lại yêu cầu thanh toán và các số tiền khi thay nguồn bảng tính.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Guid.NewGuid</c>, <c>UpdatePaymentControls</c>.</remarks>
     private void ResetPayment()
     {
         pendingPayment = null; KetQua = null; MaYeuCauHienTai = Guid.NewGuid();
@@ -38,6 +74,10 @@ public partial class BangTinhPhiEditor
         MethodBox.SelectedIndex=0;
         UpdatePaymentControls();
     }
+    /// <summary>
+    /// Bật hoặc tắt thao tác thu tiền theo trạng thái bảng tính và tiến trình đang xử lý.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>user.CoQuyen</c>, <c>UpdateChange</c>.</remarks>
     private void UpdatePaymentControls()
     {
         var allowed = user is not null && user.CoQuyen(QuyenLamViec.ThuTien) && BangTinh?.DuocThanhToan == true;
@@ -51,6 +91,10 @@ public partial class BangTinhPhiEditor
         WarehouseFilter.IsEnabled = !DangXuLy && !ChoDoiChieu;
         UpdateChange();
     }
+    /// <summary>
+    /// Tính và hiển thị tiền thừa theo số tiền khách đưa và số phải thu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Money</c>, <c>decimal.TryParse</c>, <c>GivenText.Text.Trim</c>.</remarks>
     private void UpdateChange()
     {
         if(ChangeText is null) return;
@@ -60,6 +104,11 @@ public partial class BangTinhPhiEditor
         ChangeText.Text = MethodBox.SelectedValue as string == "Chuyển khoản" ? "Chuyển khoản phải đúng số phải thu, có tham chiếu và đối chiếu thủ công." :
             change < 0 ? "Còn thiếu: " + Money(-change) : "Tiền thối dự kiến: " + Money(change);
     }
+    /// <summary>
+    /// Kiểm tra thông tin thu và thực hiện thanh toán bất đồng bộ; giữ mã yêu cầu để đối chiếu nếu cần gọi lại.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>user.CoQuyen</c>, <c>ReferenceText.Text.Trim</c>, <c>decimal.TryParse</c>, <c>GivenText.Text.Trim</c>.</remarks>
+    /// <returns>Tác vụ bất đồng bộ để nơi gọi theo dõi thời điểm kết thúc và kết quả xử lý.</returns>
     public async Task<bool> TryThanhToanAsync()
     {
         if(DangXuLy || KetQua is not null) return false;
@@ -97,6 +146,10 @@ public partial class BangTinhPhiEditor
         { StatusText.Text="Chưa xác nhận được kết quả. Giữ nguyên lượt, kho và tiền; bấm Thử lại yêu cầu để đối chiếu, không lập lần thu khác.";return false; }
         finally { DangXuLy=false;UpdatePaymentControls(); }
     }
+    /// <summary>
+    /// Mở cửa sổ in hóa đơn với nguồn chứng từ được chỉ định.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>TryInHoaDon</c>, <c>Window.GetWindow</c>.</remarks>
     private void OpenInvoicePrint()=>TryInHoaDon(source=>
     {var id=source.HoaDon.MaHD;new XemTruocHoaDon(()=>new BUS.BUS_THANHTOANTRONGOI().LayBanInHoaDon(id,user)){Owner=Window.GetWindow(this)}.Show();},out _);
 }

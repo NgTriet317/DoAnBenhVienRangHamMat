@@ -1,0 +1,469 @@
+using System.Data;
+using System.Reflection;
+using BUS;
+using DAL;
+using Dapper;
+using ET;
+using Microsoft.Data.SqlClient;
+
+// Real BUS/DAL and direct SQL integration checks. No UI, mocks, commits, or live databases.
+// Each maintenance case rolls back, including cases where a trigger aborts its transaction.
+// An empty database needs one committed asset visible to both race connections; the race
+// creates GUID catalog/asset fixtures and removes only its own rows in finally.
+static class Program
+{
+    /// <summary>
+    /// Bản nháp đã xác nhận đang thực hiện đã hoàn thành được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    const string Draft="Chưa xác nhận", Confirmed="Đã xác nhận", Running="Đang thực hiện", Finished="Đã hoàn thành";
+    /// <summary>
+    /// Cs được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    static string cs="";
+    /// <summary>
+    /// Số kiểm tra đạt số kiểm tra lỗi được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    static int passed, failed;
+    /// <summary>
+    /// Bước kiểm chứng chính; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>System.Text.RegularExpressions.Regex.IsMatch</c>, <c>Environment.SetEnvironmentVariable</c>, <c>Console.WriteLine</c>, <c>Open</c>.</remarks>
+    /// <param name="args">Giá trị đối số dùng khi thực hiện thao tác; kiểu string[].</param>
+    /// <returns>Giá trị số được đọc, đếm hoặc tính toán trong hàm.</returns>
+    static int Main(string[] args)
+    {
+        if(args.Length!=2 || !System.Text.RegularExpressions.Regex.IsMatch(args[1],"^RHM_Hospital_Test_[A-Za-z0-9_]+$"))
+            throw new ArgumentException("Only isolated RHM_Hospital_Test_ databases are allowed.");
+        cs=new SqlConnectionStringBuilder { DataSource=args[0], InitialCatalog=args[1], IntegratedSecurity=true,
+            TrustServerCertificate=true, ConnectTimeout=8 }.ConnectionString;
+        Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",cs);
+        Console.WriteLine($"Maintenance serial checks: {args[1]}; maintenance transactions roll back; owned race seed is removed");
+        try {using var preflight=Open();Assert(preflight.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0")==60,"Expected the canonical 60-table schema");}
+        catch(Exception ex){Console.WriteLine("BLOCKED database preflight: "+ex.Message);return 2;}
+        Check("Maintenance model maps nullable lifecycle timestamps",()=> {
+            foreach(string name in new[]{"NgayXacNhan","NgayThucHien"})
+            {
+                Assert(typeof(ET_BAOTRITHIETBI).GetProperty(name)?.PropertyType==typeof(DateTime?),"Missing DateTime? "+name);
+                using var db=Open();
+                Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.columns c JOIN sys.types t ON t.user_type_id=c.user_type_id WHERE c.object_id=OBJECT_ID('dbo.BAO_TRI_THIET_BI') AND c.name=@name AND c.is_nullable=1 AND t.name='datetime2'",new{name})==1,"Missing nullable SQL timestamp "+name);
+            }
+        });
+        Case("BUS draft is editable without changing physical or management state",f=> {
+            var b=f.Add();var before=f.Read(b.MaBT);b.NoiDung="Nội dung nháp mới";b.ChiPhi=125m;
+            Assert(f.Bus.suaBaoTriThietBi(b,before),"Draft edit returned false");
+            Assert(f.Read(b.MaBT).NoiDung=="Nội dung nháp mới" && f.Read(b.MaBT).ChiPhi==125m,"Draft edits were not saved");
+            f.Asset("Hư hại","Hư hại");
+        });
+        Case("BUS lifecycle synchronizes only selected serial of identical goods",f=> {
+            var b=f.Add();f.Move(b.MaBT,Confirmed);var confirmed=f.Read(b.MaBT);
+            Assert(Time(confirmed,"NgayXacNhan")!=null,"Confirmation has no SQL timestamp");
+            f.Recent(Time(confirmed,"NgayXacNhan"));
+            f.Asset("Hư hại","Hư hại");f.Move(b.MaBT,Running);var running=f.Read(b.MaBT);
+            Assert(Time(running,"NgayThucHien")!=null && Time(running,"NgayThucHien")>=Time(confirmed,"NgayXacNhan"),"Missing or reversed start timestamp");
+            f.Recent(Time(running,"NgayThucHien"));
+            f.Asset("Đang bảo trì","Hư hại");f.Move(b.MaBT,Finished);var done=f.Read(b.MaBT);
+            Assert(done.NgayKetThuc!=null && done.NgayKetThuc>=Time(running,"NgayThucHien"),"Missing or reversed completion timestamp");
+            f.Recent(done.NgayKetThuc);
+            Assert(Time(done,"NgayXacNhan")==Time(confirmed,"NgayXacNhan") && Time(done,"NgayThucHien")==Time(running,"NgayThucHien"),"Lifecycle changed original timestamps");
+            f.Asset("Đang hoạt động","Hư hại");
+        });
+        Case("BUS direct confirmed insert stamps confirmation without starting maintenance",f=> {
+            var b=f.Add(Confirmed);Assert(Time(f.Read(b.MaBT),"NgayXacNhan")!=null,"No confirmation timestamp");f.Asset("Hư hại","Hư hại");
+        });
+        Case("BUS cancellation only preserves draft history and damaged serial",f=> {
+            var b=f.Add();f.Move(b.MaBT,"Hủy");Assert(f.Read(b.MaBT).TrangThai=="Hủy","Draft cancellation not stored");f.Asset("Hư hại","Hư hại");
+        });
+        foreach(string state in new[]{Confirmed,Running,Finished,"Hủy"})
+        {
+            string captured=state;
+            Case("BUS freezes content in "+state,f=> {var b=f.At(captured);var old=f.Read(b.MaBT);b.NoiDung="forbidden";Reject(()=>f.Bus.suaBaoTriThietBi(b,old));});
+            Case("SQL freezes content in "+state,f=> {var b=f.At(captured);RejectSql(()=>f.Exec("UPDATE dbo.BAO_TRI_THIET_BI SET ChiPhi=ChiPhi+1 WHERE MaBT=@id",new{id=b.MaBT}));});
+        }
+        foreach(string state in new[]{Confirmed,Running,Finished})
+        {
+            string captured=state;
+            Case("BUS cannot cancel "+state,f=> {var b=f.At(captured);Reject(()=>f.Move(b.MaBT,"Hủy"));});
+        }
+        foreach(string state in new[]{Draft,Confirmed,Running,Finished,"Hủy"})
+        {
+            string captured=state;
+            Case("BUS cannot delete history in "+state,f=> {var b=f.At(captured);var old=f.Read(b.MaBT);Reject(()=>f.Bus.xoaBaoTriThietBi(b.MaBT,old));});
+        }
+        foreach(var pair in new[]{(Draft,Running),(Draft,Finished),(Confirmed,Finished),(Running,Confirmed),(Finished,Running),("Hủy",Confirmed),(Confirmed,Confirmed),(Running,Running),(Finished,Finished)})
+        {
+            var p=pair;Case($"BUS rejects transition {p.Item1} -> {p.Item2}",f=> {var b=f.At(p.Item1);Reject(()=>f.Move(b.MaBT,p.Item2));});
+        }
+        Case("BUS rejects stale draft update snapshot",f=> {
+            var b=f.Add();var stale=f.Read(b.MaBT);var fresh=f.Read(b.MaBT);fresh.GhiChu="other edit";f.Bus.suaBaoTriThietBi(fresh,f.Read(b.MaBT));
+            b.NoiDung="stale overwrite";Reject(()=>f.Bus.suaBaoTriThietBi(b,stale));
+        });
+        Case("BUS rejects stale lifecycle snapshot",f=> {
+            var b=f.Add();var stale=f.Read(b.MaBT);var fresh=f.Read(b.MaBT);fresh.GhiChu="other edit";f.Bus.suaBaoTriThietBi(fresh,f.Read(b.MaBT));
+            Reject(()=>f.Move(b.MaBT,Confirmed,stale));
+        });
+        Case("BUS cannot reassign maintenance to another serial",f=> {var b=f.Add();var old=f.Read(b.MaBT);b.MaTB=f.B;Reject(()=>f.Bus.suaBaoTriThietBi(b,old));});
+        Case("BUS one open record per serial",f=> {f.Add();Reject(()=>f.Add());});
+        foreach(string state in new[]{Running,Finished})
+        {
+            string captured=state;Case("BUS cannot insert "+state,f=>Reject(()=>f.Add(captured)));
+        }
+        Case("BUS confirms only damaged physical asset",f=> {f.Exec("UPDATE dbo.THIET_BI SET TinhTrang=N'Đang hoạt động' WHERE MaTB=@id",new{id=f.A});Reject(()=>f.Add(Confirmed));});
+        Case("BUS cannot confirm retired physical asset",f=> {f.Exec("UPDATE dbo.THIET_BI SET TinhTrang=N'Ngưng sử dụng' WHERE MaTB=@id",new{id=f.A});Reject(()=>f.Add(Confirmed));});
+        Case("SQL direct lifecycle also synchronizes exact serial",f=> {
+            var b=f.RawAdd();f.RawMove(b,Confirmed);Assert(f.Read(b).TrangThai==Confirmed && Time(f.Read(b),"NgayXacNhan")!=null,"SQL confirmation did not stamp");
+            f.RawMove(b,Running);f.Asset("Đang bảo trì","Hư hại");Assert(Time(f.Read(b),"NgayThucHien")!=null,"SQL start did not stamp");
+            f.RawMove(b,Finished);f.Asset("Đang hoạt động","Hư hại");Assert(f.Read(b).NgayKetThuc!=null,"SQL completion did not stamp");
+        });
+        Case("SQL duplicate open maintenance blocked",f=> {f.RawAdd();RejectSql(()=>f.RawAdd());});
+        Case("SQL direct confirmed insert stamps lifecycle",f=> {var id=f.RawAdd(Confirmed);Assert(Time(f.Read(id),"NgayXacNhan")!=null,"SQL confirmed insert not stamped");});
+        Case("SQL cannot insert already running",f=>RejectSql(()=>f.RawAdd(Running)));
+        Case("SQL cannot insert already finished",f=>RejectSql(()=>f.RawAdd(Finished)));
+        Case("SQL cannot skip confirmation",f=> {var id=f.RawAdd();RejectSql(()=>f.RawMove(id,Running));});
+        Case("SQL cannot skip execution",f=> {var id=f.RawAdd(Confirmed);RejectSql(()=>f.RawMove(id,Finished));});
+        Case("SQL cannot cancel confirmed",f=> {var id=f.RawAdd(Confirmed);RejectSql(()=>f.RawMove(id,"Hủy"));});
+        Case("SQL cannot delete even draft history",f=> {var id=f.RawAdd();RejectSql(()=>f.Exec("DELETE dbo.BAO_TRI_THIET_BI WHERE MaBT=@id",new{id}));});
+        Case("SQL cannot change linked serial identity",f=> {f.RawAdd();RejectSql(()=>f.Exec("UPDATE dbo.THIET_BI SET SoSerial=SoSerial+N'changed' WHERE MaTB=@id",new{id=f.A}));});
+        Case("SQL cannot reassign maintenance serial",f=> {var id=f.RawAdd();RejectSql(()=>f.Exec("UPDATE dbo.BAO_TRI_THIET_BI SET MaTB=@asset WHERE MaBT=@id",new{id,asset=f.B}));});
+        Case("SQL cannot manually mark asset under maintenance with no running record",f=>RejectSql(()=>f.Exec("UPDATE dbo.THIET_BI SET TinhTrang=N'Đang bảo trì' WHERE MaTB=@id",new{id=f.A})));
+        Case("SQL cannot manually change asset while running",f=> {var id=f.RawAdd(Confirmed);f.RawMove(id,Running);RejectSql(()=>f.Exec("UPDATE dbo.THIET_BI SET TinhTrang=N'Đang hoạt động' WHERE MaTB=@id",new{id=f.A}));});
+        Case("SQL cannot tamper confirmation timestamp",f=> {var id=f.RawAdd(Confirmed);RejectSql(()=>f.Exec("UPDATE dbo.BAO_TRI_THIET_BI SET NgayXacNhan='20000101' WHERE MaBT=@id",new{id}));});
+        Case("SQL cannot tamper execution timestamp",f=> {var id=f.RawAdd(Confirmed);f.RawMove(id,Running);RejectSql(()=>f.Exec("UPDATE dbo.BAO_TRI_THIET_BI SET NgayThucHien='20000101' WHERE MaBT=@id",new{id}));});
+        Case("SQL rejects mixed valid and invalid lifecycle update atomically",f=> {
+            var first=f.RawAdd(Confirmed);var second=f.RawAdd(Draft,f.B);
+            RejectSql(()=>f.Exec("UPDATE dbo.BAO_TRI_THIET_BI SET TrangThai=N'Đang thực hiện' WHERE MaBT IN(@first,@second)",new{first,second}));
+        });
+        Check("Concurrent duplicate open inserts serialize until rollback",DuplicateRace);
+        Check("Bulk warehouse DAL generates globally unique serials and rolls back",BulkImport);
+        Check("Failed bulk warehouse DAL leaves no partial document or serials",FailedBulkImport);
+        Check("All fixture rows rolled back",()=> {
+            using var db=Open();
+            Assert(db.ExecuteScalar<int>("SELECT (SELECT COUNT(*) FROM dbo.THIET_BI WHERE MaTB LIKE N'MSC[_]%' AND MaTB<>N'MSC_RACE')+(SELECT COUNT(*) FROM dbo.BAO_TRI_THIET_BI WHERE MaBT LIKE N'MSC[_]%')+(SELECT COUNT(*) FROM dbo.HOA_DON_NHAP WHERE SoHoaDonNCC LIKE N'MSC[_]%')+(SELECT COUNT(*) FROM dbo.HANG_HOA WHERE MaHH LIKE N'MSC[_]RaceH%')+(SELECT COUNT(*) FROM dbo.LOAI_HANG_HOA WHERE MaLoaiHH LIKE N'MSC[_]RaceL%')")==0,"Fixture rows persisted");
+        });
+        Console.WriteLine($"RESULT: {passed} passed; {failed} failed");return failed==0?0:1;
+    }
+    /// <summary>
+    /// Bước kiểm chứng thời gian; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>.GetValue</c>.</remarks>
+    /// <param name="b">Giá trị b dùng khi thực hiện thao tác; kiểu ET_BAOTRITHIETBI.</param>
+    /// <param name="name">Giá trị tên dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Đối tượng kiểu DateTime được tìm hoặc tính toán; có thể null theo nhánh xử lý trong hàm.</returns>
+    static DateTime? Time(ET_BAOTRITHIETBI b,string name)=>typeof(ET_BAOTRITHIETBI).GetProperty(name)?.GetValue(b) as DateTime?;
+    /// <summary>
+    /// Bước kiểm chứng kiểm tra; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>test</c>, <c>Console.WriteLine</c>, <c>Unwrap</c>.</remarks>
+    /// <param name="name">Giá trị tên dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="test">Giá trị kiểm thử dùng khi thực hiện thao tác; kiểu Action.</param>
+    static void Check(string name,Action test){try{test();passed++;Console.WriteLine("PASS "+name);}catch(Exception ex){failed++;Console.WriteLine("FAIL "+name+": "+Unwrap(ex).Message);}}
+    /// <summary>
+    /// Bước kiểm chứng trường hợp kiểm thử; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Check</c>, <c>test</c>.</remarks>
+    /// <param name="name">Giá trị tên dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="test">Giá trị kiểm thử dùng khi thực hiện thao tác; kiểu Action&lt;Fixture&gt;.</param>
+    static void Case(string name,Action<Fixture> test)=>Check(name,()=>{using var f=new Fixture();test(f);});
+    /// <summary>
+    /// Bước kiểm chứng gỡ lớp ngoại lệ; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Unwrap</c>.</remarks>
+    /// <param name="ex">Giá trị ex dùng khi thực hiện thao tác; kiểu Exception.</param>
+    /// <returns>Kết quả kiểu Exception dùng cho bước xử lý tiếp theo.</returns>
+    static Exception Unwrap(Exception ex)=>ex is TargetInvocationException && ex.InnerException!=null?Unwrap(ex.InnerException):ex;
+    /// <summary>
+    /// Bước kiểm chứng khẳng định điều kiện; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <param name="condition">Giá trị tình trạng dùng khi thực hiện thao tác; kiểu bool.</param>
+    /// <param name="message">Nội dung thông báo được chuyển đến nơi gọi hoặc hiển thị cho người dùng.</param>
+    static void Assert(bool condition,string message){if(!condition)throw new Exception(message);}
+    /// <summary>
+    /// Bước kiểm chứng kiểm tra từ chối; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>test</c>, <c>Unwrap</c>, <c>IsBusiness</c>.</remarks>
+    /// <param name="test">Giá trị kiểm thử dùng khi thực hiện thao tác; kiểu Action.</param>
+    static void Reject(Action test)
+    {
+        try{test();}catch(Exception ex){var e=Unwrap(ex);if(e is InvalidOperationException || e is SqlException s && IsBusiness(s))return;throw;}
+        throw new Exception("Expected business rejection; write was accepted");
+    }
+    /// <summary>
+    /// Bước kiểm chứng là nghiệp vụ; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <param name="ex">Giá trị ex dùng khi thực hiện thao tác; kiểu SqlException.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
+    static bool IsBusiness(SqlException ex)=>ex.Number>=50000 || ex.Number is 547 or 2601 or 2627;
+    /// <summary>
+    /// Bước kiểm chứng kiểm tra từ chối SQL; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>test</c>, <c>IsBusiness</c>.</remarks>
+    /// <param name="test">Giá trị kiểm thử dùng khi thực hiện thao tác; kiểu Action.</param>
+    static void RejectSql(Action test){try{test();}catch(SqlException ex)when(IsBusiness(ex)){return;}throw new Exception("Expected SQL business rejection; bypass was accepted");}
+    /// <summary>
+    /// Bước kiểm chứng mở; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.Open</c>.</remarks>
+    /// <returns>Kết quả kiểu SqlConnection dùng cho bước xử lý tiếp theo.</returns>
+    static SqlConnection Open(){var db=new SqlConnection(cs);db.Open();return db;}
+    /// <summary>
+    /// Nhóm dữ liệu và thao tác kiểm chứng dữ liệu kiểm thử trong công cụ kiểm tra của dự án.
+    /// </summary>
+    sealed class Fixture:IDisposable
+    {
+        /// <summary>
+        /// Cơ sở dữ liệu.
+        /// </summary>
+        public SqlConnection Db {get;}=Open();
+        /// <summary>
+        /// Giao dịch.
+        /// </summary>
+        public SqlTransaction Tx {get;}
+        /// <summary>
+        /// Lớp nghiệp vụ.
+        /// </summary>
+        public BUS_BAOTRITHIETBI Bus {get;}
+        /// <summary>
+        /// A.
+        /// </summary>
+        public string A {get;}="MSC_A"+Guid.NewGuid().ToString("N");
+        /// <summary>
+        /// B.
+        /// </summary>
+        public string B {get;}="MSC_B"+Guid.NewGuid().ToString("N");
+        /// <summary>
+        /// Nhân viên.
+        /// </summary>
+        public string Staff {get;}
+        /// <summary>
+        /// Khởi tạo dữ liệu kiểm thử.
+        /// </summary>
+        public Fixture()
+        {
+            Tx=Db.BeginTransaction();Bus=new(Tx);
+            try {
+                Staff=Db.QueryFirst<string>("SELECT TOP(1) MaNV FROM dbo.NHAN_VIEN ORDER BY MaNV",transaction:Tx);
+                var goods=Catalog(Db,Tx);
+                Exec("INSERT dbo.THIET_BI(MaTB,MaHH,SoSerial,TinhTrang,TrangThai) VALUES(@A,@goods,@A,N'Hư hại',N'Đang sử dụng'),(@B,@goods,@B,N'Hư hại',N'Đang sử dụng')",new{A,B,goods});
+            }catch{Dispose();throw;}
+        }
+        /// <summary>
+        /// Bước kiểm chứng thi hành SQL; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>Db.Execute</c>.</remarks>
+        /// <param name="sql">Giá trị SQL dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="args">Giá trị đối số dùng khi thực hiện thao tác; kiểu object?.</param>
+        public void Exec(string sql,object? args=null)=>Db.Execute(sql,args,Tx);
+        /// <summary>
+        /// Bước kiểm chứng đọc; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>Bus.layBaoTriThietBiTheoMa</c>.</remarks>
+        /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <returns>Kết quả kiểu ET_BAOTRITHIETBI dùng cho bước xử lý tiếp theo.</returns>
+        public ET_BAOTRITHIETBI Read(string id)=>Bus.layBaoTriThietBiTheoMa(id)??throw new Exception("Maintenance disappeared");
+        /// <summary>
+        /// Bước kiểm chứng thêm; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>Assert</c>, <c>Bus.themBaoTriThietBi</c>, <c>Read</c>.</remarks>
+        /// <param name="state">Giá trị trạng thái dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <returns>Kết quả kiểu ET_BAOTRITHIETBI dùng cho bước xử lý tiếp theo.</returns>
+        public ET_BAOTRITHIETBI Add(string state=Draft)
+        {
+            var b=new ET_BAOTRITHIETBI{MaTB=A,MaNV=Staff,NgayBatDau=DateTime.Today,NoiDung="Kiểm thử serial rollback",ChiPhi=0,TrangThai=state};
+            Assert(Bus.themBaoTriThietBi(b),"Insert returned false");return Read(b.MaBT);
+        }
+        /// <summary>
+        /// Bước kiểm chứng chuyển; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>Assert</c>, <c>method.Invoke</c>, <c>Read</c>.</remarks>
+        /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="target">Giá trị đích dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="original">Bản dữ liệu trước khi chỉnh sửa để đối chiếu với giá trị hiện tại.</param>
+        public void Move(string id,string target,ET_BAOTRITHIETBI? original=null)
+        {
+            var method=typeof(BUS_BAOTRITHIETBI).GetMethod("chuyenTrangThaiBaoTri",new[]{typeof(string),typeof(string),typeof(ET_BAOTRITHIETBI)})
+                ??throw new MissingMethodException("BUS.chuyenTrangThaiBaoTri(string,string,ET_BAOTRITHIETBI) is required");
+            Assert(method.Invoke(Bus,new object[]{id,target,original??Read(id)}) is true,"Transition returned false");
+        }
+        /// <summary>
+        /// Bước kiểm chứng tại thời điểm; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>Add</c>, <c>Move</c>, <c>Read</c>.</remarks>
+        /// <param name="state">Giá trị trạng thái dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <returns>Kết quả kiểu ET_BAOTRITHIETBI dùng cho bước xử lý tiếp theo.</returns>
+        public ET_BAOTRITHIETBI At(string state)
+        {
+            var b=Add();if(state=="Hủy")Move(b.MaBT,"Hủy");else if(state!=Draft){Move(b.MaBT,Confirmed);if(state!=Confirmed){Move(b.MaBT,Running);if(state==Finished)Move(b.MaBT,Finished);}}
+            return Read(b.MaBT);
+        }
+        /// <summary>
+        /// Bước kiểm chứng trực tiếp thêm; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>Guid.NewGuid</c>, <c>Exec</c>.</remarks>
+        /// <param name="state">Giá trị trạng thái dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="asset">Giá trị thiết bị dùng khi thực hiện thao tác; kiểu string?.</param>
+        /// <returns>Chuỗi kết quả của thao tác trực tiếp thêm.</returns>
+        public string RawAdd(string state=Draft,string? asset=null)
+        {
+            string id="MSC_"+Guid.NewGuid().ToString("N");
+            Exec("INSERT dbo.BAO_TRI_THIET_BI(MaBT,MaTB,MaNV,NgayBatDau,NoiDung,ChiPhi,TrangThai) VALUES(@id,@asset,@Staff,CAST(GETDATE() AS date),N'Rollback direct SQL',0,@state)",new{id,asset=asset??A,Staff,state});return id;
+        }
+        /// <summary>
+        /// Bước kiểm chứng trực tiếp chuyển; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>Exec</c>.</remarks>
+        /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="target">Giá trị đích dùng khi thực hiện thao tác; kiểu string.</param>
+        public void RawMove(string id,string target)=>Exec("UPDATE dbo.BAO_TRI_THIET_BI SET TrangThai=@target WHERE MaBT=@id",new{id,target});
+        /// <summary>
+        /// Bước kiểm chứng thiết bị; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>Assert</c>, <c>rows.Single</c>, <c>rows.All</c>.</remarks>
+        /// <param name="first">Giá trị đầu tiên dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="second">Giá trị giây dùng khi thực hiện thao tác; kiểu string.</param>
+        public void Asset(string first,string second)
+        {
+            var rows=Db.Query<(string MaTB,string TinhTrang,string TrangThai)>("SELECT MaTB,TinhTrang,TrangThai FROM dbo.THIET_BI WHERE MaTB IN(@A,@B)",new{A,B},Tx).ToArray();
+            Assert(rows.Single(r=>r.MaTB==A).TinhTrang==first && rows.Single(r=>r.MaTB==B).TinhTrang==second,"Wrong physical serial changed");
+            Assert(rows.All(r=>r.TrangThai=="Đang sử dụng"),"Maintenance overwrote management status");
+        }
+        /// <summary>
+        /// Bước kiểm chứng gần nhất; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>Db.ExecuteScalar&lt;DateTime&gt;</c>, <c>Assert</c>, <c>now.AddMinutes</c>, <c>now.AddSeconds</c>.</remarks>
+        /// <param name="value">Giá trị ngày thời gian được truyền vào để đọc, kiểm tra hoặc cập nhật trong thao tác này.</param>
+        public void Recent(DateTime? value)
+        {
+            var now=Db.ExecuteScalar<DateTime>("SELECT GETDATE()",transaction:Tx);
+            Assert(value>=now.AddMinutes(-2) && value<=now.AddSeconds(2),"Lifecycle timestamp is not the current SQL server time");
+        }
+        /// <summary>
+        /// Bước kiểm chứng giải phóng tài nguyên; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>Tx.Rollback</c>, <c>Tx.Dispose</c>, <c>Db.Dispose</c>.</remarks>
+        public void Dispose(){try{Tx.Rollback();}catch(InvalidOperationException){}finally{Tx.Dispose();Db.Dispose();}}
+    }
+    /// <summary>
+    /// Bước kiểm chứng trùng lặp cạnh tranh đồng thời; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Open</c>, <c>first.QueryFirstOrDefault&lt;string&gt;</c>, <c>first.QueryFirst&lt;string&gt;</c>, <c>Guid.NewGuid</c>.</remarks>
+    static void DuplicateRace()
+    {
+        using var first=Open();using var second=Open();
+        var candidate=first.QueryFirstOrDefault<string>("SELECT TOP(1) t.MaTB FROM dbo.THIET_BI t WHERE t.TinhTrang=N'Hư hại' AND NOT EXISTS(SELECT 1 FROM dbo.BAO_TRI_THIET_BI b WHERE b.MaTB=t.MaTB AND b.TrangThai IN(N'Chưa xác nhận',N'Đã xác nhận',N'Đang thực hiện')) ORDER BY t.MaTB");
+        string staff=first.QueryFirst<string>("SELECT TOP(1) MaNV FROM dbo.NHAN_VIEN ORDER BY MaNV");
+        string? ownedAsset=null,ownedGoods=null,ownedType=null;
+        try {
+            if(candidate==null)
+            {
+                string suffix=Guid.NewGuid().ToString("N");
+                ownedAsset="MSC_RaceA"+suffix;ownedGoods="MSC_RaceH"+suffix;ownedType="MSC_RaceL"+suffix;
+                using var setup=first.BeginTransaction();
+                first.Execute("INSERT dbo.LOAI_HANG_HOA(MaLoaiHH,TenLoaiHH,MoTa,TrangThai) VALUES(@ownedType,N'Thiết bị kiểm thử đồng thời',N'Owned race fixture',N'Đang sử dụng'); INSERT dbo.HANG_HOA(MaHH,TenHH,MaLoaiHH,DonViTinh,MoTa,TrangThai) VALUES(@ownedGoods,N'Máy kiểm thử đồng thời',@ownedType,N'Cái',N'Owned race fixture',N'Đang sử dụng'); INSERT dbo.THIET_BI(MaTB,MaHH,SoSerial,TinhTrang,TrangThai) VALUES(@ownedAsset,@ownedGoods,@ownedAsset,N'Hư hại',N'Đang sử dụng')",new{ownedAsset,ownedGoods,ownedType},setup);
+                setup.Commit();candidate=ownedAsset;
+                Console.WriteLine("  Created an owned race fixture for the empty database; finally removes it");
+            }
+            using var t1=first.BeginTransaction();using var t2=second.BeginTransaction();
+            const string insert="INSERT dbo.BAO_TRI_THIET_BI(MaBT,MaTB,MaNV,NgayBatDau,NoiDung,ChiPhi,TrangThai) VALUES(@id,@candidate,@staff,CAST(GETDATE() AS date),N'Rollback race',0,N'Chưa xác nhận')";
+            Task? pending=null;
+            try {
+                first.Execute(insert,new{id="MSC_"+Guid.NewGuid().ToString("N"),candidate,staff},t1);
+                using var started=new ManualResetEventSlim();
+                pending=Task.Run(()=>{started.Set();second.Execute(insert,new{id="MSC_"+Guid.NewGuid().ToString("N"),candidate,staff},t2,commandTimeout:8);});
+                Assert(started.Wait(2000),"Second writer did not start");
+                Assert(!pending.Wait(500),"Concurrent writer bypassed the first open record lock");
+                t1.Rollback();Assert(pending.Wait(10000),"Second writer did not proceed after rollback");
+                Assert(second.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.BAO_TRI_THIET_BI WHERE MaTB=@candidate AND TrangThai=N'Chưa xác nhận'",new{candidate},t2)==1,"Duplicate open records visible after serialized insert");
+            } finally {
+                try{t1.Rollback();}catch(InvalidOperationException){}
+                try{pending?.Wait(10000);}catch(AggregateException){}
+                try{t2.Rollback();}catch(InvalidOperationException){}
+            }
+        } finally {
+            if(ownedAsset!=null)
+            {
+                using var cleanup=first.BeginTransaction();
+                first.Execute("DELETE dbo.THIET_BI WHERE MaTB=@ownedAsset; DELETE dbo.HANG_HOA WHERE MaHH=@ownedGoods; DELETE dbo.LOAI_HANG_HOA WHERE MaLoaiHH=@ownedType",new{ownedAsset,ownedGoods,ownedType},cleanup);
+                cleanup.Commit();
+                Assert(first.ExecuteScalar<int>("SELECT (SELECT COUNT(*) FROM dbo.THIET_BI WHERE MaTB=@ownedAsset)+(SELECT COUNT(*) FROM dbo.HANG_HOA WHERE MaHH=@ownedGoods)+(SELECT COUNT(*) FROM dbo.LOAI_HANG_HOA WHERE MaLoaiHH=@ownedType)",new{ownedAsset,ownedGoods,ownedType})==0,"Owned race fixture cleanup left rows");
+            }
+        }
+    }
+    /// <summary>
+    /// Bước kiểm chứng nhập dữ liệu dữ liệu kiểm thử; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Catalog</c>, <c>db.QueryFirst&lt;string&gt;</c>, <c>Guid.NewGuid</c>, <c>db.Execute</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="total">Giá trị tổng dùng khi thực hiện thao tác; kiểu decimal.</param>
+    /// <returns>Kết quả kiểu (string invoice,string goods,string warehouse,string staff) dùng cho bước xử lý tiếp theo.</returns>
+    static (string invoice,string goods,string warehouse,string staff) ImportFixture(SqlConnection db,SqlTransaction tx,decimal total)
+    {
+        string goods=Catalog(db,tx);
+        string staff=db.QueryFirst<string>("SELECT TOP(1) MaNV FROM dbo.NHAN_VIEN ORDER BY MaNV",transaction:tx);
+        string supplier="MSC_N"+Guid.NewGuid().ToString("N"),warehouse="MSC_K"+Guid.NewGuid().ToString("N");
+        db.Execute("INSERT dbo.NHA_CUNG_CAP(MaNCC,TenNCC,Email,NguoiLienHe,TrangThai) VALUES(@supplier,N'Rollback supplier',N'msc@example.invalid',N'Rollback',N'Đang hợp tác'); INSERT dbo.KHO(MaKho,TenKho,MaNV,LoaiKho,TrangThai) VALUES(@warehouse,N'Rollback equipment warehouse',@staff,N'Kho thiết bị',N'Đang hoạt động')",new{supplier,warehouse,staff},tx);
+        var invoice=new ET_HOADONNHAP{SoHoaDonNCC="MSC_"+Guid.NewGuid().ToString("N"),MaNCC=supplier,MaNV=staff,NgayHoaDon=DateTime.Today,TongTien=total,TrangThai="Nháp"};
+        var dal=new DAL_HOADONNHAP(tx);dal.themHoaDonNhap(invoice);var original=dal.layHoaDonNhapTheoMa(invoice.MaHDN)!;invoice.TrangThai="Đã xác nhận";dal.suaHoaDonNhap(invoice,original,true);
+        return(invoice.MaHDN,goods,warehouse,staff);
+    }
+    /// <summary>
+    /// Bước kiểm chứng danh mục; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Guid.NewGuid</c>, <c>db.Execute</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <returns>Chuỗi kết quả của thao tác danh mục.</returns>
+    static string Catalog(SqlConnection db,SqlTransaction tx)
+    {
+        string goods="MSC_H"+Guid.NewGuid().ToString("N"),type="MSC_L"+Guid.NewGuid().ToString("N");
+        db.Execute("INSERT dbo.LOAI_HANG_HOA(MaLoaiHH,TenLoaiHH,MoTa,TrangThai) VALUES(@type,N'Thiết bị rollback',N'Fixture',N'Đang sử dụng'); INSERT dbo.HANG_HOA(MaHH,TenHH,MaLoaiHH,DonViTinh,MoTa,TrangThai) VALUES(@goods,N'Máy serial kiểm thử',@type,N'Cái',N'Fixture',N'Đang sử dụng')",new{goods,type},tx);
+        return goods;
+    }
+    // DAL_NHAPKHO has no transaction constructor. Inject only the inherited infrastructure
+    // field in this test adapter so its real code shares a rollback-only local transaction.
+    static DAL_NHAPKHO ImportDal(SqlTransaction tx)
+    {
+        var dal=new DAL_NHAPKHO();
+        typeof(dbconnect).GetField("transaction",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(dal,tx);
+        return dal;
+    }
+    /// <summary>
+    /// Bước kiểm chứng hàng loạt nhập dữ liệu; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Open</c>, <c>db.BeginTransaction</c>, <c>ImportFixture</c>, <c>ImportDal</c>.</remarks>
+    static void BulkImport()
+    {
+        using var db=Open();using var tx=db.BeginTransaction();
+        try {
+            var f=ImportFixture(db,tx,300);
+            var dal=ImportDal(tx);
+            string first=dal.TaoPhieu(f.invoice,f.warehouse,f.staff,DateTime.Today,"Rollback serial import",null,new(){new(){MaHH=f.goods,SoLo="MSC_"+Guid.NewGuid().ToString("N"),SoLuong=2,DonGia=100}},true);
+            string second=dal.TaoPhieu(f.invoice,f.warehouse,f.staff,DateTime.Today,"Rollback serial import",null,new(){new(){MaHH=f.goods,SoLo="MSC_"+Guid.NewGuid().ToString("N"),SoLuong=1,DonGia=100}},true);
+            var serials=db.Query<string>("SELECT SoSerial FROM dbo.THIET_BI WHERE GhiChu LIKE @first OR GhiChu LIKE @second",new{first="Tạo tự động khi ghi sổ phiếu "+first+";%",second="Tạo tự động khi ghi sổ phiếu "+second+";%"},tx).ToArray();
+            Assert(serials.Length==3 && serials.Distinct(StringComparer.OrdinalIgnoreCase).Count()==3,"Bulk import duplicated or omitted a serial across lots");
+            Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM (SELECT SoSerial FROM dbo.THIET_BI GROUP BY SoSerial HAVING COUNT(*)>1) d",transaction:tx)==0,"Global serial duplication");
+        } finally {try{tx.Rollback();}catch(InvalidOperationException){}}
+    }
+    /// <summary>
+    /// Bước kiểm chứng số kiểm tra lỗi hàng loạt nhập dữ liệu; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Open</c>, <c>db.BeginTransaction</c>, <c>ImportFixture</c>, <c>ImportDal</c>.</remarks>
+    static void FailedBulkImport()
+    {
+        using var db=Open();
+        const string counts="SELECT (SELECT COUNT(*) FROM dbo.THIET_BI),(SELECT COUNT(*) FROM dbo.PHIEU_NHAP),(SELECT COUNT(*) FROM dbo.LO_HANG_HOA)";
+        var before=db.QuerySingle<(int assets,int receipts,int lots)>(counts);
+        using(var tx=db.BeginTransaction())
+        {
+            try {
+                var f=ImportFixture(db,tx,350);
+                bool rejected=false;
+                try{ImportDal(tx).TaoPhieu(f.invoice,f.warehouse,f.staff,DateTime.Today,"Rollback fractional equipment",null,new(){new(){MaHH=f.goods,SoLo="MSC_"+Guid.NewGuid().ToString("N"),SoLuong=2,DonGia=100},new(){MaHH=f.goods,SoLo="MSC_"+Guid.NewGuid().ToString("N"),SoLuong=1.5m,DonGia=100}},true);}
+                catch(InvalidOperationException ex)when(ex.Message.Contains("số nguyên dương",StringComparison.OrdinalIgnoreCase)){rejected=true;}
+                Assert(rejected,"Fractional equipment did not reach the serial generation business rejection");
+                Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.THIET_BI",transaction:tx)==before.assets+2,"Failure did not occur after the valid first equipment lot had synchronized");
+            } finally {try{tx.Rollback();}catch(InvalidOperationException){}}
+        }
+        var after=db.QuerySingle<(int assets,int receipts,int lots)>(counts);
+        Assert(before==after,"Failed warehouse transaction persisted partial serial/receipt/lot");
+    }
+}

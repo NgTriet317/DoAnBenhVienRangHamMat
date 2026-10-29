@@ -9,24 +9,69 @@ using System.Windows.Media;
 
 namespace RangHamMat.Views
 {
+    /// <summary>
+    /// Phần xử lý ca hiển thị của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public class CaHienThi
     {
+        /// <summary>
+        /// Mã ca làm việc.
+        /// </summary>
         public string MaCa { get; set; } = "";
+        /// <summary>
+        /// Tên ca.
+        /// </summary>
         public string TenCa { get; set; } = "";
+        /// <summary>
+        /// Giờ bắt đầu.
+        /// </summary>
         public TimeSpan GioBatDau { get; set; }
+        /// <summary>
+        /// Giờ kết thúc.
+        /// </summary>
         public TimeSpan GioKetThuc { get; set; }
     }
 
+    /// <summary>
+    /// Phần xử lý thêm lịch khám của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public partial class ThemLichKham : UserControl
     {
+        /// <summary>
+        /// Đối tượng nghiệp vụ lịch khám được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         BUS_LICHKHAM busLichKham = new BUS_LICHKHAM();
+        /// <summary>
+        /// Lịch cũ được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         ET_LICHKHAM lichCu;
+        /// <summary>
+        /// Cờ Đang sửa; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         bool dangSua;
+        /// <summary>
+        /// Mã bệnh nhân khóa được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         string? maBenhNhanKhoa;
+        /// <summary>
+        /// Kết quả biểu mẫu đã lưu dữ liệu thành công.
+        /// </summary>
         public bool DaLuu { get; private set; }
+        /// <summary>
+        /// Mã lịch vừa lưu.
+        /// </summary>
         public string MaLichVuaLuu { get; private set; } = "";
+        /// <summary>
+        /// Cờ Đang nhúng trong lịch khám; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         bool dangNhungTrongLichKham;
+        /// <summary>
+        /// Thông báo lưu thành công cho các thành phần đã đăng ký theo dõi.
+        /// </summary>
         public event EventHandler? LuuThanhCong;
+        /// <summary>
+        /// Thông báo yêu cầu đóng cho các thành phần đã đăng ký theo dõi.
+        /// </summary>
         public event EventHandler? YeuCauDong;
 
         // Sử dụng một biểu mẫu cho Thêm, Xem chi tiết và Sửa ở panel bên phải.
@@ -49,6 +94,11 @@ namespace RangHamMat.Views
                 txtHuongDan.Text = "Lịch đã xác nhận/hoàn tất hoặc đang được điều phối lại. Không sửa trực tiếp; thực hiện đổi phân công theo quy trình quản lý.";
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút chính sửa khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnChinhSua_Click(object sender, RoutedEventArgs e)
         {
             if (!dangSua) return;
@@ -63,8 +113,15 @@ namespace RangHamMat.Views
             txtHuongDan.Text = "* Các thay đổi phải hợp lệ với lịch làm việc và lịch nghỉ đã duyệt.";
         }
 
+        /// <summary>
+        /// Khởi tạo thêm lịch khám.
+        /// </summary>
         public ThemLichKham() : this((string?)null) { }
 
+        /// <summary>
+        /// Khởi tạo thêm lịch khám. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+        /// </summary>
+        /// <param name="maBenhNhan">Mã bệnh nhân xác định đối tượng cần xử lý.</param>
         public ThemLichKham(string? maBenhNhan)
         {
             InitializeComponent();
@@ -75,6 +132,10 @@ namespace RangHamMat.Views
             DatLaiDuLieu();
         }
 
+        /// <summary>
+        /// Khởi tạo thêm lịch khám. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+        /// </summary>
+        /// <param name="lich">Giá trị lịch dùng khi thực hiện thao tác; kiểu ET_LICHKHAM.</param>
         public ThemLichKham(ET_LICHKHAM lich)
         {
             InitializeComponent();
@@ -118,6 +179,10 @@ namespace RangHamMat.Views
             return form.DaLuu;
         }
 
+        /// <summary>
+        /// Nạp các danh mục mà biểu mẫu cần để chọn bác sĩ, phòng và các thông tin lịch khám.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>LichKham.LayBacSi</c>, <c>ca.GioBatDau.ToString</c>, <c>ca.GioKetThuc.ToString</c>, <c>dsCa.Add</c>.</remarks>
         private void NapDanhSachChon()
         {
             cboBenhNhan.ItemsSource = new BUS_BENHNHAN().layToanBoBenhNhan().ToList();
@@ -175,6 +240,10 @@ namespace RangHamMat.Views
             txtGioKham.Text = ca.GioBatDau.ToString(@"hh\:mm");
         }
 
+        /// <summary>
+        /// Đặt lại nội dung và lựa chọn biểu mẫu theo dữ liệu đầu vào hoặc chế độ tạo mới.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XoaBaoLoi</c>, <c>txtLyDoKham.Clear</c>, <c>txtGhiChu.Clear</c>, <c>txtLyDoThayDoi.Clear</c>.</remarks>
         private void DatLaiDuLieu()
         {
             XoaBaoLoi();
@@ -224,6 +293,11 @@ namespace RangHamMat.Views
             ChonGiaTriCombo(cboTrangThai, lichCu.TrangThai);
         }
 
+        /// <summary>
+        /// Chọn mục của ComboBox theo mã hoặc giá trị hiển thị được truyền vào.
+        /// </summary>
+        /// <param name="combo">Giá trị hộp chọn dùng khi thực hiện thao tác; kiểu ComboBox.</param>
+        /// <param name="giaTri">Giá trị giá trị dùng khi thực hiện thao tác; kiểu string.</param>
         private void ChonGiaTriCombo(ComboBox combo, string giaTri)
         {
             foreach (object item in combo.Items)
@@ -238,12 +312,23 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Đọc mã hoặc giá trị của mục đang chọn để chuyển vào dữ liệu biểu mẫu.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>combo.SelectedValue.ToString</c>.</remarks>
+        /// <param name="combo">Giá trị hộp chọn dùng khi thực hiện thao tác; kiểu ComboBox.</param>
+        /// <returns>Chuỗi kết quả của thao tác giá trị chọn.</returns>
         private string GiaTriChon(ComboBox combo)
         {
             if (combo.SelectedValue == null) return "";
             return combo.SelectedValue.ToString();
         }
 
+        /// <summary>
+        /// Đọc nhãn nội dung của lựa chọn hiện tại để hiển thị hoặc kiểm tra dữ liệu.
+        /// </summary>
+        /// <param name="combo">Giá trị hộp chọn dùng khi thực hiện thao tác; kiểu ComboBox.</param>
+        /// <returns>Chuỗi kết quả của thao tác nội dung chọn.</returns>
         private string NoiDungChon(ComboBox combo)
         {
             ComboBoxItem item = combo.SelectedItem as ComboBoxItem;
@@ -251,6 +336,12 @@ namespace RangHamMat.Views
             return Convert.ToString(item.Content);
         }
 
+        /// <summary>
+        /// Hiển thị nội dung lỗi ở trường hoặc vùng thông báo của biểu mẫu.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>dieuKhien.Focus</c>, <c>MessageBox.Show</c>.</remarks>
+        /// <param name="dieuKhien">Giá trị điều khiển dùng khi thực hiện thao tác; kiểu Control.</param>
+        /// <param name="thongBao">Nội dung thông báo được chuyển đến nơi gọi hoặc hiển thị cho người dùng.</param>
         private void BaoLoi(Control dieuKhien, string thongBao)
         {
             dieuKhien.BorderBrush = Brushes.IndianRed;
@@ -259,6 +350,10 @@ namespace RangHamMat.Views
             MessageBox.Show(thongBao, "Dữ liệu chưa hợp lệ", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
+        /// <summary>
+        /// Xóa thông báo lỗi còn lại khi bắt đầu thao tác hoặc kiểm tra mới.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>control.ClearValue</c>.</remarks>
         private void XoaBaoLoi()
         {
             Control[] danhSach = { txtMaLich, cboBenhNhan, cboBacSi, cboPhong, cboCa,
@@ -271,6 +366,12 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Kiểm tra dữ liệu lịch khám và phản hồi lỗi của các trường trước khi gọi nghiệp vụ.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XoaBaoLoi</c>, <c>BaoLoi</c>, <c>DateTime.TryParseExact</c>, <c>txtGioKham.Text.Trim</c>.</remarks>
+        /// <param name="lichMoi">Giá trị lịch mới dùng khi thực hiện thao tác; kiểu ET_LICHKHAM.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         private bool KiemTraDuLieu(out ET_LICHKHAM lichMoi)
         {
             lichMoi = new ET_LICHKHAM();
@@ -397,6 +498,12 @@ namespace RangHamMat.Views
             return true;
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn hộp chọn bác sĩ vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>GiaTriChon</c>, <c>LichKham.LayBacSi</c>, <c>danhSach.Add</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void cboBacSi_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (cboBacSiDuBi == null) return;
@@ -416,6 +523,12 @@ namespace RangHamMat.Views
             if (!string.IsNullOrWhiteSpace(maDangChon)) cboBacSiDuBi.SelectedValue = maDangChon;
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn hộp chọn mức độ vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>NoiDungChon</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void cboMucDo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (txtYeuCauDuBi == null) return;
@@ -423,6 +536,12 @@ namespace RangHamMat.Views
             if (NoiDungChon(cboMucDo)=="Cao") txtYeuCauDuBi.Visibility = Visibility.Visible;
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút lưu lịch khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>KiemTraDuLieu</c>, <c>busLichKham.suaLichKham</c>, <c>busLichKham.themLichKham</c>, <c>MessageBox.Show</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnLuuLich_Click(object sender, RoutedEventArgs e)
         {
             ET_LICHKHAM lichMoi;
@@ -460,11 +579,23 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút làm mới khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>DatLaiDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnLamMoi_Click(object sender, RoutedEventArgs e)
         {
             DatLaiDuLieu();
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút dòng khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>YeuCauDong</c>, <c>Window.GetWindow</c>, <c>cuaSo.Close</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnDong_Click(object sender, RoutedEventArgs e)
         {
             if (dangNhungTrongLichKham)
@@ -476,6 +607,11 @@ namespace RangHamMat.Views
             if (cuaSo != null) cuaSo.Close();
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn trình nhập liệu các tab vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void EditorTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
 

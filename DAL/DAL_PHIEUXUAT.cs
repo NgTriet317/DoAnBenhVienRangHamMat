@@ -119,9 +119,26 @@ public sealed class DAL_PHIEUXUAT : dbconnect
     public string DispensePrescription(string prescriptionId, string warehouseId, string employeeId)
         => DispenseCore(prescriptionId, warehouseId, employeeId, false);
 
+    /// <summary>
+    /// Xuất thuốc theo đơn trong giao dịch của đầu mối thanh toán.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>DispenseCore</c>.</remarks>
+    /// <param name="prescriptionId">Giá trị đơn thuốc mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="warehouseId">Giá trị kho mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="employeeId">Giá trị nhân viên mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Chuỗi kết quả của thao tác xuất thuốc được điều phối đơn thuốc.</returns>
     internal string DispenseCoordinatedPrescription(string prescriptionId, string warehouseId, string employeeId)
         => DispenseCore(prescriptionId, warehouseId, employeeId, true);
 
+    /// <summary>
+    /// Thực hiện phần kiểm tra tồn, nguồn đơn và ghi xuất thuốc của nghiệp vụ xuất kho. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>KiemTraNhanVien</c>, <c>db.ExecuteScalar&lt;bool&gt;</c>, <c>db.ExecuteScalar&lt;string?&gt;</c>.</remarks>
+    /// <param name="prescriptionId">Giá trị đơn thuốc mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="warehouseId">Giá trị kho mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="employeeId">Giá trị nhân viên mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="coordinated">Giá trị được điều phối dùng khi thực hiện thao tác; kiểu bool.</param>
+    /// <returns>Chuỗi kết quả của thao tác xuất thuốc xử lý lõi.</returns>
     private string DispenseCore(string prescriptionId, string warehouseId, string employeeId, bool coordinated)
     {
         return ThucHien((db, tx) =>
@@ -200,10 +217,22 @@ public sealed class DAL_PHIEUXUAT : dbconnect
         });
     }
 
+    /// <summary>
+    /// Mô hình và thao tác hỗ trợ đơn thuốc dùng bởi các thành phần liên quan.
+    /// </summary>
     private sealed class Prescription
     {
+        /// <summary>
+        /// Mã lần khám liên kết các chứng từ cùng lượt.
+        /// </summary>
         public string MaLS { get; set; } = "";
+        /// <summary>
+        /// Trạng thái.
+        /// </summary>
         public string TrangThai { get; set; } = "";
+        /// <summary>
+        /// Ngày kê.
+        /// </summary>
         public DateTime NgayKe { get; set; }
     }
 }

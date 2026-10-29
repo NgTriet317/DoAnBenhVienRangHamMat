@@ -1,15 +1,22 @@
+<!-- Giao diện KeDonThuocEditor: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl x:Class="RangHamMat.Views.KeDonThuocEditor"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  xmlns:clinical="clr-namespace:RangHamMat.Controls.ClinicalWorkflow" clinical:ClinicalLayout.IsEnabled="True"
  FontFamily="Segoe UI" FontSize="14" Language="vi-VN" Background="#F3F6FA">
  <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/ClinicalWorkflowStyles.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
+ <!-- Vùng bố cục MainSurface. -->
  <Grid x:Name="MainSurface" Margin="12">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <!-- Vùng bố cục RxHeader. -->
   <StackPanel x:Name="RxHeader" Margin="0,0,0,10">
    <TextBlock Text="Kê thuốc trong lần khám" Style="{StaticResource HospitalHeading}"/>
+   <!-- Trường lựa chọn VisitPicker. Chuyển sự kiện đến Visit_Changed trong code-behind. -->
    <ComboBox x:Name="VisitPicker" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Visit_Changed" Visibility="Collapsed"/>
+   <!-- Thông tin hiển thị PatientHeader. -->
    <TextBlock x:Name="PatientHeader" FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="Wrap"/>
+   <!-- Thông tin hiển thị VisitHeader. -->
    <TextBlock x:Name="VisitHeader" TextWrapping="Wrap" Foreground="#64748B" Margin="0,4"/>
+   <!-- Thông tin hiển thị SafetyHeader. -->
    <Expander Header="Dị ứng và tiền sử — đối chiếu trước khi kê thuốc"><TextBlock x:Name="SafetyHeader" TextWrapping="Wrap" Foreground="#9A3412" Margin="0,8"/></Expander>
   </StackPanel>
   <Grid Grid.Row="1">
@@ -20,19 +27,25 @@
      <StackPanel>
       <TextBlock Text="Danh mục thuốc theo nhóm" Style="{StaticResource HospitalSection}"/>
       <TextBlock Text="Nhóm thuốc" Style="{StaticResource FieldLabel}" Margin="0,8,0,0"/>
+      <!-- Trường lựa chọn GroupChoice. Chuyển sự kiện đến Group_Changed trong code-behind. -->
       <ComboBox x:Name="GroupChoice" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Group_Changed"/>
       <TextBlock Text="Tên hoặc mã thuốc" Style="{StaticResource FieldLabel}"/>
+      <!-- Nút thao tác SearchButton — Tìm. Chuyển sự kiện đến Search_Click trong code-behind. -->
       <DockPanel><Button x:Name="SearchButton" Content="Tìm" Click="Search_Click" DockPanel.Dock="Right" Margin="8,0,0,0"/><TextBox x:Name="DrugSearch"/></DockPanel>
       <Expander Header="Lọc thêm hàm lượng và đơn vị" Margin="0,8,0,0"><StackPanel>
+       <!-- Ô nhập StrengthFilter. -->
        <TextBlock Text="Hàm lượng"/><TextBox x:Name="StrengthFilter"/>
+       <!-- Ô nhập FormFilter. -->
        <TextBlock Text="Đơn vị cấp phát"/><TextBox x:Name="FormFilter"/>
       </StackPanel></Expander>
      </StackPanel>
+     <!-- Danh sách DrugGrid. -->
      <DataGrid x:Name="DrugGrid" Grid.Row="1" IsReadOnly="True" CanUserAddRows="False" AutoGenerateColumns="False" SelectionMode="Extended" MinHeight="120" Margin="0,10,0,8">
       <DataGrid.Columns><DataGridTemplateColumn Header="Thuốc / hàm lượng" Width="*"><DataGridTemplateColumn.CellTemplate><DataTemplate><StackPanel Margin="8,7"><TextBlock Text="{Binding TenThuoc}" TextWrapping="Wrap" FontWeight="SemiBold"/><TextBlock TextWrapping="Wrap" Foreground="#64748B" FontSize="12" Margin="0,4,0,0"><Run Text="{Binding HamLuong,Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding DonViTinh,Mode=OneWay}"/></TextBlock><TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,4,0,0"><Run Text="Giá: "/><Run Text="{Binding GiaHienThi,Mode=OneWay}"/><Run Text=" · Tồn: "/><Run Text="{Binding TonThamKhao,StringFormat=0.###,Mode=OneWay}"/></TextBlock></StackPanel></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn></DataGrid.Columns>
      </DataGrid>
      <StackPanel Grid.Row="2">
       <TextBlock Text="Chọn thuốc rồi thêm vào đơn để nhập cách dùng. Có thể giữ Ctrl để chọn nhiều thuốc." TextWrapping="Wrap" Foreground="#64748B" FontSize="12" Margin="0,0,0,8"/>
+      <!-- Nút thao tác AddSelectedButton — + Thêm thuốc đã chọn. Chuyển sự kiện đến Add_Click trong code-behind. -->
       <Button x:Name="AddSelectedButton" Content="+ Thêm thuốc đã chọn" Click="Add_Click" HorizontalAlignment="Left"/>
      </StackPanel>
     </Grid>
@@ -40,10 +53,15 @@
    <Border Grid.Column="2" Style="{StaticResource HospitalPanel}">
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
      <TextBlock Text="Thuốc đã chọn" Style="{StaticResource HospitalSection}"/>
+     <!-- Trường lựa chọn OrderChoice. Chuyển sự kiện đến Order_Changed trong code-behind. -->
      <Expander Header="Đơn bổ sung / thay thế" Margin="0,6"><StackPanel><ComboBox x:Name="OrderChoice" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Order_Changed" Margin="0,8"/>
+     <!-- Thông tin hiển thị OrderHeader. -->
      <TextBlock x:Name="OrderHeader" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
+     <!-- Nút thao tác NewButton — Đơn mới / bổ sung. Chuyển sự kiện đến New_Click trong code-behind. -->
      <WrapPanel><Button x:Name="NewButton" Content="Đơn mới / bổ sung" Click="New_Click"/><Button x:Name="ReplaceButton" Content="Soạn đơn thay thế" Click="Replace_Click" Margin="8,0,0,0"/></WrapPanel></StackPanel></Expander>
+     <!-- Danh sách RxLines. Chuyển sự kiện đến Line_Selected trong code-behind. -->
      <DataGrid x:Name="RxLines" MinHeight="95" MaxHeight="160" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" SelectionMode="Single" SelectionChanged="Line_Selected" CellEditEnding="Line_Edit" Margin="0,10">
+      <!-- Tài nguyên RxWrappedCell (Style) áp dụng cho TextBlock. -->
       <DataGrid.Resources><Style x:Key="RxWrappedCell" TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style></DataGrid.Resources>
       <DataGrid.Columns>
        <DataGridTextColumn Header="Thuốc / hàm lượng / đơn vị" Binding="{Binding TenHienThi}" ElementStyle="{StaticResource RxWrappedCell}" IsReadOnly="True" Width="*" MinWidth="180"/>
@@ -51,27 +69,39 @@
        <DataGridTextColumn Header="Số ngày" Binding="{Binding SoNgayDung}" IsReadOnly="True" Width="75"/>
       </DataGrid.Columns>
      </DataGrid>
+     <!-- Nút thao tác RemoveLineButton — Bỏ thuốc đang chọn. Chuyển sự kiện đến RemoveLine_Click trong code-behind. -->
      <Button x:Name="RemoveLineButton" Content="Bỏ thuốc đang chọn" Click="RemoveLine_Click" HorizontalAlignment="Left"/>
+     <!-- Thông tin hiển thị SelectedDrugHeader — Chọn một thuốc trong đơn để nhập cách dùng.. -->
      <TextBlock x:Name="SelectedDrugHeader" Text="Chọn một thuốc trong đơn để nhập cách dùng." FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,14,0,8"/>
+     <!-- Vùng bố cục DetailForm. -->
      <StackPanel x:Name="DetailForm" IsEnabled="False">
       <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition/></Grid.ColumnDefinitions>
+       <!-- Ô nhập QuantityEditor. Chuyển sự kiện đến Detail_Changed trong code-behind. -->
        <StackPanel><TextBlock Text="Số lượng cấp phát" Style="{StaticResource FieldLabel}"/><TextBox x:Name="QuantityEditor" TextChanged="Detail_Changed" LostFocus="Detail_LostFocus"/></StackPanel>
+       <!-- Ô nhập DaysEditor. Chuyển sự kiện đến Detail_Changed trong code-behind. -->
        <StackPanel Grid.Column="2"><TextBlock Text="Số ngày dùng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="DaysEditor" TextChanged="Detail_Changed" LostFocus="Detail_LostFocus"/></StackPanel>
       </Grid>
+      <!-- Ô nhập DoseEditor. Chuyển sự kiện đến Detail_Changed trong code-behind. -->
       <TextBlock Text="Liều dùng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="DoseEditor" TextChanged="Detail_Changed" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="44"/>
+      <!-- Ô nhập RouteEditor. Chuyển sự kiện đến Detail_Changed trong code-behind. -->
       <TextBlock Text="Đường dùng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="RouteEditor" TextChanged="Detail_Changed"/>
+      <!-- Ô nhập InstructionEditor. Chuyển sự kiện đến Detail_Changed trong code-behind. -->
       <TextBlock Text="Hướng dẫn sử dụng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="InstructionEditor" TextChanged="Detail_Changed" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="58"/>
      </StackPanel>
      <TextBlock Text="Bác sĩ nhập liều và hướng dẫn theo người bệnh. Kê đơn không giữ hoặc trừ tồn kho." TextWrapping="Wrap" Foreground="#64748B" FontSize="12" Margin="0,10,0,0"/>
      <Expander Header="Ghi chú / lý do thay hoặc bổ sung đơn" Margin="0,10,0,0"><StackPanel>
+      <!-- Ô nhập ReplacementReason. Chuyển sự kiện đến Input_Changed trong code-behind. -->
       <TextBlock Text="Lý do thay đơn (nếu có)"/><TextBox x:Name="ReplacementReason" TextChanged="Input_Changed" TextWrapping="Wrap"/>
+      <!-- Ô nhập NoteEditor. Chuyển sự kiện đến Input_Changed trong code-behind. -->
       <TextBlock Text="Ghi chú / lý do đơn bổ sung" Margin="0,8,0,0"/><TextBox x:Name="NoteEditor" TextChanged="Input_Changed" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="45"/>
      </StackPanel></Expander>
     </StackPanel></ScrollViewer>
    </Border>
   </Grid>
   <StackPanel Grid.Row="2" Margin="0,10,0,0">
+   <!-- Thông tin hiển thị ErrorText. -->
    <TextBlock x:Name="ErrorText" TextWrapping="Wrap" Foreground="#B91C1C"/><TextBlock x:Name="StatusText" TextWrapping="Wrap" Foreground="#15803D" Margin="0,4,0,6"/>
+   <!-- Nút thao tác CancelButton — Hủy nháp. Chuyển sự kiện đến Cancel_Click trong code-behind. -->
    <WrapPanel HorizontalAlignment="Right"><Button x:Name="CancelButton" Content="Hủy nháp" Click="Cancel_Click"/><Button x:Name="PrintButton" Content="Xem / in đơn đã ký" Click="Print_Click"/><Button x:Name="SaveButton" Content="Lưu nháp" Click="Save_Click"/><Button x:Name="SignButton" Content="Ký đơn thuốc" Click="Sign_Click" Style="{StaticResource HospitalPrimary}"/></WrapPanel>
   </StackPanel>
  </Grid>

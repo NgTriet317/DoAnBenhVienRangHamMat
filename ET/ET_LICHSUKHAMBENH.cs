@@ -11,19 +11,58 @@ namespace ET
     [Table("LICH_SU_KHAM_BENH")]
     public class ET_LICHSUKHAMBENH
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính KhongKeThuoc, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private int khongKeThuoc;
+        /// <summary>
+        /// Lý do không kê thuốc được ghi nhận cho lần khám được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string? lyDoKhongKeThuoc;
 
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaLS, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maLS = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaPhieu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maPhieu = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaBS, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maBS = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaPhong, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maPhong = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính ThoiGianKham, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime thoiGianKham;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrieuChung, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trieuChung = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính ChanDoan, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string chanDoan = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính KeHoachXuLy, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string keHoachXuLy = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgayXacNhan, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime? ngayXacNhan;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GhiChu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? ghiChu;
 
         /// <summary>
@@ -97,7 +136,26 @@ namespace ET
 
         // Cột bổ sung P03; constructor cũ được giữ để tương thích mã gọi hiện có.
         public int KhongKeThuoc { get => khongKeThuoc; set => khongKeThuoc = value; }
+        /// <summary>
+        /// Giá trị Lý do không kê thuốc được ghi nhận cho lần khám; được xác định bởi phần getter/setter của thuộc tính. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public string? LyDoKhongKeThuoc { get => lyDoKhongKeThuoc; set => lyDoKhongKeThuoc = value; }
+        /// <summary>
+        /// Khởi tạo lịch sử khám bệnh. Gán các giá trị đầu vào vào đối tượng để nơi gọi sử dụng cùng một bản dữ liệu.
+        /// </summary>
+        /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+        /// <param name="maPhieu">Mã phiếu xác định đối tượng cần xử lý.</param>
+        /// <param name="maBS">Mã bác sĩ xác định đối tượng cần xử lý.</param>
+        /// <param name="maPhong">Mã phòng xác định đối tượng cần xử lý.</param>
+        /// <param name="thoiGianKham">Giá trị thời gian khám dùng khi thực hiện thao tác; kiểu DateTime.</param>
+        /// <param name="trieuChung">Giá trị triệu chứng dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="chanDoan">Giá trị chẩn đoán dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="keHoachXuLy">Giá trị kế hoạch xử lý dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="trangThai">Giá trị trạng thái dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="ngayXacNhan">Giá trị ngày xác nhận dùng khi thực hiện thao tác; kiểu DateTime?.</param>
+        /// <param name="ghiChu">Giá trị ghi chú dùng khi thực hiện thao tác; kiểu string?.</param>
+        /// <param name="khongKeThuoc">Giá trị không kê thuốc dùng khi thực hiện thao tác; kiểu int.</param>
+        /// <param name="lyDoKhongKeThuoc">Giá trị lý do không kê thuốc dùng khi thực hiện thao tác; kiểu string?.</param>
         public ET_LICHSUKHAMBENH(string maLS, string maPhieu, string maBS, string maPhong, DateTime thoiGianKham, string trieuChung, string chanDoan, string keHoachXuLy, string trangThai, DateTime? ngayXacNhan, string? ghiChu, int khongKeThuoc, string? lyDoKhongKeThuoc)
         {
             this.maLS = maLS;

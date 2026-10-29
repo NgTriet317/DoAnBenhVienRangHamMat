@@ -6,6 +6,7 @@
  <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <StackPanel Margin="0,0,0,18"><TextBlock Text="Lập hóa đơn theo lần khám" Style="{StaticResource HospitalHeading}"/><TextBlock Text="Chỉ lấy dịch vụ xác nhận và thuốc đã cấp đủ chưa nằm trên hóa đơn khác. Kiểm tra các khoản rồi lưu nháp." Style="{StaticResource HospitalMuted}"/></StackPanel>
   <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
+   <!-- Trường lựa chọn PatientBox. Chuyển sự kiện đến Patient_Changed trong code-behind. -->
    <WrapPanel><StackPanel Width="250" Margin="0,0,14,16"><TextBlock Text="Bệnh nhân *" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="PatientBox" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Patient_Changed" AutomationProperties.Name="Bệnh nhân lập hóa đơn"/></StackPanel><StackPanel Width="260" Margin="0,0,14,16"><TextBlock Text="Lần khám đã xác nhận *" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="VisitBox" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Visit_Changed" AutomationProperties.Name="Lần khám lập hóa đơn"/></StackPanel><StackPanel Width="250" Margin="0,0,14,16"><TextBlock Text="Nhân viên lập *" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="EmployeeBox" DisplayMemberPath="Label" SelectedValuePath="Value" AutomationProperties.Name="Nhân viên lập hóa đơn"/></StackPanel></WrapPanel>
    <TextBlock Text="Các khoản thu thực tế" Style="{StaticResource HospitalSection}" Margin="0,4,0,12"/>
    <!-- Bảng ChargeGrid: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. -->
@@ -18,10 +19,13 @@
      <DataGridTextColumn Header="Thành tiền" Binding="{Binding ThanhTien, Converter={StaticResource InvoiceMoney}}" Width="140" MinWidth="140" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}"/>
     </DataGrid.Columns>
    </DataGrid>
+   <!-- Thông tin hiển thị ChargesInfo. -->
    <TextBlock x:Name="ChargesInfo" Style="{StaticResource HospitalMuted}" Margin="0,12,0,16"/>
    <WrapPanel><StackPanel Width="220" Margin="0,0,18,16"><TextBlock Text="Giảm giá (số tiền ₫)" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}">
+    <!-- Ô nhập DiscountBox — 0. Chuyển sự kiện đến Discount_Changed trong code-behind. Kiểm tra đầu vào theo metadata HOA_DON.GiamGia. -->
     <TextBox x:Name="DiscountBox" Tag="DB:HOA_DON.GiamGia" Text="0" TextChanged="Discount_Changed" AutomationProperties.Name="Giảm giá hóa đơn"/>
    </ContentControl></StackPanel><StackPanel Width="280" Margin="0,0,18,16"><TextBlock Text="Tổng phải thu" Style="{StaticResource FieldLabel}"/><TextBlock x:Name="NetTotal" FontWeight="SemiBold" Foreground="{StaticResource AccentDark}" FontSize="20" Margin="0,6,0,0"/></StackPanel></WrapPanel>
+   <!-- Thông tin hiển thị Feedback. -->
    <TextBlock x:Name="Feedback" TextWrapping="Wrap" Foreground="#8F3B32" Margin="0,0,0,12" AutomationProperties.LiveSetting="Polite"/>
   </StackPanel></ScrollViewer>
   <WrapPanel Grid.Row="2" Margin="0,18,0,0"><!-- Thao tác Quay lại: gọi Back_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->

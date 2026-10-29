@@ -1,11 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Thư viện nghiệp vụ .NET 8; nullable giúp phát hiện giá trị thiếu khi phối hợp các tầng. -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- BUS gọi DAL và trao đổi các thực thể ET; không phụ thuộc vào giao diện WPF. -->
   <ItemGroup>
     <ProjectReference Include="..\DAL\DAL.csproj" />
     <ProjectReference Include="..\ET\ET.csproj" />

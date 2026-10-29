@@ -10,13 +10,37 @@ namespace RangHamMat.Views;
 /// <summary>Form tiếp nhận chỉ gửi lựa chọn; định danh người lưu, giờ và số thứ tự được DAL xác định lại.</summary>
 public partial class TiepNhanKham : UserControl
 {
+    /// <summary>
+    /// Cờ Sẵn sàng; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool ready;
+    /// <summary>
+    /// Mã bệnh nhân được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private string? patientId;
+    /// <summary>
+    /// Ngữ cảnh định danh và quyền của người dùng đang thao tác.
+    /// </summary>
     private NguCanhNghiepVu? user;
+    /// <summary>
+    /// Đã lưu kết quả. Có thể để null khi dữ liệu chưa được cung cấp.
+    /// </summary>
     public KetQuaTiepNhan? SavedResult { get; private set; }
+    /// <summary>
+    /// Khởi tạo tiếp nhận khám. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+    /// </summary>
     public TiepNhanKham() => InitializeComponent();
+    /// <summary>
+    /// Giá trị Lịch hẹn; được xác định bởi phần getter/setter của thuộc tính. Có thể để null khi dữ liệu chưa được cung cấp.
+    /// </summary>
     private object? Appointment => DuLieuGiaoDien.Find("LICH_KHAM",AppointmentPicker.SelectedValue);
 
+    /// <summary>
+    /// Nạp dữ liệu khởi đầu khi biểu mẫu được tải lên giao diện.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>user.CoQuyen</c>, <c>BieuMauHoSo.GetRecord</c>, <c>BieuMauHoSo.GetPatientScope</c>, <c>DuLieuGiaoDien.PatientId</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Form_Loaded(object sender,RoutedEventArgs e)
     {
         if(ready)return;
@@ -50,7 +74,18 @@ public partial class TiepNhanKham : UserControl
         }
         catch(InvalidOperationException ex){FormError.Text=ex.Message;SaveReceptionButton.IsEnabled=false;}
     }
+    /// <summary>
+    /// Kiểm tra hoặc lấy thông tin đã xác định của dữ liệu hiện tại.
+    /// </summary>
+    /// <param name="value">Giá trị string được truyền vào để đọc, kiểm tra hoặc cập nhật trong thao tác này.</param>
+    /// <returns>Chuỗi kết quả của thao tác đã biết.</returns>
     private static string Known(string value)=>string.IsNullOrWhiteSpace(value)?"Chưa ghi nhận, cần đối chiếu người bệnh":value;
+    /// <summary>
+    /// Tiếp nhận thay đổi lịch hẹn và cập nhật trạng thái/dữ liệu phụ thuộc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>UiRecord.Text</c>, <c>UiRecord.Get</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Appointment_Changed(object sender,SelectionChangedEventArgs e)
     {
         if(!ready)return;
@@ -60,6 +95,12 @@ public partial class TiepNhanKham : UserControl
         if(Appointment is object appointment)
         {ArrivalReason.Text=UiRecord.Text(appointment,"LyDoKham");ServicePicker.SelectedValue=UiRecord.Get(appointment,"MaDV");}
     }
+    /// <summary>
+    /// Tiếp nhận thay đổi dịch vụ và cập nhật trạng thái/dữ liệu phụ thuộc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>DispatchReason.Clear</c>, <c>UiRecord.Get</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Service_Changed(object sender,SelectionChangedEventArgs e)
     {
         if(!ready)return;
@@ -75,6 +116,12 @@ public partial class TiepNhanKham : UserControl
         }
         catch(InvalidOperationException ex){FormError.Text=ex.Message;}
     }
+    /// <summary>
+    /// Tiếp nhận thay đổi bác sĩ và cập nhật trạng thái/dữ liệu phụ thuộc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>DispatchReason.Clear</c>, <c>DuLieuGiaoDien.Rows</c>, <c>UiRecord.Text</c>, <c>UiRecord.Get</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Doctor_Changed(object sender,SelectionChangedEventArgs e)
     {
         if(!ready)return;

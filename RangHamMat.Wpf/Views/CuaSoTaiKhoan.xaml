@@ -11,6 +11,7 @@
       <TextBlock Text="Tài khoản và vai trò · Thêm mới" Style="{StaticResource Title}" />
       <TextBlock Text="Điền lần lượt từng nhóm thông tin. Dấu * là trường bắt buộc." Style="{StaticResource Subtitle}" />
     </StackPanel>
+    <!-- Thành phần EditorTabs. -->
     <TabControl x:Name="EditorTabs" Grid.Row="1">
       <!-- Nhóm Tài khoản: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
       <TabItem Header="Tài khoản" Tag="Table:TAI_KHOAN" Visibility="Collapsed">

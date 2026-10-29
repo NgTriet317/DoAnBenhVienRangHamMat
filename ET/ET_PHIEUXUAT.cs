@@ -11,15 +11,45 @@ namespace ET
     [Table("PHIEU_XUAT")]
     public class ET_PHIEUXUAT
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaPX, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maPX = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaKho, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maKho = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaNV, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maNV = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaKhoa, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maKhoa;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaPhong, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maPhong;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaLS, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maLS;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgayXuat, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime ngayXuat;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính LyDo, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string lyDo = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GhiChu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? ghiChu;
 
         /// <summary>

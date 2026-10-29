@@ -10,15 +10,45 @@ namespace ET
     [Table("BAO_TRI_THIET_BI")]
     public class ET_BAOTRITHIETBI
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaBT, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maBT = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaTB, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maTB = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaNV, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maNV = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgayBatDau, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime ngayBatDau;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgayKetThuc, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime? ngayKetThuc;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NoiDung, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string noiDung = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính ChiPhi, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal chiPhi;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgayBaoTriTiepTheo, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime? ngayBaoTriTiepTheo;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GhiChu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? ghiChu;
 
         /// <summary>
@@ -63,6 +93,10 @@ namespace ET
         /// Ngày kết thúc kế hoạch; ánh xạ cột NgayKetThuc của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
         /// </summary>
         public DateTime? NgayKetThuc { get => ngayKetThuc; set => ngayKetThuc = value; }
+        /// <summary>Giờ SQL xác nhận phiếu; hệ thống ghi, không nhập hoặc sửa tay.</summary>
+        public DateTime? NgayXacNhan { get; set; }
+        /// <summary>Giờ bắt đầu thực hiện thực tế; khác ngày dự kiến NgayBatDau.</summary>
+        public DateTime? NgayThucHien { get; set; }
         /// <summary>
         /// Nội dung chứng từ hoặc khoản thu; ánh xạ cột NoiDung của bảng trong TableAttribute.
         /// </summary>

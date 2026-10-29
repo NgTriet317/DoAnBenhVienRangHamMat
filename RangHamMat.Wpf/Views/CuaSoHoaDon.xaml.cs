@@ -16,8 +16,17 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class CuaSoHoaDon : UserControl, IBieuMauLuu, IPatientScoped
 {
+    /// <summary>
+    /// Đối tượng nghiệp vụ hóa đơn được màn hình dùng để đọc/ghi dữ liệu.
+    /// </summary>
     private readonly BUS_HOADON finance = new();
+    /// <summary>
+    /// Cờ Đang cập nhật; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool updating;
+    /// <summary>
+    /// Tổng được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private decimal total;
     /// <summary>
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.
@@ -27,7 +36,13 @@ public partial class CuaSoHoaDon : UserControl, IBieuMauLuu, IPatientScoped
     /// Mã hóa đơn đã tạo thành công; giúp chọn hóa đơn mới và chặn bấm lưu tạo lặp cùng một form.
     /// </summary>
     public string? SavedInvoiceId { get; private set; }
+    /// <summary>
+    /// Thông báo đã tạo xong cho các thành phần đã đăng ký theo dõi.
+    /// </summary>
     public event Action<string>? CreationCompleted;
+    /// <summary>
+    /// Thông báo đóng được yêu cầu cho các thành phần đã đăng ký theo dõi.
+    /// </summary>
     public event Action? CloseRequested;
     /// <summary>
     /// Khởi tạo biểu mẫu lập hóa đơn nháp theo lần khám từ XAML.

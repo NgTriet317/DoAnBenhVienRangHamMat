@@ -1,41 +1,58 @@
+<!-- Giao diện TiepNhanKham: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl xmlns:clinical="clr-namespace:RangHamMat.Controls.ClinicalWorkflow" clinical:ClinicalLayout.IsEnabled="True" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.TiepNhanKham" Loaded="Form_Loaded" Background="#F3F6FA" FontFamily="Segoe UI" FontSize="14" Language="vi-VN" UseLayoutRounding="True">
   <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/ClinicalWorkflowStyles.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
   <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <StackPanel Margin="0,0,0,16"><TextBlock Text="Tiếp nhận khám" Style="{StaticResource HospitalHeading}"/><TextBlock Text="Đối chiếu người bệnh, chọn dịch vụ và phân đúng bác sĩ." Style="{StaticResource HospitalMuted}" Margin="0,6,0,0" TextWrapping="Wrap"/><TextBlock x:Name="PatientIdentity" Margin="0,10,0,4" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock x:Name="DestinationIdentity" Text="Chưa chọn bác sĩ phụ trách" Foreground="#1D4ED8" TextWrapping="Wrap"/></StackPanel>
+    <!-- Vùng bố cục InputPanel. -->
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"><StackPanel x:Name="InputPanel">
       <Border Style="{StaticResource HospitalPanel}" Margin="0,0,0,12"><StackPanel>
         <TextBlock Text="1. Người bệnh và hồ sơ" FontWeight="SemiBold" FontSize="16"/>
+        <!-- Thông tin hiển thị MedicalIdentity. -->
         <TextBlock x:Name="MedicalIdentity" Style="{StaticResource HospitalMuted}" TextWrapping="Wrap"/>
+        <!-- Thông tin hiển thị SafetyInfo. -->
         <TextBlock x:Name="SafetyInfo" TextWrapping="Wrap" Foreground="#9A3412" Margin="0,8,0,0"/>
         <TextBlock Text="Nguồn tiếp nhận" Style="{StaticResource FieldLabel}" Margin="0,12,0,5"/>
+        <!-- Trường lựa chọn AppointmentPicker. Chuyển sự kiện đến Appointment_Changed trong code-behind. -->
         <ComboBox x:Name="AppointmentPicker" MinHeight="36" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Appointment_Changed" AutomationProperties.Name="Nguồn trực tiếp hoặc lịch hẹn"/>
       </StackPanel></Border>
       <Border Style="{StaticResource HospitalPanel}" Margin="0,0,0,12"><StackPanel>
         <TextBlock Text="2. Dịch vụ và bác sĩ phụ trách" FontWeight="SemiBold" FontSize="16"/>
         <TextBlock Text="Dịch vụ khám ban đầu" Style="{StaticResource FieldLabel}" Margin="0,12,0,5"/>
+        <!-- Trường lựa chọn ServicePicker. Chuyển sự kiện đến Service_Changed trong code-behind. -->
         <ComboBox x:Name="ServicePicker" MinHeight="36" DisplayMemberPath="Label" SelectedValuePath="Value" IsEditable="True" IsTextSearchEnabled="True" SelectionChanged="Service_Changed" AutomationProperties.Name="Dịch vụ khám"/>
         <TextBlock Text="Bác sĩ phù hợp chuyên khoa" Style="{StaticResource FieldLabel}" Margin="0,12,0,5"/>
+        <!-- Trường lựa chọn DoctorPicker. Chuyển sự kiện đến Doctor_Changed trong code-behind. -->
         <ComboBox x:Name="DoctorPicker" MinHeight="36" DisplayMemberPath="Label" SelectedValuePath="MaNV" IsEditable="True" IsTextSearchEnabled="True" SelectionChanged="Doctor_Changed" AutomationProperties.Name="Bác sĩ tiếp nhận"/>
+        <!-- Thông tin hiển thị ScheduleHint. -->
         <TextBlock x:Name="ScheduleHint" Foreground="#9A3412" Margin="0,6,0,0" TextWrapping="Wrap"/>
         <TextBlock Text="Phòng khám" Style="{StaticResource FieldLabel}" Margin="0,12,0,5"/>
+        <!-- Trường lựa chọn RoomPicker. -->
         <ComboBox x:Name="RoomPicker" MinHeight="36" DisplayMemberPath="Label" SelectedValuePath="Value" AutomationProperties.Name="Phòng tiếp nhận"/>
+        <!-- Vùng bố cục DispatchBlock. -->
         <StackPanel x:Name="DispatchBlock" Visibility="Collapsed" Margin="0,12,0,0">
           <TextBlock Text="Lý do điều phối khi chưa có lịch làm việc" Style="{StaticResource FieldLabel}" TextWrapping="Wrap"/>
+          <!-- Ô nhập DispatchReason. -->
           <TextBox x:Name="DispatchReason" MaxLength="500" MinHeight="60" AcceptsReturn="True" TextWrapping="Wrap"/>
         </StackPanel>
       </StackPanel></Border>
       <Border Style="{StaticResource HospitalPanel}"><StackPanel>
         <TextBlock Text="3. Lý do và xác nhận" FontWeight="SemiBold" FontSize="16"/>
         <TextBlock Text="Lý do đến khám" Style="{StaticResource FieldLabel}" Margin="0,12,0,5"/>
+        <!-- Ô nhập ArrivalReason. -->
         <TextBox x:Name="ArrivalReason" MinHeight="65" AcceptsReturn="True" TextWrapping="Wrap"/>
         <TextBlock Text="Ghi chú tiếp nhận" Style="{StaticResource FieldLabel}" Margin="0,12,0,5"/>
+        <!-- Ô nhập ReceptionNote. -->
         <TextBox x:Name="ReceptionNote" MinHeight="55" AcceptsReturn="True" TextWrapping="Wrap"/>
+        <!-- Thông tin hiển thị SystemInfo. -->
         <TextBlock x:Name="SystemInfo" Style="{StaticResource HospitalMuted}" TextWrapping="Wrap" Margin="0,12,0,5"/>
+        <!-- Ô nhập QueueNumber — Số thứ tự do hệ thống cấp khi lưu. -->
         <TextBox x:Name="QueueNumber" Text="Số thứ tự do hệ thống cấp khi lưu" IsReadOnly="True" IsTabStop="False" BorderThickness="0"/>
       </StackPanel></Border>
     </StackPanel></ScrollViewer>
     <Border Grid.Row="2" Padding="0,12,0,0" Margin="0,12,0,0" BorderThickness="0,1,0,0" BorderBrush="#DCE5EF"><StackPanel>
+      <!-- Thông tin hiển thị FormError. -->
       <TextBlock x:Name="FormError" Foreground="#B42318" TextWrapping="Wrap" Margin="0,0,0,8"/>
+      <!-- Thông tin hiển thị SavedStatus. -->
       <TextBlock x:Name="SavedStatus" Foreground="#15803D" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
       <WrapPanel HorizontalAlignment="Right"><Button Content="Đóng" Tag="DongCuaSo" MinHeight="36"/><Button x:Name="SaveReceptionButton" Content="Xác nhận tiếp nhận" Tag="HoSoSave" MinHeight="36" Style="{StaticResource HospitalPrimary}"/></WrapPanel>
     </StackPanel></Border>

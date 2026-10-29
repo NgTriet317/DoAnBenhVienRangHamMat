@@ -11,11 +11,29 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class ChiTietKhamDieuTri : UserControl, IPatientScoped
 {
+    /// <summary>
+    /// Mã lần khám được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly string visitId;
+    /// <summary>
+    /// Giá trị lưu nội bộ của thuộc tính PatientId, dùng bởi getter/setter tương ứng.
+    /// </summary>
     private TongHopLanKham? summary;
+    /// <summary>
+    /// Quyền cho phép thao tác được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private Func<string, bool> allowed = _ => true;
+    /// <summary>
+    /// Lâm sàng trình nhập liệu được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private KhamLamSang? clinicalEditor;
+    /// <summary>
+    /// Giá trị Có thay đổi chưa lưu; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public bool CoThayDoiChuaLuu=>clinicalEditor?.CoThayDoiChuaLuu==true;
+    /// <summary>
+    /// Thông báo quay lại được yêu cầu cho các thành phần đã đăng ký theo dõi.
+    /// </summary>
     public event Action? BackRequested;
     /// <summary>
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.

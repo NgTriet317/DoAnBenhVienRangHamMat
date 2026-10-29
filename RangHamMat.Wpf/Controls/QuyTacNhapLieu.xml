@@ -215,6 +215,8 @@
     <Cot Ten="MaNV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
     <Cot Ten="NgayBatDau" Kieu="date" QuyCach="" ChoTrong="false" Khoa="false" />
     <Cot Ten="NgayKetThuc" Kieu="datetime2" QuyCach="0" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NgayXacNhan" Kieu="datetime2" QuyCach="0" ChoTrong="true" Khoa="false" />
+    <Cot Ten="NgayThucHien" Kieu="datetime2" QuyCach="0" ChoTrong="true" Khoa="false" />
     <Cot Ten="NoiDung" Kieu="nvarchar" QuyCach="MAX" ChoTrong="false" Khoa="false" />
     <Cot Ten="ChiPhi" Kieu="decimal" QuyCach="18,2" ChoTrong="false" Khoa="false" />
     <Cot Ten="NgayBaoTriTiepTheo" Kieu="date" QuyCach="" ChoTrong="true" Khoa="false" />

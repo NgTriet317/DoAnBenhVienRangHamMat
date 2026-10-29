@@ -11,16 +11,49 @@ namespace ET
     [Table("NHAN_VIEN")]
     public class ET_NHANVIEN
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaNV, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maNV = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính HoTen, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string hoTen = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GioiTinh, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? gioiTinh;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgaySinh, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime? ngaySinh;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính SDT, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? sdt;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính DiaChi, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? diaChi;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaChucVu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maChucVu = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaCK, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maCK;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính BangCap, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? bangCap;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgayVaoLam, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime ngayVaoLam;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
 
         /// <summary>

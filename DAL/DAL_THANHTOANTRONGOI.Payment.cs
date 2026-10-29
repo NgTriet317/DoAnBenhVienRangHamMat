@@ -7,6 +7,9 @@ using ET;
 
 namespace DAL;
 
+/// <summary>
+/// Tầng truy cập dữ liệu thanh toán trọn gói, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
 public sealed partial class DAL_THANHTOANTRONGOI
 {
     // Chỉ BUS đầu mối sở hữu commit. Các DAL con không mở kết nối hay commit riêng.
@@ -107,7 +110,16 @@ public sealed partial class DAL_THANHTOANTRONGOI
         });
     }
 
+    /// <summary>
+    /// Giới hạn số tiền được chấp nhận trong kiểm tra nghiệp vụ được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private const decimal MaxMoney = 9999999999999999m;
+    /// <summary>
+    /// Chuẩn hóa đầu vào và kiểm tra các điều kiện của yêu cầu trước khi xử lý tiếp.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Error</c>, <c>.Trim</c>, <c>r.MaKhoCapThuoc.Trim</c>, <c>r.MaThamChieu.Trim</c>.</remarks>
+    /// <param name="r">Gói dữ liệu đầu vào cho thao tác; các trường được kiểm tra trong quá trình xử lý.</param>
+    /// <returns>Kết quả kiểu YeuCauThanhToan dùng cho bước xử lý tiếp theo.</returns>
     private static YeuCauThanhToan Normalize(YeuCauThanhToan r)
     {
         if (r is null) throw Error("ThanhToan", "Thiếu yêu cầu thanh toán.");
@@ -124,9 +136,25 @@ public sealed partial class DAL_THANHTOANTRONGOI
             throw Error("MaThamChieu", "Chuyển khoản cần mã tham chiếu và xác nhận đã đối chiếu thủ công.");
         return r with { MaLS = visit, MaKhoCapThuoc = warehouse, DauVanTayBangTinh = hash, PhuongThuc = method, MaThamChieu = reference };
     }
+    /// <summary>
+    /// Lấy khóa ứng dụng cho yêu cầu hoặc nguồn thanh toán trong giao dịch hiện tại. Dùng application lock sở hữu bởi giao dịch; từ chối khi không lấy được khóa trong thời gian chờ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.ExecuteScalar&lt;int&gt;</c>, <c>Error</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="key">Giá trị khóa dùng khi thực hiện thao tác; kiểu string.</param>
     private static void PaymentLock(IDbConnection db, IDbTransaction? tx, string key)
     { if (db.ExecuteScalar<int>("DECLARE @r int; EXEC @r=sys.sp_getapplock @Resource=@key,@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000; SELECT @r", new { key }, tx) < 0) throw Error("ThanhToan", "Lượt đang xử lý; thử lại cùng yêu cầu."); }
 
+    /// <summary>
+    /// Đọc và đối chiếu dữ liệu hóa đơn, khoản thu và bàn giao để tạo kết quả thanh toán. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.QuerySingle&lt;ET_HOADON&gt;</c>, <c>db.Query&lt;ET_THANHTOAN&gt;</c>, <c>Error</c>, <c>db.Query&lt;DeliveryState&gt;</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="existing">Giá trị đã tồn tại dùng khi thực hiện thao tác; kiểu bool.</param>
+    /// <returns>Kết quả kiểu KetQuaThanhToan dùng cho bước xử lý tiếp theo.</returns>
     private static KetQuaThanhToan ReadPaymentResult(IDbConnection db, IDbTransaction? tx, string id, bool existing)
     {
         var h = db.QuerySingle<ET_HOADON>("SELECT * FROM dbo.HOA_DON WITH(HOLDLOCK) WHERE MaHD=@id", new { id }, tx);
@@ -139,6 +167,14 @@ public sealed partial class DAL_THANHTOANTRONGOI
         return new(h.MaLS, h.MaHD, payments.SingleOrDefault()?.MaTT, deliveries, h.SoTienPhaiThu,
             payments.SingleOrDefault()?.SoTienKhachDua ?? 0, payments.SingleOrDefault()?.TienThua ?? 0, existing);
     }
+    /// <summary>
+    /// Đối chiếu các nguồn dịch vụ và từng phần lô thuốc trên hóa đơn với bảng tính đã xem.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.Query&lt;string&gt;</c>, <c>services.SequenceEqual</c>, <c>fee.DichVu.Select</c>, <c>Error</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="invoiceId">Giá trị mã hóa đơn dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="fee">Giá trị phí dùng khi thực hiện thao tác; kiểu BangTinhPhi.</param>
     private static void VerifyChargeSources(IDbConnection db, IDbTransaction? tx, string invoiceId, BangTinhPhi fee)
     {
         var services = db.Query<string>("SELECT MaDVThucHien FROM dbo.CHI_TIET_HOA_DON WHERE MaHD=@invoiceId AND MaDVThucHien IS NOT NULL ORDER BY MaDVThucHien", new { invoiceId }, tx).ToArray();
@@ -152,6 +188,14 @@ public sealed partial class DAL_THANHTOANTRONGOI
         if (!actual.OrderBy(l=>l.MaCTDT,StringComparer.Ordinal).ThenBy(l=>l.MaLo,StringComparer.Ordinal).SequenceEqual(expected))
             throw Error("ThanhToan", "Nguồn thuốc hoặc từng phần lô không khớp bảng tính.");
     }
+    /// <summary>
+    /// Liên kết các dòng thuốc đã chốt với từng phần xuất lô; chỉ thay nguồn sau khi số lượng và tiền khớp. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.Query&lt;ET_CHITIETHOADON&gt;</c>, <c>deliveries.Select</c>, <c>exported.Sum</c>, <c>Error</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="invoiceId">Giá trị mã hóa đơn dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="deliveries">Giá trị các đơn bàn giao dùng khi thực hiện thao tác; kiểu DonThuocDaThu[].</param>
     private static void AttachPrescriptionExports(IDbConnection db, IDbTransaction? tx, string invoiceId, DonThuocDaThu[] deliveries)
     {
         var pending = db.Query<ET_CHITIETHOADON>("SELECT * FROM dbo.CHI_TIET_HOA_DON WITH(UPDLOCK,HOLDLOCK) WHERE MaHD=@invoiceId AND MaCTDT IS NOT NULL ORDER BY MaCTDT", new { invoiceId }, tx).ToArray();
@@ -170,11 +214,46 @@ public sealed partial class DAL_THANHTOANTRONGOI
             db.Execute("DELETE dbo.CHI_TIET_HOA_DON WHERE MaCTHD=@MaCTHD AND MaHD=@invoiceId", new { source.MaCTHD, invoiceId }, tx);
         }
     }
+    /// <summary>
+    /// Gói dữ liệu phân thu đã chốt truyền giữa các bước xử lý; các thành phần được khai báo ngay trong kiểu.
+    /// </summary>
+    /// <param name="MaCTDT">Mã chi tiết đơn thuốc xác định đối tượng cần xử lý.</param>
+    /// <param name="MaLo">Mã lô xác định đối tượng cần xử lý.</param>
+    /// <param name="SoLuong">Giá trị số lượng dùng khi thực hiện thao tác; kiểu decimal.</param>
+    /// <param name="DonGia">Giá trị đơn giá dùng khi thực hiện thao tác; kiểu decimal.</param>
+    /// <param name="ThanhTien">Giá trị thành tiền dùng khi thực hiện thao tác; kiểu decimal.</param>
     private sealed record PhanThuDaChot(string MaCTDT, string MaLo, decimal SoLuong, decimal DonGia, decimal ThanhTien);
+    /// <summary>
+    /// Gói dữ liệu yêu cầu bí danh yêu cầu truyền giữa các bước xử lý; các thành phần được khai báo ngay trong kiểu.
+    /// </summary>
+    /// <param name="MaLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <param name="MaHD">Mã hóa đơn xác định đối tượng cần xử lý.</param>
+    /// <param name="DauVanTayYeuCau">Giá trị dùng đối chiếu phiên bản dữ liệu tại bước xử lý tương ứng.</param>
     private sealed record RequestAlias(string MaLS,string MaHD,string DauVanTayYeuCau);
+    /// <summary>
+    /// Mô hình và thao tác hỗ trợ bàn giao trạng thái dùng bởi các thành phần liên quan.
+    /// </summary>
     private sealed class DeliveryState
     {
-        public string MaDT{get;set;}=""; public string MaPX{get;set;}="";
-        public string TrangThaiGiao{get;set;}="";public string? MaNVGiao{get;set;}public DateTime? ThoiGianGiao{get;set;}
+        /// <summary>
+        /// Mã đơn thuốc.
+        /// </summary>
+        public string MaDT{get;set;}="";
+        /// <summary>
+        /// Mã phiếu xuất.
+        /// </summary>
+        public string MaPX{get;set;}="";
+        /// <summary>
+        /// Trạng thái bàn giao thuốc cho bệnh nhân.
+        /// </summary>
+        public string TrangThaiGiao{get;set;}="";
+        /// <summary>
+        /// Mã nhân viên xác nhận bàn giao thuốc. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
+        public string? MaNVGiao{get;set;}
+        /// <summary>
+        /// Thời điểm xác nhận bàn giao thuốc. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
+        public DateTime? ThoiGianGiao{get;set;}
     }
 }

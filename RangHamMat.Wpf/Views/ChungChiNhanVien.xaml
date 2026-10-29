@@ -1,3 +1,4 @@
+<!-- Giao diện ChungChiNhanVien: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="RangHamMat.Views.ChungChiNhanVien">
@@ -36,18 +37,21 @@
       <Border Grid.Column="0" Background="White" BorderBrush="#DDD6FE" BorderThickness="1" CornerRadius="12" Padding="16">
         <StackPanel>
           <TextBlock Text="Tổng chứng chỉ" Foreground="#6D28D9" />
+          <!-- Thông tin hiển thị lblTongChungChi — 0. -->
           <TextBlock x:Name="lblTongChungChi" Text="0" FontSize="26" FontWeight="SemiBold" Margin="0,5,0,0" />
         </StackPanel>
       </Border>
       <Border Grid.Column="2" Background="#FFF7ED" BorderBrush="#FED7AA" BorderThickness="1" CornerRadius="12" Padding="16">
         <StackPanel>
           <TextBlock Text="Sắp hết hạn" Foreground="#C2410C" />
+          <!-- Thông tin hiển thị lblSapHetHan — 0. -->
           <TextBlock x:Name="lblSapHetHan" Text="0" FontSize="26" FontWeight="SemiBold" Margin="0,5,0,0" />
         </StackPanel>
       </Border>
       <Border Grid.Column="4" Background="#F0FDF4" BorderBrush="#BBF7D0" BorderThickness="1" CornerRadius="12" Padding="16">
         <StackPanel>
           <TextBlock Text="Còn hiệu lực" Foreground="#15803D" />
+          <!-- Thông tin hiển thị lblConHieuLuc — 0. -->
           <TextBlock x:Name="lblConHieuLuc" Text="0" FontSize="26" FontWeight="SemiBold" Margin="0,5,0,0" />
         </StackPanel>
       </Border>
@@ -73,6 +77,7 @@
           <StackPanel>
             <TextBlock Text="Tìm nhân viên" FontSize="18" FontWeight="SemiBold" />
             <TextBlock Text="Chọn nhân viên để xem hoặc thêm chứng chỉ tương ứng." Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,4,0,12" />
+            <!-- Ô nhập txtTimNhanVien. Chuyển sự kiện đến txtTimNhanVien_TextChanged trong code-behind. -->
             <TextBox x:Name="txtTimNhanVien" ToolTip="Nhập mã hoặc tên nhân viên" Margin="0,0,0,10"
                      TextChanged="txtTimNhanVien_TextChanged" Height="38"/>
           </StackPanel>
@@ -86,8 +91,11 @@
           <!-- CARD THÔNG TIN NHÂN VIÊN ĐANG CHỌN -->
           <Border Grid.Row="2" Background="White" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="10" Padding="14">
             <StackPanel>
+              <!-- Thông tin hiển thị lblNhanVienChonTen — Tất cả nhân viên. -->
               <TextBlock x:Name="lblNhanVienChonTen" Text="Tất cả nhân viên" FontWeight="SemiBold" />
+              <!-- Thông tin hiển thị lblNhanVienChonChiTiet — Hiển thị toàn bộ chứng chỉ. -->
               <TextBlock x:Name="lblNhanVienChonChiTiet" Text="Hiển thị toàn bộ chứng chỉ" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,4,0,10" FontSize="12"/>
+              <!-- Nút thao tác btnXemTatCa — Xem tất cả nhân viên. Chuyển sự kiện đến btnXemTatCa_Click trong code-behind. -->
               <Button x:Name="btnXemTatCa" Content="Xem tất cả nhân viên" Height="36" Click="btnXemTatCa_Click"/>
             </StackPanel>
           </Border>
@@ -116,11 +124,13 @@
                   <TextBlock Text="Nhấp đúp chuột vào một dòng để xem chi tiết hoặc chỉnh sửa thông tin chứng chỉ."
                              Foreground="{StaticResource Muted}" Margin="0,4,0,0" FontSize="12"/>
                 </StackPanel>
+                <!-- Nút thao tác btnThemChungChi — + Thêm chứng chỉ. Chuyển sự kiện đến btnThemChungChi_Click trong code-behind. -->
                 <Button x:Name="btnThemChungChi" Content="+ Thêm chứng chỉ" Style="{StaticResource Primary}"
                         DockPanel.Dock="Right" Margin="8,0,0,0" Click="btnThemChungChi_Click"/>
               </DockPanel>
             </Border>
 
+            <!-- Danh sách dgvChungChiNhanVien. -->
             <DataGrid x:Name="dgvChungChiNhanVien" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True"
                       CanUserAddRows="False" FrozenColumnCount="2" ScrollViewer.HorizontalScrollBarVisibility="Auto"
                       MouseDoubleClick="dgvChungChiNhanVien_MouseDoubleClick">
@@ -151,14 +161,17 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
               <TextBlock Text="Lọc số chứng chỉ" FontWeight="SemiBold" Margin="0,0,0,6" FontSize="12"/>
+              <!-- Ô nhập txtLocSoCC. Chuyển sự kiện đến txtLocChungChi_TextChanged trong code-behind. -->
               <TextBox x:Name="txtLocSoCC" Height="38" TextChanged="txtLocChungChi_TextChanged"/>
             </StackPanel>
             <StackPanel Grid.Column="2">
               <TextBlock Text="Lọc tên chứng chỉ" FontWeight="SemiBold" Margin="0,0,0,6" FontSize="12"/>
+              <!-- Ô nhập txtLocTenCC. Chuyển sự kiện đến txtLocChungChi_TextChanged trong code-behind. -->
               <TextBox x:Name="txtLocTenCC" Height="38" TextChanged="txtLocChungChi_TextChanged"/>
             </StackPanel>
             <StackPanel Grid.Column="4">
               <TextBlock Text="Lọc trạng thái" FontWeight="SemiBold" Margin="0,0,0,6" FontSize="12"/>
+              <!-- Trường lựa chọn cboLocTrangThai. Chuyển sự kiện đến cboLocTrangThai_SelectionChanged trong code-behind. -->
               <ComboBox x:Name="cboLocTrangThai" SelectedIndex="0" Height="38" SelectionChanged="cboLocTrangThai_SelectionChanged">
                 <ComboBoxItem Content="Tất cả"/>
                 <ComboBoxItem Content="Còn hiệu lực" />

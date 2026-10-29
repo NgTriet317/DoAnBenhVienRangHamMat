@@ -3,11 +3,29 @@ using Dapper;
 using ET;
 namespace DAL;
 
+/// <summary>
+/// Tầng truy cập dữ liệu khám điều trị, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
 public sealed partial class DAL_KHAMDIEUTRI
 {
+    /// <summary>
+    /// Đọc các dịch vụ và thuốc thuộc lần khám để tổng kết trước khi chốt; giữ thông tin nguồn và dấu vân tay đối chiếu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>OwnedVisit</c>, <c>ReadSummary</c>.</remarks>
+    /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu TongKetKham dùng cho bước xử lý tiếp theo.</returns>
     public TongKetKham LayTongKetKham(string maLS,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {var(_,visit)=OwnedVisit(db,tx,maLS,user,false);return ReadSummary(db,tx,visit);});
 
+    /// <summary>
+    /// Xác nhận các dịch vụ đã thực hiện sau khi đối chiếu dữ liệu hiện tại và quyền của người thao tác. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch. Đối chiếu dấu vân tay trước khi ghi để phát hiện bản dữ liệu đã bị thay đổi.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>OwnedVisit</c>, <c>ReadSummary</c>, <c>RequireFingerprint</c>.</remarks>
+    /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <param name="dauVanTay">Giá trị dùng đối chiếu phiên bản dữ liệu tại bước xử lý tương ứng.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu TongKetKham dùng cho bước xử lý tiếp theo.</returns>
     public TongKetKham XacNhanThucHien(string maLS,string dauVanTay,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
         var(actor,visit)=OwnedVisit(db,tx,maLS,user,true);
@@ -47,6 +65,14 @@ public sealed partial class DAL_KHAMDIEUTRI
         THEN 1 ELSE 0 END)
         """,new{maLS},tx);
 
+    /// <summary>
+    /// Đọc nguồn dịch vụ/thuốc và các điều kiện hiện tại để tạo tổng kết lần khám. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.Query&lt;DichVuTongKetKham&gt;</c>, <c>db.Query&lt;ThuocTongKetKham&gt;</c>, <c>db.Query&lt;ET_KEHOACHDIEUTRI&gt;</c>, <c>db.Query&lt;ET_CHITIETKEHOACH&gt;</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="visit">Giá trị lần khám dùng khi thực hiện thao tác; kiểu VisitRead.</param>
+    /// <returns>Kết quả kiểu TongKetKham dùng cho bước xử lý tiếp theo.</returns>
     private static TongKetKham ReadSummary(IDbConnection db,IDbTransaction? tx,VisitRead visit)
     {
         var services=db.Query<DichVuTongKetKham>("""

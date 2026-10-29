@@ -11,18 +11,54 @@ namespace ET
     [Table("CHI_TIET_DON_THUOC")]
     public class ET_CHITIETDONTHUOC
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính DuongDung, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? duongDung;
+        /// <summary>
+        /// Tên thuốc chốt được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string? tenThuocChot;
+        /// <summary>
+        /// Hàm lượng chốt được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string? hamLuongChot;
+        /// <summary>
+        /// Đơn vị tính đã chốt được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string? donViTinhChot;
+        /// <summary>
+        /// Phiên bản hướng dẫn được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private int? phienBanHuongDan;
 
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaCTDT, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maCTDT = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaDT, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maDT = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaThuoc, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maThuoc = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính LieuDung, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string lieuDung = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính SoLuong, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal soLuong;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính SoNgayDung, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private int soNgayDung;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính HuongDan, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string huongDan = string.Empty;
 
         /// <summary>
@@ -76,10 +112,37 @@ namespace ET
 
         // Cột bổ sung P03; constructor cũ được giữ để tương thích mã gọi hiện có.
         public string? DuongDung { get => duongDung; set => duongDung = value; }
+        /// <summary>
+        /// Giá trị Tên thuốc chốt; được xác định bởi phần getter/setter của thuộc tính. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public string? TenThuocChot { get => tenThuocChot; set => tenThuocChot = value; }
+        /// <summary>
+        /// Giá trị Hàm lượng chốt; được xác định bởi phần getter/setter của thuộc tính. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public string? HamLuongChot { get => hamLuongChot; set => hamLuongChot = value; }
+        /// <summary>
+        /// Giá trị Đơn vị tính đã chốt; được xác định bởi phần getter/setter của thuộc tính. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public string? DonViTinhChot { get => donViTinhChot; set => donViTinhChot = value; }
+        /// <summary>
+        /// Giá trị Phiên bản hướng dẫn; được xác định bởi phần getter/setter của thuộc tính. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public int? PhienBanHuongDan { get => phienBanHuongDan; set => phienBanHuongDan = value; }
+        /// <summary>
+        /// Khởi tạo chi tiết đơn thuốc. Gán các giá trị đầu vào vào đối tượng để nơi gọi sử dụng cùng một bản dữ liệu.
+        /// </summary>
+        /// <param name="maCTDT">Mã chi tiết đơn thuốc xác định đối tượng cần xử lý.</param>
+        /// <param name="maDT">Mã đơn thuốc xác định đối tượng cần xử lý.</param>
+        /// <param name="maThuoc">Mã thuốc xác định đối tượng cần xử lý.</param>
+        /// <param name="lieuDung">Giá trị liều dùng dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="soLuong">Giá trị số lượng dùng khi thực hiện thao tác; kiểu decimal.</param>
+        /// <param name="soNgayDung">Giá trị số ngày dụng dùng khi thực hiện thao tác; kiểu int.</param>
+        /// <param name="huongDan">Giá trị hướng dẫn dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="duongDung">Giá trị đường dùng dùng khi thực hiện thao tác; kiểu string?.</param>
+        /// <param name="tenThuocChot">Giá trị tên thuốc chốt dùng khi thực hiện thao tác; kiểu string?.</param>
+        /// <param name="hamLuongChot">Giá trị hàm lượng chốt dùng khi thực hiện thao tác; kiểu string?.</param>
+        /// <param name="donViTinhChot">Giá trị đơn vị tính đã chốt dùng khi thực hiện thao tác; kiểu string?.</param>
+        /// <param name="phienBanHuongDan">Giá trị phiên bản hướng dẫn dùng khi thực hiện thao tác; kiểu int?.</param>
         public ET_CHITIETDONTHUOC(string maCTDT, string maDT, string maThuoc, string lieuDung, decimal soLuong, int soNgayDung, string huongDan, string? duongDung, string? tenThuocChot, string? hamLuongChot, string? donViTinhChot, int? phienBanHuongDan)
         {
             this.maCTDT = maCTDT;

@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <!-- Ứng dụng desktop Windows dùng WPF .NET 8; XAML được biên dịch cùng code-behind. -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF><EnableWindowsTargeting>true</EnableWindowsTargeting>
@@ -6,8 +7,11 @@
     <RootNamespace>RangHamMat</RootNamespace><AssemblyName>RangHamMat.Wpf</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Chép cấu hình kết nối cạnh exe ở cả bản build và publish để máy triển khai có thể cấu hình SQL Server. -->
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Metadata kiểm tra nhập liệu được nhúng vào assembly; giao diện đối chiếu tên/kiểu/giới hạn cột. -->
     <EmbeddedResource Include="Controls\QuyTacNhapLieu.xml" />
+    <!-- Giao diện gọi nghiệp vụ qua BUS và dùng ET cho dữ liệu; DAL được dẫn vào qua BUS. -->
     <ProjectReference Include="..\BUS\BUS.csproj" />
     <ProjectReference Include="..\ET\ET.csproj" />
   </ItemGroup>

@@ -6,8 +6,17 @@ using ET;
 
 namespace DAL
 {
+    /// <summary>
+    /// Tầng truy cập dữ liệu chấm công, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+    /// </summary>
     public class DAL_CHAMCONG : dbconnect
     {
+        /// <summary>
+        /// Đọc dữ liệu chấm công theo kỳ được chọn.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>CreateConnection</c>, <c>ketNoi.CreateCommand</c>, <c>lenh.Parameters.Add</c>, <c>dauThang.AddMonths</c>.</remarks>
+        /// <param name="dauThang">Giá trị đầu tháng dùng khi thực hiện thao tác; kiểu DateTime.</param>
+        /// <returns>Kết quả kiểu DataTable dùng cho bước xử lý tiếp theo.</returns>
         public DataTable layChamCongTheoThang(DateTime dauThang)
         {
             using var ketNoi = (SqlConnection)CreateConnection();
@@ -54,7 +63,7 @@ namespace DAL
                   IF NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN WHERE MaNV=@MaNV)
                     THROW 51100,N'Nhân viên duyệt không tồn tại.',1;
                   IF OBJECT_ID('dbo.NHAT_KY_DUYET_CHAM_CONG','U') IS NULL
-                    THROW 51101,N'Cần chạy SQL nâng cấp đối soát chấm công trước.',1;",ketNoi,giaoDich))
+                    THROW 51101,N'Cần chạy toàn bộ Database/QLBenhVienRangHamMat.sql để đồng bộ chấm công trước.',1;",ketNoi,giaoDich))
                 {
                     quyen.Parameters.AddWithValue("@MaNV",maNVQuanLy);
                     quyen.ExecuteNonQuery();
@@ -82,6 +91,14 @@ namespace DAL
             }
         }
 
+        /// <summary>
+        /// Duyệt kết quả chấm công một ca và lưu người duyệt theo dữ liệu được kiểm tra. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>lenh.Parameters.AddWithValue</c>, <c>lenh.ExecuteReader</c>, <c>hienTai.Load</c>, <c>dong.Field&lt;string&gt;</c>.</remarks>
+        /// <param name="ketNoi">Giá trị kết nối dùng khi thực hiện thao tác; kiểu SqlConnection.</param>
+        /// <param name="giaoDich">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+        /// <param name="ca">Giá trị ca dùng khi thực hiện thao tác; kiểu ET_CHAMCONG.</param>
+        /// <param name="maNVQuanLy">Mã nhân viên quản lý xác định đối tượng cần xử lý.</param>
         private static void duyetMotCa(SqlConnection ketNoi, SqlTransaction giaoDich,
             ET_CHAMCONG ca, string maNVQuanLy)
         {

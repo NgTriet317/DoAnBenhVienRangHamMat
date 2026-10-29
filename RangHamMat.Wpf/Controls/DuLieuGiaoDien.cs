@@ -23,23 +23,54 @@ namespace RangHamMat.Controls;
 /// </summary>
 public static class DuLieuGiaoDien
 {
+    /// <summary>
+    /// Phạm vi lâm sàng.
+    /// </summary>
     public static bool PhamViLamSang { get; private set; }
+    /// <summary>
+    /// Áp dụng phạm vi dữ liệu lâm sàng của phiên vào các thao tác đọc/ghi giao diện.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ChonPhamViLamSang</c>.</remarks>
+    /// <param name="enabled">Giá trị đã bật dùng khi thực hiện thao tác; kiểu bool.</param>
     public static void ChonPhamViLamSang(bool enabled)
         =>ChonPhamViLamSang(enabled,clinicalScope);
+    /// <summary>
+    /// Áp dụng phạm vi dữ liệu lâm sàng của phiên vào các thao tác đọc/ghi giao diện.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>XoaCachePhien</c>, <c>RefreshFromDatabase</c>.</remarks>
+    /// <param name="enabled">Giá trị đã bật dùng khi thực hiện thao tác; kiểu bool.</param>
+    /// <param name="scope">Giá trị phạm vi dùng khi thực hiện thao tác; kiểu NguCanhHoSo?.</param>
     internal static void ChonPhamViLamSang(bool enabled,NguCanhHoSo? scope)
     {
         if (PhamViLamSang != enabled) { XoaCachePhien(); PhamViLamSang = enabled; }
         clinicalScope=scope??new();
         if (enabled) RefreshFromDatabase();
     }
+    /// <summary>
+    /// Lâm sàng người dùng được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static NguCanhNghiepVu? clinicalUser;
+    /// <summary>
+    /// Lâm sàng phạm vi được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static NguCanhHoSo clinicalScope=new();
+    /// <summary>
+    /// Giữ lại bản ghi đã commit trong nguồn dữ liệu giao diện để cập nhật lựa chọn sau khi lưu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>tables.TryGetValue</c>, <c>Key</c>, <c>UiRecord.Text</c>, <c>rows.ToList</c>.</remarks>
+    /// <param name="table">Giá trị bảng dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="saved">Giá trị đã lưu dùng khi thực hiện thao tác; kiểu object.</param>
     internal static void GiuBanGhiDaCommit(string table,object saved)
     {
         if(!tables.TryGetValue(table,out var rows)){rows=new ObservableCollection<object>();tables[table]=rows;}
         var key=Key(table);var id=UiRecord.Text(saved,key);var index=rows.ToList().FindIndex(r=>UiRecord.Text(r,key)==id);
         if(index<0)rows.Add(saved);else rows[index]=saved;
     }
+    /// <summary>
+    /// Kiểm tra ngữ cảnh phiên còn hợp lệ trước khi cung cấp dữ liệu nghiệp vụ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Find</c>, <c>QuyenNghiepVu.LayNguCanh</c>, <c>RefreshFromDatabase</c>.</remarks>
+    /// <param name="context">Giá trị ngữ cảnh dùng khi thực hiện thao tác; kiểu NguCanhHoSo.</param>
     internal static void BaoDamNguCanh(NguCanhHoSo context)
     {
         if(!PhamViLamSang)return;
@@ -47,18 +78,43 @@ public static class DuLieuGiaoDien
         var valid=new BUS_KHAMDIEUTRI().XacMinhNguCanh(context,QuyenNghiepVu.LayNguCanh());
         clinicalScope=valid;RefreshFromDatabase();
     }
+    /// <summary>
+    /// Giá trị Người dùng lâm sàng; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public static NguCanhNghiepVu NguoiDungLamSang { get { EnsureLoaded(); return clinicalUser ?? throw new TuChoiQuyenNghiepVuException(); } }
+    /// <summary>
+    /// Khởi tạo dữ liệu giao diện.
+    /// </summary>
     static DuLieuGiaoDien() => PhienDangNhap.DinhDanhThayDoi += XoaCachePhien;
+    /// <summary>
+    /// Xóa dữ liệu đệm theo phiên để lần đăng nhập/ngữ cảnh tiếp theo không dùng lại dữ liệu cũ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>rows.Clear</c>, <c>tables.Clear</c>.</remarks>
     private static void XoaCachePhien()
     {
         if (batching) throw new InvalidOperationException("Không đổi phiên khi đang lưu chứng từ.");
         foreach (var rows in tables.Values) rows.Clear();
         tables.Clear(); loaded = false; clinicalUser = null;clinicalScope=new();
     }
+    /// <summary>
+    /// Các bảng được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly Dictionary<string, ObservableCollection<object>> tables = new();
+    /// <summary>
+    /// Giao dịch được giữ để các thao tác liên quan dùng cùng một phạm vi commit/rollback.
+    /// </summary>
     private static IDbTransaction? transaction;
+    /// <summary>
+    /// Cờ Cờ đã nạp dữ liệu ban đầu; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private static bool loaded;
+    /// <summary>
+    /// Cờ Đang cập nhật theo lô; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private static bool batching;
+    /// <summary>
+    /// Các khóa được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly Dictionary<string, string> keys = new()
     {
         ["BENH_NHAN"] = "MaBN",
@@ -96,6 +152,9 @@ public static class DuLieuGiaoDien
         ["KHO"] = "MaKho",
         ["LO_HANG_HOA"] = "MaLo"
     };
+    /// <summary>
+    /// Tham chiếu các bảng được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     public static readonly Dictionary<string, string> ForeignTables = new()
     {
         ["MaBN"] = "BENH_NHAN",
@@ -135,6 +194,9 @@ public static class DuLieuGiaoDien
         ["MaNV"] = "NHAN_VIEN"
     };
 
+    /// <summary>
+    /// Thông báo thay đổi cho các thành phần đã đăng ký theo dõi.
+    /// </summary>
     public static event EventHandler? Changed;
 
     /// <summary>
@@ -497,8 +559,8 @@ public static class DuLieuGiaoDien
     /// </summary>
     public static bool CanEdit(string table, object row)
     {
+        if (table == "BAO_TRI_THIET_BI") return UiRecord.Text(row, "TrangThai") == "Chưa xác nhận";
         if (PhamViLamSang && !QuyenNghiepVu.DuocGhi(table, row)) return false;
-        if (table == "BAO_TRI_THIET_BI") return UiRecord.Text(row, "TrangThai") is "Nháp" or "Đang thực hiện";
         if (table is "BENH_NHAN" or "HO_SO_BENH_AN" or "NHA_CUNG_CAP") return true;
         if (table == "CHI_TIET_KE_HOACH" && Children("DICH_VU_THUC_HIEN", "MaCTKH", UiRecord.Get(row, "MaCTKH")).Any(r => UiRecord.Text(r, "TrangThai") == "Đã xác nhận")) return false;
         var parentLink = table switch { "CHI_TIET_DON_THUOC" => ("DON_THUOC", "MaDT"), "CHI_TIET_KE_HOACH" => ("KE_HOACH_DIEU_TRI", "MaKHDT"), "TINH_TRANG_BENH" => ("LICH_SU_KHAM_BENH", "MaLS"), _ => ("", "") };
@@ -553,6 +615,7 @@ public static class DuLieuGiaoDien
     /// </summary>
     public static void SetValue(string table, object row, string field, object? value)
     {
+        if(table=="BAO_TRI_THIET_BI" && field=="TrangThai") { ChuyenTrangThaiBaoTri(row,Convert.ToString(value)??""); return; }
         if (!batching) { Transaction(() => { SetValue(table, row, field, value); return true; }); return; }
         if (!TruongDuLieu.Tables.TryGetValue(table, out var schema) || !schema.ContainsKey(field)) throw new InvalidOperationException("Trường cập nhật không có trong database.");
         if (table == "LICH_KHAM" && field == "TrangThai" && (UiRecord.Text(row, "TrangThai") is "Hủy" or "Đã đổi" or "Hoàn thành") && Convert.ToString(value) != UiRecord.Text(row, "TrangThai")) throw new InvalidOperationException("Lịch đã kết thúc được giữ nguyên. Hãy tạo một lịch mới.");
@@ -570,6 +633,7 @@ public static class DuLieuGiaoDien
     /// </summary>
     public static void Delete(string table, object row)
     {
+        if(table=="BAO_TRI_THIET_BI")throw new InvalidOperationException("Không xóa lịch sử; chỉ phiếu Chưa xác nhận được chuyển sang Hủy.");
         if (!batching) { Transaction(() => { Delete(table, row); return true; }); return; }
         if (!CanEdit(table, row)) throw new InvalidOperationException("Chỉ xóa bản nháp chưa xác nhận.");
         var key = Key(table); var id = UiRecord.Text(row, key);
@@ -578,6 +642,22 @@ public static class DuLieuGiaoDien
                 throw new InvalidOperationException("Bản ghi đang có dữ liệu liên kết. Không thể xóa.");
         DeleteRecord(table, id, Values(row));
         Rows(table).Remove(row); UpdatePlanTotal(table, row); Notify();
+    }
+
+    /// <summary>Lưu phiếu và đọc lại cả thiết bị trong giao dịch hiện tại; chỉ thông báo sau khi commit.</summary>
+    public static object ChuyenTrangThaiBaoTri(object record,string target)
+    {
+        if(!batching){object? saved=null;Transaction(()=>{saved=ChuyenTrangThaiBaoTri(record,target);return true;});return saved!;}
+        var original=UiRecord.ChuyenDoi<ET_BAOTRITHIETBI>(Values(record));
+        var bus=new BUS_BAOTRITHIETBI(transaction);
+        bus.chuyenTrangThaiBaoTri(original.MaBT,target,original);
+        var fresh=bus.layBaoTriThietBiTheoMa(original.MaBT)??throw new InvalidOperationException("Không đọc lại được phiếu bảo trì.");
+        var current=Find("BAO_TRI_THIET_BI",original.MaBT) as IDictionary<string,object?>
+            ??throw new InvalidOperationException("Phiếu không còn trong danh sách; hãy tải lại.");
+        current.Clear();foreach(var field in Values(fresh))current[field.Key]=field.Value;
+        var asset=new BUS_THIETBI(transaction).layThietBiTheoMa(fresh.MaTB);
+        if(asset is not null && Find("THIET_BI",fresh.MaTB) is IDictionary<string,object?> cached){cached.Clear();foreach(var field in Values(asset))cached[field.Key]=field.Value;}
+        Notify();return current;
     }
 
     /// <summary>

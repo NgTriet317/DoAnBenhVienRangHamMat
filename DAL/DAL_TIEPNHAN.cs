@@ -4,14 +4,31 @@ using ET;
 
 namespace DAL;
 
+/// <summary>
+/// Tầng truy cập dữ liệu tiếp nhận, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
 public sealed class DAL_TIEPNHAN(IDbTransaction? transaction=null) : dbconnect(transaction)
 {
+    /// <summary>
+    /// Đọc danh sách bác sĩ theo tiêu chí và phạm vi áp dụng tại nơi gọi.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>Authorize</c>, <c>Candidates</c>, <c>Now</c>.</remarks>
+    /// <param name="maDV">Mã dịch vụ xác định đối tượng cần xử lý.</param>
+    /// <param name="nguoiDung">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Tập dữ liệu kiểu IReadOnlyList&lt;BacSiTiepNhan&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
     public IReadOnlyList<BacSiTiepNhan> LayBacSi(string maDV,NguCanhNghiepVu nguoiDung) => ThucHien((db,tx)=>
     {
         Authorize(db,tx,nguoiDung);
         return Candidates(db,tx,maDV,Now(db,tx));
     });
 
+    /// <summary>
+    /// Kiểm tra đầu vào và quyền tiếp nhận trước khi tạo hoặc liên kết hồ sơ, phiếu khám và người phụ trách. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>ArgumentNullException.ThrowIfNull</c>, <c>Lock</c>, <c>Authorize</c>.</remarks>
+    /// <param name="yeuCau">Giá trị yêu cầu dùng khi thực hiện thao tác; kiểu YeuCauTiepNhan.</param>
+    /// <param name="nguoiDung">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu KetQuaTiepNhan dùng cho bước xử lý tiếp theo.</returns>
     public KetQuaTiepNhan TiepNhan(YeuCauTiepNhan yeuCau,NguCanhNghiepVu nguoiDung) => ThucHien((db,tx)=>
     {
         ArgumentNullException.ThrowIfNull(yeuCau);
@@ -78,6 +95,15 @@ public sealed class DAL_TIEPNHAN(IDbTransaction? transaction=null) : dbconnect(t
         return Result(r.MaBN,receipt);
     });
 
+    /// <summary>
+    /// Đọc các lựa chọn bác sĩ/phòng phù hợp với yêu cầu tiếp nhận. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Code</c>, <c>db.QuerySingleOrDefault&lt;string&gt;</c>, <c>Error</c>, <c>db.Query&lt;BacSiTiepNhan&gt;</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="service">Giá trị dịch vụ dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="now">Giá trị thời điểm hiện tại dùng khi thực hiện thao tác; kiểu DateTime.</param>
+    /// <returns>Tập dữ liệu kiểu IReadOnlyList&lt;BacSiTiepNhan&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
     private static IReadOnlyList<BacSiTiepNhan> Candidates(IDbConnection db,IDbTransaction? tx,string service,DateTime now)
     {
         Code(service,"MaDV");
@@ -103,12 +129,53 @@ public sealed class DAL_TIEPNHAN(IDbTransaction? transaction=null) : dbconnect(t
             ORDER BY n.HoTen,n.MaNV
             """,new{specialty,now},tx).ToArray();
     }
+    /// <summary>
+    /// Kiểm tra quyền của người dùng trước khi tiếp tục nghiệp vụ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>DAL_QUYENNGHIEPVU.XacThuc</c>, <c>current.CoQuyen</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu NguCanhNghiepVu dùng cho bước xử lý tiếp theo.</returns>
     private static NguCanhNghiepVu Authorize(IDbConnection db,IDbTransaction? tx,NguCanhNghiepVu user)
     {var current=DAL_QUYENNGHIEPVU.XacThuc(db,tx,user);if(!current.CoQuyen(QuyenLamViec.TiepNhan))throw DAL_QUYENNGHIEPVU.TuChoi();return current;}
+    /// <summary>
+    /// Đọc thời điểm máy chủ dùng trong thao tác hiện tại.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.ExecuteScalar&lt;DateTime&gt;</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <returns>Kết quả kiểu DateTime dùng cho bước xử lý tiếp theo.</returns>
     private static DateTime Now(IDbConnection db,IDbTransaction? tx)=>db.ExecuteScalar<DateTime>("SELECT CONVERT(datetime2(0),SYSDATETIME())",transaction:tx);
+    /// <summary>
+    /// Chuẩn hóa hoặc kiểm tra mã trước khi dùng trong nghiệp vụ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>code.Trim</c>, <c>Error</c>.</remarks>
+    /// <param name="code">Giá trị mã dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <param name="field">Giá trị trường dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Chuỗi kết quả của thao tác mã.</returns>
     private static string Code(string? code,string field)=>!string.IsNullOrWhiteSpace(code)&&code.Trim().Length<=50?code.Trim():throw Error(field,"Chọn "+field+" hợp lệ trước khi tiếp nhận.");
+    /// <summary>
+    /// Tạo ngoại lệ nghiệp vụ với thông tin trường và thông báo được truyền vào.
+    /// </summary>
+    /// <param name="field">Giá trị trường dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="message">Nội dung thông báo được chuyển đến nơi gọi hoặc hiển thị cho người dùng.</param>
+    /// <returns>Kết quả kiểu LoiTiepNhanException dùng cho bước xử lý tiếp theo.</returns>
     private static LoiTiepNhanException Error(string field,string message)=>new(field,message);
+    /// <summary>
+    /// Tạo kết quả trả về từ dữ liệu nghiệp vụ đã đọc hoặc xử lý.
+    /// </summary>
+    /// <param name="patient">Giá trị bệnh nhân dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="receipt">Giá trị phiếu tiếp nhận dùng khi thực hiện thao tác; kiểu ET_PHIEUKHAMBENH.</param>
+    /// <returns>Kết quả kiểu KetQuaTiepNhan dùng cho bước xử lý tiếp theo.</returns>
     private static KetQuaTiepNhan Result(string patient,ET_PHIEUKHAMBENH receipt)=>new(patient,receipt.MaHS,receipt.MaPhieu,receipt.MaBS!,receipt.SoThuTu,receipt.TrangThai);
+    /// <summary>
+    /// Lấy khóa cho nguồn dữ liệu nghiệp vụ trong giao dịch hiện tại. Dùng application lock sở hữu bởi giao dịch; từ chối khi không lấy được khóa trong thời gian chờ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.ExecuteScalar&lt;int&gt;</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="resource">Giá trị tài nguyên dùng khi thực hiện thao tác; kiểu string.</param>
     private static void Lock(IDbConnection db,IDbTransaction? tx,string resource)
     {
         var result=db.ExecuteScalar<int>("DECLARE @result int; EXEC @result=sys.sp_getapplock @Resource=@resource,@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000; SELECT @result",new{resource},tx);

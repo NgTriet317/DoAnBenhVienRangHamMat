@@ -1,22 +1,29 @@
+<!-- Giao diện VatTu: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl x:Class="RangHamMat.Views.VatTu"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="#F5F8FC">
     <UserControl.Resources>
+        <!-- Tài nguyên KhoInk (SolidColorBrush) dùng lại qua khóa XAML. -->
         <SolidColorBrush x:Key="KhoInk" Color="#173550"/>
+        <!-- Tài nguyên KhoMuted (SolidColorBrush) dùng lại qua khóa XAML. -->
         <SolidColorBrush x:Key="KhoMuted" Color="#698198"/>
+        <!-- Tài nguyên KhoAccent (SolidColorBrush) dùng lại qua khóa XAML. -->
         <SolidColorBrush x:Key="KhoAccent" Color="#1665C5"/>
+        <!-- Tài nguyên KhoCard (Style) áp dụng cho Border. -->
         <Style x:Key="KhoCard" TargetType="Border">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="#DDE8F3"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="14"/>
         </Style>
+        <!-- Tài nguyên KhoLabel (Style) áp dụng cho TextBlock. -->
         <Style x:Key="KhoLabel" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Foreground" Value="{StaticResource KhoMuted}"/>
             <Setter Property="Margin" Value="0,0,0,6"/>
         </Style>
+        <!-- Tài nguyên KhoRow (Style) áp dụng cho DataGridRow. -->
         <Style x:Key="KhoRow" TargetType="DataGridRow">
             <Setter Property="Height" Value="60"/>
             <Setter Property="Background" Value="White"/>
@@ -27,6 +34,7 @@
                 <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#E6F1FF"/><Setter Property="Foreground" Value="#173550"/></Trigger>
             </Style.Triggers>
         </Style>
+        <!-- Tài nguyên KhoGrid (Style) áp dụng cho DataGrid. -->
         <Style x:Key="KhoGrid" TargetType="DataGrid">
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="IsReadOnly" Value="True"/>
@@ -42,6 +50,7 @@
             <Setter Property="Background" Value="White"/>
             <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
         </Style>
+        <!-- Tài nguyên KhoNumber (Style) áp dụng cho TextBlock. -->
         <Style x:Key="KhoNumber" TargetType="TextBlock">
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="27"/>
@@ -62,8 +71,10 @@
                 <TextBlock Text="Theo dõi lượng tồn, thuốc, lô sắp hết hạn và thông tin từng kho trên một màn hình." FontSize="13" Foreground="{StaticResource KhoMuted}"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Nút thao tác ↻ Làm mới — ↻ Làm mới. Chuyển sự kiện đến TaiLai_Click trong code-behind. -->
                 <Button Content="↻  Làm mới" Click="TaiLai_Click" Margin="0,0,9,0"/>
                 <Button Content="Nhập / xuất kho ↗" Tag="MoTrang:NhapXuatVatTu" Margin="0,0,9,0"/>
+                <!-- Nút thao tác ＋ Đăng ký mặt hàng — ＋ Đăng ký mặt hàng. Chuyển sự kiện đến ThemMoi_Click trong code-behind. -->
                 <Button Content="＋  Đăng ký mặt hàng" Click="ThemMoi_Click" Style="{StaticResource Primary}" Margin="0"/>
             </StackPanel>
         </Grid>
@@ -71,24 +82,28 @@
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <Border Grid.Column="0" Style="{StaticResource KhoCard}" Padding="18,13">
                 <StackPanel><TextBlock Text="DANH MỤC QUẢN LÝ" Style="{StaticResource KhoLabel}"/>
+                    <!-- Thông tin hiển thị lblTongDanhMuc — 0. -->
                     <TextBlock x:Name="lblTongDanhMuc" Text="0" Style="{StaticResource KhoNumber}"/>
                     <TextBlock Text="Vật tư và thuốc" Foreground="{StaticResource KhoMuted}" FontSize="11"/>
                 </StackPanel>
             </Border>
             <Border Grid.Column="2" Style="{StaticResource KhoCard}" Padding="18,13">
                 <StackPanel><TextBlock Text="DƯỚI NGƯỠNG TỒN" Style="{StaticResource KhoLabel}"/>
+                    <!-- Thông tin hiển thị lblDuoiNguong — 0. -->
                     <TextBlock x:Name="lblDuoiNguong" Text="0" Style="{StaticResource KhoNumber}" Foreground="#BE6B0D"/>
                     <TextBlock Text="Cần bổ sung hàng" Foreground="{StaticResource KhoMuted}" FontSize="11"/>
                 </StackPanel>
             </Border>
             <Border Grid.Column="4" Style="{StaticResource KhoCard}" Padding="18,13">
                 <StackPanel><TextBlock Text="LÔ CẦN KIỂM TRA" Style="{StaticResource KhoLabel}"/>
+                    <!-- Thông tin hiển thị lblSapHetHan — 0. -->
                     <TextBlock x:Name="lblSapHetHan" Text="0" Style="{StaticResource KhoNumber}" Foreground="#BF4E39"/>
                     <TextBlock Text="Hết hạn hoặc sắp hết hạn" Foreground="{StaticResource KhoMuted}" FontSize="11"/>
                 </StackPanel>
             </Border>
             <Border Grid.Column="6" Style="{StaticResource KhoCard}" Padding="18,13">
                 <StackPanel><TextBlock Text="KHO ĐANG QUẢN LÝ" Style="{StaticResource KhoLabel}"/>
+                    <!-- Thông tin hiển thị lblTongKho — 0. -->
                     <TextBlock x:Name="lblTongKho" Text="0" Style="{StaticResource KhoNumber}" Foreground="#087D78"/>
                     <TextBlock Text="Địa điểm lưu trữ" Foreground="{StaticResource KhoMuted}" FontSize="11"/>
                 </StackPanel>
@@ -98,17 +113,22 @@
             <Grid>
                 <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="1.2*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="1.15*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                 <StackPanel><TextBlock Text="Tìm kiếm" Style="{StaticResource KhoLabel}"/>
+                    <!-- Ô nhập txtTimKiem. Chuyển sự kiện đến BoLoc_Changed trong code-behind. -->
                     <TextBox x:Name="txtTimKiem" ToolTip="Tìm theo tên hàng, loại hàng, kho hoặc nhà cung cấp" TextChanged="BoLoc_Changed"/>
                 </StackPanel>
                 <StackPanel Grid.Column="2"><TextBlock Text="Tình trạng / cảnh báo" Style="{StaticResource KhoLabel}"/>
+                    <!-- Trường lựa chọn cboTinhTrangLoc. Chuyển sự kiện đến BoLoc_Changed trong code-behind. -->
                     <ComboBox x:Name="cboTinhTrangLoc" SelectionChanged="BoLoc_Changed"/>
                 </StackPanel>
                 <StackPanel Grid.Column="4"><TextBlock Text="Kho" Style="{StaticResource KhoLabel}"/>
+                    <!-- Trường lựa chọn cboKhoLoc. Chuyển sự kiện đến BoLoc_Changed trong code-behind. -->
                     <ComboBox x:Name="cboKhoLoc" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="BoLoc_Changed"/>
                 </StackPanel>
+                <!-- Nút thao tác Xóa lọc — Xóa lọc. Chuyển sự kiện đến XoaLoc_Click trong code-behind. -->
                 <Button Grid.Column="5" Content="Xóa lọc" VerticalAlignment="Bottom" Margin="10,0,0,0" Click="XoaLoc_Click"/>
             </Grid>
         </Border>
+        <!-- Thành phần tabKho. Chuyển sự kiện đến TabKho_SelectionChanged trong code-behind. -->
         <TabControl Grid.Row="3" x:Name="tabKho" SelectionChanged="TabKho_SelectionChanged" Margin="0,0,0,12">
             <TabItem Header="Vật tư &amp; thuốc"/>
             <TabItem Header="Lô hàng &amp; hạn dùng"/>
@@ -121,14 +141,17 @@
                     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                     <Grid Margin="18,15,18,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <StackPanel>
+                            <!-- Thông tin hiển thị lblTenDanhSach — Danh sách vật tư & thuốc. -->
                             <TextBlock x:Name="lblTenDanhSach" Text="Danh sách vật tư &amp; thuốc" Foreground="{StaticResource KhoInk}" FontSize="17" FontWeight="SemiBold"/>
                             <TextBlock Text="Chọn một dòng để xem chi tiết bên phải." Foreground="{StaticResource KhoMuted}" Margin="0,4,0,0" FontSize="12"/>
                         </StackPanel>
                         <Border Grid.Column="1" Background="#E8F2FD" CornerRadius="9" Padding="10,6" VerticalAlignment="Center">
+                            <!-- Thông tin hiển thị lblDangHien — 0 mặt hàng. -->
                             <TextBlock x:Name="lblDangHien" Text="0 mặt hàng" Foreground="{StaticResource KhoAccent}" FontSize="12" FontWeight="SemiBold"/>
                         </Border>
                     </Grid>
                     <Grid Grid.Row="1">
+                        <!-- Danh sách Grid_VAT_TU. Chuyển sự kiện đến DanhSachVatTu_SelectionChanged trong code-behind. -->
                         <DataGrid x:Name="Grid_VAT_TU" Style="{StaticResource KhoGrid}" SelectionChanged="DanhSachVatTu_SelectionChanged">
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="MẶT HÀNG" Width="2*" MinWidth="160"><DataGridTemplateColumn.CellTemplate><DataTemplate>
@@ -152,6 +175,7 @@
                                 </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
+                        <!-- Danh sách Grid_LO_HANG_HOA. Chuyển sự kiện đến DanhSachLo_SelectionChanged trong code-behind. -->
                         <DataGrid x:Name="Grid_LO_HANG_HOA" Visibility="Collapsed" Style="{StaticResource KhoGrid}" SelectionChanged="DanhSachLo_SelectionChanged">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="TÊN HÀNG" Binding="{Binding TenHang}" Width="2*" MinWidth="150"/>
@@ -161,6 +185,7 @@
                                 <DataGridTextColumn Header="CẢNH BÁO" Binding="{Binding CanhBao}" Width="1.25*" MinWidth="135"/>
                             </DataGrid.Columns>
                         </DataGrid>
+                        <!-- Danh sách Grid_KHO. Chuyển sự kiện đến DanhSachKho_SelectionChanged trong code-behind. -->
                         <DataGrid x:Name="Grid_KHO" Visibility="Collapsed" Style="{StaticResource KhoGrid}" SelectionChanged="DanhSachKho_SelectionChanged">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="TÊN KHO" Binding="{Binding TenKho}" Width="2*" MinWidth="155"/>
@@ -169,6 +194,7 @@
                                 <DataGridTextColumn Header="TRẠNG THÁI" Binding="{Binding TrangThai}" Width="1*" MinWidth="115"/>
                             </DataGrid.Columns>
                         </DataGrid>
+                        <!-- Thông tin hiển thị lblTrong — Không có dữ liệu phù hợp bộ lọc.. -->
                         <TextBlock x:Name="lblTrong" Text="Không có dữ liệu phù hợp bộ lọc." Foreground="{StaticResource KhoMuted}" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" IsHitTestVisible="False"/>
                     </Grid>
                     <TextBlock Grid.Row="2" Text="Tồn được tính từ các phiếu nhập và xuất đã ghi sổ; phiếu nháp không làm thay đổi số tồn." Margin="18,11" Foreground="{StaticResource KhoMuted}" FontSize="11" TextWrapping="Wrap"/>
@@ -179,29 +205,40 @@
                     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                     <Border Background="#E9F2FF" BorderBrush="#D7E7FB" BorderThickness="0,0,0,1" Padding="19,15">
                         <StackPanel>
+                            <!-- Thông tin hiển thị lblCheDo — HỒ SƠ MẶT HÀNG. -->
                             <TextBlock x:Name="lblCheDo" Text="HỒ SƠ MẶT HÀNG" Foreground="{StaticResource KhoAccent}" FontWeight="SemiBold" FontSize="11"/>
+                            <!-- Thông tin hiển thị lblTieuDe — Chọn một mặt hàng. -->
                             <TextBlock x:Name="lblTieuDe" Text="Chọn một mặt hàng" Foreground="{StaticResource KhoInk}" FontSize="19" FontWeight="Bold" TextWrapping="Wrap" Margin="0,7,0,4"/>
+                            <!-- Thông tin hiển thị lblPhuDe — Thông tin chi tiết sẽ xuất hiện ở đây. -->
                             <TextBlock x:Name="lblPhuDe" Text="Thông tin chi tiết sẽ xuất hiện ở đây" FontSize="12" Foreground="{StaticResource KhoMuted}" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="19,17,19,10">
+                            <!-- Vùng bố cục formVatTu. -->
                             <StackPanel x:Name="formVatTu">
                                 <TextBlock Text="Thông tin mặt hàng" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource KhoInk}" Margin="0,0,0,13"/>
                                 <TextBlock Text="Tên mặt hàng" Style="{StaticResource KhoLabel}"/>
+                                <!-- Trường lựa chọn cboHangHoa. -->
                                 <ComboBox x:Name="cboHangHoa" DisplayMemberPath="Label" SelectedValuePath="Value" Margin="0,0,0,12"/>
                                 <TextBlock Text="Phân nhóm" Style="{StaticResource KhoLabel}"/>
+                                <!-- Trường lựa chọn cboLoaiDangKy. Chuyển sự kiện đến LoaiDangKy_Changed trong code-behind. -->
                                 <ComboBox x:Name="cboLoaiDangKy" Margin="0,0,0,12" SelectionChanged="LoaiDangKy_Changed">
                                     <ComboBoxItem Content="Vật tư"/><ComboBoxItem Content="Thuốc"/>
                                 </ComboBox>
                                 <TextBlock Text="Số lượng tồn (đã ghi sổ)" Style="{StaticResource KhoLabel}"/>
+                                <!-- Thông tin hiển thị lblTonChiTiet — 0. -->
                                 <TextBlock x:Name="lblTonChiTiet" Text="0" FontSize="21" FontWeight="Bold" Foreground="{StaticResource KhoInk}" Margin="0,0,0,12"/>
                                 <TextBlock Text="Mức tồn tối thiểu *" Style="{StaticResource KhoLabel}"/>
+                                <!-- Ô nhập txtMucTon. -->
                                 <TextBox x:Name="txtMucTon" Margin="0,0,0,13" ToolTip="Mức tồn tối thiểu không được âm"/>
+                                <!-- Vùng bố cục formThuoc. -->
                                 <StackPanel x:Name="formThuoc" Visibility="Collapsed">
                                     <TextBlock Text="Hàm lượng thuốc *" Style="{StaticResource KhoLabel}"/>
+                                    <!-- Ô nhập txtHamLuong. -->
                                     <TextBox x:Name="txtHamLuong" Margin="0,0,0,12"/>
                                     <TextBlock Text="Đơn giá bán *" Style="{StaticResource KhoLabel}"/>
+                                    <!-- Ô nhập txtGiaBan. -->
                                     <TextBox x:Name="txtGiaBan" Margin="0,0,0,13" ToolTip="Đơn giá không được âm"/>
                                 </StackPanel>
                                 <Border Background="#F3F8FF" CornerRadius="9" Padding="12" Margin="0,3,0,10">
@@ -210,6 +247,7 @@
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
+                            <!-- Vùng bố cục formLo. -->
                             <StackPanel x:Name="formLo" Visibility="Collapsed">
                                 <TextBlock Text="Vật tư / thuốc" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblLoHang" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,15" TextWrapping="Wrap"/>
                                 <TextBlock Text="Kho lưu trữ" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblLoKho" FontSize="14" Margin="0,0,0,15" TextWrapping="Wrap"/>
@@ -218,6 +256,7 @@
                                 <TextBlock Text="Tồn của lô" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblLoTon" FontSize="21" FontWeight="Bold" Margin="0,0,0,14"/>
                                 <TextBlock Text="Cảnh báo" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblLoCanhBao" FontWeight="SemiBold" FontSize="14" TextWrapping="Wrap"/>
                             </StackPanel>
+                            <!-- Vùng bố cục formKho. -->
                             <StackPanel x:Name="formKho" Visibility="Collapsed">
                                 <TextBlock Text="Tên kho" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblKhoTen" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,15"/>
                                 <TextBlock Text="Người phụ trách" Style="{StaticResource KhoLabel}"/><TextBlock x:Name="lblKhoNguoi" FontSize="14" Margin="0,0,0,15"/>
@@ -229,10 +268,15 @@
                     </ScrollViewer>
                     <Border Grid.Row="2" Padding="17,11" BorderBrush="#E8EFF6" BorderThickness="0,1,0,0">
                         <StackPanel>
+                            <!-- Thông tin hiển thị lblThongBao. -->
                             <TextBlock x:Name="lblThongBao" Foreground="#B45309" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6"/>
+                            <!-- Vùng bố cục panelThaoTac. -->
                             <StackPanel x:Name="panelThaoTac" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <!-- Nút thao tác btnHuy — Hủy. Chuyển sự kiện đến Huy_Click trong code-behind. -->
                                 <Button x:Name="btnHuy" Content="Hủy" Click="Huy_Click" Visibility="Collapsed" Margin="0,0,8,0"/>
+                                <!-- Nút thao tác btnSua — Sửa thông tin. Chuyển sự kiện đến Sua_Click trong code-behind. -->
                                 <Button x:Name="btnSua" Content="Sửa thông tin" Click="Sua_Click" Margin="0"/>
+                                <!-- Nút thao tác btnLuu — Lưu thông tin. Chuyển sự kiện đến Luu_Click trong code-behind. -->
                                 <Button x:Name="btnLuu" Content="Lưu thông tin" Style="{StaticResource Primary}" Click="Luu_Click" Visibility="Collapsed" Margin="0"/>
                             </StackPanel>
                         </StackPanel>

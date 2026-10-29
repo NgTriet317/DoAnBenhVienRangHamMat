@@ -11,7 +11,13 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class ChiTietDonThuoc : UserControl, IPatientScoped
 {
+    /// <summary>
+    /// Thông báo quay lại được yêu cầu cho các thành phần đã đăng ký theo dõi.
+    /// </summary>
     public event Action? BackRequested;
+    /// <summary>
+    /// Cần mở được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private Func<string, bool> canOpen = _ => true;
     /// <summary>
     /// Mã đơn thuốc đang xem, dùng tìm đúng dữ liệu sau mỗi lần cache thay đổi.
@@ -186,5 +192,11 @@ public partial class ChiTietDonThuoc : UserControl, IPatientScoped
         if (Card is RxCard { CanPrint: true } card)
             try{new XemTruocDonThuoc(card) { Owner = Window.GetWindow(this) }.ShowDialog();}catch(InvalidOperationException ex){Feedback.Text=ex.Message;}
     }
+    /// <summary>
+    /// Xử lý thao tác mở trình nhập liệu khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>canOpen</c>, <c>DieuHuongHoSo.Open</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void OpenEditor_Click(object sender,RoutedEventArgs e){if(Card is RxCard c&&canOpen("DonThuoc"))DieuHuongHoSo.Open(this,"DonThuoc",c.PatientId,c.Visit,c.Code);}
 }

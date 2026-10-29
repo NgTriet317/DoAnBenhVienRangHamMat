@@ -10,8 +10,17 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class ChiTietHoSo : UserControl, IPatientScoped
 {
+    /// <summary>
+    /// Bảng được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly string table;
+    /// <summary>
+    /// Bản ghi được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly object record;
+    /// <summary>
+    /// Cờ Lịch hẹn chỉ đọc; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private readonly bool appointmentReadOnly;
     /// <summary>
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.

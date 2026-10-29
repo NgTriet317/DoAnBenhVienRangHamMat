@@ -10,13 +10,37 @@ namespace ET
     [Table("TAI_KHOAN")]
     public class ET_TAIKHOAN
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaTK, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maTK = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TenDangNhap, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string tenDangNhap = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MatKhauHash, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string matKhauHash = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaVaiTro, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maVaiTro = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaNV, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maNV = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaKhoa, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maKhoa;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaPhong, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maPhong;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
 
         /// <summary>

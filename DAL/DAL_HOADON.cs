@@ -9,6 +9,9 @@ namespace DAL;
 /// </summary>
 public sealed class DAL_HOADON : dbconnect
 {
+    /// <summary>
+    /// Giao dịch được giữ để các thao tác liên quan dùng cùng một phạm vi commit/rollback.
+    /// </summary>
     private readonly IDbTransaction? callerTransaction;
     /// <summary>
     /// Tên gọi tiếng Việt của CreateInvoice: lập hóa đơn Nháp cho khoản thu mới của lần khám đã xác nhận và trả mã hóa đơn.
@@ -212,7 +215,18 @@ public sealed class DAL_HOADON : dbconnect
     public void ConfirmInvoice(string invoiceId)
         => ConfirmInvoiceCore(invoiceId, false);
 
+    /// <summary>
+    /// Xác nhận hóa đơn theo đầu mối điều phối và giao dịch dùng chung.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ConfirmInvoiceCore</c>.</remarks>
+    /// <param name="invoiceId">Giá trị mã hóa đơn dùng khi thực hiện thao tác; kiểu string.</param>
     internal void ConfirmCoordinatedInvoice(string invoiceId) => ConfirmInvoiceCore(invoiceId, true);
+    /// <summary>
+    /// Thực hiện phần kiểm tra và cập nhật lõi khi xác nhận hóa đơn.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>LockInvoice</c>, <c>KiemTraHoaDonLegacy</c>, <c>db.Execute</c>.</remarks>
+    /// <param name="invoiceId">Giá trị mã hóa đơn dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="coordinated">Giá trị được điều phối dùng khi thực hiện thao tác; kiểu bool.</param>
     private void ConfirmInvoiceCore(string invoiceId, bool coordinated)
     {
         ThucHien((db, tx) =>
@@ -284,11 +298,22 @@ public sealed class DAL_HOADON : dbconnect
         });
     }
 
+    /// <summary>
+    /// Kiểm tra hóa đơn của quy trình cũ trước khi cho phép API tài chính tiếp tục xử lý.
+    /// </summary>
+    /// <param name="invoice">Giá trị hóa đơn dùng khi thực hiện thao tác; kiểu ET_HOADON.</param>
     internal static void KiemTraHoaDonLegacy(ET_HOADON invoice)
     {
         if (invoice.PhienBanQuyTrinh == 2 || invoice.TaoKhiHoanTat)
             throw new LoiKhamException("MaHD", "Hóa đơn quy trình mới chỉ được ghi trong đầu mối thu trọn gói; chứng từ đã thu chỉ được xem/in lại.");
     }
+    /// <summary>
+    /// Kiểm tra trạng thái lần khám và các chứng từ liên quan trước thao tác của quy trình cũ. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.ExecuteScalar&lt;int&gt;</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="visitId">Giá trị mã lần khám dùng khi thực hiện thao tác; kiểu string.</param>
     internal static void KiemTraLuotLegacy(IDbConnection db, IDbTransaction? tx, string visitId)
     {
         if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.HOA_DON WITH(HOLDLOCK) WHERE MaLS=@visitId AND (PhienBanQuyTrinh=2 OR TaoKhiHoanTat=1)", new { visitId }, tx) > 0)

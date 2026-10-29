@@ -16,10 +16,25 @@ public partial class HoSoBenhNhan : UserControl, IPatientScoped
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.
     /// </summary>
     public string? PatientId { get; }
+    /// <summary>
+    /// Quyền cho phép thao tác được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private Func<string, bool> allowed = _ => true;
+    /// <summary>
+    /// Cờ Sẵn sàng; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool ready;
+    /// <summary>
+    /// Cờ Đang làm mới; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool refreshing;
+    /// <summary>
+    /// Đang mở mã lần khám được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private string? openedVisitId;
+    /// <summary>
+    /// Lần khám chi tiết được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private ChiTietKhamDieuTri? visitDetails;
 
     /// <summary>
@@ -86,6 +101,13 @@ public partial class HoSoBenhNhan : UserControl, IPatientScoped
         }
     }
 
+    /// <summary>
+    /// Chuẩn hóa giá trị thông tin an toàn của hồ sơ thành nội dung có thể hiển thị.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>UiRecord.Text</c>.</remarks>
+    /// <param name="patient">Giá trị bệnh nhân dùng khi thực hiện thao tác; kiểu object.</param>
+    /// <param name="field">Giá trị trường dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Chuỗi kết quả của thao tác an toàn giá trị.</returns>
     private static string SafetyValue(object patient,string field)=>string.IsNullOrWhiteSpace(UiRecord.Text(patient,field))?"chưa ghi nhận, cần đối chiếu":UiRecord.Text(patient,field);
 
     /// <summary>

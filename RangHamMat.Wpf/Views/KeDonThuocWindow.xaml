@@ -1,3 +1,4 @@
+<!-- Giao diện KeDonThuocWindow: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <Window x:Class="RangHamMat.Views.KeDonThuocWindow"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  Title="Kê thuốc cho lần khám" Width="1180" Height="850" MinWidth="680" MinHeight="540"
@@ -5,16 +6,20 @@
  <Window.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/ClinicalWorkflowStyles.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></Window.Resources>
  <Grid>
   <Grid.RowDefinitions><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <!-- Thành phần EditorHost. -->
   <ContentControl x:Name="EditorHost" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
   <Border Grid.Row="1" Background="White" BorderBrush="#DCE4EE" BorderThickness="0,1,0,0" Padding="16,12">
    <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <StackPanel Margin="0,0,16,0" VerticalAlignment="Center">
      <TextBlock Text="Xác nhận để lưu đơn nháp và đưa về lần khám." TextWrapping="Wrap"/>
      <TextBlock Text="Có thể mở lại để sửa trước khi chốt lần khám." Foreground="#64748B" TextWrapping="Wrap" FontSize="12" Margin="0,3,0,0"/>
+     <!-- Thông tin hiển thị WindowError. -->
      <TextBlock x:Name="WindowError" Foreground="#B91C1C" TextWrapping="Wrap" Margin="0,4,0,0"/>
     </StackPanel>
     <WrapPanel Grid.Column="1" VerticalAlignment="Center">
+     <!-- Nút thao tác CloseButton — Đóng. Chuyển sự kiện đến Close_Click trong code-behind. -->
      <Button x:Name="CloseButton" Content="Đóng" Click="Close_Click" Margin="0,0,8,0"/>
+     <!-- Nút thao tác ConfirmButton — Xác nhận đơn thuốc. Chuyển sự kiện đến Confirm_Click trong code-behind. -->
      <Button x:Name="ConfirmButton" Content="Xác nhận đơn thuốc" Click="Confirm_Click" Style="{StaticResource HospitalPrimary}"/>
     </WrapPanel>
    </Grid>

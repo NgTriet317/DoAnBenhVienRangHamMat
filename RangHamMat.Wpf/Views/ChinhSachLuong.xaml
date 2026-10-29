@@ -1,3 +1,4 @@
+<!-- Giao diện ChinhSachLuong: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl x:Class="RangHamMat.Views.ChinhSachLuong"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -6,15 +7,18 @@
              mc:Ignorable="d" d:DesignWidth="1300" d:DesignHeight="860"
              FontFamily="Segoe UI" Background="#F6F5F0">
     <UserControl.Resources>
+        <!-- Tài nguyên InputSalary (Style) áp dụng cho TextBox. -->
         <Style x:Key="InputSalary" TargetType="TextBox">
             <Setter Property="BorderBrush" Value="#D4E0DF"/><Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Background" Value="#FFFFFF"/><Setter Property="FontSize" Value="13"/>
             <Setter Property="Foreground" Value="#183346"/><Setter Property="Padding" Value="10,9"/>
         </Style>
+        <!-- Tài nguyên LabelSalary (Style) áp dụng cho TextBlock. -->
         <Style x:Key="LabelSalary" TargetType="TextBlock">
             <Setter Property="FontSize" Value="11"/><Setter Property="Foreground" Value="#778A94"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
+        <!-- Tài nguyên Pnl (Style) áp dụng cho Border. -->
         <Style x:Key="Pnl" TargetType="Border">
             <Setter Property="Background" Value="White"/><Setter Property="CornerRadius" Value="15"/>
             <Setter Property="BorderBrush" Value="#E4EAE8"/><Setter Property="BorderThickness" Value="1"/>
@@ -32,7 +36,9 @@
                         <TextBlock Text="Lưu theo phiên bản, hiệu lực và chức vụ — không ghi đè chính sách đã duyệt" Foreground="#ABBFCB" FontSize="13"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Nút thao tác btnTaiLai — Làm mới. -->
                         <Button x:Name="btnTaiLai" Content="Làm mới" Margin="0,0,10,0" Background="#31475A" Foreground="White" BorderThickness="0" Padding="15,10"/>
+                        <!-- Nút thao tác btnTaoChinhSach — + Tạo phiên bản mới. -->
                         <Button x:Name="btnTaoChinhSach" Content="+ Tạo phiên bản mới" Background="#EBC084" Foreground="#142C42" FontWeight="Bold" BorderThickness="0" Padding="17,10"/>
                     </StackPanel>
                 </Grid>
@@ -50,9 +56,12 @@
                     <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                         <TextBlock Text="Danh sách phiên bản" Foreground="#1B3546" FontSize="20" FontWeight="Bold" Margin="0,0,0,14"/>
                         <StackPanel Grid.Row="1" Margin="0,0,0,11">
+                            <!-- Ô nhập txtTimChinhSach. -->
                             <TextBox x:Name="txtTimChinhSach" Style="{StaticResource InputSalary}" Margin="0,0,0,9" ToolTip="Tìm mã hoặc tên chính sách"/>
+                            <!-- Trường lựa chọn cboChucVu. -->
                             <ComboBox x:Name="cboChucVu" Height="36" SelectedIndex="0" Background="White"><ComboBoxItem Content="Tất cả chức vụ"/></ComboBox>
                         </StackPanel>
+                        <!-- Danh sách gridChinhSach. -->
                         <DataGrid Grid.Row="2" x:Name="gridChinhSach" AutoGenerateColumns="False" HeadersVisibility="Column" IsReadOnly="True" CanUserAddRows="False"
                                   AlternatingRowBackground="#F6FAF8" GridLinesVisibility="None" BorderThickness="0" RowHeight="39" FontSize="12">
                             <DataGrid.Columns>
@@ -70,10 +79,13 @@
                     <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                         <DockPanel Margin="0,0,0,20" LastChildFill="False">
                             <StackPanel DockPanel.Dock="Left"><TextBlock Text="CHI TIẾT CHÍNH SÁCH" Style="{StaticResource LabelSalary}"/><TextBlock x:Name="lblTenChinhSach" Text="Chọn một phiên bản bên trái" Foreground="#1D3748" FontSize="20" FontWeight="Bold" Margin="0,8,0,0"/></StackPanel>
+                            <!-- Thông tin hiển thị lblTrangThai — CHƯA CHỌN. -->
                             <Border DockPanel.Dock="Right" Background="#E1EFE9" Padding="13,9" CornerRadius="8"><TextBlock x:Name="lblTrangThai" Text="CHƯA CHỌN" Foreground="#2D786E" FontSize="11" FontWeight="Bold"/></Border>
                         </DockPanel>
                         <Grid Grid.Row="1" Margin="0,0,0,18"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <!-- Ô nhập txtLuongCoBan. -->
                             <StackPanel Grid.Column="0"><TextBlock Text="LƯƠNG CƠ BẢN" Style="{StaticResource LabelSalary}" Margin="0,0,0,6"/><TextBox x:Name="txtLuongCoBan" Style="{StaticResource InputSalary}"/><TextBlock Text="PHỤ CẤP CỐ ĐỊNH" Style="{StaticResource LabelSalary}" Margin="0,17,0,6"/><TextBox x:Name="txtPhuCap" Style="{StaticResource InputSalary}"/></StackPanel>
+                            <!-- Ô nhập txtTyLeHoaHong. -->
                             <StackPanel Grid.Column="2"><TextBlock Text="TỶ LỆ HOA HỒNG" Style="{StaticResource LabelSalary}" Margin="0,0,0,6"/><TextBox x:Name="txtTyLeHoaHong" Style="{StaticResource InputSalary}"/><TextBlock Text="NGÀY HIỆU LỰC" Style="{StaticResource LabelSalary}" Margin="0,17,0,6"/><DatePicker x:Name="dpHieuLuc" Height="36"/></StackPanel>
                         </Grid>
                         <Grid Grid.Row="2" Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
@@ -89,6 +101,7 @@
                                 </Border>
                             </StackPanel>
                         </Grid>
+                        <!-- Nút thao tác btnLuuNhap — Lưu nháp. -->
                         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0"><Button x:Name="btnLuuNhap" Content="Lưu nháp" Padding="22,11" Margin="0,0,9,0" Background="#E3ECE8" Foreground="#22675C" BorderThickness="0"/><Button x:Name="btnDuyet" Content="Duyệt chính sách" Padding="22,11" Background="#197469" Foreground="White" FontWeight="Bold" BorderThickness="0"/></StackPanel>
                     </Grid>
                 </Border>

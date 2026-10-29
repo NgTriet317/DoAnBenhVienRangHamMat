@@ -16,11 +16,32 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class XemTruocHoaDon : Window
 {
+    /// <summary>
+    /// Mã được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly string code="";
+    /// <summary>
+    /// Đọc được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly Func<BanInHoaDon>? read;
+    /// <summary>
+    /// Nguồn in. Có thể để null khi dữ liệu chưa được cung cấp.
+    /// </summary>
     public BanInHoaDon? NguonIn {get;private set;}
+    /// <summary>
+    /// Khởi tạo xem trước hóa đơn. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+    /// </summary>
+    /// <param name="read">Giá trị đọc dùng khi thực hiện thao tác; kiểu Func&lt;BanInHoaDon&gt;.</param>
     public XemTruocHoaDon(Func<BanInHoaDon> read)
     {InitializeComponent();RangHamMat.Controls.ClinicalWorkflow.ClinicalWindowLifecycle.Attach(this);this.read=read;var initial=read();code=initial.HoaDon.MaHD;Apply(initial);}
+    /// <summary>
+    /// Kiểm tra nguồn bản in và thực hiện in bằng hộp thoại in của ứng dụng.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>read</c>, <c>Apply</c>, <c>send</c>, <c>InvoiceDocument.CreatePaginator</c>.</remarks>
+    /// <param name="send">Giá trị gửi dùng khi thực hiện thao tác; kiểu Action&lt;DocumentPaginator&gt;.</param>
+    /// <param name="pageSize">Giá trị số dòng mỗi trang dùng khi thực hiện thao tác; kiểu Size.</param>
+    /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     public bool TryPrint(Action<DocumentPaginator> send,Size pageSize,out string? error)
     {
         error=null;try
@@ -30,6 +51,11 @@ public partial class XemTruocHoaDon : Window
         }
         catch(Exception ex){error=ex is LoiKhamException or TuChoiQuyenNghiepVuException?ex.Message:"Không thể in hóa đơn #"+code+". In lại cùng chứng từ; kết quả thu tiền giữ nguyên.";PrintStatus.Text=error;return false;}
     }
+    /// <summary>
+    /// Áp dụng dữ liệu hoặc các thiết lập hiển thị cho thành phần theo các bước trong thân hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>lines.Columns.Add</c>, <c>lines.Rows.Add</c>, <c>h.NgayLap.ToString</c>, <c>Money</c>.</remarks>
+    /// <param name="p">Giá trị p dùng khi thực hiện thao tác; kiểu BanInHoaDon.</param>
     private void Apply(BanInHoaDon p)
     {
         NguonIn=p;var h=p.HoaDon;var lines=new DataTable();foreach(var name in new[]{"MaCTHD","MaCTPX","MaCTDT","MaDT","NoiDung","DonViTinh"})lines.Columns.Add(name);foreach(var name in new[]{"SoLuong","DonGiaChot","ThanhTien"})lines.Columns.Add(name,typeof(decimal));

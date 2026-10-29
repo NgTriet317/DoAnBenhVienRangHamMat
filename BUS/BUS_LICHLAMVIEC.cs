@@ -61,6 +61,12 @@ namespace BUS
         public List<ET_LICHLAMVIEC> layLichTheoTuan(DateTime dauTuan)
             => data.layLichTheoTuan(dauTuan);
 
+        /// <summary>
+        /// Kiểm tra điều kiện nhân viên/ngày/phòng và tạo đăng ký ca làm việc. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>data.dangKyCa</c>.</remarks>
+        /// <param name="lich">Giá trị lịch dùng khi thực hiện thao tác; kiểu ET_LICHLAMVIEC.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool dangKyCa(ET_LICHLAMVIEC lich)
         {
             if (string.IsNullOrWhiteSpace(lich.MaNV) || string.IsNullOrWhiteSpace(lich.MaCa)
@@ -68,19 +74,47 @@ namespace BUS
             return data.dangKyCa(lich);
         }
 
+        /// <summary>
+        /// Điều phối đăng ký các ca trong tuần theo các lựa chọn đã được kiểm tra. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XuLyLoi.ThucHien</c>, <c>data.dangKyTuan</c>.</remarks>
+        /// <param name="maNV">Mã nhân viên xác định đối tượng cần xử lý.</param>
+        /// <param name="dauTuan">Giá trị đầu tuần dùng khi thực hiện thao tác; kiểu DateTime.</param>
+        /// <returns>Kết quả kiểu (int ThanhCong, int DaCo, int TrungGio, int DangNghi) dùng cho bước xử lý tiếp theo.</returns>
         public (int ThanhCong, int DaCo, int TrungGio, int DangNghi) dangKyTuan(string maNV, DateTime dauTuan)
         {
             if (string.IsNullOrWhiteSpace(maNV)) return (0, 0, 0, 0);
             return XuLyLoi.ThucHien(() => data.dangKyTuan(maNV, dauTuan));
         }
 
+        /// <summary>
+        /// Duyệt đăng ký ca sau khi kiểm tra nhân viên, ngày nghỉ và điều kiện phân công. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>data.duyetCa</c>.</remarks>
+        /// <param name="maLLV">Mã lịch làm việc xác định đối tượng cần xử lý.</param>
+        /// <param name="maPhong">Mã phòng xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool duyetCa(string maLLV, string maPhong)
             => !string.IsNullOrWhiteSpace(maLLV) && !string.IsNullOrWhiteSpace(maPhong)
                 && data.duyetCa(maLLV, maPhong);
 
+        /// <summary>
+        /// Từ chối đăng ký ca và ghi thông tin phản hồi theo dữ liệu được truyền vào. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>data.tuChoiCa</c>.</remarks>
+        /// <param name="maLLV">Mã lịch làm việc xác định đối tượng cần xử lý.</param>
+        /// <param name="lyDo">Giá trị lý do dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool tuChoiCa(string maLLV, string lyDo)
             => !string.IsNullOrWhiteSpace(lyDo) && data.tuChoiCa(maLLV, lyDo);
 
+        /// <summary>
+        /// Hủy đăng ký ca khi trạng thái hiện tại và quyền người thao tác cho phép. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>data.huyDangKy</c>.</remarks>
+        /// <param name="maLLV">Mã lịch làm việc xác định đối tượng cần xử lý.</param>
+        /// <param name="maNV">Mã nhân viên xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool huyDangKy(string maLLV, string maNV)
             => !string.IsNullOrWhiteSpace(maNV) && data.huyDangKy(maLLV, maNV);
 

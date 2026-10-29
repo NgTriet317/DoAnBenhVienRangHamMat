@@ -5,8 +5,14 @@ using System.Globalization;
 
 namespace DAL;
 
+/// <summary>
+/// Tầng truy cập dữ liệu quyền nghiệp vụ, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
 public sealed partial class DAL_QUYENNGHIEPVU
 {
+    /// <summary>
+    /// Lâm sàng các bảng được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly IReadOnlyDictionary<string, (string Key, string Parent)> ClinicalTables =
         new Dictionary<string, (string, string)>(StringComparer.Ordinal)
         {
@@ -17,6 +23,15 @@ public sealed partial class DAL_QUYENNGHIEPVU
             ["DON_THUOC"] = ("MaDT", "MaLS"), ["CHI_TIET_DON_THUOC"] = ("MaCTDT", "MaDT")
         };
 
+    /// <summary>
+    /// Kiểm tra quyền và phạm vi chỉnh sửa hồ sơ trước khi ghi dữ liệu. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>XacThuc</c>, <c>ClinicalTables.TryGetValue</c>, <c>TuChoi</c>.</remarks>
+    /// <param name="bang">Giá trị bang dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="giaTri">Giá trị giá trị dùng khi thực hiện thao tác; kiểu IDictionary&lt;string, object?&gt;.</param>
+    /// <param name="ma">Mã định danh của bản ghi cần xử lý.</param>
+    /// <param name="xoa">Giá trị xóa dùng khi thực hiện thao tác; kiểu bool.</param>
+    /// <param name="nguoiDung">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
     public void KiemTraGhiHoSo(string bang, IDictionary<string, object?> giaTri, string? ma, bool xoa, NguCanhNghiepVu nguoiDung)
     {
         if (callerTransaction is null && System.Transactions.Transaction.Current is null)
@@ -81,6 +96,15 @@ public sealed partial class DAL_QUYENNGHIEPVU
         });
     }
 
+    /// <summary>
+    /// Đọc bản ghi dùng kiểm tra quyền và dữ liệu của hồ sơ. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>KiemTraMa</c>, <c>ClinicalTables.TryGetValue</c>, <c>TuChoi</c>, <c>db.QuerySingleOrDefault</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="table">Giá trị bảng dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Đối tượng kiểu Dictionary&lt;string, object?&gt; được tìm hoặc tính toán; có thể null theo nhánh xử lý trong hàm.</returns>
     private static Dictionary<string, object?>? ReadRow(IDbConnection db, IDbTransaction? tx, string table, string id)
     {
         KiemTraMa(id);
@@ -88,8 +112,20 @@ public sealed partial class DAL_QUYENNGHIEPVU
         var row = db.QuerySingleOrDefault($"SELECT * FROM dbo.[{table}] WITH(UPDLOCK,HOLDLOCK) WHERE [{metadata.Key}]=@id", new { id }, tx);
         return row is null ? null : ((IDictionary<string, object>)row).ToDictionary(p => p.Key, p => p.Value is DBNull ? null : (object?)p.Value);
     }
+    /// <summary>
+    /// Chuyển giá trị dữ liệu về dạng chuỗi theo quy tắc kiểm tra của hồ sơ.
+    /// </summary>
+    /// <param name="value">Giá trị object được truyền vào để đọc, kiểm tra hoặc cập nhật trong thao tác này.</param>
+    /// <returns>Chuỗi kết quả của thao tác nội dung.</returns>
     private static string Text(object? value) => Convert.ToString(value) ?? "";
 
+    /// <summary>
+    /// So sánh giá trị nhập và giá trị lưu theo quy tắc đối chiếu của hồ sơ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>decimal.TryParse</c>, <c>value.Trim</c>, <c>int.TryParse</c>, <c>Equals</c>.</remarks>
+    /// <param name="input">Giá trị đầu vào dùng khi thực hiện thao tác; kiểu object?.</param>
+    /// <param name="stored">Giá trị đã lưu dùng khi thực hiện thao tác; kiểu object?.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     private static bool SameStoredValue(object? input, object? stored)
     {
         if (input is DBNull) input = null;

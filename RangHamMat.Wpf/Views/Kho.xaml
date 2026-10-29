@@ -1,13 +1,16 @@
+<!-- Giao diện Kho: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl x:Class="RangHamMat.Views.Kho"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Background="#F4F7FB">
     <UserControl.Resources>
+        <!-- Tài nguyên KhoVien (Style) áp dụng cho Border. -->
         <Style x:Key="KhoVien" TargetType="Border">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="#DAE5F0"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="14"/>
         </Style>
+        <!-- Tài nguyên KhoBang (Style) áp dụng cho DataGrid. -->
         <Style x:Key="KhoBang" TargetType="DataGrid">
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="IsReadOnly" Value="True"/>
@@ -35,6 +38,7 @@
                 <TextBlock Text="Tồn kho thuốc / vật tư / thiết bị" FontSize="25" FontWeight="Bold" Foreground="#173550"/>
                 <TextBlock Text="Chọn kho để xem mặt hàng đang có, số lượng tồn và lô hàng." Margin="0,5,0,0" FontSize="13" Foreground="#71859B"/>
             </StackPanel>
+            <!-- Nút thao tác ↻ Làm mới — ↻ Làm mới. Chuyển sự kiện đến LamMoi_Click trong code-behind. -->
             <Button Grid.Column="1" Content="↻ Làm mới" Click="LamMoi_Click" Padding="15,9" VerticalAlignment="Center"/>
         </Grid>
 
@@ -51,18 +55,22 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel>
                     <TextBlock Text="Chọn kho" Foreground="#71859B" FontSize="12" Margin="0,0,0,6"/>
+                    <!-- Trường lựa chọn cboKho. Chuyển sự kiện đến cboKho_SelectionChanged trong code-behind. -->
                     <ComboBox x:Name="cboKho" Height="39" DisplayMemberPath="TenKho" SelectedValuePath="MaKho" SelectionChanged="cboKho_SelectionChanged"/>
                 </StackPanel>
                 <StackPanel Grid.Column="2">
                     <TextBlock Text="Tìm hàng hóa" Foreground="#71859B" FontSize="12" Margin="0,0,0,6"/>
+                    <!-- Ô nhập txtTimKiem. Chuyển sự kiện đến txtTimKiem_TextChanged trong code-behind. -->
                     <TextBox x:Name="txtTimKiem" Padding="10,7"  TextChanged="txtTimKiem_TextChanged"/>
                 </StackPanel>
                 <StackPanel Grid.Column="4">
                     <TextBlock Text="Mặt hàng đang còn" Foreground="#71859B" FontSize="12"/>
+                    <!-- Thông tin hiển thị lblTongMatHang — 0. -->
                     <TextBlock x:Name="lblTongMatHang" Text="0" Foreground="#145FAF" FontSize="27" FontWeight="Bold" Margin="0,3,0,0"/>
                 </StackPanel>
                 <StackPanel Grid.Column="6">
                     <TextBlock Text="Dưới mức tối thiểu" Foreground="#71859B" FontSize="12"/>
+                    <!-- Thông tin hiển thị lblCanBoSung — 0. -->
                     <TextBlock x:Name="lblCanBoSung" Text="0" Foreground="#D08318" FontSize="27" FontWeight="Bold" Margin="0,3,0,0"/>
                 </StackPanel>
             </Grid>
@@ -81,10 +89,14 @@
                     <Grid Margin="0,0,0,13">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="165"/></Grid.ColumnDefinitions>
                         <StackPanel>
+                            <!-- Thông tin hiển thị lblTenKho — Danh sách tồn kho. -->
                             <TextBlock x:Name="lblTenKho" Text="Danh sách tồn kho" Foreground="#173550" FontSize="18" FontWeight="Bold"/>
+                            <!-- Thông tin hiển thị lblMoTaKho — Chọn kho để xem hàng hóa. -->
                             <TextBlock x:Name="lblMoTaKho" Text="Chọn kho để xem hàng hóa" Foreground="#71859B" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                            <!-- Thông tin hiển thị lblNguoiPhuTrach — Người phụ trách: Chưa xác định. -->
                             <TextBlock x:Name="lblNguoiPhuTrach" Text="Người phụ trách: Chưa xác định" Foreground="#71859B" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap"/>
                         </StackPanel>
+                        <!-- Trường lựa chọn cboTrangThai. Chuyển sự kiện đến cboTrangThai_SelectionChanged trong code-behind. -->
                         <ComboBox x:Name="cboTrangThai" Grid.Column="1" Height="36" SelectedIndex="0" VerticalAlignment="Center" SelectionChanged="cboTrangThai_SelectionChanged">
                             <ComboBoxItem Content="Tất cả tình trạng"/>
                             <ComboBoxItem Content="Còn hàng"/>
@@ -92,6 +104,7 @@
                             <ComboBoxItem Content="Hết hàng"/>
                         </ComboBox>
                     </Grid>
+                    <!-- Danh sách gridTonKho. Chuyển sự kiện đến gridTonKho_SelectionChanged trong code-behind. -->
                     <DataGrid Grid.Row="1" x:Name="gridTonKho" Style="{StaticResource KhoBang}" SelectionChanged="gridTonKho_SelectionChanged">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Tên hàng hóa" Binding="{Binding TenHH}" Width="2.1*" MinWidth="155"/>
@@ -113,6 +126,7 @@
                     </Grid.RowDefinitions>
                     <StackPanel Margin="0,0,0,15">
                         <TextBlock Text="CHI TIẾT HÀNG HÓA" FontSize="11" Foreground="#72869B" FontWeight="SemiBold"/>
+                        <!-- Thông tin hiển thị lblTenHang — Chưa chọn mặt hàng. -->
                         <TextBlock x:Name="lblTenHang" Text="Chưa chọn mặt hàng" Foreground="#173550" FontSize="20" FontWeight="Bold" Margin="0,6,0,4" TextWrapping="Wrap"/>
                         <TextBlock Text="Chọn một dòng bên trái để xem tồn và lô tương ứng." Foreground="#72869B" FontSize="12" TextWrapping="Wrap"/>
                     </StackPanel>
@@ -121,10 +135,12 @@
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="Số lượng tồn" Foreground="#58748D" FontSize="12"/>
+                                <!-- Thông tin hiển thị lblSoLuong — —. -->
                                 <TextBlock x:Name="lblSoLuong" Text="—" FontSize="24" FontWeight="Bold" Foreground="#145FAF" Margin="0,5,0,0"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1">
                                 <TextBlock Text="Mức tồn tối thiểu" Foreground="#58748D" FontSize="12"/>
+                                <!-- Thông tin hiển thị lblMucToiThieu — —. -->
                                 <TextBlock x:Name="lblMucToiThieu" Text="—" FontSize="24" FontWeight="Bold" Foreground="#173550" Margin="0,5,0,0"/>
                             </StackPanel>
                         </Grid>
@@ -134,8 +150,10 @@
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <TextBlock Text="Các lô hàng trong kho" FontSize="15" FontWeight="SemiBold" Foreground="#173550"/>
                             <TextBlock Text="  •  Lô sắp hết hạn (30 ngày): " FontSize="12" Foreground="#B56F1C" VerticalAlignment="Center"/>
+                            <!-- Thông tin hiển thị lblLoSapHetHan — 0. -->
                             <TextBlock x:Name="lblLoSapHetHan" Text="0" FontSize="12" FontWeight="Bold" Foreground="#B56F1C" VerticalAlignment="Center"/>
                         </StackPanel>
+                        <!-- Danh sách gridLoHang. -->
                         <DataGrid Grid.Row="1" x:Name="gridLoHang" Style="{StaticResource KhoBang}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Số lô" Binding="{Binding SoLo}" Width="1.2*"/>

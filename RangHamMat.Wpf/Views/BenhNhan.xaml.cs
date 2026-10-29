@@ -12,13 +12,37 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class BenhNhan : UserControl, IPatientScoped
 {
+    /// <summary>
+    /// Số dòng mỗi trang được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private const int PageSize = 15;
+    /// <summary>
+    /// Cờ Sẵn sàng; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool ready;
+    /// <summary>
+    /// Cờ Đang làm mới; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool refreshing;
+    /// <summary>
+    /// Trang hiện tại được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private int currentPage = 1;
+    /// <summary>
+    /// Đã lọc được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private object[] filtered = Array.Empty<object>();
+    /// <summary>
+    /// Giá trị lưu nội bộ của thuộc tính PatientId, dùng bởi getter/setter tương ứng.
+    /// </summary>
     private HoSoBenhNhan? profile;
+    /// <summary>
+    /// Quyền truy cập được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private Func<string, bool>? access;
+    /// <summary>
+    /// Được yêu cầu mã bệnh nhân được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private string? requestedPatientId;
     /// <summary>
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.

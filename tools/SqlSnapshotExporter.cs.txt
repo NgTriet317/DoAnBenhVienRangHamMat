@@ -1,0 +1,255 @@
+using System.Data;
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using Dapper;
+using Microsoft.Data.SqlClient;
+
+/// <summary>
+/// Nhóm dữ liệu và thao tác kiểm chứng chương trình kiểm tra trong công cụ kiểm tra của dự án.
+/// </summary>
+static class Program
+{
+ /// <summary>
+ /// Cơ sở dữ liệu được giữ trong phạm vi lớp để các thao tác dùng lại.
+ /// </summary>
+ static SqlConnection db=null!;
+    /// <summary>
+    /// Giao dịch được giữ để các thao tác liên quan dùng cùng một phạm vi commit/rollback.
+    /// </summary>
+    static SqlTransaction tx=null!;
+    /// <summary>
+    /// Nguồn tên được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    static string sourceName="";
+ /// <summary>
+ /// Bước kiểm chứng phân hệ; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+ /// </summary>
+ /// <remarks>Các bước được phối hợp qua <c>sourceName.StartsWith</c>, <c>definition.Replace</c>.</remarks>
+ /// <param name="definition">Giá trị khai báo dùng khi thực hiện thao tác; kiểu string.</param>
+ /// <returns>Chuỗi kết quả của thao tác phân hệ.</returns>
+ static string Module(string definition)=>sourceName.StartsWith("RHM_Hospital_Test_",StringComparison.Ordinal)?definition.Replace(sourceName,"QLBenhVienRangHamMat",StringComparison.Ordinal):definition;
+ /// <summary>
+ /// Câu lệnh SQL SQL dùng trong các thao tác của lớp; giá trị đầu vào được truyền theo cách nơi gọi quy định.
+ /// </summary>
+ static readonly StringBuilder sql=new();
+ /// <summary>
+ /// Bước kiểm chứng định danh SQL; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+ /// </summary>
+ /// <remarks>Các bước được phối hợp qua <c>s.Replace</c>.</remarks>
+ /// <param name="s">Giá trị s dùng khi thực hiện thao tác; kiểu string.</param>
+ /// <returns>Chuỗi kết quả của thao tác định danh SQL.</returns>
+ static string Q(string s)=>"["+s.Replace("]","]]")+"]";
+ /// <summary>
+ /// Bước kiểm chứng chuỗi Unicode; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+ /// </summary>
+ /// <remarks>Các bước được phối hợp qua <c>char.IsHighSurrogate</c>, <c>b.Append</c>, <c>s.Substring</c>, <c>b.ToString</c>.</remarks>
+ /// <param name="s">Giá trị s dùng khi thực hiện thao tác; kiểu string.</param>
+ /// <returns>Chuỗi kết quả của thao tác chuỗi Unicode.</returns>
+ static string N(string s)
+ {
+  var b=new StringBuilder("CAST(N'' AS nvarchar(max))");
+  for(int i=0;i<s.Length;){int n=Math.Min(2800,s.Length-i);if(i+n<s.Length&&char.IsHighSurrogate(s[i+n-1]))n--;
+   b.Append("+N'").Append(s.Substring(i,n).Replace("'","''").Replace("\r","'+NCHAR(13)+N'").Replace("\n","'+NCHAR(10)+N'")).Append("'");i+=n;}
+  return b.ToString();
+ }
+ /// <summary>
+ /// Bước kiểm chứng biểu diễn literal; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+ /// </summary>
+ /// <remarks>Các bước được phối hợp qua <c>N</c>, <c>t.ToString</c>, <c>g.ToString</c>, <c>d.ToString</c>.</remarks>
+ /// <param name="v">Giá trị v dùng khi thực hiện thao tác; kiểu object?.</param>
+ /// <returns>Chuỗi kết quả của thao tác biểu diễn literal.</returns>
+ static string Literal(object? v)=>v switch{
+  null or DBNull=>"NULL",string s=>N(s),bool b=>b?"1":"0",byte[] a=>"0x"+Convert.ToHexString(a),
+  DateTime t=>"CONVERT(datetime2(7),'"+t.ToString("yyyy-MM-ddTHH:mm:ss.fffffff",CultureInfo.InvariantCulture)+"',126)",
+  DateTimeOffset t=>"CONVERT(datetimeoffset(7),'"+t.ToString("O",CultureInfo.InvariantCulture)+"',127)",
+  TimeSpan t=>"CONVERT(time(7),'"+t.ToString(@"hh\:mm\:ss\.fffffff",CultureInfo.InvariantCulture)+"')",
+  Guid g=>"CONVERT(uniqueidentifier,'"+g.ToString("D")+"')",
+  decimal d=>d.ToString("G29",CultureInfo.InvariantCulture),double d=>d.ToString("R",CultureInfo.InvariantCulture),float f=>f.ToString("R",CultureInfo.InvariantCulture),
+  IFormattable f=>f.ToString(null,CultureInfo.InvariantCulture),_=>throw new Exception("Unsupported value type: "+v.GetType().FullName)};
+ /// <summary>
+ /// Bước kiểm chứng thi hành SQL; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+ /// </summary>
+ /// <remarks>Các bước được phối hợp qua <c>sql.Append</c>, <c>N</c>.</remarks>
+ /// <param name="body">Giá trị nội dung dùng khi thực hiện thao tác; kiểu string.</param>
+ static void Exec(string body)=>sql.Append(" SET @RhmSnapshotSql=").Append(N(body)).AppendLine("; EXEC sys.sp_executesql @RhmSnapshotSql;");
+ /// <summary>
+ /// Bước kiểm chứng đọc; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+ /// </summary>
+ /// <remarks>Các bước được phối hợp qua <c>db.Query</c>.</remarks>
+ /// <param name="query">Giá trị truy vấn dùng khi thực hiện thao tác; kiểu string.</param>
+ /// <param name="p">Giá trị p dùng khi thực hiện thao tác; kiểu object?.</param>
+ /// <returns>Tập dữ liệu kiểu List&lt;dynamic&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
+ static List<dynamic> Read(string query,object? p=null)=>db.Query(query,p,tx,commandTimeout:120).ToList();
+ /// <summary>
+ /// Bước kiểm chứng kiểu; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+ /// </summary>
+ /// <remarks>Các bước được phối hợp qua <c>Q</c>, <c>length.ToString</c>.</remarks>
+ /// <param name="c">Giá trị c dùng khi thực hiện thao tác; kiểu dynamic.</param>
+ /// <returns>Chuỗi kết quả của thao tác kiểu.</returns>
+ static string Type(dynamic c)
+ {
+  string type=c.TypeName;int length=c.max_length,precision=c.precision,scale=c.scale;
+  return Q(type)+(type switch{
+   "nvarchar" or "nchar"=>"("+(length<0?"max":(length/2).ToString())+")",
+   "varchar" or "char" or "varbinary" or "binary"=>"("+(length<0?"max":length.ToString())+")",
+   "decimal" or "numeric"=>"("+precision+","+scale+")",
+   "datetime2" or "time" or "datetimeoffset"=>"("+scale+")",_=>""});
+ }
+ /// <summary>
+ /// Bước kiểm chứng các khóa; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+ /// </summary>
+ /// <remarks>Các bước được phối hợp qua <c>Read</c>, <c>Q</c>.</remarks>
+ /// <param name="objectId">Giá trị object mã dùng khi thực hiện thao tác; kiểu int.</param>
+ /// <param name="indexId">Giá trị chỉ số mã dùng khi thực hiện thao tác; kiểu int.</param>
+ /// <returns>Chuỗi kết quả của thao tác các khóa.</returns>
+ static string Keys(int objectId,int indexId)=>string.Join(",",Read("SELECT c.name,ic.is_descending_key FROM sys.index_columns ic JOIN sys.columns c ON c.object_id=ic.object_id AND c.column_id=ic.column_id WHERE ic.object_id=@id AND ic.index_id=@index AND ic.key_ordinal>0 ORDER BY ic.key_ordinal",new{id=objectId,index=indexId}).Select(c=>Q((string)c.name)+((bool)c.is_descending_key?" DESC":" ASC")));
+ /// <summary>
+ /// Bước kiểm chứng các dòng; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+ /// </summary>
+ /// <remarks>Các bước được phối hợp qua <c>db.CreateCommand</c>, <c>command.ExecuteReader</c>, <c>reader.Read</c>, <c>row.Add</c>.</remarks>
+ /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu int.</param>
+ /// <param name="table">Giá trị bảng dùng khi thực hiện thao tác; kiểu string.</param>
+ /// <returns>Tập dữ liệu kiểu List&lt;List&lt;object?&gt;&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
+ static List<List<object?>> Rows(int id,string table)
+ {
+  using var command=db.CreateCommand();command.Transaction=tx;command.CommandTimeout=120;command.CommandText="SELECT * FROM "+table;
+  using var reader=command.ExecuteReader();var rows=new List<List<object?>>();
+  while(reader.Read()){var row=new List<object?>();for(int i=0;i<reader.FieldCount;i++)row.Add(reader.IsDBNull(i)?null:reader.GetValue(i));rows.Add(row);}return rows;
+ }
+ /// <summary>
+ /// Băm biểu diễn dữ liệu để tạo dấu vân tay phát hiện thay đổi giữa lúc đọc và lúc ghi.
+ /// </summary>
+ /// <remarks>Các bước được phối hợp qua <c>rows.Select</c>, <c>r.Select</c>, <c>SHA256.HashData</c>, <c>Encoding.UTF8.GetBytes</c>.</remarks>
+ /// <param name="rows">Giá trị các dòng dùng khi thực hiện thao tác; kiểu List&lt;List&lt;object?&gt;&gt;.</param>
+ /// <returns>Chuỗi kết quả của thao tác dấu vân tay dữ liệu.</returns>
+ static string Fingerprint(List<List<object?>> rows)
+ {
+  var normalized=rows.Select(r=>string.Join("\u001f",r.Select(Literal))).OrderBy(s=>s,StringComparer.Ordinal);
+  return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\u001e",normalized))));
+ }
+ /// <summary>
+ /// Bước kiểm chứng bảo đảm bản ghi cha; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+ /// </summary>
+ /// <remarks>Các bước được phối hợp qua <c>Path.GetDirectoryName</c>, <c>Path.GetFullPath</c>, <c>Directory.CreateDirectory</c>.</remarks>
+ /// <param name="path">Giá trị đường dẫn dùng khi thực hiện thao tác; kiểu string.</param>
+ static void EnsureParent(string path){var dir=Path.GetDirectoryName(Path.GetFullPath(path));if(dir is not null)Directory.CreateDirectory(dir);}
+ /// <summary>
+ /// Bước kiểm chứng chính; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+ /// </summary>
+ /// <remarks>Các bước được phối hợp qua <c>db.Open</c>, <c>db.BeginTransaction</c>, <c>db.Execute</c>, <c>Read</c>.</remarks>
+ /// <param name="args">Giá trị đối số dùng khi thực hiện thao tác; kiểu string[].</param>
+ /// <returns>Giá trị số được đọc, đếm hoặc tính toán trong hàm.</returns>
+ static int Main(string[] args)
+ {
+  if(args.Length is <4 or >5)throw new Exception("server database output manifest [--verify]");
+  var verify=args.Length==5&&args[4]=="--verify";
+  sourceName=args[1];
+  db=new SqlConnection(new SqlConnectionStringBuilder{DataSource=args[0],InitialCatalog=args[1],IntegratedSecurity=true,TrustServerCertificate=true}.ConnectionString);db.Open();
+  tx=db.BeginTransaction(IsolationLevel.Serializable);
+  // Chỉ đóng gói nguồn đúng phiên bản của dự án; lỗi phải xảy ra trước khi ghi file.
+  // Kiểm tra này chỉ đọc metadata/dữ liệu, không sửa database nguồn.
+  db.Execute("""
+   IF OBJECT_ID(N'dbo.usp_RHM_KiemTraSchema',N'P') IS NULL
+    THROW 59982,N'Nguồn xuất chưa có schema bệnh viện hiện tại. Chạy file SQL chính để đồng bộ trước khi xuất.',1;
+   EXEC dbo.usp_RHM_KiemTraSchema;
+   """,transaction:tx,commandTimeout:120);
+  var tables=Read("SELECT t.object_id,t.name,s.name SchemaName FROM sys.tables t JOIN sys.schemas s ON s.schema_id=t.schema_id WHERE t.is_ms_shipped=0 ORDER BY s.name,t.name");
+  if(tables.Count!=60)throw new Exception("Source must contain exactly the 60 supported hospital tables.");
+  if(Read("SELECT 1 FROM sys.foreign_keys WHERE is_disabled=1 OR is_not_trusted=1 UNION ALL SELECT 1 FROM sys.check_constraints WHERE is_disabled=1 OR is_not_trusted=1").Count>0)throw new Exception("Source constraints are not active/trusted.");
+  var manifests=new SortedDictionary<string,TableManifest>(StringComparer.Ordinal);
+  var materialized=new Dictionary<int,(List<dynamic> Columns,List<List<object?>> Rows,string Table)>();
+  foreach(var t in tables){int id=t.object_id;string table=Q((string)t.SchemaName)+"."+Q((string)t.name);
+   var columns=Read("""
+    SELECT c.name,ty.name TypeName,CONVERT(int,c.max_length) max_length,CONVERT(int,c.precision) precision,CONVERT(int,c.scale) scale,c.is_nullable,c.is_identity,c.is_computed,c.collation_name,
+     cc.definition ComputedDefinition,cc.is_persisted,dc.name DefaultName,dc.definition DefaultDefinition,
+     CONVERT(nvarchar(50),ic.seed_value) Seed,CONVERT(nvarchar(50),ic.increment_value) IncrementValue
+    FROM sys.columns c JOIN sys.types ty ON ty.user_type_id=c.user_type_id
+    LEFT JOIN sys.computed_columns cc ON cc.object_id=c.object_id AND cc.column_id=c.column_id
+    LEFT JOIN sys.default_constraints dc ON dc.parent_object_id=c.object_id AND dc.parent_column_id=c.column_id
+    LEFT JOIN sys.identity_columns ic ON ic.object_id=c.object_id AND ic.column_id=c.column_id
+    WHERE c.object_id=@id ORDER BY c.column_id
+    """,new{id});
+   var rows=Rows(id,table);materialized[id]=(columns,rows,table);
+   manifests[(string)t.SchemaName+"."+(string)t.name]=new(rows.Count,Fingerprint(rows));
+  }
+  if(verify){
+   var expected=JsonSerializer.Deserialize<SnapshotManifest>(File.ReadAllText(args[3]))??throw new Exception("Missing manifest");
+   var differences=expected.Tables.Keys.Union(manifests.Keys).Where(k=>!expected.Tables.TryGetValue(k,out var a)||!manifests.TryGetValue(k,out var b)||a!=b).ToArray();
+   tx.Rollback();db.Dispose();if(differences.Length>0)throw new Exception("Data differs: "+string.Join(", ",differences));
+   Console.WriteLine($"PASS: all {manifests.Count} tables match row counts and SHA256 fingerprints.");return 0;
+  }
+  sql.AppendLine("-- BEGIN RHM DATA SNAPSHOT: generated from restored and validated data; load only into a database with no user tables.");
+  sql.AppendLine("IF NOT EXISTS(SELECT 1 FROM sys.tables WHERE is_ms_shipped=0)\nBEGIN TRY\n BEGIN TRANSACTION;\n DECLARE @RhmSnapshotSql nvarchar(max);");
+  foreach(var t in tables){int id=t.object_id;var m=materialized[id];var lines=new List<string>();
+   foreach(var c in m.Columns){string definition=Q((string)c.name);
+    if((bool)c.is_computed)definition+=" AS "+(string)c.ComputedDefinition+((bool)c.is_persisted?" PERSISTED":"");
+    else {
+     definition+=" "+Type(c);if(c.collation_name is string collation){if(!System.Text.RegularExpressions.Regex.IsMatch(collation,"^[A-Za-z0-9_]+$"))throw new Exception("Invalid collation name");definition+=" COLLATE "+collation;}
+     if((bool)c.is_identity)definition+=" IDENTITY("+(string)c.Seed+","+(string)c.IncrementValue+")";
+     definition+=(bool)c.is_nullable?" NULL":" NOT NULL";
+     if(c.DefaultName is string defaultName)definition+=" CONSTRAINT "+Q(defaultName)+" DEFAULT "+(string)c.DefaultDefinition;
+    }
+    lines.Add(definition);
+   }
+   foreach(var k in Read("SELECT kc.name,kc.type,i.index_id,i.type IndexType FROM sys.key_constraints kc JOIN sys.indexes i ON i.object_id=kc.parent_object_id AND i.index_id=kc.unique_index_id WHERE kc.parent_object_id=@id ORDER BY kc.type,kc.name",new{id}))
+    lines.Add("CONSTRAINT "+Q((string)k.name)+((string)k.type=="PK"?" PRIMARY KEY ":" UNIQUE ")+((int)k.IndexType==1?"CLUSTERED":"NONCLUSTERED")+" ("+Keys(id,(int)k.index_id)+")");
+   if((string)t.SchemaName!="dbo")throw new Exception("Non-dbo schema needs explicit schema creation.");
+   Exec("CREATE TABLE "+m.Table+" (\n"+string.Join(",\n",lines)+"\n);");
+  }
+  foreach(var t in tables){int id=t.object_id;var m=materialized[id];var insertable=m.Columns.Select((c,i)=>(c,i)).Where(x=>!(bool)x.c.is_computed && (string)x.c.TypeName!="timestamp" && (string)x.c.TypeName!="rowversion").ToArray();
+   bool identity=m.Columns.Any(c=>(bool)c.is_identity);if(identity&&m.Rows.Count>0)Exec("SET IDENTITY_INSERT "+m.Table+" ON;");
+   foreach(var batch in m.Rows.Chunk(100)){
+    var command="INSERT "+m.Table+" ("+string.Join(",",insertable.Select(x=>Q((string)x.c.name)))+") VALUES\n"+
+     string.Join(",\n",batch.Select(r=>"("+string.Join(",",insertable.Select(x=>Literal(r[x.i])))+")"))+";";
+    Exec(command);
+   }
+   if(identity&&m.Rows.Count>0)Exec("SET IDENTITY_INSERT "+m.Table+" OFF;");
+  }
+  foreach(var t in tables){int id=t.object_id;var m=materialized[id];
+   foreach(var check in Read("SELECT name,definition,is_not_for_replication FROM sys.check_constraints WHERE parent_object_id=@id",new{id}))
+    Exec("ALTER TABLE "+m.Table+" WITH CHECK ADD CONSTRAINT "+Q((string)check.name)+" CHECK "+((bool)check.is_not_for_replication?"NOT FOR REPLICATION ":"")+(string)check.definition+";");
+   foreach(var index in Read("SELECT index_id,name,type,is_unique,filter_definition FROM sys.indexes WHERE object_id=@id AND is_primary_key=0 AND is_unique_constraint=0 AND index_id>0 AND is_hypothetical=0",new{id})){
+    if((int)index.type is not (1 or 2))throw new Exception("Unsupported index type");
+    var include=Read("SELECT c.name FROM sys.index_columns ic JOIN sys.columns c ON c.object_id=ic.object_id AND c.column_id=ic.column_id WHERE ic.object_id=@id AND ic.index_id=@idx AND ic.is_included_column=1 ORDER BY ic.index_column_id",new{id,idx=(int)index.index_id});
+    Exec("CREATE "+((bool)index.is_unique?"UNIQUE ":"")+((int)index.type==1?"CLUSTERED ":"NONCLUSTERED ")+"INDEX "+Q((string)index.name)+" ON "+m.Table+" ("+Keys(id,(int)index.index_id)+")"+
+     (include.Count>0?" INCLUDE ("+string.Join(",",include.Select(c=>Q((string)c.name)))+")":"")+(index.filter_definition is string filter?" WHERE "+filter:"")+";");
+   }
+  }
+  foreach(var fk in Read("""
+   SELECT f.object_id,f.name,f.parent_object_id,f.referenced_object_id,f.delete_referential_action_desc Del,f.update_referential_action_desc Upd,f.is_not_for_replication
+   FROM sys.foreign_keys f ORDER BY f.name
+   """)){
+   int id=fk.object_id;var cols=Read("SELECT pc.name P,rc.name R FROM sys.foreign_key_columns fc JOIN sys.columns pc ON pc.object_id=fc.parent_object_id AND pc.column_id=fc.parent_column_id JOIN sys.columns rc ON rc.object_id=fc.referenced_object_id AND rc.column_id=fc.referenced_column_id WHERE fc.constraint_object_id=@id ORDER BY fc.constraint_column_id",new{id});
+   Exec("ALTER TABLE "+materialized[(int)fk.parent_object_id].Table+" WITH CHECK ADD CONSTRAINT "+Q((string)fk.name)+" FOREIGN KEY ("+string.Join(",",cols.Select(c=>Q((string)c.P)))+") REFERENCES "+materialized[(int)fk.referenced_object_id].Table+" ("+string.Join(",",cols.Select(c=>Q((string)c.R)))+") ON DELETE "+((string)fk.Del).Replace('_',' ')+" ON UPDATE "+((string)fk.Upd).Replace('_',' ')+((bool)fk.is_not_for_replication?" NOT FOR REPLICATION":"")+";");
+  }
+  var modules=Read("SELECT o.object_id,o.type,m.definition FROM sys.objects o JOIN sys.sql_modules m ON m.object_id=o.object_id WHERE o.is_ms_shipped=0 ORDER BY CASE WHEN o.type IN('FN','IF','TF') THEN 0 WHEN o.type='V' THEN 1 WHEN o.type='P' THEN 2 ELSE 3 END,o.name");
+  var dependencies=Read("SELECT DISTINCT referencing_id,referenced_id FROM sys.sql_expression_dependencies WHERE referenced_id IS NOT NULL");
+  var pending=modules.Where(m=>(string)m.type is "V" or "FN" or "IF" or "TF").ToList();
+  while(pending.Count>0){var ready=pending.FirstOrDefault(m=>!dependencies.Any(d=>(int)d.referencing_id==(int)m.object_id&&pending.Any(p=>(int)p.object_id==(int)d.referenced_id)));if(ready is null)throw new Exception("Cyclic view/function dependency");Exec(Module((string)ready.definition));pending.Remove(ready);}
+  foreach(var module in modules.Where(m=>(string)m.type is not ("V" or "FN" or "IF" or "TF")))Exec(Module((string)module.definition));
+  foreach(var p in Read("SELECT name,value FROM sys.extended_properties WHERE class=0 ORDER BY name")){
+   string propName="N'"+((string)p.name).Replace("'","''")+"'";
+   if(p.value is string text)Exec("DECLARE @value nvarchar(4000)="+N(text)+"; EXEC sys.sp_addextendedproperty @name="+propName+",@value=@value;");
+   else Exec("EXEC sys.sp_addextendedproperty @name="+propName+",@value="+Literal(p.value)+";");
+  }
+  sql.AppendLine(" COMMIT TRANSACTION;\n PRINT N'Đã nạp schema và dữ liệu phục hồi đóng gói trong file SQL.';\nEND TRY\nBEGIN CATCH\n IF XACT_STATE()<>0 ROLLBACK TRANSACTION;\n THROW;\nEND CATCH;\n-- END RHM DATA SNAPSHOT\n");
+  tx.Rollback();db.Dispose();EnsureParent(args[2]);EnsureParent(args[3]);
+  File.WriteAllText(args[2],sql.ToString(),new UTF8Encoding(false));
+  File.WriteAllText(args[3],JsonSerializer.Serialize(new SnapshotManifest(DateTime.UtcNow,manifests),new JsonSerializerOptions{WriteIndented=true}),new UTF8Encoding(false));
+  Console.WriteLine($"Exported {tables.Count} tables, {manifests.Values.Sum(m=>m.Rows)} rows; schema/data bootstrap and SHA256 manifest saved.");return 0;
+ }
+ /// <summary>
+ /// Nhóm dữ liệu và thao tác kiểm chứng bảng bản kê trong công cụ kiểm tra của dự án.
+ /// </summary>
+ /// <param name="Rows">Giá trị các dòng dùng khi thực hiện thao tác; kiểu long.</param>
+ /// <param name="Sha256">Giá trị Sha 256 dùng khi thực hiện thao tác; kiểu string.</param>
+ public record TableManifest(long Rows,string Sha256);
+ /// <summary>
+ /// Nhóm dữ liệu và thao tác kiểm chứng bản chụp dữ liệu bản kê trong công cụ kiểm tra của dự án.
+ /// </summary>
+ /// <param name="GeneratedUtc">Giá trị được sinh UTC dùng khi thực hiện thao tác; kiểu DateTime.</param>
+ /// <param name="Tables">Giá trị các bảng dùng khi thực hiện thao tác; kiểu SortedDictionary&lt;string,TableManifest&gt;.</param>
+ public record SnapshotManifest(DateTime GeneratedUtc,SortedDictionary<string,TableManifest> Tables);
+}

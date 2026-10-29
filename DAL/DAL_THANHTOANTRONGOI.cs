@@ -5,10 +5,28 @@ using Dapper;
 using ET;
 namespace DAL;
 
+/// <summary>
+/// Tầng truy cập dữ liệu thanh toán trọn gói, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
 public sealed partial class DAL_THANHTOANTRONGOI : dbconnect
 {
+    /// <summary>
+    /// Giao dịch được giữ để các thao tác liên quan dùng cùng một phạm vi commit/rollback.
+    /// </summary>
     private readonly IDbTransaction? paymentTransaction;
+    /// <summary>
+    /// Khởi tạo thanh toán trọn gói. Chuyển giao dịch tùy chọn cho lớp cơ sở; nơi cấp giao dịch chịu trách nhiệm kết thúc giao dịch đó.
+    /// </summary>
+    /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
     public DAL_THANHTOANTRONGOI(IDbTransaction? transaction = null) : base(transaction) => paymentTransaction = transaction;
+    /// <summary>
+    /// Đọc nguồn phí dịch vụ, thuốc và tồn lô để lập bảng tính trước khi thu; trả các điều kiện cho phép thanh toán. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch. Dùng application lock sở hữu bởi giao dịch; từ chối khi không lấy được khóa trong thời gian chờ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>DAL_QUYENNGHIEPVU.KiemTraMa</c>, <c>db.ExecuteScalar&lt;int&gt;</c>, <c>DAL_QUYENNGHIEPVU.XacThuc</c>.</remarks>
+    /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <param name="maKhoCapThuoc">Mã kho cấp thuốc xác định đối tượng cần xử lý.</param>
+    /// <param name="nguoiDung">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu BangTinhPhi dùng cho bước xử lý tiếp theo.</returns>
     public BangTinhPhi LapBangTinh(string maLS, string? maKhoCapThuoc, NguCanhNghiepVu nguoiDung)
         => ThucHien((db, tx) =>
         {
@@ -120,35 +138,113 @@ public sealed partial class DAL_THANHTOANTRONGOI : dbconnect
                 pending is null ? "Giá và tồn sẽ được kiểm tra lại khi thanh toán." : "Hóa đơn đã lập khi hoàn tất khám. Thu đúng khoản đã chốt; tồn thuốc được kiểm tra khi thanh toán.", pending?.MaHD);
         });
 
+    /// <summary>
+    /// Tạo ngoại lệ nghiệp vụ với thông tin trường và thông báo được truyền vào.
+    /// </summary>
+    /// <param name="field">Giá trị trường dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="text">Giá trị nội dung dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Kết quả kiểu LoiKhamException dùng cho bước xử lý tiếp theo.</returns>
     private static LoiKhamException Error(string field, string text) => new(field, text);
+    /// <summary>
+    /// Mô hình và thao tác hỗ trợ lượt phí dùng bởi các thành phần liên quan.
+    /// </summary>
     private sealed class LuotPhi
     {
+        /// <summary>
+        /// Mã bác sĩ.
+        /// </summary>
         public string MaBS { get; set; } = "";
+        /// <summary>
+        /// Bác sĩ trên phiếu tiếp nhận.
+        /// </summary>
         public string BacSiPhieu { get; set; } = "";
+        /// <summary>
+        /// Trạng thái.
+        /// </summary>
         public string TrangThai { get; set; } = "";
+        /// <summary>
+        /// Trạng thái hiện tại của phiếu tiếp nhận.
+        /// </summary>
         public string TrangThaiPhieu { get; set; } = "";
+        /// <summary>
+        /// Mã bệnh nhân.
+        /// </summary>
         public string MaBN { get; set; } = "";
+        /// <summary>
+        /// Họ tên bệnh nhân.
+        /// </summary>
         public string HoTenBN { get; set; } = "";
+        /// <summary>
+        /// Thời gian khám.
+        /// </summary>
         public DateTime ThoiGianKham { get; set; }
+        /// <summary>
+        /// Thời điểm xác nhận; dữ liệu nháp hoặc chưa xác nhận có thể chưa có giá trị. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public DateTime? NgayXacNhan { get; set; }
     }
+    /// <summary>
+    /// Mô hình và thao tác hỗ trợ đơn phí dùng bởi các thành phần liên quan.
+    /// </summary>
     private sealed class DonPhi
     {
+        /// <summary>
+        /// Mã đơn thuốc.
+        /// </summary>
         public string MaDT { get; set; } = "";
+        /// <summary>
+        /// Ngày kê.
+        /// </summary>
         public DateTime NgayKe { get; set; }
+        /// <summary>
+        /// Mã đơn thuốc được thay thế bởi đơn hiện tại. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public string? MaDTThayThe { get; set; }
     }
+    /// <summary>
+    /// Mô hình và thao tác hỗ trợ thuốc phí dùng bởi các thành phần liên quan.
+    /// </summary>
     private sealed class ThuocPhi
     {
+        /// <summary>
+        /// Mã đơn thuốc.
+        /// </summary>
         public string MaDT { get; set; } = "";
+        /// <summary>
+        /// Mã dòng chi tiết đơn thuốc.
+        /// </summary>
         public string MaCTDT { get; set; } = "";
+        /// <summary>
+        /// Mã thuốc.
+        /// </summary>
         public string MaThuoc { get; set; } = "";
+        /// <summary>
+        /// Mã hàng hóa.
+        /// </summary>
         public string MaHH { get; set; } = "";
+        /// <summary>
+        /// Số lượng của dòng dữ liệu.
+        /// </summary>
         public decimal SoLuong { get; set; }
+        /// <summary>
+        /// Đơn giá áp dụng cho dòng dữ liệu.
+        /// </summary>
         public decimal DonGia { get; set; }
+        /// <summary>
+        /// Tên thuốc chốt. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public string? TenThuocChot { get; set; }
+        /// <summary>
+        /// Hàm lượng chốt. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public string? HamLuongChot { get; set; }
+        /// <summary>
+        /// Đơn vị tính đã chốt. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public string? DonViTinhChot { get; set; }
+        /// <summary>
+        /// Trạng thái hàng.
+        /// </summary>
         public string TrangThaiHang { get; set; } = "";
     }
 }

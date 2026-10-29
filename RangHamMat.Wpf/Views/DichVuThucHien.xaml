@@ -1,1 +1,2 @@
+<!-- Giao diện DichVuThucHien: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.DichVuThucHien"><ContentControl x:Name="HistoryHost"/></UserControl>

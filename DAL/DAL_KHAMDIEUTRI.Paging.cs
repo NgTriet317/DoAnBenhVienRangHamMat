@@ -2,13 +2,32 @@ using System.Globalization;
 using Dapper;
 using ET;
 namespace DAL;
+/// <summary>
+/// Tầng truy cập dữ liệu khám điều trị, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
 public sealed partial class DAL_KHAMDIEUTRI
 {
+    /// <summary>
+    /// Câu lệnh SQL phạm vi bệnh nhân SQL dùng trong các thao tác của lớp; giá trị đầu vào được truyền theo cách nơi gọi quy định.
+    /// </summary>
     private const string PatientScopeSql="""
         WITH patients AS (SELECT b.* FROM dbo.BENH_NHAN b WHERE @reception=1 OR @LaAdmin=1
           OR (@doctor=1 AND EXISTS(SELECT 1 FROM dbo.HO_SO_BENH_AN hs JOIN dbo.PHIEU_KHAM_BENH p ON p.MaHS=hs.MaHS WHERE hs.MaBN=b.MaBN AND p.MaBS=@MaNV AND p.TrangThai<>N'Hủy'))
           OR (@finance=1 AND @doctor=0 AND EXISTS(SELECT 1 FROM dbo.HO_SO_BENH_AN hs JOIN dbo.PHIEU_KHAM_BENH p ON p.MaHS=hs.MaHS JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaPhieu=p.MaPhieu WHERE hs.MaBN=b.MaBN AND l.TrangThai=N'Đã xác nhận')))
         """;
+    /// <summary>
+    /// Thực thi truy vấn phân trang và ghép số lượng tổng với các dòng trong trang hiện tại.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>DAL_QUYENNGHIEPVU.XacThuc</c>, <c>user.CoQuyen</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>.</remarks>
+    /// <param name="filter">Giá trị bộ lọc dùng khi thực hiện thao tác; kiểu BoLocDanhSachHoSo.</param>
+    /// <param name="actor">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <param name="source">Giá trị nguồn dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="fields">Giá trị các trường dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="order">Giá trị đơn dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="project">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="prescriptionHistory">Giá trị đơn thuốc lịch sử dùng khi thực hiện thao tác; kiểu bool.</param>
+    /// <returns>Kết quả kiểu TrangHoSo&lt;T&gt; dùng cho bước xử lý tiếp theo.</returns>
+    /// <typeparam name="T">Kiểu dữ liệu dùng cho thao tác tổng quát này.</typeparam>
     private TrangHoSo<T> ReadPage<T>(BoLocDanhSachHoSo filter,NguCanhNghiepVu actor,string source,string fields,string order,Action<System.Data.IDbConnection,System.Data.IDbTransaction?,T[]>? project=null,bool prescriptionHistory=false)=>ThucHien((db,tx)=>
     {
         var user=DAL_QUYENNGHIEPVU.XacThuc(db,tx,actor);
@@ -25,6 +44,13 @@ public sealed partial class DAL_KHAMDIEUTRI
         DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db,tx,user,"TRANG_HO_SO",typeof(T).Name);
         return new TrangHoSo<T>(rows,total,filter.Trang,filter.KichThuocTrang);
     });
+    /// <summary>
+    /// Đọc một trang bệnh nhân trong phạm vi quyền và bộ lọc được yêu cầu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ReadPage&lt;DongBenhNhanDanhSach&gt;</c>.</remarks>
+    /// <param name="filter">Giá trị bộ lọc dùng khi thực hiện thao tác; kiểu BoLocDanhSachHoSo.</param>
+    /// <param name="actor">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu TrangHoSo&lt;DongBenhNhanDanhSach&gt; dùng cho bước xử lý tiếp theo.</returns>
     public TrangHoSo<DongBenhNhanDanhSach> LayTrangBenhNhan(BoLocDanhSachHoSo filter,NguCanhNghiepVu actor)=>ReadPage<DongBenhNhanDanhSach>(filter,actor,"""
         SELECT b.MaBN,b.HoTenBN,b.NgaySinh,b.GioiTinh,b.SDT,b.DiaChi,b.TrangThai,
          (SELECT MAX(l.ThoiGianKham) FROM dbo.HO_SO_BENH_AN hs JOIN dbo.PHIEU_KHAM_BENH p ON p.MaHS=hs.MaHS JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaPhieu=p.MaPhieu
@@ -32,6 +58,13 @@ public sealed partial class DAL_KHAMDIEUTRI
         FROM patients b WHERE (@status IS NULL OR b.TrangThai=@status) AND (@gender IS NULL OR b.GioiTinh=@gender)
           AND (@patient IS NULL OR b.MaBN=@patient) AND (@term=N'' OR b.MaBN LIKE @search ESCAPE N'~' OR b.HoTenBN LIKE @search ESCAPE N'~' OR b.SDT LIKE @search ESCAPE N'~' OR b.NgaySinh=@birth)
         ""","*","HoTenBN,MaBN");
+    /// <summary>
+    /// Đọc một trang các lần khám theo phạm vi hồ sơ và bộ lọc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ReadPage&lt;DongLanKhamDanhSach&gt;</c>.</remarks>
+    /// <param name="filter">Giá trị bộ lọc dùng khi thực hiện thao tác; kiểu BoLocDanhSachHoSo.</param>
+    /// <param name="actor">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu TrangHoSo&lt;DongLanKhamDanhSach&gt; dùng cho bước xử lý tiếp theo.</returns>
     public TrangHoSo<DongLanKhamDanhSach> LayTrangLanKham(BoLocDanhSachHoSo filter,NguCanhNghiepVu actor)=>ReadPage<DongLanKhamDanhSach>(filter,actor,"""
         SELECT l.MaLS,l.MaPhieu,l.MaBS,l.MaPhong,l.ThoiGianKham,l.TrangThai,l.NgayXacNhan,b.MaBN,b.HoTenBN,n.HoTen TenBS,
           CASE WHEN @fullClinical=1 AND(@LaAdmin=1 OR l.TrangThai=N'Đã xác nhận' OR(@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV)) THEN l.ChanDoan ELSE N'' END ChanDoan,CASE WHEN p.MaLich IS NULL THEN N'Trực tiếp' ELSE N'Lịch hẹn #'+p.MaLich END NguonTiepNhan
@@ -42,6 +75,13 @@ public sealed partial class DAL_KHAMDIEUTRI
           AND (@from IS NULL OR l.ThoiGianKham>=@from) AND (@end IS NULL OR l.ThoiGianKham<@end)
           AND (@term=N'' OR l.MaLS LIKE @search ESCAPE N'~' OR b.MaBN LIKE @search ESCAPE N'~' OR b.HoTenBN LIKE @search ESCAPE N'~' OR (@fullClinical=1 AND(@LaAdmin=1 OR l.TrangThai=N'Đã xác nhận' OR(@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV)) AND l.ChanDoan LIKE @search ESCAPE N'~') OR (@finance=1 AND EXISTS(SELECT 1 FROM dbo.HOA_DON h WHERE h.MaLS=l.MaLS AND h.MaHD LIKE @search ESCAPE N'~')))
         ""","*","ThoiGianKham DESC,MaLS");
+    /// <summary>
+    /// Đọc một trang lịch sử đơn thuốc theo phạm vi và bộ lọc của người dùng.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ReadPage&lt;DongLichSuDon&gt;</c>, <c>db.Query&lt;ET_CHITIETDONTHUOC&gt;</c>, <c>rows.Select</c>, <c>lines[row.MaDT].ToArray</c>.</remarks>
+    /// <param name="filter">Giá trị bộ lọc dùng khi thực hiện thao tác; kiểu BoLocDanhSachHoSo.</param>
+    /// <param name="actor">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu TrangHoSo&lt;DongLichSuDon&gt; dùng cho bước xử lý tiếp theo.</returns>
     public TrangHoSo<DongLichSuDon> LayTrangLichSuDon(BoLocDanhSachHoSo filter,NguCanhNghiepVu actor)=>ReadPage<DongLichSuDon>(filter,actor,"""
         SELECT d.*,b.MaBN,b.HoTenBN,b.SDT,b.NgaySinh,l.ThoiGianKham,l.ChanDoan,n.HoTen TenBS
         FROM dbo.DON_THUOC d JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=d.MaLS JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS JOIN patients b ON b.MaBN=hs.MaBN JOIN dbo.NHAN_VIEN n ON n.MaNV=d.MaBS
@@ -54,6 +94,13 @@ public sealed partial class DAL_KHAMDIEUTRI
             var lines=db.Query<ET_CHITIETDONTHUOC>("SELECT * FROM dbo.CHI_TIET_DON_THUOC WHERE MaDT IN @ids ORDER BY MaDT,MaCTDT",new{ids=rows.Select(r=>r.MaDT).ToArray()},tx).ToLookup(d=>d.MaDT);
             foreach(var row in rows)row.CacDong=lines[row.MaDT].ToArray();
         },true);
+    /// <summary>
+    /// Tra mã lần khám gắn với hóa đơn để mở đúng nguồn nghiệp vụ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>DAL_QUYENNGHIEPVU.XacThuc</c>, <c>DAL_QUYENNGHIEPVU.KiemTraMa</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>.</remarks>
+    /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <param name="actor">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Tập dữ liệu kiểu IReadOnlyList&lt;string&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
     public IReadOnlyList<string> LayMaLuotHoaDon(string? maLS,NguCanhNghiepVu actor)=>ThucHien((db,tx)=>
     {
         var user=DAL_QUYENNGHIEPVU.XacThuc(db,tx,actor);if(maLS is not null)DAL_QUYENNGHIEPVU.KiemTraMa(maLS);

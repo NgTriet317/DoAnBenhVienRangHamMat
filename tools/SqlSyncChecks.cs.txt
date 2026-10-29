@@ -1,0 +1,319 @@
+using System.Data;
+using System.Reflection;
+using System.Transactions;
+using DAL;
+using ET;
+using Dapper;
+using Dapper.Contrib.Extensions;
+using Microsoft.Data.SqlClient;
+
+// Standalone integration harness; generated project/build outputs stay in obj/SqlSyncChecks.
+// Every fixture is rolled back. Never run against the application's live database.
+static class Program
+{
+    /// <summary>
+    /// Cs được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    static string cs = "";
+    /// <summary>
+    /// Số kiểm tra đạt số kiểm tra lỗi được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    static int passed, failed;
+    /// <summary>
+    /// Đầu tiên cuối cùng được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    static readonly DateTime First = new(2000, 1, 1), Last = new(2000, 1, 31);
+    /// <summary>
+    /// Nhân viên chính sách được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    const string Staff = "SYNC_NV", Policy = "SYNC_CSL";
+    /// <summary>
+    /// Quản trị viên được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    static string admin = "";
+
+    /// <summary>
+    /// Bước kiểm chứng chính; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>System.Text.RegularExpressions.Regex.IsMatch</c>, <c>Environment.SetEnvironmentVariable</c>, <c>Console.WriteLine</c>, <c>Check</c>.</remarks>
+    /// <param name="args">Giá trị đối số dùng khi thực hiện thao tác; kiểu string[].</param>
+    /// <returns>Giá trị số được đọc, đếm hoặc tính toán trong hàm.</returns>
+    static int Main(string[] args)
+    {
+        if (args.Length < 2 || !System.Text.RegularExpressions.Regex.IsMatch(args[1], "^RHM_Hospital_Test_[A-Za-z0-9_]+$"))
+            throw new ArgumentException("An isolated RHM_Hospital_Test_ database is required.");
+        cs = new SqlConnectionStringBuilder { DataSource=args[0], InitialCatalog=args[1], IntegratedSecurity=true,
+            TrustServerCertificate=true, ConnectTimeout=8, Pooling=true }.ConnectionString;
+        Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING", cs);
+        Console.WriteLine($"SQL sync checks: {args[1]}; rollback-only fixtures");
+        Check("Every direct ET table/property exists in SQL", MappedColumns);
+        Check("V9 salary/attendance tables, procedures and active protection triggers", RequiredObjects);
+        Check("DAL appointment display query", () => new DAL_LICHKHAM().layLichKhamHienThi().ToArray());
+        Check("DAL monthly attendance query", () => Assert(new DAL_CHAMCONG().layChamCongTheoThang(First).Columns.Contains("CongDuocTinh"), "Missing attendance display columns"));
+        Check("DAL V9 payroll display and reconciliation queries", () => {
+            var dal = new DAL_BANGLUONG(); Assert(dal.suDungSchemaV9() && dal.daCaiTinhLuong(), "V9 schema/procedures unavailable");
+            Assert(dal.layBangLuongTheoKy(First, Last).Columns.Contains("TienBaoHiem"), "Missing payroll columns");
+            dal.demCongChoDoiSoat(First, Last); dal.layDoiSoatTheoKy(First, Last); dal.layNgayMayChu();
+        });
+        if (!args.Contains("--schema-only"))
+        {
+            admin = Scalar<string>("SELECT TOP(1) tk.MaNV FROM dbo.TAI_KHOAN tk JOIN dbo.VAI_TRO v ON v.MaVaiTro=tk.MaVaiTro WHERE v.TenVaiTro=N'Admin' AND tk.TrangThai=N'Đang hoạt động'");
+            Check("DAL short completed shift is 0.5 day with audit source", ShortShift);
+            Check("DAL full salary calculation, leave, lateness, adjustments and source commission", () => Fixture(() => { Calculate(); VerifySalary(); TraceSource(); }));
+            Check("Paid holiday is excluded from standard days", () => Fixture(() => {
+                Exec("INSERT dbo.NGAY_NGHI_LE(MaNgayNghi,NgayNghi,TenNgayNghi,LoaiNgayNghi,CoHuongLuong) VALUES(N'SYNC_HOLIDAY','20000106',N'Rollback holiday',N'Nghỉ theo quy định nội bộ',1)");
+                Calculate();var r=Payroll();Assert((decimal)r["CongChuan"]==25m && (decimal)r["LuongTheoCa"]==182000m,"Holiday not excluded from salary divisor");
+            }));
+            Check("DAL salary closing after month end +5 days", () => Fixture(() => { Calculate(); Close(); Assert(Scalar<string>("SELECT TrangThai FROM dbo.BANG_LUONG WHERE MaNV=N'SYNC_NV'")=="Đã chốt", "Not closed"); }));
+            Reject("Closing before month end +5 days", 52014, () => Fixture(() => {
+                Exec("UPDATE dbo.BANG_LUONG SET TuNgay=DATEFROMPARTS(YEAR(GETDATE()),MONTH(GETDATE()),1),DenNgay=EOMONTH(GETDATE()) WHERE MaNV=N'SYNC_NV'");
+                new DAL_BANGLUONG().chotLuongNhanVien("SYNC_BL",admin,0,0,0);
+            }, calculate:false));
+            Reject("Stale viewed salary cannot be closed", 52018, () => Fixture(() => { Calculate(); var r=Payroll(); new DAL_BANGLUONG().chotLuongNhanVien((string)r["MaBL"],admin,999,0,0); }));
+            Reject("Unapproved attendance blocks closing", 52015, () => Fixture(() => { Exec("UPDATE dbo.CHAM_CONG SET TrangThai=N'Chờ đối soát' WHERE MaLLV=N'SYNC_L1'"); Calculate(); Close(); }));
+            Reject("Pending leave blocks closing", 52016, () => Fixture(() => { Exec("UPDATE dbo.DON_XIN_NGHI SET TrangThaiDuyet=N'Chờ duyệt' WHERE MaDonNghi=N'SYNC_DN'"); Calculate(); Close(); }));
+            Reject("Paid attendance overlapping approved leave blocks closing", 52017, () => Fixture(() => { Exec("UPDATE dbo.DON_XIN_NGHI SET TuNgay='20000103',DenNgay='20000103' WHERE MaDonNghi=N'SYNC_DN'"); Calculate(); Close(); }));
+            Reject("Unclassified positive adjustment blocks closing", 52022, () => Fixture(() => { Exec("UPDATE dbo.CHI_TIET_LUONG SET LoaiKhoan=N'Điều chỉnh' WHERE MaCTL=N'SYNC_PC'"); Calculate(); Close(); }));
+            Reject("Unapproved salary document blocks closing", 52023, () => Fixture(() => { Exec("UPDATE dbo.CHI_TIET_LUONG SET MaNVDuyet=NULL WHERE MaCTL=N'SYNC_PC'"); Calculate(); Close(); }));
+            Reject("Unpaid service commission blocks closing", 52021, () => Fixture(() => { Exec("INSERT dbo.THANH_TOAN(MaTT,MaHD,MaNV,NgayThanhToan,SoTien,LoaiGiaoDich,PhuongThuc,LyDo,TrangThai) VALUES(N'SYNC_REFUND',N'SYNC_HD',@admin,'20000104',1,N'Hoàn',N'Tiền mặt',N'Rollback test',N'Đã xác nhận')"); Calculate(); Close(); }));
+            Reject("Closed salary is immutable", 51038, () => Fixture(() => { Calculate(); Close(); Exec("UPDATE dbo.BANG_LUONG SET GhiChu=N'change' WHERE MaNV=N'SYNC_NV'"); }));
+            Reject("Closed attendance is immutable", 51112, () => Fixture(() => { Calculate(); Close(); Exec("UPDATE dbo.CHAM_CONG SET GhiChu=N'change' WHERE MaLLV=N'SYNC_L1'"); }));
+            Reject("Closed schedule attendance fields are immutable", 51113, () => Fixture(() => { Calculate(); Close(); Exec("UPDATE dbo.LICH_LAM_VIEC SET GioRa=DATEADD(minute,1,GioRa) WHERE MaLLV=N'SYNC_L1'"); }));
+            Reject("Open schedule cannot move into a closed salary period", 51113, () => Fixture(() => {
+                Exec("INSERT dbo.LICH_LAM_VIEC(MaLLV,MaNV,MaCa,NgayLam,TrangThai,TrangThaiHienDien) VALUES(N'SYNC_MOVE',N'SYNC_NV',N'SYNC_CA','20000207',N'Đã duyệt',N'Có mặt')");
+                Calculate();Close();Exec("UPDATE dbo.LICH_LAM_VIEC SET NgayLam='20000108' WHERE MaLLV=N'SYNC_MOVE'");
+            }));
+            Reject("Closed salary details are immutable", 51042, () => Fixture(() => { Calculate(); Close(); Exec("UPDATE dbo.CHI_TIET_LUONG SET LyDo=N'change' WHERE MaCTL=N'SYNC_PC'"); }));
+            Reject("Closed commission is immutable", 51043, () => Fixture(() => { Calculate(); Close(); Exec("UPDATE dbo.CHI_TIET_HOA_HONG_LUONG SET TyLe=0.2 WHERE MaCTHH=N'SYNC_HH'"); }));
+            Reject("V9 rows cannot be downgraded to legacy money", 52332, () => Fixture(() => Exec("UPDATE dbo.BANG_LUONG SET PhienBanTinhLuong=8,LuongTheoCaTruocDongBo=1,TongLuongTruocDongBo=1 WHERE MaBL=N'SYNC_BL'")));
+            Reject("Historical money snapshots cannot be edited", 52332, () => Fixture(() => Exec("UPDATE dbo.BANG_LUONG SET TongLuongTruocDongBo=1 WHERE MaBL=N'SYNC_BL'")));
+            Reject("Public schema check detects missing V9 trigger", 52335, () => SchemaFixture(() => {
+                Exec("DROP TRIGGER dbo.TR_CC_KhoaKyDaChot");Exec("EXEC dbo.usp_RHM_KiemTraSchema");
+            }));
+            Reject("Public schema check detects missing V9 index", 52335, () => SchemaFixture(() => {
+                Exec("DROP INDEX IX_CTL_BangLuong ON dbo.CHI_TIET_LUONG");Exec("EXEC dbo.usp_RHM_KiemTraSchema");
+            }));
+            Reject("Public schema check detects missing attendance CHECK", 52335, () => SchemaFixture(() => {
+                Exec("ALTER TABLE dbo.CHAM_CONG DROP CONSTRAINT CK_CHAM_CONG_1");Exec("EXEC dbo.usp_RHM_KiemTraSchema");
+            }));
+            Reject("Public schema check detects missing attendance uniqueness", 52335, () => SchemaFixture(() => {
+                Exec("ALTER TABLE dbo.CHAM_CONG DROP CONSTRAINT UQ_CHAM_CONG_Lich");Exec("EXEC dbo.usp_RHM_KiemTraSchema");
+            }));
+            Check("Partial-period legacy salary remains visible by calendar month", () => PartialLegacy(() => {
+                var rows=new DAL_BANGLUONG().layBangLuongTheoKy(First,Last).AsEnumerable().Where(r=>r.Field<string>("MaBL")=="SYNC_BL").ToArray();
+                Assert(rows.Length==1 && rows[0].Field<decimal>("TongLuong")==12600m && rows[0].Field<DateTime>("DenNgay")==new DateTime(2000,1,10),"Partial historical salary disappeared or changed money/period");
+            }));
+            Reject("Full-month calculation cannot overlap unreconciled legacy period", 52333, () => PartialLegacy(Calculate));
+            Check("Fixture rows and source documents were rolled back", () => {
+                Assert(Scalar<int>("SELECT (SELECT COUNT(*) FROM dbo.NHAN_VIEN WHERE MaNV=N'SYNC_NV')+(SELECT COUNT(*) FROM dbo.BENH_NHAN WHERE MaBN=N'SYNC_BN')+(SELECT COUNT(*) FROM dbo.BANG_LUONG WHERE MaBL=N'SYNC_BL')+(SELECT COUNT(*) FROM dbo.NHAT_KY_DUYET_CHAM_CONG WHERE MaLLV=N'SYNC_L1')")==0,"Fixture rows persisted");
+            });
+        }
+        Console.WriteLine($"RESULT: {passed} passed; {failed} failed");
+        return failed == 0 ? 0 : 1;
+    }
+
+    /// <summary>
+    /// Bước kiểm chứng cột được ánh xạ; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Open</c>, <c>t.GetCustomAttribute&lt;TableAttribute&gt;</c>, <c>db.Query&lt;string&gt;</c>, <c>t.GetProperties</c>.</remarks>
+    static void MappedColumns()
+    {
+        var missing = new List<string>(); int types=0, properties=0;
+        using var db = Open();
+        foreach(var t in typeof(ET_LICHKHAM).Assembly.GetTypes())
+        {
+            var table = t.GetCustomAttribute<TableAttribute>(inherit:false); if(table is null) continue;
+            types++;
+            var columns=db.Query<string>("SELECT name FROM sys.columns WHERE object_id=OBJECT_ID(@name)",new{name="dbo."+table.Name}).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach(var p in t.GetProperties().Where(p=>p.CanRead && p.CanWrite && p.GetIndexParameters().Length==0 && p.GetCustomAttribute<WriteAttribute>()?.Write!=false))
+            { properties++; if(!columns.Contains(p.Name))missing.Add(table.Name+"."+p.Name); }
+        }
+        Assert(missing.Count==0, "Missing mapped columns: "+string.Join(", ", missing));
+        Console.WriteLine($"  {types} ET tables; {properties} mapped properties checked");
+    }
+    /// <summary>
+    /// Bước kiểm chứng bắt buộc các đối tượng; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>objects.Where</c>, <c>Scalar&lt;int&gt;</c>, <c>Assert</c>.</remarks>
+    static void RequiredObjects()
+    {
+        var objects = new[]{"CHAM_CONG","NGAY_NGHI_LE","CHI_TIET_LUONG","PHU_TA_DICH_VU","CHI_TIET_HOA_HONG_LUONG","LAM_THEM_GIO","NHAT_KY_DUYET_CHAM_CONG","RHM_TinhLuongKy","RHM_ChotLuongNhanVien","TR_BL_ChotLuong","TR_CSL_KhoaChinhSach","TR_CTL_KhoaTheoBangLuong","TR_CTHH_KhoaTheoBangLuong","TR_CC_KhoaKyDaChot","TR_LLV_KhoaKyDaChot","TR_NKCC_KhongSua"};
+        var missing=objects.Where(n=>Scalar<int>("SELECT COUNT(*) FROM sys.objects o LEFT JOIN sys.triggers t ON t.object_id=o.object_id WHERE o.object_id=OBJECT_ID(@name) AND ISNULL(t.is_disabled,0)=0",new{name="dbo."+n})!=1).ToArray();
+        Assert(missing.Length==0,"Missing/disabled V9 objects: "+string.Join(", ",missing));
+        Assert(Scalar<int>("SELECT COUNT(*) FROM sys.computed_columns WHERE object_id=OBJECT_ID('dbo.BANG_LUONG') AND name IN('LuongTheoCa','TongLuong') AND is_persisted=1")==2,"Missing persisted salary formulas");
+    }
+    /// <summary>
+    /// Bước kiểm chứng kiểm tra; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>action</c>, <c>Console.WriteLine</c>, <c>Unwrap</c>.</remarks>
+    /// <param name="name">Giá trị tên dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="action">Giá trị action dùng khi thực hiện thao tác; kiểu Action.</param>
+    static void Check(string name, Action action) { try {action(); passed++;Console.WriteLine("PASS "+name);}catch(Exception ex){failed++;Console.WriteLine("FAIL "+name+": "+Unwrap(ex).Message);} }
+    /// <summary>
+    /// Bước kiểm chứng gỡ lớp ngoại lệ; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Unwrap</c>.</remarks>
+    /// <param name="ex">Giá trị ex dùng khi thực hiện thao tác; kiểu Exception.</param>
+    /// <returns>Kết quả kiểu Exception dùng cho bước xử lý tiếp theo.</returns>
+    static Exception Unwrap(Exception ex)=>ex is TargetInvocationException && ex.InnerException is not null ? Unwrap(ex.InnerException):ex;
+    /// <summary>
+    /// Bước kiểm chứng kiểm tra từ chối; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Check</c>, <c>action</c>, <c>Unwrap</c>.</remarks>
+    /// <param name="name">Giá trị tên dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="number">Giá trị số dùng khi thực hiện thao tác; kiểu int.</param>
+    /// <param name="action">Giá trị action dùng khi thực hiện thao tác; kiểu Action.</param>
+    static void Reject(string name,int number,Action action)=>Check(name,()=>{try{action();}catch(Exception ex){if(Unwrap(ex) is SqlException sql && sql.Number==number)return;throw;}throw new Exception("Expected SQL error "+number);});
+    /// <summary>
+    /// Bước kiểm chứng khẳng định điều kiện; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <param name="condition">Giá trị tình trạng dùng khi thực hiện thao tác; kiểu bool.</param>
+    /// <param name="text">Giá trị nội dung dùng khi thực hiện thao tác; kiểu string.</param>
+    static void Assert(bool condition,string text){if(!condition)throw new Exception(text);}
+    /// <summary>
+    /// Bước kiểm chứng mở; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.Open</c>.</remarks>
+    /// <returns>Kết quả kiểu SqlConnection dùng cho bước xử lý tiếp theo.</returns>
+    static SqlConnection Open(){var db=new SqlConnection(cs);db.Open();return db;}
+    /// <summary>
+    /// Bước kiểm chứng giá trị đơn; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Open</c>, <c>db.ExecuteScalar&lt;T&gt;</c>.</remarks>
+    /// <param name="sql">Giá trị SQL dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="args">Giá trị đối số dùng khi thực hiện thao tác; kiểu object?.</param>
+    /// <returns>Kết quả kiểu T dùng cho bước xử lý tiếp theo.</returns>
+    /// <typeparam name="T">Kiểu dữ liệu dùng cho thao tác tổng quát này.</typeparam>
+    static T Scalar<T>(string sql,object? args=null){using var db=Open();return db.ExecuteScalar<T>(sql,args ?? new{admin})!;}
+    /// <summary>
+    /// Bước kiểm chứng thi hành SQL; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Open</c>, <c>db.Execute</c>.</remarks>
+    /// <param name="sql">Giá trị SQL dùng khi thực hiện thao tác; kiểu string.</param>
+    static void Exec(string sql){using var db=Open();db.Execute(sql,new{admin},commandTimeout:90);}
+    // Sequential connections reuse SqlClient's ambient transaction connection. No Complete: always rollback.
+    static void Fixture(Action action,bool calculate=true)
+    {
+        using var scope=new TransactionScope(TransactionScopeOption.RequiresNew,new TransactionOptions{IsolationLevel=System.Transactions.IsolationLevel.Serializable,Timeout=TimeSpan.FromMinutes(3)});
+        Exec(FixtureSql);
+        if(calculate) Calculate();
+        action();
+    }
+    /// <summary>
+    /// Bước kiểm chứng tính toán; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    static void Calculate()=>new DAL_BANGLUONG().tinhLuongTheoKy(First,Last,admin);
+    /// <summary>
+    /// Bước kiểm chứng cấu trúc dữ liệu dữ liệu kiểm thử; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>TimeSpan.FromMinutes</c>, <c>action</c>.</remarks>
+    /// <param name="action">Giá trị action dùng khi thực hiện thao tác; kiểu Action.</param>
+    static void SchemaFixture(Action action)
+    {
+        using var scope=new TransactionScope(TransactionScopeOption.RequiresNew,new TransactionOptions{IsolationLevel=System.Transactions.IsolationLevel.Serializable,Timeout=TimeSpan.FromMinutes(3)});
+        action();
+    }
+    /// <summary>
+    /// Bước kiểm chứng một phần quy trình cũ; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Fixture</c>, <c>Exec</c>, <c>action</c>.</remarks>
+    /// <param name="action">Giá trị action dùng khi thực hiện thao tác; kiểu Action.</param>
+    static void PartialLegacy(Action action)=>Fixture(()=>{
+        // Emulate a pre-upgrade historical row; DDL and data are contained in the rollback fixture.
+        Exec("DROP TRIGGER dbo.TR_BL_ChotLuong; UPDATE dbo.BANG_LUONG SET PhienBanTinhLuong=8,LuongTheoCaTruocDongBo=175000,TongLuongTruocDongBo=12600,DenNgay='20000110' WHERE MaBL=N'SYNC_BL'");
+        action();
+    });
+    /// <summary>
+    /// Bước kiểm chứng bảng lương; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>r.Field&lt;string&gt;</c>.</remarks>
+    /// <returns>Kết quả kiểu DataRow dùng cho bước xử lý tiếp theo.</returns>
+    static DataRow Payroll()=>new DAL_BANGLUONG().layBangLuongTheoKy(First,Last).AsEnumerable().Single(r=>r.Field<string>("MaNV")==Staff);
+    /// <summary>
+    /// Bước kiểm chứng đóng; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Payroll</c>.</remarks>
+    static void Close(){var r=Payroll();new DAL_BANGLUONG().chotLuongNhanVien((string)r["MaBL"],admin,(decimal)r["CongThucTe"],(decimal)r["TongLuong"],(decimal)r["TienHoaHong"]);}
+    /// <summary>
+    /// Bước kiểm chứng đối chiếu lương; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Payroll</c>, <c>Assert</c>, <c>x.Field&lt;string&gt;</c>, <c>r.Field&lt;string&gt;</c>.</remarks>
+    static void VerifySalary()
+    {
+        var r=Payroll();
+        Assert((int)r["PhienBanTinhLuong"]==9,"Calculated salary must use V9");
+        foreach(var (name,value) in new[]{("CongChuan",26m),("CongNghiPhep",1m),("CongTruDiTre",0.25m),("CongThucTe",1.75m),("SoCaTinh",2m),("LuongTheoCa",175000m),("TienHoaHong",10000m),("TienPhuCap",100500m),("TienTangCa",200m),("TienBaoHiem",273000m),("TienKhauTruKhac",100m),("TongLuong",12600m)})
+            Assert(Convert.ToDecimal(r[name])==value,$"{name}: expected {value}; got {r[name]}");
+        var reconciliation=new DAL_BANGLUONG().layDoiSoatTheoKy(First,Last).AsEnumerable().Single(x=>x.Field<string>("MaBL")==r.Field<string>("MaBL"));
+        foreach(var name in new[]{"CongChuaDuyet","DonNghiChoDuyet","CongTrungNgayPhep","KhoanCongChuaPhanLoai","ChungTuChuaDuyet","HoaHongChuaHopLe"})Assert(Convert.ToInt32(reconciliation[name])==0,"Reconciliation issue: "+name);
+        Assert((bool)reconciliation["ChinhSachHopLe"],"Policy invalid");
+        var attendance=new DAL_CHAMCONG().layChamCongTheoThang(First).AsEnumerable().Where(x=>x.Field<string>("MaNV")==Staff).ToArray();
+        Assert(attendance.Length==2 && attendance.All(x=>x.Field<decimal>("CongDuocTinh")==0.5m),"Monthly DAL query lost approved shifts");
+        Assert(attendance.Single(x=>x.Field<string>("MaLLV")=="SYNC_L2").Field<int>("SoPhutDiTre")==20,"Monthly DAL query lost lateness source");
+        var appointment=new DAL_LICHKHAM().layLichKhamHienThiTheoMa("SYNC_LK");
+        Assert(appointment is not null && appointment.MucDoNghiemTrong=="Cao" && appointment.MaBSDuBi==admin && appointment.TenBacSiDuBi.Length>0,"Appointment display lost seriousness or backup doctor");
+    }
+    /// <summary>
+    /// Bước kiểm chứng dấu vết nguồn; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Assert</c>, <c>Scalar&lt;int&gt;</c>.</remarks>
+    static void TraceSource()=>Assert(Scalar<int>("SELECT COUNT(*) FROM dbo.CHI_TIET_HOA_HONG_LUONG hh JOIN dbo.BANG_LUONG b ON b.MaBL=hh.MaBL JOIN dbo.CHI_TIET_HOA_DON c ON c.MaCTHD=hh.MaCTHD JOIN dbo.HOA_DON h ON h.MaHD=c.MaHD JOIN dbo.DICH_VU_THUC_HIEN d ON d.MaDVThucHien=c.MaDVThucHien WHERE hh.MaCTHH=N'SYNC_HH' AND b.MaNV=N'SYNC_NV' AND d.MaNVThucHien=b.MaNV AND hh.TienHoaHong=10000 AND h.TrangThai=N'Đã xác nhận' AND d.TrangThai=N'Đã xác nhận' AND h.SoTienPhaiThu=(SELECT SUM(CASE WHEN LoaiGiaoDich=N'Thu' THEN SoTien ELSE -SoTien END) FROM dbo.THANH_TOAN WHERE MaHD=h.MaHD AND TrangThai=N'Đã xác nhận')")==1,"Commission source cannot be traced to paid service");
+    /// <summary>
+    /// Bước kiểm chứng ngắn ca; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Open</c>, <c>db.BeginTransaction</c>, <c>db.Execute</c>, <c>method.Invoke</c>.</remarks>
+    static void ShortShift()
+    {
+        using var db=Open();using var tx=db.BeginTransaction();
+        try{
+            db.Execute(FixtureSql,new{admin},tx);
+            db.Execute("DELETE dbo.CHAM_CONG WHERE MaLLV=N'SYNC_L1'; UPDATE dbo.LICH_LAM_VIEC SET GioVao=NULL,GioRa=NULL WHERE MaLLV=N'SYNC_L1'",transaction:tx);
+            // Public approval owns a transaction. Invoke its unchanged per-shift implementation with this rollback fixture's transaction.
+            var method=typeof(DAL_CHAMCONG).GetMethod("duyetMotCa",BindingFlags.Static|BindingFlags.NonPublic) ?? throw new Exception("Attendance DAL implementation changed; update rollback adapter");
+            method.Invoke(null,new object[]{db,tx,new ET_CHAMCONG{MaLLV="SYNC_L1",TrangThaiCu="Chờ đối soát",KetQua="Hoàn tất",GioVao=new DateTime(2000,1,3,8,0,0),GioRa=new DateTime(2000,1,3,8,10,0),LyDo="Rollback short shift fixture"},admin});
+            Assert(db.ExecuteScalar<decimal>("SELECT CongDuocTinh FROM dbo.CHAM_CONG WHERE MaLLV=N'SYNC_L1'",transaction:tx)==0.5m,"Ten-minute completed shift must receive 0.5 day");
+            Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_DUYET_CHAM_CONG WHERE MaLLV=N'SYNC_L1' AND CongMoi=0.5 AND NguoiThucHien=@admin AND GioRaMoi='20000103 08:10'",new{admin},tx)==1,"Missing attendance audit source");
+        }finally{if(tx.Connection is not null)tx.Rollback();}
+    }
+    /// <summary>
+    /// Câu lệnh SQL dữ liệu kiểm thử SQL dùng trong các thao tác của lớp; giá trị đầu vào được truyền theo cách nơi gọi quy định.
+    /// </summary>
+    const string FixtureSql="""
+    INSERT dbo.CHUC_VU(MaChucVu,TenChucVu,MoTa) VALUES(N'SYNC_CV',N'Rollback SQL checks',N'Fixture');
+    INSERT dbo.NHAN_VIEN(MaNV,HoTen,MaChucVu,MaCK,NgayVaoLam,TrangThai) VALUES(N'SYNC_NV',N'Rollback fixture',N'SYNC_CV',N'CK001','19990101',N'Đang làm việc');
+    INSERT dbo.CHINH_SACH_LUONG(MaCSL,MaChucVu,TenChinhSach,PhienBan,NgayHieuLuc,LuongCoBan,SoCaDinhMuc,CoSoHoaHong,TyLeHoaHong,PhuCapCoDinh,TrangThai,MaNVDuyet,NgayDuyet)
+    VALUES(N'SYNC_CSL',N'SYNC_CV',N'Rollback policy',1,'19990101',2600000,52,N'Dịch vụ',0.1,100000,N'Đã duyệt',@admin,'19990101');
+    INSERT dbo.CA_LAM(MaCa,GioBatDau,GioKetThuc,TrangThai,GhiChu) VALUES(N'SYNC_CA','08:00','12:00',N'Đang hoạt động',N'Rollback fixture');
+    INSERT dbo.LICH_LAM_VIEC(MaLLV,MaNV,MaCa,NgayLam,TrangThai,TrangThaiHienDien,GioVao,GioRa)
+    VALUES(N'SYNC_L1',N'SYNC_NV',N'SYNC_CA','20000103',N'Đã duyệt',N'Có mặt','20000103 08:00','20000103 08:10'),
+    (N'SYNC_L2',N'SYNC_NV',N'SYNC_CA','20000104',N'Đã duyệt',N'Có mặt','20000104 08:20','20000104 09:00');
+    INSERT dbo.CHAM_CONG(MaCC,MaLLV,SoPhutDiTre,CongDuocTinh,TrangThai,MaNVDoiSoat,NgayDoiSoat)
+    VALUES(N'SYNC_CC1',N'SYNC_L1',0,0.5,N'Đã xác nhận',@admin,'20000103'),(N'SYNC_CC2',N'SYNC_L2',20,0.5,N'Đã xác nhận',@admin,'20000104');
+    INSERT dbo.DON_XIN_NGHI(MaDonNghi,MaNV,TuNgay,DenNgay,LyDo,NgayGui,TrangThaiDuyet,MaNVDuyet,NgayDuyet)
+    VALUES(N'SYNC_DN',N'SYNC_NV','20000105','20000105',N'Rollback leave','20000101',N'Đã duyệt',@admin,'20000101');
+    INSERT dbo.BANG_LUONG(MaBL,MaNV,MaCSL,TuNgay,DenNgay,LuongCoBan,SoCaDinhMuc,CongChuan,TrangThai)
+    VALUES(N'SYNC_BL',N'SYNC_NV',N'SYNC_CSL','20000101','20000131',2600000,52,26,N'Nháp');
+    INSERT dbo.CHI_TIET_LUONG(MaCTL,MaBL,LoaiKhoan,TinhChat,SoTien,NgayPhatSinh,LyDo,MaNVDuyet)
+    VALUES(N'SYNC_PC',N'SYNC_BL',N'Phụ cấp',N'Cộng',500,'20000105',N'Rollback fixture',@admin),
+    (N'SYNC_OT',N'SYNC_BL',N'Làm thêm giờ',N'Cộng',200,'20000105',N'Rollback fixture',@admin),
+    (N'SYNC_DED',N'SYNC_BL',N'Tạm ứng',N'Trừ',100,'20000105',N'Rollback fixture',@admin);
+    INSERT dbo.PHONG(MaPhong,MaKhoa,TenPhong,LoaiPhong,TinhTrang,TrangThai) VALUES(N'SYNC_PH',N'KHOA001',N'Rollback room',N'Phòng khám chuyên khoa',N'Đang sử dụng',N'Đang hoạt động');
+    INSERT dbo.BENH_NHAN(MaBN,HoTenBN,TrangThai) VALUES(N'SYNC_BN',N'Rollback patient',N'Đang theo dõi');
+    INSERT dbo.LICH_KHAM(MaLich,MaBN,MaBS,MaCa,MaPhong,NgayGioKham,ThoiLuongDuKien,UuTien,MucDoNghiemTrong,MaBSDuBi,LyDoKham,TrangThai,NgayTao)
+    VALUES(N'SYNC_LK',N'SYNC_BN',N'SYNC_NV',N'SYNC_CA',N'SYNC_PH','20000103 08:00',30,N'Bình thường',N'Cao',@admin,N'Rollback fixture',N'Đã khám','20000101');
+    INSERT dbo.HO_SO_BENH_AN(MaHS,MaBN,NgayLap,LyDoKhamBanDau,TrangThai) VALUES(N'SYNC_HS',N'SYNC_BN','20000103',N'Fixture',N'Đang theo dõi');
+    INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaPhong,MaBS,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai)
+    VALUES(N'SYNC_PK',N'SYNC_HS',N'SYNC_PH',N'SYNC_NV',@admin,N'DV001',998,'20000103 08:00',N'Fixture',N'Đang khám');
+    INSERT dbo.LICH_SU_KHAM_BENH(MaLS,MaPhieu,MaBS,MaPhong,ThoiGianKham,TrieuChung,ChanDoan,KeHoachXuLy,TrangThai)
+    VALUES(N'SYNC_LS',N'SYNC_PK',N'SYNC_NV',N'SYNC_PH','20000103 08:01',N'Fixture',N'Fixture',N'Fixture',N'Nháp');
+    INSERT dbo.DICH_VU_THUC_HIEN(MaDVThucHien,MaLS,MaDV,MaNVThucHien,ThoiGianThucHien,SoLuong,DonGia,KetQua,TrangThai)
+    VALUES(N'SYNC_DVTH',N'SYNC_LS',N'DV001',N'SYNC_NV','20000103 08:02',1,100000,N'Fixture',N'Đã xác nhận');
+    UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận',NgayXacNhan='20000103 08:03' WHERE MaLS=N'SYNC_LS';
+    INSERT dbo.HOA_DON(MaHD,MaLS,MaNV,NgayLap,TrangThai) VALUES(N'SYNC_HD',N'SYNC_LS',@admin,'20000103 08:03',N'Nháp');
+    INSERT dbo.CHI_TIET_HOA_DON(MaCTHD,MaHD,MaDVThucHien,NoiDung) VALUES(N'SYNC_CTHD',N'SYNC_HD',N'SYNC_DVTH',N'Rollback service');
+    UPDATE dbo.HOA_DON SET TrangThai=N'Đã xác nhận',NgayXacNhan='20000103 08:04' WHERE MaHD=N'SYNC_HD';
+    INSERT dbo.THANH_TOAN(MaTT,MaHD,MaNV,NgayThanhToan,SoTien,LoaiGiaoDich,PhuongThuc,TrangThai)
+    VALUES(N'SYNC_TT',N'SYNC_HD',@admin,'20000103 08:05',100000,N'Thu',N'Tiền mặt',N'Đã xác nhận');
+    INSERT dbo.CHI_TIET_HOA_HONG_LUONG(MaCTHH,MaBL,MaCTHD,VaiTroHoaHong,GiaTriTinh,TyLe) VALUES(N'SYNC_HH',N'SYNC_BL',N'SYNC_CTHD',N'Bác sĩ',100000,0.1);
+    """;
+}

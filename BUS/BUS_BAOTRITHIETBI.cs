@@ -50,13 +50,15 @@ namespace BUS
         public bool suaBaoTriThietBi(ET_BAOTRITHIETBI duLieu, ET_BAOTRITHIETBI? banGoc = null, bool chiDoiTrangThai = false)
             => XuLyLoi.ThucHien(() => data.suaBaoTriThietBi(duLieu, banGoc, chiDoiTrangThai));
         /// <summary>
-        /// Xóa bảo trì thiết bị có mã ma qua DAL_BAOTRITHIETBI.xoaBaoTriThietBi; DAL khóa bản hiện tại, kiểm tra banGoc nếu có
-        /// rồi DELETE. Trả true khi hoàn tất; bản không tồn tại, xung đột hoặc ràng buộc liên kết sẽ phát lỗi. XuLyLoi chuyển lỗi
-        /// SQL sang thông báo tiếng Việt và giữ lỗi gốc trong InnerException.
+        /// API tương thích cho nơi gọi cũ: luôn từ chối xóa để giữ lịch sử. Dùng chuyenTrangThaiBaoTri sang Hủy khi phiếu Chưa xác nhận.
         /// </summary>
         /// <param name="ma">Mã định danh bản ghi cần tra cứu hoặc xóa.</param>
         /// <param name="banGoc">Bản ET đọc trước khi sửa/xóa để DAL phát hiện thay đổi đồng thời; null bỏ đối chiếu bản dự kiến.</param>
         public bool xoaBaoTriThietBi(string ma, ET_BAOTRITHIETBI? banGoc = null) => XuLyLoi.ThucHien(() => data.xoaBaoTriThietBi(ma, banGoc));
+
+        /// <summary>Chuyển đúng vòng đời và cập nhật đúng serial trong cùng giao dịch.</summary>
+        public bool chuyenTrangThaiBaoTri(string maBT, string trangThaiMoi, ET_BAOTRITHIETBI banGoc)
+            => XuLyLoi.ThucHien(() => data.chuyenTrangThaiBaoTri(maBT, trangThaiMoi, banGoc));
 
     }
 }

@@ -11,14 +11,32 @@ using System.Windows.Media;
 
 namespace RangHamMat.Views
 {
+    /// <summary>
+    /// Phần xử lý nhân sự của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public partial class NhanSu : UserControl
     {
+        /// <summary>
+        /// Đối tượng nghiệp vụ nhân viên được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private BUS_NHANVIEN busNhanVien = new();
+        /// <summary>
+        /// Đối tượng nghiệp vụ chức vụ được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private BUS_CHUCVU busChucVu = new();
+        /// <summary>
+        /// Đối tượng nghiệp vụ chuyên khoa được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private BUS_CHUYENKHOA busChuyenKhoa = new();
 
+        /// <summary>
+        /// Danh sách nhân viên dùng trong nhân sự được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private List<ET_NHANVIEN> danhSachNhanVien = new();
 
+        /// <summary>
+        /// Khởi tạo nhân sự. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+        /// </summary>
         public NhanSu()
         {
             InitializeComponent();
@@ -36,6 +54,10 @@ namespace RangHamMat.Views
             if (e.NewValue is true) LoadDuLieuNhanVien();
         }
 
+        /// <summary>
+        /// Đọc lại nhân viên và áp dụng bộ lọc để phản ánh dữ liệu nhân sự hiện tại.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>busNhanVien.layToanBoNhanVien</c>, <c>duLieu.ToList</c>, <c>ApDungBoLocNhanVien</c>, <c>MessageBox.Show</c>.</remarks>
         private void LoadDuLieuNhanVien()
         {
             try
@@ -54,6 +76,10 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Nạp danh mục chức vụ cho các trường chọn và danh sách chức vụ.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>busChucVu.layToanBoChucVu</c>.</remarks>
         private void LoadDuLieuChucVu()
         {
             var chucVuList = busChucVu.layToanBoChucVu().ToList();
@@ -61,11 +87,21 @@ namespace RangHamMat.Views
             cboChucVu.ItemsSource = chucVuList;
         }
 
+        /// <summary>
+        /// Nạp danh mục chuyên khoa để chọn và hiển thị đúng tên trên hồ sơ nhân viên.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>busChuyenKhoa.layToanBoChuyenKhoa</c>.</remarks>
         private void LoadDuLieuChuyenKhoa()
         {
             cboChuyenKhoa.ItemsSource = busChuyenKhoa.layToanBoChuyenKhoa();
         }
 
+        /// <summary>
+        /// Xóa nội dung thông báo lỗi đang hiển thị trên biểu mẫu.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XoaBaoDo</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void XoaThongBaoLoi(object? sender, EventArgs e)
         {
             if (sender is Control control)
@@ -74,6 +110,9 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Đăng ký sự kiện các trường nhập để gỡ đánh dấu lỗi khi người dùng chỉnh lại nội dung.
+        /// </summary>
         private void DangKySuKienXoaBaoDo()
         {
             txtHoTen.TextChanged += XoaThongBaoLoi;
@@ -86,18 +125,31 @@ namespace RangHamMat.Views
             txtTenChucVu.TextChanged += XoaThongBaoLoi;
         }
 
+        /// <summary>
+        /// Đánh dấu trường nhập không hợp lệ và lưu thông tin cần dùng khi gỡ cảnh báo.
+        /// </summary>
+        /// <param name="control">Giá trị điều khiển dùng khi thực hiện thao tác; kiểu Control.</param>
         private void DatBaoDo(Control control)
         {
             control.BorderBrush = Brushes.Red;
             control.BorderThickness = new Thickness(1.5);
         }
 
+        /// <summary>
+        /// Gỡ đánh dấu lỗi của trường đã được chỉnh sửa hoặc kiểm tra lại.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>control.ClearValue</c>.</remarks>
+        /// <param name="control">Giá trị điều khiển dùng khi thực hiện thao tác; kiểu Control.</param>
         private void XoaBaoDo(Control control)
         {
             control.ClearValue(BorderBrushProperty);
             control.ClearValue(BorderThicknessProperty);
         }
 
+        /// <summary>
+        /// Gỡ các dấu lỗi của biểu mẫu nhân viên trước lần nhập hoặc kiểm tra mới.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XoaBaoDo</c>.</remarks>
         private void XoaToanBoBaoDoNhanVien()
         {
             XoaBaoDo(txtHoTen);
@@ -107,12 +159,20 @@ namespace RangHamMat.Views
             XoaBaoDo(cboChucVu);
         }
 
+        /// <summary>
+        /// Gỡ các dấu lỗi của biểu mẫu chức vụ trước lần nhập hoặc kiểm tra mới.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XoaBaoDo</c>.</remarks>
         private void XoaToanBoBaoDoChucVu()
         {
             XoaBaoDo(txtMaChucVu);
             XoaBaoDo(txtTenChucVu);
         }
 
+        /// <summary>
+        /// Lọc danh sách nhân viên theo tên/mã và trạng thái nhân sự.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>txtTimNhanVien.Text.Trim</c>, <c>mucDaChon.Content.ToString</c>, <c>nhanVien.MaNV.IndexOf</c>, <c>nhanVien.HoTen.IndexOf</c>.</remarks>
         private void ApDungBoLocNhanVien()
         {
             if (dgvNhanVien == null || danhSachNhanVien == null)
@@ -155,16 +215,34 @@ namespace RangHamMat.Views
             dgvNhanVien.ItemsSource = ketQua;
         }
 
+        /// <summary>
+        /// Tiếp nhận thay đổi ô nhập tìm nhân viên và cập nhật trạng thái/dữ liệu phụ thuộc.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ApDungBoLocNhanVien</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void txtTimNhanVien_TextChanged(object sender, TextChangedEventArgs e)
         {
             ApDungBoLocNhanVien();
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn hộp chọn lọc trạng thái nhân viên vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ApDungBoLocNhanVien</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void cboLocTrangThaiNhanVien_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ApDungBoLocNhanVien();
         }
 
+        /// <summary>
+        /// Mở nội dung hoặc thao tác chi tiết của bảng nhân viên khi người dùng bấm đúp.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>frm.ShowDialog</c>, <c>LoadDuLieuNhanVien</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void dgvNhanVien_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (dgvNhanVien.SelectedItem is not ET_NHANVIEN nhanVien)
@@ -185,6 +263,13 @@ namespace RangHamMat.Views
         }
 
 
+        /// <summary>
+        /// Đề xuất mã nhập theo quy tắc đang áp dụng của biểu mẫu; mã lưu cuối cùng vẫn do nghiệp vụ xử lý.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>chucVu.Split</c>, <c>catchuoi[0].Substring</c>, <c>catchuoi[1].Substring</c>.</remarks>
+        /// <param name="sdt">Giá trị số điện thoại dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="chucVu">Giá trị chức vụ dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <returns>Chuỗi kết quả của thao tác tạo mã tự động.</returns>
         public string taoMaTuDong(string sdt, string chucVu)
         {
             string[] catchuoi = chucVu.Split(' ');
@@ -287,6 +372,12 @@ namespace RangHamMat.Views
             return hopLe;
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút thêm nhân viên khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>KiemTraDuLieuThemNhanVien</c>, <c>MessageBox.Show</c>, <c>taoMaTuDong</c>, <c>txtSDT.Text.Trim</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnThemNhanVien_Click(object sender, RoutedEventArgs e)
         {
             if (!KiemTraDuLieuThemNhanVien(out string thongBaoLoi))
@@ -340,6 +431,12 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút làm mới nhân viên khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XoaToanBoBaoDoNhanVien</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnLamMoiNhanVien_Click(object sender, RoutedEventArgs e)
         {
             txtHoTen.Text = string.Empty;
@@ -356,6 +453,12 @@ namespace RangHamMat.Views
             XoaToanBoBaoDoNhanVien();
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút thêm chức vụ khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XoaToanBoBaoDoChucVu</c>, <c>DatBaoDo</c>, <c>MessageBox.Show</c>, <c>txtMaChucVu.Text.Trim</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnThemChucVu_Click(object sender, RoutedEventArgs e)
         {
             XoaToanBoBaoDoChucVu();
@@ -388,6 +491,10 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Xóa các ô nhập của biểu mẫu chức vụ để bắt đầu nhập lại.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XoaToanBoBaoDoChucVu</c>.</remarks>
         public void clearTextBoxesChucVu()
         {
             txtMaChucVu.Text = string.Empty;
@@ -396,12 +503,24 @@ namespace RangHamMat.Views
             XoaToanBoBaoDoChucVu();
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút làm mới chức vụ khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>clearTextBoxesChucVu</c>, <c>LoadDuLieuChucVu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnLamMoiChucVu_Click(object sender, RoutedEventArgs e)
         {
             clearTextBoxesChucVu();
             LoadDuLieuChucVu();
         }
 
+        /// <summary>
+        /// Tiếp nhận thay đổi ô nhập họ tên và cập nhật trạng thái/dữ liệu phụ thuộc.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>DatBaoDo</c>, <c>txtHoTen.Text.Trim</c>, <c>char.IsLetter</c>, <c>char.IsWhiteSpace</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void txtHoTen_TextChanged(object sender, TextChangedEventArgs e)
         {
             // Họ tên không đc để trống

@@ -14,14 +14,35 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class XemTruocDonThuoc : Window
 {
+    /// <summary>
+    /// Đọc được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly Func<BanInDonThuoc>? read;
+    /// <summary>
+    /// Cố định mã được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly string? fixedId;
+    /// <summary>
+    /// Người xem được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private FlowDocumentScrollViewer? viewer;
+    /// <summary>
+    /// Đơn đã đọc. Có thể để null khi dữ liệu chưa được cung cấp.
+    /// </summary>
     public FlowDocument? DonDaDoc {get;private set;}
+    /// <summary>
+    /// Khởi tạo xem trước đơn thuốc. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+    /// </summary>
+    /// <param name="read">Giá trị đọc dùng khi thực hiện thao tác; kiểu Func&lt;BanInDonThuoc&gt;.</param>
     public XemTruocDonThuoc(Func<BanInDonThuoc> read)
     {
         InitializeComponent();RangHamMat.Controls.ClinicalWorkflow.ClinicalWindowLifecycle.Attach(this);this.read=read;var source=read();fixedId=source.Nguon.Don.MaDT;ShowModern(source);
     }
+    /// <summary>
+    /// Hiển thị bản đơn thuốc theo cấu trúc chứng từ mới cùng nguồn in đã xác định.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>DonThuocDocument.Tao</c>, <c>DockPanel.SetDock</c>, <c>panel.Children.Add</c>.</remarks>
+    /// <param name="source">Giá trị nguồn dùng khi thực hiện thao tác; kiểu BanInDonThuoc.</param>
     private void ShowModern(BanInDonThuoc source)
     {
         DonDaDoc=DonThuocDocument.Tao(source);
@@ -31,8 +52,23 @@ public partial class XemTruocDonThuoc : Window
         var feedback=new TextBlock{TextWrapping=TextWrapping.Wrap,Margin=new Thickness(10)};
         modernStatus=feedback;DockPanel.SetDock(button,Dock.Top);DockPanel.SetDock(feedback,Dock.Top);panel.Children.Add(button);panel.Children.Add(feedback);panel.Children.Add(viewer);Content=panel;Title="Đơn thuốc "+fixedId;
     }
+    /// <summary>
+    /// Quy trình hiện tại trạng thái được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private TextBlock? modernStatus;
+    /// <summary>
+    /// Hiển thị phản hồi khi thao tác tra cứu hoặc in gặp điều kiện cần thông báo.
+    /// </summary>
+    /// <param name="text">Giá trị nội dung dùng khi thực hiện thao tác; kiểu string.</param>
     private void Feedback(string text)=>(modernStatus??PrintStatus).Text=text;
+    /// <summary>
+    /// Kiểm tra nguồn bản in và thực hiện in bằng hộp thoại in của ứng dụng.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>read</c>, <c>DonThuocDocument.Tao</c>, <c>ValidateSigned</c>, <c>paginator.ComputePageCount</c>.</remarks>
+    /// <param name="send">Giá trị gửi dùng khi thực hiện thao tác; kiểu Action&lt;DocumentPaginator&gt;.</param>
+    /// <param name="pageSize">Giá trị số dòng mỗi trang dùng khi thực hiện thao tác; kiểu Size.</param>
+    /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     public bool TryPrint(Action<DocumentPaginator> send,Size pageSize,out string? error)
     {
         error=null;try
@@ -58,6 +94,11 @@ public partial class XemTruocDonThuoc : Window
             {var id=card.Code;read=()=>service.LayBanInDon(id,actor);fixedId=id;ShowModern(read());}
         }
     }
+    /// <summary>
+    /// Đối chiếu điều kiện của đơn đã ký trước khi cho phép in.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Controls.ClinicalWorkflow.QuyenNghiepVu.LayNguCanh</c>.</remarks>
+    /// <param name="card">Giá trị thẻ dùng khi thực hiện thao tác; kiểu RxCard.</param>
     private static void ValidateSigned(RxCard card)
     {
         if(!card.CanPrint)throw new ET.LoiKhamException("MaDT","Chỉ in đơn đã xác nhận.");

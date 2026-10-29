@@ -5,8 +5,18 @@ using System.Text;
 using System.Text.Json;
 using System.Security.Cryptography;
 namespace DAL;
+/// <summary>
+/// Tầng truy cập dữ liệu đơn thuốc, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
 public partial class DAL_DONTHUOC
 {
+    /// <summary>
+    /// Tra thuốc theo bộ lọc và phạm vi dữ liệu kê đơn để cung cấp lựa chọn cho bác sĩ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>ArgumentNullException.ThrowIfNull</c>, <c>ConfigUser</c>, <c>new[]{filter.TuKhoa,filter.HamLuong,filter.DangBaoChe}.Any</c>.</remarks>
+    /// <param name="filter">Giá trị bộ lọc dùng khi thực hiện thao tác; kiểu BoLocThuoc.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Tập dữ liệu kiểu IReadOnlyList&lt;ThuocKeDon&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
     public IReadOnlyList<ThuocKeDon> TimThuoc(BoLocThuoc filter,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
         ArgumentNullException.ThrowIfNull(filter);ConfigUser(db,tx,user,false);
@@ -22,10 +32,31 @@ public partial class DAL_DONTHUOC
         return (IReadOnlyList<ThuocKeDon>)drugs.Select(d=>new ThuocKeDon(d.MaThuoc,d.MaHH,d.TenThuoc,d.HamLuong,d.DonViTinh,d.DonGiaBan,
             db.ExecuteScalar<decimal>("SELECT COALESCE(SUM(SoLuongTon),0) FROM dbo.VW_TON_KHO WHERE MaHH=@MaHH",d,tx),null,d.MaNhomThuoc,d.TenNhomThuoc)).ToArray();
     });
+    /// <summary>
+    /// Đọc các lần khám có liên quan đến kê đơn trong phạm vi người dùng.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>RxDoctor</c>, <c>DAL_QUYENNGHIEPVU.KiemTraMa</c>, <c>db.Query&lt;LuotKeDon&gt;</c>.</remarks>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <param name="patient">Giá trị bệnh nhân dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <returns>Tập dữ liệu kiểu IReadOnlyList&lt;LuotKeDon&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
     public IReadOnlyList<LuotKeDon> LayLuotKeDon(NguCanhNghiepVu user,string? patient=null)=>ThucHien((db,tx)=>
     {var a=RxDoctor(db,tx,user);if(patient is not null)DAL_QUYENNGHIEPVU.KiemTraMa(patient);return (IReadOnlyList<LuotKeDon>)db.Query<LuotKeDon>("SELECT TOP(100) l.MaLS,h.MaBN,b.HoTenBN,l.MaBS,l.TrangThai,l.ThoiGianKham FROM dbo.LICH_SU_KHAM_BENH l JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN h ON h.MaHS=p.MaHS JOIN dbo.BENH_NHAN b ON b.MaBN=h.MaBN WHERE (@LaAdmin=1 OR (l.MaBS=@MaNV AND p.MaBS=@MaNV)) AND(@patient IS NULL OR h.MaBN=@patient) ORDER BY l.ThoiGianKham DESC,l.MaLS",new{a.MaNV,a.LaAdmin,patient},tx).ToArray();});
+    /// <summary>
+    /// Nạp ngữ cảnh lần khám, các đơn và dữ liệu cần thiết cho màn hình kê thuốc. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>RxVisit</c>, <c>VisitDraft</c>, <c>Processed</c>.</remarks>
+    /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu KhongGianKeDon dùng cho bước xử lý tiếp theo.</returns>
     public KhongGianKeDon LayKhongGianKeDon(string maLS,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {var(a,v)=RxVisit(db,tx,maLS,user);return new KhongGianKeDon(new(v.MaLS,v.MaBN,v.HoTenBN,v.MaBS,v.TrangThai,v.ThoiGianKham),v.ChanDoan,VisitDraft(v)&&v.KhongKeThuoc==0&&!Processed(db,tx,v.MaLS)&&DAL_KHAMDIEUTRI.DaThucHienXong(db,tx,maLS),db.Query<ET_DONTHUOC>("SELECT * FROM dbo.DON_THUOC WITH(HOLDLOCK) WHERE MaLS=@MaLS ORDER BY NgayKe DESC,MaDT",v,tx).ToArray(),v.NgaySinh,v.DiUng,v.TienSuBenh);});
+    /// <summary>
+    /// Đọc đơn thuốc và các dòng chi tiết kèm thông tin phiên bản để tiếp tục soạn hoặc đối chiếu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>Route</c>, <c>RxLock</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>.</remarks>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu BanNhapDon dùng cho bước xử lý tiếp theo.</returns>
     public BanNhapDon LayBanNhapDon(string id,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
         var parent=Route(db,tx,id);RxLock(db,tx,"RHM:Kham:LanKham:"+parent);
@@ -35,6 +66,13 @@ public partial class DAL_DONTHUOC
         {s.Don.GhiChu=s.Don.LyDoThayThe=null;foreach(var d in s.CacDong){d.LieuDung=d.HuongDan="";d.DuongDung=null;}}
         return s;
     });
+    /// <summary>
+    /// Kiểm tra và lưu đơn nháp cùng các dòng thuốc; giữ liên kết lần khám và thông tin thay thế khi có.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>ArgumentNullException.ThrowIfNull</c>, <c>RxLock</c>, <c>RxVisit</c>.</remarks>
+    /// <param name="request">Gói dữ liệu đầu vào cho thao tác; các trường được kiểm tra trong quá trình xử lý.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu BanNhapDon dùng cho bước xử lý tiếp theo.</returns>
     public BanNhapDon LuuDon(YeuCauLuuDon request,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
         ArgumentNullException.ThrowIfNull(request);RxLock(db,tx,"RHM:DonThuoc:Write");var(a,v)=RxVisit(db,tx,request.MaLS,user);
@@ -50,6 +88,14 @@ public partial class DAL_DONTHUOC
         foreach(var row in rows.OrderBy(r=>string.IsNullOrEmpty(r.MaCTDT)?1:0)){row.MaDT=header.MaDT;if(string.IsNullOrEmpty(row.MaCTDT))row.MaCTDT=TaoMa(db,tx,"CHI_TIET_DON_THUOC","MaCTDT");db.Execute("INSERT dbo.CHI_TIET_DON_THUOC(MaCTDT,MaDT,MaThuoc,LieuDung,SoLuong,SoNgayDung,HuongDan,DuongDung,TenThuocChot,HamLuongChot,DonViTinhChot,PhienBanHuongDan) VALUES(@MaCTDT,@MaDT,@MaThuoc,@LieuDung,@SoLuong,@SoNgayDung,@HuongDan,@DuongDung,@TenThuocChot,@HamLuongChot,@DonViTinhChot,@PhienBanHuongDan)",row,tx);}
         var saved=RxSnapshot(db,tx,header.MaDT,v,a);RxAudit(db,tx,a,"Lưu đơn nháp",header.MaDT,old?.DauVanTay,saved.DauVanTay);return saved;
     });
+    /// <summary>
+    /// Kiểm tra quyền, bản dữ liệu và điều kiện kê thuốc trước khi ký xác nhận đơn nháp.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>RxLock</c>, <c>OwnRx</c>, <c>RxError</c>.</remarks>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="token">Giá trị dấu vân tay đối chiếu dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu BanNhapDon dùng cho bước xử lý tiếp theo.</returns>
     public BanNhapDon XacNhanDon(string id,string token,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
         RxLock(db,tx,"RHM:DonThuoc:Write");var(a,v,s)=OwnRx(db,tx,id,user);
@@ -63,13 +109,46 @@ public partial class DAL_DONTHUOC
         if(s.Don.MaDTThayThe is string old){db.Execute("UPDATE dbo.DON_THUOC SET TrangThai=N'Ngừng áp dụng' WHERE MaDT=@old AND TrangThai=N'Đã xác nhận'",new{old},tx);RxAudit(db,tx,a,"Ngừng đơn do thay thế",old,null,id);}
         var result=RxSnapshot(db,tx,id,v,a);RxAudit(db,tx,a,"Ký đơn thuốc",id,s.DauVanTay,result.DauVanTay);return result;
     });
+    /// <summary>
+    /// Hủy đơn nháp theo quyền và phiên bản dữ liệu mà người dùng đã đọc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>RxLock</c>, <c>OwnRx</c>, <c>RxError</c>.</remarks>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="token">Giá trị dấu vân tay đối chiếu dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu BanNhapDon dùng cho bước xử lý tiếp theo.</returns>
     public BanNhapDon HuyDonNhap(string id,string token,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {RxLock(db,tx,"RHM:DonThuoc:Write");var(a,v,s)=OwnRx(db,tx,id,user);if(s.Don.TrangThai!="Nháp")throw RxError("MaDT","Chỉ hủy đơn nháp.");RxHash(token,s.DauVanTay);if(Processed(db,tx,v.MaLS))throw RxError("MaDT","Lượt có chứng từ xử lý; đối chiếu trước khi đổi đơn.");db.Execute("UPDATE dbo.DON_THUOC SET TrangThai=N'Hủy' WHERE MaDT=@id",new{id},tx);RxAudit(db,tx,a,"Hủy đơn nháp",id,s.DauVanTay,null);return RxSnapshot(db,tx,id,v,a);});
+    /// <summary>
+    /// Đọc nội dung đơn dùng cho bản in theo quyền và điều kiện hiệu lực của chứng từ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>DAL_QUYENNGHIEPVU.XacThuc</c>, <c>a.CoQuyen</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>.</remarks>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu BanInDonThuoc dùng cho bước xử lý tiếp theo.</returns>
     public BanInDonThuoc LayBanInDon(string id,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {var a=DAL_QUYENNGHIEPVU.XacThuc(db,tx,user);if(!a.LaAdmin&&!a.CoQuyen(QuyenLamViec.Kham)&&!a.CoQuyen(QuyenLamViec.GiaoThuoc))throw DAL_QUYENNGHIEPVU.TuChoi();var s=new DAL_DONTHUOC(tx).LayBanNhapDon(id,user);if(s.Don.TrangThai!="Đã xác nhận"||s.CacDong.Count==0||s.CacDong.Any(d=>string.IsNullOrWhiteSpace(d.TenThuocChot)||string.IsNullOrWhiteSpace(d.HamLuongChot)||string.IsNullOrWhiteSpace(d.DonViTinhChot)))throw RxError("MaDT","Chỉ in bản đã ký có đầy đủ thông tin chốt. Đơn cũ xem qua lịch sử.");var v=ReadRxVisit(db,tx,s.Don.MaLS);return new BanInDonThuoc(s,v.HoTenBN,db.QuerySingle<string>("SELECT HoTen FROM dbo.NHAN_VIEN WHERE MaNV=@MaBS",s.Don,tx),v.ChanDoan,v.NgaySinh);});
+    /// <summary>
+    /// Kiểm tra đơn thuốc có đủ điều kiện tham gia bước thu tiền của lần khám. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>DAL_QUYENNGHIEPVU.KiemTraMa</c>, <c>RxLock</c>, <c>DAL_QUYENNGHIEPVU.XacThuc</c>.</remarks>
+    /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     public bool KiemTraDonChoThu(string maLS,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {DAL_QUYENNGHIEPVU.KiemTraMa(maLS);RxLock(db,tx,"RHM:Kham:LanKham:"+maLS);var a=DAL_QUYENNGHIEPVU.XacThuc(db,tx,user);var v=ReadRxVisit(db,tx,maLS);if(!a.LaAdmin&&!a.CoQuyen(QuyenLamViec.ThuTien)&&!(a.CoQuyen(QuyenLamViec.Kham)&&v.MaBS==a.MaNV&&v.BacSiPhieu==a.MaNV))throw DAL_QUYENNGHIEPVU.TuChoi();if(v.TrangThai!="Đã xác nhận"||db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DON_THUOC WITH(HOLDLOCK) WHERE MaLS=@maLS AND TrangThai=N'Nháp'",new{maLS},tx)>0||db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DICH_VU_THUC_HIEN WITH(HOLDLOCK) WHERE MaLS=@maLS AND TrangThai=N'Nháp'",new{maLS},tx)>0)throw RxError("MaLS","Chưa hoàn tất hoặc còn đơn/dịch vụ nháp cần xử lý trước tính phí.");DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db,tx,a,"LICH_SU_KHAM_BENH",maLS);return true;});
 
+    /// <summary>
+    /// Chuẩn bị và kiểm tra từng dòng thuốc trước khi ghi đơn.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>RxError</c>, <c>previous.ToDictionary</c>, <c>ActiveDrug</c>, <c>drugs.Add</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="header">Giá trị đầu trang dùng khi thực hiện thao tác; kiểu ET_DONTHUOC.</param>
+    /// <param name="input">Giá trị đầu vào dùng khi thực hiện thao tác; kiểu IReadOnlyList&lt;DongThuocKeDon&gt;.</param>
+    /// <param name="previous">Giá trị trước dùng khi thực hiện thao tác; kiểu IReadOnlyList&lt;ET_CHITIETDONTHUOC&gt;.</param>
+    /// <param name="signing">Giá trị đang ký dùng khi thực hiện thao tác; kiểu bool.</param>
+    /// <returns>Tập dữ liệu kiểu List&lt;ET_CHITIETDONTHUOC&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
     private List<ET_CHITIETDONTHUOC> PrepareRxRows(IDbConnection db,IDbTransaction? tx,ET_DONTHUOC header,IReadOnlyList<DongThuocKeDon> input,IReadOnlyList<ET_CHITIETDONTHUOC> previous,bool signing)
     {
         if(input is null||input.Count is <1 or >100)throw RxError("CacDong","Đơn cần 1–100 dòng thuốc đầy đủ chỉ định.");var old=previous.ToDictionary(d=>d.MaCTDT,StringComparer.OrdinalIgnoreCase);var ids=new HashSet<string>(StringComparer.OrdinalIgnoreCase);var drugs=new HashSet<string>(StringComparer.OrdinalIgnoreCase);var result=new List<ET_CHITIETDONTHUOC>();
@@ -86,6 +165,16 @@ public partial class DAL_DONTHUOC
         }
         return result;
     }
+    /// <summary>
+    /// Kiểm tra điều kiện lần khám cho phép kê thuốc. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>RxError</c>, <c>Processed</c>, <c>DAL_KHAMDIEUTRI.DaThucHienXong</c>, <c>VisitDraft</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="v">Giá trị v dùng khi thực hiện thao tác; kiểu RxVisitData.</param>
+    /// <param name="replace">Giá trị thay thế dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <param name="reason">Giá trị lý do dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <param name="current">Giá trị hiện tại dùng khi thực hiện thao tác; kiểu string?.</param>
     private static void CanPrescribe(IDbConnection db,IDbTransaction? tx,RxVisitData v,string? replace,string? reason,string? current)
     {
         if(v.KhongKeThuoc==1)throw RxError("MaLS","Lượt đã chọn không kê thuốc; không tự tạo chỉ định mới.");
@@ -98,26 +187,214 @@ public partial class DAL_DONTHUOC
         if(old is null||replace==current)throw RxError("MaDTThayThe","Chọn đơn hiệu lực cùng lượt và bác sĩ.");
         if(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DON_THUOC WITH(HOLDLOCK) WHERE MaDTThayThe=@replace AND TrangThai=N'Nháp' AND(@current IS NULL OR MaDT<>@current)",new{replace,current},tx)>0)throw RxError("MaDTThayThe","Đã có bản nháp thay đơn này; mở bản đang soạn để tiếp tục.");
     }
+    /// <summary>
+    /// Kiểm tra lý do bổ sung khi loại thao tác kê đơn yêu cầu giải trình. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.ExecuteScalar&lt;int&gt;</c>, <c>RxError</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <param name="current">Giá trị hiện tại dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <param name="replacement">Giá trị thay thế dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <param name="note">Giá trị ghi chú dùng khi thực hiện thao tác; kiểu string?.</param>
     private static void RequireAdditionalReason(IDbConnection db,IDbTransaction? tx,string maLS,string? current,string? replacement,string? note)
     {if(replacement is null&&string.IsNullOrWhiteSpace(note)&&db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DON_THUOC WITH(HOLDLOCK) WHERE MaLS=@maLS AND TrangThai=N'Đã xác nhận' AND(@current IS NULL OR MaDT<>@current)",new{maLS,current},tx)>0)throw RxError("GhiChu","Ghi lý do đơn bổ sung khi lượt đã có đơn hiệu lực.");}
+    /// <summary>
+    /// Kiểm tra chứng từ đã được xử lý theo trạng thái và dữ liệu liên quan hay chưa. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.ExecuteScalar&lt;int&gt;</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     private static bool Processed(IDbConnection db,IDbTransaction? tx,string maLS)=>db.ExecuteScalar<int>("SELECT CASE WHEN EXISTS(SELECT 1 FROM dbo.HOA_DON WITH(HOLDLOCK) WHERE MaLS=@maLS) OR EXISTS(SELECT 1 FROM dbo.PHIEU_XUAT p WITH(HOLDLOCK) WHERE p.MaLS=@maLS AND p.TrangThai=N'Đã ghi sổ') OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT x WITH(HOLDLOCK) JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT JOIN dbo.DON_THUOC d ON d.MaDT=c.MaDT WHERE d.MaLS=@maLS) THEN 1 ELSE 0 END",new{maLS},tx)==1;
+    /// <summary>
+    /// Đọc bản đơn thuốc và nội dung cần dùng để đối chiếu trước khi thay đổi. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.QuerySingleOrDefault&lt;ET_DONTHUOC&gt;</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>, <c>db.Query&lt;ET_CHITIETDONTHUOC&gt;</c>, <c>a.CoQuyen</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="v">Giá trị v dùng khi thực hiện thao tác; kiểu RxVisitData.</param>
+    /// <param name="a">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu BanNhapDon dùng cho bước xử lý tiếp theo.</returns>
     private static BanNhapDon RxSnapshot(IDbConnection db,IDbTransaction? tx,string id,RxVisitData v,NguCanhNghiepVu a)
     {var h=db.QuerySingleOrDefault<ET_DONTHUOC>("SELECT * FROM dbo.DON_THUOC WITH(HOLDLOCK) WHERE MaDT=@id AND MaLS=@MaLS",new{id,v.MaLS},tx)??throw DAL_QUYENNGHIEPVU.TuChoi();var rows=db.Query<ET_CHITIETDONTHUOC>("SELECT * FROM dbo.CHI_TIET_DON_THUOC WITH(HOLDLOCK) WHERE MaDT=@id ORDER BY MaCTDT",new{id},tx).ToArray();var own=a.CoQuyen(QuyenLamViec.Kham)&&(a.LaAdmin||v.MaBS==a.MaNV&&v.BacSiPhieu==a.MaNV&&h.MaBS==a.MaNV);var free=own&&v.KhongKeThuoc==0&&!Processed(db,tx,v.MaLS)&&DAL_KHAMDIEUTRI.DaThucHienXong(db,tx,v.MaLS);return new(h,rows,v.MaBN,RxFingerprint(new{Header=h,Rows=rows}),free&&h.TrangThai=="Nháp"&&VisitDraft(v),free&&h.TrangThai=="Đã xác nhận"&&VisitDraft(v));}
+    /// <summary>
+    /// Kiểm tra phạm vi truy cập đơn thuốc của người thực hiện.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>RxVisit</c>, <c>Route</c>, <c>RxSnapshot</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu (NguCanhNghiepVu,RxVisitData,BanNhapDon) dùng cho bước xử lý tiếp theo.</returns>
     private static (NguCanhNghiepVu,RxVisitData,BanNhapDon) OwnRx(IDbConnection db,IDbTransaction? tx,string id,NguCanhNghiepVu user)
     {var(a,v)=RxVisit(db,tx,Route(db,tx,id),user);var s=RxSnapshot(db,tx,id,v,a);if(!a.LaAdmin && s.Don.MaBS!=a.MaNV)throw DAL_QUYENNGHIEPVU.TuChoi();return(a,v,s);}
+    /// <summary>
+    /// Tra mã lần khám MaLS từ mã đơn MaDT để định tuyến thao tác về đúng nguồn; đây chưa phải bước xác thực quyền.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>DAL_QUYENNGHIEPVU.KiemTraMa</c>, <c>db.QuerySingleOrDefault&lt;string&gt;</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Chuỗi kết quả của thao tác đường dùng.</returns>
     private static string Route(IDbConnection db,IDbTransaction? tx,string id){DAL_QUYENNGHIEPVU.KiemTraMa(id);return db.QuerySingleOrDefault<string>("SELECT MaLS FROM dbo.DON_THUOC WITH(READUNCOMMITTED) WHERE MaDT=@id",new{id},tx)??throw DAL_QUYENNGHIEPVU.TuChoi();}
+    /// <summary>
+    /// Kiểm tra và đọc lần khám phục vụ thao tác đơn thuốc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>DAL_QUYENNGHIEPVU.KiemTraMa</c>, <c>RxLock</c>, <c>RxDoctor</c>, <c>ReadRxVisit</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu (NguCanhNghiepVu,RxVisitData) dùng cho bước xử lý tiếp theo.</returns>
     private static (NguCanhNghiepVu,RxVisitData) RxVisit(IDbConnection db,IDbTransaction? tx,string maLS,NguCanhNghiepVu user)
     {DAL_QUYENNGHIEPVU.KiemTraMa(maLS);RxLock(db,tx,"RHM:Kham:LanKham:"+maLS);var a=RxDoctor(db,tx,user);var v=ReadRxVisit(db,tx,maLS);if(!a.LaAdmin && (v.MaBS!=a.MaNV||v.BacSiPhieu!=a.MaNV))throw DAL_QUYENNGHIEPVU.TuChoi();return(a,v);}
+    /// <summary>
+    /// Đọc thông tin lần khám và phiếu tiếp nhận liên quan cho nghiệp vụ kê đơn. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.QuerySingleOrDefault&lt;RxVisitData&gt;</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <returns>Kết quả kiểu RxVisitData dùng cho bước xử lý tiếp theo.</returns>
     private static RxVisitData ReadRxVisit(IDbConnection db,IDbTransaction? tx,string maLS)=>db.QuerySingleOrDefault<RxVisitData>("SELECT l.*,p.MaBS BacSiPhieu,p.TrangThai TrangThaiPhieu,h.MaBN,b.HoTenBN,b.NgaySinh,b.DiUng,b.TienSuBenh FROM dbo.LICH_SU_KHAM_BENH l WITH(HOLDLOCK) JOIN dbo.PHIEU_KHAM_BENH p WITH(HOLDLOCK) ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN h WITH(HOLDLOCK) ON h.MaHS=p.MaHS JOIN dbo.BENH_NHAN b WITH(HOLDLOCK) ON b.MaBN=h.MaBN WHERE l.MaLS=@maLS",new{maLS},tx)??throw DAL_QUYENNGHIEPVU.TuChoi();
+    /// <summary>
+    /// Xác thực người dùng và kiểm tra quyền kê thuốc của bác sĩ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>DAL_QUYENNGHIEPVU.XacThuc</c>, <c>a.CoQuyen</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu NguCanhNghiepVu dùng cho bước xử lý tiếp theo.</returns>
     private static NguCanhNghiepVu RxDoctor(IDbConnection db,IDbTransaction? tx,NguCanhNghiepVu user){var a=DAL_QUYENNGHIEPVU.XacThuc(db,tx,user);if(!a.CoQuyen(QuyenLamViec.Kham))throw DAL_QUYENNGHIEPVU.TuChoi();return a;}
+    /// <summary>
+    /// Kiểm tra trạng thái nháp của lần khám liên quan đến đơn thuốc.
+    /// </summary>
+    /// <param name="v">Giá trị v dùng khi thực hiện thao tác; kiểu RxVisitData.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     private static bool VisitDraft(RxVisitData v)=>v.TrangThai=="Nháp"&&v.TrangThaiPhieu is "Chờ khám" or "Đang khám";
+    /// <summary>
+    /// Tạo dấu vân tay cho bản đơn thuốc và các dòng chi tiết dùng kiểm tra thay đổi đồng thời.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>SHA256.HashData</c>, <c>Encoding.UTF8.GetBytes</c>, <c>JsonSerializer.Serialize</c>.</remarks>
+    /// <param name="value">Giá trị T được truyền vào để đọc, kiểm tra hoặc cập nhật trong thao tác này.</param>
+    /// <returns>Chuỗi kết quả của thao tác đơn thuốc dấu vân tay dữ liệu.</returns>
+    /// <typeparam name="T">Kiểu dữ liệu dùng cho thao tác tổng quát này.</typeparam>
     private static string RxFingerprint<T>(T value)=>Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value))));
+    /// <summary>
+    /// So sánh token dấu vân tay với giá trị hiện tại; phát XungDotDuLieuKhamException khi hai giá trị không khớp.
+    /// </summary>
+    /// <param name="token">Giá trị dấu vân tay đối chiếu dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <param name="expected">Giá trị dùng đối chiếu phiên bản dữ liệu tại bước xử lý tương ứng.</param>
     private static void RxHash(string? token,string expected){if(token!=expected)throw new XungDotDuLieuKhamException();}
+    /// <summary>
+    /// Tạo lỗi kê đơn gắn với trường dữ liệu để giao diện phản hồi đúng vị trí.
+    /// </summary>
+    /// <param name="field">Giá trị trường dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="text">Giá trị nội dung dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Kết quả kiểu LoiKhamException dùng cho bước xử lý tiếp theo.</returns>
     private static LoiKhamException RxError(string field,string text)=>new(field,text);
+    /// <summary>
+    /// Lấy khóa ứng dụng cho thao tác kê đơn trong giao dịch hiện tại. Dùng application lock sở hữu bởi giao dịch; từ chối khi không lấy được khóa trong thời gian chờ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.ExecuteScalar&lt;int&gt;</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="key">Giá trị khóa dùng khi thực hiện thao tác; kiểu string.</param>
     private static void RxLock(IDbConnection db,IDbTransaction? tx,string key){if(db.ExecuteScalar<int>("DECLARE @r int; EXEC @r=sys.sp_getapplock @Resource=@key,@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000; SELECT @r",new{key},tx)<0)throw new InvalidOperationException("Đơn đang được xử lý. Thử lại sau.");}
+    /// <summary>
+    /// Ghi nhật ký nghiệp vụ đơn thuốc, người thao tác và dữ liệu đối chiếu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.Execute</c>, <c>TaoMa</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="a">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <param name="action">Giá trị action dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="before">Giá trị trước dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <param name="after">Giá trị sau dùng khi thực hiện thao tác; kiểu string?.</param>
     private static void RxAudit(IDbConnection db,IDbTransaction? tx,NguCanhNghiepVu a,string action,string id,string? before,string? after)=>db.Execute("INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau) VALUES(@nk,@MaTK,SYSDATETIME(),@action,N'DON_THUOC',@id,N'Thành công',@before,@after)",new{nk=TaoMa(db,tx,"NHAT_KY_THAO_TAC","MaNK"),a.MaTK,action,id,before,after},tx);
+    /// <summary>
+    /// Câu lệnh SQL thuốc SQL dùng trong các thao tác của lớp; giá trị đầu vào được truyền theo cách nơi gọi quy định.
+    /// </summary>
     private const string DrugSql="SELECT t.MaThuoc,t.MaHH,h.TenHH TenThuoc,t.HamLuong,h.DonViTinh,t.DonGiaBan,t.MaNhomThuoc,COALESCE(g.TenNhom,N'Chưa phân nhóm') TenNhomThuoc FROM dbo.THUOC t WITH(HOLDLOCK) JOIN dbo.HANG_HOA h WITH(HOLDLOCK) ON h.MaHH=t.MaHH LEFT JOIN dbo.NHOM_THUOC_KE_DON g WITH(HOLDLOCK) ON g.MaNhomThuoc=t.MaNhomThuoc ";
+    /// <summary>
+    /// Đọc thuốc và kiểm tra điều kiện sử dụng trong danh mục hiện tại.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>DAL_QUYENNGHIEPVU.KiemTraMa</c>, <c>db.QuerySingleOrDefault&lt;Drug&gt;</c>, <c>RxError</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Kết quả kiểu Drug dùng cho bước xử lý tiếp theo.</returns>
     private static Drug ActiveDrug(IDbConnection db,IDbTransaction? tx,string id){DAL_QUYENNGHIEPVU.KiemTraMa(id);var d=db.QuerySingleOrDefault<Drug>(DrugSql+"WHERE t.MaThuoc=@id AND h.TrangThai=N'Đang hoạt động'",new{id},tx)??throw RxError("MaThuoc","Thuốc không còn hoạt động.");if(string.IsNullOrWhiteSpace(d.TenThuoc)||string.IsNullOrWhiteSpace(d.HamLuong)||string.IsNullOrWhiteSpace(d.DonViTinh))throw RxError("MaThuoc","Thuốc thiếu tên/hàm lượng/đơn vị để chốt.");return d;}
-    private sealed class Drug{public string MaThuoc{get;set;}="";public string MaHH{get;set;}="";public string TenThuoc{get;set;}="";public string HamLuong{get;set;}="";public string DonViTinh{get;set;}="";public decimal DonGiaBan{get;set;}public string? MaNhomThuoc{get;set;}public string? TenNhomThuoc{get;set;}}
-    private sealed class RxVisitData:ET_LICHSUKHAMBENH{public string MaBN{get;set;}="";public string HoTenBN{get;set;}="";public string BacSiPhieu{get;set;}="";public string TrangThaiPhieu{get;set;}="";public DateTime? NgaySinh{get;set;}public string? DiUng{get;set;}public string? TienSuBenh{get;set;}}
+    /// <summary>
+    /// Mô hình và thao tác hỗ trợ thuốc dùng bởi các thành phần liên quan.
+    /// </summary>
+    private sealed class Drug{
+        /// <summary>
+        /// Mã thuốc.
+        /// </summary>
+        public string MaThuoc{get;set;}="";
+        /// <summary>
+        /// Mã hàng hóa.
+        /// </summary>
+        public string MaHH{get;set;}="";
+        /// <summary>
+        /// Tên thuốc.
+        /// </summary>
+        public string TenThuoc{get;set;}="";
+        /// <summary>
+        /// Hàm lượng.
+        /// </summary>
+        public string HamLuong{get;set;}="";
+        /// <summary>
+        /// Đơn vị tính.
+        /// </summary>
+        public string DonViTinh{get;set;}="";
+        /// <summary>
+        /// Đơn giá bán được lưu cho mặt hàng.
+        /// </summary>
+        public decimal DonGiaBan{get;set;}
+        /// <summary>
+        /// Mã nhóm thuốc. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
+        public string? MaNhomThuoc{get;set;}
+        /// <summary>
+        /// Tên nhóm thuốc. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
+        public string? TenNhomThuoc{get;set;}}
+    /// <summary>
+    /// Mô hình và thao tác hỗ trợ dữ liệu lần khám khi kê đơn dùng bởi các thành phần liên quan.
+    /// </summary>
+    private sealed class RxVisitData:ET_LICHSUKHAMBENH{
+        /// <summary>
+        /// Mã bệnh nhân.
+        /// </summary>
+        public string MaBN{get;set;}="";
+        /// <summary>
+        /// Họ tên bệnh nhân.
+        /// </summary>
+        public string HoTenBN{get;set;}="";
+        /// <summary>
+        /// Bác sĩ trên phiếu tiếp nhận.
+        /// </summary>
+        public string BacSiPhieu{get;set;}="";
+        /// <summary>
+        /// Trạng thái hiện tại của phiếu tiếp nhận.
+        /// </summary>
+        public string TrangThaiPhieu{get;set;}="";
+        /// <summary>
+        /// Ngày sinh. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
+        public DateTime? NgaySinh{get;set;}
+        /// <summary>
+        /// Thông tin dị ứng đã ghi nhận. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
+        public string? DiUng{get;set;}
+        /// <summary>
+        /// Tiền sử bệnh do hồ sơ ghi nhận. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
+        public string? TienSuBenh{get;set;}}
 }

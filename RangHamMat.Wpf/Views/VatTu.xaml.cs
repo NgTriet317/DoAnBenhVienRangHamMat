@@ -12,18 +12,57 @@ namespace RangHamMat.Views
     // Các lớp này chỉ phục vụ hiển thị. Database vẫn sử dụng mã khóa chính.
     public class VatTuDong
     {
+        /// <summary>
+        /// Mã hàng hóa.
+        /// </summary>
         public string MaHH { get; set; } = "";
+        /// <summary>
+        /// Tên hàng.
+        /// </summary>
         public string TenHang { get; set; } = "";
+        /// <summary>
+        /// Tên loại.
+        /// </summary>
         public string TenLoai { get; set; } = "";
+        /// <summary>
+        /// Đơn vị tính.
+        /// </summary>
         public string DonViTinh { get; set; } = "";
+        /// <summary>
+        /// Nhóm hàng.
+        /// </summary>
         public string NhomHang { get; set; } = "";
+        /// <summary>
+        /// Mức tối thiểu.
+        /// </summary>
         public decimal MucToiThieu { get; set; }
+        /// <summary>
+        /// Tồn.
+        /// </summary>
         public decimal Ton { get; set; }
+        /// <summary>
+        /// Có nhập xuất.
+        /// </summary>
         public bool CoNhapXuat { get; set; }
+        /// <summary>
+        /// Vật tư. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public ET_VATTU? VatTu { get; set; }
+        /// <summary>
+        /// Thuốc. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public ET_THUOC? Thuoc { get; set; }
+        /// <summary>
+        /// Giá trị Có thể bổ sung; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public bool CanBoSung { get { return Ton < MucToiThieu; } }
+        /// <summary>
+        /// Giá trị Tồn hiển thị; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string TonHienThi { get { return Ton.ToString("N3") + " " + DonViTinh; } }
+        /// <summary>
+        /// Giá trị Cảnh báo; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string CanhBao
         {
             get
@@ -36,16 +75,46 @@ namespace RangHamMat.Views
         }
     }
 
+    /// <summary>
+    /// Phần xử lý lô hàng dòng của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public class LoHangDong
     {
+        /// <summary>
+        /// Dữ liệu nghiệp vụ gốc liên kết với dòng hiển thị.
+        /// </summary>
         public ET_LOHANGHOA DuLieu { get; set; } = new ET_LOHANGHOA();
+        /// <summary>
+        /// Tên hàng.
+        /// </summary>
         public string TenHang { get; set; } = "";
+        /// <summary>
+        /// Tên kho.
+        /// </summary>
         public string TenKho { get; set; } = "";
+        /// <summary>
+        /// Tên nhà cung cấp.
+        /// </summary>
         public string TenNCC { get; set; } = "";
+        /// <summary>
+        /// Đơn vị tính.
+        /// </summary>
         public string DonViTinh { get; set; } = "";
+        /// <summary>
+        /// Tồn.
+        /// </summary>
         public decimal Ton { get; set; }
+        /// <summary>
+        /// Có giao dịch.
+        /// </summary>
         public bool CoGiaoDich { get; set; }
+        /// <summary>
+        /// Giá trị Tồn hiển thị; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string TonHienThi { get { return Ton.ToString("N3") + " " + DonViTinh; } }
+        /// <summary>
+        /// Giá trị Hạn dùng hiển thị; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string HanDungHienThi
         {
             get
@@ -54,6 +123,9 @@ namespace RangHamMat.Views
                 return "Chưa cập nhật";
             }
         }
+        /// <summary>
+        /// Giá trị Sắp hết hạn; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public bool SapHetHan
         {
             get
@@ -63,6 +135,9 @@ namespace RangHamMat.Views
                 return ngay >= DateTime.Today && ngay <= DateTime.Today.AddDays(30);
             }
         }
+        /// <summary>
+        /// Giá trị Cảnh báo; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string CanhBao
         {
             get
@@ -79,48 +154,134 @@ namespace RangHamMat.Views
         }
     }
 
+    /// <summary>
+    /// Phần xử lý kho dòng của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public class KhoDong
     {
+        /// <summary>
+        /// Dữ liệu nghiệp vụ gốc liên kết với dòng hiển thị.
+        /// </summary>
         public ET_KHO DuLieu { get; set; } = new ET_KHO();
+        /// <summary>
+        /// Giá trị Tên kho; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string TenKho { get { return DuLieu.TenKho; } }
+        /// <summary>
+        /// Giá trị Loại kho; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string LoaiKho { get { return DuLieu.LoaiKho; } }
+        /// <summary>
+        /// Giá trị Trạng thái; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string TrangThai { get { return DuLieu.TrangThai; } }
+        /// <summary>
+        /// Người quản lý.
+        /// </summary>
         public string NguoiQuanLy { get; set; } = "Chưa xác định";
+        /// <summary>
+        /// Số mặt hàng.
+        /// </summary>
         public int SoMatHang { get; set; }
     }
 
+    /// <summary>
+    /// Phần xử lý vật tư của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public partial class VatTu : UserControl
     {
+        /// <summary>
+        /// Đối tượng nghiệp vụ vật tư được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private readonly BUS_VATTU busVatTu = new BUS_VATTU();
+        /// <summary>
+        /// Đối tượng nghiệp vụ thuốc được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private readonly BUS_THUOC busThuoc = new BUS_THUOC();
+        /// <summary>
+        /// Danh sách vật tư dùng trong vật tư được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly List<VatTuDong> danhSachVatTu = new List<VatTuDong>();
+        /// <summary>
+        /// Danh sách lô dùng trong vật tư được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly List<LoHangDong> danhSachLo = new List<LoHangDong>();
+        /// <summary>
+        /// Danh sách kho dùng trong vật tư được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly List<KhoDong> danhSachKho = new List<KhoDong>();
+        /// <summary>
+        /// Danh mục hàng được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly List<ET_HANGHOA> danhMucHang = new List<ET_HANGHOA>();
+        /// <summary>
+        /// Tồn theo kho được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly Dictionary<string, decimal> tonTheoKho = new Dictionary<string, decimal>();
+        /// <summary>
+        /// Tồn theo lô được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly Dictionary<string, decimal> tonTheoLo = new Dictionary<string, decimal>();
+        /// <summary>
+        /// Hàng có giao dịch được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly HashSet<string> hangCoGiaoDich = new HashSet<string>();
+        /// <summary>
+        /// Cờ Đang nạp; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool dangNap;
+        /// <summary>
+        /// Cờ Đã nạp; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool daNap;
+        /// <summary>
+        /// Cờ Đang sửa; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool dangSua;
+        /// <summary>
+        /// Cờ Đang thêm; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool dangThem;
 
+        /// <summary>
+        /// Khởi tạo vật tư. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+        /// </summary>
         public VatTu()
         {
             InitializeComponent();
             Loaded += VatTu_Loaded;
         }
 
+        /// <summary>
+        /// Nạp dữ liệu khởi đầu khi vật tư được tải lên giao diện.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>TaiDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void VatTu_Loaded(object sender, RoutedEventArgs e)
         {
             if (!daNap) TaiDuLieu("");
         }
 
+        /// <summary>
+        /// Tạo khóa ghép định danh tồn theo kho/mặt hàng hoặc lô để tra trong danh sách tổng hợp.
+        /// </summary>
+        /// <param name="maHH">Mã hàng hóa xác định đối tượng cần xử lý.</param>
+        /// <param name="maKho">Mã kho xác định đối tượng cần xử lý.</param>
+        /// <returns>Chuỗi kết quả của thao tác khóa tồn.</returns>
         private string KhoaTon(string maHH, string maKho)
         {
             return maHH + "\u001f" + maKho;
         }
 
+        /// <summary>
+        /// Cộng số lượng tồn vào mục tương ứng trong dữ liệu tổng hợp.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>KhoaTon</c>, <c>tonTheoKho.ContainsKey</c>, <c>hangCoGiaoDich.Add</c>, <c>tonTheoLo.ContainsKey</c>.</remarks>
+        /// <param name="maHH">Mã hàng hóa xác định đối tượng cần xử lý.</param>
+        /// <param name="maKho">Mã kho xác định đối tượng cần xử lý.</param>
+        /// <param name="maLo">Mã lô xác định đối tượng cần xử lý.</param>
+        /// <param name="soLuong">Giá trị số lượng dùng khi thực hiện thao tác; kiểu decimal.</param>
         private void CongTon(string maHH, string maKho, string maLo, decimal soLuong)
         {
             string khoa = KhoaTon(maHH, maKho);
@@ -134,6 +295,13 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Tra số lượng tồn của đối tượng/kho được yêu cầu từ dữ liệu đã nạp.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>KhoaTon</c>, <c>tonTheoKho.ContainsKey</c>, <c>item.Key.StartsWith</c>.</remarks>
+        /// <param name="maHH">Mã hàng hóa xác định đối tượng cần xử lý.</param>
+        /// <param name="maKho">Mã kho xác định đối tượng cần xử lý.</param>
+        /// <returns>Giá trị số được đọc, đếm hoặc tính toán trong hàm.</returns>
         private decimal LayTon(string maHH, string maKho)
         {
             if (maKho.Length > 0)
@@ -150,6 +318,13 @@ namespace RangHamMat.Views
             return tong;
         }
 
+        /// <summary>
+        /// Kiểm tra mục hàng đã có chứng từ giao dịch liên quan để quyết định thao tác được phép.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>hangCoGiaoDich.Contains</c>, <c>KhoaTon</c>, <c>khoa.StartsWith</c>.</remarks>
+        /// <param name="maHH">Mã hàng hóa xác định đối tượng cần xử lý.</param>
+        /// <param name="maKho">Mã kho xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         private bool CoGiaoDich(string maHH, string maKho)
         {
             if (maKho.Length > 0) return hangCoGiaoDich.Contains(KhoaTon(maHH, maKho));
@@ -160,6 +335,11 @@ namespace RangHamMat.Views
             return false;
         }
 
+        /// <summary>
+        /// Tra tên hàng dùng khi dựng dòng hiển thị vật tư/tồn kho.
+        /// </summary>
+        /// <param name="maHH">Mã hàng hóa xác định đối tượng cần xử lý.</param>
+        /// <returns>Chuỗi kết quả của thao tác tên hàng.</returns>
         private string TenHang(string maHH)
         {
             foreach (ET_HANGHOA hang in danhMucHang)
@@ -169,6 +349,11 @@ namespace RangHamMat.Views
             return "Chưa có tên hàng";
         }
 
+        /// <summary>
+        /// Tra đơn vị tính của hàng hóa dùng khi hiển thị số lượng và tồn kho.
+        /// </summary>
+        /// <param name="maHH">Mã hàng hóa xác định đối tượng cần xử lý.</param>
+        /// <returns>Chuỗi kết quả của thao tác đơn vị.</returns>
         private string DonVi(string maHH)
         {
             foreach (ET_HANGHOA hang in danhMucHang)
@@ -178,6 +363,11 @@ namespace RangHamMat.Views
             return "";
         }
 
+        /// <summary>
+        /// Đọc lại dữ liệu theo phạm vi hiện tại, áp dụng bộ lọc và cập nhật danh sách/chi tiết.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>busVatTu.layToanBoVatTu</c>, <c>busThuoc.layToanBoThuoc</c>, <c>danhMucHang.Clear</c>, <c>danhMucHang.AddRange</c>.</remarks>
+        /// <param name="maHangChon">Mã hàng chọn xác định đối tượng cần xử lý.</param>
         private void TaiDuLieu(string maHangChon)
         {
             try
@@ -356,6 +546,10 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Cộng và cập nhật các số liệu tổng hợp kho/vật tư từ dữ liệu đã nạp.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>LayTon</c>, <c>canThem.ToString</c>, <c>sapHetHan.ToString</c>.</remarks>
         private void CapNhatSoLieu()
         {
             if (!daNap) return;
@@ -375,6 +569,10 @@ namespace RangHamMat.Views
             lblSapHetHan.Text = sapHetHan.ToString();
         }
 
+        /// <summary>
+        /// Áp dụng các tiêu chí đang chọn để cập nhật danh sách và trạng thái rỗng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>txtTimKiem.Text.Trim</c>, <c>CapNhatSoLieu</c>, <c>LayTon</c>, <c>CoGiaoDich</c>.</remarks>
         private void ApDungBoLoc()
         {
             if (!daNap || dangNap) return;
@@ -464,11 +662,23 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Tiếp nhận thay đổi bộ lọc và cập nhật trạng thái/dữ liệu phụ thuộc.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ApDungBoLoc</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void BoLoc_Changed(object sender, EventArgs e)
         {
             ApDungBoLoc();
         }
 
+        /// <summary>
+        /// Xử lý thao tác xóa lọc khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>txtTimKiem.Clear</c>, <c>ApDungBoLoc</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void XoaLoc_Click(object sender, RoutedEventArgs e)
         {
             txtTimKiem.Clear();
@@ -477,6 +687,12 @@ namespace RangHamMat.Views
             ApDungBoLoc();
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn tab kho vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ApDungBoLoc</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void TabKho_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.Source != tabKho) return;
@@ -485,6 +701,12 @@ namespace RangHamMat.Views
             ApDungBoLoc();
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn danh sách vật tư vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>HienVatTu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void DanhSachVatTu_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (dangNap || !daNap || tabKho.SelectedIndex != 0 || dangSua || dangThem) return;
@@ -492,6 +714,11 @@ namespace RangHamMat.Views
             if (dong != null) HienVatTu(dong);
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn danh sách lô vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void DanhSachLo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (dangNap || !daNap || tabKho.SelectedIndex != 1) return;
@@ -509,6 +736,11 @@ namespace RangHamMat.Views
             lblThongBao.Text = "";
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn danh sách kho vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void DanhSachKho_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (dangNap || !daNap || tabKho.SelectedIndex != 2) return;
@@ -525,6 +757,9 @@ namespace RangHamMat.Views
             lblThongBao.Text = "";
         }
 
+        /// <summary>
+        /// Ẩn hoặc xóa nội dung chi tiết khi chưa chọn mục trong danh sách.
+        /// </summary>
         private void HienChuaChon()
         {
             lblCheDo.Text = "HỒ SƠ KHO";
@@ -535,6 +770,11 @@ namespace RangHamMat.Views
             btnHuy.Visibility = Visibility.Collapsed;
         }
 
+        /// <summary>
+        /// Hiển thị thông tin vật tư cùng dữ liệu tồn và các thao tác phù hợp.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>dong.MucToiThieu.ToString</c>, <c>dong.Thuoc.DonGiaBan.ToString</c>, <c>DoiCheDo</c>.</remarks>
+        /// <param name="dong">Giá trị dòng dùng khi thực hiện thao tác; kiểu VatTuDong.</param>
         private void HienVatTu(VatTuDong dong)
         {
             dangSua = false;
@@ -557,6 +797,10 @@ namespace RangHamMat.Views
             DoiCheDo(false);
         }
 
+        /// <summary>
+        /// Chuyển chế độ xem/thêm/sửa và cập nhật các trường, nút theo chế độ được chọn.
+        /// </summary>
+        /// <param name="dangChinhSua">Giá trị đang chính sửa dùng khi thực hiện thao tác; kiểu bool.</param>
         private void DoiCheDo(bool dangChinhSua)
         {
             cboHangHoa.IsEnabled = dangThem;
@@ -570,12 +814,23 @@ namespace RangHamMat.Views
             if (Grid_VAT_TU.SelectedItem == null && !dangThem) btnSua.Visibility = Visibility.Collapsed;
         }
 
+        /// <summary>
+        /// Tiếp nhận thay đổi loại đăng ký và cập nhật trạng thái/dữ liệu phụ thuộc.
+        /// </summary>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void LoaiDangKy_Changed(object sender, SelectionChangedEventArgs e)
         {
             if (formThuoc == null || cboLoaiDangKy == null) return;
             formThuoc.Visibility = cboLoaiDangKy.SelectedIndex == 1 ? Visibility.Visible : Visibility.Collapsed;
         }
 
+        /// <summary>
+        /// Xử lý thao tác sửa khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>DoiCheDo</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void Sua_Click(object sender, RoutedEventArgs e)
         {
             if (tabKho.SelectedIndex != 0) return;
@@ -586,6 +841,12 @@ namespace RangHamMat.Views
             DoiCheDo(true);
         }
 
+        /// <summary>
+        /// Xử lý thao tác thêm mới khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>txtHamLuong.Clear</c>, <c>DoiCheDo</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void ThemMoi_Click(object sender, RoutedEventArgs e)
         {
             if (!daNap) return;
@@ -606,6 +867,12 @@ namespace RangHamMat.Views
             DoiCheDo(true);
         }
 
+        /// <summary>
+        /// Xử lý thao tác hủy khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>HienVatTu</c>, <c>HienChuaChon</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void Huy_Click(object sender, RoutedEventArgs e)
         {
             dangSua = false;
@@ -615,6 +882,13 @@ namespace RangHamMat.Views
             else HienChuaChon();
         }
 
+        /// <summary>
+        /// Đọc số từ ô nhập và từ chối giá trị âm trước khi ghi dữ liệu.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>decimal.TryParse</c>, <c>text.Trim</c>.</remarks>
+        /// <param name="text">Giá trị nội dung dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="ketQua">Giá trị kết quả dùng khi thực hiện thao tác; kiểu decimal.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         private bool DocSoKhongAm(string text, out decimal ketQua)
         {
             ketQua = 0;
@@ -622,6 +896,12 @@ namespace RangHamMat.Views
             return ketQua >= 0;
         }
 
+        /// <summary>
+        /// Xử lý thao tác lưu khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>DocSoKhongAm</c>, <c>txtHamLuong.Text.Trim</c>, <c>busThuoc.themThuoc</c>, <c>busVatTu.themVatTu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void Luu_Click(object sender, RoutedEventArgs e)
         {
             if (!dangSua && !dangThem) return;
@@ -709,6 +989,12 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Xử lý thao tác tải lại khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>TaiDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void TaiLai_Click(object sender, RoutedEventArgs e)
         {
             string ma = "";

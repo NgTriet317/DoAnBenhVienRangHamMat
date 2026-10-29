@@ -9,76 +9,247 @@ using ET;
 
 namespace RangHamMat.Views
 {
+    /// <summary>
+    /// Phần xử lý phiếu nhập hiển thị của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public class PhieuNhapHienThi
     {
+        /// <summary>
+        /// Mã phiếu tiếp nhận khám.
+        /// </summary>
         public string MaPhieu { get; set; } = "";
+        /// <summary>
+        /// Mã kho.
+        /// </summary>
         public string MaKho { get; set; } = "";
+        /// <summary>
+        /// Mã hóa đơn nhập.
+        /// </summary>
         public string MaHDN { get; set; } = "";
+        /// <summary>
+        /// Nội dung ghi chú bổ sung của bản ghi.
+        /// </summary>
         public string GhiChu { get; set; } = "";
+        /// <summary>
+        /// Có thể sửa.
+        /// </summary>
         public bool CanSua { get; set; } = true;
+        /// <summary>
+        /// Nhà cung cấp.
+        /// </summary>
         public string NhaCungCap { get; set; } = "";
+        /// <summary>
+        /// Số hóa đơn.
+        /// </summary>
         public string SoHoaDon { get; set; } = "";
+        /// <summary>
+        /// Tên kho.
+        /// </summary>
         public string TenKho { get; set; } = "";
+        /// <summary>
+        /// Tên nhân viên.
+        /// </summary>
         public string TenNhanVien { get; set; } = "";
+        /// <summary>
+        /// Ngày nhập.
+        /// </summary>
         public string NgayNhap { get; set; } = "";
+        /// <summary>
+        /// Thời gian nhập.
+        /// </summary>
         public DateTime ThoiGianNhap { get; set; }
+        /// <summary>
+        /// Trạng thái.
+        /// </summary>
         public string TrangThai { get; set; } = "";
+        /// <summary>
+        /// Lý do.
+        /// </summary>
         public string LyDo { get; set; } = "";
+        /// <summary>
+        /// Hàng hóa.
+        /// </summary>
         public List<HangNhapHienThi> HangHoa { get; set; } = new List<HangNhapHienThi>();
     }
 
+    /// <summary>
+    /// Phần xử lý hàng nhập hiển thị của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public class HangNhapHienThi
     {
+        /// <summary>
+        /// Mã hàng hóa.
+        /// </summary>
         public string MaHH { get; set; } = "";
+        /// <summary>
+        /// Hạn sử dụng của lô hàng. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public DateTime? HanSuDung { get; set; }
+        /// <summary>
+        /// Trạng thái lô.
+        /// </summary>
         public string TrangThaiLo { get; set; } = "";
+        /// <summary>
+        /// Tên hàng.
+        /// </summary>
         public string TenHang { get; set; } = "";
+        /// <summary>
+        /// Tên lô.
+        /// </summary>
         public string TenLo { get; set; } = "";
+        /// <summary>
+        /// Đơn vị tính.
+        /// </summary>
         public string DonViTinh { get; set; } = "";
+        /// <summary>
+        /// Số lượng của dòng dữ liệu.
+        /// </summary>
         public decimal SoLuong { get; set; }
+        /// <summary>
+        /// Đơn giá áp dụng cho dòng dữ liệu.
+        /// </summary>
         public decimal DonGia { get; set; }
+        /// <summary>
+        /// Giá trị Số lượng hiển thị; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string SoLuongHienThi { get { return SoLuong.ToString("N3"); } }
+        /// <summary>
+        /// Giá trị Đơn giá hiển thị; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string DonGiaHienThi { get { return DonGia.ToString("N0") + " đ"; } }
+        /// <summary>
+        /// Giá trị Thành tiền hiển thị; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string ThanhTienHienThi { get { return (SoLuong * DonGia).ToString("N0") + " đ"; } }
     }
 
+    /// <summary>
+    /// Phần xử lý lựa chọn nhập của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public class LuaChonNhap
     {
+        /// <summary>
+        /// Mã.
+        /// </summary>
         public string Ma { get; set; } = "";
+        /// <summary>
+        /// Tên.
+        /// </summary>
         public string Ten { get; set; } = "";
+        /// <summary>
+        /// Nhóm hàng.
+        /// </summary>
         public string NhomHang { get; set; } = "";
     }
 
+    /// <summary>
+    /// Phần xử lý dòng nhập tạm của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public class DongNhapTam
     {
+        /// <summary>
+        /// Mã hàng hóa.
+        /// </summary>
         public string MaHH { get; set; } = "";
+        /// <summary>
+        /// Tên hàng.
+        /// </summary>
         public string TenHang { get; set; } = "";
+        /// <summary>
+        /// Số lô do nghiệp vụ kho ghi nhận.
+        /// </summary>
         public string SoLo { get; set; } = "";
+        /// <summary>
+        /// Hạn sử dụng của lô hàng. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public DateTime? HanSuDung { get; set; }
+        /// <summary>
+        /// Số lượng của dòng dữ liệu.
+        /// </summary>
         public decimal SoLuong { get; set; }
+        /// <summary>
+        /// Đơn giá áp dụng cho dòng dữ liệu.
+        /// </summary>
         public decimal DonGia { get; set; }
+        /// <summary>
+        /// Giá trị Hạn sử dụng hiển thị; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string HanSuDungHienThi { get { if (HanSuDung.HasValue) return HanSuDung.Value.ToString("dd/MM/yyyy"); return "—"; } }
+        /// <summary>
+        /// Giá trị Số lượng hiển thị; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string SoLuongHienThi { get { return SoLuong.ToString("N3"); } }
+        /// <summary>
+        /// Giá trị Thành tiền hiển thị; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string ThanhTienHienThi { get { return (SoLuong * DonGia).ToString("N0") + " đ"; } }
     }
 
+    /// <summary>
+    /// Phần xử lý nhập kho của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public partial class NhapKho : UserControl
     {
+        /// <summary>
+        /// Cờ Đang tải; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool dangTai;
+        /// <summary>
+        /// Cờ Đã tải; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool daTai;
+        /// <summary>
+        /// Danh sách  dùng trong nhập kho được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly List<PhieuNhapHienThi> danhSach = new List<PhieuNhapHienThi>();
+        /// <summary>
+        /// Dòng nhập mới được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly List<DongNhapTam> dongNhapMoi = new List<DongNhapTam>();
+        /// <summary>
+        /// Danh sách hàng chọn dùng trong nhập kho được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly List<LuaChonNhap> danhSachHangChon = new List<LuaChonNhap>();
+        /// <summary>
+        /// Hóa đơn được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly Dictionary<string, ET_HOADONNHAP> hoaDon = new Dictionary<string, ET_HOADONNHAP>();
+        /// <summary>
+        /// Nhà cung cấp được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly Dictionary<string, string> nhaCungCap = new Dictionary<string, string>();
+        /// <summary>
+        /// Tên hàng được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly Dictionary<string, string> tenHang = new Dictionary<string, string>();
+        /// <summary>
+        /// Đơn vị được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly Dictionary<string, string> donVi = new Dictionary<string, string>();
+        /// <summary>
+        /// Tên kho được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly Dictionary<string, string> tenKho = new Dictionary<string, string>();
+        /// <summary>
+        /// Tên nhân viên được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private readonly Dictionary<string, string> tenNhanVien = new Dictionary<string, string>();
+        /// <summary>
+        /// Mã đang xem được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string maDangXem = "";
+        /// <summary>
+        /// Mã đang sửa được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string maDangSua = "";
+        /// <summary>
+        /// Ngày nhập đã tạo được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private DateTime? ngayNhapDaTao;
 
+        /// <summary>
+        /// Khởi tạo nhập kho. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+        /// </summary>
         public NhapKho()
         {
             InitializeComponent();
@@ -87,18 +258,36 @@ namespace RangHamMat.Views
             Loaded += NhapKho_Loaded;
         }
 
+        /// <summary>
+        /// Nạp dữ liệu khởi đầu khi nhập kho được tải lên giao diện.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>TaiDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void NhapKho_Loaded(object sender, RoutedEventArgs e)
         {
             // Mỗi lần mở lại tab sẽ lấy phiếu mới, kể cả phiếu vừa ghi từ phân hệ khác.
             if (!dangTai) TaiDuLieu();
         }
 
+        /// <summary>
+        /// Tra tên trong danh mục dữ liệu đã nạp theo mã được truyền vào.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>bang.ContainsKey</c>.</remarks>
+        /// <param name="bang">Giá trị bang dùng khi thực hiện thao tác; kiểu Dictionary&lt;string, string&gt;.</param>
+        /// <param name="ma">Mã định danh của bản ghi cần xử lý.</param>
+        /// <param name="macDinh">Giá trị mặc định dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <returns>Chuỗi kết quả của thao tác lấy tên.</returns>
         private static string LayTen(Dictionary<string, string> bang, string? ma, string macDinh)
         {
             if (ma != null && bang.ContainsKey(ma)) return bang[ma];
             return macDinh;
         }
 
+        /// <summary>
+        /// Đọc lại dữ liệu theo phạm vi hiện tại, áp dụng bộ lọc và cập nhật danh sách/chi tiết.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>tenKho.Clear</c>, <c>tenNhanVien.Clear</c>, <c>tenHang.Clear</c>, <c>donVi.Clear</c>.</remarks>
         private void TaiDuLieu()
         {
             dangTai = true;
@@ -239,17 +428,32 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// So sánh hai phiếu để xác định thứ tự hiển thị của danh sách.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>b.ThoiGianNhap.CompareTo</c>.</remarks>
+        /// <param name="a">Giá trị a dùng khi thực hiện thao tác; kiểu PhieuNhapHienThi.</param>
+        /// <param name="b">Giá trị b dùng khi thực hiện thao tác; kiểu PhieuNhapHienThi.</param>
+        /// <returns>Giá trị số được đọc, đếm hoặc tính toán trong hàm.</returns>
         private static int SoSanhPhieu(PhieuNhapHienThi a, PhieuNhapHienThi b)
         {
             return b.ThoiGianNhap.CompareTo(a.ThoiGianNhap);
         }
 
+        /// <summary>
+        /// Hiển thị nhân viên lập phiếu theo ngữ cảnh và dữ liệu đang chọn.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>LayTen</c>.</remarks>
         private void CapNhatNguoiLap()
         {
             string maNV = PhienDangNhap.MaNV;
             lblNguoiLapMoi.Text = LayTen(tenNhanVien, maNV, "Chưa có nhân viên đăng nhập");
         }
 
+        /// <summary>
+        /// Đưa thông tin nhà cung cấp của chứng từ đang chọn lên biểu mẫu.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>hoaDon.ContainsKey</c>, <c>LayTen</c>.</remarks>
         private void HienNhaCungCap()
         {
             string maHDN = cboHoaDon.SelectedValue as string;
@@ -258,6 +462,10 @@ namespace RangHamMat.Views
             else lblNCCMoi.Text = "Chọn hóa đơn";
         }
 
+        /// <summary>
+        /// Lọc danh sách phiếu theo các tiêu chí đang chọn trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>txtTimPhieu.Text.Trim</c>, <c>trangThaiItem.Content.ToString</c>, <c>chuoi.IndexOf</c>, <c>ketQua.Add</c>.</remarks>
         private void LocPhieu()
         {
             if (dangTai || !daTai) return;
@@ -291,6 +499,11 @@ namespace RangHamMat.Views
             dangTai = false;
         }
 
+        /// <summary>
+        /// Hiển thị đầu phiếu, các dòng hàng và trạng thái cho phép thao tác của phiếu được chọn.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>phieu.HangHoa.Count.ToString</c>, <c>soLuong.ToString</c>, <c>tongTien.ToString</c>.</remarks>
+        /// <param name="phieu">Giá trị phiếu dùng khi thực hiện thao tác; kiểu PhieuNhapHienThi.</param>
         private void HienPhieu(PhieuNhapHienThi phieu)
         {
             if (phieu == null) return;
@@ -332,6 +545,10 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Khởi tạo dữ liệu và các dòng rỗng để bắt đầu soạn phiếu nhập mới.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>dongNhapMoi.Clear</c>, <c>HienDongMoi</c>, <c>HienNhaCungCap</c>, <c>CapNhatNguoiLap</c>.</remarks>
         private void KhoiTaoPhieuMoi()
         {
             maDangXem = "";
@@ -358,6 +575,11 @@ namespace RangHamMat.Views
             CapNhatNguoiLap();
         }
 
+        /// <summary>
+        /// Lọc danh mục hàng có thể thêm vào phiếu nhập đang soạn.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ketQua.Add</c>.</remarks>
+        /// <param name="maDaChon">Mã đã chọn xác định đối tượng cần xử lý.</param>
         private void LocHangMoi(string? maDaChon = null)
         {
             string nhom = (cboLoaiHangMoi.SelectedItem as ComboBoxItem)?.Tag as string ?? "Thuoc";
@@ -371,18 +593,37 @@ namespace RangHamMat.Views
             if (cboHangMoi.SelectedIndex < 0 && ketQua.Count > 0) cboHangMoi.SelectedIndex = 0;
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn loại hàng mới vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>LocHangMoi</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void LoaiHangMoi_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (dangTai || !daTai) return;
             LocHangMoi();
         }
 
+        /// <summary>
+        /// Đọc giá trị số từ ô nhập theo định dạng được biểu mẫu chấp nhận.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>decimal.TryParse</c>.</remarks>
+        /// <param name="text">Giá trị nội dung dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="so">Giá trị số dùng khi thực hiện thao tác; kiểu decimal.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         private static bool DocSo(string text, out decimal so)
         {
             if (decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, out so)) return true;
             return decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out so);
         }
 
+        /// <summary>
+        /// Xử lý thao tác thêm dòng khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>txtSoLo.Text.Trim</c>, <c>DocSo</c>, <c>txtSoLuong.Text.Trim</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void ThemDong_Click(object sender, RoutedEventArgs e)
         {
             string maHH = cboHangMoi.SelectedValue as string;
@@ -438,6 +679,10 @@ namespace RangHamMat.Views
             dpHanSuDung.SelectedDate = null;
         }
 
+        /// <summary>
+        /// Cập nhật danh sách các dòng nhập mới đang soạn trên biểu mẫu.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>tong.ToString</c>.</remarks>
         private void HienDongMoi()
         {
             gridDongMoi.ItemsSource = null;
@@ -447,6 +692,12 @@ namespace RangHamMat.Views
             lblTongTienMoi.Text = "Tổng tiền: " + tong.ToString("N0") + " đ";
         }
 
+        /// <summary>
+        /// Xử lý thao tác xóa dòng khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>dongNhapMoi.Remove</c>, <c>HienDongMoi</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void XoaDong_Click(object sender, RoutedEventArgs e)
         {
             DongNhapTam dong = gridDongMoi.SelectedItem as DongNhapTam;
@@ -455,6 +706,11 @@ namespace RangHamMat.Views
             HienDongMoi();
         }
 
+        /// <summary>
+        /// Kiểm tra và lưu đầu phiếu cùng các dòng hàng; nội dung được ghi theo trạng thái và quyền hiện tại.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>cacDong.Add</c>, <c>dongNhapMoi.Clear</c>, <c>HienDongMoi</c>.</remarks>
+        /// <param name="ghiSo">Giá trị ghi sổ dùng khi thực hiện thao tác; kiểu bool.</param>
         private void LuuPhieu(bool ghiSo)
         {
             string maHDN = cboHoaDon.SelectedValue as string;
@@ -531,6 +787,11 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Tìm phiếu theo mã vừa xử lý và chọn lại để hiển thị dữ liệu sau khi lưu.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>HienPhieu</c>.</remarks>
+        /// <param name="maPN">Mã phiếu nhập xác định đối tượng cần xử lý.</param>
         private void HienPhieuTheoMa(string maPN)
         {
             foreach (PhieuNhapHienThi p in danhSach)
@@ -552,6 +813,12 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Xử lý thao tác sửa nhập khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>phieu.ThoiGianNhap.ToString</c>, <c>dongNhapMoi.Clear</c>, <c>dongNhapMoi.Add</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void SuaNhap_Click(object sender, RoutedEventArgs e)
         {
             PhieuNhapHienThi phieu = null;
@@ -589,6 +856,12 @@ namespace RangHamMat.Views
             HienDongMoi();
         }
 
+        /// <summary>
+        /// Xử lý thao tác ghi sổ cũ khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>TaiDuLieu</c>, <c>HienPhieuTheoMa</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void GhiSoCu_Click(object sender, RoutedEventArgs e)
         {
             PhieuNhapHienThi phieu = null;
@@ -619,32 +892,74 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn chọn phiếu vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>HienPhieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void ChonPhieu_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (dangTai) return;
             PhieuNhapHienThi p = lstPhieu.SelectedItem as PhieuNhapHienThi;
             if (p != null) HienPhieu(p);
         }
+        /// <summary>
+        /// Tiếp nhận thay đổi lọc phiếu và cập nhật trạng thái/dữ liệu phụ thuộc.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>LocPhieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void LocPhieu_Changed(object sender, RoutedEventArgs e)
         {
             if (!dangTai && daTai) LocPhieu();
         }
+        /// <summary>
+        /// Phản ánh lựa chọn hóa đơn vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>HienNhaCungCap</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void HoaDon_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!dangTai && daTai) HienNhaCungCap();
         }
+        /// <summary>
+        /// Xử lý thao tác tạo mới khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>KhoiTaoPhieuMoi</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void TaoMoi_Click(object sender, RoutedEventArgs e)
         {
             KhoiTaoPhieuMoi();
         }
+        /// <summary>
+        /// Xử lý thao tác lưu nháp khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>LuuPhieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void LuuNhap_Click(object sender, RoutedEventArgs e)
         {
             LuuPhieu(false);
         }
+        /// <summary>
+        /// Xử lý thao tác ghi sổ mới khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>LuuPhieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void GhiSoMoi_Click(object sender, RoutedEventArgs e)
         {
             LuuPhieu(true);
         }
+        /// <summary>
+        /// Xử lý thao tác tải lại khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>TaiDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void TaiLai_Click(object sender, RoutedEventArgs e)
         {
             TaiDuLieu();

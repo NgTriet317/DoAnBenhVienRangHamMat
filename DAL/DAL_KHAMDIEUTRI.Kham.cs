@@ -5,8 +5,18 @@ using System.Text;
 using System.Text.Json;
 using Dapper;
 namespace DAL;
+/// <summary>
+/// Tầng truy cập dữ liệu khám điều trị, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
 public sealed partial class DAL_KHAMDIEUTRI
 {
+    /// <summary>
+    /// Nạp bản khám, bệnh nhân, dịch vụ, kế hoạch và danh mục tình trạng để màn hình mở đúng ngữ cảnh. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>OwnedVisit</c>, <c>ClinicalSnapshot</c>, <c>db.QuerySingle&lt;ET_BENHNHAN&gt;</c>.</remarks>
+    /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu DuLieuKhongGianKham dùng cho bước xử lý tiếp theo.</returns>
     public DuLieuKhongGianKham LayKhongGianKham(string maLS,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
         var(_,v)=OwnedVisit(db,tx,maLS,user,false);var s=ClinicalSnapshot(db,tx,v);
@@ -17,6 +27,13 @@ public sealed partial class DAL_KHAMDIEUTRI
         var related=db.Query<DichVuTinhTrang>("SELECT m.MaDMTT,d.MaDV,d.TenDV,d.DonGia,m.NoiDungDeXuat,m.ThuTu FROM dbo.DICH_VU_TINH_TRANG m JOIN dbo.DICH_VU d ON d.MaDV=m.MaDV JOIN dbo.DM_TINH_TRANG_BENH t ON t.MaDMTT=m.MaDMTT WHERE d.TrangThai=N'Đang hoạt động' AND t.TrangThai=N'Đang áp dụng' ORDER BY m.MaDMTT,m.ThuTu,d.MaDV",transaction:tx).ToArray();
         return new DuLieuKhongGianKham(s,patient,services,plans,reference,related);
     });
+    /// <summary>
+    /// Bắt đầu khám từ phiếu tiếp nhận: kiểm tra bác sĩ/quyền, dùng lại lượt đã tạo khi phù hợp và cập nhật phiếu sang Đang khám. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>ClinicalLock</c>, <c>ValidCode</c>, <c>Doctor</c>.</remarks>
+    /// <param name="maPhieu">Mã phiếu xác định đối tượng cần xử lý.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Chuỗi kết quả của thao tác bắt đầu khám.</returns>
     public string BatDauKham(string maPhieu,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
         ClinicalLock(db,tx,"Phieu:"+ValidCode(maPhieu));
@@ -40,9 +57,23 @@ public sealed partial class DAL_KHAMDIEUTRI
         return visit.MaLS;
     });
 
+    /// <summary>
+    /// Đọc bản khám hiện tại cùng tình trạng bệnh, quyền sửa và dấu vân tay dữ liệu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>OwnedVisit</c>, <c>ClinicalSnapshot</c>.</remarks>
+    /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu BanNhapKham dùng cho bước xử lý tiếp theo.</returns>
     public BanNhapKham LayBanNhap(string maLS,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {var (_,v)=OwnedVisit(db,tx,maLS,user,false);return ClinicalSnapshot(db,tx,v);});
 
+    /// <summary>
+    /// Lưu nháp nội dung khám và các tình trạng bệnh; kiểm tra lựa chọn không kê thuốc và quan hệ kế hoạch trước khi thay các dòng. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch. Đối chiếu dấu vân tay trước khi ghi để phát hiện bản dữ liệu đã bị thay đổi.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>ArgumentNullException.ThrowIfNull</c>, <c>OwnedVisit</c>, <c>ClinicalSnapshot</c>.</remarks>
+    /// <param name="request">Gói dữ liệu đầu vào cho thao tác; các trường được kiểm tra trong quá trình xử lý.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu BanNhapKham dùng cho bước xử lý tiếp theo.</returns>
     public BanNhapKham LuuKham(YeuCauLuuKham request,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -83,6 +114,14 @@ public sealed partial class DAL_KHAMDIEUTRI
         var saved=ClinicalSnapshot(db,tx,visit);ClinicalAudit(db,tx,actor,"Lưu nháp khám","LICH_SU_KHAM_BENH",visit.MaLS,original.DauVanTay,saved.DauVanTay);return saved;
     });
 
+    /// <summary>
+    /// Kiểm tra nội dung khám, đơn thuốc và dịch vụ trước khi hoàn tất; cập nhật phiếu và lập hóa đơn trong giao dịch. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch. Đối chiếu dấu vân tay trước khi ghi để phát hiện bản dữ liệu đã bị thay đổi.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>OwnedVisit</c>, <c>ClinicalSnapshot</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>.</remarks>
+    /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <param name="dauVanTay">Giá trị dùng đối chiếu phiên bản dữ liệu tại bước xử lý tương ứng.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu BanNhapKham dùng cho bước xử lý tiếp theo.</returns>
     public BanNhapKham HoanTatKham(string maLS,string dauVanTay,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
         var (actor,visit)=OwnedVisit(db,tx,maLS,user,false);var s=ClinicalSnapshot(db,tx,visit);
@@ -109,30 +148,126 @@ public sealed partial class DAL_KHAMDIEUTRI
         catch{if(db.ExecuteScalar<int>("SELECT XACT_STATE()",transaction:tx)==1)db.Execute("ROLLBACK TRANSACTION RhmCompleteVisit",transaction:tx);throw;}
     });
 
+    /// <summary>
+    /// Xác thực lại ngữ cảnh và yêu cầu quyền khám trước khi thao tác dữ liệu lâm sàng.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>DAL_QUYENNGHIEPVU.XacThuc</c>, <c>current.CoQuyen</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu NguCanhNghiepVu dùng cho bước xử lý tiếp theo.</returns>
     private static NguCanhNghiepVu Doctor(IDbConnection db,IDbTransaction? tx,NguCanhNghiepVu user)
     {var current=DAL_QUYENNGHIEPVU.XacThuc(db,tx,user);if(!current.CoQuyen(QuyenLamViec.Kham))throw DAL_QUYENNGHIEPVU.TuChoi();return current;}
+    /// <summary>
+    /// Khóa và đọc lần khám theo phạm vi bác sĩ/quản trị; kiểm tra trạng thái cho phép sửa khi nơi gọi yêu cầu. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ClinicalLock</c>, <c>ValidCode</c>, <c>Doctor</c>, <c>db.QuerySingleOrDefault&lt;VisitRead&gt;</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <param name="draft">Giá trị bản nháp dùng khi thực hiện thao tác; kiểu bool.</param>
+    /// <returns>Kết quả kiểu (NguCanhNghiepVu,VisitRead) dùng cho bước xử lý tiếp theo.</returns>
     private static (NguCanhNghiepVu,VisitRead) OwnedVisit(IDbConnection db,IDbTransaction? tx,string id,NguCanhNghiepVu user,bool draft)
     {
         ClinicalLock(db,tx,"LanKham:"+ValidCode(id));var actor=Doctor(db,tx,user);
         var v=db.QuerySingleOrDefault<VisitRead>("SELECT l.*,p.MaHS,p.MaBS BacSiTiepNhan,p.TrangThai TrangThaiPhieu,h.MaBN FROM dbo.LICH_SU_KHAM_BENH l WITH(UPDLOCK,HOLDLOCK) JOIN dbo.PHIEU_KHAM_BENH p WITH(UPDLOCK,HOLDLOCK) ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN h WITH(HOLDLOCK) ON h.MaHS=p.MaHS WHERE l.MaLS=@id AND (@LaAdmin=1 OR (l.MaBS=@MaNV AND p.MaBS=@MaNV))",new{id,actor.MaNV,actor.LaAdmin},tx);
         if(v is null || draft&&!Editable(v))throw DAL_QUYENNGHIEPVU.TuChoi();return(actor,v);
     }
+    /// <summary>
+    /// Kiểm tra lần khám còn Nháp và phiếu tiếp nhận đang Chờ khám hoặc Đang khám.
+    /// </summary>
+    /// <param name="v">Giá trị v dùng khi thực hiện thao tác; kiểu VisitRead.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     private static bool Editable(VisitRead v)=>v.TrangThai=="Nháp" && v.TrangThaiPhieu is "Chờ khám" or "Đang khám";
+    /// <summary>
+    /// Đọc tình trạng bệnh và hóa đơn liên quan, ghép bản khám với dấu vân tay và quyền sửa. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.Query&lt;ET_TINHTRANGBENH&gt;</c>, <c>db.QuerySingleOrDefault&lt;string&gt;</c>, <c>Fingerprint</c>, <c>Editable</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="v">Giá trị v dùng khi thực hiện thao tác; kiểu VisitRead.</param>
+    /// <returns>Kết quả kiểu BanNhapKham dùng cho bước xử lý tiếp theo.</returns>
     private static BanNhapKham ClinicalSnapshot(IDbConnection db,IDbTransaction? tx,VisitRead v)
     {
         var conditions=db.Query<ET_TINHTRANGBENH>("SELECT * FROM dbo.TINH_TRANG_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaLS=@MaLS ORDER BY MaTTB",v,tx).ToArray();
         var invoice=db.QuerySingleOrDefault<string>("SELECT MaHD FROM dbo.HOA_DON WHERE MaLS=@MaLS AND TaoKhiHoanTat=1",v,tx);
         return new(v,conditions,Fingerprint(new{Visit=(ET_LICHSUKHAMBENH)v,Conditions=conditions}),Editable(v),v.MaBN,v.MaHS,invoice);
     }
+    /// <summary>
+    /// Băm biểu diễn dữ liệu để tạo dấu vân tay phát hiện thay đổi giữa lúc đọc và lúc ghi.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>SHA256.HashData</c>, <c>Encoding.UTF8.GetBytes</c>, <c>JsonSerializer.Serialize</c>.</remarks>
+    /// <param name="value">Giá trị T được truyền vào để đọc, kiểm tra hoặc cập nhật trong thao tác này.</param>
+    /// <returns>Chuỗi kết quả của thao tác dấu vân tay dữ liệu.</returns>
+    /// <typeparam name="T">Kiểu dữ liệu dùng cho thao tác tổng quát này.</typeparam>
     private static string Fingerprint<T>(T value)=>Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value))));
+    /// <summary>
+    /// Yêu cầu dấu vân tay đầu vào khớp phiên bản dữ liệu hiện tại trước khi tiếp tục.
+    /// </summary>
+    /// <param name="supplied">Giá trị dùng đối chiếu phiên bản dữ liệu tại bước xử lý tương ứng.</param>
+    /// <param name="expected">Giá trị dùng đối chiếu phiên bản dữ liệu tại bước xử lý tương ứng.</param>
     private static void RequireFingerprint(string? supplied,string expected){if(string.IsNullOrEmpty(supplied)||!string.Equals(supplied,expected,StringComparison.Ordinal))throw new XungDotDuLieuKhamException();}
+    /// <summary>
+    /// Kiểm tra định dạng mã nghiệp vụ trước khi đưa vào thao tác dữ liệu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>DAL_QUYENNGHIEPVU.KiemTraMa</c>.</remarks>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Chuỗi kết quả của thao tác hợp lệ mã.</returns>
     private static string ValidCode(string id){DAL_QUYENNGHIEPVU.KiemTraMa(id);return id;}
+    /// <summary>
+    /// Đọc giờ SQL Server để các dấu thời gian của thao tác thống nhất theo máy chủ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.ExecuteScalar&lt;DateTime&gt;</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <returns>Kết quả kiểu DateTime dùng cho bước xử lý tiếp theo.</returns>
     private static DateTime ClinicalNow(IDbConnection db,IDbTransaction? tx)=>db.ExecuteScalar<DateTime>("SELECT CONVERT(datetime2(0),SYSDATETIME())",transaction:tx);
+    /// <summary>
+    /// Tạo lỗi khám gắn với tên trường để giao diện đưa thông báo về đúng vị trí.
+    /// </summary>
+    /// <param name="field">Giá trị trường dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="message">Nội dung thông báo được chuyển đến nơi gọi hoặc hiển thị cho người dùng.</param>
+    /// <returns>Kết quả kiểu LoiKhamException dùng cho bước xử lý tiếp theo.</returns>
     private static LoiKhamException KhamError(string field,string message)=>new(field,message);
+    /// <summary>
+    /// Từ chối giá trị rỗng hoặc chỉ có khoảng trắng bằng lỗi gắn với trường nhập.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>KhamError</c>.</remarks>
+    /// <param name="value">Giá trị string được truyền vào để đọc, kiểm tra hoặc cập nhật trong thao tác này.</param>
+    /// <param name="field">Giá trị trường dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="message">Nội dung thông báo được chuyển đến nơi gọi hoặc hiển thị cho người dùng.</param>
     private static void Required(string? value,string field,string message){if(string.IsNullOrWhiteSpace(value))throw KhamError(field,message);}
+    /// <summary>
+    /// Lấy khóa ứng dụng cho nguồn dữ liệu khám trong giao dịch hiện tại. Dùng application lock sở hữu bởi giao dịch; từ chối khi không lấy được khóa trong thời gian chờ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.ExecuteScalar&lt;int&gt;</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="source">Giá trị nguồn dùng khi thực hiện thao tác; kiểu string.</param>
     private static void ClinicalLock(IDbConnection db,IDbTransaction? tx,string source)
     {if(db.ExecuteScalar<int>("DECLARE @r int; EXEC @r=sys.sp_getapplock @Resource=@resource,@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000; SELECT @r",new{resource="RHM:Kham:"+source},tx)<0)throw new InvalidOperationException("Dữ liệu đang được lưu ở cửa sổ khác. Vui lòng thử lại.");}
+    /// <summary>
+    /// Kiểm tra tình trạng đã được tham chiếu làm nguồn của kế hoạch điều trị hay chưa. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.ExecuteScalar&lt;int&gt;</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     private static bool ConditionHasPlan(IDbConnection db,IDbTransaction? tx,string id)=>db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.KE_HOACH_DIEU_TRI WITH(UPDLOCK,HOLDLOCK) WHERE MaTTBNguon=@id",new{id},tx)>0;
+    /// <summary>
+    /// Ghi nhật ký thao tác khám với người thực hiện, đối tượng và dấu vân tay trước/sau.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.Execute</c>, <c>TaoMa</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <param name="action">Giá trị action dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="table">Giá trị bảng dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="before">Giá trị trước dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <param name="after">Giá trị sau dùng khi thực hiện thao tác; kiểu string?.</param>
     private static void ClinicalAudit(IDbConnection db,IDbTransaction? tx,NguCanhNghiepVu user,string action,string table,string id,string? before,string? after)
     {db.Execute("INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau) VALUES(@nk,@MaTK,SYSDATETIME(),@action,@table,@id,N'Thành công',@before,@after)",new{nk=TaoMa(db,tx,"NHAT_KY_THAO_TAC","MaNK"),user.MaTK,action,table,id,before,after},tx);}
 }

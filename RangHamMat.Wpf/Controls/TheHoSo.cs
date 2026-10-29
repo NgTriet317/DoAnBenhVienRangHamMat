@@ -162,6 +162,9 @@ public sealed class PrescriptionLine
     /// Nhãn dễ đọc cho lựa chọn/dòng dữ liệu; với ô lịch là mô tả hành động tạo lịch.
     /// </summary>
     public string Label => string.IsNullOrWhiteSpace(UiRecord.Text(Record,"TenThuocChot"))?DuLieuGiaoDien.Lookup("MaThuoc", UiRecord.Get(Record, "MaThuoc")):$"{UiRecord.Text(Record,"TenThuocChot")} · {UiRecord.Text(Record,"HamLuongChot")}";
+    /// <summary>
+    /// Giá trị Đường dùng thuốc được lưu cùng dòng kê đơn; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string DuongDung => UiRecord.Text(Record,"DuongDung");
     /// <summary>
     /// Đơn vị tính của thuốc lấy từ hàng hóa liên kết.

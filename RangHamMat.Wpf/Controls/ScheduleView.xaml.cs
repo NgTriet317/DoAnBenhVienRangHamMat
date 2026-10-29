@@ -22,6 +22,9 @@ public sealed partial class ScheduleView : UserControl, INotifyPropertyChanged
     public static readonly DependencyProperty ShiftsSourceProperty = DependencyProperty.Register(nameof(ShiftsSource), typeof(IEnumerable), typeof(ScheduleView), new PropertyMetadata(null, SourceChanged));
     /// <summary>Chế độ lịch để đổi cách đọc nguồn: Appointments hoặc Shifts.</summary>
     public static readonly DependencyProperty ModeProperty = DependencyProperty.Register(nameof(Mode), typeof(string), typeof(ScheduleView), new PropertyMetadata("Appointments", SourceChanged));
+    /// <summary>
+    /// Các đăng ký sự kiện được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly HashSet<INotifyCollectionChanged> subscriptions = new();
     /// <summary>Các bản ghi lịch từ bảng dữ liệu; chỉ hiển thị, không ghi SQL trong control này.</summary>
     public IEnumerable? ItemsSource { get => (IEnumerable?)GetValue(ItemsSourceProperty); set => SetValue(ItemsSourceProperty, value); }

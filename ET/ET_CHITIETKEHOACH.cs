@@ -11,16 +11,46 @@ namespace ET
     [Table("CHI_TIET_KE_HOACH")]
     public class ET_CHITIETKEHOACH
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NoiDungBuoc, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? noiDungBuoc;
 
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaCTKH, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maCTKH = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaKHDT, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maKHDT = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaDV, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maDV = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính LanThu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private int lanThu;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính SoLuongDuKien, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal soLuongDuKien;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính DonGiaDuKien, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal donGiaDuKien;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính ThanhTienDuKien, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal thanhTienDuKien;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GhiChu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? ghiChu;
 
         /// <summary>
@@ -85,6 +115,19 @@ namespace ET
 
         // Cột bổ sung P03; constructor cũ được giữ để tương thích mã gọi hiện có.
         public string? NoiDungBuoc { get => noiDungBuoc; set => noiDungBuoc = value; }
+        /// <summary>
+        /// Khởi tạo chi tiết kế hoạch. Gán các giá trị đầu vào vào đối tượng để nơi gọi sử dụng cùng một bản dữ liệu.
+        /// </summary>
+        /// <param name="maCTKH">Mã chi tiết kế hoạch xác định đối tượng cần xử lý.</param>
+        /// <param name="maKHDT">Mã kế hoạch điều trị xác định đối tượng cần xử lý.</param>
+        /// <param name="maDV">Mã dịch vụ xác định đối tượng cần xử lý.</param>
+        /// <param name="lanThu">Giá trị lần thứ dùng khi thực hiện thao tác; kiểu int.</param>
+        /// <param name="soLuongDuKien">Giá trị số lượng dự kiến dùng khi thực hiện thao tác; kiểu decimal.</param>
+        /// <param name="donGiaDuKien">Giá trị đơn giá dự kiến dùng khi thực hiện thao tác; kiểu decimal.</param>
+        /// <param name="thanhTienDuKien">Giá trị thành tiền dự kiến dùng khi thực hiện thao tác; kiểu decimal.</param>
+        /// <param name="trangThai">Giá trị trạng thái dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="ghiChu">Giá trị ghi chú dùng khi thực hiện thao tác; kiểu string?.</param>
+        /// <param name="noiDungBuoc">Giá trị nội dung bước dùng khi thực hiện thao tác; kiểu string?.</param>
         public ET_CHITIETKEHOACH(string maCTKH, string maKHDT, string maDV, int lanThu, decimal soLuongDuKien, decimal donGiaDuKien, decimal thanhTienDuKien, string trangThai, string? ghiChu, string? noiDungBuoc)
         {
             this.maCTKH = maCTKH;

@@ -7,8 +7,17 @@ using System.Linq;
 
 namespace DAL
 {
+    /// <summary>
+    /// Tầng truy cập dữ liệu đơn xin nghỉ, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+    /// </summary>
     public class DAL_DON_XIN_NGHI : dbconnect
     {
+        /// <summary>
+        /// Kiểm tra và lưu đơn xin nghỉ để chuyển vào quy trình duyệt của quản lý. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MoKetNoi</c>, <c>connection.BeginTransaction</c>, <c>connection.ExecuteScalar&lt;int&gt;</c>, <c>LaDonNghiViec</c>.</remarks>
+        /// <param name="don">Giá trị đơn dùng khi thực hiện thao tác; kiểu ET_DON_XIN_NGHI.</param>
+        /// <returns>Chuỗi kết quả của thao tác gửi đơn.</returns>
         public string guiDon(ET_DON_XIN_NGHI don)
         {
             using var connection = MoKetNoi();
@@ -123,6 +132,13 @@ namespace DAL
             catch { tx.Rollback(); throw; }
         }
 
+        /// <summary>
+        /// Kiểm tra nhân viên đã có đơn nghỉ được duyệt áp dụng tại ngày được chỉ định.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MoKetNoi</c>, <c>connection.ExecuteScalar&lt;int&gt;</c>.</remarks>
+        /// <param name="maNV">Mã nhân viên xác định đối tượng cần xử lý.</param>
+        /// <param name="ngay">Giá trị ngày dùng khi thực hiện thao tác; kiểu DateTime.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool daDuocDuyetNghi(string maNV, DateTime ngay)
         {
             using var connection = MoKetNoi();
@@ -133,12 +149,22 @@ namespace DAL
             return soDon>0;
         }
 
+        /// <summary>
+        /// Đếm các đơn còn chờ duyệt để hiển thị thông báo cho quản lý.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MoKetNoi</c>, <c>connection.ExecuteScalar&lt;int&gt;</c>.</remarks>
+        /// <returns>Giá trị số được đọc, đếm hoặc tính toán trong hàm.</returns>
         public int demDonChoDuyet()
         {
             using var connection = MoKetNoi();
             return connection.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DON_XIN_NGHI WHERE TrangThaiDuyet=N'Chờ duyệt'");
         }
 
+        /// <summary>
+        /// Đọc danh sách đơn xin nghỉ cùng dữ liệu hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MoKetNoi</c>, <c>connection.Query&lt;ET_DON_XIN_NGHI_HIENTHI&gt;</c>.</remarks>
+        /// <returns>Tập dữ liệu kiểu List&lt;ET_DON_XIN_NGHI_HIENTHI&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
         public List<ET_DON_XIN_NGHI_HIENTHI> layDanhSachDon()
         {
             using var connection = MoKetNoi();
@@ -153,6 +179,12 @@ namespace DAL
             return connection.Query<ET_DON_XIN_NGHI_HIENTHI>(sql).ToList();
         }
 
+        /// <summary>
+        /// Đọc các ca bị ảnh hưởng bởi đơn nghỉ để quản lý lập phương án thay thế.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MoKetNoi</c>, <c>connection.Query&lt;ET_CA_CAN_THAY_THE&gt;</c>.</remarks>
+        /// <param name="maDon">Mã đơn xác định đối tượng cần xử lý.</param>
+        /// <returns>Tập dữ liệu kiểu List&lt;ET_CA_CAN_THAY_THE&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
         public List<ET_CA_CAN_THAY_THE> layCaCanThayThe(string maDon)
         {
             using var connection = MoKetNoi();
@@ -180,6 +212,12 @@ namespace DAL
             return connection.Query<ET_CA_CAN_THAY_THE>(sql, new { MaDon = maDon }).ToList();
         }
 
+        /// <summary>
+        /// Đọc danh sách nhân viên phù hợp để thay ca của đơn nghỉ.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MoKetNoi</c>, <c>connection.Query&lt;ET_NGUOI_THAY_THE&gt;</c>.</remarks>
+        /// <param name="maDon">Mã đơn xác định đối tượng cần xử lý.</param>
+        /// <returns>Tập dữ liệu kiểu List&lt;ET_NGUOI_THAY_THE&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
         public List<ET_NGUOI_THAY_THE> layNhanVienThayThe(string maDon)
         {
             using var connection = MoKetNoi();
@@ -233,6 +271,12 @@ namespace DAL
             LEFT JOIN dbo.NHAN_VIEN xacnhan ON xacnhan.MaNV=xn.MaNVXacNhan
             WHERE d.MaDonNghi=@MaDon AND d.TrangThaiDuyet=N'Đã duyệt'";
 
+        /// <summary>
+        /// Đọc các lịch khám bị ảnh hưởng bởi đơn nghỉ và cần quản lý xác nhận xử lý.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MoKetNoi</c>, <c>connection.QuerySingleOrDefault&lt;string&gt;</c>, <c>connection.Query&lt;ET_LICH_KHAM_CAN_XAC_NHAN&gt;</c>, <c>dangCho.Add</c>.</remarks>
+        /// <param name="maDon">Mã đơn xác định đối tượng cần xử lý.</param>
+        /// <returns>Tập dữ liệu kiểu List&lt;ET_LICH_KHAM_CAN_XAC_NHAN&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
         public List<ET_LICH_KHAM_CAN_XAC_NHAN> layLichKhamCanXacNhan(string maDon)
         {
             using var connection = MoKetNoi();
@@ -281,6 +325,14 @@ namespace DAL
             return dangCho;
         }
 
+        /// <summary>
+        /// Kiểm tra và xác nhận phương án xử lý của từng lịch khám thuộc đơn nghỉ. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch. Dùng application lock sở hữu bởi giao dịch; từ chối khi không lấy được khóa trong thời gian chờ.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MoKetNoi</c>, <c>connection.BeginTransaction</c>, <c>connection.ExecuteScalar&lt;int&gt;</c>, <c>connection.QuerySingleOrDefault&lt;string&gt;</c>.</remarks>
+        /// <param name="maDon">Mã đơn xác định đối tượng cần xử lý.</param>
+        /// <param name="maLich">Mã lịch xác định đối tượng cần xử lý.</param>
+        /// <param name="maNguoiXacNhan">Mã người xác nhận xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool xacNhanTungLichKham(string maDon, string maLich, string maNguoiXacNhan)
         {
             using var connection = MoKetNoi();
@@ -360,6 +412,15 @@ namespace DAL
             catch { tx.Rollback(); throw; }
         }
 
+        /// <summary>
+        /// Kiểm tra và lưu phương án nhân viên/phòng thay thế cho ca thuộc đơn nghỉ. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch. Dùng application lock sở hữu bởi giao dịch; từ chối khi không lấy được khóa trong thời gian chờ.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MoKetNoi</c>, <c>connection.BeginTransaction</c>, <c>connection.ExecuteScalar&lt;int&gt;</c>, <c>connection.QuerySingleOrDefault&lt;ET_CA_CAN_THAY_THE&gt;</c>.</remarks>
+        /// <param name="maDon">Mã đơn xác định đối tượng cần xử lý.</param>
+        /// <param name="maLLVGoc">Mã lịch làm việc gốc xác định đối tượng cần xử lý.</param>
+        /// <param name="maNVThay">Mã nhân viên thay xác định đối tượng cần xử lý.</param>
+        /// <param name="maPhong">Mã phòng xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool phanCongThayThe(string maDon, string maLLVGoc, string maNVThay, string maPhong)
         {
             using var connection = MoKetNoi();
@@ -453,6 +514,13 @@ namespace DAL
             catch { tx.Rollback(); throw; }
         }
 
+        /// <summary>
+        /// Hủy phương án thay ca đang được chọn sau khi kiểm tra điều kiện dữ liệu. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch. Dùng application lock sở hữu bởi giao dịch; từ chối khi không lấy được khóa trong thời gian chờ.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MoKetNoi</c>, <c>connection.BeginTransaction</c>, <c>connection.ExecuteScalar&lt;int&gt;</c>, <c>connection.QuerySingleOrDefault&lt;string&gt;</c>.</remarks>
+        /// <param name="maDon">Mã đơn xác định đối tượng cần xử lý.</param>
+        /// <param name="maLLVGoc">Mã lịch làm việc gốc xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool huyPhanCongThayThe(string maDon, string maLLVGoc)
         {
             using var connection = MoKetNoi();
@@ -498,6 +566,15 @@ namespace DAL
             catch { tx.Rollback(); throw; }
         }
 
+        /// <summary>
+        /// Kiểm tra người duyệt, phương án ca/lịch và ghi kết quả duyệt hoặc từ chối đơn nghỉ. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch. Dùng application lock sở hữu bởi giao dịch; từ chối khi không lấy được khóa trong thời gian chờ.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MoKetNoi</c>, <c>connection.BeginTransaction</c>, <c>connection.ExecuteScalar&lt;int&gt;</c>, <c>connection.QuerySingleOrDefault&lt;ET_DON_XIN_NGHI&gt;</c>.</remarks>
+        /// <param name="maDon">Mã đơn xác định đối tượng cần xử lý.</param>
+        /// <param name="maNguoiDuyet">Mã người duyệt xác định đối tượng cần xử lý.</param>
+        /// <param name="duyet">Giá trị duyệt dùng khi thực hiện thao tác; kiểu bool.</param>
+        /// <param name="lyDoKhongDuyet">Giá trị lý do không duyệt dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool xuLyDon(string maDon, string maNguoiDuyet, bool duyet, string lyDoKhongDuyet)
         {
             using var connection = MoKetNoi();
@@ -577,6 +654,12 @@ namespace DAL
             catch { tx.Rollback(); throw; }
         }
 
+        /// <summary>
+        /// Nhận diện đơn nghỉ việc theo thông tin loại đơn được lưu trong ghi chú.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ghiChu.Contains</c>.</remarks>
+        /// <param name="ghiChu">Giá trị ghi chú dùng khi thực hiện thao tác; kiểu string?.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         private static bool LaDonNghiViec(string? ghiChu)
         {
             if (string.IsNullOrWhiteSpace(ghiChu)) return false;

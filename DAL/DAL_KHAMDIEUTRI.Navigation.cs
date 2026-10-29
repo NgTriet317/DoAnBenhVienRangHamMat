@@ -1,8 +1,18 @@
 using Dapper;
 using ET;
 namespace DAL;
+/// <summary>
+/// Tầng truy cập dữ liệu khám điều trị, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
 public sealed partial class DAL_KHAMDIEUTRI
 {
+    /// <summary>
+    /// Đối chiếu quan hệ giữa bệnh nhân, hồ sơ, phiếu và lần khám trước khi sử dụng ngữ cảnh.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>DAL_QUYENNGHIEPVU.XacThuc</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>, <c>user.CoQuyen</c>.</remarks>
+    /// <param name="context">Giá trị ngữ cảnh dùng khi thực hiện thao tác; kiểu NguCanhHoSo.</param>
+    /// <param name="actor">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu NguCanhHoSo dùng cho bước xử lý tiếp theo.</returns>
     public NguCanhHoSo XacMinhNguCanh(NguCanhHoSo context,NguCanhNghiepVu actor)=>ThucHien((db,tx)=>
     {
         var user=DAL_QUYENNGHIEPVU.XacThuc(db,tx,actor);

@@ -109,6 +109,9 @@ public sealed class DAL_CHITIETHOADON : dbconnect
           AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON h WITH(HOLDLOCK) WHERE h.MaCTDT=c.MaCTDT)
         """;
 
+    /// <summary>
+    /// Câu lệnh SQL đủ điều kiện các khoản phí SQL dùng trong các thao tác của lớp; giá trị đầu vào được truyền theo cách nơi gọi quy định.
+    /// </summary>
     internal const string EligibleChargesSql = """
         SELECT s.MaDVThucHien,CAST(NULL AS nvarchar(50)) MaCTPX,d.TenDV NoiDung,s.SoLuong,
             s.DonGia DonGiaChot,CAST(NULL AS decimal(18,2)) DonGia,s.ThanhTien,N'Dịch vụ' Loai

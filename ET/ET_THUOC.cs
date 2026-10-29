@@ -11,10 +11,25 @@ namespace ET
     [Table("THUOC")]
     public class ET_THUOC
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaThuoc, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maThuoc = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaHH, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maHH = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính HamLuong, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string hamLuong = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MucTonToiThieu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal mucTonToiThieu;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính DonGiaBan, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal donGiaBan;
 
         /// <summary>
@@ -43,6 +58,9 @@ namespace ET
         /// Mã hàng hóa; ánh xạ cột MaHH của bảng trong TableAttribute.
         /// </summary>
         public string MaHH { get => maHH; set => maHH = value; }
+        /// <summary>
+        /// Mã nhóm thuốc. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public string? MaNhomThuoc { get; set; }
         /// <summary>
         /// Hàm lượng thuốc; ánh xạ cột HamLuong của bảng trong TableAttribute.

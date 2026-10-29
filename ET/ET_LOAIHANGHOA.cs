@@ -10,9 +10,21 @@ namespace ET
     [Table("LOAI_HANG_HOA")]
     public class ET_LOAIHANGHOA
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaLoaiHH, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maLoaiHH = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TenLoaiHH, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string tenLoaiHH = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MoTa, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string moTa = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
 
         /// <summary>

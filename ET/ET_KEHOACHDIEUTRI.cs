@@ -11,18 +11,54 @@ namespace ET
     [Table("KE_HOACH_DIEU_TRI")]
     public class ET_KEHOACHDIEUTRI
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaTTBNguon, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maTTBNguon;
+        /// <summary>
+        /// Mã mẫu kế hoạch điều trị được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string? maMauKH;
+        /// <summary>
+        /// Phiên bản mẫu được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private int? phienBanMau;
 
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaKHDT, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maKHDT = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaLS, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maLS = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaBS, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maBS = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgayLap, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime ngayLap;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgayBatDau, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime? ngayBatDau;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgayDuKienKetThuc, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime? ngayDuKienKetThuc;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TongTienDuKien, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal tongTienDuKien;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GhiChu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? ghiChu;
 
         /// <summary>
@@ -87,8 +123,29 @@ namespace ET
 
         // Cột bổ sung P03; constructor cũ được giữ để tương thích mã gọi hiện có.
         public string? MaTTBNguon { get => maTTBNguon; set => maTTBNguon = value; }
+        /// <summary>
+        /// Giá trị Mã mẫu kế hoạch điều trị; được xác định bởi phần getter/setter của thuộc tính. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public string? MaMauKH { get => maMauKH; set => maMauKH = value; }
+        /// <summary>
+        /// Giá trị Phiên bản mẫu; được xác định bởi phần getter/setter của thuộc tính. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public int? PhienBanMau { get => phienBanMau; set => phienBanMau = value; }
+        /// <summary>
+        /// Khởi tạo kế hoạch điều trị. Gán các giá trị đầu vào vào đối tượng để nơi gọi sử dụng cùng một bản dữ liệu.
+        /// </summary>
+        /// <param name="maKHDT">Mã kế hoạch điều trị xác định đối tượng cần xử lý.</param>
+        /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+        /// <param name="maBS">Mã bác sĩ xác định đối tượng cần xử lý.</param>
+        /// <param name="ngayLap">Giá trị ngày lập dùng khi thực hiện thao tác; kiểu DateTime.</param>
+        /// <param name="ngayBatDau">Giá trị ngày bắt đầu dùng khi thực hiện thao tác; kiểu DateTime?.</param>
+        /// <param name="ngayDuKienKetThuc">Giá trị ngày dự kiến kết thúc dùng khi thực hiện thao tác; kiểu DateTime?.</param>
+        /// <param name="tongTienDuKien">Giá trị tổng tiền dự kiến dùng khi thực hiện thao tác; kiểu decimal.</param>
+        /// <param name="trangThai">Giá trị trạng thái dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="ghiChu">Giá trị ghi chú dùng khi thực hiện thao tác; kiểu string?.</param>
+        /// <param name="maTTBNguon">Mã tình trạng bệnh nguồn xác định đối tượng cần xử lý.</param>
+        /// <param name="maMauKH">Mã mẫu kế hoạch xác định đối tượng cần xử lý.</param>
+        /// <param name="phienBanMau">Giá trị phiên bản mẫu dùng khi thực hiện thao tác; kiểu int?.</param>
         public ET_KEHOACHDIEUTRI(string maKHDT, string maLS, string maBS, DateTime ngayLap, DateTime? ngayBatDau, DateTime? ngayDuKienKetThuc, decimal tongTienDuKien, string trangThai, string? ghiChu, string? maTTBNguon, string? maMauKH, int? phienBanMau)
         {
             this.maKHDT = maKHDT;

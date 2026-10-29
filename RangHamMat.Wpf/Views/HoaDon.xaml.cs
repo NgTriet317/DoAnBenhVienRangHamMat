@@ -18,9 +18,21 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class HoaDon : UserControl, IPatientScoped
 {
+    /// <summary>
+    /// Đối tượng nghiệp vụ hóa đơn được màn hình dùng để đọc/ghi dữ liệu.
+    /// </summary>
     private readonly BUS_HOADON finance = new();
+    /// <summary>
+    /// Cờ Đang cập nhật; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool updating;
+    /// <summary>
+    /// Mã lần khám đơn thuốc mã được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private string? visitId, prescriptionId;
+    /// <summary>
+    /// Mã hóa đơn được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private string? invoiceId;
     /// <summary>
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.
@@ -34,6 +46,11 @@ public partial class HoaDon : UserControl, IPatientScoped
     /// Áp dụng mã bệnh nhân nguồn và làm mới dữ liệu trong phạm vi hồ sơ này.
     /// </summary>
     public void SetPatient(string id) => FocusContext(id);
+    /// <summary>
+    /// Chuyển màn hình tới đúng bệnh nhân/lần khám hoặc chứng từ theo ngữ cảnh được yêu cầu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>CanChangePricingContext</c>, <c>Refresh</c>.</remarks>
+    /// <param name="context">Giá trị ngữ cảnh dùng khi thực hiện thao tác; kiểu ET.NguCanhHoSo.</param>
     internal void FocusContext(ET.NguCanhHoSo context)
     {
         if(!CanChangePricingContext())return;
@@ -192,6 +209,11 @@ public partial class HoaDon : UserControl, IPatientScoped
     private void Visit_Changed(object sender, SelectionChangedEventArgs e)
     { if (updating || !CanChangePricingContext()) return; visitId = HoTroGiaoDien.Selected(VisitFilter);if(visitId=="")visitId=null;prescriptionId = null; invoiceId = null;var source=sourceVisits.FirstOrDefault(r=>r.MaLS==visitId);if(source is not null)PatientId=source.MaBN;else{var visit=DuLieuGiaoDien.Find("LICH_SU_KHAM_BENH",visitId);if(visit is not null)PatientId=DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH",visit);}try{EnsureSelectedClinicalContext();Refresh();}catch(InvalidOperationException ex){PageStatus.Text=ClinicalFormInput.Message(ex);} }
 
+    /// <summary>
+    /// Kiểm tra vùng lập phí có cho phép đổi ngữ cảnh bệnh nhân/lần khám hay không.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>pricing.CanChangeSource</c>.</remarks>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     private bool CanChangePricingContext()
     {
         if(PricingHost.Content is not BangTinhPhiEditor { } pricing || pricing.CanChangeSource(out _)) return true;

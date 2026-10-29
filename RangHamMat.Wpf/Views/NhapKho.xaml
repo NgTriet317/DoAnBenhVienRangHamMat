@@ -1,29 +1,37 @@
+<!-- Giao diện NhapKho: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl x:Class="RangHamMat.Views.NhapKho"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="#F4F8F7">
     <UserControl.Resources>
+        <!-- Tài nguyên Muc (SolidColorBrush) dùng lại qua khóa XAML. -->
         <SolidColorBrush x:Key="Muc" Color="#193E36"/>
+        <!-- Tài nguyên Phu (SolidColorBrush) dùng lại qua khóa XAML. -->
         <SolidColorBrush x:Key="Phu" Color="#698079"/>
+        <!-- Tài nguyên The (Style) áp dụng cho Border. -->
         <Style x:Key="The" TargetType="Border">
             <Setter Property="Background" Value="White"/>
             <Setter Property="CornerRadius" Value="14"/>
             <Setter Property="BorderBrush" Value="#D7E6DF"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
+        <!-- Tài nguyên Nhan (Style) áp dụng cho TextBlock. -->
         <Style x:Key="Nhan" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource Phu}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Margin" Value="0,0,0,5"/>
         </Style>
+        <!-- Tài nguyên O (Style) áp dụng cho TextBox. -->
         <Style x:Key="O" TargetType="TextBox">
             <Setter Property="MinHeight" Value="37"/>
             <Setter Property="Padding" Value="9,6"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
+        <!-- Tài nguyên Chon (Style) áp dụng cho ComboBox. -->
         <Style x:Key="Chon" TargetType="ComboBox">
             <Setter Property="Height" Value="37"/>
         </Style>
+        <!-- Tài nguyên Bang (Style) áp dụng cho DataGrid. -->
         <Style x:Key="Bang" TargetType="DataGrid">
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="IsReadOnly" Value="True"/>
@@ -35,6 +43,7 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
         </Style>
+        <!-- Tài nguyên PhieuItem (Style) áp dụng cho ListBoxItem. -->
         <Style x:Key="PhieuItem" TargetType="ListBoxItem">
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
@@ -42,6 +51,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
+                        <!-- Vùng bố cục Vien. -->
                         <Border x:Name="Vien" BorderBrush="#D7E6DF" BorderThickness="1" Background="#FAFCFB" CornerRadius="10" Padding="12,10">
                             <ContentPresenter/>
                         </Border>
@@ -65,7 +75,9 @@
                     <TextBlock Text="Mỗi dòng nhập tạo lô mới · Ghi sổ sau khi kiểm tra hàng thực nhận" Foreground="#DCEFE9" FontSize="12"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Nút thao tác ↻ Làm mới — ↻ Làm mới. Chuyển sự kiện đến TaiLai_Click trong code-behind. -->
                     <Button Content="↻ Làm mới" Click="TaiLai_Click" Padding="14,8" Margin="0,0,8,0"/>
+                    <!-- Nút thao tác + Tạo phiếu mới — + Tạo phiếu mới. Chuyển sự kiện đến TaoMoi_Click trong code-behind. -->
                     <Button Content="+ Tạo phiếu mới" Click="TaoMoi_Click" Background="#E2F8EF" Foreground="#135C46" FontWeight="Bold" Padding="16,8"/>
                 </StackPanel>
             </Grid>
@@ -79,13 +91,17 @@
                     <StackPanel Margin="0,0,0,12">
                         <TextBlock Text="DANH SÁCH PHIẾU" Foreground="#168263" FontSize="11" FontWeight="Bold"/>
                         <TextBlock Text="Tra cứu chứng từ tiếp nhận" Foreground="{StaticResource Muc}" FontSize="16" FontWeight="SemiBold" Margin="0,4,0,8"/>
+                        <!-- Ô nhập txtTimPhieu. Chuyển sự kiện đến LocPhieu_Changed trong code-behind. -->
                         <TextBox x:Name="txtTimPhieu" Style="{StaticResource O}" ToolTip="Tìm mã phiếu, tên kho hoặc nhà cung cấp" TextChanged="LocPhieu_Changed"/>
                     </StackPanel>
                     <Grid Grid.Row="1" Margin="0,0,0,12">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <!-- Trường lựa chọn cboKhoLoc. Chuyển sự kiện đến LocPhieu_Changed trong code-behind. -->
                         <StackPanel><TextBlock Text="Kho" Style="{StaticResource Nhan}"/><ComboBox x:Name="cboKhoLoc" DisplayMemberPath="Ten" SelectedValuePath="Ma" Style="{StaticResource Chon}" SelectionChanged="LocPhieu_Changed"/></StackPanel>
+                        <!-- Trường lựa chọn cboTrangThaiLoc. Chuyển sự kiện đến LocPhieu_Changed trong code-behind. -->
                         <StackPanel Grid.Column="2"><TextBlock Text="Trạng thái" Style="{StaticResource Nhan}"/><ComboBox x:Name="cboTrangThaiLoc" Style="{StaticResource Chon}" SelectedIndex="0" SelectionChanged="LocPhieu_Changed"><ComboBoxItem Content="Tất cả"/><ComboBoxItem Content="Nháp"/><ComboBoxItem Content="Đã ghi sổ"/></ComboBox></StackPanel>
                     </Grid>
+                    <!-- Danh sách lstPhieu. Chuyển sự kiện đến ChonPhieu_SelectionChanged trong code-behind. -->
                     <ListBox x:Name="lstPhieu" Grid.Row="2" BorderThickness="0" Background="Transparent" ItemContainerStyle="{StaticResource PhieuItem}" SelectionChanged="ChonPhieu_SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListBox.ItemTemplate><DataTemplate><StackPanel>
                             <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
@@ -98,7 +114,9 @@
                         </StackPanel></DataTemplate></ListBox.ItemTemplate>
                     </ListBox>
                     <StackPanel Grid.Row="3" Margin="0,12,0,0">
+                        <!-- Thông tin hiển thị lblDemPhieu — 0 phiếu. -->
                         <TextBlock x:Name="lblDemPhieu" Foreground="#6B8179" FontSize="12" Text="0 phiếu" Margin="0,0,0,8"/>
+                        <!-- Nút thao tác btnGhiSoCu — Ghi sổ phiếu nháp đã chọn. Chuyển sự kiện đến GhiSoCu_Click trong code-behind. -->
                         <Button x:Name="btnGhiSoCu" Content="Ghi sổ phiếu nháp đã chọn" Click="GhiSoCu_Click" Padding="11,9" Background="#E9F5EF" Foreground="#176649" Visibility="Collapsed"/>
                     </StackPanel>
                 </Grid>
@@ -106,22 +124,28 @@
             <!-- Phải: 60% form nhập hoặc chi tiết phiếu. -->
             <Border Grid.Column="2" Style="{StaticResource The}" ClipToBounds="True">
                 <Grid>
+                    <!-- Thành phần formTaoMoi. -->
                     <ScrollViewer x:Name="formTaoMoi" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="20,18,20,22">
+                            <!-- Thông tin hiển thị lblCheDoNhap — TẠO PHIẾU NHẬP MỚI · MỖI DÒNG MỘT LÔ MỚI. -->
                             <Border Background="#EAF5EF" CornerRadius="8" Padding="11,7" HorizontalAlignment="Left" Margin="0,0,0,12"><TextBlock x:Name="lblCheDoNhap" Text="TẠO PHIẾU NHẬP MỚI · MỖI DÒNG MỘT LÔ MỚI" Foreground="#158263" FontWeight="Bold" FontSize="11"/></Border>
                             <TextBlock Text="01   Thông tin chứng từ nguồn" Foreground="{StaticResource Muc}" FontSize="17" FontWeight="Bold" Margin="0,0,0,12"/>
                             <Grid>
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                <!-- Trường lựa chọn cboHoaDon. Chuyển sự kiện đến HoaDon_SelectionChanged trong code-behind. -->
                                 <StackPanel Grid.Row="0" Grid.ColumnSpan="3" Margin="0,0,0,12"><TextBlock Text="Hóa đơn nhà cung cấp *" Style="{StaticResource Nhan}"/><ComboBox x:Name="cboHoaDon" Style="{StaticResource Chon}" DisplayMemberPath="Ten" SelectedValuePath="Ma" SelectionChanged="HoaDon_SelectionChanged"/></StackPanel>
                                 <StackPanel Grid.Row="1" Margin="0,0,0,12"><TextBlock Text="Nhà cung cấp" Style="{StaticResource Nhan}"/><TextBlock x:Name="lblNCCMoi" Text="Chọn hóa đơn" FontWeight="SemiBold" Foreground="{StaticResource Muc}" TextWrapping="Wrap"/></StackPanel>
+                                <!-- Trường lựa chọn cboKhoMoi. -->
                                 <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,12"><TextBlock Text="Kho nhận *" Style="{StaticResource Nhan}"/><ComboBox x:Name="cboKhoMoi" Style="{StaticResource Chon}" DisplayMemberPath="Ten" SelectedValuePath="Ma"/></StackPanel>
                                 <StackPanel Grid.Row="2"><TextBlock Text="Ngày giờ tạo phiếu" Style="{StaticResource Nhan}"/><TextBlock x:Name="lblNgayNhapMoi" Text="Tự động lấy khi lưu phiếu mới" FontWeight="SemiBold" Foreground="{StaticResource Muc}" TextWrapping="Wrap"/></StackPanel>
                                 <StackPanel Grid.Row="2" Grid.Column="2"><TextBlock Text="Người lập" Style="{StaticResource Nhan}"/><TextBlock x:Name="lblNguoiLapMoi" Text="Theo tài khoản đăng nhập" Foreground="{StaticResource Muc}" FontWeight="SemiBold" TextWrapping="Wrap"/></StackPanel>
                             </Grid>
                             <TextBlock Text="Lý do nhập *" Style="{StaticResource Nhan}" Margin="0,14,0,0"/>
+                            <!-- Ô nhập txtLyDo. -->
                             <TextBox x:Name="txtLyDo" Style="{StaticResource O}"/>
                             <TextBlock Text="Ghi chú" Style="{StaticResource Nhan}" Margin="0,10,0,0"/>
+                            <!-- Ô nhập txtGhiChu. -->
                             <TextBox x:Name="txtGhiChu" Style="{StaticResource O}"/>
                             <Border Height="1" Background="#DDEAE4" Margin="0,18,0,15"/>
                             <TextBlock Text="02   Khai báo lô mới và hàng hóa nhập" Foreground="{StaticResource Muc}" FontSize="17" FontWeight="Bold" Margin="0,0,0,10"/>
@@ -130,22 +154,30 @@
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="1*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="1.6*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="1.1*"/></Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <TextBlock Text="Loại hàng hóa *" Style="{StaticResource Nhan}"/>
+                                    <!-- Trường lựa chọn cboLoaiHangMoi. Chuyển sự kiện đến LoaiHangMoi_SelectionChanged trong code-behind. -->
                                     <ComboBox x:Name="cboLoaiHangMoi" Style="{StaticResource Chon}" SelectedIndex="0" SelectionChanged="LoaiHangMoi_SelectionChanged">
                                         <ComboBoxItem Content="Thuốc" Tag="Thuoc"/>
                                         <ComboBoxItem Content="Vật tư" Tag="VatTu"/>
                                         <ComboBoxItem Content="Thiết bị" Tag="ThietBi"/>
                                     </ComboBox>
                                 </StackPanel>
+                                <!-- Trường lựa chọn cboHangMoi. -->
                                 <StackPanel Grid.Column="2"><TextBlock Text="Hàng hóa *" Style="{StaticResource Nhan}"/><ComboBox x:Name="cboHangMoi" Style="{StaticResource Chon}" DisplayMemberPath="Ten" SelectedValuePath="Ma"/></StackPanel>
+                                <!-- Ô nhập txtSoLo. -->
                                 <StackPanel Grid.Column="4"><TextBlock Text="Số lô mới *" Style="{StaticResource Nhan}"/><TextBox x:Name="txtSoLo" Style="{StaticResource O}" MaxLength="255"/></StackPanel>
                             </Grid>
                             <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <!-- Trường lựa chọn dpHanSuDung. -->
                                 <StackPanel><TextBlock Text="Hạn sử dụng (nếu có)" Style="{StaticResource Nhan}"/><DatePicker x:Name="dpHanSuDung" Height="37"/></StackPanel>
+                                <!-- Ô nhập txtSoLuong. -->
                                 <StackPanel Grid.Column="2"><TextBlock Text="Số lượng *" Style="{StaticResource Nhan}"/><TextBox x:Name="txtSoLuong" Style="{StaticResource O}"/></StackPanel>
+                                <!-- Ô nhập txtDonGia. -->
                                 <StackPanel Grid.Column="4"><TextBlock Text="Đơn giá (VNĐ) *" Style="{StaticResource Nhan}"/><TextBox x:Name="txtDonGia" Style="{StaticResource O}"/></StackPanel>
                             </Grid>
+                            <!-- Nút thao tác + Thêm dòng hàng — + Thêm dòng hàng. Chuyển sự kiện đến ThemDong_Click trong code-behind. -->
                             <Grid Margin="0,12,0,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Đơn vị tính và tổng tiền tính theo mặt hàng" Foreground="#698079" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap"/><Button Grid.Column="1" Content="+ Thêm dòng hàng" Click="ThemDong_Click" Padding="13,8" Background="#DDF2E9" Foreground="#166F55" FontWeight="Bold"/></Grid>
+                            <!-- Danh sách gridDongMoi. -->
                             <DataGrid x:Name="gridDongMoi" Style="{StaticResource Bang}" Height="200" SelectionMode="Single">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Mặt hàng" Binding="{Binding TenHang}" Width="2*" MinWidth="130"/>
@@ -155,16 +187,20 @@
                                     <DataGridTextColumn Header="Tổng tiền" Binding="{Binding ThanhTienHienThi}" Width="1.1*"/>
                                 </DataGrid.Columns>
                             </DataGrid>
+                            <!-- Nút thao tác Xóa dòng đang chọn — Xóa dòng đang chọn. Chuyển sự kiện đến XoaDong_Click trong code-behind. -->
                             <Grid Margin="0,9,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><Button Content="Xóa dòng đang chọn" Click="XoaDong_Click" HorizontalAlignment="Left" Padding="12,7"/><TextBlock Grid.Column="1" x:Name="lblTongTienMoi" Text="Tổng tiền: 0 đ" VerticalAlignment="Center" Foreground="#147254" FontSize="17" FontWeight="Bold"/></Grid>
                             <Border Height="1" Background="#DDEAE4" Margin="0,16,0,15"/>
                             <TextBlock Text="03   Hoàn tất tiếp nhận" Foreground="{StaticResource Muc}" FontSize="17" FontWeight="Bold" Margin="0,0,0,10"/>
                             <TextBlock Text="Lưu nháp không làm tăng tồn; Ghi sổ sẽ xác nhận toàn bộ phiếu nhập cùng các lô mới." Foreground="#5B7B6D" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                            <!-- Nút thao tác btnLuuNhap — Lưu nháp. Chuyển sự kiện đến LuuNhap_Click trong code-behind. -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><Button x:Name="btnLuuNhap" Content="Lưu nháp" Click="LuuNhap_Click" Padding="19,10" Margin="0,0,10,0" Background="#EDF4F0" Foreground="#1A6650"/><Button x:Name="btnGhiSoMoi" Content="Ghi sổ phiếu nhập" Click="GhiSoMoi_Click" Padding="20,10" Background="#148263" Foreground="White" FontWeight="Bold"/></StackPanel>
                         </StackPanel>
                     </ScrollViewer>
+                    <!-- Thành phần panelXemPhieu. -->
                     <ScrollViewer x:Name="panelXemPhieu" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="20,18,20,22">
                             <Border Background="#EAF5EF" CornerRadius="8" Padding="11,7" HorizontalAlignment="Left" Margin="0,0,0,12"><TextBlock Text="ĐỐI CHIẾU PHIẾU NHẬP ĐÃ LẬP" Foreground="#158263" FontWeight="Bold" FontSize="11"/></Border>
+                            <!-- Thông tin hiển thị lblTieuDeCu — Chi tiết phiếu nhập. -->
                             <TextBlock x:Name="lblTieuDeCu" Text="Chi tiết phiếu nhập" FontSize="21" Foreground="{StaticResource Muc}" FontWeight="Bold" Margin="0,0,0,12"/>
                             <Grid>
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
@@ -179,6 +215,7 @@
                             </Grid>
                             <Border Height="1" Background="#DDEAE4" Margin="0,18,0,14"/>
                             <TextBlock Text="DANH SÁCH LÔ HÀNG ĐÃ KHAI BÁO" Foreground="#168263" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+                            <!-- Danh sách gridHangNhap. -->
                             <DataGrid x:Name="gridHangNhap" Style="{StaticResource Bang}" Height="235"><DataGrid.Columns>
                                 <DataGridTextColumn Header="Mặt hàng" Binding="{Binding TenHang}" Width="2*"/>
                                 <DataGridTextColumn Header="Lô" Binding="{Binding TenLo}" Width="1.1*"/>
@@ -186,10 +223,14 @@
                                 <DataGridTextColumn Header="Đơn giá" Binding="{Binding DonGiaHienThi}" Width="1.1*"/>
                                 <DataGridTextColumn Header="Thành tiền" Binding="{Binding ThanhTienHienThi}" Width="1.1*"/>
                             </DataGrid.Columns></DataGrid>
+                            <!-- Thông tin hiển thị lblSoDong. -->
                             <Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock x:Name="lblSoDong" Foreground="#698079"/><TextBlock Grid.Column="1" x:Name="lblTongTien" Foreground="#168263" FontSize="20" FontWeight="Bold"/></Grid>
+                            <!-- Thông tin hiển thị lblTongSL. -->
                             <TextBlock x:Name="lblTongSL" Foreground="#698079" HorizontalAlignment="Right" Margin="0,5,0,0"/>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+                                <!-- Nút thao tác btnSuaNhap — Chỉnh sửa phiếu Nháp. Chuyển sự kiện đến SuaNhap_Click trong code-behind. -->
                                 <Button x:Name="btnSuaNhap" Content="Chỉnh sửa phiếu Nháp" Click="SuaNhap_Click" Background="#EAF5EF" Foreground="#176649" Padding="14,10" Margin="0,0,10,0" Visibility="Collapsed"/>
+                                <!-- Nút thao tác btnGhiSoPhieu — Ghi sổ phiếu nháp. Chuyển sự kiện đến GhiSoCu_Click trong code-behind. -->
                                 <Button x:Name="btnGhiSoPhieu" Content="Ghi sổ phiếu nháp" Click="GhiSoCu_Click" Background="#148263" Foreground="White" Padding="16,10" Visibility="Collapsed"/>
                             </StackPanel>
                             <TextBlock Text="Phiếu đã ghi sổ chỉ được xem, không được sửa để bảo toàn dữ liệu kho." Foreground="#6B8179" Margin="0,10,0,0" TextWrapping="Wrap" FontSize="12"/>

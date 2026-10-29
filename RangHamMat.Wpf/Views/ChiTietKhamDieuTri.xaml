@@ -27,8 +27,11 @@
         <WrapPanel Margin="0,6,0,0"><TextBlock Text="Lần khám " FontWeight="SemiBold"/><TextBlock Text="{Binding Code}"/><TextBlock Text="{Binding When}" Margin="12,0"/><ContentControl Content="{Binding}" ContentTemplate="{StaticResource HospitalStatusTemplate}" VerticalAlignment="Center"/></WrapPanel>
         <WrapPanel Margin="0,6,0,0" TextBlock.FontSize="12"><TextBlock Text="{Binding Doctor}"/><TextBlock Text="{Binding Room}" Margin="12,0"/><TextBlock Text="Lượt tiếp nhận: "/><TextBlock Text="{Binding Receipt}"/></WrapPanel>
         <WrapPanel Margin="0,8,0,0">
+        <!-- Nút thao tác ← Quay lại — ← Quay lại. Chuyển sự kiện đến Back_Click trong code-behind. -->
         <Button Content="← Quay lại" Click="Back_Click"/>
+        <!-- Nút thao tác Xem bệnh nhân — Xem bệnh nhân. Chuyển sự kiện đến OpenPatient_Click trong code-behind. -->
         <Button Content="Xem bệnh nhân" Click="OpenPatient_Click"/>
+        <!-- Nút thao tác ServicesButton — Dịch vụ thực hiện. Chuyển sự kiện đến OpenServices_Click trong code-behind. -->
         <Button x:Name="ServicesButton" Content="Dịch vụ thực hiện" Click="OpenServices_Click"/><!-- Thao tác Hóa đơn / thanh toán: gọi OpenInvoice_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
         <Button x:Name="InvoiceButton" Content="Hóa đơn / thanh toán" Click="OpenInvoice_Click"/></WrapPanel>
       </StackPanel>
@@ -66,6 +69,7 @@
         <!-- Vùng PlanList: hiển thị nội dung/danh sách được code-behind hoặc Binding cung cấp; DataTemplate quyết định cách trình bày mỗi đối tượng. -->
         <ListBox x:Name="PlanList" ItemsSource="{Binding Plans}" SelectionChanged="Plan_Changed" MaxHeight="160"><ListBox.ItemTemplate><DataTemplate><WrapPanel Margin="8"><TextBlock Text="{Binding Code}" FontWeight="SemiBold"/><TextBlock Text="{Binding OriginVisit}" Margin="12,0"/><TextBlock Text="{Binding Created}" Margin="8,0"/><TextBlock Text="{Binding Doctor}"/><ContentControl Content="{Binding}" ContentTemplate="{StaticResource HospitalStatusTemplate}" VerticalAlignment="Center" Margin="16,0"/></WrapPanel></DataTemplate></ListBox.ItemTemplate></ListBox>
         <TextBlock Text="{Binding PlansNote}" Style="{StaticResource HospitalMuted}" Margin="0,8"/>
+        <!-- Vùng bố cục PlanHost. -->
         <StackPanel x:Name="PlanHost" Visibility="Collapsed">
           <Border Style="{StaticResource HospitalPanel}" Margin="0,8,0,12"><StackPanel><DockPanel><WrapPanel DockPanel.Dock="Right"><!-- Thao tác Sửa kế hoạch: gọi EditPlan_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
           <Button Content="Sửa kế hoạch" Click="EditPlan_Click" IsEnabled="{Binding CanEdit}"/><!-- Thao tác Xác nhận kế hoạch: gọi ConfirmPlan_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
@@ -79,6 +83,7 @@
           <TextBlock Text="{Binding StepsNote}" Style="{StaticResource HospitalMuted}" Margin="0,8"/>
           <TextBlock Text="Thực hiện của bước đang chọn" FontWeight="SemiBold" Margin="0,12,0,8"/>
           <!-- Bảng StepExecutionGrid: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. -->
+          <!-- Thông tin hiển thị StepEmpty. -->
           <DataGrid x:Name="StepExecutionGrid" MaxHeight="220" MinHeight="70"><DataGrid.Columns><DataGridTextColumn Header="Thời gian" Binding="{Binding When}" Width="145" MinWidth="145" ElementStyle="{StaticResource HospitalCellText}"/><DataGridTextColumn Header="Lần khám thực tế" Binding="{Binding VisitId}" Width="100" MinWidth="100" ElementStyle="{StaticResource HospitalCellText}"/><DataGridTextColumn Header="Kết quả" Binding="{Binding Result}" Width="*" MinWidth="180" ElementStyle="{StaticResource HospitalCellText}"/><DataGridTemplateColumn Header="Trạng thái" Width="138" MinWidth="138" CellTemplate="{StaticResource HospitalStatusTemplate}" SortMemberPath="Status"/><DataGridTemplateColumn Header="Thao tác" CellTemplate="{StaticResource ExecutionActions}" Width="210" MinWidth="210"/></DataGrid.Columns></DataGrid><TextBlock x:Name="StepEmpty" Style="{StaticResource HospitalMuted}" Margin="0,8"/>
           <TextBlock Text="Tất cả dịch vụ thực hiện của kế hoạch" FontWeight="SemiBold" Margin="0,12,0,8"/>
           <TextBlock Text="Bao gồm các lần khám khác của cùng bệnh nhân. Mở lần khám thực tế để xem nguồn ghi nhận." Style="{StaticResource HospitalMuted}" TextWrapping="Wrap" Margin="0,0,0,8"/>

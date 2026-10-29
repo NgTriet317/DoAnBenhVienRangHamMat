@@ -11,14 +11,41 @@ namespace ET
     [Table("DICH_VU")]
     public class ET_DICHVU
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaDV, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maDV = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TenDV, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string tenDV = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NhomDV, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string nhomDV = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaCK, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maCK = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính DonGia, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal donGia;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính ThoiGianDuKien, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private int thoiGianDuKien;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MoTa, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? moTa;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgayApDung, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime ngayApDung;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
 
         /// <summary>

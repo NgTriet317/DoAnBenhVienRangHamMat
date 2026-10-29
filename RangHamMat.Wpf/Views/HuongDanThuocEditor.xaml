@@ -1,19 +1,31 @@
+<!-- Giao diện HuongDanThuocEditor: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl xmlns:clinical="clr-namespace:RangHamMat.Controls.ClinicalWorkflow" clinical:ClinicalLayout.IsEnabled="True" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.HuongDanThuocEditor" FontFamily="Segoe UI" FontSize="14" Language="vi-VN" Background="#F3F6FA">
  <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/ClinicalWorkflowStyles.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
  <Grid Margin="12"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <!-- Nút thao tác ← Quay lại — ← Quay lại. Chuyển sự kiện đến Back_Click trong code-behind. -->
   <StackPanel Margin="0,0,0,12"><DockPanel><Button Content="← Quay lại" Click="Back_Click" DockPanel.Dock="Right"/><TextBlock Text="Nhóm và hướng dẫn kê đơn" Style="{StaticResource HospitalHeading}"/></DockPanel><TextBlock Text="Chỉ áp hướng dẫn sau khi được duyệt và bác sĩ xác nhận phù hợp. Không có nội dung tự duyệt sẵn." Foreground="#9A3412" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel>
   <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"><StackPanel>
+   <!-- Ô nhập GroupName. -->
    <Expander Header="Thêm nhóm kê đơn"><StackPanel Margin="10"><TextBox x:Name="GroupName" MaxLength="255"/><Button Content="Lưu nhóm" Click="AddGroup_Click" HorizontalAlignment="Right" Margin="0,8,0,0"/></StackPanel></Expander>
+   <!-- Nút thao tác FindDrugButton — Tìm thuốc. Chuyển sự kiện đến FindDrug_Click trong code-behind. -->
    <TextBlock Text="Tìm thuốc theo mã hoặc tên" Style="{StaticResource FieldLabel}"/><DockPanel><Button x:Name="FindDrugButton" Content="Tìm thuốc" DockPanel.Dock="Right" Click="FindDrug_Click"/><TextBox x:Name="DrugQuery" Margin="0,0,8,0"/></DockPanel><TextBlock Text="Thuốc" Style="{StaticResource FieldLabel}" Margin="0,8,0,0"/><ComboBox x:Name="DrugChoice" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Drug_Changed" MinHeight="36"/>
+   <!-- Thông tin hiển thị ReviewText. -->
    <TextBlock x:Name="ReviewText" TextWrapping="Wrap" Margin="0,10,0,10"/>
+   <!-- Vùng bố cục InputPanel. -->
    <StackPanel x:Name="InputPanel"><TextBlock Text="Nhóm kê đơn"/><ComboBox x:Name="GroupChoice" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Field_Changed" MinHeight="36"/>
+    <!-- Ô nhập PopulationEditor. Chuyển sự kiện đến Input_Changed trong code-behind. -->
     <TextBlock Text="Đối tượng áp dụng / điều kiện cần kiểm tra" Margin="0,10,0,0"/><TextBox x:Name="PopulationEditor" MaxLength="255" TextChanged="Input_Changed"/>
+    <!-- Ô nhập RouteEditor. Chuyển sự kiện đến Input_Changed trong code-behind. -->
     <TextBlock Text="Đường dùng" Margin="0,10,0,0"/><TextBox x:Name="RouteEditor" MaxLength="100" TextChanged="Input_Changed"/>
+    <!-- Ô nhập DoseEditor. Chuyển sự kiện đến Input_Changed trong code-behind. -->
     <TextBlock Text="Liều gợi ý" Margin="0,10,0,0"/><TextBox x:Name="DoseEditor" MaxLength="255" TextChanged="Input_Changed"/>
+    <!-- Ô nhập InstructionEditor. Chuyển sự kiện đến Input_Changed trong code-behind. -->
     <TextBlock Text="Hướng dẫn gợi ý" Margin="0,10,0,0"/><TextBox x:Name="InstructionEditor" AcceptsReturn="True" MinHeight="100" TextWrapping="Wrap" TextChanged="Input_Changed"/>
    </StackPanel>
+   <!-- Nút thao tác NextVersionButton — Soạn phiên bản nháp tiếp theo. Chuyển sự kiện đến NextVersion_Click trong code-behind. -->
    <Button x:Name="NextVersionButton" Content="Soạn phiên bản nháp tiếp theo" Click="NextVersion_Click" Margin="0,12,0,0" HorizontalAlignment="Left"/>
   </StackPanel></ScrollViewer>
+  <!-- Thông tin hiển thị ErrorText. -->
   <StackPanel Grid.Row="2" Margin="0,10,0,0"><TextBlock x:Name="ErrorText" Foreground="#B91C1C" TextWrapping="Wrap"/><DockPanel Margin="0,8,0,0"><WrapPanel DockPanel.Dock="Right"><Button Content="Tải lại (bỏ nháp)" Click="Reload_Click"/><Button x:Name="SaveButton" Content="Lưu nháp" Click="Save_Click" Margin="8,0"/><Button x:Name="ApproveButton" Content="Duyệt hướng dẫn" Click="Approve_Click" Style="{StaticResource HospitalPrimary}"/></WrapPanel><TextBlock x:Name="StatusText" VerticalAlignment="Center" TextWrapping="Wrap"/></DockPanel></StackPanel>
  </Grid>
 </UserControl>

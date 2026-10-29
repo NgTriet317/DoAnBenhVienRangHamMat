@@ -21,9 +21,12 @@
       <Grid.ColumnDefinitions><ColumnDefinition Width="330" MinWidth="270" MaxWidth="420"/><ColumnDefinition Width="12"/><ColumnDefinition Width="7*" MinWidth="460"/></Grid.ColumnDefinitions>
       <Border Style="{StaticResource HospitalPanel}" Padding="12">
         <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <!-- Ô nhập SearchBox. Chuyển sự kiện đến Filter_Changed trong code-behind. -->
           <StackPanel Margin="0,0,0,12"><TextBlock Text="Danh sách bệnh nhân" FontWeight="SemiBold" FontSize="15"/><TextBlock Text="Tìm mã, tên, điện thoại hoặc ngày sinh" Style="{StaticResource HospitalMuted}" Margin="0,4,0,6"/><TextBox x:Name="SearchBox" TextChanged="Filter_Changed" MinHeight="34" AutomationProperties.Name="Tìm bệnh nhân theo mã, tên, điện thoại, ngày sinh"/></StackPanel>
           <Grid Grid.Row="1" Margin="0,0,0,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <!-- Trường lựa chọn GenderFilter. Chuyển sự kiện đến Filter_Changed trong code-behind. -->
             <StackPanel><TextBlock Text="Giới tính" Style="{StaticResource HospitalMuted}" Margin="0,0,0,4"/><ComboBox x:Name="GenderFilter" SelectedIndex="0" SelectionChanged="Filter_Changed" MinHeight="32"><ComboBoxItem Content="Tất cả"/><ComboBoxItem Content="Nam"/><ComboBoxItem Content="Nữ"/><ComboBoxItem Content="Khác"/></ComboBox></StackPanel>
+            <!-- Trường lựa chọn StatusFilter. Chuyển sự kiện đến Filter_Changed trong code-behind. -->
             <StackPanel Grid.Column="2"><TextBlock Text="Trạng thái" Style="{StaticResource HospitalMuted}" Margin="0,0,0,4"/><ComboBox x:Name="StatusFilter" SelectedIndex="0" SelectionChanged="Filter_Changed" MinHeight="32"><ComboBoxItem Content="Tất cả"/><ComboBoxItem Content="Đang theo dõi"/><ComboBoxItem Content="Ngừng theo dõi"/></ComboBox></StackPanel>
           </Grid>
           <Grid Grid.Row="2">
@@ -31,15 +34,19 @@
             <DataGrid x:Name="Grid_BENH_NHAN" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow" SelectionChanged="Patient_SelectionChanged" HeadersVisibility="None" RowHeaderWidth="0" GridLinesVisibility="None" BorderThickness="0" CanUserSortColumns="False" RowStyle="{StaticResource PatientRow}" CellStyle="{StaticResource PatientCell}" HorizontalScrollBarVisibility="Disabled" RowHeight="90">
               <DataGrid.Columns><DataGridTemplateColumn Width="*"><DataGridTemplateColumn.CellTemplate><DataTemplate><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="{Binding HoTenBN}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" FontSize="14"/><TextBlock Foreground="#687B91" FontSize="12" Margin="0,5,0,0"><Run Text="{Binding MaBN, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding SDT, Mode=OneWay}"/></TextBlock><TextBlock Text="{Binding NgaySinhHienThi}" FontSize="12" Foreground="#687B91" Margin="0,3,0,0"/><TextBlock Text="{Binding LanKhamGanNhat}" FontSize="12" Foreground="#687B91" Margin="0,3,0,0"/></StackPanel><TextBlock Grid.Column="1" Text="{Binding GioiTinh}" Foreground="#687B91" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center"/></Grid></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn></DataGrid.Columns>
             </DataGrid>
+            <!-- Thông tin hiển thị ListEmpty — Chưa có bệnh nhân. Thêm bệnh nhân để bắt đầu.. -->
             <TextBlock x:Name="ListEmpty" Text="Chưa có bệnh nhân. Thêm bệnh nhân để bắt đầu." Style="{StaticResource HospitalMuted}" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16" IsHitTestVisible="False" Visibility="Collapsed"/>
           </Grid>
+          <!-- Thông tin hiển thị RecordCount. -->
           <StackPanel Grid.Row="3" Margin="0,12,0,0"><TextBlock x:Name="RecordCount" Style="{StaticResource HospitalMuted}"/><DockPanel Margin="0,8,0,0"><!-- Thao tác ‹ Trước: gọi Previous_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
           <Button x:Name="PreviousButton" Content="‹ Trước" DockPanel.Dock="Left" Click="Previous_Click" Style="{StaticResource HospitalSecondary}"/><!-- Thao tác Sau ›: gọi Next_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
+          <!-- Thông tin hiển thị PageLabel. -->
           <Button x:Name="NextButton" Content="Sau ›" DockPanel.Dock="Right" Click="Next_Click" Style="{StaticResource HospitalSecondary}"/><TextBlock x:Name="PageLabel" HorizontalAlignment="Center" VerticalAlignment="Center"/></DockPanel></StackPanel>
         </Grid>
       </Border>
       <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="#DCE5EF" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"/>
       <Grid Grid.Column="2">
+        <!-- Vùng bố cục ProfileEmpty. -->
         <Border x:Name="ProfileEmpty" Style="{StaticResource HospitalPanel}"><StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="350"><TextBlock Text="Chọn bệnh nhân" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center"/><TextBlock x:Name="ProfileEmptyText" Text="Chọn một bệnh nhân ở danh sách để xem hồ sơ, lịch hẹn và lịch sử khám." Style="{StaticResource HospitalMuted}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,10,0,0"/></StackPanel></Border>
         <!-- Vùng ProfileHost: hiển thị nội dung/danh sách được code-behind hoặc Binding cung cấp; DataTemplate quyết định cách trình bày mỗi đối tượng. -->
         <ContentControl x:Name="ProfileHost" Visibility="Collapsed"/>

@@ -8,36 +8,48 @@
   <Style x:Key="PaymentTextInput" TargetType="TextBox" BasedOn="{StaticResource HospitalTextInput}"><Setter Property="FontSize" Value="13"/><Setter Property="Padding" Value="10,4"/></Style></ResourceDictionary></UserControl.Resources>
  <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
   <StackPanel><TextBlock Text="Hóa đơn và thanh toán" Style="{StaticResource HospitalHeading}"/><TextBlock Text="Thu phí dịch vụ đã xác nhận và thuốc đã cấp. Giữ cùng bệnh nhân, lần khám khi chuyển mục." Style="{StaticResource HospitalMuted}"/></StackPanel>
+  <!-- Thành phần FinanceSourceExpander — Tìm / chọn bệnh nhân và lượt khám. -->
   <Expander x:Name="FinanceSourceExpander" Grid.Row="1" Header="Tìm / chọn bệnh nhân và lượt khám" IsExpanded="True"><WrapPanel Margin="0,8,0,12"><StackPanel x:Name="FinanceSearchPanel" Width="360" Margin="0,0,14,10" Visibility="Collapsed"><TextBlock Text="Tìm tên/mã BN, lượt hoặc hóa đơn tại SQL" Style="{StaticResource FieldLabel}"/><DockPanel><Button x:Name="FinanceSearchButton" Content="Tìm" Click="FinanceSearch_Click" DockPanel.Dock="Right" MinHeight="36"/><TextBox x:Name="FinanceSearch" AutomationProperties.Name="Tìm nguồn thu theo tên hoặc mã"/></DockPanel><WrapPanel Margin="0,6,0,0"><Button x:Name="PreviousFinancePage" Content="←" Click="PreviousFinance_Click" MinHeight="36"/><TextBlock x:Name="FinancePageText" VerticalAlignment="Center" Margin="8,0"/><Button x:Name="NextFinancePage" Content="→" Click="NextFinance_Click" MinHeight="36"/></WrapPanel></StackPanel>
+   <!-- Trường lựa chọn PatientFilter. Chuyển sự kiện đến Patient_Changed trong code-behind. -->
    <StackPanel Width="240" Margin="0,0,14,10"><TextBlock Text="Bệnh nhân" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="PatientFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Patient_Changed" AutomationProperties.Name="Bệnh nhân"/></StackPanel>
+   <!-- Trường lựa chọn VisitFilter. Chuyển sự kiện đến Visit_Changed trong code-behind. -->
    <StackPanel Width="245" Margin="0,0,14,10"><TextBlock Text="Lần khám" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="VisitFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Visit_Changed" AutomationProperties.Name="Lần khám"/></StackPanel>
+   <!-- Trường lựa chọn EmployeeFilter. Chuyển sự kiện đến Employee_Changed trong code-behind. -->
    <StackPanel Width="240" Margin="0,0,14,10"><TextBlock Text="Nhân viên thực hiện *" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="EmployeeFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Employee_Changed" AutomationProperties.Name="Nhân viên thực hiện"/></StackPanel>
    <!-- Thao tác Tải lại: gọi Reload_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
    <Button Content="Tải lại" Click="Reload_Click" Margin="0,20,8,10"/><!-- Thao tác Lập hóa đơn: gọi Create_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
    <Button x:Name="CreateButton" Content="Lập hóa đơn" Click="Create_Click" Style="{StaticResource HospitalPrimary}" Margin="0,20,0,10"/>
   </WrapPanel></Expander>
+  <!-- Thông tin hiển thị PageStatus. -->
   <TextBlock x:Name="PageStatus" Grid.Row="2" TextWrapping="Wrap" Margin="0,0,0,12" Foreground="#8F3B32" AutomationProperties.LiveSetting="Polite"/>
   <Grid Grid.Row="3"><Grid.ColumnDefinitions><ColumnDefinition Width="310" MinWidth="270"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
    <Border Style="{StaticResource HospitalPanel}" Padding="12"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <!-- Thông tin hiển thị InvoiceCount — Hóa đơn. -->
     <TextBlock x:Name="InvoiceCount" Text="Hóa đơn" FontWeight="SemiBold" Margin="8,2,8,12"/>
     <!-- Vùng InvoiceList: hiển thị nội dung/danh sách được code-behind hoặc Binding cung cấp; DataTemplate quyết định cách trình bày mỗi đối tượng. -->
     <ListBox x:Name="InvoiceList" Grid.Row="1" SelectionChanged="Invoice_Changed" BorderThickness="0" Background="Transparent" HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
      <ListBox.ItemTemplate><DataTemplate><StackPanel Margin="8,10"><DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding TrangThai}" Style="{StaticResource HospitalMuted}"/><TextBlock Text="{Binding MaHD, StringFormat=Hóa đơn #{0}}" FontWeight="SemiBold"/></DockPanel><TextBlock Text="{Binding HoTenBN}" Margin="0,7,0,3" TextWrapping="Wrap"/><TextBlock Text="{Binding NgayLap, StringFormat={}{0:dd/MM/yyyy HH:mm}}" Style="{StaticResource HospitalMuted}"/><TextBlock Text="{Binding SoTienPhaiThu, Converter={StaticResource InvoiceMoney}}" Foreground="{StaticResource AccentDark}" FontWeight="SemiBold" Margin="0,6,0,0"/></StackPanel></DataTemplate></ListBox.ItemTemplate>
     </ListBox>
    </Grid></Border>
+   <!-- Thành phần DetailTabs. -->
    <TabControl x:Name="DetailTabs" Grid.Column="2">
     <!-- Nhóm Hóa đơn / thu tiền: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
     <TabItem Header="Hóa đơn / thu tiền"><Grid Margin="0,14,0,0">
      <!-- Vùng EditorHost: hiển thị nội dung/danh sách được code-behind hoặc Binding cung cấp; DataTemplate quyết định cách trình bày mỗi đối tượng. -->
      <ContentControl x:Name="EditorHost" Visibility="Collapsed"/>
+     <!-- Thành phần InvoiceContent. -->
      <ScrollViewer x:Name="InvoiceContent" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
+      <!-- Thông tin hiển thị InvoiceEmpty — Chọn hóa đơn để xem khoản thu và thanh toán. Chọn lần khám để lập hóa đơn mới.. -->
       <TextBlock x:Name="InvoiceEmpty" Text="Chọn hóa đơn để xem khoản thu và thanh toán. Chọn lần khám để lập hóa đơn mới." Style="{StaticResource HospitalMuted}" Margin="8,14"/>
+      <!-- Vùng bố cục InvoicePanel. -->
       <Border x:Name="InvoicePanel" Style="{StaticResource HospitalPanel}" Visibility="Collapsed"><StackPanel>
+       <!-- Thông tin hiển thị InvoiceTitle. -->
        <TextBlock x:Name="InvoiceTitle" Style="{StaticResource HospitalSection}" Margin="0,0,8,12"/>
        <WrapPanel><!-- Thao tác Xác nhận: gọi Confirm_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
        <Button x:Name="ConfirmButton" Content="Xác nhận" Click="Confirm_Click" Style="{StaticResource HospitalPrimary}"/><!-- Thao tác Hủy nháp: gọi Cancel_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
        <Button x:Name="CancelButton" Content="Hủy nháp" Click="Cancel_Click"/><!-- Thao tác Xem trước / In…: gọi Print_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
        <Button Content="Xem trước / In…" Click="Print_Click"/></WrapPanel>
+       <!-- Thông tin hiển thị InvoiceInfo. -->
        <TextBlock x:Name="InvoiceInfo" Style="{StaticResource HospitalMuted}" Margin="0,12,0,8"/>
        <WrapPanel Margin="0,0,0,12"><!-- Thao tác Hồ sơ: gọi Patient_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
        <Button Content="Hồ sơ" Click="Patient_Click"/><!-- Thao tác Lần khám: gọi Visit_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
@@ -53,11 +65,16 @@
          <DataGridTextColumn Header="Thành tiền" Binding="{Binding ThanhTien, Converter={StaticResource InvoiceMoney}}" Width="140" MinWidth="140" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}"/>
         </DataGrid.Columns>
        </DataGrid>
+       <!-- Thông tin hiển thị TotalsText. -->
        <TextBlock x:Name="TotalsText" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,16,0,12"/>
        <TextBlock Text="Thu / hoàn tiền" Style="{StaticResource HospitalSection}"/>
+       <!-- Thành phần PaymentForm. -->
        <WrapPanel x:Name="PaymentForm"><StackPanel Width="100" Margin="0,0,12,12"><TextBlock Text="Giao dịch" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="PaymentType" SelectedIndex="0"><ComboBoxItem Content="Thu"/><ComboBoxItem Content="Hoàn"/></ComboBox></StackPanel><StackPanel Width="150" Margin="0,0,12,12"><TextBlock Text="Số tiền (₫) *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}">
+        <!-- Ô nhập AmountBox. Kiểm tra đầu vào theo metadata THANH_TOAN.SoTien. -->
         <TextBox x:Name="AmountBox" Tag="DB:THANH_TOAN.SoTien" Style="{StaticResource PaymentTextInput}" AutomationProperties.Name="Số tiền thanh toán"/>
+       <!-- Trường lựa chọn MethodBox. -->
        </ContentControl></StackPanel><StackPanel Width="180" Margin="0,0,12,12"><TextBlock Text="Phương thức *" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="MethodBox" SelectedIndex="0"><ComboBoxItem Content="Tiền mặt"/><ComboBoxItem Content="Chuyển khoản"/><ComboBoxItem Content="Thẻ"/></ComboBox></StackPanel><StackPanel Width="250" Margin="0,0,12,12"><TextBlock Text="Lý do (bắt buộc khi hoàn)" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}">
+        <!-- Ô nhập ReasonBox. Kiểm tra đầu vào theo metadata THANH_TOAN.LyDo. -->
         <TextBox x:Name="ReasonBox" Tag="DB:THANH_TOAN.LyDo" Style="{StaticResource PaymentTextInput}" AutomationProperties.Name="Lý do giao dịch"/>
        </ContentControl></StackPanel><!-- Thao tác Ghi nhận giao dịch: gọi Payment_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
        <Button Content="Ghi nhận giao dịch" Click="Payment_Click" Style="{StaticResource HospitalPrimary}" Margin="0,20,0,12"/></WrapPanel>
@@ -79,8 +96,10 @@
     <!-- Nhóm Cấp thuốc: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
     <TabItem Header="Cấp thuốc" x:Name="DispenseTab"><ScrollViewer VerticalScrollBarVisibility="Auto"><Border Style="{StaticResource HospitalPanel}" Margin="0,14,0,0"><StackPanel>
      <TextBlock Text="Cấp đủ đơn thuốc" Style="{StaticResource HospitalSection}" Margin="0,0,0,8"/><TextBlock Text="Chọn lần khám và đơn đã xác nhận. Thuốc được cấp đủ từ các lô còn sử dụng, chưa hết hạn trong kho đã chọn; ưu tiên lô nhập trước." Style="{StaticResource HospitalMuted}"/>
+     <!-- Trường lựa chọn PrescriptionFilter. Chuyển sự kiện đến Stock_Changed trong code-behind. -->
      <WrapPanel Margin="0,18,0,0"><StackPanel Width="280" Margin="0,0,14,12"><TextBlock Text="Đơn thuốc *" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="PrescriptionFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Stock_Changed"/></StackPanel><StackPanel Width="240" Margin="0,0,14,12"><TextBlock Text="Kho cấp thuốc *" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="WarehouseFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Stock_Changed"/></StackPanel><!-- Thao tác Cấp thuốc và ghi sổ: gọi Dispense_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
      <Button x:Name="DispenseButton" Content="Cấp thuốc và ghi sổ" Click="Dispense_Click" Style="{StaticResource HospitalPrimary}" Margin="0,20,0,12"/></WrapPanel>
+     <!-- Thông tin hiển thị DispenseInfo. -->
      <TextBlock x:Name="DispenseInfo" Style="{StaticResource HospitalMuted}" Margin="0,0,0,12"/>
      <TextBlock Text="Thuốc kê" Style="{StaticResource HospitalSection}"/><!-- Bảng PrescriptionGrid: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. -->
      <DataGrid x:Name="PrescriptionGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" MaxHeight="230" MinHeight="90" ScrollViewer.HorizontalScrollBarVisibility="Auto">
@@ -102,6 +121,7 @@
       </DataGrid.Columns>
      </DataGrid>
     </StackPanel></Border></ScrollViewer></TabItem>
+    <!-- Thành phần PricingTab — Bảng tính phí. -->
     <TabItem x:Name="PricingTab" Header="Bảng tính phí" Visibility="Collapsed"><ContentControl x:Name="PricingHost"/></TabItem>
    </TabControl>
   </Grid>

@@ -11,14 +11,38 @@ namespace ET
     [Table("DON_THUOC")]
     public class ET_DONTHUOC
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaDTThayThe, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maDTThayThe;
 
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaDT, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maDT = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaLS, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maLS = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaBS, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maBS = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgayKe, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime ngayKe;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính LyDoThayThe, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? lyDoThayThe;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GhiChu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? ghiChu;
 
         /// <summary>
@@ -72,6 +96,17 @@ namespace ET
 
         // Cột bổ sung P03; constructor cũ được giữ để tương thích mã gọi hiện có.
         public string? MaDTThayThe { get => maDTThayThe; set => maDTThayThe = value; }
+        /// <summary>
+        /// Khởi tạo đơn thuốc. Gán các giá trị đầu vào vào đối tượng để nơi gọi sử dụng cùng một bản dữ liệu.
+        /// </summary>
+        /// <param name="maDT">Mã đơn thuốc xác định đối tượng cần xử lý.</param>
+        /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+        /// <param name="maBS">Mã bác sĩ xác định đối tượng cần xử lý.</param>
+        /// <param name="ngayKe">Giá trị ngày kê dùng khi thực hiện thao tác; kiểu DateTime.</param>
+        /// <param name="lyDoThayThe">Giá trị lý do thay thế dùng khi thực hiện thao tác; kiểu string?.</param>
+        /// <param name="trangThai">Giá trị trạng thái dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="ghiChu">Giá trị ghi chú dùng khi thực hiện thao tác; kiểu string?.</param>
+        /// <param name="maDTThayThe">Mã đơn thuốc thay thế xác định đối tượng cần xử lý.</param>
         public ET_DONTHUOC(string maDT, string maLS, string maBS, DateTime ngayKe, string? lyDoThayThe, string trangThai, string? ghiChu, string? maDTThayThe)
         {
             this.maDT = maDT;

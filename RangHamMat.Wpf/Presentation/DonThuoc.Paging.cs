@@ -4,8 +4,15 @@ using RangHamMat.Controls;
 using RangHamMat.Controls.ClinicalWorkflow;
 
 namespace RangHamMat.Views;
+/// <summary>
+/// Phần xử lý đơn thuốc của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+/// </summary>
 public partial class DonThuoc
 {
+    /// <summary>
+    /// Nạp trang lịch sử từ SQL và đồng bộ lựa chọn trên giao diện.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>HoTroGiaoDien.Choice</c>, <c>history.LayTrangLichSuDon</c>, <c>page.CacDong.Select</c>, <c>rows.Select</c>.</remarks>
     private void RefreshHistoryPage()
     {
         try
@@ -48,8 +55,20 @@ public partial class DonThuoc
         finally { updating = false; }
         ShowSelected();
     }
+    /// <summary>
+    /// Xử lý thao tác trước đơn thuốc khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>MustKeepSource</c>, <c>Refresh</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void PreviousPrescription_Click(object sender, RoutedEventArgs e)
     { if (MustKeepSource()) return; historyPage = Math.Max(1, historyPage - 1); Refresh(); }
+    /// <summary>
+    /// Xử lý thao tác tiếp đơn thuốc khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>MustKeepSource</c>, <c>Refresh</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void NextPrescription_Click(object sender, RoutedEventArgs e)
     { if (MustKeepSource()) return; historyPage++; Refresh(); }
 }

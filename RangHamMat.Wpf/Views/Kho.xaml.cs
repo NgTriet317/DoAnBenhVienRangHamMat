@@ -9,20 +9,50 @@ using ET;
 
 namespace RangHamMat.Views
 {
+    /// <summary>
+    /// Phần xử lý kho của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public partial class Kho : UserControl
     {
+        /// <summary>
+        /// Đối tượng nghiệp vụ kho được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private readonly BUS_KHO busKho = new BUS_KHO();
+        /// <summary>
+        /// Đối tượng nghiệp vụ nhân viên được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private readonly BUS_NHANVIEN busNhanVien = new BUS_NHANVIEN();
 
+        /// <summary>
+        /// Danh sách tồn dùng trong kho được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private DataTable danhSachTon = new DataTable();
+        /// <summary>
+        /// Danh sách lô dùng trong kho được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private DataTable danhSachLo = new DataTable();
 
+        /// <summary>
+        /// Lọc tìm kiểm được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string locTimKiem = "";
+        /// <summary>
+        /// Lọc trạng thái được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string locTrangThai = "";
 
+        /// <summary>
+        /// Cờ Đang tải; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool dangTai;
+        /// <summary>
+        /// Cờ Đã tải; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool daTai;
 
+        /// <summary>
+        /// Khởi tạo kho. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+        /// </summary>
         public Kho()
         {
             InitializeComponent();
@@ -148,11 +178,23 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn hộp chọn kho vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>TaiTonKho</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void cboKho_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (daTai && !dangTai) TaiTonKho();
         }
 
+        /// <summary>
+        /// Xử lý thao tác làm mới khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>hienThiDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void LamMoi_Click(object sender, RoutedEventArgs e)
         {
             hienThiDuLieu();

@@ -9,12 +9,29 @@ using System.Windows.Controls;
 
 namespace RangHamMat.Views
 {
+    /// <summary>
+    /// Phần xử lý lịch khám của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public partial class LichKham : UserControl, IPatientScoped
     {
+        /// <summary>
+        /// Đối tượng nghiệp vụ lịch khám được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         BUS_LICHKHAM lichkham = new BUS_LICHKHAM();
+        /// <summary>
+        /// Danh sách  dùng trong lịch khám được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         List<ET_LICHKHAM_HIENTHI> danhSach = new List<ET_LICHKHAM_HIENTHI>();
+        /// <summary>
+        /// Mã bệnh nhân. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public string? PatientId { get; private set; }
 
+        /// <summary>
+        /// Áp dụng bệnh nhân được chỉ định làm phạm vi dữ liệu của màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>DuLieuGiaoDien.BaoDamNguCanh</c>, <c>TaiDuLieu</c>, <c>ApDungBoLoc</c>, <c>HienFormThem</c>.</remarks>
+        /// <param name="maBenhNhan">Mã bệnh nhân xác định đối tượng cần xử lý.</param>
         public void SetPatient(string? maBenhNhan)
         {
             PatientId = maBenhNhan;
@@ -39,6 +56,9 @@ namespace RangHamMat.Views
                 .Where(nv => maChucVuBacSi.Contains(nv.MaChucVu)).ToList();
         }
 
+        /// <summary>
+        /// Khởi tạo lịch khám. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+        /// </summary>
         public LichKham()
         {
             InitializeComponent();
@@ -49,6 +69,10 @@ namespace RangHamMat.Views
             HoTroGiaoDien.Observe(this, TaiDuLieu);
         }
 
+        /// <summary>
+        /// Đọc lại dữ liệu theo phạm vi hiện tại, áp dụng bộ lọc và cập nhật danh sách/chi tiết.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>NapDanhSachBacSi</c>, <c>form.NapLaiDanhSachBacSi</c>, <c>DuLieuGiaoDien.Rows</c>, <c>UiRecord.ChuyenDoi&lt;ET_LICHKHAM_HIENTHI&gt;</c>.</remarks>
         public void TaiDuLieu()
         {
             try
@@ -83,6 +107,10 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Nạp các danh sách dùng cho bộ lọc và đặt lựa chọn ban đầu.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>NapDanhSachBacSi</c>.</remarks>
         private void NapBoLoc()
         {
             NapDanhSachBacSi();
@@ -91,6 +119,10 @@ namespace RangHamMat.Views
             cboPhong.SelectedIndex = -1;
         }
 
+        /// <summary>
+        /// Nạp lại danh sách bác sĩ và khôi phục mã đang chọn để giữ bộ lọc hiện tại.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>.ToString</c>, <c>LayBacSi</c>.</remarks>
         private void NapDanhSachBacSi()
         {
             // Giữ bộ lọc bác sĩ hiện tại khi làm mới, không xóa lựa chọn người dùng.
@@ -99,6 +131,10 @@ namespace RangHamMat.Views
             if (maDangChon.Length > 0) cboBacSi.SelectedValue = maDangChon;
         }
 
+        /// <summary>
+        /// Áp dụng các tiêu chí đang chọn để cập nhật danh sách và trạng thái rỗng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>txtTimKiem.Text.Trim</c>, <c>cboBacSi.SelectedValue.ToString</c>, <c>cboPhong.SelectedValue.ToString</c>, <c>lich.MaLich.Contains</c>.</remarks>
         private void ApDungBoLoc()
         {
             if (lstLichKham == null || cboTrangThai == null || txtTimKiem == null) return;
@@ -169,21 +205,45 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Tiếp nhận thay đổi bộ lọc và cập nhật trạng thái/dữ liệu phụ thuộc.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ApDungBoLoc</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void BoLoc_Changed(object sender, RoutedEventArgs e)
         {
             ApDungBoLoc();
         }
 
+        /// <summary>
+        /// Tiếp nhận thay đổi ngày lọc và cập nhật trạng thái/dữ liệu phụ thuộc.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ApDungBoLoc</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void NgayLoc_Changed(object sender, SelectionChangedEventArgs e)
         {
             ApDungBoLoc();
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút lọc khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ApDungBoLoc</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnLoc_Click(object sender, RoutedEventArgs e)
         {
             ApDungBoLoc();
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút đặt lại khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>txtTimKiem.Clear</c>, <c>ApDungBoLoc</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnDatLai_Click(object sender, RoutedEventArgs e)
         {
             txtTimKiem.Clear();
@@ -210,6 +270,11 @@ namespace RangHamMat.Views
             pnlBieuMau.Content = form;
         }
 
+        /// <summary>
+        /// Đưa dữ liệu mục đang chọn vào vùng chi tiết, đồng thời cập nhật các nút thao tác liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>DuLieuGiaoDien.Find</c>, <c>HoTroGiaoDien.Workspace</c>, <c>.ShowHoSoDetails</c>, <c>lichkham.layLichKhamTheoMa</c>.</remarks>
+        /// <param name="lichChon">Giá trị lịch chọn dùng khi thực hiện thao tác; kiểu ET_LICHKHAM_HIENTHI.</param>
         private void HienChiTiet(ET_LICHKHAM_HIENTHI lichChon)
         {
             if (DuLieuGiaoDien.PhamViLamSang)
@@ -241,6 +306,11 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Chọn lịch khám theo mã để hiển thị lại đúng bản ghi sau khi tải danh sách.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>lstLichKham.ScrollIntoView</c>.</remarks>
+        /// <param name="maLich">Mã lịch xác định đối tượng cần xử lý.</param>
         private void ChonLichTrongDanhSach(string maLich)
         {
             foreach (object item in lstLichKham.Items)
@@ -256,6 +326,12 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Tiếp nhận thông báo biểu mẫu đã lưu, tải lại dữ liệu và chọn lịch vừa xử lý.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>DuLieuGiaoDien.RefreshFromDatabase</c>, <c>TaiDuLieu</c>, <c>ChonLichTrongDanhSach</c>, <c>HienFormThem</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void Form_LuuThanhCong(object? sender, EventArgs e)
         {
             ThemLichKham form = sender as ThemLichKham;
@@ -275,12 +351,24 @@ namespace RangHamMat.Views
             else HienFormThem();
         }
 
+        /// <summary>
+        /// Tiếp nhận yêu cầu đóng biểu mẫu để quay về trạng thái xem lịch khám.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>HienFormThem</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void Form_YeuCauDong(object? sender, EventArgs e)
         {
             lstLichKham.SelectedItem = null;
             HienFormThem();
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút thêm lịch khám khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>HienFormThem</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnThemLichKham_Click(object sender, RoutedEventArgs e)
         {
             e.Handled = true;

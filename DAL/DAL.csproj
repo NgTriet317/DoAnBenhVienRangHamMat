@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Thư viện truy cập dữ liệu .NET 8, dùng kiểu nullable khi đọc các cột SQL cho phép NULL. -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -7,16 +8,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Dapper/Dapper.Contrib ánh xạ ET; SqlClient cung cấp kết nối và giao dịch SQL Server. -->
     <PackageReference Include="Dapper" Version="2.1.89" />
     <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <!-- DAL chỉ nhận/trả hợp đồng dữ liệu ET, không tham chiếu BUS hoặc giao diện. -->
     <ProjectReference Include="..\ET\ET.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Nhúng ánh xạ quyền vào assembly để DAL xác thực lại quyền từ cấu hình đi kèm bản build. -->
     <EmbeddedResource Include="ClinicalWorkflowPermissions.json" />
   </ItemGroup>
 </Project>

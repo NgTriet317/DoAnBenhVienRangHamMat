@@ -1,3 +1,4 @@
+<!-- Giao diện CaLamViec: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl x:Class="RangHamMat.Views.CaLamViec"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -6,28 +7,42 @@
         mc:Ignorable="d"        
         FontFamily="Segoe UI" FontSize="13" Foreground="#242B40" Background="#F7F8FC">
     <UserControl.Resources>
+        <!-- Tài nguyên Primary (SolidColorBrush) dùng lại qua khóa XAML. -->
         <SolidColorBrush x:Key="Primary" Color="#5B53E8"/>
+        <!-- Tài nguyên PrimaryLight (SolidColorBrush) dùng lại qua khóa XAML. -->
         <SolidColorBrush x:Key="PrimaryLight" Color="#EFEDFF"/>
+        <!-- Tài nguyên Ink (SolidColorBrush) dùng lại qua khóa XAML. -->
         <SolidColorBrush x:Key="Ink" Color="#242B40"/>
+        <!-- Tài nguyên Muted (SolidColorBrush) dùng lại qua khóa XAML. -->
         <SolidColorBrush x:Key="Muted" Color="#77829C"/>
+        <!-- Tài nguyên Stroke (SolidColorBrush) dùng lại qua khóa XAML. -->
         <SolidColorBrush x:Key="Stroke" Color="#DDE2EF"/>
+        <!-- Tài nguyên Pane (SolidColorBrush) dùng lại qua khóa XAML. -->
         <SolidColorBrush x:Key="Pane" Color="#F0F2F8"/>
+        <!-- Tài nguyên Good (SolidColorBrush) dùng lại qua khóa XAML. -->
         <SolidColorBrush x:Key="Good" Color="#168460"/>
+        <!-- Tài nguyên GoodBg (SolidColorBrush) dùng lại qua khóa XAML. -->
         <SolidColorBrush x:Key="GoodBg" Color="#E6F6EE"/>
+        <!-- Tài nguyên Warn (SolidColorBrush) dùng lại qua khóa XAML. -->
         <SolidColorBrush x:Key="Warn" Color="#A96C0F"/>
+        <!-- Tài nguyên WarnBg (SolidColorBrush) dùng lại qua khóa XAML. -->
         <SolidColorBrush x:Key="WarnBg" Color="#FFF2D5"/>
+        <!-- Tài nguyên BoolVisibility (BooleanToVisibilityConverter) dùng lại qua khóa XAML. -->
         <BooleanToVisibilityConverter x:Key="BoolVisibility"/>
 
+        <!-- Tài nguyên FieldLabel (Style) áp dụng cho TextBlock. -->
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{StaticResource Ink}"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
         </Style>
+        <!-- Tài nguyên MutedText (Style) áp dụng cho TextBlock. -->
         <Style x:Key="MutedText" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource Muted}"/>
             <Setter Property="FontSize" Value="12"/>
         </Style>
+        <!-- Tài nguyên BaseButton (Style) áp dụng cho Button. -->
         <Style x:Key="BaseButton" TargetType="Button">
             <Setter Property="Height" Value="38"/>
             <Setter Property="Padding" Value="14,0"/>
@@ -40,6 +55,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
+                        <!-- Vùng bố cục Shell. -->
                         <Border x:Name="Shell" BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 Background="{TemplateBinding Background}" CornerRadius="7">
@@ -61,11 +77,13 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- Tài nguyên PrimaryButton (Style) áp dụng cho Button. -->
         <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
             <Setter Property="Background" Value="{StaticResource Primary}"/>
             <Setter Property="BorderBrush" Value="{StaticResource Primary}"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
+        <!-- Tài nguyên IconButton (Style) áp dụng cho Button. -->
         <Style x:Key="IconButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
             <Setter Property="Width" Value="33"/>
             <Setter Property="Height" Value="32"/>
@@ -73,6 +91,7 @@
             <Setter Property="FontSize" Value="17"/>
             <Setter Property="Foreground" Value="{StaticResource Muted}"/>
         </Style>
+        <!-- Tài nguyên ActionButton (Style) áp dụng cho Button. -->
         <Style x:Key="ActionButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
             <Setter Property="Height" Value="29"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
@@ -83,6 +102,7 @@
             <Setter Property="FontWeight" Value="Normal"/>
             <Setter Property="FontSize" Value="11"/>
         </Style>
+        <!-- Tài nguyên InputText (Style) áp dụng cho TextBox. -->
         <Style x:Key="InputText" TargetType="TextBox">
             <Setter Property="Height" Value="43"/>
             <Setter Property="Padding" Value="12,9"/>
@@ -93,6 +113,7 @@
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Foreground" Value="{StaticResource Ink}"/>
         </Style>
+        <!-- Tài nguyên InputCombo (Style) áp dụng cho ComboBox. -->
         <Style x:Key="InputCombo" TargetType="ComboBox">
             <Setter Property="Height" Value="43"/>
             <Setter Property="Padding" Value="9,5"/>
@@ -101,11 +122,13 @@
             <Setter Property="Foreground" Value="{StaticResource Ink}"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
+        <!-- Tài nguyên InputDate (Style) áp dụng cho DatePicker. -->
         <Style x:Key="InputDate" TargetType="DatePicker">
             <Setter Property="Height" Value="43"/>
             <Setter Property="BorderBrush" Value="{StaticResource Stroke}"/>
             <Setter Property="Background" Value="White"/>
         </Style>
+        <!-- Tài nguyên Chip (Style) áp dụng cho Border. -->
         <Style x:Key="Chip" TargetType="Border">
             <Setter Property="Background" Value="{StaticResource GoodBg}"/>
             <Setter Property="CornerRadius" Value="5"/>
@@ -113,6 +136,7 @@
             <Setter Property="HorizontalAlignment" Value="Left"/>
         </Style>
 
+        <!-- Tài nguyên StatusChip (Style) áp dụng cho Border. -->
         <Style x:Key="StatusChip" TargetType="Border" BasedOn="{StaticResource Chip}">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding Status}" Value="Chờ xác nhận">
@@ -120,6 +144,7 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+        <!-- Tài nguyên StatusText (Style) áp dụng cho TextBlock. -->
         <Style x:Key="StatusText" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource Good}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -132,6 +157,7 @@
 
         <!-- Một thẻ ca làm; nội dung thuần WPF, không dùng ảnh chụp làm giao diện. -->
         <DataTemplate x:Key="ShiftCardTemplate">
+            <!-- Vùng bố cục ShiftCard. -->
             <Border x:Name="ShiftCard" Background="White" BorderBrush="{StaticResource Stroke}"
                     BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,10"
                     Tag="{Binding}">
@@ -193,8 +219,10 @@
                                             <TextBlock Text="{Binding Person.Name}" FontSize="10.5" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal">
+                                            <!-- Nút thao tác ✓ Duyệt — ✓ Duyệt. Chuyển sự kiện đến btnDuyetCa_Click trong code-behind. -->
                                             <Button Style="{StaticResource ActionButton}" Tag="{Binding}"
                                                     Click="btnDuyetCa_Click" Content="✓  Duyệt" Margin="0,0,4,0"/>
+                                            <!-- Nút thao tác ✕ Từ chối — ✕ Từ chối. Chuyển sự kiện đến btnTuChoiCa_Click trong code-behind. -->
                                             <Button Style="{StaticResource ActionButton}" Tag="{Binding}"
                                                     Click="btnTuChoiCa_Click" Content="✕  Từ chối"/>
                                         </StackPanel>
@@ -204,11 +232,14 @@
                         </ItemsControl>
                     </StackPanel>
                     </StackPanel>
+                    <!-- Nút thao tác ✉ Đăng ký ca — ✉ Đăng ký ca. Chuyển sự kiện đến btnDangKyCa_Click trong code-behind. -->
                     <Button Style="{StaticResource PrimaryButton}" Content="✉  Đăng ký ca"
                             Tag="{Binding}" Click="btnDangKyCa_Click" Margin="0,4,0,6" Height="31"
                             Visibility="{Binding IsEmployee, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolVisibility}}"/>
+                    <!-- Nút thao tác ♧ Chi tiết ca — ♧ Chi tiết ca. Chuyển sự kiện đến btnChiTietCa_Click trong code-behind. -->
                     <Button Style="{StaticResource ActionButton}" Content="♧  Chi tiết ca"
                             Tag="{Binding}" Click="btnChiTietCa_Click" Margin="0,4,0,0"/>
+                    <!-- Nút thao tác ✕ Bỏ ca khỏi ngày — ✕ Bỏ ca khỏi ngày. Chuyển sự kiện đến btnBoCaKhoiNgay_Click trong code-behind. -->
                     <Button Style="{StaticResource ActionButton}" Content="✕  Bỏ ca khỏi ngày"
                             Tag="{Binding}" Click="btnBoCaKhoiNgay_Click" Margin="0,4,0,0"
                             Visibility="{Binding IsManager, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolVisibility}}"/>
@@ -221,6 +252,7 @@
         <!-- Main content -->
         <Grid x:Name="MainCaContent" Grid.Row="1" Margin="40,20,40,16">
             <Grid.RowDefinitions>
+                <!-- Thành phần HangTieuDeCa. -->
                 <RowDefinition x:Name="HangTieuDeCa" Height="104"/>
                 <RowDefinition Height="68"/>
                 <RowDefinition Height="78"/>
@@ -235,23 +267,30 @@
                                Style="{StaticResource MutedText}" Margin="0,7,0,0"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,0,0">
+                    <!-- Vùng bố cục EmployeePicker. -->
                     <StackPanel x:Name="EmployeePicker" Margin="0,0,12,0" Visibility="Collapsed">
                         <TextBlock Text="Nhân viên đang xem" FontSize="10" Foreground="{StaticResource Muted}" Margin="0,0,0,4"/>
+                        <!-- Trường lựa chọn cboEmployee. -->
                         <ComboBox x:Name="cboEmployee" Width="225" Height="37" Style="{StaticResource InputCombo}"
                                  DisplayMemberPath="Name"/>
                     </StackPanel>
+                    <!-- Nút thao tác btnDangKyTuan — ✓ Đăng ký tuần. Chuyển sự kiện đến btnDangKyTuan_Click trong code-behind. -->
                     <Button x:Name="btnDangKyTuan" Style="{StaticResource PrimaryButton}"
                             Content="✓  Đăng ký tuần" Click="btnDangKyTuan_Click"
                             ToolTip="Đăng ký các ca hợp lệ của tuần đang xem, bỏ qua ca đã có hoặc trùng giờ"
                             Margin="0,15,10,0" Visibility="Collapsed"/>
+                    <!-- Nút thao tác btnMyRequests — ✉ Đăng ký của tôi. Chuyển sự kiện đến btnXemDangKy_Click trong code-behind. -->
                     <Button x:Name="btnMyRequests" Style="{StaticResource PrimaryButton}"
                             Content="✉  Đăng ký của tôi" Click="btnXemDangKy_Click"
                             Margin="0,15,10,0" Visibility="Collapsed"/>
+                    <!-- Nút thao tác btnDongBoLichKham — ↻ Đồng bộ lịch khám. Chuyển sự kiện đến btnDongBoLichKham_Click trong code-behind. -->
                     <Button x:Name="btnDongBoLichKham" Style="{StaticResource BaseButton}"
                             Content="↻  Đồng bộ lịch khám" Click="btnDongBoLichKham_Click"
                             Margin="0,15,10,0" Visibility="Collapsed"/>
+                    <!-- Nút thao tác btnExport — ♧ Xuất lịch. Chuyển sự kiện đến btnXuatLich_Click trong code-behind. -->
                     <Button x:Name="btnExport" Style="{StaticResource BaseButton}" Content="♧  Xuất lịch"
                             Click="btnXuatLich_Click" Margin="0,15,10,0"/>
+                    <!-- Nút thao tác btnCreate — ＋ Tạo mẫu ca. Chuyển sự kiện đến btnMoTaoCa_Click trong code-behind. -->
                     <Button x:Name="btnCreate" Style="{StaticResource PrimaryButton}" Content="＋  Tạo mẫu ca"
                             Margin="0,15,0,0" Click="btnMoTaoCa_Click"/>
                 </StackPanel>
@@ -265,6 +304,7 @@
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="🔔  THÔNG BÁO ĐƠN XIN NGHỈ" Foreground="#22569F"
                                        FontWeight="Bold" FontSize="13"/>
+                            <!-- Thông tin hiển thị txtThongBaoDonXinNghi — Đang tải đơn chờ duyệt.... -->
                             <TextBlock x:Name="txtThongBaoDonXinNghi" Text="Đang tải đơn chờ duyệt..."
                                        Foreground="#364C70" FontSize="12" Margin="0,4,0,0"/>
                         </StackPanel>
@@ -281,6 +321,7 @@
                         <Border Background="#F7F8FC" Width="36" Height="36" CornerRadius="9">
                             <TextBlock Text="▦" FontSize="19" Foreground="{StaticResource Primary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
+                        <!-- Thông tin hiển thị txtShiftCount — 3. -->
                         <TextBlock x:Name="txtShiftCount" Text="3" FontSize="24" FontWeight="SemiBold" Margin="15,0,12,0" VerticalAlignment="Center"/>
                         <TextBlock Text="ca làm trong tuần" Style="{StaticResource MutedText}" VerticalAlignment="Center"/>
                     </StackPanel>
@@ -288,6 +329,7 @@
                         <Border Background="#F7F8FC" Width="36" Height="36" CornerRadius="9">
                             <TextBlock Text="♧" FontSize="19" Foreground="{StaticResource Primary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
+                        <!-- Thông tin hiển thị txtStaffCount — 6. -->
                         <TextBlock x:Name="txtStaffCount" Text="6" FontSize="24" FontWeight="SemiBold" Margin="15,0,12,0" VerticalAlignment="Center"/>
                         <TextBlock Text="nhân sự được xếp ca" Style="{StaticResource MutedText}" VerticalAlignment="Center"/>
                     </StackPanel>
@@ -295,6 +337,7 @@
                         <Border Background="#F7F8FC" Width="36" Height="36" CornerRadius="9">
                             <TextBlock Text="◷" FontSize="19" Foreground="{StaticResource Primary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
+                        <!-- Thông tin hiển thị txtHours — 24. -->
                         <TextBlock x:Name="txtHours" Text="24" FontSize="24" FontWeight="SemiBold" Margin="15,0,12,0" VerticalAlignment="Center"/>
                         <TextBlock Text="giờ khung ca" Style="{StaticResource MutedText}" VerticalAlignment="Center"/>
                     </StackPanel>
@@ -302,6 +345,7 @@
                         <Border Background="#F7F8FC" Width="36" Height="36" CornerRadius="9">
                             <TextBlock Text="☑" FontSize="19" Foreground="{StaticResource Primary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
+                        <!-- Thông tin hiển thị txtConfirmed — 3/3. -->
                         <TextBlock x:Name="txtConfirmed" Text="3/3" FontSize="22" FontWeight="SemiBold" Margin="15,0,12,0" VerticalAlignment="Center"/>
                         <TextBlock Text="ca đã xác nhận" Style="{StaticResource MutedText}" VerticalAlignment="Center"/>
                     </StackPanel>
@@ -311,18 +355,25 @@
             <!-- Week navigation -->
             <Grid Grid.Row="2">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Nút thao tác ‹ — ‹. Chuyển sự kiện đến btnTuanTruoc_Click trong code-behind. -->
                     <Button Style="{StaticResource IconButton}" Content="‹" Click="btnTuanTruoc_Click"/>
+                    <!-- Thông tin hiển thị txtWeekRange — 12 – 18 tháng 10, 2026. -->
                     <TextBlock x:Name="txtWeekRange" Text="12 – 18 tháng 10, 2026" FontWeight="SemiBold"
                                FontSize="15" Margin="12,0" VerticalAlignment="Center"/>
+                    <!-- Nút thao tác › — ›. Chuyển sự kiện đến btnTuanSau_Click trong code-behind. -->
                     <Button Style="{StaticResource IconButton}" Content="›" Click="btnTuanSau_Click" Margin="0,0,12,0"/>
+                    <!-- Nút thao tác Tuần này — Tuần này. Chuyển sự kiện đến btnTuanHienTai_Click trong code-behind. -->
                     <Button Style="{StaticResource BaseButton}" Content="Tuần này" Click="btnTuanHienTai_Click"/>
+                    <!-- Thông tin hiển thị txtWeekNumber — Tuần 42. -->
                     <TextBlock x:Name="txtWeekNumber" Text="Tuần 42" Style="{StaticResource MutedText}"
                                Margin="15,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <Border Background="#E5E8F0" CornerRadius="9" Padding="4" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal">
+                        <!-- Nút thao tác btnWeekView — ▥ Tuần. Chuyển sự kiện đến btnXemTuan_Click trong code-behind. -->
                         <Button x:Name="btnWeekView" Style="{StaticResource BaseButton}" Background="White" BorderThickness="0"
                                 Height="32" Content="▥  Tuần" Foreground="{StaticResource Primary}" Click="btnXemTuan_Click"/>
+                        <!-- Nút thao tác btnListView — Danh sách. Chuyển sự kiện đến btnXemDanhSach_Click trong code-behind. -->
                         <Button x:Name="btnListView" Style="{StaticResource BaseButton}" Background="Transparent" BorderThickness="0"
                                 Height="32" Content="Danh sách" Foreground="{StaticResource Muted}" Click="btnXemDanhSach_Click"/>
                     </StackPanel>
@@ -333,6 +384,7 @@
             <Grid Grid.Row="3" VerticalAlignment="Top">
                 <StackPanel Orientation="Horizontal">
                     <Grid Width="232" Height="39">
+                        <!-- Ô nhập txtSearch. Chuyển sự kiện đến BoLoc_ThayDoi trong code-behind. -->
                         <TextBox x:Name="txtSearch" Style="{StaticResource InputText}" Height="39"
                                  Padding="12,7" TextChanged="BoLoc_ThayDoi"
                                  ToolTip="Tìm theo tên ca hoặc nhân sự"/>
@@ -350,6 +402,7 @@
                             </TextBlock.Style>
                         </TextBlock>
                     </Grid>
+                    <!-- Trường lựa chọn cboDepartment. Chuyển sự kiện đến BoLoc_ThayDoi trong code-behind. -->
                     <ComboBox x:Name="cboDepartment" Style="{StaticResource InputCombo}" Height="39" Width="148"
                               Margin="10,0,0,0" SelectedIndex="0" SelectionChanged="BoLoc_ThayDoi">
                         <ComboBoxItem Content="Tất cả bộ phận"/>
@@ -357,12 +410,14 @@
                         <ComboBoxItem Content="Kinh doanh"/>
                         <ComboBoxItem Content="Điều trị"/>
                     </ComboBox>
+                    <!-- Trường lựa chọn cboLocation. Chuyển sự kiện đến BoLoc_ThayDoi trong code-behind. -->
                     <ComboBox x:Name="cboLocation" Style="{StaticResource InputCombo}" Height="39" Width="150"
                               Margin="10,0,0,0" SelectedIndex="0" SelectionChanged="BoLoc_ThayDoi">
                         <ComboBoxItem Content="Tất cả địa điểm"/>
                         <ComboBoxItem Content="Trụ sở chính"/>
                         <ComboBoxItem Content="Chi nhánh 2"/>
                     </ComboBox>
+                    <!-- Trường lựa chọn cboStatus. Chuyển sự kiện đến BoLoc_ThayDoi trong code-behind. -->
                     <ComboBox x:Name="cboStatus" Style="{StaticResource InputCombo}" Height="39" Width="147"
                               Margin="10,0,0,0" SelectedIndex="0" SelectionChanged="BoLoc_ThayDoi">
                         <ComboBoxItem Content="Tất cả trạng thái"/>
@@ -370,6 +425,7 @@
                         <ComboBoxItem Content="Chờ xác nhận"/>
                     </ComboBox>
                 </StackPanel>
+                <!-- Thông tin hiển thị txtVisibleCount — Hiển thị các mẫu ca trong tuần. -->
                 <TextBlock x:Name="txtVisibleCount" Text="Hiển thị các mẫu ca trong tuần" Style="{StaticResource MutedText}"
                            HorizontalAlignment="Right" VerticalAlignment="Center"/>
             </Grid>
@@ -378,6 +434,7 @@
             <Grid Grid.Row="4" x:Name="WeekView">
               <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
                             CanContentScroll="False">
+                <!-- Thành phần WeekItems. -->
                 <ItemsControl x:Name="WeekItems" MinWidth="1120" ItemsSource="{Binding Days}"
                               Height="{Binding ActualHeight, ElementName=WeekView}">
                     <ItemsControl.ItemsPanel>
@@ -387,6 +444,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
+                            <!-- Vùng bố cục DayDropZone. -->
                             <Border x:Name="DayDropZone" Background="{StaticResource Pane}" CornerRadius="12"
                                     BorderThickness="1" BorderBrush="{StaticResource Stroke}"
                                     Margin="0,0,10,0" Padding="10,15" AllowDrop="True"
@@ -405,6 +463,7 @@
                                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                         <StackPanel>
                                             <ItemsControl ItemsSource="{Binding Shifts}" ItemTemplate="{StaticResource ShiftCardTemplate}"/>
+                                            <!-- Nút thao tác ⚙ Cài đặt ca — ⚙ Cài đặt ca. Chuyển sự kiện đến btnCaiDatCa_Click trong code-behind. -->
                                             <Button Content="⚙  Cài đặt ca" Style="{StaticResource BaseButton}" BorderThickness="0"
                                                     Background="Transparent" FontWeight="Normal" Foreground="{StaticResource Primary}"
                                                     FontSize="11" Tag="{Binding Date}" Click="btnCaiDatCa_Click"
@@ -422,6 +481,7 @@
             <!-- Alternative list mode -->
             <Border Grid.Row="4" x:Name="ListView" Visibility="Collapsed" Background="White"
                     CornerRadius="10" BorderBrush="{StaticResource Stroke}" BorderThickness="1">
+                <!-- Danh sách ShiftGrid. -->
                 <DataGrid x:Name="ShiftGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
                           CanUserAddRows="False" BorderThickness="0" GridLinesVisibility="None"
                           RowHeight="55" ColumnHeaderHeight="48" AlternatingRowBackground="#F7F8FC"
@@ -438,6 +498,7 @@
                 </DataGrid>
             </Border>
             <Grid Grid.Row="5" VerticalAlignment="Center">
+                <!-- Thông tin hiển thị txtFootHint. -->
                 <TextBlock x:Name="txtFootHint" Style="{StaticResource MutedText}"/>
                 <TextBlock Text="Múi giờ GMT+7" Style="{StaticResource MutedText}" HorizontalAlignment="Right"/>
             </Grid>
@@ -456,14 +517,17 @@
                         <Grid>
                             <StackPanel VerticalAlignment="Center" Margin="0,0,25,0">
                                 <TextBlock Text="Chi tiết khung giờ Ca" FontSize="21" FontWeight="Bold"/>
+                                <!-- Thông tin hiển thị txtDetailSubtitle. -->
                                 <TextBlock x:Name="txtDetailSubtitle" Style="{StaticResource MutedText}"
                                            Margin="0,6,0,0" TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
+                            <!-- Nút thao tác × — ×. Chuyển sự kiện đến btnDongChiTiet_Click trong code-behind. -->
                             <Button Content="×" Style="{StaticResource IconButton}" HorizontalAlignment="Right"
                                     VerticalAlignment="Top" BorderThickness="0" Click="btnDongChiTiet_Click"/>
                         </Grid>
                     </Border>
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <!-- Vùng bố cục DetailContent. -->
                         <StackPanel x:Name="DetailContent" Margin="24,24,24,28">
                             <Grid Margin="0,0,0,18">
                                 <TextBlock Text="Thông tin khung giờ Ca" FontWeight="SemiBold"/>
@@ -566,8 +630,10 @@
                                                     <TextBlock Text="{Binding Person.Department}" Style="{StaticResource MutedText}" FontSize="10"/>
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                                    <!-- Nút thao tác ✓ Duyệt — ✓ Duyệt. Chuyển sự kiện đến btnDuyetCa_Click trong code-behind. -->
                                                     <Button Content="✓ Duyệt" Style="{StaticResource PrimaryButton}"
                                                             FontSize="11" Height="33" Tag="{Binding}" Click="btnDuyetCa_Click" Margin="0,0,5,0"/>
+                                                    <!-- Nút thao tác ✕ Từ chối — ✕ Từ chối. Chuyển sự kiện đến btnTuChoiCa_Click trong code-behind. -->
                                                     <Button Content="✕ Từ chối" Style="{StaticResource BaseButton}"
                                                             FontSize="11" Height="33" Tag="{Binding}" Click="btnTuChoiCa_Click"/>
                                                 </StackPanel>
@@ -616,15 +682,19 @@
                     <Grid Margin="23,15">
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="Đăng ký ca của tôi (tuần đang xem)" FontSize="20" FontWeight="Bold"/>
+                            <!-- Thông tin hiển thị txtMyRequestCount. -->
                             <TextBlock x:Name="txtMyRequestCount" Style="{StaticResource MutedText}" Margin="0,4,0,0"/>
                         </StackPanel>
+                        <!-- Nút thao tác × — ×. Chuyển sự kiện đến btnDongDanhSachDangKy_Click trong code-behind. -->
                         <Button Content="×" Style="{StaticResource IconButton}" HorizontalAlignment="Right"
                                 VerticalAlignment="Top" Click="btnDongDanhSachDangKy_Click"/>
                     </Grid>
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="23,9">
                         <StackPanel>
+                            <!-- Thông tin hiển thị EmptyMyRequests — Nhân viên này chưa có yêu cầu đăng ký.. -->
                             <TextBlock x:Name="EmptyMyRequests" Text="Nhân viên này chưa có yêu cầu đăng ký."
                                        Style="{StaticResource MutedText}" Visibility="Collapsed" Margin="0,16"/>
+                            <!-- Thành phần MyRequestsList. -->
                             <ItemsControl x:Name="MyRequestsList">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -644,6 +714,7 @@
                                                 <TextBlock Text="{Binding ReviewCaption}" Style="{StaticResource MutedText}" Margin="0,4,0,0"/>
                                                 <TextBlock Text="{Binding ReviewNote}" Foreground="{StaticResource Ink}" Margin="0,4,0,0"
                                                            FontSize="11" TextWrapping="Wrap"/>
+                                                <!-- Nút thao tác Hủy yêu cầu chờ duyệt — Hủy yêu cầu chờ duyệt. Chuyển sự kiện đến btnHuyDangKy_Click trong code-behind. -->
                                                 <Button Content="Hủy yêu cầu chờ duyệt" Style="{StaticResource BaseButton}"
                                                         HorizontalAlignment="Left" Margin="0,10,0,0" Tag="{Binding}"
                                                         Click="btnHuyDangKy_Click"
@@ -656,6 +727,7 @@
                         </StackPanel>
                     </ScrollViewer>
                     <Border Grid.Row="2" Background="#F8F9FC" Padding="23,10" BorderBrush="{StaticResource Stroke}" BorderThickness="0,1,0,0">
+                        <!-- Nút thao tác Đóng — Đóng. Chuyển sự kiện đến btnDongDanhSachDangKy_Click trong code-behind. -->
                         <Button Style="{StaticResource PrimaryButton}" Content="Đóng" HorizontalAlignment="Right"
                                 Click="btnDongDanhSachDangKy_Click"/>
                     </Border>
@@ -670,13 +742,17 @@
                     HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="Từ chối đăng ký ca" FontSize="20" FontWeight="Bold"/>
+                    <!-- Thông tin hiển thị txtRejectTitle. -->
                     <TextBlock x:Name="txtRejectTitle" Style="{StaticResource MutedText}"
                                Margin="0,7,0,18" TextWrapping="Wrap"/>
                     <TextBlock Text="Lý do từ chối *" Style="{StaticResource FieldLabel}"/>
+                    <!-- Ô nhập txtRejectReason. -->
                     <TextBox x:Name="txtRejectReason" Style="{StaticResource InputText}" Height="94"
                              TextWrapping="Wrap" AcceptsReturn="True" VerticalContentAlignment="Top"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <!-- Nút thao tác Hủy — Hủy. Chuyển sự kiện đến btnDongTuChoi_Click trong code-behind. -->
                         <Button Style="{StaticResource BaseButton}" Content="Hủy" Click="btnDongTuChoi_Click" Margin="0,0,8,0"/>
+                        <!-- Nút thao tác Xác nhận từ chối — Xác nhận từ chối. Chuyển sự kiện đến btnXacNhanTuChoi_Click trong code-behind. -->
                         <Button Style="{StaticResource PrimaryButton}" Content="Xác nhận từ chối" Click="btnXacNhanTuChoi_Click"/>
                     </StackPanel>
                 </StackPanel>
@@ -701,6 +777,7 @@
                                 <TextBlock Text="Tạo MẪU GIỜ vào CA_LAM. Ngày và phòng chỉ được lưu khi có LICH_LAM_VIEC."
                                            Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,6,0,0"/>
                             </StackPanel>
+                            <!-- Nút thao tác × — ×. Chuyển sự kiện đến btnDongTaoCa_Click trong code-behind. -->
                             <Button Style="{StaticResource IconButton}" Content="×" BorderThickness="0"
                                     HorizontalAlignment="Right" VerticalAlignment="Top" Click="btnDongTaoCa_Click"/>
                         </Grid>
@@ -709,6 +786,7 @@
                         <StackPanel Margin="24,24,24,24">
                             <TextBlock Text="Mã ca tự sinh · Chỉ giờ/trạng thái/ghi chú được lưu trong CA_LAM" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                             <TextBlock Text="Tên ca làm *" Style="{StaticResource FieldLabel}"/>
+                            <!-- Trường lựa chọn cbCreateName. Chuyển sự kiện đến ThongTinTaoCa_Changed trong code-behind. -->
                             <ComboBox x:Name="cbCreateName" Style="{StaticResource InputCombo}" SelectedIndex="0"
                                       SelectionChanged="ThongTinTaoCa_Changed">
                                 <ComboBoxItem Content="Ca hành chính"/>
@@ -725,6 +803,7 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Margin="0,0,8,0">
                                     <TextBlock Text="Tuần hiển thị (không lưu)" Style="{StaticResource FieldLabel}"/>
+                                    <!-- Trường lựa chọn cbCreateDay. Chuyển sự kiện đến cboNgayTaoCa_SelectionChanged trong code-behind. -->
                                     <ComboBox x:Name="cbCreateDay" Style="{StaticResource InputCombo}" SelectedIndex="0"
                                               SelectionChanged="cboNgayTaoCa_SelectionChanged">
                                         <ComboBoxItem Content="Thứ 2"/>
@@ -738,6 +817,7 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                     <TextBlock Text="Ngày xem trước (không lưu)" Style="{StaticResource FieldLabel}"/>
+                                    <!-- Trường lựa chọn dpCreateDate. Chuyển sự kiện đến dpNgayTaoCa_SelectedDateChanged trong code-behind. -->
                                     <DatePicker x:Name="dpCreateDate" Style="{StaticResource InputDate}"
                                                 SelectedDateChanged="dpNgayTaoCa_SelectedDateChanged"/>
                                 </StackPanel>
@@ -749,11 +829,13 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Margin="0,0,8,0">
                                     <TextBlock Text="Giờ bắt đầu *" Style="{StaticResource FieldLabel}"/>
+                                    <!-- Ô nhập txtCreateStart — 09:00. Chuyển sự kiện đến ThongTinTaoCa_Changed trong code-behind. -->
                                     <TextBox x:Name="txtCreateStart" Style="{StaticResource InputText}" Text="09:00"
                                              TextChanged="ThongTinTaoCa_Changed"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                     <TextBlock Text="Giờ kết thúc *" Style="{StaticResource FieldLabel}"/>
+                                    <!-- Ô nhập txtCreateEnd — 17:00. Chuyển sự kiện đến ThongTinTaoCa_Changed trong code-behind. -->
                                     <TextBox x:Name="txtCreateEnd" Style="{StaticResource InputText}" Text="17:00"
                                              TextChanged="ThongTinTaoCa_Changed"/>
                                 </StackPanel>
@@ -765,6 +847,7 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Margin="0,0,8,0">
                                     <TextBlock Text="Loại ca" Style="{StaticResource FieldLabel}"/>
+                                    <!-- Trường lựa chọn cbCreateType. Chuyển sự kiện đến ThongTinTaoCa_Changed trong code-behind. -->
                                     <ComboBox x:Name="cbCreateType" Style="{StaticResource InputCombo}" SelectedIndex="0"
                                               SelectionChanged="ThongTinTaoCa_Changed">
                                         <ComboBoxItem Content="Ca hành chính"/>
@@ -775,6 +858,7 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                     <TextBlock Text="Địa điểm" Style="{StaticResource FieldLabel}"/>
+                                    <!-- Trường lựa chọn cbCreateLocation. Chuyển sự kiện đến ThongTinTaoCa_Changed trong code-behind. -->
                                     <ComboBox x:Name="cbCreateLocation" Style="{StaticResource InputCombo}" SelectedIndex="0"
                                               SelectionChanged="ThongTinTaoCa_Changed">
                                         <ComboBoxItem Content="Trụ sở chính"/>
@@ -783,12 +867,15 @@
                                 </StackPanel>
                             </Grid>
                             <TextBlock Text="Số nhân sự tối đa *" Style="{StaticResource FieldLabel}" Visibility="Collapsed"/>
+                            <!-- Ô nhập txtCreateCapacity — 4. -->
                             <TextBox x:Name="txtCreateCapacity" Style="{StaticResource InputText}" Text="4" Visibility="Collapsed"
                                      MaxLength="3" Margin="0,0,0,18"/>
                             <Border Background="{StaticResource PrimaryLight}" CornerRadius="8" Padding="14">
                                 <StackPanel>
+                                    <!-- Thông tin hiển thị txtCreatePreview — ☑ Ca trống mới · Thứ 6, 16/10. -->
                                     <TextBlock x:Name="txtCreatePreview" Text="☑  Ca trống mới · Thứ 6, 16/10"
                                                Foreground="{StaticResource Primary}" FontWeight="SemiBold" FontSize="12"/>
+                                    <!-- Thông tin hiển thị txtCreatePreviewSub — 09:00 – 17:00 · 8 giờ · 0 nhân sự · Chưa lưu. -->
                                     <TextBlock x:Name="txtCreatePreviewSub" Text="09:00 – 17:00 · 8 giờ · 0 nhân sự · Chưa lưu"
                                                Style="{StaticResource MutedText}" Margin="22,5,0,0"/>
                                 </StackPanel>
@@ -799,7 +886,9 @@
                         <Grid>
                             <TextBlock Text="* Thông tin bắt buộc" Style="{StaticResource MutedText}" VerticalAlignment="Center" FontSize="11"/>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <!-- Nút thao tác Hủy — Hủy. Chuyển sự kiện đến btnDongTaoCa_Click trong code-behind. -->
                                 <Button Style="{StaticResource BaseButton}" Content="Hủy" Click="btnDongTaoCa_Click" Margin="0,0,10,0"/>
+                                <!-- Nút thao tác ✓ Lưu mẫu ca — ✓ Lưu mẫu ca. Chuyển sự kiện đến btnLuuCaLam_Click trong code-behind. -->
                                 <Button Style="{StaticResource PrimaryButton}" Content="✓  Lưu mẫu ca" Click="btnLuuCaLam_Click"/>
                             </StackPanel>
                         </Grid>
@@ -815,11 +904,15 @@
                     HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="Cài đặt ca làm" FontSize="20" FontWeight="Bold"/>
+                    <!-- Thông tin hiển thị txtNgayCaiDat. -->
                     <TextBlock x:Name="txtNgayCaiDat" Style="{StaticResource MutedText}" Margin="0,8,0,18"/>
                     <TextBlock Text="Chọn ca có sẵn" Style="{StaticResource FieldLabel}"/>
+                    <!-- Trường lựa chọn cboCaCoSan. -->
                     <ComboBox x:Name="cboCaCoSan" Style="{StaticResource InputCombo}"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <!-- Nút thao tác Hủy — Hủy. Chuyển sự kiện đến btnDongCaiDatCa_Click trong code-behind. -->
                         <Button Content="Hủy" Style="{StaticResource BaseButton}" Click="btnDongCaiDatCa_Click" Margin="0,0,8,0"/>
+                        <!-- Nút thao tác Lưu ca — Lưu ca. Chuyển sự kiện đến btnLuuCaiDatCa_Click trong code-behind. -->
                         <Button Content="Lưu ca" Style="{StaticResource PrimaryButton}" Click="btnLuuCaiDatCa_Click"/>
                     </StackPanel>
                 </StackPanel>
@@ -833,15 +926,19 @@
                     HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="Duyệt đăng ký và phân phòng" FontSize="20" FontWeight="Bold"/>
+                    <!-- Thông tin hiển thị txtThongTinDuyet. -->
                     <TextBlock x:Name="txtThongTinDuyet" Style="{StaticResource MutedText}"
                                TextWrapping="Wrap" Margin="0,8,0,18"/>
                     <TextBlock Text="Chọn phòng khám *" Style="{StaticResource FieldLabel}"/>
+                    <!-- Trường lựa chọn cboPhongDuyet. -->
                     <ComboBox x:Name="cboPhongDuyet" Style="{StaticResource InputCombo}"
                               DisplayMemberPath="TenPhong" SelectedValuePath="MaPhong"/>
                     <TextBlock Text="Một phòng hoặc một nhân viên không được trùng khung giờ với lịch đã duyệt."
                                Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,10,0,0"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <!-- Nút thao tác Hủy — Hủy. Chuyển sự kiện đến btnDongDuyet_Click trong code-behind. -->
                         <Button Content="Hủy" Style="{StaticResource BaseButton}" Click="btnDongDuyet_Click" Margin="0,0,8,0"/>
+                        <!-- Nút thao tác Xác nhận duyệt — Xác nhận duyệt. Chuyển sự kiện đến btnXacNhanDuyet_Click trong code-behind. -->
                         <Button Content="Xác nhận duyệt" Style="{StaticResource PrimaryButton}" Click="btnXacNhanDuyet_Click"/>
                     </StackPanel>
                 </StackPanel>
@@ -850,6 +947,7 @@
 
         <!-- View danh sách duyệt/lịch sử đơn nghỉ được mở bên trong Ca làm. -->
         <Grid x:Name="DonXinNghiOverlay" Grid.RowSpan="2" Panel.ZIndex="100" Background="#F6F8FC" Visibility="Collapsed">
+            <!-- Thành phần NoiDungDonXinNghi. -->
             <ContentControl x:Name="NoiDungDonXinNghi"/>
         </Grid>
     </Grid>

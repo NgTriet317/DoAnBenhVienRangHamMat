@@ -13,9 +13,25 @@ using RangHamMat;
 using RangHamMat.Controls;
 using RangHamMat.Views;
 
+/// <summary>
+/// Nhóm dữ liệu và thao tác kiểm chứng chương trình kiểm tra trong công cụ kiểm tra của dự án.
+/// </summary>
 internal static class Program
 {
-    static int passed,failed;static string cs="";
+    /// <summary>
+    /// Số kiểm tra đạt số kiểm tra lỗi được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    static int passed,failed;
+    /// <summary>
+    /// Cs được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    static string cs="";
+    /// <summary>
+    /// Bước kiểm chứng chính; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>args[1].StartsWith</c>, <c>Environment.SetEnvironmentVariable</c>, <c>app.Resources.MergedDictionaries.Add</c>, <c>Check</c>.</remarks>
+    /// <param name="args">Giá trị đối số dùng khi thực hiện thao tác; kiểu string[].</param>
+    /// <returns>Giá trị số được đọc, đếm hoặc tính toán trong hàm.</returns>
     [STAThread] static int Main(string[] args)
     {
         var readOnly=args.Length==3&&args[2]=="--ui-only";
@@ -192,14 +208,17 @@ internal static class Program
         }));
         }
         if(readOnly){
-        Check("Đăng nhập Admin và mở đủ 26 phân hệ trên database sạch/hiện tại",()=>{
+        Check("Đăng nhập Admin và mở đủ 27 phân hệ trên database sạch/hiện tại",()=>{
             PhienDangNhap.KhoiTaoPhienUngDung();var login=new DangNhap();login.Dispatcher.BeginInvoke(new Action(()=>{Control<TextBox>(login,"UsernameBox").Text="admin001";Control<PasswordBox>(login,"PasswordBox").Password="123456";typeof(DangNhap).GetMethod("DangNhap_Click",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(login,[login,new RoutedEventArgs()]);if(login.DialogResult!=true)login.Close();}));Assert(login.ShowDialog()==true&&PhienDangNhap.IsAdmin,"Không đăng nhập được Admin");
-            var shell=new MainWindow();try{foreach(var key in new[]{"TongQuan","BenhNhan","KhamDieuTri","DichVuThucHien","DonThuoc","NhanSu","ChungChiNhanVien","CaLamViec","ThietBi","BaoTri","VatTu","DanhMucHangHoa","NhaCungCap","NhapXuatVatTu","NhapKho","XuatKho","LichKham","DichVu","HoaDon","BangLuong","ChinhSachLuong","TaiKhoan","BaoCao","PhieuHuongDan","NhatKy","XinNghiViec"}){Assert((bool)typeof(MainWindow).GetMethod("CanOpen",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(shell,[key])!,"Bị chặn "+key);Assert((bool)typeof(MainWindow).GetMethod("OpenApp",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(shell,[key])!,"Không mở "+key);}}finally{shell.Close();}
+            var shell=new MainWindow();try{foreach(var key in new[]{"TongQuan","BenhNhan","KhamDieuTri","DichVuThucHien","DonThuoc","NhanSu","ChungChiNhanVien","CaLamViec","ThietBi","BaoTri","VatTu","DanhMucHangHoa","NhaCungCap","NhapXuatVatTu","NhapKho","XuatKho","LichKham","DichVu","HoaDon","BangLuong","ChamCong","ChinhSachLuong","TaiKhoan","BaoCao","PhieuHuongDan","NhatKy","XinNghiViec"}){Assert((bool)typeof(MainWindow).GetMethod("CanOpen",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(shell,[key])!,"Bị chặn "+key);Assert((bool)typeof(MainWindow).GetMethod("OpenApp",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(shell,[key])!,"Không mở "+key);}}finally{shell.Close();}
         });
         Check("Màn dịch vụ chỉ có lịch sử, không có nút phát sinh",()=>{var page=new ThucHienDichVuEditor();Assert(page.FindName("NewButton") is null&&page.FindName("FromStepButton") is null&&Control<DataGrid>(page,"ActualGrid").IsReadOnly,"Còn luồng ghi dịch vụ");});
         }
         app.Shutdown();Console.WriteLine($"RESULT: {passed} passed, {failed} failed");return failed==0?0:1;
     }
+    /// <summary>
+    /// Câu lệnh SQL tài chính dữ liệu kiểm thử SQL dùng trong các thao tác của lớp; giá trị đầu vào được truyền theo cách nơi gọi quy định.
+    /// </summary>
     const string FinanceFixtureSql="""
 -- Test setup only. The caller owns a Serializable transaction and always rolls it back.
 -- Run after creating draft TC_LS/NV002, before HoanTatKham. No invoice/payment/export here.
@@ -253,18 +272,103 @@ IF (SELECT SUM(c.SoLuong) FROM dbo.CHI_TIET_PHIEU_NHAP c JOIN dbo.PHIEU_NHAP p O
  THROW 52994,N'Finance fixture must have exactly three units of posted stock in two lots.',1;
 
 """;
+    /// <summary>
+    /// Bước kiểm chứng sẵn sàng đơn thuốc; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Fixture</c>, <c>Login</c>, <c>ReadyClinical</c>, <c>ConfirmExecution</c>.</remarks>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <returns>Kết quả kiểu (BUS_KHAMDIEUTRI,NguCanhNghiepVu,BUS_DONTHUOC,ThuocKeDon) dùng cho bước xử lý tiếp theo.</returns>
     static (BUS_KHAMDIEUTRI,NguCanhNghiepVu,BUS_DONTHUOC,ThuocKeDon) ReadyRx(IDbTransaction tx){Fixture(tx);var a=Login(tx);var b=new BUS_KHAMDIEUTRI(tx);ReadyClinical(b,a,false);ConfirmExecution(b,a);var rx=new BUS_DONTHUOC(tx);var drug=rx.TimThuoc(new(),a).First(x=>x.TenThuoc.StartsWith("Hapacol",StringComparison.OrdinalIgnoreCase)&&x.DonGiaThamKhao>0);return(b,a,rx,drug);}
+    /// <summary>
+    /// Bước kiểm chứng lưu bản nháp; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>rx.LuuDon</c>.</remarks>
+    /// <param name="rx">Giá trị đơn thuốc dùng khi thực hiện thao tác; kiểu BUS_DONTHUOC.</param>
+    /// <param name="a">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <param name="drug">Giá trị thuốc dùng khi thực hiện thao tác; kiểu ThuocKeDon.</param>
+    /// <param name="quantity">Giá trị số lượng dùng khi thực hiện thao tác; kiểu decimal.</param>
+    /// <returns>Kết quả kiểu BanNhapDon dùng cho bước xử lý tiếp theo.</returns>
     static BanNhapDon SaveDraft(BUS_DONTHUOC rx,NguCanhNghiepVu a,ThuocKeDon drug,decimal quantity)=>rx.LuuDon(new(){MaLS="TC_LS",CacDong=[new(){MaThuoc=drug.MaThuoc,LieuDung="FIXTURE",DuongDung="Uống",HuongDan="FIXTURE kiểm thử không dùng điều trị",SoNgayDung=1,SoLuong=quantity}]},a);
+    /// <summary>
+    /// Bước kiểm chứng xác nhận thực hiện; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>b.LayTongKetKham</c>, <c>b.XacNhanThucHien</c>.</remarks>
+    /// <param name="b">Giá trị b dùng khi thực hiện thao tác; kiểu BUS_KHAMDIEUTRI.</param>
+    /// <param name="a">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
     static void ConfirmExecution(BUS_KHAMDIEUTRI b,NguCanhNghiepVu a){var before=b.LayTongKetKham("TC_LS",a);b.XacNhanThucHien("TC_LS",before.DauVanTay,a);}
+    /// <summary>
+    /// Bước kiểm chứng sẵn sàng lâm sàng; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>b.LayBanNhap</c>, <c>b.LuuKham</c>.</remarks>
+    /// <param name="b">Giá trị b dùng khi thực hiện thao tác; kiểu BUS_KHAMDIEUTRI.</param>
+    /// <param name="a">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <param name="noRx">Giá trị no đơn thuốc dùng khi thực hiện thao tác; kiểu bool.</param>
+    /// <returns>Kết quả kiểu BanNhapKham dùng cho bước xử lý tiếp theo.</returns>
     static BanNhapKham ReadyClinical(BUS_KHAMDIEUTRI b,NguCanhNghiepVu a,bool noRx=true){var old=b.LayBanNhap("TC_LS",a);return b.LuuKham(new(){MaLS="TC_LS",DauVanTay=old.DauVanTay,TrieuChung="FIXTURE triệu chứng",ChanDoan="FIXTURE chẩn đoán",KeHoachXuLy="FIXTURE xử trí",KhongKeThuoc=noRx,LyDoKhongKeThuoc=noRx?"FIXTURE không kê thuốc":null,TinhTrang=[new(){LoaiTinhTrang="Đánh giá vùng hàm mặt"}]},a);}
+    /// <summary>
+    /// Bước kiểm chứng kết quả dự kiến không hợp lệ; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>run</c>.</remarks>
+    /// <param name="run">Giá trị thực thi dùng khi thực hiện thao tác; kiểu Action.</param>
     static void ExpectInvalid(Action run){try{run();}catch(InvalidOperationException){return;}throw new Exception("Không từ chối thao tác sai");}
+    /// <summary>
+    /// Điền dữ liệu đã đọc vào các trường của biểu mẫu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Control&lt;TextBox&gt;</c>.</remarks>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
+    /// <param name="name">Giá trị tên dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="text">Giá trị nội dung dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="location">Giá trị vị trí dùng khi thực hiện thao tác; kiểu string.</param>
     static void Fill(KhamLamSang e,string name,string text,string location){Control<TextBox>(e,"ConditionNameEditor").Text=name;Control<TextBox>(e,"ConditionDetailEditor").Text=text;}
+    /// <summary>
+    /// Bước kiểm chứng điều khiển; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>e.FindName</c>, <c>Assert</c>.</remarks>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
+    /// <param name="name">Giá trị tên dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Kết quả kiểu T dùng cho bước xử lý tiếp theo.</returns>
+    /// <typeparam name="T">Kiểu dữ liệu dùng cho thao tác tổng quát này.</typeparam>
     static T Control<T>(FrameworkElement e,string name) where T:class{var c=e.FindName(name) as T;Assert(c is not null,"Thiếu ô/nút "+name);return c!;}
+    /// <summary>
+    /// Bước kiểm chứng bấm; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Control&lt;Button&gt;</c>.</remarks>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
+    /// <param name="name">Giá trị tên dùng khi thực hiện thao tác; kiểu string.</param>
     static void Click(FrameworkElement e,string name)=>Control<Button>(e,name).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+    /// <summary>
+    /// Bước kiểm chứng chụp kết quả cửa sổ; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Pump</c>, <c>bmp.Render</c>, <c>encoder.Frames.Add</c>, <c>System.Windows.Media.Imaging.BitmapFrame.Create</c>.</remarks>
+    /// <param name="window">Giá trị cửa sổ dùng khi thực hiện thao tác; kiểu Window.</param>
+    /// <param name="name">Giá trị tên dùng khi thực hiện thao tác; kiểu string.</param>
     static void CaptureWindow(Window window,string name){Pump();var bmp=new System.Windows.Media.Imaging.RenderTargetBitmap((int)window.ActualWidth,(int)window.ActualHeight,96,96,System.Windows.Media.PixelFormats.Pbgra32);bmp.Render(window);var encoder=new System.Windows.Media.Imaging.PngBitmapEncoder();encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bmp));Directory.CreateDirectory("obj/RhmFinal");using var stream=File.Create(Path.Combine("obj/RhmFinal",name));encoder.Save(stream);}
+    /// <summary>
+    /// Bước kiểm chứng tìm cây giao diện; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>System.Windows.Media.VisualTreeHelper.GetChildrenCount</c>, <c>System.Windows.Media.VisualTreeHelper.GetChild</c>, <c>FindVisual&lt;T&gt;</c>.</remarks>
+    /// <param name="root">Giá trị phần tử gốc dùng khi thực hiện thao tác; kiểu DependencyObject.</param>
+    /// <returns>Đối tượng kiểu T được tìm hoặc tính toán; có thể null theo nhánh xử lý trong hàm.</returns>
+    /// <typeparam name="T">Kiểu dữ liệu dùng cho thao tác tổng quát này.</typeparam>
     static T? FindVisual<T>(DependencyObject root) where T:DependencyObject { for(int i=0;i<System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);i++){var child=System.Windows.Media.VisualTreeHelper.GetChild(root,i);if(child is T found)return found;var nested=FindVisual<T>(child);if(nested is not null)return nested;}return null; }
+    /// <summary>
+    /// Bước kiểm chứng xử lý hàng đợi giao diện; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke</c>.</remarks>
     static void Pump()=>System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(()=>{},System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+    /// <summary>
+    /// Bước kiểm chứng đăng nhập; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="nv">Giá trị nhân viên dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="tk">Giá trị tài khoản dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Kết quả kiểu NguCanhNghiepVu dùng cho bước xử lý tiếp theo.</returns>
     static NguCanhNghiepVu Login(IDbTransaction tx,string nv="NV002",string tk="TK002"){Thread.CurrentPrincipal=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.NameIdentifier,tk),new(DinhDanhNghiepVu.MaNhanVienClaim,nv)],DinhDanhNghiepVu.KieuXacThuc));return new BUS_QUYENNGHIEPVU(tx).LayNguCanh(nv);}
+    /// <summary>
+    /// Bước kiểm chứng dữ liệu kiểm thử; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>tx.Connection!.Execute</c>.</remarks>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
     static void Fixture(IDbTransaction tx){tx.Connection!.Execute("""
       INSERT dbo.PHONG(MaPhong,MaKhoa,TenPhong,LoaiPhong,TinhTrang,TrangThai) VALUES(N'PH001',N'KHOA001',N'FIXTURE phòng',N'Phòng khám chuyên khoa',N'Đang sử dụng',N'Đang hoạt động');
       INSERT dbo.NHAN_VIEN(MaNV,HoTen,MaChucVu,MaCK,NgayVaoLam,TrangThai)
@@ -284,10 +388,43 @@ IF (SELECT SUM(c.SoLuong) FROM dbo.CHI_TIET_PHIEU_NHAP c JOIN dbo.PHIEU_NHAP p O
       INSERT dbo.LICH_SU_KHAM_BENH(MaLS,MaPhieu,MaBS,MaPhong,ThoiGianKham,TrieuChung,ChanDoan,KeHoachXuLy,TrangThai)
       VALUES(N'TC_LS',N'TC_PH',N'NV002',N'PH001',DATEADD(minute,-4,SYSDATETIME()),N'FIXTURE triệu chứng',N'FIXTURE chẩn đoán',N'FIXTURE xử trí',N'Nháp');
       """,transaction:tx);}
+    /// <summary>
+    /// Bước kiểm chứng chụp kết quả; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>window.Show</c>, <c>Pump</c>, <c>bmp.Render</c>, <c>encoder.Frames.Add</c>.</remarks>
+    /// <param name="editor">Giá trị trình nhập liệu dùng khi thực hiện thao tác; kiểu UserControl.</param>
+    /// <param name="file">Giá trị file dùng khi thực hiện thao tác; kiểu string.</param>
     static void Capture(UserControl editor,string file){var background=editor.Background;editor.Background??=System.Windows.Media.Brushes.White;var window=new Window{Content=editor,Width=1100,Height=850,ShowInTaskbar=false,Left=-20000,Top=-20000};window.Show();try{Pump();var bmp=new System.Windows.Media.Imaging.RenderTargetBitmap((int)editor.ActualWidth,(int)editor.ActualHeight,96,96,System.Windows.Media.PixelFormats.Pbgra32);bmp.Render(editor);var encoder=new System.Windows.Media.Imaging.PngBitmapEncoder();encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bmp));Directory.CreateDirectory("obj/RhmFinal");using var stream=File.Create(Path.Combine("obj/RhmFinal",file));encoder.Save(stream);}finally{window.Close();editor.Background=background;}}
+    /// <summary>
+    /// Bước kiểm chứng giao dịch; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>db.Open</c>, <c>db.BeginTransaction</c>, <c>run</c>, <c>tx.Rollback</c>.</remarks>
+    /// <param name="run">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
     static void Tx(Action<IDbTransaction> run){using var db=new Microsoft.Data.SqlClient.SqlConnection(cs);db.Open();using var tx=db.BeginTransaction(IsolationLevel.Serializable);try{run(tx);}finally{if(tx.Connection is not null)tx.Rollback();}}
+    /// <summary>
+    /// Duyệt các phần tử con để tìm những thành phần cần được phối hợp theo dõi hoặc cập nhật.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>LogicalTreeHelper.GetChildren</c>, <c>Nodes</c>.</remarks>
+    /// <param name="root">Giá trị phần tử gốc dùng khi thực hiện thao tác; kiểu DependencyObject.</param>
+    /// <returns>Tập dữ liệu kiểu IEnumerable&lt;DependencyObject&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
     static IEnumerable<DependencyObject> Nodes(DependencyObject root){yield return root;foreach(var child in LogicalTreeHelper.GetChildren(root).OfType<DependencyObject>())foreach(var node in Nodes(child))yield return node;}
+    /// <summary>
+    /// Bước kiểm chứng bị từ chối; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>a</c>.</remarks>
+    /// <param name="a">Giá trị a dùng khi thực hiện thao tác; kiểu Action.</param>
     static void Denied(Action a){try{a();}catch(TuChoiQuyenNghiepVuException){return;}throw new Exception("Không từ chối quyền");}
+    /// <summary>
+    /// Bước kiểm chứng khẳng định điều kiện; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <param name="ok">Giá trị ok dùng khi thực hiện thao tác; kiểu bool.</param>
+    /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu string.</param>
     static void Assert(bool ok,string error){if(!ok)throw new Exception(error);}
+    /// <summary>
+    /// Bước kiểm chứng kiểm tra; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>run</c>, <c>Console.WriteLine</c>, <c>ex.GetType</c>.</remarks>
+    /// <param name="name">Giá trị tên dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="run">Giá trị thực thi dùng khi thực hiện thao tác; kiểu Action.</param>
     static void Check(string name,Action run){try{run();passed++;Console.WriteLine("PASS: "+name);}catch(Exception ex){failed++;Console.WriteLine("FAIL: "+name+" | "+ex.GetType().Name+": "+ex.Message);}}
 }

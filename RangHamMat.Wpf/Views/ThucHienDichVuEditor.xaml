@@ -1,11 +1,17 @@
+<!-- Giao diện ThucHienDichVuEditor: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl xmlns:clinical="clr-namespace:RangHamMat.Controls.ClinicalWorkflow" clinical:ClinicalLayout.IsEnabled="True" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.ThucHienDichVuEditor" FontFamily="Segoe UI" FontSize="14" Language="vi-VN" Background="#F3F6FA">
  <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/ClinicalWorkflowStyles.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
  <Grid Margin="12"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <!-- Nút thao tác Tải lại — Tải lại. Chuyển sự kiện đến Reload_Click trong code-behind. -->
   <Border Style="{StaticResource HospitalPanel}" Margin="0,0,0,12"><StackPanel><DockPanel><Button Content="Tải lại" Click="Reload_Click" DockPanel.Dock="Right"/><TextBlock Text="Lịch sử dịch vụ đã thực hiện" Style="{StaticResource HospitalHeading}"/></DockPanel><TextBlock Text="Xem các dịch vụ đã chốt ở những lần khám trước. Dịch vụ mới được ghi nhận trong Khám điều trị khi hoàn tất." TextWrapping="Wrap" Foreground="#64748B" Margin="0,8"/>
+   <!-- Thông tin hiển thị PatientHeader. -->
    <TextBlock x:Name="PatientHeader" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="Chọn lần khám đã hoàn tất" Margin="0,12,0,4"/><ComboBox x:Name="VisitPicker" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Visit_Changed"/><TextBlock x:Name="VisitHeader" TextWrapping="Wrap" Foreground="#64748B" Margin="0,8,0,0"/>
   </StackPanel></Border>
+  <!-- Thông tin hiển thị ActualSummary. -->
   <Border Grid.Row="1" Style="{StaticResource HospitalPanel}"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions><TextBlock x:Name="ActualSummary" FontWeight="SemiBold" Margin="0,0,0,12" TextWrapping="Wrap"/>
+   <!-- Danh sách ActualGrid. -->
    <DataGrid x:Name="ActualGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single" FrozenColumnCount="0"><DataGrid.Columns><DataGridTextColumn Header="Dịch vụ" Binding="{Binding TenDV}" Width="250"/><DataGridTextColumn Header="Lần khám" Binding="{Binding DichVu.MaLS}" Width="110"/><DataGridTextColumn Header="Ngày thực hiện" Binding="{Binding DichVu.ThoiGianThucHien,StringFormat=dd/MM/yyyy HH:mm}" Width="150"/><DataGridTextColumn Header="Bác sĩ" Binding="{Binding TenNguoiThucHien}" Width="180"/><DataGridTextColumn Header="SL" Binding="{Binding DichVu.SoLuong}" Width="65"/><DataGridTextColumn Header="Đơn giá" Binding="{Binding DichVu.DonGia,StringFormat=N0}" Width="105"/><DataGridTextColumn Header="Thành tiền" Binding="{Binding DichVu.ThanhTien,StringFormat=N0}" Width="115"/><DataGridTextColumn Header="Ghi nhận" Binding="{Binding DichVu.KetQua}" Width="300"/></DataGrid.Columns></DataGrid>
+  <!-- Thông tin hiển thị ErrorText. -->
   </Grid></Border><TextBlock x:Name="ErrorText" Grid.Row="2" Foreground="#B42318" TextWrapping="Wrap" Margin="0,8"/>
  </Grid>
 </UserControl>

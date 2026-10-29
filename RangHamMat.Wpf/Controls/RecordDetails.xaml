@@ -20,10 +20,12 @@
   <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
    <StackPanel Margin="0,12,12,0">
     <Border Style="{StaticResource Card}" Margin="0,0,0,22">
+     <!-- Thành phần FieldsList. -->
      <ItemsControl x:Name="FieldsList" ItemsSource="{Binding Fields}" ItemTemplate="{StaticResource DetailFieldTemplate}">
       <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
      </ItemsControl>
     </Border>
+    <!-- Thành phần RelatedGroups. -->
     <ItemsControl x:Name="RelatedGroups" ItemsSource="{Binding Relations}">
      <ItemsControl.ItemTemplate><DataTemplate>
       <StackPanel>

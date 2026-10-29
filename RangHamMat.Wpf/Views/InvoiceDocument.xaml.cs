@@ -25,9 +25,21 @@ public partial class InvoiceDocument : UserControl, IDocumentPaginatorSource
 /// <summary>AI hỗ trợ: phân trang bằng dải visual của chứng từ XAML; ngắt ở biên dòng chữ, không bỏ dòng cao hơn trang.</summary>
 internal sealed class InvoiceVisualPaginator : DocumentPaginator
 {
+    /// <summary>
+    /// Giá trị lưu nội bộ của thuộc tính PageSize, dùng bởi getter/setter tương ứng.
+    /// </summary>
     private const double Padding = 34;
+    /// <summary>
+    /// Giá trị lưu nội bộ của thuộc tính Source, dùng bởi getter/setter tương ứng.
+    /// </summary>
     private readonly InvoiceDocument document;
+    /// <summary>
+    /// Giá trị lưu nội bộ của thuộc tính PageCount, dùng bởi getter/setter tương ứng.
+    /// </summary>
     private Rect[] slices = Array.Empty<Rect>();
+    /// <summary>
+    /// Giá trị lưu nội bộ của thuộc tính PageSize, dùng bởi getter/setter tương ứng.
+    /// </summary>
     private Size pageSize;
 
     /// <summary>AI hỗ trợ: nhận chứng từ XAML và kích thước vùng in rồi đo đầy đủ nội dung trước khi xác định trang.</summary>

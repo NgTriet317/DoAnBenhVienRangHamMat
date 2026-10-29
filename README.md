@@ -1,4 +1,4 @@
-# Quản lý Bệnh viện Răng Hàm Mặt
+﻿# Quản lý Bệnh viện Răng Hàm Mặt
 
 WPF .NET8 + SQL Server2016SP1 trở lên. Solution có đúng bốn project: RangHamMat.Wpf (giao diện), ET, DAL và BUS. Views chỉ có các cặp XAML/code-behind; C# phụ trợ ở Presentation/Controls.
 
@@ -10,9 +10,13 @@ Dùng SSMS hoặc sqlcmd chạy **toàn bộ** [Database/QLBenhVienRangHamMat.sq
 sqlcmd -S . -E -C -b -f65001 -i Database/QLBenhVienRangHamMat.sql
 ```
 
-File tạo database trống hoặc đồng bộ database ClinicalWorkflow v2/v3 được hỗ trợ, tổng53 bảng. Sao lưu trước khi đồng bộ. Script kiểm tra schema, giữ mật khẩu/giá/hồ sơ và chứng từ cũ; chỉ dọn bộ DEMO28 còn nguyên bản, không bị nghiệp vụ người dùng tham chiếu. Nhật ký tra cứu chỉ đọc được giữ nguyên. Dữ liệu demo đã được sửa/ký hoặc có chứng từ khiến thao tác dừng để đối chiếu, không ép xóa bằng cách tắt trigger.
+File chỉ tạo một database **QLBenhVienRangHamMat**, tổng60 bảng. Khi chưa có bảng, script nạp đầy đủ schema và bản dữ liệu đã phục hồi từ backup ngày29/10/2026 lúc15:32, sau đó kiểm tra đồng bộ. Khi chạy lại trên database đã có bảng, script giữ dữ liệu hiện tại, không nạp đè snapshot và không tự dọn DEMO28. Sao lưu trước khi đồng bộ database ClinicalWorkflow v2/v3 được hỗ trợ.
 
-Cài mới chỉ có **admin001 / 123456** và danh mục cơ sở; không tạo bệnh nhân, bác sĩ, lịch trực, bệnh án, tồn kho hoặc chứng từ giả. Đổi mật khẩu sau đăng nhập. Nhập nhân sự/phòng/lịch làm việc, hàng hóa/thuốc và chứng từ nhập kho thực tế trước khi sử dụng các nghiệp vụ liên quan. Không tự tạo danh tính người thật khi chưa có nguồn được phép sử dụng.
+Đã hợp nhất các phần còn thiếu từ SQL_V9_CAI_MOI_TEST_F5.sql: lịch khám có mức nghiêm trọng/bác sĩ dự bị; chấm công, nhật ký duyệt; lương, phụ cấp, khấu trừ, bảo hiểm, hoa hồng và khóa kỳ đã chốt. Chỉ chạy file SQL chính; không cần chạy thêm các file nâng cấp trong SQL/. File V9 gốc chỉ dùng đối chiếu, có dữ liệu mẫu và không dùng để chạy tiếp trên database đang sử dụng. Xem [đối chiếu và cách bảo toàn lương cũ](docs/database/HOP_NHAT_V9.md).
+
+Phiếu lương từ công thức cũ giữ nguyên số tiền, ghi chú và trạng thái bằng bản tiền trước đồng bộ. Phiếu đã chốt không được sửa; không tự điền người chốt khi dữ liệu cũ chưa có. Bấm Tính lương mới chuyển các phiếu Nháp sang công thức V9 và vẫn giữ bản tiền gốc để đối chiếu. Nhập lịch nghỉ đã được bệnh viện duyệt vào NGAY_NGHI_LE trước khi tính kỳ liên quan; bản cài không tự áp lịch nghỉ hoặc tạo chứng từ lương mẫu.
+
+Cài mới có dữ liệu phục hồi: **11 bệnh nhân,10 nhân viên,10 thiết bị,10 lịch sử bảo trì,11 hóa đơn,10 phiếu lương,10 tài khoản** cùng dữ liệu liên quan; bản phục hồi gốc1.410 dòng; bản đóng gói hiện tại1.418 dòng do giữ thêm8 nhật ký truy cập khi kiểm giao diện, trên60 bảng. Các lần bảo trì cũ đã kết thúc được đồng bộ thành Đã hoàn thành; tiền lương cũ được bảo toàn. Đăng nhập Admin đã kiểm chứng với **admin001 / 123456**; đồng bộ không đặt lại mật khẩu tài khoản hiện tại. Xem [phục hồi dữ liệu và cập nhật bản SQL](docs/database/PHUC_HOI_VA_DU_LIEU_SQL.md).
 
 Danh mục khởi tạo có47 tình trạng,42 dịch vụ,112 liên kết; gồm chấn thương, khớp thái dương hàm, niêm mạc, tuyến nước bọt, nhiễm trùng, nang/u, khe hở, thần kinh, hậu phẫu và bệnh răng. Nguồn/giá/ngày đối chiếu tại [DANH_MUC_RHM.md](docs/clinical-workflow/DANH_MUC_RHM.md). Giá công khai của cơ sở nguồn là mức tham khảo ban đầu; bệnh viện quản lý giá áp dụng trong DICH_VU.
 
@@ -22,6 +26,8 @@ Danh mục thuốc có52 sản phẩm có nguồn và20 nhóm độc lập mẫu
 
 Mở BenhVienRangHamMat.sln bằng Visual Studio2022 có .NET desktop development/.NET8 SDK, chọn RangHamMat.Wpf làm startup rồi F5. Hoặc mở PhatHanh/RangHamMat.Wpf.exe với .NET8 Desktop Runtime trên Windows.
 
+Máy mới cần cài SQL Server2016SP1 trở lên, mở toàn bộ file SQL chính trong SSMS rồi F5 và cấu hình đúng instance/quyền truy cập trước khi F5 ứng dụng. Không cần SQLCMD mode hoặc đường dẫn backup của máy cũ. File hiện tại chứa dữ liệu phục hồi; dữ liệu nhập sau lần đóng gói cần sao lưu/khôi phục hoặc cập nhật snapshot bằng tools/CapNhatDuLieuSql.ps1 trước khi chuyển máy.
+
 Ứng dụng kết nối **SQL Server**, không kết nối trực tiếp vào file .sql. File SQL là nguồn khởi tạo/đồng bộ duy nhất. Sửa RangHamMat.Wpf/appsettings.json (hoặc bản cạnh exe):
 
 ```json
@@ -29,6 +35,10 @@ Mở BenhVienRangHamMat.sln bằng Visual Studio2022 có .NET desktop developmen
 ```
 
 Biến môi trường RHM_CONNECTION_STRING được ưu tiên hơn file. Instance có tên cần viết hai dấu gạch chéo trong JSON, ví dụ TEN_MAY\\SQLEXPRESS. Giữ toàn bộ thư mục PhatHanh khi chuyển máy, không chỉ chép exe.
+
+## Bảo trì thiết bị theo serial
+
+Lịch sử bảo trì đã quản lý theo serial: chọn thiết bị hư hại → lưu chưa xác nhận/xác nhận → tiến hành → hoàn thành; tình trạng thiết bị được đồng bộ trong cùng giao dịch. Chỉ phiếu chưa xác nhận được sửa/hủy, lịch sử không xóa. Xem [hướng dẫn bảo trì theo serial](docs/database/BAO_TRI_SERIAL.md).
 
 ## Luồng khám và thu tiền
 
@@ -44,12 +54,16 @@ Admin toàn quyền chức năng nhưng vẫn tuân thủ trạng thái chứng 
 
 ## Kiểm tra và đóng gói
 
+Hướng dẫn đọc từng tầng, quy ước chú thích tiếng Việt và phạm vi bổ sung ngày30/10/2026 tại [HƯỚNG DẪN CHÚ THÍCH CODE](docs/HUONG_DAN_CHU_THICH_CODE.md). Chú thích bổ sung không thay đổi token thực thi C#, cấu trúc XAML hoặc nội dung file SQL chính.
+
 ```powershell
 .\KiemTra.bat -KiemTraSql -MayChu . -Database QLBenhVienRangHamMat
 # Dựng/chạy bộ kiểm trên database thử riêng; mọi dữ liệu nghiệp vụ fixture rollback:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraQuyTrinhBenhVien.ps1 -TaoDatabaseKiemThu
-# Chỉ kiểm đăng nhập Admin/mở26 phân hệ, không ghi hồ sơ khám:
+# Chỉ kiểm đăng nhập Admin/mở27 phân hệ, gồm chấm công, không ghi hồ sơ khám:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraQuyTrinhBenhVien.ps1 -ChiGiaoDien -Database QLBenhVienRangHamMat
+# Kiểm đồng bộ ET/DAL và nghiệp vụ chấm công/lương trên database thử đã cài SQL chính:
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraDongBoSql.ps1 -Database RHM_Hospital_Test_20261029
 
 dotnet publish RangHamMat.Wpf -c Release -o PhatHanh
 ```

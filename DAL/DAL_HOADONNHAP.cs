@@ -155,6 +155,14 @@ namespace DAL
             if (trung > 0) throw new InvalidOperationException("Số hóa đơn đã tồn tại ở nhà cung cấp này.");
         }
 
+        /// <summary>
+        /// Kiểm tra hóa đơn nhà cung cấp đã có phiếu nhập liên kết hay chưa. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>connection.ExecuteScalar&lt;int&gt;</c>.</remarks>
+        /// <param name="connection">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+        /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+        /// <param name="maHDN">Mã hóa đơn nhập xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         private bool CoPhieuNhap(IDbConnection connection, IDbTransaction? transaction, string maHDN)
         {
             return connection.ExecuteScalar<int>(

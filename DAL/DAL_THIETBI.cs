@@ -88,6 +88,9 @@ namespace DAL
                 }
 
                 // Không thay đổi tình trạng vật lý qua hàm sửa chung để tránh khôi phục thiết bị đã ngưng.
+                if ((duLieu.SoSerial != hienTai.SoSerial || duLieu.MaHH != hienTai.MaHH)
+                    && connection.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.BAO_TRI_THIET_BI WITH(HOLDLOCK) WHERE MaTB=@ma",new{ma=hienTai.MaTB},transaction)>0)
+                    throw new InvalidOperationException("Thiết bị đã có lịch sử bảo trì; không thay serial hoặc loại hàng của tài sản.");
                 if (duLieu.TinhTrang != hienTai.TinhTrang)
                     throw new InvalidOperationException("Chỉ được đổi tình trạng qua nút Hư hại hoặc Ngưng sử dụng.");
                 if (duLieu.MaPhong != hienTai.MaPhong)
@@ -151,6 +154,9 @@ namespace DAL
                     throw new InvalidOperationException("Thiết bị đã ngưng sử dụng vĩnh viễn, không thể thay đổi tình trạng.");
                 if (hienTai.TinhTrang == tinhTrangMoi)
                     throw new InvalidOperationException("Thiết bị đã ở tình trạng này.");
+
+                if(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.BAO_TRI_THIET_BI WITH(HOLDLOCK) WHERE MaTB=@ma AND TrangThai IN(N'Chưa xác nhận',N'Đã xác nhận',N'Đang thực hiện')",new{ma=maTB},transaction)>0)
+                    throw new InvalidOperationException("Thiết bị đang có phiếu bảo trì mở; hãy xử lý tại Lịch sử bảo trì.");
 
                 ET_THIETBI capNhat = new ET_THIETBI(hienTai.MaTB, hienTai.MaHH,
                     hienTai.SoSerial, hienTai.NgayMua, hienTai.MaNCC, hienTai.MaPhong,

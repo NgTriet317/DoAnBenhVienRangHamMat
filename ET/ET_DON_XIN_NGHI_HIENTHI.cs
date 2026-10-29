@@ -5,10 +5,22 @@ namespace ET
     // Dữ liệu đơn xin nghỉ kèm tên nhân viên và chuyên khoa để hiển thị.
     public class ET_DON_XIN_NGHI_HIENTHI : ET_DON_XIN_NGHI
     {
+        /// <summary>
+        /// Họ tên.
+        /// </summary>
         public string HoTen { get; set; } = "";
+        /// <summary>
+        /// Tên chuyên khoa.
+        /// </summary>
         public string TenCK { get; set; } = "";
+        /// <summary>
+        /// Tên người duyệt.
+        /// </summary>
         public string TenNguoiDuyet { get; set; } = "";
 
+        /// <summary>
+        /// Giá trị Loại đơn; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string LoaiDon
         {
             get
@@ -26,6 +38,9 @@ namespace ET
             }
         }
 
+        /// <summary>
+        /// Giá trị Lý do không duyệt; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string LyDoKhongDuyet
         {
             get

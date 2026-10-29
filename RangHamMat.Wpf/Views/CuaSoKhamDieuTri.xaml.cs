@@ -13,8 +13,17 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class CuaSoKhamDieuTri : UserControl, IBieuMauLuu
 {
+    /// <summary>
+    /// Giá trị lưu nội bộ của thuộc tính Drafts, dùng bởi getter/setter tương ứng.
+    /// </summary>
     private readonly ObservableCollection<TreatmentDraft> planRows=new(), progressRows=new();
+    /// <summary>
+    /// Các dịch vụ được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private TreatmentServiceChoice[] services=Array.Empty<TreatmentServiceChoice>();
+    /// <summary>
+    /// Đã khởi tạo bảng được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private string initializedTable="";
     /// <summary>
     /// Khởi tạo biểu mẫu lần khám/tình trạng/kế hoạch/bước/dịch vụ thực hiện từ XAML.

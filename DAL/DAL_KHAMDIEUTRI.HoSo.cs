@@ -4,12 +4,35 @@ using ET;
 
 namespace DAL;
 
+/// <summary>
+/// Tầng truy cập dữ liệu khám điều trị, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
 public sealed partial class DAL_KHAMDIEUTRI
 {
+    /// <summary>
+    /// Đọc dữ liệu hồ sơ và các thành phần liên quan trong phạm vi người dùng được truy cập.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>LaySnapshot</c>.</remarks>
+    /// <param name="nguoiDung">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu DuLieuHoSoTheoQuyen dùng cho bước xử lý tiếp theo.</returns>
     public DuLieuHoSoTheoQuyen LayDuLieuHoSo(NguCanhNghiepVu nguoiDung)
         =>LaySnapshot(nguoiDung,null);
+    /// <summary>
+    /// Chuẩn bị nguồn hồ sơ theo quyền để giao diện tra cứu và điều hướng dữ liệu liên quan.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>LaySnapshot</c>.</remarks>
+    /// <param name="context">Giá trị ngữ cảnh dùng khi thực hiện thao tác; kiểu NguCanhHoSo.</param>
+    /// <param name="actor">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu DuLieuHoSoTheoQuyen dùng cho bước xử lý tiếp theo.</returns>
     public DuLieuHoSoTheoQuyen LayDuLieuHoSoGiaoDien(NguCanhHoSo context,NguCanhNghiepVu actor)
         =>LaySnapshot(actor,context??throw new ArgumentNullException(nameof(context)));
+    /// <summary>
+    /// Đọc các thành phần của hồ sơ để tạo bản dữ liệu tổng hợp tại thời điểm truy vấn.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>DAL_QUYENNGHIEPVU.XacThuc</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>, <c>user.CoQuyen</c>.</remarks>
+    /// <param name="nguoiDung">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <param name="context">Giá trị ngữ cảnh dùng khi thực hiện thao tác; kiểu NguCanhHoSo?.</param>
+    /// <returns>Kết quả kiểu DuLieuHoSoTheoQuyen dùng cho bước xử lý tiếp theo.</returns>
     private DuLieuHoSoTheoQuyen LaySnapshot(NguCanhNghiepVu nguoiDung,NguCanhHoSo? context)
         => ThucHien((db, tx) =>
         {
@@ -47,6 +70,9 @@ public sealed partial class DAL_KHAMDIEUTRI
             return new DuLieuHoSoTheoQuyen(user, data);
         });
 
+    /// <summary>
+    /// Câu lệnh SQL bản chụp dữ liệu SQL dùng trong các thao tác của lớp; giá trị đầu vào được truyền theo cách nơi gọi quy định.
+    /// </summary>
     private const string SnapshotSql = """
         DECLARE @bn TABLE(MaBN nvarchar(50) PRIMARY KEY);
         INSERT @bn SELECT TOP(@patientLimit) b.MaBN FROM dbo.BENH_NHAN b WHERE (@patient IS NULL OR b.MaBN=@patient) AND (@reception=1 OR @LaAdmin=1

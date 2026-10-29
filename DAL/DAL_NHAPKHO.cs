@@ -11,6 +11,19 @@ namespace DAL
     // Lưu đầu phiếu, từng lô MỚI và chi tiết trong một giao dịch SQL.
     public class DAL_NHAPKHO : dbconnect
     {
+        /// <summary>
+        /// Tạo phiếu nhập và các dòng hàng sau khi kiểm tra đầu vào, nguồn hóa đơn và các liên kết. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>connection.QuerySingleOrDefault&lt;ET_HOADONNHAP&gt;</c>, <c>connection.ExecuteScalar&lt;int&gt;</c>, <c>DoiTrangThai</c>.</remarks>
+        /// <param name="maHDN">Mã hóa đơn nhập xác định đối tượng cần xử lý.</param>
+        /// <param name="maKho">Mã kho xác định đối tượng cần xử lý.</param>
+        /// <param name="maNV">Mã nhân viên xác định đối tượng cần xử lý.</param>
+        /// <param name="ngayNhap">Giá trị ngày nhập dùng khi thực hiện thao tác; kiểu DateTime.</param>
+        /// <param name="lyDo">Giá trị lý do dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="ghiChu">Giá trị ghi chú dùng khi thực hiện thao tác; kiểu string?.</param>
+        /// <param name="cacDong">Giá trị các dòng dùng khi thực hiện thao tác; kiểu List&lt;ET_DONGNHAPMOI&gt;.</param>
+        /// <param name="ghiSo">Giá trị ghi sổ dùng khi thực hiện thao tác; kiểu bool.</param>
+        /// <returns>Chuỗi kết quả của thao tác tạo phiếu.</returns>
         public string TaoPhieu(string maHDN, string maKho, string maNV, DateTime ngayNhap,
             string lyDo, string? ghiChu, List<ET_DONGNHAPMOI> cacDong, bool ghiSo)
         {
@@ -169,6 +182,11 @@ namespace DAL
             });
         }
 
+        /// <summary>
+        /// Kiểm tra phiếu và ghi sổ nhập/xuất để các thay đổi tồn kho có hiệu lực theo nghiệp vụ.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>DoiTrangThai</c>.</remarks>
+        /// <param name="maPN">Mã phiếu nhập xác định đối tượng cần xử lý.</param>
         public void GhiSo(string maPN)
         {
             ThucHien((connection, transaction) =>
@@ -178,6 +196,13 @@ namespace DAL
             });
         }
 
+        /// <summary>
+        /// Chuyển trạng thái phiếu theo điều kiện của bản hiện tại và dữ liệu đã đối chiếu. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>connection.QuerySingleOrDefault&lt;string&gt;</c>, <c>connection.ExecuteScalar&lt;int&gt;</c>, <c>connection.Execute</c>, <c>TaoThietBiTuLo</c>.</remarks>
+        /// <param name="connection">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+        /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+        /// <param name="maPN">Mã phiếu nhập xác định đối tượng cần xử lý.</param>
         private static void DoiTrangThai(IDbConnection connection, IDbTransaction? transaction, string maPN)
         {
             string? trangThai = connection.QuerySingleOrDefault<string>(
@@ -237,6 +262,13 @@ namespace DAL
             TaoThietBiTuLo(connection, transaction, maPN);
         }
 
+        /// <summary>
+        /// Tạo các thiết bị/serial từ dòng nhập thiết bị theo lô trong cùng giao dịch ghi sổ. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch. Dùng application lock sở hữu bởi giao dịch; từ chối khi không lấy được khóa trong thời gian chờ.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>connection.Query&lt;ET_CHITIETPHIEUNHAP&gt;</c>, <c>decimal.Truncate</c>, <c>connection.QuerySingle&lt;ET_HANGHOA&gt;</c>, <c>connection.QuerySingle&lt;ET_LOHANGHOA&gt;</c>.</remarks>
+        /// <param name="connection">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+        /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+        /// <param name="maPN">Mã phiếu nhập xác định đối tượng cần xử lý.</param>
         private static void TaoThietBiTuLo(IDbConnection connection, IDbTransaction? transaction, string maPN)
         {
             List<ET_CHITIETPHIEUNHAP> cacDong = new List<ET_CHITIETPHIEUNHAP>(connection.Query<ET_CHITIETPHIEUNHAP>(@"
@@ -300,6 +332,12 @@ namespace DAL
             }
         }
 
+        /// <summary>
+        /// Lấy các chữ cái đầu của tên để tạo phần nhận diện theo quy tắc mã đang áp dụng.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>tenThietBi.Replace</c>, <c>CharUnicodeInfo.GetUnicodeCategory</c>, <c>char.IsLetter</c>, <c>chuDau.Append</c>.</remarks>
+        /// <param name="tenThietBi">Giá trị tên thiết bị dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <returns>Chuỗi kết quả của thao tác lấy chú cài đầu.</returns>
         private static string LayChuCaiDau(string tenThietBi)
         {
             // VD: "Máy đo huyết áp" -> MDHA, "Máy X-quang" -> MXQ.

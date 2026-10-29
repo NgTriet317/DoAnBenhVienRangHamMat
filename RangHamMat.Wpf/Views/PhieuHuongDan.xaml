@@ -22,12 +22,16 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <TextBlock Text="Hồ sơ" Margin="0,0,0,6"/>
+                        <!-- Trường lựa chọn ComboBox. Chuyển sự kiện đến ComboBox_SelectionChanged trong code-behind. -->
                         <ComboBox SelectionChanged="ComboBox_SelectionChanged"/>
                         <TextBlock Text="Lịch khám" Margin="0,0,0,6"/>
+                        <!-- Trường lựa chọn ComboBox. Chuyển sự kiện đến ComboBox_SelectionChanged trong code-behind. -->
                         <ComboBox SelectionChanged="ComboBox_SelectionChanged"/>
                         <TextBlock Text="Bác sĩ" Margin="0,0,0,6"/>
+                        <!-- Trường lựa chọn ComboBox. Chuyển sự kiện đến ComboBox_SelectionChanged trong code-behind. -->
                         <ComboBox SelectionChanged="ComboBox_SelectionChanged"/>
                         <TextBlock Text="Dịch vụ" Margin="0,0,0,6"/>
+                        <!-- Trường lựa chọn ComboBox. Chuyển sự kiện đến ComboBox_SelectionChanged trong code-behind. -->
                         <ComboBox SelectionChanged="ComboBox_SelectionChanged"/>
                         <TextBlock Text="Số thứ tự" Margin="0,0,0,6"/>
                         <TextBox BorderBrush="Black" BorderThickness="1" />

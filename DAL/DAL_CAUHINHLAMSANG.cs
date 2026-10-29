@@ -10,12 +10,34 @@ namespace DAL;
 /// <summary>Đọc/lưu cấu hình hỗ trợ trong cùng transaction với kiểm tra định danh và audit SQL.</summary>
 public abstract class DAL_CAUHINHLAMSANG<T> : dbconnect where T : class, new()
 {
+    /// <summary>
+    /// Quyền cho phép thao tác được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly Type[] Allowed = [typeof(ET_NHOMTHUOCKEDON),typeof(ET_CAUHINHTHUOCKEDON)];
+    /// <summary>
+    /// Bảng được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly string Table = Allowed.Contains(typeof(T)) ? typeof(T).GetCustomAttribute<TableAttribute>()!.Name : throw new InvalidOperationException("Entity ngoài hợp đồng cấu hình.");
+    /// <summary>
+    /// Các cột được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly PropertyInfo[] Columns = typeof(T).GetProperties();
+    /// <summary>
+    /// Khóa được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly PropertyInfo Key = Columns.Single(p => p.GetCustomAttribute<ExplicitKeyAttribute>() is not null);
+    /// <summary>
+    /// Khởi tạo cấu hình lâm sàng. Chuyển giao dịch tùy chọn cho lớp cơ sở; nơi cấp giao dịch chịu trách nhiệm kết thúc giao dịch đó.
+    /// </summary>
+    /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
     protected DAL_CAUHINHLAMSANG(IDbTransaction? transaction) : base(transaction) { }
 
+    /// <summary>
+    /// Đọc danh sách cấu hình theo điều kiện được truyền vào.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>DAL_QUYENNGHIEPVU.XacThuc</c>, <c>user.CoQuyen</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>.</remarks>
+    /// <param name="nguoiDung">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Tập dữ liệu kiểu IReadOnlyList&lt;T&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
     public IReadOnlyList<T> LayDanhSach(NguCanhNghiepVu nguoiDung) => ThucHien((db,tx) =>
     {
         var user=DAL_QUYENNGHIEPVU.XacThuc(db,tx,nguoiDung);
@@ -69,5 +91,11 @@ public abstract class DAL_CAUHINHLAMSANG<T> : dbconnect where T : class, new()
     });
 }
 
+/// <summary>
+/// Tầng truy cập dữ liệu nhóm thuốc kê đơn, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
 public sealed class DAL_NHOMTHUOCKEDON(IDbTransaction? transaction=null) : DAL_CAUHINHLAMSANG<ET_NHOMTHUOCKEDON>(transaction);
+/// <summary>
+/// Tầng truy cập dữ liệu cấu hình thuốc kê đơn, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
 public sealed class DAL_CAUHINHTHUOCKEDON(IDbTransaction? transaction=null) : DAL_CAUHINHLAMSANG<ET_CAUHINHTHUOCKEDON>(transaction);

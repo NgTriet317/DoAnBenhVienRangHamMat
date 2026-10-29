@@ -3,8 +3,20 @@ using Dapper;
 using ET;
 namespace DAL;
 
+/// <summary>
+/// Tầng truy cập dữ liệu khám điều trị, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
 public sealed partial class DAL_KHAMDIEUTRI
 {
+    /// <summary>
+    /// Chốt lần khám từ bản tổng kết đã xem, phối hợp xác nhận đơn thuốc và lập hóa đơn để giữ nhất quán các chứng từ. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch. Dùng application lock sở hữu bởi giao dịch; từ chối khi không lấy được khóa trong thời gian chờ. Đối chiếu dấu vân tay trước khi ghi để phát hiện bản dữ liệu đã bị thay đổi.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>db.ExecuteScalar&lt;int&gt;</c>, <c>KhamError</c>, <c>OwnedVisit</c>.</remarks>
+    /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <param name="dauVanTay">Giá trị dùng đối chiếu phiên bản dữ liệu tại bước xử lý tương ứng.</param>
+    /// <param name="dauVanTayTongKet">Giá trị dùng đối chiếu phiên bản dữ liệu tại bước xử lý tương ứng.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu BanNhapKham dùng cho bước xử lý tiếp theo.</returns>
     public BanNhapKham ChotKhamVaLapHoaDon(string maLS,string dauVanTay,string dauVanTayTongKet,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
         // Same order as the prescription writer: global Rx lock, then visit lock.

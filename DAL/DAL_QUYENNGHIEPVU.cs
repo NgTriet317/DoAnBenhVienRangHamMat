@@ -9,12 +9,28 @@ namespace DAL;
 /// <summary>Đọc lại định danh/quyền từ SQL trong transaction của thao tác, không tin cờ quyền từ UI.</summary>
 public sealed partial class DAL_QUYENNGHIEPVU : dbconnect
 {
+    /// <summary>
+    /// Giao dịch được giữ để các thao tác liên quan dùng cùng một phạm vi commit/rollback.
+    /// </summary>
     private readonly IDbTransaction? callerTransaction;
+    /// <summary>
+    /// Ánh xạ mã chức vụ sang quyền nghiệp vụ, được nạp khi dùng lần đầu được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly Lazy<IReadOnlyDictionary<string, QuyenLamViec>> Mapping = new(ReadMapping);
 
+    /// <summary>
+    /// Khởi tạo quyền nghiệp vụ. Chuyển giao dịch tùy chọn cho lớp cơ sở; nơi cấp giao dịch chịu trách nhiệm kết thúc giao dịch đó.
+    /// </summary>
+    /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
     public DAL_QUYENNGHIEPVU(IDbTransaction? transaction = null) : base(transaction)
         => callerTransaction = transaction;
 
+    /// <summary>
+    /// Đọc ngữ cảnh nghiệp vụ từ định danh đăng nhập để áp dụng quyền và phạm vi dữ liệu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>ReadIdentity</c>.</remarks>
+    /// <param name="maNV">Mã nhân viên xác định đối tượng cần xử lý.</param>
+    /// <returns>Kết quả kiểu NguCanhNghiepVu dùng cho bước xử lý tiếp theo.</returns>
     public NguCanhNghiepVu LayNguCanh(string maNV)
         => ThucHien((db, tx) => ReadIdentity(db, tx, maNV));
 
@@ -39,6 +55,14 @@ public sealed partial class DAL_QUYENNGHIEPVU : dbconnect
         });
     }
 
+    /// <summary>
+    /// Xác thực lại người dùng theo dữ liệu hiện tại trước khi cho phép thao tác nghiệp vụ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>TuChoi</c>, <c>ReadIdentity</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="nguoiDung">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu NguCanhNghiepVu dùng cho bước xử lý tiếp theo.</returns>
     internal static NguCanhNghiepVu XacThuc(IDbConnection db, IDbTransaction? tx, NguCanhNghiepVu nguoiDung)
     {
         if (nguoiDung is null) throw TuChoi();
@@ -47,6 +71,14 @@ public sealed partial class DAL_QUYENNGHIEPVU : dbconnect
         return current;
     }
 
+    /// <summary>
+    /// Đọc thông tin định danh cần đối chiếu với tài khoản và nhân viên trong SQL. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>KiemTraMa</c>, <c>.Identities.SingleOrDefault</c>, <c>.FindAll</c>, <c>TuChoi</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="maNV">Mã nhân viên xác định đối tượng cần xử lý.</param>
+    /// <returns>Kết quả kiểu NguCanhNghiepVu dùng cho bước xử lý tiếp theo.</returns>
     private static NguCanhNghiepVu ReadIdentity(IDbConnection db, IDbTransaction? tx, string maNV)
     {
         KiemTraMa(maNV);
@@ -74,6 +106,15 @@ public sealed partial class DAL_QUYENNGHIEPVU : dbconnect
             : Mapping.Value.GetValueOrDefault(user.MaChucVu, QuyenLamViec.Khong) };
     }
 
+    /// <summary>
+    /// Ghi nhật ký tra cứu cho quản trị viên để theo dõi việc truy cập dữ liệu quy trình khám.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>TaoMa</c>, <c>db.Execute</c>.</remarks>
+    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <param name="table">Giá trị bảng dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
     internal static void GhiTraCuuAdmin(IDbConnection db, IDbTransaction? tx, NguCanhNghiepVu user, string table, string id)
     {
         if (!user.LaAdmin) return;
@@ -84,13 +125,27 @@ public sealed partial class DAL_QUYENNGHIEPVU : dbconnect
             """, new { maNK, user.MaTK, table, id }, tx);
     }
 
+    /// <summary>
+    /// Kiểm tra mã định danh hợp lệ trước khi tra dữ liệu nghiệp vụ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>TuChoi</c>.</remarks>
+    /// <param name="ma">Mã định danh của bản ghi cần xử lý.</param>
     internal static void KiemTraMa(string? ma)
     {
         if (string.IsNullOrWhiteSpace(ma) || ma.Length > 50) throw TuChoi();
     }
 
+    /// <summary>
+    /// Tạo ngoại lệ từ chối quyền nghiệp vụ cho thao tác không thuộc phạm vi cho phép.
+    /// </summary>
+    /// <returns>Kết quả kiểu TuChoiQuyenNghiepVuException dùng cho bước xử lý tiếp theo.</returns>
     internal static TuChoiQuyenNghiepVuException TuChoi() => new();
 
+    /// <summary>
+    /// Đọc ánh xạ quyền hoặc phạm vi phục vụ xác thực ngữ cảnh.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>JsonSerializer.Deserialize&lt;Dictionary&lt;string,string[]&gt;&gt;</c>, <c>Enum.TryParse&lt;QuyenLamViec&gt;</c>, <c>Enum.IsDefined</c>, <c>mapping.Add</c>.</remarks>
+    /// <returns>Kết quả kiểu IReadOnlyDictionary&lt;string, QuyenLamViec&gt; dùng cho bước xử lý tiếp theo.</returns>
     private static IReadOnlyDictionary<string, QuyenLamViec> ReadMapping()
     {
         using var stream = typeof(DAL_QUYENNGHIEPVU).Assembly.GetManifestResourceStream("DAL.ClinicalWorkflowPermissions.json")

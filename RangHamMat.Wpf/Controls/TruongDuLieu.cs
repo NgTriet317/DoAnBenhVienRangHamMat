@@ -13,6 +13,9 @@ public static class TruongDuLieu
     /// Tra cột liên kết cha của từng loại hồ sơ để khóa lại khi chỉnh sửa, tránh chuyển bản ghi sang một hồ sơ khác.
     /// </summary>
     public static string OwnerField(string table) => table switch { "HO_SO_BENH_AN"=>"MaBN", "PHIEU_KHAM_BENH"=>"MaHS", "LICH_SU_KHAM_BENH"=>"MaPhieu", "TINH_TRANG_BENH" or "KE_HOACH_DIEU_TRI" or "DON_THUOC" or "DICH_VU_THUC_HIEN"=>"MaLS", "CHI_TIET_KE_HOACH"=>"MaKHDT", "CHI_TIET_DON_THUOC"=>"MaDT", _=>"" };
+    /// <summary>
+    /// Các bảng được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     public static readonly Dictionary<string,Dictionary<string,string>> Tables = new()
     {
         ["NHA_CUNG_CAP"] = new() { ["MaNCC"] = "Mã nhà cung cấp", ["TenNCC"] = "Tên nhà cung cấp", ["SDT"] = "Số điện thoại", ["Email"] = "Email", ["DiaChi"] = "Địa chỉ", ["NguoiLienHe"] = "Người liên hệ", ["TrangThai"] = "Trạng thái" },

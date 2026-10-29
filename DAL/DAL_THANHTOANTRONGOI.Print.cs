@@ -2,8 +2,18 @@ using Dapper;
 using ET;
 namespace DAL;
 
+/// <summary>
+/// Tầng truy cập dữ liệu thanh toán trọn gói, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
 public sealed partial class DAL_THANHTOANTRONGOI
 {
+    /// <summary>
+    /// Đọc hóa đơn và các dòng nguồn đã chốt để tạo nội dung bản in. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>DAL_QUYENNGHIEPVU.XacThuc</c>, <c>DAL_QUYENNGHIEPVU.KiemTraMa</c>, <c>db.QuerySingleOrDefault&lt;InvoiceContext&gt;</c>.</remarks>
+    /// <param name="maHD">Mã hóa đơn xác định đối tượng cần xử lý.</param>
+    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu BanInHoaDon dùng cho bước xử lý tiếp theo.</returns>
     public BanInHoaDon LayBanInHoaDon(string maHD,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
         var actor=DAL_QUYENNGHIEPVU.XacThuc(db,tx,user);DAL_QUYENNGHIEPVU.KiemTraMa(maHD);
@@ -39,9 +49,38 @@ public sealed partial class DAL_THANHTOANTRONGOI
         return new BanInHoaDon(h,context.MaBN,context.HoTenBN,context.NguoiLap,collected,h.SoTienPhaiThu-collected,details,
             h.PhienBanQuyTrinh==2?cash?.SoTienKhachDua??0:null,h.PhienBanQuyTrinh==2?cash?.TienThua??0:null,cash?.PhuongThuc,cash?.MaThamChieu);
     });
+    /// <summary>
+    /// Mô hình và thao tác hỗ trợ hóa đơn ngữ cảnh dùng bởi các thành phần liên quan.
+    /// </summary>
     private sealed class InvoiceContext
     {
-        public string MaBN{get;set;}="";public string HoTenBN{get;set;}="";public string NguoiLap{get;set;}="";
-        public string MaBS{get;set;}="";public string BacSiPhieu{get;set;}="";public string TrangThaiLuot{get;set;}="";public bool DaPhuTrach{get;set;}
+        /// <summary>
+        /// Mã bệnh nhân.
+        /// </summary>
+        public string MaBN{get;set;}="";
+        /// <summary>
+        /// Họ tên bệnh nhân.
+        /// </summary>
+        public string HoTenBN{get;set;}="";
+        /// <summary>
+        /// Người lập.
+        /// </summary>
+        public string NguoiLap{get;set;}="";
+        /// <summary>
+        /// Mã bác sĩ.
+        /// </summary>
+        public string MaBS{get;set;}="";
+        /// <summary>
+        /// Bác sĩ trên phiếu tiếp nhận.
+        /// </summary>
+        public string BacSiPhieu{get;set;}="";
+        /// <summary>
+        /// Trạng thái hiện tại của lần khám.
+        /// </summary>
+        public string TrangThaiLuot{get;set;}="";
+        /// <summary>
+        /// Đã phụ trách.
+        /// </summary>
+        public bool DaPhuTrach{get;set;}
     }
 }

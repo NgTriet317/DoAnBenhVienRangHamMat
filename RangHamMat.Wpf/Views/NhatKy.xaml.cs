@@ -12,6 +12,9 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class NhatKy : UserControl
 {
+    /// <summary>
+    /// Quyền cho phép thao tác được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly HashSet<string> Allowed = new() { "Đăng nhập", "Đăng xuất", "Phân quyền", "Thay đổi thông tin" };
     /// <summary>
     /// Khởi tạo nhật ký hoạt động từ XAML. Chưa có xử lý đọc/lưu SQL riêng trong constructor.

@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Thư viện thực thể/hợp đồng dữ liệu dùng chung; không tham chiếu các tầng nghiệp vụ/giao diện. -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -7,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Cung cấp Table/Key/ExplicitKey/Computed để ánh xạ thuộc tính thực thể với bảng SQL. -->
     <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
   </ItemGroup>
 

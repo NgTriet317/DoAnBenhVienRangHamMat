@@ -7,11 +7,29 @@ namespace DAL;
 /// <summary>Nguồn đọc có phạm vi SQL cho quy trình khám; không lấy cache toàn viện rồi lọc quyền trong UI.</summary>
 public sealed partial class DAL_KHAMDIEUTRI : dbconnect
 {
+    /// <summary>
+    /// Khởi tạo khám điều trị. Chuyển giao dịch tùy chọn cho lớp cơ sở; nơi cấp giao dịch chịu trách nhiệm kết thúc giao dịch đó.
+    /// </summary>
+    /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
     public DAL_KHAMDIEUTRI(IDbTransaction? transaction = null) : base(transaction) { }
 
+    /// <summary>
+    /// Đọc danh sách hàng đợi theo phạm vi dữ liệu và quyền của người dùng.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>LayTrangHangDoi</c>.</remarks>
+    /// <param name="boLoc">Giá trị bộ lọc dùng khi thực hiện thao tác; kiểu BoLocHangDoi.</param>
+    /// <param name="nguoiDung">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Tập dữ liệu kiểu IReadOnlyList&lt;HangDoiKhamItem&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
     public IReadOnlyList<HangDoiKhamItem> LayHangDoi(BoLocHangDoi boLoc, NguCanhNghiepVu nguoiDung)
         => LayTrangHangDoi(boLoc,nguoiDung).CacDong;
 
+    /// <summary>
+    /// Đọc dữ liệu chi tiết của mục được chọn để hiển thị hoặc tiếp tục xử lý.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>DAL_QUYENNGHIEPVU.KiemTraMa</c>, <c>DAL_QUYENNGHIEPVU.XacThuc</c>, <c>user.CoQuyen</c>.</remarks>
+    /// <param name="maLS">Mã lần khám xác định đối tượng cần xử lý.</param>
+    /// <param name="nguoiDung">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu LanKhamChiTiet dùng cho bước xử lý tiếp theo.</returns>
     public LanKhamChiTiet LayChiTiet(string maLS, NguCanhNghiepVu nguoiDung)
         => ThucHien((db, tx) =>
         {
@@ -37,6 +55,13 @@ public sealed partial class DAL_KHAMDIEUTRI : dbconnect
             return new LanKhamChiTiet(row, row.MaBN, row.MaHS, canEdit);
         });
 
+    /// <summary>
+    /// Đọc các đơn thuốc liên quan đến nguồn hồ sơ/lần khám theo phạm vi nghiệp vụ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>DAL_QUYENNGHIEPVU.KiemTraMa</c>, <c>DAL_QUYENNGHIEPVU.XacThuc</c>, <c>user.CoQuyen</c>.</remarks>
+    /// <param name="maDT">Mã đơn thuốc xác định đối tượng cần xử lý.</param>
+    /// <param name="nguoiDung">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu DonThuocChiTiet dùng cho bước xử lý tiếp theo.</returns>
     public DonThuocChiTiet LayDonThuoc(string maDT, NguCanhNghiepVu nguoiDung)
         => ThucHien((db, tx) =>
         {
@@ -66,19 +91,49 @@ public sealed partial class DAL_KHAMDIEUTRI : dbconnect
             return new DonThuocChiTiet(row, lines, row.MaBN, canEdit);
         });
 
+    /// <summary>
+    /// Mô hình và thao tác hỗ trợ lần khám đọc dùng bởi các thành phần liên quan.
+    /// </summary>
     private sealed class VisitRead : ET_LICHSUKHAMBENH
     {
+        /// <summary>
+        /// Mã bệnh nhân.
+        /// </summary>
         public string MaBN { get; set; } = "";
+        /// <summary>
+        /// Mã hồ sơ bệnh án của bệnh nhân.
+        /// </summary>
         public string MaHS { get; set; } = "";
+        /// <summary>
+        /// Bác sĩ được phân công khi tiếp nhận. Có thể để null khi dữ liệu chưa được cung cấp.
+        /// </summary>
         public string? BacSiTiepNhan { get; set; }
+        /// <summary>
+        /// Trạng thái hiện tại của phiếu tiếp nhận.
+        /// </summary>
         public string TrangThaiPhieu { get; set; } = "";
     }
 
+    /// <summary>
+    /// Mô hình và thao tác hỗ trợ đơn thuốc đọc dùng bởi các thành phần liên quan.
+    /// </summary>
     private sealed class PrescriptionRead : ET_DONTHUOC
     {
+        /// <summary>
+        /// Mã bệnh nhân.
+        /// </summary>
         public string MaBN { get; set; } = "";
+        /// <summary>
+        /// Trạng thái lần khám.
+        /// </summary>
         public string TrangThaiLanKham { get; set; } = "";
+        /// <summary>
+        /// Trạng thái hiện tại của phiếu tiếp nhận.
+        /// </summary>
         public string TrangThaiPhieu { get; set; } = "";
+        /// <summary>
+        /// Chính bác sĩ phụ trách.
+        /// </summary>
         public bool ChinhBacSi { get; set; }
     }
 }

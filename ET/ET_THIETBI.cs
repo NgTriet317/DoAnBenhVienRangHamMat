@@ -10,15 +10,45 @@ namespace ET
     [Table("THIET_BI")]
     public class ET_THIETBI
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaTB, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maTB = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaHH, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maHH = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính SoSerial, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string soSerial = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgayMua, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime? ngayMua;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaNCC, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maNCC;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaPhong, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maPhong;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TinhTrang, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string tinhTrang = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính HanBaoHanh, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime? hanBaoHanh;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GhiChu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? ghiChu;
 
         /// <summary>

@@ -135,8 +135,17 @@ public sealed class AppointmentDisplay
 /// </summary>
 public partial class LichHenKham : UserControl, INotifyPropertyChanged
 {
+    /// <summary>
+    /// Các mục được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private object[] items = Array.Empty<object>();
+    /// <summary>
+    /// Đang chọn được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private DateTime selected = DateTime.Today;
+    /// <summary>
+    /// Cờ Sẵn sàng; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool ready;
     /// <summary>
     /// Chế độ hiển thị của control lịch, quyết định dữ liệu và bố cục cần dựng.
@@ -178,10 +187,25 @@ public partial class LichHenKham : UserControl, INotifyPropertyChanged
     /// Các ngày điều trị hoặc các ô ngày trong lịch được gom để binding.
     /// </summary>
     public CalendarDay[] Days { get; private set; } = Array.Empty<CalendarDay>();
+    /// <summary>
+    /// Thông báo thay đổi thuộc tính cho các thành phần đã đăng ký theo dõi.
+    /// </summary>
     public event PropertyChangedEventHandler? PropertyChanged;
+    /// <summary>
+    /// Thông báo mở bản ghi cho các thành phần đã đăng ký theo dõi.
+    /// </summary>
     public event Action<object>? OpenRecord;
+    /// <summary>
+    /// Thông báo chỉnh sửa bản ghi cho các thành phần đã đăng ký theo dõi.
+    /// </summary>
     public event Action<object>? EditRecord;
+    /// <summary>
+    /// Thông báo thay đổi trạng thái cho các thành phần đã đăng ký theo dõi.
+    /// </summary>
     public event Action<object, string>? ChangeStatus;
+    /// <summary>
+    /// Thông báo tạo lịch hẹn cho các thành phần đã đăng ký theo dõi.
+    /// </summary>
     public event Action<DateTime>? CreateAppointment;
     /// <summary>
     /// Khởi tạo LichHenKham từ XAML.

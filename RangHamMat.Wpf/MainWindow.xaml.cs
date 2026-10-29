@@ -17,9 +17,21 @@ namespace RangHamMat;
 /// </summary>
 public partial class MainWindow : Window
 {
+    /// <summary>
+    /// Phiên đăng nhập tài khoản được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private string? sessionAccount=(Thread.CurrentPrincipal as ClaimsPrincipal)?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    /// <summary>
+    /// Phiên đăng nhập nhân viên được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private string? sessionEmployee=(Thread.CurrentPrincipal as ClaimsPrincipal)?.FindFirst(ET.DinhDanhNghiepVu.MaNhanVienClaim)?.Value;
+    /// <summary>
+    /// Đã tách công việc lỗi được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly TextBlock detachedWorkError=new(){Foreground=System.Windows.Media.Brushes.Firebrick,Background=System.Windows.Media.Brushes.White,TextWrapping=TextWrapping.Wrap,Margin=new Thickness(24),VerticalAlignment=VerticalAlignment.Bottom,Visibility=Visibility.Collapsed};
+    /// <summary>
+    /// Toàn bộ các trang được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly HashSet<string> AllPages = new(StringComparer.Ordinal)
     {
         "TongQuan", "BenhNhan", "KhamDieuTri", "DichVuThucHien", "DonThuoc", "NhanSu", "ChungChiNhanVien", "CaLamViec",
@@ -28,6 +40,9 @@ public partial class MainWindow : Window
         "NhatKy", "XinNghiViec"
     };
 
+    /// <summary>
+    /// Vai trò các quyền được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly Dictionary<string, HashSet<string>> RolePermissions = new(StringComparer.Ordinal)
     {
         ["Admin"] = AllPages,
@@ -92,6 +107,13 @@ public partial class MainWindow : Window
     /// </summary>
     internal bool OpenApp(string tag)
         =>OpenAppCore(tag,null);
+    /// <summary>
+    /// Mở không gian ứng dụng và phân hệ được yêu cầu sau các bước kiểm tra điều hướng.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>TryLeaveClinicalWork</c>, <c>CanOpen</c>, <c>MessageBox.Show</c>, <c>DuLieuGiaoDien.ChonPhamViLamSang</c>.</remarks>
+    /// <param name="tag">Giá trị thông tin gắn kèm dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="context">Giá trị ngữ cảnh dùng khi thực hiện thao tác; kiểu ET.NguCanhHoSo?.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     private bool OpenAppCore(string tag,ET.NguCanhHoSo? context)
     {
         // Các liên kết cũ tới VatTu được đưa về Tồn kho, không mở màn hình đã bỏ.
@@ -227,14 +249,32 @@ public partial class MainWindow : Window
         HomeSurface.Visibility = Visibility.Visible;
     }
 
+    /// <summary>
+    /// Rời màn hình lựa chọn. Có thể để null khi dữ liệu chưa được cung cấp.
+    /// </summary>
     internal Func<string,MessageBoxResult>? LeaveDecision {get;set;}
+    /// <summary>
+    /// Phối hợp kiểm tra các phần lâm sàng còn thay đổi trước khi rời không gian làm việc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ClinicalWindowLifecycle.Owned</c>, <c>workspace.TryLeaveClinicalWork</c>, <c>workspace.ClinicalRoots.Concat</c>, <c>ClinicalPendingWork.TryLeave</c>.</remarks>
+    /// <param name="decision">Giá trị lựa chọn dùng khi thực hiện thao tác; kiểu Func&lt;string,MessageBoxResult&gt;?.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     public bool TryLeaveClinicalWork(Func<string,MessageBoxResult>? decision=null)
     {
         var owned=ClinicalWindowLifecycle.Owned(this).Where(ClinicalWindowLifecycle.IsClinical).Cast<DependencyObject>();
         if(AppHost.Content is AppWorkspace workspace)return workspace.TryLeaveClinicalWork(decision??LeaveDecision,workspace.ClinicalRoots.Concat(owned));
         var ok=ClinicalPendingWork.TryLeave(owned,decision??LeaveDecision,out var error);detachedWorkError.Text=error;detachedWorkError.Visibility=string.IsNullOrEmpty(error)?Visibility.Collapsed:Visibility.Visible;return ok;
     }
+    /// <summary>
+    /// Kiểm tra công việc còn thay đổi trước khi cho phép đổi tài khoản hoặc định danh phiên.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>TryLeaveClinicalWork</c>.</remarks>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     private bool BeforeIdentityChange()=>TryLeaveClinicalWork();
+    /// <summary>
+    /// Làm mới trạng thái và dữ liệu phụ thuộc sau khi định danh đăng nhập thay đổi.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>.FindFirst</c>, <c>ClinicalWindowLifecycle.Owned</c>, <c>ClinicalWindowLifecycle.IsClinical</c>, <c>child.Close</c>.</remarks>
     private void IdentityChanged()
     {
         var currentAccount=(Thread.CurrentPrincipal as ClaimsPrincipal)?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -265,6 +305,9 @@ public partial class MainWindow : Window
             WindowState = WindowState.Maximized;
     }
 
+    /// <summary>
+    /// Đang chọn nhóm phân loại được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private string selectedCategory = "Tất cả";
 
     /// <summary>

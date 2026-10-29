@@ -10,8 +10,17 @@ namespace ET
     [Table("CHUC_VU")]
     public class ET_CHUCVU
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaChucVu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maChucVu = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TenChucVu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string tenChucVu = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MoTa, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string moTa = string.Empty;
 
         /// <summary>

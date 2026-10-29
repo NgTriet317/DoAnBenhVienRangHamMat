@@ -11,10 +11,25 @@ namespace ET
     [Table("KHO")]
     public class ET_KHO
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaKho, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maKho = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TenKho, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string tenKho = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaNV, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maNV = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính LoaiKho, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string loaiKho = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
 
         /// <summary>

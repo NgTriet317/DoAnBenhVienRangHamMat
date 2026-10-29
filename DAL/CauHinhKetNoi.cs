@@ -5,6 +5,11 @@ namespace DAL;
 /// <summary>Cấu hình chung cho mọi DAL; biến môi trường ưu tiên hơn file cạnh ứng dụng.</summary>
 public static class CauHinhKetNoi
 {
+    /// <summary>
+    /// Đọc chuỗi kết nối theo thứ tự ưu tiên cấu hình và trả giá trị dùng mở SQL Server.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Environment.GetEnvironmentVariable</c>, <c>Path.Combine</c>, <c>File.Exists</c>, <c>JsonDocument.Parse</c>.</remarks>
+    /// <returns>Chuỗi kết quả của thao tác lấy chuỗi kết nối.</returns>
     public static string LayChuoiKetNoi()
     {
         var environment=Environment.GetEnvironmentVariable("RHM_CONNECTION_STRING");

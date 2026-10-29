@@ -3,6 +3,9 @@ using ET;
 
 namespace DAL;
 
+/// <summary>
+/// Tầng truy cập dữ liệu khám điều trị, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
 public sealed partial class DAL_KHAMDIEUTRI
 {
     // Phiếu tiếp nhận là nguồn công việc; lịch sử khám chỉ được tạo khi bác sĩ bắt đầu.
@@ -24,6 +27,13 @@ public sealed partial class DAL_KHAMDIEUTRI
               OR b.HoTenBN LIKE @search ESCAPE N'~' OR n.HoTen LIKE @search ESCAPE N'~')
         """;
 
+    /// <summary>
+    /// Đọc một trang hàng chờ khám cùng tổng số mục khớp điều kiện.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>DAL_QUYENNGHIEPVU.XacThuc</c>, <c>user.CoQuyen</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>.</remarks>
+    /// <param name="boLoc">Giá trị bộ lọc dùng khi thực hiện thao tác; kiểu BoLocHangDoi.</param>
+    /// <param name="nguoiDung">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Kết quả kiểu TrangHoSo&lt;HangDoiKhamItem&gt; dùng cho bước xử lý tiếp theo.</returns>
     public TrangHoSo<HangDoiKhamItem> LayTrangHangDoi(BoLocHangDoi boLoc,NguCanhNghiepVu nguoiDung)
         => ThucHien((db,tx) =>
         {

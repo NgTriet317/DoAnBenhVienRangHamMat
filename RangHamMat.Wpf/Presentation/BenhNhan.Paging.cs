@@ -2,8 +2,15 @@ using System.Windows;
 using RangHamMat.Controls;
 using RangHamMat.Controls.ClinicalWorkflow;
 namespace RangHamMat.Views;
+/// <summary>
+/// Phần xử lý bệnh nhân của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+/// </summary>
 public partial class BenhNhan
 {
+    /// <summary>
+    /// Nạp trang dữ liệu mới từ SQL theo bộ lọc đang áp dụng.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Filter</c>, <c>HoTroGiaoDien.Choice</c>, <c>QuyenNghiepVu.LayNguCanh</c>, <c>bus.LayTrangBenhNhan</c>.</remarks>
     private void RefreshSqlPage()
     {
         if(refreshing)return;

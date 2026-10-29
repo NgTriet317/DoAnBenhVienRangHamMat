@@ -13,11 +13,17 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class CuaSoDonThuoc : UserControl, IBieuMauLuu
 {
+    /// <summary>
+    /// Bản nháp được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly ObservableCollection<RxDraftLine> draft = new();
     /// <summary>
     /// Collection mã/nhãn thuốc dùng làm ItemsSource cho các dòng kê đơn; cập nhật khi danh mục đổi.
     /// </summary>
     public ObservableCollection<LuaChonDanhMuc> MedicineOptions { get; } = new();
+    /// <summary>
+    /// Cờ Đã khởi tạo; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool initialized;
     /// <summary>
     /// Khởi tạo biểu mẫu đơn thuốc và dòng thuốc từ XAML. Theo dõi cache khi Loaded và làm mới nội dung khi dữ liệu thay đổi; gỡ theo dõi khi Unloaded.

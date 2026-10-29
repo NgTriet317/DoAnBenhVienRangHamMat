@@ -71,6 +71,9 @@ public sealed class RxCard
     /// Số điện thoại của bệnh nhân nguồn, giữ dạng chuỗi để không mất số 0 đầu.
     /// </summary>
     public string Phone { get; }
+    /// <summary>
+    /// Ngày sinh.
+    /// </summary>
     public string BirthDate { get; }
     /// <summary>
     /// Ghi chú của bản ghi/dòng nháp để hiển thị hoặc nhập bổ sung trước khi lưu.

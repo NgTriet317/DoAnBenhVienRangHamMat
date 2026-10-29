@@ -16,6 +16,7 @@
       <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
     <StackPanel Margin="0,0,0,16">
+      <!-- Thông tin hiển thị DetailTitle. -->
       <TextBlock x:Name="DetailTitle" Style="{StaticResource HoSoTitle}"/>
       <TextBlock Text="Thông tin đầy đủ của bản ghi đang chọn" Style="{StaticResource HoSoHint}"/>
     </StackPanel>
@@ -25,6 +26,7 @@
           <!-- Vùng DetailBody: hiển thị nội dung/danh sách được code-behind hoặc Binding cung cấp; DataTemplate quyết định cách trình bày mỗi đối tượng. -->
           <ContentControl x:Name="DetailBody"/>
         </Border>
+        <!-- Vùng bố cục PlanDetails. -->
         <StackPanel x:Name="PlanDetails" Visibility="Collapsed" Margin="0,16,0,0">
           <DockPanel Margin="0,0,0,12">
             <!-- Nút điều hướng MoCuaSo:KhamDieuTri: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
@@ -36,6 +38,7 @@
         </StackPanel>
         <!-- Vùng RelatedCard: hiển thị nội dung/danh sách được code-behind hoặc Binding cung cấp; DataTemplate quyết định cách trình bày mỗi đối tượng. -->
         <ContentControl x:Name="RelatedCard" Margin="0,16,0,0"/>
+        <!-- Vùng bố cục RelatedActions. -->
         <StackPanel x:Name="RelatedActions" Visibility="Collapsed" Margin="0,12,0,0">
           <TextBlock Text="Thêm thông tin liên quan" FontWeight="SemiBold" Margin="0,0,0,10"/>
           <WrapPanel>

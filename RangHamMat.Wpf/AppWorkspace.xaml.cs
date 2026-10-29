@@ -17,12 +17,33 @@ namespace RangHamMat;
 /// </summary>
 public partial class AppWorkspace : UserControl
 {
+    /// <summary>
+    /// Trang chính được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly MainWindow home;
+    /// <summary>
+    /// Trang được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly UserControl page;
+    /// <summary>
+    /// Lịch sử được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly Stack<object> history = new();
+    /// <summary>
+    /// Trước chuyển tiêu điểm được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private IInputElement? previousFocus;
+    /// <summary>
+    /// Hộp thoại lịch sử được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly Stack<object> modalHistory = new();
+    /// <summary>
+    /// Bổ sung các cột được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly Dictionary<DataGrid, List<DataGridColumn>> extraColumns = new();
+    /// <summary>
+    /// Điều hướng lỗi được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly TextBlock navigationError=new(){TextWrapping=TextWrapping.Wrap,Foreground=System.Windows.Media.Brushes.Firebrick,Visibility=Visibility.Collapsed,Margin=new Thickness(0,8,0,0)};
 
     /// <summary>
@@ -63,7 +84,13 @@ public partial class AppWorkspace : UserControl
     /// Chuyển việc kiểm tra quyền hiển thị phân hệ về MainWindow để dùng cùng bộ quyền cho mọi màn hình con.
     /// </summary>
     public bool CanOpen(string module) => home.CanOpen(module);
+    /// <summary>
+    /// Giá trị Có nội dung lâm sàng; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     internal bool HasClinicalContent=>QuyenNghiepVu.LaPhanHe(page.GetType().Name)||ClinicalPendingWork.Nodes(this).Any(n=>n is IClinicalPendingWork||n is UserControl f&&BieuMauHoSo.IsClinicalForm(f));
+    /// <summary>
+    /// Giá trị Lâm sàng các phần tử gốc; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     internal IEnumerable<DependencyObject> ClinicalRoots=>new[]{Workspace.Content,ModalContent.Content}.Concat(history).Concat(modalHistory).OfType<DependencyObject>();
     /// <summary>
     /// Truyền ngữ cảnh bệnh nhân/lần khám/đơn thuốc cho đúng loại màn hình; lịch khám chỉ nhận phạm vi bệnh nhân.
@@ -79,6 +106,11 @@ public partial class AppWorkspace : UserControl
         else if (page is HoaDon invoices) invoices.FocusContext(patientId,visitId,prescriptionId);
         else if (page is LichKham appointments && !string.IsNullOrWhiteSpace(patientId)) appointments.SetPatient(patientId);
     }
+    /// <summary>
+    /// Chuyển không gian làm việc tới hồ sơ được yêu cầu và kiểm tra dữ liệu chưa lưu trước khi đổi nguồn.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>invoices.FocusContext</c>, <c>FocusHoSo</c>, <c>patients.OpenMedicalRecord</c>, <c>visits.FocusReceipt</c>.</remarks>
+    /// <param name="context">Giá trị ngữ cảnh dùng khi thực hiện thao tác; kiểu ET.NguCanhHoSo.</param>
     internal void FocusHoSo(ET.NguCanhHoSo context)
     {
         if(page is HoaDon invoices){invoices.FocusContext(context);return;}
@@ -213,6 +245,9 @@ public partial class AppWorkspace : UserControl
             foreach (var element in Elements(child)) yield return element;
     }
 
+    /// <summary>
+    /// Quan hệ được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly (string Parent, string Child, string Key, string Title)[] Relations =
     {
         ("BENH_NHAN", "HO_SO_BENH_AN", "MaBN", "Hồ sơ bệnh án"),
@@ -318,6 +353,13 @@ public partial class AppWorkspace : UserControl
         catch(InvalidOperationException ex) {MessageBox.Show(ex.Message,"Tải dữ liệu",MessageBoxButton.OK,MessageBoxImage.Error);}
     }
 
+    /// <summary>
+    /// Phối hợp kiểm tra các phần lâm sàng còn thay đổi trước khi rời không gian làm việc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ClinicalPendingWork.TryLeave</c>, <c>ClinicalPendingWork.Nodes</c>, <c>control.BringIntoView</c>.</remarks>
+    /// <param name="decision">Giá trị lựa chọn dùng khi thực hiện thao tác; kiểu Func&lt;string,MessageBoxResult&gt;?.</param>
+    /// <param name="roots">Giá trị các phần tử gốc dùng khi thực hiện thao tác; kiểu IEnumerable&lt;DependencyObject&gt;?.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     internal bool TryLeaveClinicalWork(Func<string,MessageBoxResult>? decision=null,IEnumerable<DependencyObject>? roots=null)
     {
         roots??=ClinicalRoots;

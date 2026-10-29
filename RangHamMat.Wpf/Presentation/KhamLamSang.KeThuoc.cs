@@ -3,11 +3,27 @@ using System.Windows;
 using System.Windows.Controls;
 namespace RangHamMat.Views;
 
+/// <summary>
+/// Phần xử lý khám lâm sàng của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+/// </summary>
 public partial class KhamLamSang
 {
+    /// <summary>
+    /// Đơn thuốc trình nhập liệu được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private KeDonThuocEditor? prescriptionEditor;
+    /// <summary>
+    /// Đơn thuốc cửa sổ được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private KeDonThuocWindow? prescriptionWindow;
+    /// <summary>
+    /// Lâm sàng tổng kết được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private TongKetKham? clinicalSummary;
+    /// <summary>
+    /// Nạp lại tổng kết dịch vụ và thuốc cho lần khám đang mở.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>service.LayTongKetKham</c>, <c>clinicalSummary.Thuoc.Any</c>, <c>prescriptionEditor.FocusContext</c>, <c>Run</c>.</remarks>
     private void RefreshClinicalSummary()
     {
         clinicalSummary=service.LayTongKetKham(visitId,actor);
@@ -39,6 +55,11 @@ public partial class KhamLamSang
             NoPrescription.IsChecked==true?"Lưu lý do không kê thuốc bằng nút Lưu khám, rồi chuyển Tổng kết.":"Bấm Kê thuốc, chọn và nhập chỉ định trong cửa sổ; Xác nhận để đưa danh sách về lần khám.";
         UpdateClinicalFooter();
     }
+    /// <summary>
+    /// Tạo cửa sổ kê thuốc gắn với đúng lần khám và phối hợp việc xác nhận bản đơn nháp.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>RequireEditable</c>, <c>editor.RefreshContext</c>, <c>Window.GetWindow</c>, <c>window.ReleaseEditor</c>.</remarks>
+    /// <returns>Kết quả kiểu KeDonThuocWindow dùng cho bước xử lý tiếp theo.</returns>
     public KeDonThuocWindow TaoCuaSoKeThuoc()
     {
         RequireEditable();
@@ -61,8 +82,25 @@ public partial class KhamLamSang
         }
         catch{PrescriptionHost.Content=editor;throw;}
     }
+    /// <summary>
+    /// Xử lý thao tác kê thuốc khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Run</c>, <c>TaoCuaSoKeThuoc</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Prescribe_Click(object sender,RoutedEventArgs e)=>Run(()=>TaoCuaSoKeThuoc().ShowDialog(),out _);
+    /// <summary>
+    /// Xử lý thao tác đối chiếu đơn thuốc khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void ReviewPrescription_Click(object sender,RoutedEventArgs e)=>ClinicalTabs.SelectedIndex=5;
+    /// <summary>
+    /// Đối chiếu bản tổng kết và thử xác nhận dịch vụ đã thực hiện của lần khám.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Run</c>, <c>RequireEditable</c>, <c>service.LayTongKetKham</c>, <c>service.XacNhanThucHien</c>.</remarks>
+    /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     public bool TryExecutePlan(out string error)=>Run(()=>
     {
         RequireEditable();
@@ -75,13 +113,28 @@ public partial class KhamLamSang
         FillCompletionOverview(current);ClinicalStatus.Text="Đã ghi nhận dịch vụ thực hiện; chưa lập hóa đơn. Tiếp tục kê thuốc.";
         ClinicalTabs.SelectedItem=PrescriptionTab;SyncCache();
     },out error);
+    /// <summary>
+    /// Xử lý thao tác thực thi kế hoạch khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>TryExecutePlan</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void ExecutePlan_Click(object sender,RoutedEventArgs e)=>TryExecutePlan(out _);
+    /// <summary>
+    /// Tiếp nhận thay đổi lâm sàng các tab và cập nhật trạng thái/dữ liệu phụ thuộc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>UpdateClinicalFooter</c>, <c>Run</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void ClinicalTabs_Changed(object sender,SelectionChangedEventArgs e)
     {
         if(e.Source!=ClinicalTabs||CompleteClinicalButton is null)return;
         UpdateClinicalFooter();
         if(!loading&&snapshot is not null)Run(RefreshClinicalSummary,out _);
     }
+    /// <summary>
+    /// Cập nhật nút và thông tin cuối màn hình theo bước khám đang chọn.
+    /// </summary>
     private void UpdateClinicalFooter()
     {
         if(CompleteClinicalButton is null||ReloadClinicalButton is null)return;

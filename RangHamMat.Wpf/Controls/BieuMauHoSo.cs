@@ -21,6 +21,9 @@ namespace RangHamMat.Controls;
 /// </summary>
 public static partial class BieuMauHoSo
 {
+    /// <summary>
+    /// Định danh dependency property đánh dấu dữ liệu đã lưu được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     public static readonly DependencyProperty SavedProperty = DependencyProperty.RegisterAttached("Saved", typeof(object), typeof(BieuMauHoSo));
     /// <summary>
     /// Đọc attached property Saved để màn hình cha biết bản ghi vừa lưu thành công từ biểu mẫu.
@@ -34,6 +37,9 @@ public static partial class BieuMauHoSo
     /// Trạng thái một form gồm bảng, bản ghi nguồn, liên kết cha, snapshot đầu/chi tiết và quan hệ các dòng con.
     /// </summary>
     private sealed record FormState(string Table, object? Record, CreationContext? Context, OriginalRow[] Originals, string ChildTable, string ChildField);
+    /// <summary>
+    /// Các trạng thái được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<UserControl, FormState> states = new();
     // ConditionalWeakTable giữ trạng thái theo form; form đóng và không còn tham chiếu có thể được thu hồi bộ nhớ.
     /// <summary>
@@ -173,6 +179,9 @@ public static partial class BieuMauHoSo
         catch (LoiNhapLieu ex) { KiemTraNhapLieu.MarkError(form, ex); error = ex.Message; return false; }
         catch (Exception ex) when (ex is InvalidOperationException or FormatException or OverflowException or ArgumentOutOfRangeException) { error = ex.Message; return false; }
     }
+    /// <summary>
+    /// Định danh dependency property cho phạm vi bệnh nhân được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     public static readonly DependencyProperty PatientScopeProperty = DependencyProperty.RegisterAttached("PatientScope", typeof(string), typeof(BieuMauHoSo));
     /// <summary>
     /// Gắn mã bệnh nhân vào attached property của form để các danh mục liên kết chỉ hiện dữ liệu thuộc hồ sơ đó.

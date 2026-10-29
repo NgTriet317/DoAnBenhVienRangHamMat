@@ -1,3 +1,4 @@
+<!-- Giao diện BaoCao: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl x:Class="RangHamMat.Views.BaoCao" x:Name="ReportRoot"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  xmlns:ui="clr-namespace:RangHamMat.Controls" Language="vi-VN" UseLayoutRounding="True">
@@ -7,8 +8,10 @@
   <Border Style="{StaticResource ReportPanel}" Padding="12,16"><Grid>
    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
    <StackPanel Margin="6,0,6,16"><TextBlock Text="Danh mục báo cáo" Style="{StaticResource ReportSection}"/><TextBlock x:Name="CatalogCount" Text="4 nhóm · 18 chuyên đề" Style="{StaticResource ReportMuted}" Margin="0,6,0,0"/></StackPanel>
+   <!-- Ô nhập ReportSearch. Chuyển sự kiện đến TimKiem_Changed trong code-behind. -->
    <StackPanel Grid.Row="1" Margin="4,0,4,10"><TextBlock Text="Tìm chuyên đề" Style="{StaticResource FieldLabel}"/><TextBox x:Name="ReportSearch" Height="38" TextChanged="TimKiem_Changed" AutomationProperties.Name="Tìm tên hoặc nhóm báo cáo" ToolTip="Tìm theo tên hoặc nhóm, có thể nhập không dấu."/></StackPanel>
    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,3,0" PanningMode="VerticalOnly"><StackPanel>
+    <!-- Thành phần ReportCatalog. -->
     <ItemsControl x:Name="ReportCatalog"><ItemsControl.ItemTemplate><DataTemplate>
      <Expander Style="{StaticResource ReportGroup}" IsExpanded="{Binding MoRong, Mode=TwoWay}">
       <Expander.Header><Grid Margin="0,0,8,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="22"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Ten}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Grid.Column="1" Text="{Binding SoLuong}" Style="{StaticResource ReportMuted}" HorizontalAlignment="Right"/></Grid></Expander.Header>
@@ -17,76 +20,124 @@
       </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
      </Expander>
     </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+    <!-- Thông tin hiển thị NoSearchResults — Không tìm thấy chuyên đề. Thử tên khác hoặc xóa từ khóa.. -->
     <TextBlock x:Name="NoSearchResults" Text="Không tìm thấy chuyên đề. Thử tên khác hoặc xóa từ khóa." Style="{StaticResource ReportMuted}" Margin="8,16" Visibility="Collapsed"/>
    </StackPanel></ScrollViewer>
    <Border Grid.Row="3" BorderBrush="{StaticResource HospitalBorder}" BorderThickness="0,1,0,0" Padding="6,12,6,0" Margin="0,10,0,0"><TextBlock Text="Báo cáo nội bộ · Chỉ đọc dữ liệu" Style="{StaticResource ReportMuted}" FontSize="12"/></Border>
   </Grid></Border>
+  <!-- Vùng bố cục MainContent. -->
   <Grid Grid.Column="2" x:Name="MainContent" SizeChanged="NoiDung_SizeChanged">
    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
    <Grid Margin="0,0,0,18"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <!-- Thông tin hiển thị ReportTitle — Hồ sơ bệnh nhân. -->
     <StackPanel Margin="0,0,16,0"><TextBlock x:Name="ReportTitle" Text="Hồ sơ bệnh nhân" FontSize="25" FontWeight="SemiBold" Foreground="#102F54" TextWrapping="Wrap"/><TextBlock x:Name="ReportDescription" Style="{StaticResource ReportMuted}" Margin="0,6,0,0"/></StackPanel>
+    <!-- Nút thao tác ExportButton. Chuyển sự kiện đến Xuat_Click trong code-behind. -->
     <Button Grid.Column="1" x:Name="ExportButton" IsEnabled="False" Click="Xuat_Click" Style="{StaticResource ReportPrimary}" VerticalAlignment="Top" ToolTip="Xuất CSV riêng của báo cáo đã tải, gồm kỳ lọc và quy tắc tính."><StackPanel Orientation="Horizontal"><Path Data="M8,1 V11 M4,7 L8,11 L12,7 M2,12 V16 H14 V12" Width="15" Height="16" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5" VerticalAlignment="Center" Margin="0,0,8,0"/><TextBlock Text="Xuất báo cáo này" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" FontSize="13" FontWeight="SemiBold"/></StackPanel></Button>
    </Grid>
+   <!-- Thành phần ReportScroll. -->
    <ScrollViewer Grid.Row="1" x:Name="ReportScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,6" PanningMode="VerticalOnly"><StackPanel>
     <Border Style="{StaticResource ReportPanel}" Margin="0,0,0,14"><StackPanel>
+     <!-- Thành phần RangeShortcuts. -->
      <WrapPanel x:Name="RangeShortcuts" Margin="0,0,0,5"><TextBlock Text="Khoảng báo cáo" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,6"/><Button Content="Hôm nay" Tag="Today" Click="ChonNhanh_Click" Style="{StaticResource ReportShortcut}"/><Button Content="7 ngày qua" Tag="Week" Click="ChonNhanh_Click" Style="{StaticResource ReportShortcut}"/><Button Content="Tháng này" Tag="Month" Click="ChonNhanh_Click" Style="{StaticResource ReportShortcut}"/></WrapPanel>
+     <!-- Thành phần DateRangeFields. -->
      <WrapPanel x:Name="DateRangeFields">
+      <!-- Trường lựa chọn FromDate. Chuyển sự kiện đến BoLoc_Changed trong code-behind. -->
       <StackPanel Width="155" Margin="0,0,12,6"><TextBlock Text="Từ ngày" Style="{StaticResource FieldLabel}"/><DatePicker x:Name="FromDate" SelectedDateChanged="BoLoc_Changed" DateValidationError="NgayKhongHopLe" AutomationProperties.Name="Từ ngày báo cáo"/></StackPanel>
+      <!-- Trường lựa chọn ToDate. Chuyển sự kiện đến BoLoc_Changed trong code-behind. -->
       <StackPanel Width="155" Margin="0,0,12,6"><TextBlock Text="Đến ngày" Style="{StaticResource FieldLabel}"/><DatePicker x:Name="ToDate" SelectedDateChanged="BoLoc_Changed" DateValidationError="NgayKhongHopLe" AutomationProperties.Name="Đến ngày báo cáo"/></StackPanel>
+      <!-- Trường lựa chọn PeriodMode. Chuyển sự kiện đến BoLoc_Changed trong code-behind. -->
       <StackPanel Width="145" Margin="0,0,12,6"><TextBlock Text="Nhóm số liệu theo" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="PeriodMode" SelectionChanged="BoLoc_Changed" AutomationProperties.Name="Nhóm số liệu theo ngày tuần tháng"><ComboBoxItem Content="Ngày"/><ComboBoxItem Content="Tuần"/><ComboBoxItem Content="Tháng"/></ComboBox></StackPanel>
      </WrapPanel>
+     <!-- Thành phần SnapshotFields. -->
      <WrapPanel x:Name="SnapshotFields" Visibility="Collapsed">
+      <!-- Trường lựa chọn AsOfDate. Chuyển sự kiện đến BoLoc_Changed trong code-behind. -->
       <StackPanel Width="155" Margin="0,0,12,6"><TextBlock Text="Ngày chốt" Style="{StaticResource FieldLabel}"/><DatePicker x:Name="AsOfDate" SelectedDateChanged="BoLoc_Changed" DateValidationError="NgayKhongHopLe" AutomationProperties.Name="Ngày chốt kiểm tra hạn dùng"/></StackPanel>
+      <!-- Trường lựa chọn ExpiryThreshold. Chuyển sự kiện đến BoLoc_Changed trong code-behind. -->
       <StackPanel Width="180" Margin="0,0,12,6"><TextBlock Text="Ngưỡng sắp đến hạn" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="ExpiryThreshold" SelectionChanged="BoLoc_Changed" SelectedIndex="0" AutomationProperties.Name="Ngưỡng cảnh báo hạn dùng"><ComboBoxItem Content="Trong 30 ngày"/><ComboBoxItem Content="Trong 60 ngày"/><ComboBoxItem Content="Trong 90 ngày"/></ComboBox></StackPanel>
      </WrapPanel>
+     <!-- Thông tin hiển thị FilterError. -->
      <TextBlock x:Name="FilterError" Foreground="#B42318" TextWrapping="Wrap" Margin="0,2,0,6" Visibility="Collapsed" AutomationProperties.LiveSetting="Polite"/>
+     <!-- Nút thao tác LoadButton — Tải báo cáo. Chuyển sự kiện đến Tai_Click trong code-behind. -->
      <WrapPanel Margin="0,3,0,0"><Button x:Name="LoadButton" Content="Tải báo cáo" Click="Tai_Click" Style="{StaticResource ReportPrimary}" Margin="0,0,12,0"/><TextBlock x:Name="FilterHint" Text="Chỉ tính dữ liệu trong khoảng ngày đã chọn." Style="{StaticResource ReportMuted}" VerticalAlignment="Center" Margin="0,6"/></WrapPanel>
     </StackPanel></Border>
+    <!-- Vùng bố cục StatusSurface. -->
     <Border x:Name="StatusSurface" Background="#EAF2FF" CornerRadius="7" Padding="14,11" Margin="0,0,0,14"><StackPanel><TextBlock x:Name="PageStatus" Text="Chưa tải báo cáo. Chọn khoảng thời gian rồi nhấn Tải báo cáo." Foreground="#1D5AAC" TextWrapping="Wrap" FontSize="13" AutomationProperties.LiveSetting="Polite"/><ProgressBar x:Name="LoadingProgress" Height="3" IsIndeterminate="True" Visibility="Collapsed" Margin="0,10,0,0" Foreground="#2468CD"/></StackPanel></Border>
+    <!-- Thành phần MetricItems. -->
     <Border Style="{StaticResource ReportPanel}" Padding="4,8" Margin="0,0,0,16"><ItemsControl x:Name="MetricItems"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding KpiColumns, RelativeSource={RelativeSource AncestorType=UserControl}}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><StackPanel Margin="15,8" ToolTip="{Binding GhiChu}"><TextBlock Text="{Binding Ten}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding GiaTri}" Foreground="{Binding Mau}" FontSize="27" FontWeight="SemiBold" Margin="0,7,0,4" TextTrimming="CharacterEllipsis" ToolTip="{Binding GiaTri}"/><TextBlock Text="{Binding DonVi}" Style="{StaticResource ReportMuted}" FontSize="12"/></StackPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></Border>
+    <!-- Vùng bố cục ChartLayout. -->
     <Grid x:Name="ChartLayout" Margin="0,0,0,16">
      <Grid.ColumnDefinitions><ColumnDefinition x:Name="TrendColumn" Width="1.6*"/><ColumnDefinition x:Name="ChartGapColumn" Width="14"/><ColumnDefinition x:Name="CompositionColumn" Width="*"/></Grid.ColumnDefinitions>
      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition x:Name="ChartGapRow" Height="0"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <!-- Vùng bố cục TrendPanel. -->
      <Border x:Name="TrendPanel" Style="{StaticResource ReportPanel}"><StackPanel><TextBlock x:Name="TrendTitle" Text="Xu hướng theo ngày" Style="{StaticResource ReportSection}"/><TextBlock x:Name="TrendSubtitle" Style="{StaticResource ReportMuted}" FontSize="12" Margin="0,5,0,12"/><ScrollViewer x:Name="TrendScroll" Height="250" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PanningMode="HorizontalOnly"><ui:ChartView x:Name="ReportChart" Height="230" Unit=""/></ScrollViewer><TextBlock x:Name="TrendCaption" Text="Mỗi cặp cột là một kỳ. Cuộn ngang để xem đầy đủ." Style="{StaticResource ReportMuted}" FontSize="12"/></StackPanel></Border>
+     <!-- Vùng bố cục CompositionPanel. -->
      <Border x:Name="CompositionPanel" Grid.Column="2" Style="{StaticResource ReportPanel}"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+      <!-- Thông tin hiển thị CompositionTitle — Cơ cấu trạng thái. -->
       <TextBlock x:Name="CompositionTitle" Text="Cơ cấu trạng thái" Style="{StaticResource ReportSection}"/><TextBlock x:Name="CompositionSubtitle" Grid.Row="1" Text="Trong khoảng ngày đã chọn" Style="{StaticResource ReportMuted}" FontSize="12" Margin="0,5,0,16"/>
+      <!-- Thành phần CompositionItems. -->
       <ScrollViewer Grid.Row="2" Height="224" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Grid><ItemsControl x:Name="CompositionItems"><ItemsControl.ItemTemplate><DataTemplate><StackPanel Margin="0,0,0,16"><DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding HienThi}" FontSize="13" FontWeight="SemiBold" Margin="10,0,0,0"/><TextBlock Text="{Binding Ten}" Style="{StaticResource ReportMuted}" ToolTip="{Binding Ten}"/></DockPanel><ProgressBar Value="{Binding TiLe, Mode=OneWay}" Maximum="100" Height="7" Margin="0,7,0,0" Foreground="#087A73" Background="#E8EEF5" BorderThickness="0" IsHitTestVisible="False"/></StackPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl><TextBlock x:Name="CompositionEmpty" Text="Cơ cấu sẽ hiển thị sau khi tải dữ liệu." Style="{StaticResource ReportMuted}" TextAlignment="Center" VerticalAlignment="Center" Margin="12"/></Grid></ScrollViewer>
      </Grid></Border>
     </Grid>
+    <!-- Vùng bố cục SummaryPanel. -->
     <Border x:Name="SummaryPanel" Style="{StaticResource ReportPanel}" Padding="0" Margin="0,0,0,16"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <!-- Thông tin hiển thị TableTitle — Bảng đối chiếu theo kỳ. -->
      <StackPanel Margin="18,16,18,12"><TextBlock x:Name="TableTitle" Text="Bảng đối chiếu theo kỳ" Style="{StaticResource ReportSection}"/><TextBlock x:Name="TableHint" Text="Đối chiếu số liệu trước khi xuất báo cáo." Style="{StaticResource ReportMuted}" FontSize="12" Margin="0,5,0,0"/></StackPanel>
+     <!-- Danh sách ReportGrid. -->
      <Grid Grid.Row="1" Height="280"><DataGrid x:Name="ReportGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" RowHeight="44" MinColumnWidth="110" SelectionMode="Single" SelectionUnit="FullRow" ScrollViewer.HorizontalScrollBarVisibility="Auto" AutomationProperties.Name="Bảng tổng hợp báo cáo theo kỳ"><DataGrid.Columns>
       <DataGridTextColumn Header="Kỳ báo cáo" Binding="{Binding Ky}" Width="220" MinWidth="170" ElementStyle="{StaticResource ReportPeriod}"/>
+      <!-- Thành phần FirstColumn — Chỉ tiêu 1. -->
       <DataGridTextColumn x:Name="FirstColumn" Header="Chỉ tiêu 1" Binding="{Binding Mot, StringFormat=N0}" Width="*" ElementStyle="{StaticResource ReportNumber}" HeaderStyle="{StaticResource ReportNumberHeader}"/>
+      <!-- Thành phần SecondColumn — Chỉ tiêu 2. -->
       <DataGridTextColumn x:Name="SecondColumn" Header="Chỉ tiêu 2" Binding="{Binding Hai, StringFormat=N0}" Width="*" ElementStyle="{StaticResource ReportNumber}" HeaderStyle="{StaticResource ReportNumberHeader}"/>
+      <!-- Thành phần ThirdColumn — Chỉ tiêu 3. -->
       <DataGridTextColumn x:Name="ThirdColumn" Header="Chỉ tiêu 3" Binding="{Binding Ba, StringFormat=N0}" Width="*" ElementStyle="{StaticResource ReportNumber}" HeaderStyle="{StaticResource ReportNumberHeader}"/>
+      <!-- Thành phần FourthColumn — Chỉ tiêu 4. -->
       <DataGridTextColumn x:Name="FourthColumn" Header="Chỉ tiêu 4" Binding="{Binding Bon, StringFormat=N0}" Width="*" ElementStyle="{StaticResource ReportNumber}" HeaderStyle="{StaticResource ReportNumberHeader}"/>
      </DataGrid.Columns></DataGrid>
+     <!-- Vùng bố cục TableEmpty. -->
      <StackPanel x:Name="TableEmpty" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,42,24,16"><Path Data="M2,1 H17 L23,7 V28 H2 Z M17,1 V8 H23 M7,14 H18 M7,19 H18" Stroke="#7B8FA7" StrokeThickness="1.5" Width="26" Height="30" HorizontalAlignment="Center" Margin="0,0,0,14"/><TextBlock x:Name="EmptyTitle" Text="Chưa có kết quả để đối chiếu" FontSize="16" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap"/><TextBlock x:Name="EmptyDescription" Text="Tải báo cáo để xem các kỳ và số liệu tương ứng." Style="{StaticResource ReportMuted}" TextAlignment="Center" Margin="0,7,0,0"/></StackPanel></Grid>
+     <!-- Thông tin hiển thị RowCount — Chưa tải dữ liệu. -->
      <Border Grid.Row="2" BorderBrush="{StaticResource HospitalBorder}" BorderThickness="0,1,0,0" Padding="18,12"><TextBlock x:Name="RowCount" Text="Chưa tải dữ liệu" Style="{StaticResource ReportMuted}" FontSize="12"/></Border>
     </Grid></Border>
+    <!-- Vùng bố cục DetailsPanel. -->
     <Border x:Name="DetailsPanel" Style="{StaticResource ReportPanel}" Padding="0" Margin="0,0,0,16" Visibility="Collapsed"><Grid>
      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <!-- Thông tin hiển thị DetailsTitle — Bảng chi tiết. -->
      <StackPanel Margin="18,16,18,12"><TextBlock x:Name="DetailsTitle" Text="Bảng chi tiết" Style="{StaticResource ReportSection}"/><TextBlock x:Name="DetailsHint" Style="{StaticResource ReportMuted}" FontSize="12" Margin="0,5,0,0"/></StackPanel>
      <Grid Grid.Row="1" Height="300">
+      <!-- Danh sách DetailsGrid. -->
       <DataGrid x:Name="DetailsGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" RowHeight="44" SelectionMode="Single" ScrollViewer.HorizontalScrollBarVisibility="Auto" AutomationProperties.Name="Chi tiết dữ liệu nguồn của báo cáo">
        <DataGrid.Columns>
+        <!-- Thành phần DetailMa. -->
         <DataGridTextColumn x:Name="DetailMa" Binding="{Binding Ma}" Width="125" ElementStyle="{StaticResource ReportPeriod}"/>
+        <!-- Thành phần DetailTen. -->
         <DataGridTextColumn x:Name="DetailTen" Binding="{Binding Ten}" Width="220" ElementStyle="{StaticResource ReportPeriod}"/>
+        <!-- Thành phần DetailPhanLoai. -->
         <DataGridTextColumn x:Name="DetailPhanLoai" Binding="{Binding PhanLoai}" Width="175" ElementStyle="{StaticResource ReportPeriod}"/>
+        <!-- Thành phần DetailDonVi. -->
         <DataGridTextColumn x:Name="DetailDonVi" Binding="{Binding DonVi}" Width="105" ElementStyle="{StaticResource ReportPeriod}"/>
+        <!-- Thành phần DetailNgay. -->
         <DataGridTextColumn x:Name="DetailNgay" Binding="{Binding Ngay, StringFormat=dd/MM/yyyy}" Width="120" ElementStyle="{StaticResource ReportPeriod}"/>
+        <!-- Thành phần DetailDenNgay. -->
         <DataGridTextColumn x:Name="DetailDenNgay" Binding="{Binding DenNgay, StringFormat=dd/MM/yyyy}" Width="120" ElementStyle="{StaticResource ReportPeriod}"/>
+        <!-- Thành phần DetailMot. -->
         <DataGridTextColumn x:Name="DetailMot" Binding="{Binding Mot}" Width="165" ElementStyle="{StaticResource ReportNumber}" HeaderStyle="{StaticResource ReportNumberHeader}"/>
+        <!-- Thành phần DetailHai. -->
         <DataGridTextColumn x:Name="DetailHai" Binding="{Binding Hai}" Width="165" ElementStyle="{StaticResource ReportNumber}" HeaderStyle="{StaticResource ReportNumberHeader}"/>
+        <!-- Thành phần DetailBa. -->
         <DataGridTextColumn x:Name="DetailBa" Binding="{Binding Ba}" Width="170" ElementStyle="{StaticResource ReportNumber}" HeaderStyle="{StaticResource ReportNumberHeader}"/>
+        <!-- Thành phần DetailBon. -->
         <DataGridTextColumn x:Name="DetailBon" Binding="{Binding Bon}" Width="95" ElementStyle="{StaticResource ReportNumber}" HeaderStyle="{StaticResource ReportNumberHeader}"/>
+        <!-- Thành phần DetailTrangThai. -->
         <DataGridTextColumn x:Name="DetailTrangThai" Binding="{Binding TrangThai}" Width="155" ElementStyle="{StaticResource ReportPeriod}"/>
+        <!-- Thành phần DetailGhiChu. -->
         <DataGridTextColumn x:Name="DetailGhiChu" Binding="{Binding GhiChu}" Width="330" ElementStyle="{StaticResource ReportPeriod}"/>
        </DataGrid.Columns>
       </DataGrid>
+      <!-- Thông tin hiển thị DetailsEmpty — Tải báo cáo để xem chi tiết từ dữ liệu nguồn.. -->
       <TextBlock x:Name="DetailsEmpty" Text="Tải báo cáo để xem chi tiết từ dữ liệu nguồn." Style="{StaticResource ReportMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" Margin="20,40,20,10"/>
      </Grid>
+     <!-- Thông tin hiển thị DetailsCount — Chưa tải dữ liệu. -->
      <Border Grid.Row="2" BorderBrush="{StaticResource HospitalBorder}" BorderThickness="0,1,0,0" Padding="18,12"><TextBlock x:Name="DetailsCount" Text="Chưa tải dữ liệu" Style="{StaticResource ReportMuted}" FontSize="12"/></Border>
     </Grid></Border>
     <Border Background="#EDF2F7" CornerRadius="8" Padding="16,13"><StackPanel><TextBlock Text="Nguồn và cách tính" FontWeight="SemiBold" FontSize="13"/><TextBlock x:Name="SourceText" Style="{StaticResource ReportMuted}" FontSize="12" Margin="0,6,0,4"/><TextBlock x:Name="RuleText" Style="{StaticResource ReportMuted}" FontSize="12"/></StackPanel></Border>

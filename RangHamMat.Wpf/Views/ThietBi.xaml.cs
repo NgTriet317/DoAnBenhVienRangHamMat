@@ -12,30 +12,54 @@ namespace RangHamMat.Views
     // Lớp dùng để hiển thị thông tin thiết bị trên DataGrid.
     public class ThietBiDong
     {
+        /// <summary>
+        /// Dữ liệu nghiệp vụ gốc liên kết với dòng hiển thị.
+        /// </summary>
         public ET_THIETBI DuLieu { get; set; } = new ET_THIETBI();
+        /// <summary>
+        /// Tên thiết bị.
+        /// </summary>
         public string TenThietBi { get; set; } = "";
+        /// <summary>
+        /// Tên phòng.
+        /// </summary>
         public string TenPhong { get; set; } = "";
+        /// <summary>
+        /// Nhà cung cấp.
+        /// </summary>
         public string NhaCungCap { get; set; } = "";
+        /// <summary>
+        /// Dấu hiệu mục cần được người dùng chú ý.
+        /// </summary>
         public bool CanChuY { get; set; }
+        /// <summary>
+        /// Dấu hiệu thiết bị sắp hết bảo hành.
+        /// </summary>
         public bool SapHetBaoHanh { get; set; }
 
         // Quy đổi tên tình trạng cũ khi hiển thị, không tự sửa bản ghi trong SQL.
         public static string HienThiTinhTrang(string? tinhTrang)
         {
-            if (tinhTrang == "Tốt" || tinhTrang == "Bình thường")
+            if (tinhTrang == "Tốt" || tinhTrang == "Bình thường" || tinhTrang == "Hoạt động tốt")
                 return "Đang hoạt động";
-            if (tinhTrang == "Hỏng" || tinhTrang == "Cần bảo trì" || tinhTrang == "Đang bảo trì")
+            if (tinhTrang == "Hỏng" || tinhTrang == "Cần bảo trì")
                 return "Hư hại";
             if (tinhTrang == "Ngừng sử dụng")
                 return "Ngưng sử dụng";
             return string.IsNullOrWhiteSpace(tinhTrang) ? "Chưa cập nhật" : tinhTrang;
         }
 
+        /// <summary>
+        /// Giá trị Số serial hiển thị; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string SoSerialHienThi
         {
             get { return "Serial: " + DuLieu.SoSerial; }
         }
 
+        /// <summary>
+        /// Giá trị Bảo hành hiển thị; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string BaoHanhHienThi
         {
             get
@@ -46,41 +70,98 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Giá trị Tình trạng; được xác định bởi phần getter/setter của thuộc tính.
+        /// </summary>
         public string TinhTrang
         {
             get { return HienThiTinhTrang(DuLieu.TinhTrang); }
         }
     }
 
+    /// <summary>
+    /// Phần xử lý thiết bị của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public partial class ThietBi : UserControl
     {
+        /// <summary>
+        /// Đối tượng nghiệp vụ thiết bị được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private BUS_THIETBI busThietBi = new BUS_THIETBI();
+        /// <summary>
+        /// Đối tượng nghiệp vụ hàng hóa được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private BUS_HANGHOA busHangHoa = new BUS_HANGHOA();
+        /// <summary>
+        /// Đối tượng nghiệp vụ loại hàng hóa được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private BUS_LOAIHANGHOA busLoaiHangHoa = new BUS_LOAIHANGHOA();
+        /// <summary>
+        /// Đối tượng nghiệp vụ phòng được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private BUS_PHONG busPhong = new BUS_PHONG();
+        /// <summary>
+        /// Đối tượng nghiệp vụ nhà cung cấp được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private BUS_NHACUNGCAP busNhaCungCap = new BUS_NHACUNGCAP();
 
+        /// <summary>
+        /// Danh sách thiết bị dùng trong thiết bị được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private List<ET_THIETBI> danhSachThietBi = new List<ET_THIETBI>();
+        /// <summary>
+        /// Danh sách hàng hóa dùng trong thiết bị được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private List<ET_HANGHOA> danhSachHangHoa = new List<ET_HANGHOA>();
+        /// <summary>
+        /// Danh sách phòng dùng trong thiết bị được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private List<ET_PHONG> danhSachPhong = new List<ET_PHONG>();
+        /// <summary>
+        /// Danh sách nhà cung cấp dùng trong thiết bị được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private List<ET_NHACUNGCAP> danhSachNhaCungCap = new List<ET_NHACUNGCAP>();
 
+        /// <summary>
+        /// Danh sách hiển thị dùng trong thiết bị được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private List<ThietBiDong> danhSachHienThi = new List<ThietBiDong>();
 
+        /// <summary>
+        /// Thiết bị đang chọn được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private ET_THIETBI? thietBiDangChon;
+        /// <summary>
+        /// Bản dữ liệu gốc được giữ để đối chiếu trước khi cập nhật hoặc khôi phục nội dung đang sửa.
+        /// </summary>
         private ET_THIETBI? banGoc;
 
+        /// <summary>
+        /// Cờ Đang sửa; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool dangSua = false;
 
+        /// <summary>
+        /// Cờ Đã tải dữ liệu; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool daTaiDuLieu = false;
 
+        /// <summary>
+        /// Khởi tạo thiết bị. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+        /// </summary>
         public ThietBi()
         {
             InitializeComponent();
-            Loaded += ThietBi_Loaded;
+            HoTroGiaoDien.Observe(this,()=>LoadDuLieuThietBi(thietBiDangChon?.MaTB));
             DangKySuKienXoaBaoDo();
         }
 
+        /// <summary>
+        /// Nạp dữ liệu khởi đầu khi thiết bị được tải lên giao diện.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>LoadDuLieuThietBi</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void ThietBi_Loaded(object sender, RoutedEventArgs e)
         {
             if (!daTaiDuLieu)
@@ -131,6 +212,11 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Nạp các danh mục phụ trợ để biểu mẫu hiển thị tên và lựa chọn đúng mã.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>loai.TenLoaiHH.IndexOf</c>, <c>maLoaiThietBi.Add</c>, <c>maLoaiThietBi.Contains</c>, <c>hangHoa.Add</c>.</remarks>
+        /// <param name="danhSachLoai">Giá trị danh sách loại dùng khi thực hiện thao tác; kiểu List&lt;ET_LOAIHANGHOA&gt;.</param>
         private void LoadDanhMuc(List<ET_LOAIHANGHOA> danhSachLoai)
         {
             //lấy all mã loại của thiết bị
@@ -203,7 +289,7 @@ namespace RangHamMat.Views
 
             // Bộ lọc tình trạng thiết bị; không dùng trạng thái quản lý để lọc.
             List<string> tinhTrangLoc = new List<string>()
-                { "Tất cả tình trạng", "Đang hoạt động", "Hư hại", "Ngưng sử dụng" };
+                { "Tất cả tình trạng", "Đang hoạt động", "Hư hại", "Đang bảo trì", "Ngưng sử dụng" };
             foreach (ET_THIETBI tb in danhSachThietBi)
             {
                 string tinhTrang = ThietBiDong.HienThiTinhTrang(tb.TinhTrang);
@@ -214,6 +300,10 @@ namespace RangHamMat.Views
             cboTrangThaiLoc.SelectedIndex = 0;
         }
 
+        /// <summary>
+        /// Ghép dữ liệu thiết bị với danh mục phòng, hàng hóa và nhà cung cấp thành các dòng hiển thị.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>danhSachHienThi.Clear</c>, <c>DateTime.Today.AddDays</c>, <c>CoVanDe</c>, <c>danhSachHienThi.Add</c>.</remarks>
         private void TaoDanhSachHienThi()
         {
             danhSachHienThi.Clear();
@@ -269,6 +359,12 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Kiểm tra dấu hiệu thiết bị cần được chú ý dựa trên tình trạng và thông tin liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>noiDung.ToLower</c>, <c>s.Contains</c>.</remarks>
+        /// <param name="noiDung">Giá trị nội dung dùng khi thực hiện thao tác; kiểu string?.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         private bool CoVanDe(string? noiDung)
         {
             if (string.IsNullOrWhiteSpace(noiDung))
@@ -279,6 +375,11 @@ namespace RangHamMat.Views
                 || s.Contains("hư hại") || s.Contains("chờ xử lý");
         }
 
+        /// <summary>
+        /// Lọc các dòng thiết bị theo danh mục, trạng thái và từ khóa hiện tại.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>txtTimKiem.Text.Trim</c>, <c>chuoiTim.IndexOf</c>, <c>ketQua.Add</c>, <c>HienChiTiet</c>.</remarks>
+        /// <param name="maCanChon">Mã cần chọn xác định đối tượng cần xử lý.</param>
         private void ApDungBoLocThietBi(string? maCanChon = null)
         {
             if (!daTaiDuLieu)
@@ -346,11 +447,23 @@ namespace RangHamMat.Views
                 HienTrangThaiTrong();
         }
 
+        /// <summary>
+        /// Tiếp nhận thay đổi bộ lọc và cập nhật trạng thái/dữ liệu phụ thuộc.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ApDungBoLocThietBi</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void BoLoc_Changed(object sender, EventArgs e)
         {
             ApDungBoLocThietBi();
         }
 
+        /// <summary>
+        /// Xử lý thao tác xóa lọc khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>txtTimKiem.Clear</c>, <c>ApDungBoLocThietBi</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void XoaLoc_Click(object sender, RoutedEventArgs e)
         {
             txtTimKiem.Clear();
@@ -359,6 +472,12 @@ namespace RangHamMat.Views
             ApDungBoLocThietBi();
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn danh sách vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>HienChiTiet</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void DanhSach_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!daTaiDuLieu || dangSua)
@@ -368,12 +487,23 @@ namespace RangHamMat.Views
                 HienChiTiet(dong.DuLieu, dong.TenThietBi);
         }
 
+        /// <summary>
+        /// Tạo bản ET thiết bị riêng phục vụ chỉnh sửa và đối chiếu trước khi lưu.
+        /// </summary>
+        /// <param name="tb">Giá trị thiết bị dùng khi thực hiện thao tác; kiểu ET_THIETBI.</param>
+        /// <returns>Kết quả kiểu ET_THIETBI dùng cho bước xử lý tiếp theo.</returns>
         private ET_THIETBI SaoChepThietBi(ET_THIETBI tb)
         {
             return new ET_THIETBI(tb.MaTB, tb.MaHH, tb.SoSerial, tb.NgayMua, tb.MaNCC,
                 tb.MaPhong, tb.TinhTrang, tb.HanBaoHanh, tb.TrangThai, tb.GhiChu);
         }
 
+        /// <summary>
+        /// Đưa dữ liệu mục đang chọn vào vùng chi tiết, đồng thời cập nhật các nút thao tác liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>SaoChepThietBi</c>, <c>ThietBiDong.HienThiTinhTrang</c>, <c>XoaToanBoBaoDo</c>, <c>DoiCheDo</c>.</remarks>
+        /// <param name="tb">Giá trị thiết bị dùng khi thực hiện thao tác; kiểu ET_THIETBI.</param>
+        /// <param name="tenThietBi">Giá trị tên thiết bị dùng khi thực hiện thao tác; kiểu string.</param>
         private void HienChiTiet(ET_THIETBI tb, string tenThietBi)
         {
             thietBiDangChon = tb;
@@ -403,6 +533,10 @@ namespace RangHamMat.Views
             DoiCheDo(false);
         }
 
+        /// <summary>
+        /// Đặt vùng chi tiết về trạng thái chưa có bản ghi được chọn.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XoaForm</c>, <c>DoiCheDo</c>.</remarks>
         private void HienTrangThaiTrong()
         {
             thietBiDangChon = null;
@@ -415,6 +549,10 @@ namespace RangHamMat.Views
             DoiCheDo(false);
         }
 
+        /// <summary>
+        /// Xóa nội dung biểu mẫu và đặt lại các lựa chọn hoặc trạng thái đang chỉnh.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>txtSerial.Clear</c>, <c>txtGhiChu.Clear</c>, <c>XoaToanBoBaoDo</c>.</remarks>
         private void XoaForm()
         {
             cboHangHoa.SelectedIndex = -1;
@@ -429,6 +567,11 @@ namespace RangHamMat.Views
             XoaToanBoBaoDo();
         }
 
+        /// <summary>
+        /// Chuyển chế độ xem/thêm/sửa và cập nhật các trường, nút theo chế độ được chọn.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThietBiDong.HienThiTinhTrang</c>.</remarks>
+        /// <param name="choPhepNhap">Giá trị chờ phép nhập dùng khi thực hiện thao tác; kiểu bool.</param>
         private void DoiCheDo(bool choPhepNhap)
         {
             dgvThietBi.IsEnabled = !choPhepNhap;
@@ -464,7 +607,7 @@ namespace RangHamMat.Views
                     || thietBiDangChon.TinhTrang == "Ngừng sử dụng"
                     || thietBiDangChon.TrangThai == "Ngưng sử dụng"
                     || thietBiDangChon.TrangThai == "Ngừng sử dụng";
-                if (!daNgung)
+                if (!daNgung && thietBiDangChon.TinhTrang != "Đang bảo trì")
                 {
                     btnNgungSuDung.Visibility = Visibility.Visible;
                     if (ThietBiDong.HienThiTinhTrang(thietBiDangChon.TinhTrang) != "Hư hại")
@@ -473,6 +616,12 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Xử lý thao tác phân phòng khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>ThietBiDong.HienThiTinhTrang</c>, <c>DoiCheDo</c>, <c>cboPhong.Focus</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void PhanPhong_Click(object sender, RoutedEventArgs e)
         {
             if (thietBiDangChon == null)
@@ -504,6 +653,12 @@ namespace RangHamMat.Views
                 cboPhong.Focus();
         }
 
+        /// <summary>
+        /// Xử lý thao tác hủy khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>HienChiTiet</c>, <c>ApDungBoLocThietBi</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void Huy_Click(object sender, RoutedEventArgs e)
         {
             dangSua = false;
@@ -525,17 +680,31 @@ namespace RangHamMat.Views
                 ApDungBoLocThietBi();
         }
 
+        /// <summary>
+        /// Xóa các dấu lỗi còn trên biểu mẫu trước khi kiểm tra lại hoặc đặt lại dữ liệu.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>cboPhong.ClearValue</c>.</remarks>
         private void XoaToanBoBaoDo()
         {
             cboPhong.ClearValue(Control.BorderBrushProperty);
             cboPhong.ClearValue(Control.BorderThicknessProperty);
         }
 
+        /// <summary>
+        /// Đăng ký sự kiện các trường nhập để gỡ đánh dấu lỗi khi người dùng chỉnh lại nội dung.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XoaToanBoBaoDo</c>.</remarks>
         private void DangKySuKienXoaBaoDo()
         {
             cboPhong.SelectionChanged += (sender, e) => XoaToanBoBaoDo();
         }
 
+        /// <summary>
+        /// Xử lý thao tác lưu khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>busThietBi.phanThietBiVaoPhong</c>, <c>LoadDuLieuThietBi</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void Luu_Click(object sender, RoutedEventArgs e)
         {
             if (!dangSua || thietBiDangChon == null || banGoc == null)
@@ -580,6 +749,12 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Xử lý thao tác hư hại khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>busThietBi.capNhatTinhTrangThietBi</c>, <c>LoadDuLieuThietBi</c>, <c>MessageBox.Show</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void HuHai_Click(object sender, RoutedEventArgs e)
         {
             if (dangSua || banGoc == null)
@@ -601,6 +776,12 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Xử lý thao tác ngưng sử dụng khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>busThietBi.capNhatTinhTrangThietBi</c>, <c>LoadDuLieuThietBi</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void NgungSuDung_Click(object sender, RoutedEventArgs e)
         {
             if (dangSua || banGoc == null)
@@ -630,6 +811,12 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Xử lý thao tác tải lại khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>LoadDuLieuThietBi</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void TaiLai_Click(object sender, RoutedEventArgs e)
         {
             if (dangSua)

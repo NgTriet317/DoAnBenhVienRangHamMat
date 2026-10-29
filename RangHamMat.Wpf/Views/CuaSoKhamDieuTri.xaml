@@ -18,10 +18,12 @@
     <DockPanel Margin="0,0,0,16">
       <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Center"/>
       <StackPanel>
+        <!-- Thông tin hiển thị EditorTitle — Thông tin khám và điều trị. -->
         <TextBlock Text="Thông tin khám và điều trị" Style="{StaticResource HoSoTitle}" x:Name="EditorTitle" FontSize="18"/>
         <TextBlock Text="Nhập thông tin và chọn dịch vụ theo lần khám." Style="{StaticResource HoSoHint}"/>
       </StackPanel>
     </DockPanel>
+    <!-- Thành phần EditorTabs. Chuyển sự kiện đến EditorTabs_SelectionChanged trong code-behind. -->
     <TabControl x:Name="EditorTabs" Grid.Row="1" Style="{StaticResource TreatmentEditorTabs}" SelectionChanged="EditorTabs_SelectionChanged">
       <!-- Nhóm Lần khám: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
       <TabItem Header="Lần khám" Tag="Table:LICH_SU_KHAM_BENH">
@@ -308,6 +310,7 @@
                 </DataGrid.Columns>
               </DataGrid>
               <TextBlock Text="Chọn Thêm dịch vụ, đánh dấu dịch vụ rồi kiểm tra số lượng và đơn giá." Style="{StaticResource HoSoHint}" Margin="0,8"/>
+              <!-- Thông tin hiển thị PlanDraftTotal — Tổng chi phí: 0 đ. -->
               <TextBlock x:Name="PlanDraftTotal" Text="Tổng chi phí: 0 đ" Foreground="#2563A8" FontWeight="Bold" HorizontalAlignment="Right"/>
             </StackPanel>
           </StackPanel>
@@ -539,6 +542,7 @@
                 </DataGrid.Columns>
               </DataGrid>
               <TextBlock Text="Chọn Thêm dịch vụ, đánh dấu dịch vụ rồi kiểm tra số lượng và đơn giá." Style="{StaticResource HoSoHint}" Margin="0,8"/>
+              <!-- Thông tin hiển thị ProgressDraftTotal — Tổng chi phí: 0 đ. -->
               <TextBlock x:Name="ProgressDraftTotal" Text="Tổng chi phí: 0 đ" Foreground="#2563A8" FontWeight="Bold" HorizontalAlignment="Right"/>
             </StackPanel>
           </StackPanel>
@@ -553,9 +557,11 @@
           <!-- Nút điều hướng HoSoSave: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
           <Button Content="Lưu thông tin" Tag="HoSoSave" Style="{StaticResource TreatmentPrimary}"/>
         </WrapPanel>
+        <!-- Thông tin hiển thị FormError. -->
         <TextBlock x:Name="FormError" Foreground="#C33D3D" TextWrapping="Wrap" MaxWidth="600" VerticalAlignment="Center"/>
       </DockPanel>
     </Border>
+    <!-- Vùng bố cục ServiceOverlay. -->
     <Grid x:Name="ServiceOverlay" Grid.RowSpan="3" Panel.ZIndex="20" Visibility="Collapsed" Background="#880F172A">
       <Border Background="White" BorderBrush="#DAE2EC" BorderThickness="1" CornerRadius="8" Margin="20" Padding="16">
         <Grid>
@@ -570,6 +576,7 @@
             <Button DockPanel.Dock="Right" Content="Đóng" Click="CloseServices_Click"/>
             <TextBlock Text="CHỌN DỊCH VỤ ĐIỀU TRỊ" FontSize="15" FontWeight="Bold" Foreground="#234C7D" VerticalAlignment="Center"/>
           </DockPanel>
+          <!-- Ô nhập ServiceSearch. Chuyển sự kiện đến ServiceSearch_Changed trong code-behind. -->
           <TextBox Grid.Row="1" x:Name="ServiceSearch" TextChanged="ServiceSearch_Changed" ToolTip="Tìm mã hoặc tên dịch vụ" Margin="0,0,0,12"/>
           <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
@@ -596,6 +603,7 @@
               <!-- Thao tác Chọn dịch vụ: gọi ChooseServices_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
               <Button Content="Chọn dịch vụ" Click="ChooseServices_Click" Style="{StaticResource TreatmentPrimary}"/>
             </WrapPanel>
+            <!-- Thông tin hiển thị CatalogMessage. -->
             <TextBlock x:Name="CatalogMessage" Style="{StaticResource HoSoHint}" VerticalAlignment="Center"/>
           </DockPanel>
         </Grid>

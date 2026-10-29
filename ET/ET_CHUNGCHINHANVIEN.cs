@@ -10,14 +10,41 @@ namespace ET
     [Table("CHUNG_CHI_NHAN_VIEN")]
     public class ET_CHUNGCHINHANVIEN
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaCC, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maCC = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaNV, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maNV = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính SoChungChi, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string soChungChi = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TenChungChi, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string tenChungChi = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgayCap, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime ngayCap;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NoiCap, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string noiCap = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính HanChungChi, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime? hanChungChi;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GhiChu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? ghiChu;
 
         /// <summary>
