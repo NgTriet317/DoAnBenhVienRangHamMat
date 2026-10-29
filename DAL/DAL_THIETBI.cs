@@ -54,7 +54,6 @@ namespace DAL
             return ThucHien((connection, transaction) =>
             {
                 duLieu.MaTB = TaoMa(connection, transaction, "THIET_BI", "MaTB");
-                duLieu.TinhTrang = "Đang hoạt động";
                 KiemTra<ET_THIETBI>(connection, transaction, "THIET_BI", duLieu, null, null);
                 connection.Execute("""
                 INSERT INTO dbo.[THIET_BI] ([MaTB],[MaHH],[SoSerial],
@@ -86,12 +85,6 @@ namespace DAL
                 {
                     throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
                 }
-
-                // Không thay đổi tình trạng vật lý qua hàm sửa chung để tránh khôi phục thiết bị đã ngưng.
-                if (duLieu.TinhTrang != hienTai.TinhTrang)
-                    throw new InvalidOperationException("Chỉ được đổi tình trạng qua nút Hư hại hoặc Ngưng sử dụng.");
-                if (duLieu.MaPhong != hienTai.MaPhong)
-                    throw new InvalidOperationException("Chỉ có thể thay đổi phòng qua chức năng phân phòng hoặc thu hồi thiết bị.");
 
                 KiemTra(connection, transaction, "THIET_BI", duLieu, hienTai, banGoc);
                 if (chiDoiTrangThai)
@@ -131,42 +124,7 @@ namespace DAL
                 return true;
             });
         }
-        // Chỉ cập nhật tình trạng vật lý, không làm thay đổi TrangThai quản lý.
-        public bool capNhatTinhTrangThietBi(string maTB, string tinhTrangMoi, ET_THIETBI banGoc)
-        {
-            return ThucHien((connection, transaction) =>
-            {
-                if (tinhTrangMoi != "Hư hại" && tinhTrangMoi != "Ngưng sử dụng")
-                    throw new InvalidOperationException("Tình trạng thiết bị không hợp lệ.");
-
-                ET_THIETBI? hienTai = connection.QuerySingleOrDefault<ET_THIETBI>(
-                    "SELECT * FROM dbo.[THIET_BI] WITH(UPDLOCK,HOLDLOCK) WHERE [MaTB]=@MaTB",
-                    new { MaTB = maTB }, transaction);
-                if (hienTai == null)
-                    throw new InvalidOperationException("Thiết bị không còn tồn tại. Vui lòng tải lại.");
-
-                // Cả dữ liệu cũ 'Ngừng sử dụng' và dữ liệu mới đều không thể khôi phục.
-                if (hienTai.TinhTrang == "Ngưng sử dụng" || hienTai.TinhTrang == "Ngừng sử dụng"
-                    || hienTai.TrangThai == "Ngưng sử dụng" || hienTai.TrangThai == "Ngừng sử dụng")
-                    throw new InvalidOperationException("Thiết bị đã ngưng sử dụng vĩnh viễn, không thể thay đổi tình trạng.");
-                if (hienTai.TinhTrang == tinhTrangMoi)
-                    throw new InvalidOperationException("Thiết bị đã ở tình trạng này.");
-
-                ET_THIETBI capNhat = new ET_THIETBI(hienTai.MaTB, hienTai.MaHH,
-                    hienTai.SoSerial, hienTai.NgayMua, hienTai.MaNCC, hienTai.MaPhong,
-                    tinhTrangMoi, hienTai.HanBaoHanh, hienTai.TrangThai, hienTai.GhiChu);
-
-                // Kiểm tra bản gốc để tránh ghi đè dữ liệu khi người khác vừa thao tác.
-                KiemTra(connection, transaction, "THIET_BI", capNhat, hienTai, banGoc);
-                connection.Execute(@"
-                    UPDATE dbo.[THIET_BI]
-                    SET [TinhTrang]=@TinhTrang
-                    WHERE [MaTB]=@MaTB", capNhat, transaction);
-                return true;
-            });
-        }
-
-        // Phân phòng chỉ được phép cho thiết bị hoạt động; thu hồi thiết bị hư vẫn được phép.
+        // Chỉ cập nhật phòng và trạng thái nhận bàn giao của thiết bị đã có.
         public bool phanThietBiVaoPhong(string maTB, string? maPhong, ET_THIETBI banGoc)
         {
             return ThucHien((connection, transaction) =>
@@ -177,29 +135,28 @@ namespace DAL
                 if (hienTai == null)
                     throw new InvalidOperationException("Thiết bị không còn tồn tại. Vui lòng tải lại.");
 
+                // Chặn ghi đè nếu người khác vừa thay đổi phòng hay hồ sơ thiết bị.
                 ET_THIETBI capNhat = new ET_THIETBI(hienTai.MaTB, hienTai.MaHH,
                     hienTai.SoSerial, hienTai.NgayMua, hienTai.MaNCC, maPhong,
                     hienTai.TinhTrang, hienTai.HanBaoHanh, hienTai.TrangThai, hienTai.GhiChu);
 
                 if (maPhong != null)
                 {
-                    // Hỗ trợ dữ liệu cũ (Tốt/Bình thường) mà không tự động sửa dữ liệu trong SQL.
-                    if (hienTai.TinhTrang != "Đang hoạt động" && hienTai.TinhTrang != "Tốt"
-                        && hienTai.TinhTrang != "Bình thường")
-                        throw new InvalidOperationException("Thiết bị đang hư hại hoặc đã ngưng sử dụng, không thể phân phòng.");
-                    if (hienTai.TrangThai != "Chờ bàn giao" && hienTai.TrangThai != "Đang sử dụng"
-                        && hienTai.TrangThai != "Đang hoạt động")
-                        throw new InvalidOperationException("Trạng thái quản lý hiện tại không cho phép phân phòng.");
-
                     bool phongHoatDong = connection.ExecuteScalar<int>(
                         "SELECT COUNT(1) FROM dbo.[PHONG] WITH (HOLDLOCK) WHERE [MaPhong]=@MaPhong AND [TrangThai]=N'Đang hoạt động'",
                         new { MaPhong = maPhong }, transaction) > 0;
                     if (!phongHoatDong)
                         throw new InvalidOperationException("Phòng được chọn không tồn tại hoặc đã ngừng hoạt động.");
+
+                    if (hienTai.TrangThai != "Chờ bàn giao" && hienTai.TrangThai != "Đang sử dụng")
+                        throw new InvalidOperationException("Thiết bị đang ngừng sử dụng hoặc bảo trì, không thể phân phòng.");
+                    if (hienTai.TinhTrang.Contains("Hỏng", StringComparison.OrdinalIgnoreCase)
+                        || hienTai.TinhTrang.Contains("bảo trì", StringComparison.OrdinalIgnoreCase))
+                        throw new InvalidOperationException("Thiết bị đang hỏng hoặc bảo trì, không thể phân phòng.");
+
                     capNhat.TrangThai = "Đang sử dụng";
                 }
-                else if (hienTai.TrangThai == "Đang sử dụng" || hienTai.TrangThai == "Chờ bàn giao"
-                    || hienTai.TrangThai == "Đang hoạt động")
+                else if (hienTai.TrangThai == "Đang sử dụng" || hienTai.TrangThai == "Chờ bàn giao")
                 {
                     capNhat.TrangThai = "Chờ bàn giao";
                 }
@@ -212,5 +169,6 @@ namespace DAL
                 return true;
             });
         }
+
     }
 }

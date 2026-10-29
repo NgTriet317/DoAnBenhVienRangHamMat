@@ -19,18 +19,6 @@ namespace RangHamMat.Views
         public bool CanChuY { get; set; }
         public bool SapHetBaoHanh { get; set; }
 
-        // Quy đổi tên tình trạng cũ khi hiển thị, không tự sửa bản ghi trong SQL.
-        public static string HienThiTinhTrang(string? tinhTrang)
-        {
-            if (tinhTrang == "Tốt" || tinhTrang == "Bình thường")
-                return "Đang hoạt động";
-            if (tinhTrang == "Hỏng" || tinhTrang == "Cần bảo trì" || tinhTrang == "Đang bảo trì")
-                return "Hư hại";
-            if (tinhTrang == "Ngừng sử dụng")
-                return "Ngưng sử dụng";
-            return string.IsNullOrWhiteSpace(tinhTrang) ? "Chưa cập nhật" : tinhTrang;
-        }
-
         public string SoSerialHienThi
         {
             get { return "Serial: " + DuLieu.SoSerial; }
@@ -48,7 +36,12 @@ namespace RangHamMat.Views
 
         public string TinhTrang
         {
-            get { return HienThiTinhTrang(DuLieu.TinhTrang); }
+            get
+            {
+                if (string.IsNullOrWhiteSpace(DuLieu.TinhTrang))
+                    return "Chưa cập nhật";
+                return DuLieu.TinhTrang;
+            }
         }
     }
 
@@ -201,17 +194,28 @@ namespace RangHamMat.Views
             cboPhongLoc.ItemsSource = phongLoc;
             cboPhongLoc.SelectedIndex = 0;
 
-            // Bộ lọc tình trạng thiết bị; không dùng trạng thái quản lý để lọc.
-            List<string> tinhTrangLoc = new List<string>()
-                { "Tất cả tình trạng", "Đang hoạt động", "Hư hại", "Ngưng sử dụng" };
+            //lấy trạng thái và tình trạng fill bộ lọc
+            List<string> trangThaiLoc = new List<string>();
+            trangThaiLoc.Add("Tất cả trạng thái");
+
+            List<string> tinhTrang = new List<string>() { "Tốt", "Bình thường", "Cần bảo trì", "Đang bảo trì", "Hỏng" };
+            List<string> trangThai = new List<string>() { "Đang sử dụng", "Ngừng sử dụng", "Đang bảo trì" };
+
             foreach (ET_THIETBI tb in danhSachThietBi)
             {
-                string tinhTrang = ThietBiDong.HienThiTinhTrang(tb.TinhTrang);
-                if (!tinhTrangLoc.Contains(tinhTrang))
-                    tinhTrangLoc.Add(tinhTrang);
+                if (!string.IsNullOrWhiteSpace(tb.TrangThai) && !trangThaiLoc.Contains(tb.TrangThai))
+                    trangThaiLoc.Add(tb.TrangThai);
+
+                if (!string.IsNullOrWhiteSpace(tb.TrangThai) && !trangThai.Contains(tb.TrangThai))
+                    trangThai.Add(tb.TrangThai);
+
+                if (!string.IsNullOrWhiteSpace(tb.TinhTrang) && !tinhTrang.Contains(tb.TinhTrang))
+                    tinhTrang.Add(tb.TinhTrang);
             }
-            cboTrangThaiLoc.ItemsSource = tinhTrangLoc;
+            cboTrangThaiLoc.ItemsSource = trangThaiLoc;
             cboTrangThaiLoc.SelectedIndex = 0;
+            cboTinhTrang.ItemsSource = tinhTrang;
+            cboTrangThai.ItemsSource = trangThai;
         }
 
         private void TaoDanhSachHienThi()
@@ -275,8 +279,7 @@ namespace RangHamMat.Views
                 return false;
             string s = noiDung.ToLower();
             return s.Contains("hỏng") || s.Contains("lỗi") || s.Contains("bảo trì")
-                || s.Contains("sửa chữa") || s.Contains("ngừng") || s.Contains("ngưng")
-                || s.Contains("hư hại") || s.Contains("chờ xử lý");
+                || s.Contains("sửa chữa") || s.Contains("ngừng") || s.Contains("chờ xử lý");
         }
 
         private void ApDungBoLocThietBi(string? maCanChon = null)
@@ -285,7 +288,7 @@ namespace RangHamMat.Views
                 return;
 
             string tuKhoa = txtTimKiem.Text.Trim();
-            string trangThaiLoc = "Tất cả tình trạng";
+            string trangThaiLoc = "Tất cả trạng thái";
             string maPhongLoc = "";
 
             if (cboTrangThaiLoc.SelectedItem is string trangThaiDaChon)
@@ -302,7 +305,7 @@ namespace RangHamMat.Views
             List<ThietBiDong> ketQua = new List<ThietBiDong>();
             foreach (ThietBiDong dong in danhSachHienThi)
             {
-                if (trangThaiLoc != "Tất cả tình trạng" && dong.TinhTrang != trangThaiLoc)
+                if (trangThaiLoc != "Tất cả trạng thái" && dong.DuLieu.TrangThai != trangThaiLoc)
                     continue;
                 if (maPhongLoc == "CHUA_PHAN_PHONG" && !string.IsNullOrWhiteSpace(dong.DuLieu.MaPhong))
                     continue;
@@ -393,7 +396,8 @@ namespace RangHamMat.Views
             if (string.IsNullOrWhiteSpace(tb.MaPhong))
                 cboPhong.SelectedIndex = 0;
 
-            lblTinhTrang.Text = ThietBiDong.HienThiTinhTrang(tb.TinhTrang);
+            cboTinhTrang.Text = tb.TinhTrang;
+            cboTrangThai.Text = tb.TrangThai;
             dpNgayMua.SelectedDate = tb.NgayMua;
             dpHanBaoHanh.SelectedDate = tb.HanBaoHanh;
             txtGhiChu.Text = tb.GhiChu;
@@ -421,7 +425,8 @@ namespace RangHamMat.Views
             cboNhaCungCap.SelectedIndex = 0;
             cboPhong.SelectedIndex = 0;
             txtSerial.Clear();
-            lblTinhTrang.Text = "Chưa chọn thiết bị";
+            cboTinhTrang.Text = "";
+            cboTrangThai.Text = "";
             dpNgayMua.SelectedDate = null;
             dpHanBaoHanh.SelectedDate = null;
             txtGhiChu.Clear();
@@ -435,12 +440,9 @@ namespace RangHamMat.Views
             cboHangHoa.IsEnabled = false;
             txtSerial.IsReadOnly = true;
             cboNhaCungCap.IsEnabled = false;
-            // Thiết bị hư/ngưng vẫn được thu hồi khỏi phòng, nhưng không được phân sang phòng khác.
-            bool hoatDong = thietBiDangChon != null &&
-                ThietBiDong.HienThiTinhTrang(thietBiDangChon.TinhTrang) == "Đang hoạt động"
-                && (thietBiDangChon.TrangThai == "Chờ bàn giao" || thietBiDangChon.TrangThai == "Đang sử dụng"
-                    || thietBiDangChon.TrangThai == "Đang hoạt động");
-            cboPhong.IsEnabled = choPhepNhap && hoatDong;
+            cboPhong.IsEnabled = choPhepNhap;
+            cboTinhTrang.IsEnabled = false;
+            cboTrangThai.IsEnabled = false;
             dpNgayMua.IsEnabled = false;
             dpHanBaoHanh.IsEnabled = false;
             txtGhiChu.IsReadOnly = true;
@@ -448,29 +450,13 @@ namespace RangHamMat.Views
             btnSua.Visibility = Visibility.Collapsed;
             btnLuu.Visibility = Visibility.Collapsed;
             btnHuy.Visibility = Visibility.Collapsed;
-            btnHuHai.Visibility = Visibility.Collapsed;
-            btnNgungSuDung.Visibility = Visibility.Collapsed;
             if (choPhepNhap)
             {
                 btnLuu.Visibility = Visibility.Visible;
                 btnHuy.Visibility = Visibility.Visible;
-                btnLuu.Content = hoatDong ? "Xác nhận phân phòng" : "Xác nhận thu hồi";
             }
             else if (thietBiDangChon != null)
-            {
-                if (hoatDong || !string.IsNullOrWhiteSpace(thietBiDangChon.MaPhong))
-                    btnSua.Visibility = Visibility.Visible;
-                bool daNgung = thietBiDangChon.TinhTrang == "Ngưng sử dụng"
-                    || thietBiDangChon.TinhTrang == "Ngừng sử dụng"
-                    || thietBiDangChon.TrangThai == "Ngưng sử dụng"
-                    || thietBiDangChon.TrangThai == "Ngừng sử dụng";
-                if (!daNgung)
-                {
-                    btnNgungSuDung.Visibility = Visibility.Visible;
-                    if (ThietBiDong.HienThiTinhTrang(thietBiDangChon.TinhTrang) != "Hư hại")
-                        btnHuHai.Visibility = Visibility.Visible;
-                }
-            }
+                btnSua.Visibility = Visibility.Visible;
         }
 
         private void PhanPhong_Click(object sender, RoutedEventArgs e)
@@ -485,23 +471,10 @@ namespace RangHamMat.Views
             if (dangSua)
                 return;
 
-            bool hoatDong = ThietBiDong.HienThiTinhTrang(thietBiDangChon.TinhTrang) == "Đang hoạt động"
-                && (thietBiDangChon.TrangThai == "Chờ bàn giao" || thietBiDangChon.TrangThai == "Đang sử dụng"
-                    || thietBiDangChon.TrangThai == "Đang hoạt động");
-            if (!hoatDong && string.IsNullOrWhiteSpace(thietBiDangChon.MaPhong))
-            {
-                MessageBox.Show("Thiết bị không hoạt động, không thể phân phòng.",
-                    "Phân phòng thiết bị", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
             dangSua = true;
-            lblCheDo.Text = hoatDong ? "PHÂN PHÒNG / ĐIỀU CHUYỂN" : "THU HỒI THIẾT BỊ";
+            lblCheDo.Text = "PHÂN PHÒNG / ĐIỀU CHUYỂN";
             DoiCheDo(true);
-            if (!hoatDong)
-                cboPhong.SelectedIndex = 0;
-            else
-                cboPhong.Focus();
+            cboPhong.Focus();
         }
 
         private void Huy_Click(object sender, RoutedEventArgs e)
@@ -576,56 +549,6 @@ namespace RangHamMat.Views
             catch (Exception ex)
             {
                 lblThongBao.Text = "Không thể phân phòng thiết bị: " + ex.Message;
-                MessageBox.Show(lblThongBao.Text, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void HuHai_Click(object sender, RoutedEventArgs e)
-        {
-            if (dangSua || banGoc == null)
-                return;
-            try
-            {
-                if (busThietBi.capNhatTinhTrangThietBi(banGoc.MaTB, "Hư hại", banGoc))
-                {
-                    string maTB = banGoc.MaTB;
-                    LoadDuLieuThietBi(maTB);
-                    MessageBox.Show("Đã chuyển tình trạng thiết bị thành Hư hại.",
-                        "Thiết bị", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                lblThongBao.Text = "Không thể báo hư hại thiết bị: " + ex.Message;
-                MessageBox.Show(lblThongBao.Text, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void NgungSuDung_Click(object sender, RoutedEventArgs e)
-        {
-            if (dangSua || banGoc == null)
-                return;
-
-            MessageBoxResult traLoi = MessageBox.Show(
-                "Sau khi nhấn nút này, thiết bị sẽ bị đặt vào trạng thái ngưng sử dụng hoàn toàn và không thể khôi phục, bạn có chắc chắn chứ?",
-                "Xác nhận ngưng sử dụng", MessageBoxButton.YesNo, MessageBoxImage.Warning,
-                MessageBoxResult.No);
-            if (traLoi != MessageBoxResult.Yes)
-                return;
-
-            try
-            {
-                if (busThietBi.capNhatTinhTrangThietBi(banGoc.MaTB, "Ngưng sử dụng", banGoc))
-                {
-                    string maTB = banGoc.MaTB;
-                    LoadDuLieuThietBi(maTB);
-                    MessageBox.Show("Tình trạng thiết bị đã chuyển thành Ngưng sử dụng vĩnh viễn.",
-                        "Thiết bị", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                lblThongBao.Text = "Không thể ngưng sử dụng thiết bị: " + ex.Message;
                 MessageBox.Show(lblThongBao.Text, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

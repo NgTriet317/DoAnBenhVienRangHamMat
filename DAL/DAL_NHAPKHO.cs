@@ -290,7 +290,7 @@ namespace DAL
                     thietBi.NgayMua = lo.NgayNhap.Date;
                     thietBi.MaNCC = lo.MaNCC;
                     thietBi.MaPhong = null;
-                    thietBi.TinhTrang = "Đang hoạt động";
+                    thietBi.TinhTrang = "Tốt";
                     thietBi.HanBaoHanh = null;
                     thietBi.TrangThai = "Chờ bàn giao";
                     thietBi.GhiChu = "Tạo tự động khi ghi sổ phiếu " + maPN
