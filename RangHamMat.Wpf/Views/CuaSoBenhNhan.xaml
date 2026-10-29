@@ -1,11 +1,11 @@
 <!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của CuaSoBenhNhan.xaml; các vùng liên quan: Bệnh nhân, Thông tin cơ bản, Thông tin sức khỏe, Hồ sơ bệnh án. -->
 <!-- AI hỗ trợ: bổ sung chú thích cho biểu mẫu bệnh nhân/bệnh án. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:ui="clr-namespace:RangHamMat.Controls" xmlns:views="clr-namespace:RangHamMat.Views" x:Class="RangHamMat.Views.CuaSoBenhNhan" FontFamily="Segoe UI" Language="vi-VN" UseLayoutRounding="True" SnapsToDevicePixels="True">
+<UserControl xmlns:clinical="clr-namespace:RangHamMat.Controls.ClinicalWorkflow" clinical:ClinicalLayout.IsEnabled="True" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:ui="clr-namespace:RangHamMat.Controls" xmlns:views="clr-namespace:RangHamMat.Views" x:Class="RangHamMat.Views.CuaSoBenhNhan" FontFamily="Segoe UI" Language="vi-VN" UseLayoutRounding="True" SnapsToDevicePixels="True">
   <UserControl.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
-        <!-- Nạp tài nguyên /RangHamMat.Wpf;component/Themes/HospitalStyles.xaml để các control dùng cùng màu, font, template và trạng thái của ứng dụng. -->
-        <ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/HospitalStyles.xaml"/>
+        <!-- Nạp tài nguyên /RangHamMat.Wpf;component/Themes/ClinicalWorkflowStyles.xaml để các control dùng cùng màu, font, template và trạng thái của ứng dụng. -->
+        <ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/ClinicalWorkflowStyles.xaml"/>
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
   </UserControl.Resources>

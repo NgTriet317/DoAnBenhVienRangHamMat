@@ -22,6 +22,7 @@ namespace wpftest
         {
             // AI bổ sung: bắt lỗi ngày nhập bằng bàn phím trên các DatePicker của ứng dụng.
             RangHamMat.Controls.KiemTraNhapLieu.Register();
+            PhienDangNhap.KhoiTaoPhienUngDung();
             var login = new DangNhap();
 
             if (login.ShowDialog() != true)

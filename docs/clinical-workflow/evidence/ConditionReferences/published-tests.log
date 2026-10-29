@@ -1,0 +1,20 @@
+PASS: Schema và hợp đồng tình trạng không còn MucDo hoặc ViTriRang
+PASS: Tình trạng tự hiện đề xuất, lập nháp không ghi đè kế hoạch đang nhập
+PASS: Lưu tình trạng không cần mức độ hoặc danh mục
+PASS: Form thêm/sửa/xóa rõ ràng và lưu đọc lại đúng
+PASS: Gõ trực tiếp rồi Lưu nháp không cần bấm Thêm trước
+PASS: Thiếu tên giữ nội dung và không ghi dòng rỗng
+PASS: Màn khám không còn cấu hình/gợi ý mẫu
+PASS: Lịch sử và lượt đã xác nhận vẫn khóa nhập
+PASS: Bác sĩ khác và cờ quyền giả không ghi được tình trạng
+PASS: Hoàn tất khám với tình trạng đơn giản, không kê thuốc
+PASS: Xung đột SQL không ghi đè tình trạng
+PASS: Chọn dòng khác không làm mất tình trạng đang gõ
+PASS: Không xóa tình trạng đang liên kết kế hoạch
+PASS: Tab tình trạng có ô nhập thực, thấy được và lưu qua nút
+PASS: Mọi dịch vụ có bác sĩ đúng chuyên khoa với ca/phòng nhận khám
+PASS: 12 tài khoản bác sĩ mới xác thực được mật khẩu mẫu
+PASS: Y tá CV003 tiếp nhận chuyên khoa khác không cần quyền ngoài lịch
+PASS: Mỗi chuyên khoa có lượt nháp và tình trạng sửa được
+PASS: Seed chạy lại không ghi đè tình trạng đã sửa hoặc lượt đã ký
+RESULT: 19 passed, 0 failed

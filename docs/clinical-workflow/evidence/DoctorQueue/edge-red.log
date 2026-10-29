@@ -1,0 +1,27 @@
+PASS: Hàng chờ mặc định chỉ còn chờ/đang khám và giữ phiếu qua ngày
+PASS: Phân trang SQL có tổng số và không mất thứ tự
+PASS: Bác sĩ khác/DTO giả quyền không thấy hàng chờ riêng
+PASS: Admin xem tất cả hoặc lọc đúng bác sĩ
+PASS: Tiếp nhận thật qua BUS vào ngay hàng chờ đúng bác sĩ
+PASS: Bắt đầu/nhấn lặp/hoàn tất đúng lượt, ra khỏi hàng chờ vào lịch sử
+PASS: Tìm kiếm ký tự đặc biệt và kiểm tra bộ lọc
+PASS: Mở khám mặc định là hàng chờ, lịch sử nằm riêng
+PASS: Chọn tiếp nhận không tự khám, bấm mới mở đúng bệnh nhân
+PASS: Tải lại không tự chọn người khác khi phiếu bị hủy
+PASS: Admin lọc bác sĩ trong hàng chờ; lịch sử chỉ xem
+FAIL: Phiếu vừa hủy ở máy khác không được bắt đầu khi danh sách còn cũ | Exception: Không làm mới phiếu đã hủy
+PASS: Bác sĩ đang mở trang tự thấy tiếp nhận mới từ quầy
+PASS: Nhiều trang và phiếu ngoài cache50 vẫn mở đúng người bệnh
+RESULT: 13 passed, 1 failed
+powershell : Kiểm tra hàng chờ khám thất bại.
+At line:6 char:1
++ powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraHang ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Kiểm tra hàng chờ khám thất bại.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+At D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\tools\KiemTraHangChoKham.ps1:17 char:25
++ if($LASTEXITCODE -ne 0){throw 'Kiểm tra hàng chờ khám thất bại.'}
++                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Kiểm tra hàng chờ khám thất bại.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Kiểm tra hàng chờ khám thất bại.

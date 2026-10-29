@@ -1,0 +1,4 @@
+PASS: P12 liên tục ký khám/đơn →thu →giao →in/retry; thuốc=True,bổ sung=False,phải thu=450000.00; đúng một bộ chứng từ.
+PASS: P12 liên tục ký khám/đơn →thu →giao →in/retry; thuốc=True,bổ sung=True,phải thu=456000.00; đúng một bộ chứng từ.
+PASS: P12 liên tục ký khám/đơn →thu →giao →in/retry; thuốc=False,bổ sung=False,phải thu=0.00; đúng một bộ chứng từ.
+AcceptanceChecks: 3 PASS, 0 FAIL; commit chỉ trên DB P12 riêng.

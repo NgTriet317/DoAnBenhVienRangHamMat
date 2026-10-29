@@ -16,4 +16,7 @@
     <ProjectReference Include="..\ET\ET.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="ClinicalWorkflowPermissions.json" />
+  </ItemGroup>
 </Project>

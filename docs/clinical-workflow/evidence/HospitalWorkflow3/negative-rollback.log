@@ -1,0 +1,2 @@
+Changed database context to 'RHM_SimpleConditions_Test_20261028'.
+PASS: rejected processed demo; no HospitalWorkflow3 marker/invoice column leaked, protected demo remains.

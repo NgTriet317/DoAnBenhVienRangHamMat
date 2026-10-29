@@ -1,0 +1,35 @@
+BACKUP VERIFIED: C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Backup\QLBenhVienRangHamMat_before_prescription_flow1_20261029_153231_9326f297db1344bf96bbdb71e64194fe.bak
+Changed database context to 'master'.
+Changed database context to 'QLBenhVienRangHamMat'.
+ClinicalWorkflow v2 đã có; hợp đồng được kiểm tra.
+SchemaVersion       TableCount
+------------------- -----------
+ClinicalWorkflow v2          53
+MaHD                                               MaLS                                               SoTienPhaiThu        DaThuRong                                ConPhaiTra
+-------------------------------------------------- -------------------------------------------------- -------------------- ---------------------------------------- ----------------------------------------
+HD004                                              LS004                                                         100000.00                                      .00                                100000.00
+HD005                                              LS005                                                         150000.00                                      .00                                150000.00
+Đã bỏ MucDo; SimpleConditions v1. Dữ liệu các cột còn lại được giữ nguyên.
+Đã bỏ vị trí răng; nạp 6 tình trạng và định hướng có nguồn. Không tạo người thật, bảng giá hoặc chứng từ.
+Đã đồng bộ 8 dịch vụ tham khảo và 14 liên kết; giữ nguyên dữ liệu đã có.
+TableName                                                                                                                        DeletedRows
+-------------------------------------------------------------------------------------------------------------------------------- --------------------
+BENH_NHAN                                                                                                                                           0
+CA_LAM                                                                                                                                              0
+CA_THEO_NGAY                                                                                                                                        0
+DICH_VU                                                                                                                                             0
+HO_SO_BENH_AN                                                                                                                                       0
+LICH_LAM_VIEC                                                                                                                                       0
+LICH_SU_KHAM_BENH                                                                                                                                   0
+NHAN_VIEN                                                                                                                                           0
+PHIEU_KHAM_BENH                                                                                                                                     0
+PHONG                                                                                                                                               0
+TAI_KHOAN                                                                                                                                           0
+TINH_TRANG_BENH                                                                                                                                     0
+Hoàn tất khởi tạo/đồng bộ HospitalWorkflow v3; dữ liệu người dùng và lịch sử tài chính được giữ nguyên.
+Đã đồng bộ PrescriptionFlow1, nhóm thuốc và danh mục thuốc có nguồn.
+PASS: all original rows/original columns of53 tables preserved; PrescriptionFlow1 schema verified.
+
+Patients Medicines AddedMedicines DrugGroups UngroupedMedicines
+-------- --------- -------------- ---------- ------------------
+      11        62             52         20                  0

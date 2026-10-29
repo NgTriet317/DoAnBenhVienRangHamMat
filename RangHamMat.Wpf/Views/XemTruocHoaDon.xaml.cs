@@ -6,6 +6,8 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using RangHamMat.Controls;
+using ET;
+using System.Windows.Documents;
 
 namespace RangHamMat.Views;
 
@@ -14,24 +16,40 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class XemTruocHoaDon : Window
 {
-    private readonly string code;
+    private readonly string code="";
+    private readonly Func<BanInHoaDon>? read;
+    public BanInHoaDon? NguonIn {get;private set;}
+    public XemTruocHoaDon(Func<BanInHoaDon> read)
+    {InitializeComponent();RangHamMat.Controls.ClinicalWorkflow.ClinicalWindowLifecycle.Attach(this);this.read=read;var initial=read();code=initial.HoaDon.MaHD;Apply(initial);}
+    public bool TryPrint(Action<DocumentPaginator> send,Size pageSize,out string? error)
+    {
+        error=null;try
+        {
+            if(read is not null){var source=read();if(source.HoaDon.MaHD!=code)throw new LoiKhamException("MaHD","Nguồn in đã đổi mã hóa đơn; đóng cửa sổ và mở lại đúng chứng từ.");Apply(source);}
+            send(InvoiceDocument.CreatePaginator(pageSize));PrintStatus.Text="Đã gửi hóa đơn #"+code+" tới máy in đã chọn.";return true;
+        }
+        catch(Exception ex){error=ex is LoiKhamException or TuChoiQuyenNghiepVuException?ex.Message:"Không thể in hóa đơn #"+code+". In lại cùng chứng từ; kết quả thu tiền giữ nguyên.";PrintStatus.Text=error;return false;}
+    }
+    private void Apply(BanInHoaDon p)
+    {
+        NguonIn=p;var h=p.HoaDon;var lines=new DataTable();foreach(var name in new[]{"MaCTHD","MaCTPX","MaCTDT","MaDT","NoiDung","DonViTinh"})lines.Columns.Add(name);foreach(var name in new[]{"SoLuong","DonGiaChot","ThanhTien"})lines.Columns.Add(name,typeof(decimal));
+        foreach(var d in p.CacDong)lines.Rows.Add(d.MaCTHD,d.MaCTPX,d.MaCTDT,d.MaDT,d.NoiDung,d.DonViTinh,d.SoLuong,d.DonGia,d.ThanhTien);
+        InvoiceDocument.DataContext=new{Code=(h.TrangThai=="Nháp"?"Bản nháp hóa đơn #":"Hóa đơn #")+h.MaHD,Status=h.TrangThai,Patient=$"{p.HoTenBN} · Mã {p.MaBN}",Visit=h.MaLS,Date=h.NgayLap.ToString("dd/MM/yyyy HH:mm:ss"),Employee=p.NguoiLap,
+            Total=Money(h.TongTien),Discount=Money(h.GiamGia),Due=Money(h.SoTienPhaiThu),Collected=Money(p.DaThu),Remaining=Money(p.ConPhaiThu),
+            CashInfo=p.SoTienKhachDua is decimal given?$"Khách đưa: {Money(given)} · Tiền thối: {Money(p.TienThua??0)}\n{p.PhuongThuc}"+(string.IsNullOrEmpty(p.MaThamChieu)?"":" · Tham chiếu: "+p.MaThamChieu):"",Lines=InvoicePrintLines.Group(lines)};
+    }
     /// <summary>
     /// AI hỗ trợ: nạp chứng từ XAML và dữ liệu đầu/chi tiết hóa đơn; các dòng binding vào ItemsControl, không tạo TableRow bằng C#.
     /// </summary>
     public XemTruocHoaDon(DataRow header, DataTable lines)
     {
-        InitializeComponent(); code = Convert.ToString(header["MaHD"]) ?? "";
+        InitializeComponent();RangHamMat.Controls.ClinicalWorkflow.ClinicalWindowLifecycle.Attach(this); code = Convert.ToString(header["MaHD"]) ?? "";
         InvoiceDocument.DataContext = new
         {
             Code = $"Hóa đơn #{code}", Status = Convert.ToString(header["TrangThai"]), Patient = $"{header["HoTenBN"]} · Mã {header["MaBN"]}", Visit = Convert.ToString(header["MaLS"]),
             Date = Convert.ToDateTime(header["NgayLap"]).ToString("dd/MM/yyyy HH:mm"), Employee = Convert.ToString(header["NguoiLap"]),
             Total = Money(header["TongTien"]), Discount = Money(header["GiamGia"]), Due = Money(header["SoTienPhaiThu"]), Collected = Money(header["DaThu"]), Remaining = Money(header["ConPhaiThu"]),
-            Lines = lines.Rows.Cast<DataRow>().Select(line => new
-            {
-                Description = Convert.ToString(line["NoiDung"]) ?? "",
-                Quantity = Convert.ToDecimal(line["SoLuong"]).ToString("0.###", CultureInfo.GetCultureInfo("vi-VN")),
-                Price = Money(line["DonGiaChot"]), Amount = Money(line["ThanhTien"])
-            }).ToArray()
+            CashInfo="", Lines = InvoicePrintLines.Group(lines)
         };
     }
     /// <summary>
@@ -43,12 +61,11 @@ public partial class XemTruocHoaDon : Window
     /// </summary>
     private void Print_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new PrintDialog(); if (dialog.ShowDialog() != true) return;
         try
         {
-            var paginator = InvoiceDocument.CreatePaginator(new Size(dialog.PrintableAreaWidth, dialog.PrintableAreaHeight));
-            dialog.PrintDocument(paginator, $"Hóa đơn {code}"); PrintStatus.Text = "Đã gửi hóa đơn tới máy in đã chọn.";
+            var dialog = new PrintDialog(); if (dialog.ShowDialog() != true) return;
+            TryPrint(p=>dialog.PrintDocument(p,$"Hóa đơn {code}"),new Size(dialog.PrintableAreaWidth,dialog.PrintableAreaHeight),out _);
         }
-        catch (Exception ex) { PrintStatus.Text = "Không thể in hóa đơn: " + ex.Message; }
+        catch (Exception) { PrintStatus.Text = "Không mở được máy in. In lại cùng hóa đơn; kết quả thu tiền giữ nguyên."; }
     }
 }

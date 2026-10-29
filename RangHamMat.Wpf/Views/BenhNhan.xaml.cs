@@ -19,6 +19,7 @@ public partial class BenhNhan : UserControl, IPatientScoped
     private object[] filtered = Array.Empty<object>();
     private HoSoBenhNhan? profile;
     private Func<string, bool>? access;
+    private string? requestedPatientId;
     /// <summary>
     /// Mã bệnh nhân nguồn để giới hạn dữ liệu và giữ đúng hồ sơ khi mở form hoặc chuyển phân hệ.
     /// </summary>
@@ -41,7 +42,7 @@ public partial class BenhNhan : UserControl, IPatientScoped
     public void ConfigureAccess(Func<string, bool> allowed)
     {
         access = allowed;
-        AddPatientButton.IsEnabled = allowed("BenhNhan");
+        AddPatientButton.IsEnabled = allowed("BenhNhan") && Controls.ClinicalWorkflow.QuyenNghiepVu.DuocTao("BENH_NHAN");
         profile?.ConfigureAccess(allowed);
     }
 
@@ -52,6 +53,8 @@ public partial class BenhNhan : UserControl, IPatientScoped
     {
         if (allowed is not null) access = allowed;
         var id = UiRecord.Text(record, "MaBN");
+        try { DuLieuGiaoDien.BaoDamNguCanh(new(){MaBN=id}); }
+        catch(InvalidOperationException ex){ClearProfile(ex.Message);return;}
         var patient = DuLieuGiaoDien.Find("BENH_NHAN", id);
         if (patient is null) { ClearProfile("Bệnh nhân không còn trong dữ liệu. Chọn một bệnh nhân khác."); return; }
         if (profile?.PatientId != id)
@@ -72,6 +75,7 @@ public partial class BenhNhan : UserControl, IPatientScoped
     /// </summary>
     public void FocusContext(string? patientId, string? visitId = null, string? prescriptionId = null)
     {
+        requestedPatientId=patientId;
         var patient = DuLieuGiaoDien.Find("BENH_NHAN", patientId);
         if (patient is null)
         {
@@ -118,15 +122,18 @@ public partial class BenhNhan : UserControl, IPatientScoped
     private void Refresh()
     {
         if (!ready) return;
+        if(DuLieuGiaoDien.PhamViLamSang){RefreshSqlPage();return;}
         var selected = PatientId;
         filtered = DuLieuGiaoDien.Rows("BENH_NHAN").Where(row =>
-            HoTroGiaoDien.Matches("BENH_NHAN", row, SearchBox.Text, HoTroGiaoDien.Choice(StatusFilter)) &&
+            HoTroGiaoDien.Matches("BENH_NHAN", row, "", HoTroGiaoDien.Choice(StatusFilter)) &&
+            (HoTroGiaoDien.Matches("BENH_NHAN",row,SearchBox.Text,"Tất cả") || Controls.ClinicalWorkflow.HoSoViewModel.KhopNgaySinh(row,SearchBox.Text)) &&
             (HoTroGiaoDien.Choice(GenderFilter) == "Tất cả" || UiRecord.Text(row, "GioiTinh") == HoTroGiaoDien.Choice(GenderFilter)))
             .OrderBy(row => UiRecord.Text(row, "HoTenBN"), StringComparer.CurrentCultureIgnoreCase).ToArray();
         var pages = Math.Max(1, (int)Math.Ceiling(filtered.Length / (double)PageSize));
         currentPage = Math.Clamp(currentPage, 1, pages);
         refreshing = true;
-        Grid_BENH_NHAN.ItemsSource = filtered.Skip((currentPage - 1) * PageSize).Take(PageSize).ToArray();
+        var latest=Controls.ClinicalWorkflow.HoSoViewModel.LanKhamGanNhatTheoBenhNhan();
+        Grid_BENH_NHAN.ItemsSource = filtered.Skip((currentPage - 1) * PageSize).Take(PageSize).Select(r=>new Controls.ClinicalWorkflow.BenhNhanDanhSachItem(r,latest.TryGetValue(UiRecord.Text(r,"MaBN"),out var when)?when:null)).ToArray();
         Grid_BENH_NHAN.SelectedItem = Grid_BENH_NHAN.Items.Cast<object>().FirstOrDefault(row => UiRecord.Text(row, "MaBN") == selected);
         refreshing = false;
         RecordCount.Text = $"{filtered.Length} bệnh nhân · chọn để mở hồ sơ";
@@ -140,7 +147,7 @@ public partial class BenhNhan : UserControl, IPatientScoped
     /// <summary>
     /// Lọc và hiển thị lại danh sách theo nội dung tìm kiếm/trạng thái/ngày đang chọn; chưa thay đổi dữ liệu SQL.
     /// </summary>
-    private void Filter_Changed(object sender, RoutedEventArgs e) { if (!ready || refreshing) return; currentPage = 1; Refresh(); }
+    private void Filter_Changed(object sender, RoutedEventArgs e) { if (!ready || refreshing) return; requestedPatientId=null;currentPage = 1; Refresh(); }
     /// <summary>
     /// Giảm số trang danh sách bệnh nhân rồi lọc và hiển thị lại trang trước.
     /// </summary>

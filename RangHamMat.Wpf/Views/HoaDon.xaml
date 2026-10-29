@@ -1,21 +1,21 @@
 <!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã tạo/chỉnh style PaymentTextInput: FontSize 13 và Padding 10,4 để ô số tiền/lý do trong thu/hoàn tiền cao 38 DIP như ComboBox; bổ sung giải thích bộ lọc, bảng và binding các nút. -->
 <!-- AI hỗ trợ: bổ sung chú thích cho hóa đơn, thu/hoàn tiền và cấp thuốc. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
-<UserControl x:Class="RangHamMat.Views.HoaDon" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:views="clr-namespace:RangHamMat.Views" FontFamily="Segoe UI" Language="vi-VN" UseLayoutRounding="True" SnapsToDevicePixels="True">
- <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><!-- Nạp tài nguyên /RangHamMat.Wpf;component/Themes/HospitalStyles.xaml để các control dùng cùng màu, font, template và trạng thái của ứng dụng. -->
- <ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/HospitalStyles.xaml"/></ResourceDictionary.MergedDictionaries><views:InvoiceMoneyConverter x:Key="InvoiceMoney"/>
+<UserControl xmlns:clinical="clr-namespace:RangHamMat.Controls.ClinicalWorkflow" clinical:ClinicalLayout.IsEnabled="True" x:Class="RangHamMat.Views.HoaDon" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:views="clr-namespace:RangHamMat.Views" FontFamily="Segoe UI" Language="vi-VN" UseLayoutRounding="True" SnapsToDevicePixels="True" Background="#F3F6FA">
+ <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><!-- Nạp tài nguyên /RangHamMat.Wpf;component/Themes/ClinicalWorkflowStyles.xaml để các control dùng cùng màu, font, template và trạng thái của ứng dụng. -->
+ <ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/ClinicalWorkflowStyles.xaml"/></ResourceDictionary.MergedDictionaries><views:InvoiceMoneyConverter x:Key="InvoiceMoney"/>
   <!-- AI hỗ trợ chỉnh giao diện: template TextBox có đệm ở vùng cuộn; giảm Padding để ô tiền/lý do cao 38 DIP như ComboBox. -->
   <!-- Style PaymentTextInput cho TextBox: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. Kế thừa {StaticResource HospitalTextInput} để dùng chung template và hành vi control. -->
   <Style x:Key="PaymentTextInput" TargetType="TextBox" BasedOn="{StaticResource HospitalTextInput}"><Setter Property="FontSize" Value="13"/><Setter Property="Padding" Value="10,4"/></Style></ResourceDictionary></UserControl.Resources>
  <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
   <StackPanel><TextBlock Text="Hóa đơn và thanh toán" Style="{StaticResource HospitalHeading}"/><TextBlock Text="Thu phí dịch vụ đã xác nhận và thuốc đã cấp. Giữ cùng bệnh nhân, lần khám khi chuyển mục." Style="{StaticResource HospitalMuted}"/></StackPanel>
-  <WrapPanel Grid.Row="1" Margin="0,18,0,12">
+  <Expander x:Name="FinanceSourceExpander" Grid.Row="1" Header="Tìm / chọn bệnh nhân và lượt khám" IsExpanded="True"><WrapPanel Margin="0,8,0,12"><StackPanel x:Name="FinanceSearchPanel" Width="360" Margin="0,0,14,10" Visibility="Collapsed"><TextBlock Text="Tìm tên/mã BN, lượt hoặc hóa đơn tại SQL" Style="{StaticResource FieldLabel}"/><DockPanel><Button x:Name="FinanceSearchButton" Content="Tìm" Click="FinanceSearch_Click" DockPanel.Dock="Right" MinHeight="36"/><TextBox x:Name="FinanceSearch" AutomationProperties.Name="Tìm nguồn thu theo tên hoặc mã"/></DockPanel><WrapPanel Margin="0,6,0,0"><Button x:Name="PreviousFinancePage" Content="←" Click="PreviousFinance_Click" MinHeight="36"/><TextBlock x:Name="FinancePageText" VerticalAlignment="Center" Margin="8,0"/><Button x:Name="NextFinancePage" Content="→" Click="NextFinance_Click" MinHeight="36"/></WrapPanel></StackPanel>
    <StackPanel Width="240" Margin="0,0,14,10"><TextBlock Text="Bệnh nhân" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="PatientFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Patient_Changed" AutomationProperties.Name="Bệnh nhân"/></StackPanel>
    <StackPanel Width="245" Margin="0,0,14,10"><TextBlock Text="Lần khám" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="VisitFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Visit_Changed" AutomationProperties.Name="Lần khám"/></StackPanel>
    <StackPanel Width="240" Margin="0,0,14,10"><TextBlock Text="Nhân viên thực hiện *" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="EmployeeFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Employee_Changed" AutomationProperties.Name="Nhân viên thực hiện"/></StackPanel>
    <!-- Thao tác Tải lại: gọi Reload_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
    <Button Content="Tải lại" Click="Reload_Click" Margin="0,20,8,10"/><!-- Thao tác Lập hóa đơn: gọi Create_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
    <Button x:Name="CreateButton" Content="Lập hóa đơn" Click="Create_Click" Style="{StaticResource HospitalPrimary}" Margin="0,20,0,10"/>
-  </WrapPanel>
+  </WrapPanel></Expander>
   <TextBlock x:Name="PageStatus" Grid.Row="2" TextWrapping="Wrap" Margin="0,0,0,12" Foreground="#8F3B32" AutomationProperties.LiveSetting="Polite"/>
   <Grid Grid.Row="3"><Grid.ColumnDefinitions><ColumnDefinition Width="310" MinWidth="270"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
    <Border Style="{StaticResource HospitalPanel}" Padding="12"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
@@ -102,6 +102,7 @@
       </DataGrid.Columns>
      </DataGrid>
     </StackPanel></Border></ScrollViewer></TabItem>
+    <TabItem x:Name="PricingTab" Header="Bảng tính phí" Visibility="Collapsed"><ContentControl x:Name="PricingHost"/></TabItem>
    </TabControl>
   </Grid>
  </Grid>

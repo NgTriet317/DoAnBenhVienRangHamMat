@@ -44,6 +44,7 @@ public sealed class PatientVisitRow
     {
         get
         {
+            if(UiRecord.Text(Record,"NguonTiepNhan") is {Length:>0} source)return source;
             var receipt = DuLieuGiaoDien.Find("PHIEU_KHAM_BENH", UiRecord.Get(Record, "MaPhieu"));
             return receipt is null ? "Thiếu phiếu tiếp nhận" : string.IsNullOrWhiteSpace(UiRecord.Text(receipt, "MaLich")) ? "Trực tiếp" : "Theo lịch hẹn";
         }

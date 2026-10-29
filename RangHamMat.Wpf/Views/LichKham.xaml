@@ -257,7 +257,7 @@
               </StackPanel.Style>
               <TextBlock Text="Chưa có lịch khám phù hợp" FontSize="17" FontWeight="SemiBold" Foreground="#173B5F" TextAlignment="Center"/>
               <TextBlock Text="Thử thay đổi bộ lọc hoặc thêm lịch mới." Foreground="#70859B" TextAlignment="Center" Margin="0,7,0,10"/>
-              <Button Content="+ Thêm lịch khám" Style="{StaticResource PrimaryAction}" Click="btnThemLichKham_Click"/>
+              <Button x:Name="AddAppointmentButton" Content="+ Thêm lịch khám" Style="{StaticResource PrimaryAction}" Click="btnThemLichKham_Click"/>
             </StackPanel>
           </Grid>
         </Grid>

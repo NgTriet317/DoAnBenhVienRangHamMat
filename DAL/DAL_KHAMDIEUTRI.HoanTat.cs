@@ -1,0 +1,48 @@
+using System.Data;
+using Dapper;
+using ET;
+namespace DAL;
+
+public sealed partial class DAL_KHAMDIEUTRI
+{
+    // Hoàn tất là xác nhận của bác sĩ rằng toàn bộ dịch vụ trong các kế hoạch đã duyệt đã làm xong.
+    private static void ChotDichVuDieuTri(IDbConnection db,IDbTransaction? tx,VisitRead visit,DateTime now)
+    {
+        if(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.HOA_DON WITH(UPDLOCK,HOLDLOCK) WHERE MaLS=@MaLS",visit,tx)>0)
+            throw KhamError("HoaDon","Lượt đã có hóa đơn; đối chiếu trước khi hoàn tất.");
+        var rows=db.Query<BuocChot>("""
+            SELECT c.MaCTKH,c.MaDV,c.SoLuongDuKien,c.DonGiaDuKien,c.NoiDungBuoc
+            FROM dbo.KE_HOACH_DIEU_TRI k WITH(UPDLOCK,HOLDLOCK)
+            JOIN dbo.CHI_TIET_KE_HOACH c WITH(UPDLOCK,HOLDLOCK) ON c.MaKHDT=k.MaKHDT
+            WHERE k.MaLS=@MaLS AND k.TrangThai IN(N'Đã xác nhận',N'Đang thực hiện',N'Đã hoàn thành') AND c.TrangThai<>N'Hủy'
+            ORDER BY c.MaCTKH
+            """,visit,tx).ToArray();
+        foreach(var step in rows)
+        {
+            var used=db.ExecuteScalar<decimal>("SELECT COALESCE(SUM(SoLuong),0) FROM dbo.DICH_VU_THUC_HIEN WITH(UPDLOCK,HOLDLOCK) WHERE MaCTKH=@MaCTKH AND TrangThai=N'Đã xác nhận'",step,tx);
+            if(used>step.SoLuongDuKien)throw KhamError("DichVu","Lượng đã thực hiện vượt kế hoạch; cần đối chiếu.");
+            if(used<step.SoLuongDuKien)
+            {
+                ActiveService(db,tx,step.MaDV);
+                InsertFinishedService(db,tx,visit,now,step.MaDV,step.MaCTKH,step.SoLuongDuKien-used,step.DonGiaDuKien,
+                    "Bác sĩ xác nhận hoàn tất theo kế hoạch: "+step.NoiDungBuoc);
+            }
+            db.Execute("UPDATE dbo.CHI_TIET_KE_HOACH SET TrangThai=N'Đã hoàn thành' WHERE MaCTKH=@MaCTKH",step,tx);
+        }
+        var consultation=db.QuerySingleOrDefault<ET_DICHVU>("SELECT d.* FROM dbo.PHIEU_KHAM_BENH p WITH(HOLDLOCK) JOIN dbo.DICH_VU d WITH(HOLDLOCK) ON d.MaDV=p.MaDV WHERE p.MaPhieu=@MaPhieu",visit,tx)
+            ??throw KhamError("DichVu","Phiếu tiếp nhận cần dịch vụ khám hợp lệ trước khi hoàn tất.");
+        if(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DICH_VU_THUC_HIEN WITH(HOLDLOCK) WHERE MaLS=@MaLS AND MaDV=@MaDV AND TrangThai=N'Đã xác nhận'",new{visit.MaLS,consultation.MaDV},tx)==0)
+            InsertFinishedService(db,tx,visit,now,consultation.MaDV,null,1,consultation.DonGia,"Hoàn tất dịch vụ khám theo phiếu tiếp nhận.");
+        db.Execute("UPDATE dbo.KE_HOACH_DIEU_TRI SET TrangThai=N'Đã hoàn thành' WHERE MaLS=@MaLS AND TrangThai IN(N'Đã xác nhận',N'Đang thực hiện')",visit,tx);
+    }
+    private static void InsertFinishedService(IDbConnection db,IDbTransaction? tx,VisitRead visit,DateTime now,string service,string? step,decimal qty,decimal price,string result)
+    {
+        var id=TaoMa(db,tx,"DICH_VU_THUC_HIEN","MaDVThucHien");
+        db.Execute("""
+            INSERT dbo.DICH_VU_THUC_HIEN(MaDVThucHien,MaLS,MaCTKH,MaDV,MaNVThucHien,ThoiGianThucHien,SoLuong,DonGia,KetQua,TrangThai)
+            VALUES(@id,@MaLS,@step,@service,@MaBS,@now,@qty,@price,@result,N'Đã xác nhận')
+            """,new{id,visit.MaLS,visit.MaBS,step,service,now,qty,price,result},tx);
+    }
+    private sealed class BuocChot
+    {public string MaCTKH{get;set;}="";public string MaDV{get;set;}="";public decimal SoLuongDuKien{get;set;}public decimal DonGiaDuKien{get;set;}public string? NoiDungBuoc{get;set;}}
+}

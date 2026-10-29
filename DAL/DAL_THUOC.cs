@@ -54,7 +54,7 @@ namespace DAL
             {
                 duLieu.MaThuoc = TaoMa(connection, transaction, "THUOC", "MaThuoc");
                 KiemTra<ET_THUOC>(connection, transaction, "THUOC", duLieu, null, null);
-                connection.Execute("INSERT INTO dbo.[THUOC] ([MaThuoc],[MaHH],[HamLuong],[MucTonToiThieu],[DonGiaBan]) VALUES (@MaThuoc,@MaHH,@HamLuong,@MucTonToiThieu,@DonGiaBan)", duLieu, transaction);
+                connection.Execute("INSERT INTO dbo.[THUOC] ([MaThuoc],[MaHH],[HamLuong],[MucTonToiThieu],[DonGiaBan],[MaNhomThuoc]) VALUES (@MaThuoc,@MaHH,@HamLuong,@MucTonToiThieu,@DonGiaBan,@MaNhomThuoc)", duLieu, transaction);
                 return true;
             });
         }
@@ -82,7 +82,7 @@ namespace DAL
                     KiemTraChiDoiTrangThai(duLieu, hienTai);
                 }
 
-                connection.Execute("UPDATE dbo.[THUOC] SET [MaHH]=@MaHH,[HamLuong]=@HamLuong,[MucTonToiThieu]=@MucTonToiThieu,[DonGiaBan]=@DonGiaBan WHERE [MaThuoc]=@MaThuoc", duLieu, transaction);
+                connection.Execute("UPDATE dbo.[THUOC] SET [MaHH]=@MaHH,[HamLuong]=@HamLuong,[MucTonToiThieu]=@MucTonToiThieu,[DonGiaBan]=@DonGiaBan,[MaNhomThuoc]=@MaNhomThuoc WHERE [MaThuoc]=@MaThuoc", duLieu, transaction);
                 return true;
             });
         }

@@ -52,6 +52,7 @@ public partial class DangNhap : Window
             PhienDangNhap.MaNV = taiKhoan.MaNV;
             PhienDangNhap.TenDangNhap = taiKhoan.TenDangNhap;
             PhienDangNhap.IsAdmin = admin;
+            PhienDangNhap.KhoiTaoDinhDanhNghiepVu(taiKhoan.MaTK);
             DialogResult = true;
         }
         catch (Exception ex)

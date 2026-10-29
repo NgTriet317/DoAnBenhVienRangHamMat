@@ -161,7 +161,8 @@ public sealed class PrescriptionLine
     /// <summary>
     /// Nhãn dễ đọc cho lựa chọn/dòng dữ liệu; với ô lịch là mô tả hành động tạo lịch.
     /// </summary>
-    public string Label => DuLieuGiaoDien.Lookup("MaThuoc", UiRecord.Get(Record, "MaThuoc"));
+    public string Label => string.IsNullOrWhiteSpace(UiRecord.Text(Record,"TenThuocChot"))?DuLieuGiaoDien.Lookup("MaThuoc", UiRecord.Get(Record, "MaThuoc")):$"{UiRecord.Text(Record,"TenThuocChot")} · {UiRecord.Text(Record,"HamLuongChot")}";
+    public string DuongDung => UiRecord.Text(Record,"DuongDung");
     /// <summary>
     /// Đơn vị tính của thuốc lấy từ hàng hóa liên kết.
     /// </summary>
@@ -190,6 +191,6 @@ public sealed class PrescriptionLine
         Record = record;
         var drug = DuLieuGiaoDien.Find("THUOC", UiRecord.Get(record, "MaThuoc"));
         var goods = drug is null ? null : DuLieuGiaoDien.Find("HANG_HOA", UiRecord.Get(drug, "MaHH"));
-        Unit = goods is null ? "" : UiRecord.Text(goods, "DonViTinh");
+        var snapshotUnit=UiRecord.Text(record,"DonViTinhChot");Unit = !string.IsNullOrWhiteSpace(snapshotUnit)?snapshotUnit:goods is null ? "" : UiRecord.Text(goods, "DonViTinh");
     }
 }

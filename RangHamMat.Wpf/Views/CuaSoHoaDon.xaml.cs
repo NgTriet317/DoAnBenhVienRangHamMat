@@ -69,6 +69,7 @@ public partial class CuaSoHoaDon : UserControl, IBieuMauLuu, IPatientScoped
     private void LoadCharges()
     {
         if (updating || ChargeGrid is null) return;
+        if (DuLieuGiaoDien.PhamViLamSang) { SaveButton.IsEnabled = false; Feedback.Text = "Chứng từ lịch sử chỉ được đối chiếu và in lại."; return; }
         try
         {
             var visit = HoTroGiaoDien.Selected(VisitBox);
@@ -110,6 +111,7 @@ public partial class CuaSoHoaDon : UserControl, IBieuMauLuu, IPatientScoped
     public bool Commit(out string error)
     {
         error = "";
+        if (DuLieuGiaoDien.PhamViLamSang) { error = "Chứng từ lịch sử chỉ được đối chiếu và in lại."; return false; }
         if (SavedInvoiceId is not null) return true;
         if(!KiemTraNhapLieu.PrepareSave(this,out error)) return false;
         try

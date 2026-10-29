@@ -1,0 +1,78 @@
+Changed database context to 'master'.
+Changed database context to 'RHM_Hospital_Test_RxFinal_20261029'.
+ClinicalWorkflow v2 sẵn sàng.
+SchemaVersion       TableCount
+------------------- -----------
+ClinicalWorkflow v2          52
+MaHD                                               MaLS                                               SoTienPhaiThu        DaThuRong                                ConPhaiTra
+-------------------------------------------------- -------------------------------------------------- -------------------- ---------------------------------------- ----------------------------------------
+Đã bỏ MucDo; SimpleConditions v1. Dữ liệu các cột còn lại được giữ nguyên.
+Đã bỏ vị trí răng; nạp 6 tình trạng và định hướng có nguồn. Không tạo người thật, bảng giá hoặc chứng từ.
+Đã đồng bộ 8 dịch vụ tham khảo và 14 liên kết; giữ nguyên dữ liệu đã có.
+TableName                                                                                                                        DeletedRows
+-------------------------------------------------------------------------------------------------------------------------------- --------------------
+BENH_NHAN                                                                                                                                           0
+CA_LAM                                                                                                                                              0
+CA_THEO_NGAY                                                                                                                                        0
+DICH_VU                                                                                                                                             0
+HO_SO_BENH_AN                                                                                                                                       0
+LICH_LAM_VIEC                                                                                                                                       0
+LICH_SU_KHAM_BENH                                                                                                                                   0
+NHAN_VIEN                                                                                                                                           0
+PHIEU_KHAM_BENH                                                                                                                                     0
+PHONG                                                                                                                                               0
+TAI_KHOAN                                                                                                                                           0
+TINH_TRANG_BENH                                                                                                                                     0
+Hoàn tất khởi tạo/đồng bộ HospitalWorkflow v3; dữ liệu người dùng và lịch sử tài chính được giữ nguyên.
+Đã đồng bộ PrescriptionFlow1, nhóm thuốc và danh mục thuốc có nguồn.
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(33,211): warning CS8604: Possible null reference argument for parameter 'cnn' in 'int SqlMapper.ExecuteScalar<int>(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(50,345): warning CS8604: Possible null reference argument for parameter 'cnn' in 'decimal SqlMapper.ExecuteScalar<decimal>(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(62,13): warning CS8604: Possible null reference argument for parameter 'cnn' in 'int SqlMapper.Execute(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(79,323): warning CS8604: Possible null reference argument for parameter 'cnn' in 'decimal SqlMapper.ExecuteScalar<decimal>(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(82,169): warning CS8604: Possible null reference argument for parameter 'cnn' in 'int SqlMapper.Execute(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(92,13): warning CS8604: Possible null reference argument for parameter 'cnn' in 'int SqlMapper.Execute(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(94,137): warning CS8602: Dereference of a possibly null reference. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(98,276): warning CS8604: Possible null reference argument for parameter 'cnn' in 'ET_HOADON SqlMapper.QuerySingle<ET_HOADON>(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(108,160): warning CS8604: Possible null reference argument for parameter 'cnn' in 'string SqlMapper.QuerySingle<string>(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+PASS: Kê đơn nằm trong khám sau thực hiện và trước tổng kết
+PASS: Kê đơn bỏ mẫu phiên bản, cấu hình và tải lại bỏ nháp
+PASS: Nhóm thuốc độc lập mẫu và danh mục thuốc thực tế đa dạng
+PASS: Thực hiện chặn kế hoạch nháp, nguồn cũ và bác sĩ khác; retry không nhân dịch vụ
+PASS: WPF thực hiện rồi kê ký thuốc trong khám, tổng kết đúng nguồn và Đơn thuốc chỉ xem
+PASS: Nhóm thuốc lọc trực tiếp, không cần cấu hình hướng dẫn; giá thiếu hiện rõ
+PASS: Đơn thuốc chỉ bàn giao khi thu đủ, giữ nguồn kho và chống giao trùng
+PASS: Danh mục bệnh viện đa dạng và bản cài không tạo người giả
+PASS: Chọn nhanh chia nhóm RHM và gãy hàm có đúng dịch vụ SQL liên quan
+PASS: Hoàn tất chốt đủ dịch vụ và kế hoạch rồi lập đúng một hóa đơn
+PASS: Lỗi lập hóa đơn rollback toàn bộ lần hoàn tất trong transaction ngoài
+PASS: Lịch sử chỉ xem, không có thêm/sửa hoặc lượt chưa hoàn tất
+PASS: Điều dưỡng chỉ xem dòng được giao, thu ngân không xem kết quả lâm sàng
+PASS: Màn thu tiền hiển thị đúng hóa đơn đã lập và giá đã chốt
+PASS: Hóa đơn gồm thuốc đã ký trước thu, dùng lại khi thanh toán và retry
+PASS: Hoàn tất khám lập hóa đơn ngay
+PASS: Dịch vụ thực hiện không còn API phát sinh
+PASS: Database có liên kết tình trạng với dịch vụ thật
+PASS: Form có danh sách chọn dịch vụ liên quan
+PASS: Dịch vụ chọn sinh kế hoạch đầy đủ mã/giá và FK tình trạng
+PASS: Hai tình trạng cùng tên vẫn liên kết đúng dòng bác sĩ chọn
+PASS: Chọn dịch vụ thủ công tự điền giá và cập nhật tổng
+PASS: Đổi giá sau khi hiển thị được phát hiện và không tạo kế hoạch sai
+PASS: Cập nhật giá giữ nguyên bản nháp và lưu lại được
+PASS: Ngừng dịch vụ không còn được chọn; DAL chặn giá giả
+PASS: Đọc lại liên kết SQL mới và lọc đúng tình trạng
+PASS: Giao diện dịch vụ dùng được ở nhiều kích thước
+PASS: Schema và hợp đồng tình trạng không còn MucDo hoặc ViTriRang
+PASS: Tình trạng tự hiện đề xuất, lập nháp không ghi đè kế hoạch đang nhập
+PASS: Lưu tình trạng không cần mức độ hoặc danh mục
+PASS: Form thêm/sửa/xóa rõ ràng và lưu đọc lại đúng
+PASS: Gõ trực tiếp rồi Lưu nháp không cần bấm Thêm trước
+PASS: Thiếu tên giữ nội dung và không ghi dòng rỗng
+PASS: Màn khám không còn cấu hình/gợi ý mẫu
+PASS: Lịch sử và lượt đã xác nhận vẫn khóa nhập
+PASS: Bác sĩ khác và cờ quyền giả không ghi được tình trạng
+PASS: Hoàn tất khám với tình trạng đơn giản, không kê thuốc
+PASS: Xung đột SQL không ghi đè tình trạng
+PASS: Chọn dòng khác không làm mất tình trạng đang gõ
+PASS: Không xóa tình trạng đang liên kết kế hoạch
+PASS: Tab tình trạng có ô nhập thực, thấy được và lưu qua nút
+RESULT: 41 passed, 0 failed

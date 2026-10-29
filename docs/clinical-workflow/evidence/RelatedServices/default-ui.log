@@ -1,0 +1,4 @@
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\SimpleConditionChecks\Program.cs(31,160): warning CS8604: Possible null reference argument for parameter 'cnn' in 'string SqlMapper.QuerySingle<string>(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\SimpleConditionChecks\SimpleConditionChecks.csproj]
+GUI account: demo_ck002_dem; draft: DEMO28_LS_CK002; mode: read-only verification
+PASS: Đăng nhập bác sĩ demo thật và mở được ô tình trạng trên database sử dụng
+RESULT: 1 passed, 0 failed

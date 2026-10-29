@@ -202,6 +202,10 @@
                                         <ComboBoxItem Content="Cao"/>
                                     </ComboBox>
                                     <TextBlock x:Name="txtYeuCauDuBi" Text="Mức Cao bắt buộc chọn bác sĩ dự bị." Foreground="#A45317" FontSize="13" Visibility="Collapsed" Margin="0,7,0,0"/>
+                                    <TextBlock Text="Bác sĩ dự bị" Style="{StaticResource LKLabel}" Margin="0,14,0,7"/>
+                                    <ComboBox x:Name="cboBacSiDuBi" Tag="DB:LICH_KHAM.MaBSDuBi"
+                                              DisplayMemberPath="HoTen" SelectedValuePath="MaNV"
+                                              Style="{StaticResource LKComboBox}"/>
                                 </StackPanel>
                             </Border>
 

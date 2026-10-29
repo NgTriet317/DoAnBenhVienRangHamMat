@@ -1,51 +1,57 @@
-# Đồ án Bệnh viện Răng Hàm Mặt
+# Quản lý Bệnh viện Răng Hàm Mặt
 
-Đọc [giải thích code bằng tiếng Việt](GIAI_THICH_CODE_TIENG_VIET.md) để tra chức năng từng file, cách giao diện gọi xử lý/lưu dữ liệu và phạm vi hỗ trợ AI. Chú thích chi tiết nằm ngay trên các lớp, hàm, thuộc tính C# và các vùng XAML liên quan.
+WPF .NET8 + SQL Server2016SP1 trở lên. Solution có đúng bốn project: RangHamMat.Wpf (giao diện), ET, DAL và BUS. Views chỉ có các cặp XAML/code-behind; C# phụ trợ ở Presentation/Controls.
 
-Đọc [phần AI đã thực hiện trong giao diện](PHAN_AI_THUC_HIEN_GIAO_DIEN.md) để biết AI đã tạo, chỉnh sửa hoặc bổ sung chú thích gì trong từng file XAML/C# của giao diện.
+## Database: một file SQL duy nhất
 
-Đọc [kiểm tra nhập liệu](KIEM_TRA_NHAP_LIEU.md) để xem các trường hợp đã chặn, thông báo lỗi, kết quả kiểm thử và phạm vi các form mẫu chưa nối lưu SQL.
-
-Đọc [hướng dẫn trình bày dbconnect và DAL](HUONG_DAN_TRINH_BAY_CODE_DAL.md) để hiểu luồng lưu theo từng bước, phần code đã đơn giản hóa và các câu hỏi thường gặp khi bảo vệ đồ án.
-
-Đọc [tình trạng toàn bộ chức năng](TINH_TRANG_CHUC_NANG.md) để tra 25 phân hệ, phần đã nối SQL, phần còn là giao diện mẫu và đối chiếu ET–DAL–BUS với database. Bộ vai trò dùng tên `ET_VAITRO`, `DAL_VAITRO`, `BUS_VAITRO` và ánh xạ bảng `VAI_TRO`.
-
-Bản chú thích mở rộng đã bao gồm toàn bộ BUS/DAL. Biểu đồ, lịch tuần, chi tiết chung và bản in hóa đơn có file XAML hiện hữu; code-behind chỉ xử lý dữ liệu/sự kiện và phân trang bản in. Xem [kết quả rà toàn bộ code và XAML](KET_QUA_TOAN_BO_CODE_XAML.md).
-
-Bản cập nhật 11/10/2026 thực hiện luồng hồ sơ theo kế hoạch ban đầu, được ghi lại trong [kết quả thực hiện kế hoạch](THUC_HIEN_KE_HOACH.md). Hồ sơ bệnh nhân, lịch khám/tiếp nhận, khám điều trị, đơn thuốc, dịch vụ thực hiện, hóa đơn và thanh toán đọc/lưu SQL Server qua ET → DAL → BUS → WPF. Đã bỏ chức năng nạp dữ liệu minh họa. Các thao tác lưu tiếp tục tồn tại khi đóng và mở lại ứng dụng.
-
-Schema các bảng đang chạy là **v8**: `Database/DB_Nhom4_v8.docx` và `Database/QLBenhVienRangHamMat.sql`. Database đang chạy có 44 bảng; file SQL hiện khai báo thêm `CA_THEO_NGAY` thành 45 bảng, nhưng bảng bổ sung này chưa tồn tại trong database đang chạy. Các tài liệu/JSON mang tên v7 và một số giao diện mẫu còn mô tả cấu trúc trước; xem báo cáo tình trạng để biết các trường chưa khớp v8.
-
-Bản sửa 13/10/2026 có đủ 39 bộ ET–DAL–BUS cùng hậu tố, khớp 303 cột SQL. Xử lý liên kết nằm trong các DAL/BUS của từng thực thể; giao dịch nhiều dòng dùng chung IDbTransaction. Giao diện tiếp nhận và chi tiết đổi thành TiepNhanKham và ChiTietHoSo. Khóa chính/khóa ngoại là chuỗi theo SQL hiện tại. Mã tự cấp theo chữ đầu tên bảng và số tối thiểu hai chữ số: BN01, HSBA01, LSKB01; tiếp tục số lớn nhất đang có và giữ mã cũ. Xem [báo cáo sửa DAL/BUS/ET](CAP_NHAT_DAL_BUS_ET.md) để tra cấu trúc và kết quả kiểm tra mới nhất.
-
-## Chạy ứng dụng
-
-1. Mở `BenhVienRangHamMat.sln` bằng Visual Studio 2022 có .NET desktop development và .NET 8 SDK.
-2. Chọn `RangHamMat.Wpf` làm Startup Project rồi F5.
-3. Kết nối mặc định: SQL Server `DESKTOP-C9VCE8A`, database `QLBenhVienRangHamMat`, Windows Authentication. Máy hiện tại đã có database này.
-4. Nếu dùng máy/server khác, đặt biến môi trường `RHM_CONNECTION_STRING` trước khi mở Visual Studio hoặc chạy ứng dụng:
+Dùng SSMS hoặc sqlcmd chạy **toàn bộ** [Database/QLBenhVienRangHamMat.sql](Database/QLBenhVienRangHamMat.sql). Không còn thư mục hay bước chạy Migrations.
 
 ```powershell
-$env:RHM_CONNECTION_STRING = 'Data Source=TEN_SERVER;Initial Catalog=QLBenhVienRangHamMat;Integrated Security=True;TrustServerCertificate=True;'
-dotnet run --project RangHamMat.Wpf -c Release
+sqlcmd -S . -E -C -b -f65001 -i Database/QLBenhVienRangHamMat.sql
 ```
 
-Không chạy lại script khởi tạo trên database đang có dữ liệu. Database cần schema v8 và danh mục nhân viên, phòng, dịch vụ, thuốc, kho/lô thực tế. Nút **Tải lại dữ liệu** đọc lại SQL. Đăng nhập/chọn vai trò giữ cách hoạt động của source gốc; chọn vai trò Quản trị để thử toàn bộ luồng liên phân hệ. Trong Hóa đơn cần chọn rõ nhân viên thực hiện.
+File tạo database trống hoặc đồng bộ database ClinicalWorkflow v2/v3 được hỗ trợ, tổng53 bảng. Sao lưu trước khi đồng bộ. Script kiểm tra schema, giữ mật khẩu/giá/hồ sơ và chứng từ cũ; chỉ dọn bộ DEMO28 còn nguyên bản, không bị nghiệp vụ người dùng tham chiếu. Nhật ký tra cứu chỉ đọc được giữ nguyên. Dữ liệu demo đã được sửa/ký hoặc có chứng từ khiến thao tác dừng để đối chiếu, không ép xóa bằng cách tắt trigger.
 
-## Luồng sử dụng
+Cài mới chỉ có **admin001 / 123456** và danh mục cơ sở; không tạo bệnh nhân, bác sĩ, lịch trực, bệnh án, tồn kho hoặc chứng từ giả. Đổi mật khẩu sau đăng nhập. Nhập nhân sự/phòng/lịch làm việc, hàng hóa/thuốc và chứng từ nhập kho thực tế trước khi sử dụng các nghiệp vụ liên quan. Không tự tạo danh tính người thật khi chưa có nguồn được phép sử dụng.
 
-**Bệnh nhân → Bệnh án → Tiếp nhận → Lần khám → Kế hoạch/dịch vụ/đơn thuốc → Cấp thuốc → Hóa đơn → Thanh toán → In.**
+Danh mục khởi tạo có47 tình trạng,42 dịch vụ,112 liên kết; gồm chấn thương, khớp thái dương hàm, niêm mạc, tuyến nước bọt, nhiễm trùng, nang/u, khe hở, thần kinh, hậu phẫu và bệnh răng. Nguồn/giá/ngày đối chiếu tại [DANH_MUC_RHM.md](docs/clinical-workflow/DANH_MUC_RHM.md). Giá công khai của cơ sở nguồn là mức tham khảo ban đầu; bệnh viện quản lý giá áp dụng trong DICH_VU.
 
-Các liên kết giữ đúng bệnh nhân và lần khám nguồn. Form bệnh nhân có BHYT, số điện thoại dạng chuỗi, ngày sinh có thể để trống. Xác nhận lần khám lưu đồng thời ngày xác nhận. Bản xác nhận được khóa; thao tác nhiều dòng lưu trong một giao dịch, lỗi thì rollback. Form đã cũ bị chặn ghi đè dữ liệu mới.
+Danh mục thuốc có52 sản phẩm có nguồn và20 nhóm độc lập mẫu đơn:40 giá tham khảo công khai,12 thuốc chưa thiết lập giá. Database đang dùng có62 thuốc sau khi bổ sung và đã phân nhóm cả10 thuốc cũ. Thuốc giá0 hiển thị **Chưa thiết lập giá**, không coi là miễn phí; cần cập nhật giá trước lập hóa đơn. Không tự tạo liều dùng, mẫu đơn hay tồn kho. Xem [DANH_MUC_THUOC_RHM.md](docs/clinical-workflow/DANH_MUC_THUOC_RHM.md).
 
-Hóa đơn chỉ lấy dịch vụ đã xác nhận và thuốc đã xuất ghi sổ của đúng lần khám. Cấp thuốc chọn một kho đủ toàn bộ đơn, theo FIFO lô còn hạn. Một nguồn thu chỉ vào một hóa đơn; không tính lại khoản đã lập. Thu tiền không vượt số còn phải thu; hoàn không vượt tiền đã thu ròng và phải có lý do. Hóa đơn dài được phân trang; **In / Xuất PDF…** chọn máy in hoặc Microsoft Print to PDF.
+## Cấu hình và chạy
 
-Đọc [hướng dẫn thao tác](HUONG_DAN_GIAO_DIEN_BENH_VIEN.md) và [kết quả thực hiện kế hoạch](THUC_HIEN_KE_HOACH.md).
+Mở BenhVienRangHamMat.sln bằng Visual Studio2022 có .NET desktop development/.NET8 SDK, chọn RangHamMat.Wpf làm startup rồi F5. Hoặc mở PhatHanh/RangHamMat.Wpf.exe với .NET8 Desktop Runtime trên Windows.
 
-## Kiểm tra
+Ứng dụng kết nối **SQL Server**, không kết nối trực tiếp vào file .sql. File SQL là nguồn khởi tạo/đồng bộ duy nhất. Sửa RangHamMat.Wpf/appsettings.json (hoặc bản cạnh exe):
 
-- `KiemTra.bat`: build Release, kiểm tra XAML/luồng và đối chiếu ET với SQL.
-- `KiemTraDatabase.bat`: kiểm tra persistence, nghiệp vụ tài chính và WPF trên SQL thật; mọi bản ghi thử được rollback.
-- `KiemTraWpf.bat`: riêng kiểm tra WPF; cần Windows và database đang chạy.
+```json
+{"ConnectionStrings":{"RangHamMat":"Data Source=.;Initial Catalog=QLBenhVienRangHamMat;Integrated Security=True;TrustServerCertificate=True;"}}
+```
 
-Build và các kiểm tra đã chạy trên máy hiện tại. Xem lệnh, số kiểm tra, ảnh giao diện và giới hạn kiểm chứng trong `THUC_HIEN_KE_HOACH.md`; [báo cáo tình trạng mới nhất](TINH_TRANG_CHUC_NANG.md) ghi rõ các phân hệ chưa nối SQL. Bộ WPF hiện kiểm tra thêm việc mở đủ 25 màn hình từ các nút trang chủ.
+Biến môi trường RHM_CONNECTION_STRING được ưu tiên hơn file. Instance có tên cần viết hai dấu gạch chéo trong JSON, ví dụ TEN_MAY\\SQLEXPRESS. Giữ toàn bộ thư mục PhatHanh khi chuyển máy, không chỉ chép exe.
+
+## Luồng khám và thu tiền
+
+1. Tiếp nhận chọn bác sĩ/phòng/dịch vụ; bác sĩ mở Hàng chờ khám theo giờ tiếp nhận, ai đến trước hiện trước. Admin xem được tất cả, User theo chức vụ và phạm vi SQL.
+2. Bác sĩ ghi chẩn đoán/tình trạng, chọn nhanh theo nhóm bệnh và chọn dịch vụ liên quan. Kế hoạch có sẵn mã/giá từ SQL; chỉnh lượng/buổi rồi lưu và duyệt. Không có Mức độ hoặc Vị trí răng trong tình trạng bệnh.
+3. Sau khi đã làm xong toàn bộ kế hoạch, mở **4. Thực hiện**, đối chiếu dịch vụ và xác nhận. Hệ thống ghi dịch vụ thực tế theo giá đã duyệt, gồm phí khám một lần; chưa tạo hóa đơn. Kế hoạch nháp/chưa xong chặn bước kê thuốc và hoàn tất. Lượt chỉ khám, không có kế hoạch thủ thuật, vẫn xác nhận dịch vụ khám tại bước này.
+4. Mở **5. Kê thuốc**, bấm **Kê thuốc** để mở cửa sổ. Lọc nhóm/tên/hàm lượng ở bên trái, thêm thuốc rồi chọn từng dòng bên phải để nhập số lượng, số ngày, liều, đường dùng và hướng dẫn. Bấm **Xác nhận đơn thuốc** để lưu nháp và đưa danh sách về lần khám; còn sửa được bằng **Sửa danh sách thuốc**. Không dùng mẫu/phiên bản hay tự áp liều. Nếu không kê, chọn Không kê thuốc, nhập lý do và Lưu khám. Đóng cửa sổ khi chưa lưu có lựa chọn lưu/bỏ/ở lại; giữ một nút Hủy nháp.
+5. **6. Tổng kết** đọc dịch vụ thực tế và thuốc chờ chốt/đang hiệu lực từ SQL, không cộng lại đơn nguồn đang được thay. Kiểm tra xong chọn **Chốt và lập hóa đơn**. Hệ thống kiểm bản đã xem, ký đơn nháp, khóa lượt và tạo một hóa đơn chờ thu trong cùng giao dịch; lỗi giữ lại đơn nháp để sửa. Không tự ghi thêm phần điều trị chưa xác nhận.
+6. Quầy thu dùng lại chính hóa đơn đó; giữ giá đã chốt, thu tiền/xuất thuốc phối hợp theo giao dịch. Không thêm dịch vụ sau hoàn tất; retry không sinh hóa đơn hoặc khoản thu thứ hai. Mục **Đơn thuốc** chỉ tra cứu/in đơn đã kê và bàn giao sau khi thu đủ, theo quyền.
+7. Dịch vụ thực hiện chỉ là **Lịch sử dịch vụ đã thực hiện** của lượt hoàn tất. Không có thêm/sửa/xác nhận hoặc dịch vụ phát sinh. Điều dưỡng chỉ xem phần được giao; thu ngân không xem kết quả lâm sàng.
+
+Admin toàn quyền chức năng nhưng vẫn tuân thủ trạng thái chứng từ, kiểm tra dữ liệu, tiền và tồn kho. Xem [cửa sổ kê thuốc và chốt hóa đơn](docs/clinical-workflow/CUA_SO_KE_THUOC.md). Các mốc HospitalWorkflow3/PrescriptionFlow1 mô tả nền tảng trước; hướng dẫn hiện tại áp dụng cửa sổ xác nhận nháp rồi chốt ký/hóa đơn.
+
+## Kiểm tra và đóng gói
+
+```powershell
+.\KiemTra.bat -KiemTraSql -MayChu . -Database QLBenhVienRangHamMat
+# Dựng/chạy bộ kiểm trên database thử riêng; mọi dữ liệu nghiệp vụ fixture rollback:
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraQuyTrinhBenhVien.ps1 -TaoDatabaseKiemThu
+# Chỉ kiểm đăng nhập Admin/mở26 phân hệ, không ghi hồ sơ khám:
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraQuyTrinhBenhVien.ps1 -ChiGiaoDien -Database QLBenhVienRangHamMat
+
+dotnet publish RangHamMat.Wpf -c Release -o PhatHanh
+```
+
+Kiểm SQL gọi thủ tục chỉ đọc được cài từ file SQL chính. Project kiểm tạm sinh trong obj, không thêm project sản phẩm. Bộ kiểm ghi chỉ nhận database tiền tố RHM_Hospital_Test_. Hướng dẫn và bằng chứng các mốc cũ có nhắc Migrations/dữ liệu demo là lịch sử đã ngừng sử dụng; dùng README và file SQL hiện tại để cài/chạy.

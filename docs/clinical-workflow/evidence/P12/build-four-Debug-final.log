@@ -1,0 +1,21 @@
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\RangHamMat.Wpf\RangHamMat.Wpf.csproj : warning NU1900: Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\ET\ET.csproj : warning NU1900: Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\BUS\BUS.csproj : warning NU1900: Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\DAL\DAL.csproj : warning NU1900: Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.
+  ET -> D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\ET\bin\Debug\net8.0\ET.dll
+  DAL -> D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\DAL\bin\Debug\net8.0\DAL.dll
+  BUS -> D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\BUS\bin\Debug\net8.0\BUS.dll
+  RangHamMat.Wpf -> D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\RangHamMat.Wpf\bin\Debug\net8.0-windows\RangHamMat.Wpf.dll
+
+Build succeeded.
+
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\RangHamMat.Wpf\RangHamMat.Wpf.csproj : warning NU1900: Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\ET\ET.csproj : warning NU1900: Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\BUS\BUS.csproj : warning NU1900: Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\DAL\DAL.csproj : warning NU1900: Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.
+    4 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.58
+
+Workload updates are available. Run `dotnet workload list` for more information.

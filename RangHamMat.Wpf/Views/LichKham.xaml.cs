@@ -18,7 +18,12 @@ namespace RangHamMat.Views
         public void SetPatient(string? maBenhNhan)
         {
             PatientId = maBenhNhan;
-            ApDungBoLoc();
+            if (DuLieuGiaoDien.PhamViLamSang && maBenhNhan is not null)
+            {
+                DuLieuGiaoDien.BaoDamNguCanh(new() { MaBN = maBenhNhan });
+                TaiDuLieu();
+            }
+            else ApDungBoLoc();
             HienFormThem();
         }
 
@@ -35,6 +40,7 @@ namespace RangHamMat.Views
         public LichKham()
         {
             InitializeComponent();
+            AddAppointmentButton.IsEnabled = !DuLieuGiaoDien.PhamViLamSang;
             NapBoLoc();
             TaiDuLieu();
             HienFormThem();
@@ -48,7 +54,20 @@ namespace RangHamMat.Views
                 string maDangChon = "";
                 if (lstLichKham.SelectedItem is ET_LICHKHAM_HIENTHI lichDangChon)
                     maDangChon = lichDangChon.MaLich;
-                danhSach = lichkham.layLichKhamHienThi().ToList();
+                if (DuLieuGiaoDien.PhamViLamSang)
+                {
+                    danhSach = DuLieuGiaoDien.Rows("LICH_KHAM").Select(row =>
+                    {
+                        var item = UiRecord.ChuyenDoi<ET_LICHKHAM_HIENTHI>(DuLieuGiaoDien.Values(row));
+                        item.TenBenhNhan = DuLieuGiaoDien.Lookup("MaBN", item.MaBN);
+                        item.TenBacSi = DuLieuGiaoDien.Lookup("MaBS", item.MaBS);
+                        item.TenPhong = DuLieuGiaoDien.Lookup("MaPhong", item.MaPhong);
+                        item.TenDichVu = DuLieuGiaoDien.Lookup("MaDV", item.MaDV);
+                        item.TenCa = DuLieuGiaoDien.Lookup("MaCa", item.MaCa);
+                        return item;
+                    }).ToList();
+                }
+                else danhSach = lichkham.layLichKhamHienThi().ToList();
                 ApDungBoLoc();
                 if (!string.IsNullOrWhiteSpace(maDangChon)) ChonLichTrongDanhSach(maDangChon);
             }
@@ -165,6 +184,11 @@ namespace RangHamMat.Views
         private void HienFormThem()
         {
             if (pnlBieuMau == null) return;
+            if (DuLieuGiaoDien.PhamViLamSang)
+            {
+                pnlBieuMau.Content = null;
+                return;
+            }
             ThemLichKham form = new ThemLichKham(PatientId);
             form.HienTrongPanel(false);
             form.LuuThanhCong += Form_LuuThanhCong;
@@ -174,6 +198,12 @@ namespace RangHamMat.Views
 
         private void HienChiTiet(ET_LICHKHAM_HIENTHI lichChon)
         {
+            if (DuLieuGiaoDien.PhamViLamSang)
+            {
+                var record = DuLieuGiaoDien.Find("LICH_KHAM", lichChon.MaLich);
+                if (record is not null) HoTroGiaoDien.Workspace(this)?.ShowHoSoDetails("LICH_KHAM", record);
+                return;
+            }
             try
             {
                 // Luôn lấy dữ liệu mới nhất trước khi hiển thị / sửa.
@@ -240,6 +270,7 @@ namespace RangHamMat.Views
         private void btnThemLichKham_Click(object sender, RoutedEventArgs e)
         {
             e.Handled = true;
+            if (DuLieuGiaoDien.PhamViLamSang) return;
             lstLichKham.SelectedItem = null;
             HienFormThem();
         }

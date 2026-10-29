@@ -1,5 +1,6 @@
 using BUS;
 using ET;
+using RangHamMat.Controls.ClinicalWorkflow;
 using System;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -216,105 +217,97 @@ public partial class ChiTietNhanSu : Window
 
     private void btnChinhSua_Click(object sender, RoutedEventArgs e)
     {
-        if (!KiemTraDuLieuDauVao(out string thongBaoLoi))
+        ThucHienThaoTac(() =>
         {
-            MessageBox.Show(thongBaoLoi, "Kiểm tra dữ liệu", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
+            if (!KiemTraDuLieuDauVao(out string thongBaoLoi))
+            {
+                MessageBox.Show(thongBaoLoi, "Kiểm tra dữ liệu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
-        nhanVien.HoTen = txtHoTen.Text.Trim();
-        nhanVien.GioiTinh = cboGioiTinh.Text;
-        nhanVien.NgaySinh = dpNgaySinh.SelectedDate!.Value;
-        nhanVien.SDT = txtSDT.Text.Trim();
-        nhanVien.DiaChi = txtDiaChi.Text.Trim();
-        nhanVien.MaChucVu = cboChucVu.SelectedValue?.ToString() ?? "";
-        nhanVien.MaCK = cboChuyenKhoa.SelectedValue?.ToString() ?? "";
-        nhanVien.BangCap = txtBangCap.Text.Trim();
-        nhanVien.NgayVaoLam = dpNgayVaoLam.SelectedDate!.Value;
-        //nhanVien.TrangThai = cboTrangThai.Text;
+            nhanVien.HoTen = txtHoTen.Text.Trim();
+            nhanVien.GioiTinh = cboGioiTinh.Text;
+            nhanVien.NgaySinh = dpNgaySinh.SelectedDate!.Value;
+            nhanVien.SDT = txtSDT.Text.Trim();
+            nhanVien.DiaChi = txtDiaChi.Text.Trim();
+            nhanVien.MaChucVu = cboChucVu.SelectedValue?.ToString() ?? "";
+            nhanVien.MaCK = cboChuyenKhoa.SelectedValue?.ToString() ?? "";
+            nhanVien.BangCap = txtBangCap.Text.Trim();
+            nhanVien.NgayVaoLam = dpNgayVaoLam.SelectedDate!.Value;
+            //nhanVien.TrangThai = cboTrangThai.Text;
 
-        if (busNhanVien.capNhatNhanVien(nhanVien))
-        {
-            DaThayDoi = true;
-            CapNhatHeader();
-            MessageBox.Show("Cập nhật thông tin nhân viên thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-        else
-        {
-            MessageBox.Show("Cập nhật thông tin nhân viên thất bại. Vui lòng kiểm tra lại!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
+            if (busNhanVien.capNhatNhanVien(nhanVien))
+            {
+                DaThayDoi = true;
+                CapNhatHeader();
+                MessageBox.Show("Cập nhật thông tin nhân viên thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show("Cập nhật thông tin nhân viên thất bại. Vui lòng kiểm tra lại!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+        });
     }
 
     private void btnKhoiPhuc_Click(object sender, RoutedEventArgs e)
     {
-        if (!string.Equals(nhanVien.TrangThai, "Đã nghỉ", StringComparison.OrdinalIgnoreCase))
+        ThucHienThaoTac(() =>
         {
-            MessageBox.Show("Chỉ có thể khôi phục nhân viên đang ở trạng thái 'Đã nghỉ'.",
-                "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
-        }
+            if (!string.Equals(nhanVien.TrangThai, "Đã nghỉ", StringComparison.OrdinalIgnoreCase))
+            {
+                MessageBox.Show("Chỉ có thể khôi phục nhân viên đang ở trạng thái 'Đã nghỉ'.",
+                    "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
 
-        var confirm = MessageBox.Show(
-            $"Bạn có muốn khôi phục nhân sự '{nhanVien.HoTen}' về trạng thái 'Đang làm việc'?",
-            "Xác nhận khôi phục", MessageBoxButton.YesNo, MessageBoxImage.Question);
-        if (confirm != MessageBoxResult.Yes) return;
+            var confirm = MessageBox.Show(
+                $"Bạn có muốn khôi phục nhân sự '{nhanVien.HoTen}' về trạng thái 'Đang làm việc'?",
+                "Xác nhận khôi phục", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (confirm != MessageBoxResult.Yes) return;
 
-        if (busNhanVien.khoiPhucNhanVien(nhanVien.MaNV))
-        {
-            nhanVien.TrangThai = "Đang làm việc";
-            DaThayDoi = true;
-            CapNhatHeader();
-            MessageBox.Show("Khôi phục nhân sự thành công!", "Thông báo",
-                MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-        else
-        {
-            MessageBox.Show("Không thể khôi phục nhân sự. Vui lòng kiểm tra kết nối hoặc trạng thái hiện tại trong cơ sở dữ liệu.",
-                "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
+            if (busNhanVien.khoiPhucNhanVien(nhanVien.MaNV))
+            {
+                nhanVien.TrangThai = "Đang làm việc";
+                DaThayDoi = true;
+                CapNhatHeader();
+                MessageBox.Show("Khôi phục nhân sự thành công!", "Thông báo",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show("Không thể khôi phục nhân sự. Vui lòng kiểm tra kết nối hoặc trạng thái hiện tại trong cơ sở dữ liệu.",
+                    "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
+        });
     }
 
     private void btnNghiViec_Click(object sender, RoutedEventArgs e)
     {
-        var confirm = MessageBox.Show(
-            $"Bạn có chắc chắn muốn chuyển trạng thái nhân sự '{nhanVien.HoTen}' sang 'Đã nghỉ'?",
-            "Xác nhận nghỉ việc",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
-
-        if (confirm != MessageBoxResult.Yes)
-            return;
-        else
+        ThucHienThaoTac(() =>
         {
-            busNhanVien.nghiViecNhanVien(nhanVien.MaNV);
-            MessageBox.Show("Thao tác thành công");
-            DaThayDoi = true; CapNhatHeader();
-            
-        }
-
-
-
-        //if (busNhanVien.nghiViecNhanVien(nhanVien.MaNV))
-        //{
-        //    nhanVien.TrangThai = "Đã nghỉ";
-        //    foreach (ComboBoxItem item in cboTrangThai.Items)
-        //    {
-        //        if (string.Equals(item.Content?.ToString(), "Đã nghỉ", StringComparison.OrdinalIgnoreCase))
-        //        {
-        //            cboTrangThai.SelectedItem = item;
-        //            break;
-        //        }
-        //    }
-        //    DaThayDoi = true;
-        //    CapNhatHeader();
-        //    MessageBox.Show("Đã chuyển trạng thái nhân sự sang 'Đã nghỉ' thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
-        //}
-        //else
-        //{
-        //    MessageBox.Show("Thao tác nghỉ việc thất bại. Vui lòng thử lại!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
-        //}
+            var confirm=MessageBox.Show($"Chuyển nhân sự '{nhanVien.HoTen}' sang 'Đã nghỉ'?","Xác nhận nghỉ việc",MessageBoxButton.YesNo,MessageBoxImage.Question);
+            if(confirm!=MessageBoxResult.Yes)return;
+            if(!busNhanVien.nghiViecNhanVien(nhanVien.MaNV))
+            {
+                MessageBox.Show("Chưa cập nhật được trạng thái. Hãy tải lại để đối chiếu.","Thông báo",MessageBoxButton.OK,MessageBoxImage.Warning);
+                return;
+            }
+            nhanVien.TrangThai="Đã nghỉ";
+            DaThayDoi=true;CapNhatHeader();
+            MessageBox.Show("Đã chuyển trạng thái nghỉ việc.","Thông báo",MessageBoxButton.OK,MessageBoxImage.Information);
+        });
     }
 
+    private void ThucHienThaoTac(Action action)
+    {
+        try { action(); }
+        catch (Exception ex) when (ex is InvalidOperationException or System.Data.Common.DbException)
+        {
+            MessageBox.Show(ClinicalFormInput.Message(ex), "Chưa lưu thay đổi", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
     private void btnDong_Click(object sender, RoutedEventArgs e)
     {
         Close();

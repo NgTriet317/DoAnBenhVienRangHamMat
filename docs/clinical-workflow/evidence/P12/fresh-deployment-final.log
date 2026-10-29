@@ -1,0 +1,5 @@
+PASS: P12 cấu hình kết nối rời khỏi tên máy cố định
+PASS: P12 SQL chính cài đúng52 bảng và version2
+PASS: P12 nhân viên dùng chung transaction, đọc được thay đổi rồi rollback
+PASS: P12 tài khoản admin seed đọc được workspace lâm sàng
+DeploymentChecks: 4 PASS, 0 FAIL.

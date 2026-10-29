@@ -1,0 +1,10 @@
+Changed database context to 'master'.
+Processed 1960 pages for database 'RHM_ClinicalWorkflow_Test_P10Handover_P12Upgrade_20261027', file 'RHM_ClinicalWorkflow_Test_P10Handover_P12Upgrade_20261027' on file 1.
+Processed 2 pages for database 'RHM_ClinicalWorkflow_Test_P10Handover_P12Upgrade_20261027', file 'RHM_ClinicalWorkflow_Test_P10Handover_P12Upgrade_20261027_log' on file 1.
+BACKUP DATABASE successfully processed 1962 pages in 0.049 seconds (312.739 MB/sec).
+The backup set on file 1 is valid.
+Processed 1960 pages for database 'RHM_ClinicalWorkflow_Test_P12Restore_20261027', file 'RHM_ClinicalWorkflow_Test_P10Handover_P12Upgrade_20261027' on file 1.
+Processed 2 pages for database 'RHM_ClinicalWorkflow_Test_P12Restore_20261027', file 'RHM_ClinicalWorkflow_Test_P10Handover_P12Upgrade_20261027_log' on file 1.
+RESTORE DATABASE successfully processed 1962 pages in 0.032 seconds (478.881 MB/sec).
+Msg 52991, Level 16, State 1, Server DESKTOP-C9VCE8A, Line 33
+Restored data differs.

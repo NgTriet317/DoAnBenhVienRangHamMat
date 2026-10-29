@@ -181,13 +181,7 @@
                    <TextBox Tag="DB:TINH_TRANG_BENH.MoTaTinhTrang" AutomationProperties.Name="Mô tả tình trạng" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
                   </ContentControl>
                 </StackPanel>
-                <StackPanel Margin="0,0,14,10" MinWidth="210">
-                  <TextBlock Text="Mức độ" Style="{StaticResource FieldLabel}"/>
-                  <!-- Trường Mức độ tình trạng bệnh (TINH_TRANG_BENH.MucDo): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                  <ContentControl Style="{StaticResource TruongNhapLieu}">
-                   <TextBox Tag="DB:TINH_TRANG_BENH.MucDo" AutomationProperties.Name="Mức độ"/>
-                  </ContentControl>
-                </StackPanel>
+
                 <StackPanel Margin="0,0,14,10" MinWidth="210">
                   <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Ghi chú bổ sung (TINH_TRANG_BENH.GhiChu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->

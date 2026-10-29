@@ -1,0 +1,5 @@
+PASS: Hai quầy/hai kết nối cùng ngày/phòng cấp hai số liên tiếp khác nhau
+PASS: Hai quầy nhận cùng lịch trả cùng một MaPhieu
+PASS: Chỉ lập ba hồ sơ/ba phiếu cho ba BN trùng tên, chọn theo mã
+PASS: Transaction ReadCommitted giữ khóa lịch đến hết tiếp nhận
+PASS: Fixture commit cho kiểm tra đồng thời đã dọn sạch

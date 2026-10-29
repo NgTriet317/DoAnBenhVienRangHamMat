@@ -19,7 +19,7 @@ namespace RangHamMat.Controls;
 /// <summary>
 /// Cơ chế đọc/lưu biểu mẫu theo Tag DB và Time, quản lý snapshot chống ghi đè và ngữ cảnh bệnh nhân/liên kết cha.
 /// </summary>
-public static class BieuMauHoSo
+public static partial class BieuMauHoSo
 {
     public static readonly DependencyProperty SavedProperty = DependencyProperty.RegisterAttached("Saved", typeof(object), typeof(BieuMauHoSo));
     /// <summary>
@@ -88,6 +88,13 @@ public static class BieuMauHoSo
             if (element.Tag is not string tag || !(tag.StartsWith("DB:" + table + ".") || tag.StartsWith("Time:" + table + "."))) continue;
             var field = tag.Split('.')[1]; object? value = existing is null ? null : UiRecord.Get(existing, field);
             if (context is not null && context.ParentField == field) value = context.ParentValue;
+            if (DuLieuGiaoDien.PhamViLamSang && ((field == "MaBS" && table is "LICH_SU_KHAM_BENH" or "KE_HOACH_DIEU_TRI" or "DON_THUOC") || (field == "MaNVTiepNhan" && table == "PHIEU_KHAM_BENH")))
+            {
+                value = existing is null ? PhienDangNhap.MaNV : value;
+                element.IsEnabled = false;
+            }
+            if (DuLieuGiaoDien.PhamViLamSang && table == "DICH_VU_THUC_HIEN" &&
+                !DuLieuGiaoDien.NguoiDungLamSang.CoQuyen(QuyenLamViec.Kham) && field is not ("KetQua" or "ThoiGianThucHien")) element.IsEnabled = false;
             if (value is not null)
             {
                 if (element is TextBox text) text.Text = tag.StartsWith("Time:") && value is DateTime date ? date.ToString("HH:mm") : Convert.ToString(value, CultureInfo.CurrentCulture) ?? "";
@@ -105,6 +112,7 @@ public static class BieuMauHoSo
                 if (table == "CHI_TIET_KE_HOACH" && field == "MaDV" && DuLieuGiaoDien.Children("DICH_VU_THUC_HIEN", "MaCTKH", UiRecord.Get(existing, "MaCTKH")).Length > 0) element.IsEnabled = false;
             }
         }
+        TrackClinicalInput(form);
     }
     /// <summary>
     /// Duyệt cây logical của form, đọc các control có Tag DB:BANG.COT và ghép ngày với giờ HH:mm từ Tag Time; trả dictionary tên cột/giá trị để lưu.

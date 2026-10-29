@@ -9,8 +9,13 @@ namespace BUS
     /// Tầng nghiệp vụ đơn thuốc, cung cấp thao tác cho giao diện và chuyển truy cập dữ liệu đến DAL_DONTHUOC. Các lời gọi DAL
     /// được bọc XuLyLoi để đổi SqlException sang InvalidOperationException tiếng Việt; lỗi nghiệp vụ khác giữ nguyên.
     /// </summary>
-    public class BUS_DONTHUOC
+    public partial class BUS_DONTHUOC
     {
+        public DonThuocChiTiet LayChiTietCoQuyen(string maDT, NguCanhNghiepVu nguoiDung)
+            => XuLyLoi.ThucHien(() => clinical.LayDonThuoc(maDT, nguoiDung));
+
+        private readonly DAL_KHAMDIEUTRI clinical;
+
         /// <summary>
         /// Đối tượng DAL_DONTHUOC thực hiện truy vấn/ghi đơn thuốc trong giao dịch được truyền vào constructor.
         /// </summary>
@@ -23,6 +28,7 @@ namespace BUS
         public BUS_DONTHUOC(IDbTransaction? transaction = null)
         {
             dalDonThuoc = new DAL_DONTHUOC(transaction);
+            clinical = new DAL_KHAMDIEUTRI(transaction);
         }
 
         /// <summary>

@@ -1,0 +1,86 @@
+{
+    "VerifiedAtUtc":  "2026-10-29T08:44:38.7288927Z",
+    "BaseRevision":  "39c5c4340da4a6d69630f154c525846b23238d59",
+    "SourceTests":  {
+                        "Passed":  41,
+                        "Failed":  0
+                    },
+    "PublishedTests":  {
+                           "Passed":  41,
+                           "Failed":  0
+                       },
+    "AdminUi":  {
+                    "Modules":  26,
+                    "FreshPassed":  2,
+                    "CurrentPassed":  2
+                },
+    "Build":  {
+                  "Debug":  "passed",
+                  "ExistingNullableWarnings":  true,
+                  "Publish":  "passed",
+                  "Release":  "passed"
+              },
+    "Sql":  {
+                "MigrationsRequired":  false,
+                "Tables":  53,
+                "Repeat":  "passed",
+                "FreshInstall":  "passed",
+                "CanonicalFile":  "Database/QLBenhVienRangHamMat.sql",
+                "PrescriptionFlowVersion":  1,
+                "PublishedMatches":  true,
+                "SHA256":  "3FF956068430349618BDF7C9510AB28243DB5135E13358E1C64A0410823D997F"
+            },
+    "Fresh":  {
+                  "Staff":  1,
+                  "Invoices":  0,
+                  "StockLots":  0,
+                  "Medicines":  52,
+                  "Patients":  0,
+                  "DosingTemplates":  0,
+                  "Accounts":  1,
+                  "DrugGroups":  20
+              },
+    "Current":  {
+                    "Medicines":  62,
+                    "AddedMedicines":  52,
+                    "Patients":  11,
+                    "NewUnpriced":  12,
+                    "NewReferencePrices":  40,
+                    "UngroupedMedicines":  0,
+                    "DrugGroups":  20,
+                    "OriginalTablesPreserved":  53
+                },
+    "Backup":  {
+                   "Verify":  "RESTORE VERIFYONLY WITH CHECKSUM passed",
+                   "Mode":  "COPY_ONLY CHECKSUM",
+                   "PathFile":  "backup-path.txt"
+               },
+    "Review":  "Independent read-only review: no actionable correctness findings",
+    "Cleanup":  {
+                    "CurrentDatabaseRetained":  true,
+                    "OwnedFixtureDatabasesRemoved":  2
+                },
+    "Assemblies":  [
+                       {
+                           "File":  "PhatHanh/ET.dll",
+                           "SHA256":  "CE2FDC406729EA5F417C0382347587D9E1BD7CDA3CA264C1E7588E28A8226DA3",
+                           "MatchesRelease":  true
+                       },
+                       {
+                           "File":  "PhatHanh/DAL.dll",
+                           "SHA256":  "0BA0C12C850919A5043A8604C5C36D18C5785F86407FAC22502A41BF26E0CF7E",
+                           "MatchesRelease":  true
+                       },
+                       {
+                           "File":  "PhatHanh/BUS.dll",
+                           "SHA256":  "CEC89A96EFDFC2DE68D0B2EE314C432973503123E411C7DDBEC09A370DB81FBD",
+                           "MatchesRelease":  true
+                       },
+                       {
+                           "File":  "PhatHanh/RangHamMat.Wpf.dll",
+                           "SHA256":  "1875793CA8F23D95F423CA21375F72345A9EA8A75B0F39D99DCC2565B9988252",
+                           "MatchesRelease":  true
+                       }
+                   ],
+    "TestSourceSHA256":  "48213311CB05C68E719B96920981EA46EDD4B4061A2CA5894A98C16949ACA99E"
+}

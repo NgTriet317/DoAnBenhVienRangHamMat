@@ -11,6 +11,10 @@ namespace ET
     [Table("HOA_DON")]
     public class ET_HOADON
     {
+        private int phienBanQuyTrinh = 1;
+        private string? maYeuCau;
+        private string? dauVanTayYeuCau;
+
         private string maHD = string.Empty;
         private string maLS = string.Empty;
         private string maNV = string.Empty;
@@ -81,5 +85,26 @@ namespace ET
         /// Trạng thái nghiệp vụ của bản ghi; ánh xạ cột TrangThai của bảng trong TableAttribute.
         /// </summary>
         public string TrangThai { get => trangThai; set => trangThai = value; }
+
+        // Cột bổ sung P03; constructor cũ được giữ để tương thích mã gọi hiện có.
+        public int PhienBanQuyTrinh { get => phienBanQuyTrinh; set => phienBanQuyTrinh = value; }
+        public bool TaoKhiHoanTat { get; set; }
+        public string? MaYeuCau { get => maYeuCau; set => maYeuCau = value; }
+        public string? DauVanTayYeuCau { get => dauVanTayYeuCau; set => dauVanTayYeuCau = value; }
+        public ET_HOADON(string maHD, string maLS, string maNV, DateTime ngayLap, DateTime? ngayXacNhan, decimal tongTien, decimal giamGia, decimal soTienPhaiThu, string trangThai, int phienBanQuyTrinh, string? maYeuCau, string? dauVanTayYeuCau)
+        {
+            this.maHD = maHD;
+            this.maLS = maLS;
+            this.maNV = maNV;
+            this.ngayLap = ngayLap;
+            this.ngayXacNhan = ngayXacNhan;
+            this.tongTien = tongTien;
+            this.giamGia = giamGia;
+            this.soTienPhaiThu = soTienPhaiThu;
+            this.trangThai = trangThai;
+            this.phienBanQuyTrinh = phienBanQuyTrinh;
+            this.maYeuCau = maYeuCau;
+            this.dauVanTayYeuCau = dauVanTayYeuCau;
+        }
     }
 }

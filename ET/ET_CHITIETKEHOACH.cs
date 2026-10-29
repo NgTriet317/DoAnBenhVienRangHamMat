@@ -11,6 +11,8 @@ namespace ET
     [Table("CHI_TIET_KE_HOACH")]
     public class ET_CHITIETKEHOACH
     {
+        private string? noiDungBuoc;
+
         private string maCTKH = string.Empty;
         private string maKHDT = string.Empty;
         private string maDV = string.Empty;
@@ -80,5 +82,21 @@ namespace ET
         /// Ghi chú bổ sung; ánh xạ cột GhiChu của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
         /// </summary>
         public string? GhiChu { get => ghiChu; set => ghiChu = value; }
+
+        // Cột bổ sung P03; constructor cũ được giữ để tương thích mã gọi hiện có.
+        public string? NoiDungBuoc { get => noiDungBuoc; set => noiDungBuoc = value; }
+        public ET_CHITIETKEHOACH(string maCTKH, string maKHDT, string maDV, int lanThu, decimal soLuongDuKien, decimal donGiaDuKien, decimal thanhTienDuKien, string trangThai, string? ghiChu, string? noiDungBuoc)
+        {
+            this.maCTKH = maCTKH;
+            this.maKHDT = maKHDT;
+            this.maDV = maDV;
+            this.lanThu = lanThu;
+            this.soLuongDuKien = soLuongDuKien;
+            this.donGiaDuKien = donGiaDuKien;
+            this.thanhTienDuKien = thanhTienDuKien;
+            this.trangThai = trangThai;
+            this.ghiChu = ghiChu;
+            this.noiDungBuoc = noiDungBuoc;
+        }
     }
 }

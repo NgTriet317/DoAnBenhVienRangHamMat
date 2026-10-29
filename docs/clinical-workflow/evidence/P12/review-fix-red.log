@@ -1,0 +1,5 @@
+FAIL: P12 review employee invalid-name: HoTen tối đa 255 ký tự.
+FAIL: P12 review employee restore-sql: The wait operation timed out.
+FAIL: P12 review employee resign-sql: The wait operation timed out.
+FAIL: P12 guide: Tên database hướng dẫn chưa khớp installer.
+P12ReviewFixChecks: 0 PASS, 4 FAIL.

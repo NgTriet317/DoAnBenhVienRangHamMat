@@ -1,0 +1,262 @@
+[
+    {
+        "Table":  "BAN_GIAO_THUOC",
+        "Hash":  "5EE9173B1B564E61AFD2359A897C180B5EA83875A91A28537DF4202AAD4B3AA7",
+        "RowCount":  0
+    },
+    {
+        "Table":  "BANG_LUONG",
+        "Hash":  "6B614EF7FAF987F5395924103C1354D33CF1E934E89659FC4B51CDA32F1D2F82",
+        "RowCount":  10
+    },
+    {
+        "Table":  "BAO_TRI_THIET_BI",
+        "Hash":  "EDBD9772CCFCDBFDBAAD19AC61E7C719D43EB24F5082C40115076AAF38BE60B3",
+        "RowCount":  10
+    },
+    {
+        "Table":  "BENH_NHAN",
+        "Hash":  "5E3952CEFBBB7205E0C984F8769D3E470EC42BC9C97DE3D4A767D6C7A28E5E39",
+        "RowCount":  25
+    },
+    {
+        "Table":  "CA_LAM",
+        "Hash":  "C8F8AE78FD28F46B8D368ED00A038267F505A5484D6D5D44B8942442C4A2B55D",
+        "RowCount":  12
+    },
+    {
+        "Table":  "CA_THEO_NGAY",
+        "Hash":  "FC0E1D7D9C09AEA177CE43095AA95E355B28240B0A9F997F8BE87E90212AA024",
+        "RowCount":  37
+    },
+    {
+        "Table":  "CAU_HINH_THUOC_KE_DON",
+        "Hash":  "5EE9173B1B564E61AFD2359A897C180B5EA83875A91A28537DF4202AAD4B3AA7",
+        "RowCount":  0
+    },
+    {
+        "Table":  "CHI_TIET_DON_THUOC",
+        "Hash":  "72BFD24C50F84B41BA3DD2501C0A5E2C422720550654C4271A5D08A58F49AD2B",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHI_TIET_HOA_DON",
+        "Hash":  "606A5117E03B17C9508793DCF1901ECB0C67E999F479EE52B52258E6395BCCA8",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHI_TIET_KE_HOACH",
+        "Hash":  "07AC592CF93939A0B10BBBE2628D2F63C58D443D5071A303FEBCCF0F486F939E",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHI_TIET_MAU_KE_HOACH",
+        "Hash":  "5EE9173B1B564E61AFD2359A897C180B5EA83875A91A28537DF4202AAD4B3AA7",
+        "RowCount":  0
+    },
+    {
+        "Table":  "CHI_TIET_PHIEU_NHAP",
+        "Hash":  "66C081EA69CDF0ACBD1F9C77AD8BE9DD58A64B96865A12BC05598AAE3EEDC6C0",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHI_TIET_PHIEU_XUAT",
+        "Hash":  "9742084A61948C2F24ABFDDEA15083AFA682C5C417847D7861A6745B98164FFA",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHINH_SACH_LUONG",
+        "Hash":  "91574C7F8EE05D3737FAEAECE7E3FA7AE1AC0932F1B72BE981ACFC8E4F639098",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHUC_VU",
+        "Hash":  "DEF38A7F6560D179EFA55BD053C55282564C9D4C2D95885A547F12AB0005A05F",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHUNG_CHI_NHAN_VIEN",
+        "Hash":  "498369779E8FD0076BAB93E69206ED7CA602BFBAFB3C56B36BD1CFDE2886E73E",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHUYEN_KHOA",
+        "Hash":  "28689081A05DE41541660CD07C18EC7D0F1A1FE2AE1EF61D5263541F626FB3F4",
+        "RowCount":  10
+    },
+    {
+        "Table":  "DICH_VU",
+        "Hash":  "28542472A51D72DD15ADF48FCAED21ED8CF576A8F937D23812BCE6123A20B35D",
+        "RowCount":  14
+    },
+    {
+        "Table":  "DICH_VU_THUC_HIEN",
+        "Hash":  "20FD12024151FD33E1E7ECB3CED4EC09DBFAF44435018465CF88BDF0148A1545",
+        "RowCount":  10
+    },
+    {
+        "Table":  "DM_TINH_TRANG_BENH",
+        "Hash":  "5EE9173B1B564E61AFD2359A897C180B5EA83875A91A28537DF4202AAD4B3AA7",
+        "RowCount":  0
+    },
+    {
+        "Table":  "DON_THUOC",
+        "Hash":  "D731DF99B4ED24B99DDD1FD527FDFC95AAB1C46FBF19C95F226E8CF6C1E06767",
+        "RowCount":  10
+    },
+    {
+        "Table":  "DON_XIN_NGHI",
+        "Hash":  "380CAD6B7E5B4350D893CEDC5022285A17031DAA099088C6980FB31C70A120A8",
+        "RowCount":  10
+    },
+    {
+        "Table":  "HANG_HOA",
+        "Hash":  "6C712C6EDCF1AB3EE1F6E8EDD3281EFC225BB0DA882BB9AD7D935CA2EC33DCCF",
+        "RowCount":  30
+    },
+    {
+        "Table":  "HO_SO_BENH_AN",
+        "Hash":  "DF0501C0ECE159000D37EB17C8732FAD4AF5BCF239726B69FF577C84455897C1",
+        "RowCount":  25
+    },
+    {
+        "Table":  "HOA_DON",
+        "Hash":  "A9EAD8ADE7B0392B60AEF33947E18AD467C6B72F1E0A6DB85DEF47F32021B6AC",
+        "RowCount":  10
+    },
+    {
+        "Table":  "HOA_DON_NHAP",
+        "Hash":  "0B30431168A88871D51F88CE433A269498C614FE124D2DE47CAE092AC448CEC4",
+        "RowCount":  10
+    },
+    {
+        "Table":  "KE_HOACH_DIEU_TRI",
+        "Hash":  "D5046CD5829CDE32DA1A07A380DD77F4BDEAC737FAC753B9638E2539D5928DFC",
+        "RowCount":  10
+    },
+    {
+        "Table":  "KHO",
+        "Hash":  "153C7BC1F0E42A6A098EBFD029ACF23867149729A49C203436E8114C47CC8FA2",
+        "RowCount":  10
+    },
+    {
+        "Table":  "KHOA",
+        "Hash":  "D474A5530609D3FC27ACC439BE87C8199D6E5FE7B2480C10C0DC9811F7C39169",
+        "RowCount":  10
+    },
+    {
+        "Table":  "LICH_KHAM",
+        "Hash":  "5D1E6669D597809403B4FA28DA92F634E3E8413A594F83C20D35FF6773BF701D",
+        "RowCount":  10
+    },
+    {
+        "Table":  "LICH_LAM_VIEC",
+        "Hash":  "E3AC0CEE2A1C7A327B1E27A295A7650E28095B7514DCE5DD46123F58255BE691",
+        "RowCount":  234
+    },
+    {
+        "Table":  "LICH_SU_KHAM_BENH",
+        "Hash":  "BD4F14B9D583C950C9612FA913FD4900A1DB7D738D825A79272381FA2A1EFFB9",
+        "RowCount":  18
+    },
+    {
+        "Table":  "LO_HANG_HOA",
+        "Hash":  "71C9CBE2D933CC200BCF52DF7CF09F846626D694F03DF4AB1AF07F3EE18BBB25",
+        "RowCount":  10
+    },
+    {
+        "Table":  "LOAI_HANG_HOA",
+        "Hash":  "53064D8F7D5E7A13127D0F874D9A10844D154082D9F25E47EC8A3C1A1467A436",
+        "RowCount":  10
+    },
+    {
+        "Table":  "MAU_KE_HOACH_DIEU_TRI",
+        "Hash":  "5EE9173B1B564E61AFD2359A897C180B5EA83875A91A28537DF4202AAD4B3AA7",
+        "RowCount":  0
+    },
+    {
+        "Table":  "NHA_CUNG_CAP",
+        "Hash":  "46F02931BA1AE04D439B528F9A68EC1C71A57401D90224CC3397C236A754292B",
+        "RowCount":  10
+    },
+    {
+        "Table":  "NHAN_VIEN",
+        "Hash":  "4CBED22AAB006D5D547FEE164E03A66256BA925B333A930DB9339473FD13A5A9",
+        "RowCount":  22
+    },
+    {
+        "Table":  "NHAT_KY_THAO_TAC",
+        "Hash":  "CCD7374DD58C0FE815340199C591881DA290AE8FAA2E744AD12989498521B131",
+        "RowCount":  327
+    },
+    {
+        "Table":  "NHOM_THUOC_KE_DON",
+        "Hash":  "5EE9173B1B564E61AFD2359A897C180B5EA83875A91A28537DF4202AAD4B3AA7",
+        "RowCount":  0
+    },
+    {
+        "Table":  "PHAN_CONG_THAY_THE",
+        "Hash":  "1CE4FCAB11414A32D951906FD17514D05AD7C05E33DB136A0C686B1514EB84D1",
+        "RowCount":  10
+    },
+    {
+        "Table":  "PHIEU_KHAM_BENH",
+        "Hash":  "9910279F2FA82F6236F29FEE28A43357C09F3E1BF3554255140F173D3A6F7ABF",
+        "RowCount":  25
+    },
+    {
+        "Table":  "PHIEU_NHAP",
+        "Hash":  "082FFF80A5AAD27E3AEF0C7CE6B4B85285F84C63A6377DC1C1FF12DF83D5992D",
+        "RowCount":  10
+    },
+    {
+        "Table":  "PHIEU_XUAT",
+        "Hash":  "3E57677B731DBD6C69C996F5EC2E7CB1EFC8C1A3F22300A572EC93FCA5A278AC",
+        "RowCount":  10
+    },
+    {
+        "Table":  "PHONG",
+        "Hash":  "4855A0680B504A045C71CD5FDBF1822EF81C6DB437FF6FBED2A4B35163345CD8",
+        "RowCount":  17
+    },
+    {
+        "Table":  "TAI_KHOAN",
+        "Hash":  "7B00FC8F77E7938AA5D31533DC626095D59E86C7E06D321546D222FEEDE0305E",
+        "RowCount":  22
+    },
+    {
+        "Table":  "THANH_TOAN",
+        "Hash":  "4147C109EF778990DC462509CCB9E14D3A4CAC26A8A9ED3BC78E639B19B8C93A",
+        "RowCount":  10
+    },
+    {
+        "Table":  "THIET_BI",
+        "Hash":  "49D868B5ACF91BC346BC329C21BA745ECB09431A5AA17B1D0A4815D00A6514F6",
+        "RowCount":  10
+    },
+    {
+        "Table":  "THUOC",
+        "Hash":  "899DF124BC9305920989E94E3BCC617784961982380382238F5AB8C214EFB424",
+        "RowCount":  10
+    },
+    {
+        "Table":  "TINH_TRANG_BENH",
+        "Hash":  "C7A0571B22FEBC47F1B24CCD35B6B34C80617E8A12F5470377762B1D422C00F6",
+        "RowCount":  18
+    },
+    {
+        "Table":  "VAI_TRO",
+        "Hash":  "9EBE6ADDD729597DE7562EFD5C9E07553F5D283D5565652192B268C03BE40FD8",
+        "RowCount":  2
+    },
+    {
+        "Table":  "VAT_TU",
+        "Hash":  "7F6A1CFE53DEA6ED9245E93B41AA9112E2C1CE0FF603AE69A37778DB02FF3488",
+        "RowCount":  10
+    },
+    {
+        "Table":  "XAC_NHAN_DOI_LICH_KHAM",
+        "Hash":  "5EE9173B1B564E61AFD2359A897C180B5EA83875A91A28537DF4202AAD4B3AA7",
+        "RowCount":  0
+    }
+]

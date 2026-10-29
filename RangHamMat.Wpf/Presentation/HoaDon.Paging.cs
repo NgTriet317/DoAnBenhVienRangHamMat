@@ -1,0 +1,38 @@
+using System.Windows;
+using RangHamMat.Controls;
+using RangHamMat.Controls.ClinicalWorkflow;
+namespace RangHamMat.Views;
+public partial class HoaDon
+{
+    private int sourcePage=1;
+    private string sourceQuery="";
+    private IReadOnlyList<ET.DongLanKhamDanhSach> sourceVisits=Array.Empty<ET.DongLanKhamDanhSach>();
+    private void LoadClinicalSelectors()
+    {
+        FinanceSearchPanel.Visibility=Visibility.Visible;
+        FinanceSourceExpander.IsExpanded=string.IsNullOrEmpty(visitId);
+        var bus=new BUS.BUS_KHAMDIEUTRI();var actor=QuyenNghiepVu.LayNguCanh();
+        var filter=new ET.BoLocDanhSachHoSo{MaBN=PatientId,TuKhoa=sourceQuery,Trang=sourcePage,KichThuocTrang=25,ChiCuaToi=false};
+        var patients=bus.LayTrangBenhNhan(filter with{MaBN=null},actor);var visits=bus.LayTrangLanKham(filter,actor);
+        var pages=Math.Max(1,(int)Math.Ceiling(Math.Max(patients.TongSo,visits.TongSo)/25d));
+        if(sourcePage>pages){sourcePage=pages;filter=filter with{Trang=sourcePage};patients=bus.LayTrangBenhNhan(filter with{MaBN=null},actor);visits=bus.LayTrangLanKham(filter,actor);}
+        var patientRows=patients.CacDong.ToList();var visitRows=visits.CacDong.ToList();
+        if(!string.IsNullOrEmpty(PatientId)&&patientRows.All(r=>r.MaBN!=PatientId))patientRows.AddRange(bus.LayTrangBenhNhan(new(){MaBN=PatientId},actor).CacDong);
+        if(!string.IsNullOrEmpty(visitId)&&visitRows.All(r=>r.MaLS!=visitId))visitRows.AddRange(bus.LayTrangLanKham(new(){MaBN=PatientId,MaLS=visitId,ChiCuaToi=false},actor).CacDong);
+        PatientFilter.ItemsSource=new[]{new LuaChonDanhMuc("","Tất cả bệnh nhân")}.Concat(patientRows.Select(r=>new LuaChonDanhMuc(r.MaBN,$"{r.HoTenBN} ({r.MaBN})"))).ToArray();PatientFilter.SelectedValue=PatientId??"";
+        sourceVisits=visitRows;
+        VisitFilter.ItemsSource=new[]{new LuaChonDanhMuc("","Tất cả lần khám")}.Concat(visitRows.Select(r=>new LuaChonDanhMuc(r.MaLS,$"{r.HoTenBN} · {r.MaBN} · {r.MaLS} · {r.ThoiGianKham:dd/MM/yyyy}"))).ToArray();VisitFilter.SelectedValue=visitId??"";
+        FinancePageText.Text=$"Trang {sourcePage}/{pages} · {patients.TongSo} BN / {visits.TongSo} lượt";PreviousFinancePage.IsEnabled=sourcePage>1;NextFinancePage.IsEnabled=sourcePage<pages;
+    }
+    private void FinanceSearch_Click(object sender,RoutedEventArgs e)
+    {if(!CanChangePricingContext())return;sourceQuery=FinanceSearch.Text.Trim();sourcePage=1;PatientId=visitId=prescriptionId=invoiceId=null;Refresh();}
+    private void PreviousFinance_Click(object sender,RoutedEventArgs e){if(!CanChangePricingContext())return;sourcePage=Math.Max(1,sourcePage-1);Refresh();}
+    private void NextFinance_Click(object sender,RoutedEventArgs e){if(!CanChangePricingContext())return;sourcePage++;Refresh();}
+    private void EnsureSelectedClinicalContext()
+    {
+        if(!DuLieuGiaoDien.PhamViLamSang||string.IsNullOrEmpty(PatientId))return;
+        var prior=updating;updating=true;
+        try{DuLieuGiaoDien.BaoDamNguCanh(new(){MaBN=PatientId,MaLS=visitId});}
+        finally{updating=prior;}
+    }
+}

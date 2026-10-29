@@ -1,0 +1,78 @@
+<UserControl x:Class="RangHamMat.Views.KeDonThuocEditor"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:clinical="clr-namespace:RangHamMat.Controls.ClinicalWorkflow" clinical:ClinicalLayout.IsEnabled="True"
+ FontFamily="Segoe UI" FontSize="14" Language="vi-VN" Background="#F3F6FA">
+ <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/ClinicalWorkflowStyles.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
+ <Grid x:Name="MainSurface" Margin="12">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <StackPanel x:Name="RxHeader" Margin="0,0,0,10">
+   <TextBlock Text="Kê thuốc trong lần khám" Style="{StaticResource HospitalHeading}"/>
+   <ComboBox x:Name="VisitPicker" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Visit_Changed" Visibility="Collapsed"/>
+   <TextBlock x:Name="PatientHeader" FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="Wrap"/>
+   <TextBlock x:Name="VisitHeader" TextWrapping="Wrap" Foreground="#64748B" Margin="0,4"/>
+   <Expander Header="Dị ứng và tiền sử — đối chiếu trước khi kê thuốc"><TextBlock x:Name="SafetyHeader" TextWrapping="Wrap" Foreground="#9A3412" Margin="0,8"/></Expander>
+  </StackPanel>
+  <Grid Grid.Row="1">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="380"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+   <Border Grid.Column="0" Style="{StaticResource HospitalPanel}">
+    <Grid>
+     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <StackPanel>
+      <TextBlock Text="Danh mục thuốc theo nhóm" Style="{StaticResource HospitalSection}"/>
+      <TextBlock Text="Nhóm thuốc" Style="{StaticResource FieldLabel}" Margin="0,8,0,0"/>
+      <ComboBox x:Name="GroupChoice" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Group_Changed"/>
+      <TextBlock Text="Tên hoặc mã thuốc" Style="{StaticResource FieldLabel}"/>
+      <DockPanel><Button x:Name="SearchButton" Content="Tìm" Click="Search_Click" DockPanel.Dock="Right" Margin="8,0,0,0"/><TextBox x:Name="DrugSearch"/></DockPanel>
+      <Expander Header="Lọc thêm hàm lượng và đơn vị" Margin="0,8,0,0"><StackPanel>
+       <TextBlock Text="Hàm lượng"/><TextBox x:Name="StrengthFilter"/>
+       <TextBlock Text="Đơn vị cấp phát"/><TextBox x:Name="FormFilter"/>
+      </StackPanel></Expander>
+     </StackPanel>
+     <DataGrid x:Name="DrugGrid" Grid.Row="1" IsReadOnly="True" CanUserAddRows="False" AutoGenerateColumns="False" SelectionMode="Extended" MinHeight="120" Margin="0,10,0,8">
+      <DataGrid.Columns><DataGridTemplateColumn Header="Thuốc / hàm lượng" Width="*"><DataGridTemplateColumn.CellTemplate><DataTemplate><StackPanel Margin="8,7"><TextBlock Text="{Binding TenThuoc}" TextWrapping="Wrap" FontWeight="SemiBold"/><TextBlock TextWrapping="Wrap" Foreground="#64748B" FontSize="12" Margin="0,4,0,0"><Run Text="{Binding HamLuong,Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding DonViTinh,Mode=OneWay}"/></TextBlock><TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,4,0,0"><Run Text="Giá: "/><Run Text="{Binding GiaHienThi,Mode=OneWay}"/><Run Text=" · Tồn: "/><Run Text="{Binding TonThamKhao,StringFormat=0.###,Mode=OneWay}"/></TextBlock></StackPanel></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn></DataGrid.Columns>
+     </DataGrid>
+     <StackPanel Grid.Row="2">
+      <TextBlock Text="Chọn thuốc rồi thêm vào đơn để nhập cách dùng. Có thể giữ Ctrl để chọn nhiều thuốc." TextWrapping="Wrap" Foreground="#64748B" FontSize="12" Margin="0,0,0,8"/>
+      <Button x:Name="AddSelectedButton" Content="+ Thêm thuốc đã chọn" Click="Add_Click" HorizontalAlignment="Left"/>
+     </StackPanel>
+    </Grid>
+   </Border>
+   <Border Grid.Column="2" Style="{StaticResource HospitalPanel}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
+     <TextBlock Text="Thuốc đã chọn" Style="{StaticResource HospitalSection}"/>
+     <Expander Header="Đơn bổ sung / thay thế" Margin="0,6"><StackPanel><ComboBox x:Name="OrderChoice" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Order_Changed" Margin="0,8"/>
+     <TextBlock x:Name="OrderHeader" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
+     <WrapPanel><Button x:Name="NewButton" Content="Đơn mới / bổ sung" Click="New_Click"/><Button x:Name="ReplaceButton" Content="Soạn đơn thay thế" Click="Replace_Click" Margin="8,0,0,0"/></WrapPanel></StackPanel></Expander>
+     <DataGrid x:Name="RxLines" MinHeight="95" MaxHeight="160" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" SelectionMode="Single" SelectionChanged="Line_Selected" CellEditEnding="Line_Edit" Margin="0,10">
+      <DataGrid.Resources><Style x:Key="RxWrappedCell" TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style></DataGrid.Resources>
+      <DataGrid.Columns>
+       <DataGridTextColumn Header="Thuốc / hàm lượng / đơn vị" Binding="{Binding TenHienThi}" ElementStyle="{StaticResource RxWrappedCell}" IsReadOnly="True" Width="*" MinWidth="180"/>
+       <DataGridTextColumn Header="Số lượng" Binding="{Binding SoLuong,StringFormat=0.###}" IsReadOnly="True" Width="85"/>
+       <DataGridTextColumn Header="Số ngày" Binding="{Binding SoNgayDung}" IsReadOnly="True" Width="75"/>
+      </DataGrid.Columns>
+     </DataGrid>
+     <Button x:Name="RemoveLineButton" Content="Bỏ thuốc đang chọn" Click="RemoveLine_Click" HorizontalAlignment="Left"/>
+     <TextBlock x:Name="SelectedDrugHeader" Text="Chọn một thuốc trong đơn để nhập cách dùng." FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,14,0,8"/>
+     <StackPanel x:Name="DetailForm" IsEnabled="False">
+      <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition/></Grid.ColumnDefinitions>
+       <StackPanel><TextBlock Text="Số lượng cấp phát" Style="{StaticResource FieldLabel}"/><TextBox x:Name="QuantityEditor" TextChanged="Detail_Changed" LostFocus="Detail_LostFocus"/></StackPanel>
+       <StackPanel Grid.Column="2"><TextBlock Text="Số ngày dùng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="DaysEditor" TextChanged="Detail_Changed" LostFocus="Detail_LostFocus"/></StackPanel>
+      </Grid>
+      <TextBlock Text="Liều dùng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="DoseEditor" TextChanged="Detail_Changed" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="44"/>
+      <TextBlock Text="Đường dùng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="RouteEditor" TextChanged="Detail_Changed"/>
+      <TextBlock Text="Hướng dẫn sử dụng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="InstructionEditor" TextChanged="Detail_Changed" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="58"/>
+     </StackPanel>
+     <TextBlock Text="Bác sĩ nhập liều và hướng dẫn theo người bệnh. Kê đơn không giữ hoặc trừ tồn kho." TextWrapping="Wrap" Foreground="#64748B" FontSize="12" Margin="0,10,0,0"/>
+     <Expander Header="Ghi chú / lý do thay hoặc bổ sung đơn" Margin="0,10,0,0"><StackPanel>
+      <TextBlock Text="Lý do thay đơn (nếu có)"/><TextBox x:Name="ReplacementReason" TextChanged="Input_Changed" TextWrapping="Wrap"/>
+      <TextBlock Text="Ghi chú / lý do đơn bổ sung" Margin="0,8,0,0"/><TextBox x:Name="NoteEditor" TextChanged="Input_Changed" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="45"/>
+     </StackPanel></Expander>
+    </StackPanel></ScrollViewer>
+   </Border>
+  </Grid>
+  <StackPanel Grid.Row="2" Margin="0,10,0,0">
+   <TextBlock x:Name="ErrorText" TextWrapping="Wrap" Foreground="#B91C1C"/><TextBlock x:Name="StatusText" TextWrapping="Wrap" Foreground="#15803D" Margin="0,4,0,6"/>
+   <WrapPanel HorizontalAlignment="Right"><Button x:Name="CancelButton" Content="Hủy nháp" Click="Cancel_Click"/><Button x:Name="PrintButton" Content="Xem / in đơn đã ký" Click="Print_Click"/><Button x:Name="SaveButton" Content="Lưu nháp" Click="Save_Click"/><Button x:Name="SignButton" Content="Ký đơn thuốc" Click="Sign_Click" Style="{StaticResource HospitalPrimary}"/></WrapPanel>
+  </StackPanel>
+ </Grid>
+</UserControl>
