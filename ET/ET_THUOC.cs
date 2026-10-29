@@ -43,6 +43,7 @@ namespace ET
         /// Mã hàng hóa; ánh xạ cột MaHH của bảng trong TableAttribute.
         /// </summary>
         public string MaHH { get => maHH; set => maHH = value; }
+        public string? MaNhomThuoc { get; set; }
         /// <summary>
         /// Hàm lượng thuốc; ánh xạ cột HamLuong của bảng trong TableAttribute.
         /// </summary>

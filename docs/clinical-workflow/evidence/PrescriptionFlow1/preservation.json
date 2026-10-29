@@ -1,0 +1,373 @@
+[
+    {
+        "Table":  "BAN_GIAO_THUOC",
+        "OriginalRows":  1,
+        "PreservedRows":  1,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "BANG_LUONG",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "BAO_TRI_THIET_BI",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "BENH_NHAN",
+        "OriginalRows":  11,
+        "PreservedRows":  11,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "CA_LAM",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "CA_THEO_NGAY",
+        "OriginalRows":  5,
+        "PreservedRows":  5,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "CAU_HINH_THUOC_KE_DON",
+        "OriginalRows":  0,
+        "PreservedRows":  0,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "CHI_TIET_DON_THUOC",
+        "OriginalRows":  14,
+        "PreservedRows":  14,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "CHI_TIET_HOA_DON",
+        "OriginalRows":  17,
+        "PreservedRows":  17,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "CHI_TIET_KE_HOACH",
+        "OriginalRows":  12,
+        "PreservedRows":  12,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "CHI_TIET_MAU_KE_HOACH",
+        "OriginalRows":  0,
+        "PreservedRows":  0,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "CHI_TIET_PHIEU_NHAP",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "CHI_TIET_PHIEU_XUAT",
+        "OriginalRows":  14,
+        "PreservedRows":  14,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "CHINH_SACH_LUONG",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "CHUC_VU",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "CHUNG_CHI_NHAN_VIEN",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "CHUYEN_KHOA",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "DICH_VU",
+        "OriginalRows":  50,
+        "PreservedRows":  50,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "DICH_VU_THUC_HIEN",
+        "OriginalRows":  13,
+        "PreservedRows":  13,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "DICH_VU_TINH_TRANG",
+        "OriginalRows":  112,
+        "PreservedRows":  112,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "DM_TINH_TRANG_BENH",
+        "OriginalRows":  47,
+        "PreservedRows":  47,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "DON_THUOC",
+        "OriginalRows":  11,
+        "PreservedRows":  11,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "DON_XIN_NGHI",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "HANG_HOA",
+        "OriginalRows":  30,
+        "PreservedRows":  30,
+        "AddedRows":  52,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "HO_SO_BENH_AN",
+        "OriginalRows":  11,
+        "PreservedRows":  11,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "HOA_DON",
+        "OriginalRows":  11,
+        "PreservedRows":  11,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "HOA_DON_NHAP",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "KE_HOACH_DIEU_TRI",
+        "OriginalRows":  11,
+        "PreservedRows":  11,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "KHO",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "KHOA",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "LICH_KHAM",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "LICH_LAM_VIEC",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "LICH_SU_KHAM_BENH",
+        "OriginalRows":  11,
+        "PreservedRows":  11,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "LO_HANG_HOA",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "LOAI_HANG_HOA",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  1,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "MAU_KE_HOACH_DIEU_TRI",
+        "OriginalRows":  0,
+        "PreservedRows":  0,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "NHA_CUNG_CAP",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "NHAN_VIEN",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "NHAT_KY_THAO_TAC",
+        "OriginalRows":  588,
+        "PreservedRows":  588,
+        "AddedRows":  20,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "NHOM_THUOC_KE_DON",
+        "OriginalRows":  0,
+        "PreservedRows":  0,
+        "AddedRows":  20,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "PHAN_CONG_THAY_THE",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "PHIEU_KHAM_BENH",
+        "OriginalRows":  11,
+        "PreservedRows":  11,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "PHIEU_NHAP",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "PHIEU_XUAT",
+        "OriginalRows":  11,
+        "PreservedRows":  11,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "PHONG",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "TAI_KHOAN",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "THANH_TOAN",
+        "OriginalRows":  11,
+        "PreservedRows":  11,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "THIET_BI",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "THUOC",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  52,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "TINH_TRANG_BENH",
+        "OriginalRows":  11,
+        "PreservedRows":  11,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "VAI_TRO",
+        "OriginalRows":  2,
+        "PreservedRows":  2,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "VAT_TU",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    },
+    {
+        "Table":  "XAC_NHAN_DOI_LICH_KHAM",
+        "OriginalRows":  0,
+        "PreservedRows":  0,
+        "AddedRows":  0,
+        "OriginalColumnsMatch":  true
+    }
+]

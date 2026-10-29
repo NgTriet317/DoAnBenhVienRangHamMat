@@ -100,7 +100,7 @@ public sealed partial class DAL_KHAMDIEUTRI
         db.Execute("SAVE TRANSACTION RhmCompleteVisit",transaction:tx);
         try
         {
-        ChotDichVuDieuTri(db,tx,visit,now);
+        if(!DaThucHienXong(db,tx,maLS))throw KhamError("ThucHien","Xác nhận đã thực hiện khám/điều trị ở bước Thực hiện trước khi tổng kết và lập hóa đơn.");
         db.Execute("UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận',NgayXacNhan=@now WHERE MaLS=@maLS; UPDATE dbo.PHIEU_KHAM_BENH SET TrangThai=N'Chờ thanh toán' WHERE MaPhieu=@receipt",new{maLS,now,receipt=visit.MaPhieu},tx);
         visit.TrangThai="Đã xác nhận";visit.NgayXacNhan=now;visit.TrangThaiPhieu="Chờ thanh toán";
         new DAL_HOADON(tx).TaoTuKhamHoanTat(maLS,actor.MaNV);

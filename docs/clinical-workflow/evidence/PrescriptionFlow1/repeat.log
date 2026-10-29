@@ -1,0 +1,27 @@
+Changed database context to 'master'.
+Changed database context to 'RHM_Hospital_Test_RxFinal_20261029'.
+ClinicalWorkflow v2 đã có; hợp đồng được kiểm tra.
+SchemaVersion       TableCount
+------------------- -----------
+ClinicalWorkflow v2          53
+MaHD                                               MaLS                                               SoTienPhaiThu        DaThuRong                                ConPhaiTra
+-------------------------------------------------- -------------------------------------------------- -------------------- ---------------------------------------- ----------------------------------------
+Đã bỏ MucDo; SimpleConditions v1. Dữ liệu các cột còn lại được giữ nguyên.
+Đã bỏ vị trí răng; nạp 6 tình trạng và định hướng có nguồn. Không tạo người thật, bảng giá hoặc chứng từ.
+Đã đồng bộ 8 dịch vụ tham khảo và 14 liên kết; giữ nguyên dữ liệu đã có.
+TableName                                                                                                                        DeletedRows
+-------------------------------------------------------------------------------------------------------------------------------- --------------------
+BENH_NHAN                                                                                                                                           0
+CA_LAM                                                                                                                                              0
+CA_THEO_NGAY                                                                                                                                        0
+DICH_VU                                                                                                                                             0
+HO_SO_BENH_AN                                                                                                                                       0
+LICH_LAM_VIEC                                                                                                                                       0
+LICH_SU_KHAM_BENH                                                                                                                                   0
+NHAN_VIEN                                                                                                                                           0
+PHIEU_KHAM_BENH                                                                                                                                     0
+PHONG                                                                                                                                               0
+TAI_KHOAN                                                                                                                                           0
+TINH_TRANG_BENH                                                                                                                                     0
+Hoàn tất khởi tạo/đồng bộ HospitalWorkflow v3; dữ liệu người dùng và lịch sử tài chính được giữ nguyên.
+Đã đồng bộ PrescriptionFlow1, nhóm thuốc và danh mục thuốc có nguồn.

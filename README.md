@@ -16,6 +16,8 @@ Cài mới chỉ có **admin001 / 123456** và danh mục cơ sở; không tạo
 
 Danh mục khởi tạo có47 tình trạng,42 dịch vụ,112 liên kết; gồm chấn thương, khớp thái dương hàm, niêm mạc, tuyến nước bọt, nhiễm trùng, nang/u, khe hở, thần kinh, hậu phẫu và bệnh răng. Nguồn/giá/ngày đối chiếu tại [DANH_MUC_RHM.md](docs/clinical-workflow/DANH_MUC_RHM.md). Giá công khai của cơ sở nguồn là mức tham khảo ban đầu; bệnh viện quản lý giá áp dụng trong DICH_VU.
 
+Danh mục thuốc có52 sản phẩm có nguồn và20 nhóm độc lập mẫu đơn:40 giá tham khảo công khai,12 thuốc chưa thiết lập giá. Database đang dùng có62 thuốc sau khi bổ sung và đã phân nhóm cả10 thuốc cũ. Thuốc giá0 hiển thị **Chưa thiết lập giá**, không coi là miễn phí; cần cập nhật giá trước lập hóa đơn. Không tự tạo liều dùng, mẫu đơn hay tồn kho. Xem [DANH_MUC_THUOC_RHM.md](docs/clinical-workflow/DANH_MUC_THUOC_RHM.md).
+
 ## Cấu hình và chạy
 
 Mở BenhVienRangHamMat.sln bằng Visual Studio2022 có .NET desktop development/.NET8 SDK, chọn RangHamMat.Wpf làm startup rồi F5. Hoặc mở PhatHanh/RangHamMat.Wpf.exe với .NET8 Desktop Runtime trên Windows.
@@ -32,11 +34,13 @@ Biến môi trường RHM_CONNECTION_STRING được ưu tiên hơn file. Instan
 
 1. Tiếp nhận chọn bác sĩ/phòng/dịch vụ; bác sĩ mở Hàng chờ khám theo giờ tiếp nhận, ai đến trước hiện trước. Admin xem được tất cả, User theo chức vụ và phạm vi SQL.
 2. Bác sĩ ghi chẩn đoán/tình trạng, chọn nhanh theo nhóm bệnh và chọn dịch vụ liên quan. Kế hoạch có sẵn mã/giá từ SQL; chỉnh lượng/buổi rồi lưu và duyệt. Không có Mức độ hoặc Vị trí răng trong tình trạng bệnh.
-3. Ký đơn thuốc hoặc ghi lý do Không kê thuốc. Khi **toàn bộ dịch vụ điều trị đã làm xong**, xác nhận **Hoàn tất và lập hóa đơn**. Hệ thống chốt các bước đã duyệt, ghi nhận dịch vụ khám một lần, khóa lần khám và tạo hóa đơn chờ thu trong cùng transaction. Không hoàn tất sớm nếu kế hoạch nhiều buổi còn chưa làm xong.
-4. Quầy thu dùng lại chính hóa đơn đó; giá đã chốt được giữ, thu tiền/xuất thuốc phối hợp theo giao dịch. Không thêm dịch vụ sau khi hoàn tất. Thử lại cùng yêu cầu không sinh hóa đơn hoặc khoản thu thứ hai.
-5. Dịch vụ thực hiện chỉ là **Lịch sử dịch vụ đã thực hiện** của lượt hoàn tất. Không có thêm/sửa/xác nhận hoặc dịch vụ phát sinh. Điều dưỡng chỉ xem phần được giao; thu ngân không xem kết quả lâm sàng.
+3. Sau khi đã làm xong toàn bộ kế hoạch, mở **4. Thực hiện**, đối chiếu dịch vụ và xác nhận. Hệ thống ghi dịch vụ thực tế theo giá đã duyệt, gồm phí khám một lần; chưa tạo hóa đơn. Kế hoạch nháp/chưa xong chặn bước kê thuốc và hoàn tất. Lượt chỉ khám, không có kế hoạch thủ thuật, vẫn xác nhận dịch vụ khám tại bước này.
+4. Mở **5. Kê thuốc** ngay trong khám. Lọc nhóm/tên/hàm lượng, thêm thuốc, nhập liều/đường dùng/hướng dẫn/số ngày/số lượng, lưu rồi ký. Không dùng mẫu/phiên bản hay tự áp liều. Nếu không kê, chọn Không kê thuốc, nhập lý do và Lưu khám. Chỉ có một nút Hủy nháp; không còn Tải lại bỏ nháp trong kê thuốc.
+5. **6. Tổng kết** đọc dịch vụ đã thực hiện và thuốc hiệu lực đã ký từ SQL. Kiểm tra xong chọn **Hoàn tất và lập hóa đơn** để khóa lượt và tạo một hóa đơn chờ thu. Không tự ghi thêm phần điều trị chưa xác nhận ở bước này.
+6. Quầy thu dùng lại chính hóa đơn đó; giữ giá đã chốt, thu tiền/xuất thuốc phối hợp theo giao dịch. Không thêm dịch vụ sau hoàn tất; retry không sinh hóa đơn hoặc khoản thu thứ hai. Mục **Đơn thuốc** chỉ tra cứu/in đơn đã kê và bàn giao sau khi thu đủ, theo quyền.
+7. Dịch vụ thực hiện chỉ là **Lịch sử dịch vụ đã thực hiện** của lượt hoàn tất. Không có thêm/sửa/xác nhận hoặc dịch vụ phát sinh. Điều dưỡng chỉ xem phần được giao; thu ngân không xem kết quả lâm sàng.
 
-Admin toàn quyền chức năng nhưng vẫn tuân thủ trạng thái chứng từ, kiểm tra dữ liệu, tiền và tồn kho. Đơn thuốc có nút Bàn giao thuốc cho đơn đã thu đủ. Xem [thay đổi luồng và kiểm chứng](docs/clinical-workflow/CHOT_KHAM_VA_SQL_THONG_NHAT.md).
+Admin toàn quyền chức năng nhưng vẫn tuân thủ trạng thái chứng từ, kiểm tra dữ liệu, tiền và tồn kho. Xem [kê thuốc trong khám và kiểm chứng](docs/clinical-workflow/KE_THUOC_TRONG_KHAM.md). Mốc [HospitalWorkflow3](docs/clinical-workflow/CHOT_KHAM_VA_SQL_THONG_NHAT.md) mô tả lần cải tổ trước; phần xác nhận thực hiện và kê thuốc hiện tại theo PrescriptionFlow1.
 
 ## Kiểm tra và đóng gói
 

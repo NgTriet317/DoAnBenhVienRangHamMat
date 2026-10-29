@@ -19,6 +19,8 @@ public sealed partial class DAL_KHAMDIEUTRI
     public BanNhapKeHoach LuuKeHoach(YeuCauLuuKeHoach request,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
         ArgumentNullException.ThrowIfNull(request);var(actor,visit)=OwnedVisit(db,tx,request.MaLS,user,true);
+        if(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DON_THUOC WITH(HOLDLOCK) WHERE MaLS=@MaLS AND TrangThai IN(N'Nháp',N'Đã xác nhận')",visit,tx)>0)
+            throw KhamError("KeHoach","Lần khám đã bắt đầu kê thuốc. Không thay kế hoạch sau khi kê đơn; cần đối chiếu đơn trước.");
         var original=string.IsNullOrEmpty(request.MaKHDT)?null:PlanSnapshot(db,tx,ValidCode(request.MaKHDT));
         if(original is not null && (original.KeHoach.MaLS!=visit.MaLS || !actor.LaAdmin && original.KeHoach.MaBS!=actor.MaNV))throw DAL_QUYENNGHIEPVU.TuChoi();
         if(original is not null){if(original.KeHoach.TrangThai!="Nháp")throw KhamError("KeHoach","Kế hoạch đã duyệt chỉ còn cập nhật tiến độ.");RequireFingerprint(request.DauVanTay,original.DauVanTay);}

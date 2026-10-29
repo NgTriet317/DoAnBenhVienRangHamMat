@@ -1,0 +1,26 @@
+Changed database context to 'QLBenhVienRangHamMat'.
+SchemaVersion       TableCount
+------------------- -----------
+ClinicalWorkflow v2          53
+MaHD                                               MaLS                                               SoTienPhaiThu        DaThuRong                                ConPhaiTra
+-------------------------------------------------- -------------------------------------------------- -------------------- ---------------------------------------- ----------------------------------------
+HD004                                              LS004                                                         100000.00                                      .00                                100000.00
+HD005                                              LS005                                                         150000.00                                      .00                                150000.00
+PrescriptionFlow  DrugGroups  Medicines
+----------------- ----------- -----------
+PrescriptionFlow1          20          62
+Patients    Medicines   NewMedicines Ungrouped   DrugGroups  UnpricedNewMedicines
+----------- ----------- ------------ ----------- ----------- --------------------
+         11          62           52           0          20                   12
+Changed database context to 'RHM_Hospital_Test_RxFinal_20261029'.
+SchemaVersion       TableCount
+------------------- -----------
+ClinicalWorkflow v2          53
+MaHD                                               MaLS                                               SoTienPhaiThu        DaThuRong                                ConPhaiTra
+-------------------------------------------------- -------------------------------------------------- -------------------- ---------------------------------------- ----------------------------------------
+PrescriptionFlow  DrugGroups  Medicines
+----------------- ----------- -----------
+PrescriptionFlow1          20          52
+Patients    Staff       Accounts    Invoices    Medicines   DosingTemplates StockLots
+----------- ----------- ----------- ----------- ----------- --------------- -----------
+          0           1           1           0          52               0           0

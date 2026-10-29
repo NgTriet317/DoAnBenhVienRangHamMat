@@ -3963,3 +3963,214 @@ BEGIN CATCH
  THROW;
 END CATCH;
 GO
+-- Giai đoạn4: kê thuốc trong khám, nhóm thuốc độc lập mẫu.
+DECLARE @rxPreviousActor sql_variant=SESSION_CONTEXT(N'RHM.MaTK');
+DECLARE @rxCatalogActor nvarchar(50)=(SELECT TOP(1) t.MaTK FROM dbo.TAI_KHOAN t JOIN dbo.NHAN_VIEN n ON n.MaNV=t.MaNV JOIN dbo.VAI_TRO v ON v.MaVaiTro=t.MaVaiTro WHERE t.TrangThai=N'Đang hoạt động' AND n.TrangThai=N'Đang làm việc' AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N'ADMIN',N'QUẢN TRỊ') ORDER BY t.MaTK);
+-- RHM medicinal catalog, reference date 29/10/2026.
+-- Integrate after NHOM_THUOC_KE_DON creation in the canonical database script.
+-- 52 genuine products; 40 published reference prices; 12 explicitly unset prices (0).
+-- No doses, prescribing guidance, approval records, people, lots, balances or transactions.
+-- Running this fragment repeatedly preserves existing prices and changed catalog fields.
+SET XACT_ABORT ON;
+BEGIN TRY
+ BEGIN TRANSACTION;
+ IF COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.HospitalWorkflow.Completed')),0)<>1 THROW 52324,N'Phải hoàn tất đồng bộ HospitalWorkflow trước danh mục thuốc.',1;
+ IF @rxCatalogActor IS NULL THROW 52324,N'Cần tài khoản quản trị hoạt động để ghi nhận đồng bộ nhóm thuốc.',1;
+ EXEC sys.sp_set_session_context @key=N'RHM.MaTK',@value=@rxCatalogActor;
+ IF OBJECT_ID(N'dbo.NHOM_THUOC_KE_DON',N'U') IS NULL OR OBJECT_ID(N'dbo.THUOC',N'U') IS NULL
+  THROW 52320,N'Cần tạo bảng THUOC và NHOM_THUOC_KE_DON trước danh mục thuốc.',1;
+ IF COL_LENGTH(N'dbo.THUOC',N'MaNhomThuoc') IS NULL
+  EXEC sys.sp_executesql N'ALTER TABLE dbo.THUOC ADD MaNhomThuoc nvarchar(50) NULL;';
+ IF NOT EXISTS(SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID(N'dbo.THUOC') AND name=N'MaNhomThuoc' AND TYPE_NAME(user_type_id)=N'nvarchar' AND max_length=100 AND is_nullable=1)
+  THROW 52320,N'Kiểu cột THUOC.MaNhomThuoc không đúng hợp đồng.',1;
+ IF NOT EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_RX_Thuoc_Nhom' AND parent_object_id=OBJECT_ID(N'dbo.THUOC'))
+  EXEC sys.sp_executesql N'ALTER TABLE dbo.THUOC WITH CHECK ADD CONSTRAINT FK_RX_Thuoc_Nhom FOREIGN KEY(MaNhomThuoc) REFERENCES dbo.NHOM_THUOC_KE_DON(MaNhomThuoc);';
+ IF NOT EXISTS(
+  SELECT 1 FROM sys.foreign_keys fk JOIN sys.foreign_key_columns fkc ON fkc.constraint_object_id=fk.object_id
+  WHERE fk.name=N'FK_RX_Thuoc_Nhom' AND fk.parent_object_id=OBJECT_ID(N'dbo.THUOC')
+   AND fk.referenced_object_id=OBJECT_ID(N'dbo.NHOM_THUOC_KE_DON')
+   AND COL_NAME(fkc.parent_object_id,fkc.parent_column_id)=N'MaNhomThuoc'
+   AND COL_NAME(fkc.referenced_object_id,fkc.referenced_column_id)=N'MaNhomThuoc')
+  THROW 52320,N'Khóa ngoại FK_RX_Thuoc_Nhom không đúng cấu trúc yêu cầu.',1;
+ EXEC sys.sp_executesql N'ALTER TABLE dbo.THUOC WITH CHECK CHECK CONSTRAINT FK_RX_Thuoc_Nhom;';
+ IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.THUOC') AND name=N'IX_RX_Thuoc_Nhom')
+  EXEC sys.sp_executesql N'CREATE INDEX IX_RX_Thuoc_Nhom ON dbo.THUOC(MaNhomThuoc);';
+ -- Dynamic batch permits referencing a column added in this same transaction.
+ EXEC sys.sp_executesql N'DECLARE @Groups TABLE (MaNhomThuoc nvarchar(50) PRIMARY KEY, TenNhom nvarchar(255), MoTa nvarchar(max));
+INSERT @Groups VALUES
+(N''RHM_GIAM_DAU'',N''Giảm đau - hạ sốt'',N''Paracetamol; phân nhóm danh mục, không phải chỉ định.''),
+(N''RHM_NSAID'',N''Kháng viêm không steroid (NSAID)'',N''Các NSAID, gồm thuốc chọn lọc COX-2.''),
+(N''RHM_KS_PENICILLIN'',N''Kháng sinh penicilin và phối hợp'',N''Aminopenicilin, phối hợp chất ức chế beta-lactamase.''),
+(N''RHM_KS_CEPHALOSPORIN'',N''Kháng sinh cephalosporin'',N''Cephalosporin; không mặc định thay thế giữa các thế hệ.''),
+(N''RHM_KS_MACROLID'',N''Kháng sinh macrolid'',N''Clarithromycin và các macrolid.''),
+(N''RHM_KS_LINCOSAMID'',N''Kháng sinh lincosamid'',N''Clindamycin.''),
+(N''RHM_KS_NITROIMIDAZOL'',N''Kháng khuẩn nitroimidazol'',N''Metronidazol.''),
+(N''RHM_KS_SULFONAMID'',N''Kháng khuẩn sulfonamid phối hợp'',N''Sulfamethoxazol - trimethoprim.''),
+(N''RHM_KHANG_NAM'',N''Thuốc kháng nấm'',N''Nystatin và fluconazol.''),
+(N''RHM_KHANG_VIRUS'',N''Thuốc kháng virus'',N''Aciclovir.''),
+(N''RHM_SAT_KHUAN_MIENG'',N''Sát khuẩn miệng - họng'',N''Dung dịch súc miệng có hoạt chất sát khuẩn.''),
+(N''RHM_SAT_KHUAN_NGOAI'',N''Sát khuẩn dùng ngoài'',N''Dung dịch sát khuẩn ngoài da.''),
+(N''RHM_KHANG_HISTAMIN'',N''Chống dị ứng - kháng histamin H1'',N''Phân loại hoạt chất; không phải phác đồ xử trí phản vệ.''),
+(N''RHM_TIEU_HOA'',N''Thuốc hỗ trợ tiêu hóa - bảo vệ dạ dày'',N''Ức chế acid, bảo vệ niêm mạc, thuốc tác động nhu động.''),
+(N''RHM_CORTICOID_TOAN_THAN'',N''Corticosteroid toàn thân'',N''Corticosteroid đường uống hoặc tiêm.''),
+(N''RHM_CORTICOID_TAI_CHO'',N''Corticosteroid tại chỗ'',N''Corticosteroid dùng tại niêm mạc.''),
+(N''RHM_GAY_TE_TAI_CHO'',N''Thuốc gây tê tại chỗ'',N''Dạng tiêm, gel hoặc kem gây tê.''),
+(N''RHM_DUNG_DICH_RUA'',N''Dung dịch rửa'',N''Natri clorid dùng rửa; không tự chuyển sang đường truyền.''),
+(N''RHM_CAM_MAU'',N''Thuốc cầm máu'',N''Acid tranexamic.''),
+(N''RHM_CAP_CUU'',N''Thuốc cấp cứu - hỗ trợ thủ thuật'',N''Adrenalin, atropin; danh mục không tạo đơn ngoại trú mặc định.'');
+INSERT dbo.NHOM_THUOC_KE_DON(MaNhomThuoc,TenNhom,MoTa,TrangThai)
+SELECT g.MaNhomThuoc,g.TenNhom,g.MoTa,N''Đang áp dụng'' FROM @Groups g
+WHERE NOT EXISTS(SELECT 1 FROM dbo.NHOM_THUOC_KE_DON x WITH(UPDLOCK,HOLDLOCK) WHERE x.MaNhomThuoc=g.MaNhomThuoc);
+
+IF NOT EXISTS(SELECT 1 FROM dbo.LOAI_HANG_HOA WITH(UPDLOCK,HOLDLOCK) WHERE MaLoaiHH=N''LHH_RHM_THUOC'')
+ INSERT dbo.LOAI_HANG_HOA(MaLoaiHH,TenLoaiHH,MoTa,TrangThai)
+ VALUES(N''LHH_RHM_THUOC'',N''Thuốc bệnh viện Răng Hàm Mặt'',N''Danh mục có nguồn tham chiếu công khai; phân nhóm dược lý nằm tại THUOC.MaNhomThuoc.'',N''Đang hoạt động'');
+
+DECLARE @Catalog TABLE (
+ MaThuoc nvarchar(50) PRIMARY KEY, MaHH nvarchar(50) UNIQUE, TenHH nvarchar(255),
+ HoatChat nvarchar(255), HamLuong nvarchar(255), DangBaoChe nvarchar(255), DonViTinh nvarchar(255),
+ MaNhomThuoc nvarchar(50), DonGiaBan decimal(18,2), Nguon nvarchar(1000), ThamChieu nvarchar(1000)
+);
+INSERT @Catalog VALUES
+(N''THRHM001'',N''HHRHM001'',N''Hapacol 250 - 250 mg/gói - Dạng gói uống'',N''Paracetamol'',N''250 mg/gói'',N''Dạng gói uống'',N''Gói'',N''RHM_GIAM_DAU'',2000,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD0201-000003; cột Giá Yêu Cầu''),
+(N''THRHM002'',N''HHRHM002'',N''Koact 625 - 500 mg + 125 mg/viên - Viên uống'',N''Amoxicilin + acid clavulanic'',N''500 mg + 125 mg/viên'',N''Viên uống'',N''Viên'',N''RHM_KS_PENICILLIN'',3000,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''KOAC001; cột Giá Yêu Cầu''),
+(N''THRHM003'',N''HHRHM003'',N''Axuka - 1000 mg + 200 mg/lọ - Thuốc tiêm'',N''Amoxicilin + acid clavulanic'',N''1000 mg + 200 mg/lọ'',N''Thuốc tiêm'',N''Lọ'',N''RHM_KS_PENICILLIN'',42000,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD29-000024; cột Giá Yêu Cầu''),
+(N''THRHM004'',N''HHRHM004'',N''Metronidazol 250 - 250 mg/viên - Viên uống'',N''Metronidazol'',N''250 mg/viên'',N''Viên uống'',N''Viên'',N''RHM_KS_NITROIMIDAZOL'',252,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD29-000017; cột Giá Yêu Cầu''),
+(N''THRHM005'',N''HHRHM005'',N''Lidocain hydroclorid 40mg/2ml - 40 mg/2 ml - Dung dịch tiêm, ống 2 ml'',N''Lidocain hydroclorid'',N''40 mg/2 ml'',N''Dung dịch tiêm, ống 2 ml'',N''Ống'',N''RHM_GAY_TE_TAI_CHO'',495,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD30-003796; cột Giá Yêu Cầu''),
+(N''THRHM006'',N''HHRHM006'',N''Lignospan standard - 36 mg + 18,13 microgam/1,8 ml - Thuốc tiêm, ống 1,8 ml'',N''Lidocain + epinephrin'',N''36 mg + 18,13 microgam/1,8 ml'',N''Thuốc tiêm, ống 1,8 ml'',N''Ống'',N''RHM_GAY_TE_TAI_CHO'',20895,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD30-003487; cột Giá Yêu Cầu''),
+(N''THRHM007'',N''HHRHM007'',N''Aciclovir 5% - 50 mg/g; tuýp 5 g - Thuốc dùng ngoài, tuýp 5 g'',N''Aciclovir'',N''50 mg/g; tuýp 5 g'',N''Thuốc dùng ngoài, tuýp 5 g'',N''Tuýp'',N''RHM_KHANG_VIRUS'',3700,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD30-003857; cột Giá Yêu Cầu''),
+(N''THRHM008'',N''HHRHM008'',N''Agilecox 200 - 200 mg/viên - Viên uống'',N''Celecoxib'',N''200 mg/viên'',N''Viên uống'',N''Viên'',N''RHM_NSAID'',1155,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD30-003910; cột Giá Yêu Cầu''),
+(N''THRHM009'',N''HHRHM009'',N''Desloratadin ODT 5 - 5 mg/viên - Viên uống ODT'',N''Desloratadin'',N''5 mg/viên'',N''Viên uống ODT'',N''Viên'',N''RHM_KHANG_HISTAMIN'',1386,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD30-003900; cột Giá Yêu Cầu''),
+(N''THRHM010'',N''HHRHM010'',N''Medlon 16 - 16 mg/viên - Viên uống'',N''Methylprednisolon'',N''16 mg/viên'',N''Viên uống'',N''Viên'',N''RHM_CORTICOID_TOAN_THAN'',1220,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD30-003833; cột Giá Yêu Cầu''),
+(N''THRHM011'',N''HHRHM011'',N''Medsolu 4 mg - 4 mg/viên - Viên uống'',N''Methylprednisolon'',N''4 mg/viên'',N''Viên uống'',N''Viên'',N''RHM_CORTICOID_TOAN_THAN'',900,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD30-003318; cột Giá Yêu Cầu''),
+(N''THRHM012'',N''HHRHM012'',N''Dexamethasone - 4 mg/1 ml - Thuốc tiêm, ống 1 ml'',N''Dexamethason'',N''4 mg/1 ml'',N''Thuốc tiêm, ống 1 ml'',N''Ống'',N''RHM_CORTICOID_TOAN_THAN'',690,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD30-003735; cột Giá Yêu Cầu''),
+(N''THRHM013'',N''HHRHM013'',N''Diclofenac - 75 mg/3 ml - Thuốc tiêm, ống 3 ml'',N''Diclofenac'',N''75 mg/3 ml'',N''Thuốc tiêm, ống 3 ml'',N''Ống'',N''RHM_NSAID'',1200,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD30-003129; cột Giá Yêu Cầu''),
+(N''THRHM014'',N''HHRHM014'',N''Haxium 40 - 40 mg/viên - Viên uống'',N''Esomeprazol'',N''40 mg/viên'',N''Viên uống'',N''Viên'',N''RHM_TIEU_HOA'',840,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''HAXI001; cột Giá Yêu Cầu''),
+(N''THRHM015'',N''HHRHM015'',N''Adrenalin DV24 - 1 mg/1 ml - Thuốc tiêm, ống 1 ml'',N''Epinephrin'',N''1 mg/1 ml'',N''Thuốc tiêm, ống 1 ml'',N''Ống'',N''RHM_CAP_CUU'',2800,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD30-003598; cột Giá Yêu Cầu''),
+(N''THRHM016'',N''HHRHM016'',N''Biseptol 480 - 400 mg + 80 mg/viên - Viên uống'',N''Sulfamethoxazol + trimethoprim'',N''400 mg + 80 mg/viên'',N''Viên uống'',N''Viên'',N''RHM_KS_SULFONAMID'',2500,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD30-003876; cột Giá Yêu Cầu''),
+(N''THRHM017'',N''HHRHM017'',N''Novocain 3% - 30 mg/ml; ống 2 ml - Thuốc tiêm, ống 2 ml'',N''Procain hydroclorid'',N''30 mg/ml; ống 2 ml'',N''Thuốc tiêm, ống 2 ml'',N''Ống'',N''RHM_GAY_TE_TAI_CHO'',495,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD30-003798; cột Giá Yêu Cầu; khác TD30-003260''),
+(N''THRHM018'',N''HHRHM018'',N''Atropin sulphat - 0,25 mg/ml; ống 1 ml - Thuốc tiêm, ống 1 ml'',N''Atropin sulfat'',N''0,25 mg/ml; ống 1 ml'',N''Thuốc tiêm, ống 1 ml'',N''Ống'',N''RHM_CAP_CUU'',530,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD30-003902; cột Giá Yêu Cầu''),
+(N''THRHM019'',N''HHRHM019'',N''Hadumedrol - 10 mg/ml; ống 1 ml - Thuốc tiêm, ống 1 ml'',N''Diphenhydramin'',N''10 mg/ml; ống 1 ml'',N''Thuốc tiêm, ống 1 ml'',N''Ống'',N''RHM_KHANG_HISTAMIN'',630,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD30-003806; cột Giá Yêu Cầu''),
+(N''THRHM020'',N''HHRHM020'',N''Nerusyn 1,5g - 1 g + 0,5 g/lọ - Thuốc tiêm'',N''Ampicilin + sulbactam'',N''1 g + 0,5 g/lọ'',N''Thuốc tiêm'',N''Lọ'',N''RHM_KS_PENICILLIN'',41000,N''https://vpmed.vn/bang-gia/bang-gia-thuoc/'',N''TD29-000019; cột Giá Yêu Cầu''),
+(N''THRHM021'',N''HHRHM021'',N''Betadine Antiseptic - 10%; lọ 125 ml - Dung dịch sát khuẩn ngoài da'',N''Povidon iod'',N''10%; lọ 125 ml'',N''Dung dịch sát khuẩn ngoài da'',N''Lọ'',N''RHM_SAT_KHUAN_NGOAI'',60786,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 39, BeDT, trang 1; Giá Bán tháng 02.2026''),
+(N''THRHM022'',N''HHRHM022'',N''Betadine Mouthwash Gargle - 1% - Dung dịch súc miệng - họng'',N''Povidon iod'',N''1%'',N''Dung dịch súc miệng - họng'',N''Lọ'',N''RHM_SAT_KHUAN_MIENG'',75273,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 40, BeMT, trang 1; nguồn không ghi thể tích lọ''),
+(N''THRHM023'',N''HHRHM023'',N''Lorastad 10mg - 10 mg/viên - Viên uống'',N''Loratadin'',N''10 mg/viên'',N''Viên uống'',N''Viên'',N''RHM_KHANG_HISTAMIN'',1062,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 321, LorT4, trang 7''),
+(N''THRHM024'',N''HHRHM024'',N''Povidine 10% 90ml - 10%; chai 90 ml - Dung dịch sát khuẩn ngoài da'',N''Povidon iod'',N''10%; chai 90 ml'',N''Dung dịch sát khuẩn ngoài da'',N''Chai'',N''RHM_SAT_KHUAN_NGOAI'',18720,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 46, PovT3, trang 1''),
+(N''THRHM025'',N''HHRHM025'',N''Emla 5% - 2,5% + 2,5%; tuýp 5 g - Kem bôi ngoài da'',N''Lidocain + prilocain'',N''2,5% + 2,5%; tuýp 5 g'',N''Kem bôi ngoài da'',N''Tuýp'',N''RHM_GAY_TE_TAI_CHO'',70359,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 41, EmCT, trang 1''),
+(N''THRHM026'',N''HHRHM026'',N''Xylocaine Jelly Oin 2% - 2%; tuýp 30 g - Gel dùng tại chỗ'',N''Lidocain'',N''2%; tuýp 30 g'',N''Gel dùng tại chỗ'',N''Tuýp'',N''RHM_GAY_TE_TAI_CHO'',78062,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 52, XyJT, trang 1''),
+(N''THRHM027'',N''HHRHM027'',N''Augmentin 1g - 875 mg + 125 mg/viên - Viên nén'',N''Amoxicilin + acid clavulanic'',N''875 mg + 125 mg/viên'',N''Viên nén'',N''Viên'',N''RHM_KS_PENICILLIN'',19516,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 54, AugT6, trang 2''),
+(N''THRHM028'',N''HHRHM028'',N''Augmentin 250/31.25 mg - 250 mg + 31,25 mg/gói - Dạng gói uống'',N''Amoxicilin + acid clavulanic'',N''250 mg + 31,25 mg/gói'',N''Dạng gói uống'',N''Gói'',N''RHM_KS_PENICILLIN'',12484,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 55, AugT1, trang 2''),
+(N''THRHM029'',N''HHRHM029'',N''Fluconazole STELLA 150mg - 150 mg/viên - Viên nang cứng'',N''Fluconazol'',N''150 mg/viên'',N''Viên nang cứng'',N''Viên'',N''RHM_KHANG_NAM'',10763,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 65, FlST1, trang 2; dạng bào chế đối chiếu STELLA''),
+(N''THRHM030'',N''HHRHM030'',N''Nystafar - 100.000 IU/1 g - Dạng gói dùng miệng'',N''Nystatin'',N''100.000 IU/1 g'',N''Dạng gói dùng miệng'',N''Gói'',N''RHM_KHANG_NAM'',1890,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 74, NysT, trang 2''),
+(N''THRHM031'',N''HHRHM031'',N''Acyclovir STELLA 800mg - 800 mg/viên - Viên uống'',N''Aciclovir'',N''800 mg/viên'',N''Viên uống'',N''Viên'',N''RHM_KHANG_VIRUS'',4800,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 138, AcST, trang 3''),
+(N''THRHM032'',N''HHRHM032'',N''Cetirizine STELLA 10mg - 10 mg/viên - Viên uống'',N''Cetirizin'',N''10 mg/viên'',N''Viên uống'',N''Viên'',N''RHM_KHANG_HISTAMIN'',551,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 190, CeST, trang 4''),
+(N''THRHM033'',N''HHRHM033'',N''Clorpheniramin 4mg DHG - 4 mg/viên - Viên nén'',N''Clorpheniramin'',N''4 mg/viên'',N''Viên nén'',N''Viên'',N''RHM_KHANG_HISTAMIN'',250,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 193, CloT58, trang 4; Dược Hậu Giang''),
+(N''THRHM034'',N''HHRHM034'',N''Celebrex 200mg - 200 mg/viên - Viên uống'',N''Celecoxib'',N''200 mg/viên'',N''Viên uống'',N''Viên'',N''RHM_NSAID'',13938,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 189, CelT3, trang 4''),
+(N''THRHM035'',N''HHRHM035'',N''Paracetamol 10mg/ml Allomed - 10 mg/ml; túi 100 ml - Dung dịch truyền'',N''Paracetamol'',N''10 mg/ml; túi 100 ml'',N''Dung dịch truyền'',N''Túi'',N''RHM_GIAM_DAU'',10296,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 29, ParT15, trang 1''),
+(N''THRHM036'',N''HHRHM036'',N''Sodium chloride 0.9% Mekophar - rửa - 0,9%; chai 500 ml - Dung dịch rửa'',N''Natri clorid'',N''0,9%; chai 500 ml'',N''Dung dịch rửa'',N''Chai'',N''RHM_DUNG_DICH_RUA'',12402,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 50, SoCT42, trang 1; loại dùng rửa''),
+(N''THRHM037'',N''HHRHM037'',N''Medsamic - 500 mg/5 ml - Thuốc tiêm, ống 5 ml'',N''Acid tranexamic'',N''500 mg/5 ml'',N''Thuốc tiêm, ống 5 ml'',N''Ống'',N''RHM_CAM_MAU'',25155,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 333, MedT8, trang 7''),
+(N''THRHM038'',N''HHRHM038'',N''Motilium M - 10 mg/viên - Viên nén'',N''Domperidon'',N''10 mg/viên'',N''Viên nén'',N''Viên'',N''RHM_TIEU_HOA'',2574,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 344, MoMT, trang 7''),
+(N''THRHM039'',N''HHRHM039'',N''MUCOSTA Tablets - 100 mg/viên - Viên nén'',N''Rebamipid'',N''100 mg/viên'',N''Viên nén'',N''Viên'',N''RHM_TIEU_HOA'',4802,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 345, MucT13, trang 7''),
+(N''THRHM040'',N''HHRHM040'',N''Pantostad CAP 40mg - 40 mg/viên - Viên nang'',N''Pantoprazol'',N''40 mg/viên'',N''Viên nang'',N''Viên'',N''RHM_TIEU_HOA'',2160,N''https://tamduchearthospital.com/wp-content/uploads/2026/02/giathuocthang02.2026.pdf'',N''STT 379, PaCT13, trang 8; CAP, không phải Pantostad dạng viên nén''),
+(N''THRHM041'',N''HHRHM041'',N''Hapacol 80 - 80 mg/gói - Bột sủi bọt'',N''Paracetamol'',N''80 mg/gói'',N''Bột sủi bọt'',N''Gói'',N''RHM_GIAM_DAU'',0,N''https://hapacol.vn/san-pham/hapacol-80-2-2/'',N''DHG, công thức và dạng bào chế''),
+(N''THRHM042'',N''HHRHM042'',N''Hapacol 150 - 150 mg/gói - Bột sủi bọt'',N''Paracetamol'',N''150 mg/gói'',N''Bột sủi bọt'',N''Gói'',N''RHM_GIAM_DAU'',0,N''https://dav.gov.vn/upload_images/files/722_QD_QLD%202025_signed.pdf'',N''Cục QLD, mục 30; không sao chép khối lượng gói cũ''),
+(N''THRHM043'',N''HHRHM043'',N''Hapacol 650 - 650 mg/viên - Viên nén'',N''Paracetamol'',N''650 mg/viên'',N''Viên nén'',N''Viên'',N''RHM_GIAM_DAU'',0,N''https://hapacol.vn/san-pham/hapacol-650/'',N''DHG, công thức và dạng bào chế''),
+(N''THRHM044'',N''HHRHM044'',N''Ibuprofen STELLA 200 mg - 200 mg/viên - Viên nén bao phim'',N''Ibuprofen'',N''200 mg/viên'',N''Viên nén bao phim'',N''Viên'',N''RHM_NSAID'',0,N''https://stellapharm.com/products/ibudolor-200/'',N''STELLA, composition / dosage forms and strengths''),
+(N''THRHM045'',N''HHRHM045'',N''Ibuprofen STELLA 400 mg - 400 mg/viên - Viên nén bao phim'',N''Ibuprofen'',N''400 mg/viên'',N''Viên nén bao phim'',N''Viên'',N''RHM_NSAID'',0,N''https://stellapharm.com/products/ibuprofen-stella-400-mg/'',N''STELLA, composition / dosage forms and strengths''),
+(N''THRHM046'',N''HHRHM046'',N''Hagimox 250 - 250 mg/gói - Bột pha hỗn dịch uống'',N''Amoxicilin'',N''250 mg/gói'',N''Bột pha hỗn dịch uống'',N''Gói'',N''RHM_KS_PENICILLIN'',0,N''https://dhgpharma.com.vn/vi/san-pham/khang-sinh/hagimox-250'',N''DHG, công thức và dạng bào chế''),
+(N''THRHM047'',N''HHRHM047'',N''Haginat 250 - 250 mg/viên - Viên nén bao phim'',N''Cefuroxim'',N''250 mg/viên'',N''Viên nén bao phim'',N''Viên'',N''RHM_KS_CEPHALOSPORIN'',0,N''https://dhgpharma.com.vn/vi/san-pham/khang-sinh/haginat-250'',N''DHG, cefuroxim dưới dạng cefuroxim axetil''),
+(N''THRHM048'',N''HHRHM048'',N''Haginat 500 - 500 mg/viên - Viên nén bao phim'',N''Cefuroxim'',N''500 mg/viên'',N''Viên nén bao phim'',N''Viên'',N''RHM_KS_CEPHALOSPORIN'',0,N''https://dhgpharma.com.vn/vi/san-pham/khang-sinh/haginat-500'',N''DHG, cefuroxim dưới dạng cefuroxim axetil''),
+(N''THRHM049'',N''HHRHM049'',N''Clindamycin STELLA 300 mg - 300 mg/viên - Viên nang cứng'',N''Clindamycin'',N''300 mg/viên'',N''Viên nang cứng'',N''Viên'',N''RHM_KS_LINCOSAMID'',0,N''https://stellapharm.com/products/clindamycin-stella-300-mg/'',N''STELLA, composition / dosage forms and strengths''),
+(N''THRHM050'',N''HHRHM050'',N''Metronidazole STELLA 400 mg - 400 mg/viên - Viên nén'',N''Metronidazol'',N''400 mg/viên'',N''Viên nén'',N''Viên'',N''RHM_KS_NITROIMIDAZOL'',0,N''https://stellapharm.com/products/metronidazole-stella-400-mg/'',N''STELLA, composition / dosage forms and strengths''),
+(N''THRHM051'',N''HHRHM051'',N''Clabact 250 - 250 mg/viên - Viên nén bao phim'',N''Clarithromycin'',N''250 mg/viên'',N''Viên nén bao phim'',N''Viên'',N''RHM_KS_MACROLID'',0,N''https://dhgpharma.com.vn/vi/san-pham/khang-sinh/clabact-250'',N''DHG, công thức và dạng bào chế''),
+(N''THRHM052'',N''HHRHM052'',N''Clabact 500 - 500 mg/viên - Viên nén bao phim'',N''Clarithromycin'',N''500 mg/viên'',N''Viên nén bao phim'',N''Viên'',N''RHM_KS_MACROLID'',0,N''https://dhgpharma.com.vn/vi/san-pham/khang-sinh/clabact-500'',N''DHG, công thức và dạng bào chế'');
+
+-- Reserved identifiers may already hold staff-edited catalog rows; preserve all such rows.
+-- A medicine identifier must never be rebound to a different inventory identity.
+IF EXISTS(SELECT 1 FROM @Catalog s JOIN dbo.THUOC t ON t.MaThuoc=s.MaThuoc WHERE t.MaHH<>s.MaHH)
+ THROW 52321,N''Mã thuốc THRHM đã được dùng với mã hàng hóa khác; cần đối chiếu thủ công.'',1;
+IF EXISTS(SELECT 1 FROM @Catalog s JOIN dbo.HANG_HOA h ON h.MaHH=s.MaHH
+ WHERE NOT EXISTS(SELECT 1 FROM dbo.THUOC t WHERE t.MaThuoc=s.MaThuoc AND t.MaHH=s.MaHH)
+ AND (h.TenHH<>s.TenHH OR h.DonViTinh<>s.DonViTinh))
+ THROW 52321,N''Mã hàng hóa HHRHM đã được dùng cho mặt hàng khác; cần đối chiếu thủ công.'',1;
+
+-- Reuse exact identity matches under other keys. Do not merge by generic alone.
+DECLARE @Resolved TABLE (SeedMaThuoc nvarchar(50) PRIMARY KEY, MaThuoc nvarchar(50), MaHH nvarchar(50));
+INSERT @Resolved
+SELECT s.MaThuoc,COALESCE(own.MaThuoc,exactMatch.MaThuoc,s.MaThuoc),COALESCE(own.MaHH,exactMatch.MaHH,s.MaHH)
+FROM @Catalog s
+OUTER APPLY(SELECT t.MaThuoc,t.MaHH FROM dbo.THUOC t WHERE t.MaThuoc=s.MaThuoc) own
+OUTER APPLY(SELECT TOP(1) t.MaThuoc,t.MaHH FROM dbo.THUOC t JOIN dbo.HANG_HOA h ON h.MaHH=t.MaHH
+ WHERE h.TenHH=s.TenHH AND t.HamLuong=s.HamLuong AND h.DonViTinh=s.DonViTinh ORDER BY t.MaThuoc) exactMatch;
+
+INSERT dbo.HANG_HOA(MaHH,TenHH,MaLoaiHH,DonViTinh,MoTa,TrangThai)
+SELECT r.MaHH,s.TenHH,N''LHH_RHM_THUOC'',s.DonViTinh,
+ N''Hoạt chất: ''+s.HoatChat+N''; Dạng bào chế: ''+s.DangBaoChe
+ +N''; Nguồn: ''+s.Nguon+N''; Tham chiếu: ''+s.ThamChieu+N''; Ngày tra cứu: 29/10/2026.''
+ +CASE WHEN s.DonGiaBan>0
+ THEN N'' Giá tham khảo công khai theo đơn vị ''+s.DonViTinh+N''; không phải giá bán đã được bệnh viện này phê duyệt.''
+ ELSE N'' Chưa thiết lập giá: DonGiaBan=0 chỉ là giá trị chưa xác định, không phải thuốc miễn phí; cần nhập giá trước khi lập hóa đơn.'' END,
+ N''Đang hoạt động''
+FROM @Catalog s JOIN @Resolved r ON r.SeedMaThuoc=s.MaThuoc
+WHERE NOT EXISTS(SELECT 1 FROM dbo.HANG_HOA h WITH(UPDLOCK,HOLDLOCK) WHERE h.MaHH=r.MaHH);
+
+INSERT dbo.THUOC(MaThuoc,MaHH,HamLuong,MucTonToiThieu,DonGiaBan,MaNhomThuoc)
+SELECT r.MaThuoc,r.MaHH,s.HamLuong,0,s.DonGiaBan,s.MaNhomThuoc
+FROM @Catalog s JOIN @Resolved r ON r.SeedMaThuoc=s.MaThuoc
+WHERE NOT EXISTS(SELECT 1 FROM dbo.THUOC t WITH(UPDLOCK,HOLDLOCK) WHERE t.MaThuoc=r.MaThuoc);
+
+-- Classification is independent of prescription advice approval/versioning.
+UPDATE t SET MaNhomThuoc=s.MaNhomThuoc
+FROM dbo.THUOC t JOIN @Resolved r ON r.MaThuoc=t.MaThuoc JOIN @Catalog s ON s.MaThuoc=r.SeedMaThuoc
+WHERE t.MaNhomThuoc IS NULL;
+
+-- Conservative mappings verified by a read-only query on 29/10/2026.
+-- Requiring key, name AND strength prevents guessing after an administrator repurposes a code.
+UPDATE t SET MaNhomThuoc=e.MaNhomThuoc
+FROM dbo.THUOC t JOIN dbo.HANG_HOA h ON h.MaHH=t.MaHH
+JOIN (VALUES
+(N''TH001'',N''Paracetamol 500 mg'',N''500 mg'',N''RHM_GIAM_DAU''),
+(N''TH002'',N''Amoxicillin 500 mg'',N''500 mg'',N''RHM_KS_PENICILLIN''),
+(N''TH003'',N''Chlorhexidine 0,12% - chai 100 ml'',N''0,12%'',N''RHM_SAT_KHUAN_MIENG''),
+(N''TH004'',N''Ibuprofen 200 mg'',N''200 mg'',N''RHM_NSAID''),
+(N''TH005'',N''Cetirizine 10 mg'',N''10 mg'',N''RHM_KHANG_HISTAMIN''),
+(N''TH006'',N''Triamcinolone acetonide 0,1% - tuýp 5 g'',N''0,1%'',N''RHM_CORTICOID_TAI_CHO''),
+(N''TH007'',N''Cefalexin 500 mg'',N''500 mg'',N''RHM_KS_CEPHALOSPORIN''),
+(N''TH008'',N''Natri clorid 0,9% - chai 500 ml'',N''0,9%'',N''RHM_DUNG_DICH_RUA''),
+(N''TH009'',N''Povidone iodine 10% - chai 100 ml'',N''10%'',N''RHM_SAT_KHUAN_NGOAI''),
+(N''TH010'',N''Loratadine 10 mg'',N''10 mg'',N''RHM_KHANG_HISTAMIN'')
+) e(MaThuoc,TenHH,HamLuong,MaNhomThuoc)
+ON e.MaThuoc=t.MaThuoc AND e.TenHH=h.TenHH AND e.HamLuong=t.HamLuong
+WHERE t.MaNhomThuoc IS NULL;
+
+IF EXISTS(SELECT 1 FROM @Resolved r LEFT JOIN dbo.THUOC t ON t.MaThuoc=r.MaThuoc WHERE t.MaThuoc IS NULL OR t.MaNhomThuoc IS NULL)
+ THROW 52322,N''Danh mục thuốc chưa được tạo/phân nhóm đầy đủ.'',1;
+';
+ EXEC sys.sp_executesql N'CREATE OR ALTER PROCEDURE dbo.usp_RHM_KiemTraKeThuoc AS
+ BEGIN
+ SET NOCOUNT ON;
+ IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.PrescriptionFlow.Version'' AND TRY_CONVERT(int,value)=1)
+  THROW 52325,N''Chạy toàn bộ QLBenhVienRangHamMat.sql để đồng bộ kê thuốc trong khám.'',1;
+ IF NOT EXISTS(SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID(N''dbo.THUOC'') AND name=N''MaNhomThuoc'' AND TYPE_NAME(user_type_id)=N''nvarchar'' AND max_length=100 AND is_nullable=1)
+  THROW 52325,N''Thiếu nhóm thuốc trực tiếp hoặc sai kiểu.'',1;
+ IF NOT EXISTS(SELECT 1 FROM sys.foreign_keys f JOIN sys.foreign_key_columns c ON c.constraint_object_id=f.object_id
+  WHERE f.name=N''FK_RX_Thuoc_Nhom'' AND f.parent_object_id=OBJECT_ID(N''dbo.THUOC'') AND f.referenced_object_id=OBJECT_ID(N''dbo.NHOM_THUOC_KE_DON'')
+   AND COL_NAME(c.parent_object_id,c.parent_column_id)=N''MaNhomThuoc'' AND COL_NAME(c.referenced_object_id,c.referenced_column_id)=N''MaNhomThuoc'' AND f.is_disabled=0 AND f.is_not_trusted=0)
+  THROW 52325,N''Khóa ngoại nhóm thuốc thiếu hoặc chưa trusted.'',1;
+ IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.THUOC'') AND name=N''IX_RX_Thuoc_Nhom'' AND is_disabled=0)
+  THROW 52325,N''Thiếu index nhóm thuốc.'',1;
+ SELECT N''PrescriptionFlow1'' PrescriptionFlow,(SELECT COUNT(*) FROM dbo.NHOM_THUOC_KE_DON) DrugGroups,(SELECT COUNT(*) FROM dbo.THUOC) Medicines;
+ END;';
+ IF EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N'RHM.PrescriptionFlow.Version') EXEC sys.sp_updateextendedproperty @name=N'RHM.PrescriptionFlow.Version',@value=1; ELSE EXEC sys.sp_addextendedproperty @name=N'RHM.PrescriptionFlow.Version',@value=1;
+ COMMIT TRANSACTION;
+ PRINT N'Đã đồng bộ PrescriptionFlow1, nhóm thuốc và danh mục thuốc có nguồn.';
+ EXEC sys.sp_set_session_context @key=N'RHM.MaTK',@value=@rxPreviousActor;
+END TRY
+BEGIN CATCH
+ IF XACT_STATE()<>0 ROLLBACK TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'RHM.MaTK',@value=@rxPreviousActor;
+ THROW;
+END CATCH;
+
+
+GO

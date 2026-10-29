@@ -257,6 +257,7 @@
     <Cot Ten="MucTonToiThieu" Kieu="decimal" QuyCach="18,3" ChoTrong="false" Khoa="false" />
   </Bang>
   <Bang Ten="THUOC">
+    <Cot Ten="MaNhomThuoc" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
     <Cot Ten="MaThuoc" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
     <Cot Ten="MaHH" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
     <Cot Ten="HamLuong" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />

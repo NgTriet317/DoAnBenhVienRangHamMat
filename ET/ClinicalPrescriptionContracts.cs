@@ -1,7 +1,10 @@
 namespace ET;
 
 public sealed record BoLocThuoc(string? MaNhomThuoc=null,string? TuKhoa=null,string? DangBaoChe=null,string? HamLuong=null);
-public sealed record ThuocKeDon(string MaThuoc,string MaHH,string TenThuoc,string HamLuong,string DonViTinh,decimal DonGiaThamKhao,decimal TonThamKhao,ET_CAUHINHTHUOCKEDON? HuongDan);
+public sealed record ThuocKeDon(string MaThuoc,string MaHH,string TenThuoc,string HamLuong,string DonViTinh,decimal DonGiaThamKhao,decimal TonThamKhao,ET_CAUHINHTHUOCKEDON? HuongDan,string? MaNhomThuoc=null,string? TenNhomThuoc=null)
+{
+    public string GiaHienThi=>DonGiaThamKhao>0?DonGiaThamKhao.ToString("N0",System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))+" đ":"Chưa thiết lập giá";
+}
 public sealed class DongThuocKeDon
 {
     public string? MaCTDT{get;set;}

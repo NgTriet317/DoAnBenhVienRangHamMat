@@ -1,5 +1,7 @@
 # Chốt khám, lịch sử dịch vụ và SQL thống nhất
 
+> Mốc lịch sử trước PrescriptionFlow1. Luồng hiện tại tách xác nhận thực hiện và kê thuốc trong khám trước Tổng kết; xem [KE_THUOC_TRONG_KHAM.md](KE_THUOC_TRONG_KHAM.md).
+
 Yêu cầu29/10/2026: Dịch vụ thực hiện chỉ xem lịch sử; Hoàn tất khám chốt điều trị và lập hóa đơn ngay; đa dạng danh mục RHM, không chỉ bệnh răng; một file SQL để cài/sync, bỏ phụ thuộc Migrations và dữ liệu demo.
 
 Thiết kế: bác sĩ lập và duyệt kế hoạch ngay trong khám. Nút Hoàn tất yêu cầu xác nhận các dịch vụ trong kế hoạch đã làm xong; backend chốt phần lượng còn lại, ghi dịch vụ đã thực hiện theo đúng bước/giá đã duyệt, khóa lượt, tạo một hóa đơn chờ thu (dịch vụ và đơn đã ký), tất cả chung transaction. Dịch vụ khám tiếp nhận được ghi một lần nếu chưa có trong các bước. Không tự thu tiền hoặc xuất thuốc khi hoàn tất. Quầy thu dùng lại chính hóa đơn đó, xuất thuốc/thu/giao theo luồng hiện có; retry không tạo hóa đơn thứ hai. Kế hoạch có nhiều buổi chỉ hoàn tất khi đã thực hiện xong toàn bộ, theo xác nhận của bác sĩ.

@@ -270,6 +270,8 @@ public sealed class DAL_HOADON : dbconnect
             if (db.ExecuteScalar<int>("SELECT (SELECT COUNT(*) FROM dbo.DON_THUOC WHERE MaLS=@maLS AND TrangThai=N'Nháp')+(SELECT COUNT(*) FROM dbo.DICH_VU_THUC_HIEN WHERE MaLS=@maLS AND TrangThai=N'Nháp')", new { maLS }, tx) != 0)
                 throw new LoiKhamException("MaLS", "Xử lý hết đơn thuốc và dịch vụ nháp trước hoàn tất.");
             var charges = db.Query<ET_CHITIETHOADON>(DAL_CHITIETHOADON.CompletionChargesSql, new { visitId = maLS }, tx).ToArray();
+            if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DON_THUOC d JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaDT=d.MaDT JOIN dbo.THUOC t ON t.MaThuoc=c.MaThuoc WHERE d.MaLS=@maLS AND d.TrangThai=N'Đã xác nhận' AND t.DonGiaBan<=0", new { maLS }, tx)>0)
+                throw new LoiKhamException("DonGiaBan", "Có thuốc chưa thiết lập giá. Cập nhật giá thuốc trước khi hoàn tất và lập hóa đơn.");
             if (charges.Length == 0)
                 throw new LoiKhamException("MaLS", "Lần khám cần có dịch vụ hoặc thuốc đã ký để lập hóa đơn.");
             if (charges.Any(c => c.ThanhTien != decimal.Truncate(c.ThanhTien)))

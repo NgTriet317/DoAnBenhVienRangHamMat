@@ -4,7 +4,7 @@ namespace RangHamMat.Views;
 public partial class KhamLamSang:IClinicalPendingWork
 {
     string IClinicalPendingWork.WorkTitle=>"Nội dung khám/kế hoạch điều trị";
-    bool IClinicalPendingWork.HasChanges=>CoThayDoiChuaLuu;
+    bool IClinicalPendingWork.HasChanges=>dirty||planDirty||conditionInputDirty;
     bool IClinicalPendingWork.SaveBeforeLeave(out string error)
     {error="";if((dirty||conditionInputDirty)&&!TrySave(out error))return false;return !planDirty||TrySavePlan(out error);}
     bool IClinicalPendingWork.DiscardBeforeLeave(out string error)=>Run(LoadWorkspace,out error);
