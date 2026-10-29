@@ -49,13 +49,13 @@
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <StackPanel>
                 <TextBlock Text="QUẢN LÝ TÀI SẢN Y TẾ" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource EquipBlue}"/>
-                <TextBlock Text="Trang thiết bị" FontSize="27" FontWeight="Bold" Foreground="{StaticResource EquipInk}" Margin="0,4,0,3"/>
-                <TextBlock Text="Theo dõi tình trạng, phòng sử dụng và bảo hành trên cùng một màn hình." Foreground="{StaticResource EquipSubtle}" FontSize="13"/>
+                <TextBlock Text="Phân thiết bị vào phòng" FontSize="27" FontWeight="Bold" Foreground="{StaticResource EquipInk}" Margin="0,4,0,3"/>
+                <TextBlock Text="Chọn thiết bị đã nhập kho, phân phòng hoặc điều chuyển đến phòng khác." Foreground="{StaticResource EquipSubtle}" FontSize="13"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                 <Button Content="↻  Làm mới" Click="TaiLai_Click" Margin="0,0,8,0"/>
                 <Button Content="Lịch sử bảo trì ↗" Tag="MoTrang:BaoTri" Margin="0,0,8,0"/>
-                <Button Content="＋  Thêm thiết bị" Style="{StaticResource Primary}" Click="ThemMoi_Click" Margin="0"/>
+                <Button Content="↗  Phân phòng thiết bị" Style="{StaticResource Primary}" Click="PhanPhong_Click" Margin="0"/>
             </StackPanel>
         </Grid>
         <!-- KPI tính từ dữ liệu thật, không dùng số liệu mẫu -->
@@ -79,9 +79,9 @@
             <Border Grid.Column="2" Style="{StaticResource EquipCard}" Padding="18,14">
                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Text="CẦN THEO DÕI" Style="{StaticResource EquipLabel}" FontWeight="SemiBold"/>
+                        <TextBlock Text="CHƯA PHÂN PHÒNG" Style="{StaticResource EquipLabel}" FontWeight="SemiBold"/>
                         <TextBlock x:Name="lblCanTheoDoi" Text="0" Style="{StaticResource EquipNumber}" Foreground="#B45309"/>
-                        <TextBlock Text="Tình trạng hoặc bảo hành" FontSize="12" Foreground="{StaticResource EquipSubtle}"/>
+                        <TextBlock Text="Thiết bị chờ bàn giao" FontSize="12" Foreground="{StaticResource EquipSubtle}"/>
                     </StackPanel>
                     <Border Grid.Column="1" Background="#FFF4E5" CornerRadius="12" Width="45" Height="45" VerticalAlignment="Top">
                         <TextBlock Text="!" Foreground="#B45309" FontSize="27" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -129,14 +129,14 @@
                     <Grid Margin="20,17,20,13">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <StackPanel>
-                            <TextBlock Text="Danh mục thiết bị" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource EquipInk}"/>
-                            <TextBlock Text="Chọn một thiết bị để xem hoặc sửa thông tin bên phải." Foreground="{StaticResource EquipSubtle}" FontSize="12" Margin="0,3,0,0"/>
+                            <TextBlock Text="Danh sách thiết bị" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource EquipInk}"/>
+                            <TextBlock Text="Chọn thiết bị để phân vào phòng, điều chuyển hoặc thu hồi." Foreground="{StaticResource EquipSubtle}" FontSize="12" Margin="0,3,0,0"/>
                         </StackPanel>
                         <Border Grid.Column="1" Background="#EEF4FC" CornerRadius="8" Padding="10,6" VerticalAlignment="Center">
                             <TextBlock x:Name="lblDangHien" Text="0 thiết bị" FontSize="12" Foreground="{StaticResource EquipBlue}" FontWeight="SemiBold"/>
                         </Border>
                     </Grid>
-                    <DataGrid Grid.Row="1" x:Name="Grid_THIET_BI" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                    <DataGrid Grid.Row="1" x:Name="dgvThietBi" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
                               HeadersVisibility="Column" GridLinesVisibility="None" RowStyle="{StaticResource EquipGridRow}" SelectionUnit="FullRow" SelectionMode="Single"
                               SelectionChanged="DanhSach_SelectionChanged" BorderThickness="0" RowHeaderWidth="0" ColumnHeaderHeight="42"
                               Background="White" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto">
@@ -189,7 +189,7 @@
                     <Border Background="#EAF2FF" Padding="20,18" BorderBrush="#D9E8FB" BorderThickness="0,0,0,1">
                         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock x:Name="lblCheDo" Text="HỒ SƠ THIẾT BỊ" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource EquipBlue}"/>
+                                <TextBlock x:Name="lblCheDo" Text="PHÂN PHÒNG THIẾT BỊ" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource EquipBlue}"/>
                                 <TextBlock x:Name="lblTieuDeChiTiet" Text="Chọn một thiết bị" TextWrapping="Wrap" FontSize="19" FontWeight="Bold" Foreground="{StaticResource EquipInk}" Margin="0,7,0,4"/>
                                 <TextBlock x:Name="lblMaThietBi" Text="Thông tin sẽ hiển thị tại đây" Foreground="#647B95" FontSize="12"/>
                             </StackPanel>
@@ -200,13 +200,13 @@
                     </Border>
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="20,18,20,4">
-                            <TextBlock Text="Thông tin nhận diện" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource EquipInk}" Margin="0,0,0,13"/>
+                            <TextBlock Text="Thiết bị đã nhập kho (chỉ xem)" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource EquipInk}" Margin="0,0,0,13"/>
                             <StackPanel Style="{StaticResource EquipField}">
-                                <TextBlock Text="Tên thiết bị *" Style="{StaticResource EquipLabel}"/>
+                                <TextBlock Text="Tên thiết bị" Style="{StaticResource EquipLabel}"/>
                                 <ComboBox x:Name="cboHangHoa" DisplayMemberPath="Label" SelectedValuePath="Value"/>
                             </StackPanel>
                             <StackPanel Style="{StaticResource EquipField}">
-                                <TextBlock Text="Số serial *" Style="{StaticResource EquipLabel}"/>
+                                <TextBlock Text="Số serial tự động" Style="{StaticResource EquipLabel}"/>
                                 <TextBox x:Name="txtSerial" MaxLength="50"/>
                             </StackPanel>
                             <StackPanel Style="{StaticResource EquipField}">
@@ -214,17 +214,17 @@
                                 <ComboBox x:Name="cboNhaCungCap" DisplayMemberPath="Label" SelectedValuePath="Value"/>
                             </StackPanel>
                             <StackPanel Style="{StaticResource EquipField}">
-                                <TextBlock Text="Phòng sử dụng" Style="{StaticResource EquipLabel}"/>
-                                <ComboBox x:Name="cboPhong" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                                <TextBlock Text="Phòng nhận / Điều chuyển đến" Style="{StaticResource EquipLabel}"/>
+                                <ComboBox x:Name="cboPhong" DisplayMemberPath="Label" SelectedValuePath="Value" ToolTip="Chọn phòng nhận, hoặc Chưa phân phòng để thu hồi thiết bị"/>
                             </StackPanel>
                             <Border Height="1" Background="#E8EEF7" Margin="0,0,0,16"/>
-                            <TextBlock Text="Tình trạng &amp; bảo hành" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource EquipInk}" Margin="0,0,0,13"/>
+                            <TextBlock Text="Tình trạng &amp; bảo hành (chỉ xem)" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource EquipInk}" Margin="0,0,0,13"/>
                             <StackPanel Style="{StaticResource EquipField}">
-                                <TextBlock Text="Tình trạng thiết bị *" Style="{StaticResource EquipLabel}"/>
+                                <TextBlock Text="Tình trạng thiết bị" Style="{StaticResource EquipLabel}"/>
                                 <ComboBox x:Name="cboTinhTrang" IsEditable="True" IsTextSearchEnabled="True"/>
                             </StackPanel>
                             <StackPanel Style="{StaticResource EquipField}">
-                                <TextBlock Text="Trạng thái quản lý *" Style="{StaticResource EquipLabel}"/>
+                                <TextBlock Text="Trạng thái quản lý" Style="{StaticResource EquipLabel}"/>
                                 <ComboBox x:Name="cboTrangThai" IsEditable="True" IsTextSearchEnabled="True"/>
                             </StackPanel>
                             <Grid Margin="0,0,0,14">
@@ -248,8 +248,8 @@
                     <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="#E5ECF4" Padding="14">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button x:Name="btnHuy" Content="Hủy" Click="Huy_Click" Visibility="Collapsed"/>
-                            <Button x:Name="btnSua" Content="Chỉnh sửa" Click="Sua_Click"/>
-                            <Button x:Name="btnLuu" Content="Lưu thiết bị" Style="{StaticResource Primary}" Click="Luu_Click" Visibility="Collapsed" Margin="0"/>
+                            <Button x:Name="btnSua" Content="Phân phòng / Điều chuyển" Click="PhanPhong_Click"/>
+                            <Button x:Name="btnLuu" Content="Xác nhận phân phòng" Style="{StaticResource Primary}" Click="Luu_Click" Visibility="Collapsed" Margin="0"/>
                         </StackPanel>
                     </Border>
                 </Grid>

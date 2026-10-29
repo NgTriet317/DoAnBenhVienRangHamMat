@@ -1,4 +1,5 @@
 // AI hỗ trợ: bổ sung chú thích tiếng Việt;
+using System;
 using System.Data;
 using Dapper;
 using ET;
@@ -123,5 +124,51 @@ namespace DAL
                 return true;
             });
         }
+        // Chỉ cập nhật phòng và trạng thái nhận bàn giao của thiết bị đã có.
+        public bool phanThietBiVaoPhong(string maTB, string? maPhong, ET_THIETBI banGoc)
+        {
+            return ThucHien((connection, transaction) =>
+            {
+                ET_THIETBI? hienTai = connection.QuerySingleOrDefault<ET_THIETBI>(
+                    "SELECT * FROM dbo.[THIET_BI] WITH(UPDLOCK,HOLDLOCK) WHERE [MaTB]=@MaTB",
+                    new { MaTB = maTB }, transaction);
+                if (hienTai == null)
+                    throw new InvalidOperationException("Thiết bị không còn tồn tại. Vui lòng tải lại.");
+
+                // Chặn ghi đè nếu người khác vừa thay đổi phòng hay hồ sơ thiết bị.
+                ET_THIETBI capNhat = new ET_THIETBI(hienTai.MaTB, hienTai.MaHH,
+                    hienTai.SoSerial, hienTai.NgayMua, hienTai.MaNCC, maPhong,
+                    hienTai.TinhTrang, hienTai.HanBaoHanh, hienTai.TrangThai, hienTai.GhiChu);
+
+                if (maPhong != null)
+                {
+                    bool phongHoatDong = connection.ExecuteScalar<int>(
+                        "SELECT COUNT(1) FROM dbo.[PHONG] WITH (HOLDLOCK) WHERE [MaPhong]=@MaPhong AND [TrangThai]=N'Đang hoạt động'",
+                        new { MaPhong = maPhong }, transaction) > 0;
+                    if (!phongHoatDong)
+                        throw new InvalidOperationException("Phòng được chọn không tồn tại hoặc đã ngừng hoạt động.");
+
+                    if (hienTai.TrangThai != "Chờ bàn giao" && hienTai.TrangThai != "Đang sử dụng")
+                        throw new InvalidOperationException("Thiết bị đang ngừng sử dụng hoặc bảo trì, không thể phân phòng.");
+                    if (hienTai.TinhTrang.Contains("Hỏng", StringComparison.OrdinalIgnoreCase)
+                        || hienTai.TinhTrang.Contains("bảo trì", StringComparison.OrdinalIgnoreCase))
+                        throw new InvalidOperationException("Thiết bị đang hỏng hoặc bảo trì, không thể phân phòng.");
+
+                    capNhat.TrangThai = "Đang sử dụng";
+                }
+                else if (hienTai.TrangThai == "Đang sử dụng" || hienTai.TrangThai == "Chờ bàn giao")
+                {
+                    capNhat.TrangThai = "Chờ bàn giao";
+                }
+
+                KiemTra(connection, transaction, "THIET_BI", capNhat, hienTai, banGoc);
+                connection.Execute(@"
+                    UPDATE dbo.[THIET_BI]
+                    SET [MaPhong]=@MaPhong, [TrangThai]=@TrangThai
+                    WHERE [MaTB]=@MaTB", capNhat, transaction);
+                return true;
+            });
+        }
+
     }
 }

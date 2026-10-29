@@ -26,7 +26,7 @@
         <Style x:Key="SoChonLoai" TargetType="RadioButton">
             <Setter Property="Foreground" Value="#47637E"/>
             <Setter Property="Margin" Value="0,0,18,0"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Style.Triggers>
                 <Trigger Property="IsChecked" Value="True"><Setter Property="Foreground" Value="#1664B6"/></Trigger>
@@ -123,9 +123,9 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="360" MinWidth="320"/>
+                <ColumnDefinition Width="420" MinWidth="390"/>
                 <ColumnDefinition Width="14"/>
-                <ColumnDefinition Width="*" MinWidth="530"/>
+                <ColumnDefinition Width="*" MinWidth="480"/>
             </Grid.ColumnDefinitions>
 
             <!-- Danh sách theo dạng sổ thời gian, không dùng bảng dữ liệu toàn trang. -->
@@ -133,13 +133,13 @@
                 <Grid>
                     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                     <StackPanel Margin="17,16,17,12">
-                        <TextBlock Text="DANH SÁCH CHỨNG TỪ" Foreground="#66788A" FontSize="11" FontWeight="Bold"/>
-                        <TextBlock Text="Chọn một phiếu để xem toàn bộ chi tiết" Foreground="#152C43" FontSize="15" FontWeight="SemiBold" Margin="0,5,0,10"/>
-                        <TextBox x:Name="txtTimKiem" TextChanged="BoLoc_Changed" ToolTip="Tìm số phiếu, kho, người lập, lý do hoặc mặt hàng" Height="37" Padding="9,7"/>
-                        <TextBlock Text="Tìm theo tên kho, người lập, hàng hóa hoặc số phiếu" Foreground="#8091A3" FontSize="11" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                        <TextBlock Text="DANH SÁCH CHỨNG TỪ" Foreground="#66788A" FontSize="12" FontWeight="Bold"/>
+                        <TextBlock Text="Chọn một phiếu để xem toàn bộ chi tiết" Foreground="#152C43" FontSize="16" FontWeight="SemiBold" Margin="0,5,0,10"/>
+                        <TextBox x:Name="txtTimKiem" TextChanged="BoLoc_Changed" ToolTip="Tìm số phiếu, kho, người lập, lý do hoặc mặt hàng" Height="40" Padding="9,7" FontSize="14"/>
+                        <TextBlock Text="Tìm theo tên kho, người lập, hàng hóa hoặc số phiếu" Foreground="#8091A3" FontSize="12" TextWrapping="Wrap" Margin="0,5,0,0"/>
                     </StackPanel>
                     <StackPanel Grid.Row="1" Margin="17,0,17,12">
-                        <TextBlock Text="LOẠI PHIẾU" Foreground="#526C86" FontSize="11" FontWeight="Bold" Margin="0,0,0,9"/>
+                        <TextBlock Text="LOẠI PHIẾU" Foreground="#526C86" FontSize="13" FontWeight="Bold" Margin="0,0,0,9"/>
                         <WrapPanel Margin="0,0,0,15">
                             <RadioButton x:Name="rbTatCa" Content="Tất cả phiếu" Tag="TatCa" IsChecked="True" GroupName="LoaiPhieu" Style="{StaticResource SoChonLoai}" Checked="LocLoai_Checked"/>
                             <RadioButton x:Name="rbNhap" Content="Phiếu nhập" Tag="Nhap" GroupName="LoaiPhieu" Style="{StaticResource SoChonLoai}" Checked="LocLoai_Checked"/>
@@ -148,12 +148,12 @@
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="Kho" Style="{StaticResource SoNhan}"/>
-                                <ComboBox x:Name="cboKho" DisplayMemberPath="Ten" SelectedValuePath="Ma" SelectionChanged="BoLoc_Changed" Height="33"/>
+                                <TextBlock Text="Kho" Style="{StaticResource SoNhan}" FontSize="13"/>
+                                <ComboBox x:Name="cboKho" DisplayMemberPath="Ten" SelectedValuePath="Ma" SelectionChanged="BoLoc_Changed" Height="38" FontSize="14"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="Trạng thái" Style="{StaticResource SoNhan}"/>
-                                <ComboBox x:Name="cboTrangThai" SelectionChanged="BoLoc_Changed" Height="33" SelectedIndex="0">
+                                <TextBlock Text="Trạng thái" Style="{StaticResource SoNhan}" FontSize="13"/>
+                                <ComboBox x:Name="cboTrangThai" SelectionChanged="BoLoc_Changed" Height="38" FontSize="14" SelectedIndex="0">
                                     <ComboBoxItem Content="Tất cả"/>
                                     <ComboBoxItem Content="Nháp"/>
                                     <ComboBoxItem Content="Đã ghi sổ"/>
@@ -236,8 +236,8 @@
                                     <DataGridTextColumn Header="Lô hàng" Binding="{Binding TenLo}" Width="1*" MinWidth="85"/>
                                     <DataGridTextColumn Header="Số lượng" Binding="{Binding SoLuong, StringFormat={}{0:N3}}" Width="0.85*" MinWidth="75"/>
                                     <DataGridTextColumn Header="ĐVT" Binding="{Binding DonViTinh}" Width="0.6*" MinWidth="56"/>
-                                    <DataGridTextColumn Header="Đơn giá nhập" Binding="{Binding DonGiaHienThi}" Width="1*" MinWidth="90"/>
-                                    <DataGridTextColumn Header="Thành tiền" Binding="{Binding ThanhTienHienThi}" Width="1*" MinWidth="90"/>
+                                    <DataGridTextColumn Header="Đơn giá nhập" Binding="{Binding DonGiaHienThi}" Visibility="Collapsed" Width="1*" MinWidth="90"/>
+                                    <DataGridTextColumn Header="Thành tiền" Binding="{Binding ThanhTienHienThi}" Visibility="Collapsed" Width="1*" MinWidth="90"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                             <Border Grid.Row="4" BorderBrush="#DDE5EE" BorderThickness="0,1,0,0" Padding="0,13,0,0" Margin="0,11,0,0">

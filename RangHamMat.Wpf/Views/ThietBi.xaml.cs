@@ -57,12 +57,14 @@ namespace RangHamMat.Views
         private List<ET_HANGHOA> danhSachHangHoa = new List<ET_HANGHOA>();
         private List<ET_PHONG> danhSachPhong = new List<ET_PHONG>();
         private List<ET_NHACUNGCAP> danhSachNhaCungCap = new List<ET_NHACUNGCAP>();
+
         private List<ThietBiDong> danhSachHienThi = new List<ThietBiDong>();
 
         private ET_THIETBI? thietBiDangChon;
         private ET_THIETBI? banGoc;
-        private bool dangThem = false;
+
         private bool dangSua = false;
+
         private bool daTaiDuLieu = false;
 
         public ThietBi()
@@ -93,20 +95,23 @@ namespace RangHamMat.Views
                 LoadDanhMuc(danhSachLoai);
                 TaoDanhSachHienThi();
 
-                int soCanChuY = 0;
+                int soChuaPhanPhong = 0;
                 int soSapHetBaoHanh = 0;
+
                 foreach (ThietBiDong dong in danhSachHienThi)
                 {
-                    if (dong.CanChuY)
-                        soCanChuY++;
+                    if (string.IsNullOrWhiteSpace(dong.DuLieu.MaPhong))
+                        soChuaPhanPhong++;
                     if (dong.SapHetBaoHanh)
                         soSapHetBaoHanh++;
                 }
 
                 lblTong.Text = danhSachHienThi.Count.ToString();
-                lblCanTheoDoi.Text = soCanChuY.ToString();
+                lblCanTheoDoi.Text = soChuaPhanPhong.ToString();
                 lblSapHetBaoHanh.Text = soSapHetBaoHanh.ToString();
+
                 daTaiDuLieu = true;
+
                 ApDungBoLocThietBi(maCanChon);
                 lblThongBao.Text = "";
             }
@@ -121,6 +126,7 @@ namespace RangHamMat.Views
 
         private void LoadDanhMuc(List<ET_LOAIHANGHOA> danhSachLoai)
         {
+            //lấy all mã loại của thiết bị
             List<string> maLoaiThietBi = new List<string>();
             foreach (ET_LOAIHANGHOA loai in danhSachLoai)
             {
@@ -128,6 +134,7 @@ namespace RangHamMat.Views
                     maLoaiThietBi.Add(loai.MaLoaiHH);
             }
 
+            //so sánh hàng hóa để lọc ra hàng hóa nào là thiết bị
             List<LuaChonDanhMuc> hangHoa = new List<LuaChonDanhMuc>();
             foreach (ET_HANGHOA hh in danhSachHangHoa)
             {
@@ -149,35 +156,59 @@ namespace RangHamMat.Views
             }
             cboHangHoa.ItemsSource = hangHoa;
 
+            //lấy phòng fill combobox
             List<LuaChonDanhMuc> phong = new List<LuaChonDanhMuc>();
+
             phong.Add(new LuaChonDanhMuc("", "Chưa phân phòng"));
+
             foreach (ET_PHONG p in danhSachPhong)
+            {
                 phong.Add(new LuaChonDanhMuc(p.MaPhong, p.TenPhong));
+            }
+
             cboPhong.ItemsSource = phong;
 
+
+            //lấy ncc fill cbbox
             List<LuaChonDanhMuc> nhaCungCap = new List<LuaChonDanhMuc>();
+
             nhaCungCap.Add(new LuaChonDanhMuc("", "Chưa xác định"));
+
             foreach (ET_NHACUNGCAP ncc in danhSachNhaCungCap)
+            {
                 nhaCungCap.Add(new LuaChonDanhMuc(ncc.MaNCC, ncc.TenNCC));
+            }
             cboNhaCungCap.ItemsSource = nhaCungCap;
 
+            //lấy ncc fill bộ lọc
             List<LuaChonDanhMuc> phongLoc = new List<LuaChonDanhMuc>();
+
             phongLoc.Add(new LuaChonDanhMuc("", "Tất cả phòng"));
+            phongLoc.Add(new LuaChonDanhMuc("CHUA_PHAN_PHONG", "Chưa phân phòng"));
+
             foreach (ET_PHONG p in danhSachPhong)
+            {
                 phongLoc.Add(new LuaChonDanhMuc(p.MaPhong, p.TenPhong));
+            }
+
             cboPhongLoc.ItemsSource = phongLoc;
             cboPhongLoc.SelectedIndex = 0;
 
+            //lấy trạng thái và tình trạng fill bộ lọc
             List<string> trangThaiLoc = new List<string>();
             trangThaiLoc.Add("Tất cả trạng thái");
+
             List<string> tinhTrang = new List<string>() { "Tốt", "Bình thường", "Cần bảo trì", "Đang bảo trì", "Hỏng" };
             List<string> trangThai = new List<string>() { "Đang sử dụng", "Ngừng sử dụng", "Đang bảo trì" };
+
             foreach (ET_THIETBI tb in danhSachThietBi)
             {
                 if (!string.IsNullOrWhiteSpace(tb.TrangThai) && !trangThaiLoc.Contains(tb.TrangThai))
                     trangThaiLoc.Add(tb.TrangThai);
+
                 if (!string.IsNullOrWhiteSpace(tb.TrangThai) && !trangThai.Contains(tb.TrangThai))
                     trangThai.Add(tb.TrangThai);
+
                 if (!string.IsNullOrWhiteSpace(tb.TinhTrang) && !tinhTrang.Contains(tb.TinhTrang))
                     tinhTrang.Add(tb.TinhTrang);
             }
@@ -259,6 +290,7 @@ namespace RangHamMat.Views
             string tuKhoa = txtTimKiem.Text.Trim();
             string trangThaiLoc = "Tất cả trạng thái";
             string maPhongLoc = "";
+
             if (cboTrangThaiLoc.SelectedItem is string trangThaiDaChon)
                 trangThaiLoc = trangThaiDaChon;
             if (cboPhongLoc.SelectedValue is string phongDaChon)
@@ -266,7 +298,7 @@ namespace RangHamMat.Views
 
             if (string.IsNullOrEmpty(maCanChon))
             {
-                if (Grid_THIET_BI.SelectedItem is ThietBiDong dongDangChon)
+                if (dgvThietBi.SelectedItem is ThietBiDong dongDangChon)
                     maCanChon = dongDangChon.DuLieu.MaTB;
             }
 
@@ -275,7 +307,9 @@ namespace RangHamMat.Views
             {
                 if (trangThaiLoc != "Tất cả trạng thái" && dong.DuLieu.TrangThai != trangThaiLoc)
                     continue;
-                if (maPhongLoc != "" && dong.DuLieu.MaPhong != maPhongLoc)
+                if (maPhongLoc == "CHUA_PHAN_PHONG" && !string.IsNullOrWhiteSpace(dong.DuLieu.MaPhong))
+                    continue;
+                if (maPhongLoc != "" && maPhongLoc != "CHUA_PHAN_PHONG" && dong.DuLieu.MaPhong != maPhongLoc)
                     continue;
 
                 string chuoiTim = dong.DuLieu.MaTB + " " + dong.TenThietBi + " " + dong.DuLieu.SoSerial
@@ -285,14 +319,15 @@ namespace RangHamMat.Views
                 ketQua.Add(dong);
             }
 
-            Grid_THIET_BI.ItemsSource = ketQua;
+            dgvThietBi.ItemsSource = ketQua;
             lblDangHien.Text = ketQua.Count + " thiết bị";
+
             if (ketQua.Count == 0)
                 lblTrong.Visibility = Visibility.Visible;
             else
                 lblTrong.Visibility = Visibility.Collapsed;
 
-            if (dangThem || dangSua)
+            if (dangSua)
                 return;
 
             ThietBiDong? canChon = null;
@@ -307,7 +342,7 @@ namespace RangHamMat.Views
             if (canChon == null && ketQua.Count > 0)
                 canChon = ketQua[0];
 
-            Grid_THIET_BI.SelectedItem = canChon;
+            dgvThietBi.SelectedItem = canChon;
             if (canChon != null)
                 HienChiTiet(canChon.DuLieu, canChon.TenThietBi);
             else
@@ -329,9 +364,10 @@ namespace RangHamMat.Views
 
         private void DanhSach_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!daTaiDuLieu || dangThem || dangSua)
+            if (!daTaiDuLieu || dangSua)
                 return;
-            if (Grid_THIET_BI.SelectedItem is ThietBiDong dong)
+
+            if (dgvThietBi.SelectedItem is ThietBiDong dong)
                 HienChiTiet(dong.DuLieu, dong.TenThietBi);
         }
 
@@ -345,26 +381,28 @@ namespace RangHamMat.Views
         {
             thietBiDangChon = tb;
             banGoc = SaoChepThietBi(tb);
-            dangThem = false;
             dangSua = false;
 
-            lblCheDo.Text = "HỒ SƠ THIẾT BỊ";
+            lblCheDo.Text = "PHÂN PHÒNG THIẾT BỊ";
             lblTieuDeChiTiet.Text = tenThietBi;
             lblMaThietBi.Text = "Mã hồ sơ: " + tb.MaTB;
             cboHangHoa.SelectedValue = tb.MaHH;
             txtSerial.Text = tb.SoSerial;
             cboNhaCungCap.SelectedValue = tb.MaNCC;
             cboPhong.SelectedValue = tb.MaPhong;
+            
             if (string.IsNullOrWhiteSpace(tb.MaNCC))
                 cboNhaCungCap.SelectedIndex = 0;
             if (string.IsNullOrWhiteSpace(tb.MaPhong))
                 cboPhong.SelectedIndex = 0;
+
             cboTinhTrang.Text = tb.TinhTrang;
             cboTrangThai.Text = tb.TrangThai;
             dpNgayMua.SelectedDate = tb.NgayMua;
             dpHanBaoHanh.SelectedDate = tb.HanBaoHanh;
             txtGhiChu.Text = tb.GhiChu;
             lblThongBao.Text = "";
+
             XoaToanBoBaoDo();
             DoiCheDo(false);
         }
@@ -373,11 +411,10 @@ namespace RangHamMat.Views
         {
             thietBiDangChon = null;
             banGoc = null;
-            dangThem = false;
             dangSua = false;
-            lblCheDo.Text = "HỒ SƠ THIẾT BỊ";
+            lblCheDo.Text = "PHÂN PHÒNG THIẾT BỊ";
             lblTieuDeChiTiet.Text = "Chưa chọn thiết bị";
-            lblMaThietBi.Text = "Chọn một thiết bị bên trái hoặc thêm mới.";
+            lblMaThietBi.Text = "Chọn thiết bị bên trái để phân vào phòng.";
             XoaForm();
             DoiCheDo(false);
         }
@@ -399,16 +436,16 @@ namespace RangHamMat.Views
 
         private void DoiCheDo(bool choPhepNhap)
         {
-            Grid_THIET_BI.IsEnabled = !choPhepNhap;
-            cboHangHoa.IsEnabled = choPhepNhap;
-            txtSerial.IsReadOnly = !choPhepNhap;
-            cboNhaCungCap.IsEnabled = choPhepNhap;
+            dgvThietBi.IsEnabled = !choPhepNhap;
+            cboHangHoa.IsEnabled = false;
+            txtSerial.IsReadOnly = true;
+            cboNhaCungCap.IsEnabled = false;
             cboPhong.IsEnabled = choPhepNhap;
-            cboTinhTrang.IsEnabled = choPhepNhap;
-            cboTrangThai.IsEnabled = choPhepNhap;
-            dpNgayMua.IsEnabled = choPhepNhap;
-            dpHanBaoHanh.IsEnabled = choPhepNhap;
-            txtGhiChu.IsReadOnly = !choPhepNhap;
+            cboTinhTrang.IsEnabled = false;
+            cboTrangThai.IsEnabled = false;
+            dpNgayMua.IsEnabled = false;
+            dpHanBaoHanh.IsEnabled = false;
+            txtGhiChu.IsReadOnly = true;
 
             btnSua.Visibility = Visibility.Collapsed;
             btnLuu.Visibility = Visibility.Collapsed;
@@ -422,37 +459,26 @@ namespace RangHamMat.Views
                 btnSua.Visibility = Visibility.Visible;
         }
 
-        private void ThemMoi_Click(object sender, RoutedEventArgs e)
-        {
-            thietBiDangChon = null;
-            banGoc = null;
-            dangThem = true;
-            dangSua = false;
-            Grid_THIET_BI.SelectedItem = null;
-            XoaForm();
-            lblCheDo.Text = "THÊM THIẾT BỊ";
-            lblTieuDeChiTiet.Text = "Thiết bị mới";
-            lblMaThietBi.Text = "Mã thiết bị sẽ được tạo khi lưu";
-            cboTinhTrang.Text = "Tốt";
-            cboTrangThai.Text = "Đang sử dụng";
-            DoiCheDo(true);
-            cboHangHoa.Focus();
-        }
-
-        private void Sua_Click(object sender, RoutedEventArgs e)
+        private void PhanPhong_Click(object sender, RoutedEventArgs e)
         {
             if (thietBiDangChon == null)
+            {
+                MessageBox.Show("Hãy chọn một thiết bị trong danh sách để phân vào phòng.",
+                    "Phân phòng thiết bị", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
+            }
+
+            if (dangSua)
+                return;
+
             dangSua = true;
-            dangThem = false;
-            lblCheDo.Text = "CHỈNH SỬA THÔNG TIN";
+            lblCheDo.Text = "PHÂN PHÒNG / ĐIỀU CHUYỂN";
             DoiCheDo(true);
-            cboHangHoa.Focus();
+            cboPhong.Focus();
         }
 
         private void Huy_Click(object sender, RoutedEventArgs e)
         {
-            dangThem = false;
             dangSua = false;
             if (banGoc != null)
             {
@@ -462,7 +488,7 @@ namespace RangHamMat.Views
                     if (dong.DuLieu.MaTB == banGoc.MaTB)
                     {
                         tenThietBi = dong.TenThietBi;
-                        Grid_THIET_BI.SelectedItem = dong;
+                        dgvThietBi.SelectedItem = dong;
                         break;
                     }
                 }
@@ -472,176 +498,76 @@ namespace RangHamMat.Views
                 ApDungBoLocThietBi();
         }
 
-        private void DatBaoDo(Control control)
-        {
-            control.BorderBrush = Brushes.Red;
-            control.BorderThickness = new Thickness(1.5);
-        }
-
-        private void XoaBaoDo(Control control)
-        {
-            control.ClearValue(Control.BorderBrushProperty);
-            control.ClearValue(Control.BorderThicknessProperty);
-        }
-
         private void XoaToanBoBaoDo()
         {
-            XoaBaoDo(cboHangHoa);
-            XoaBaoDo(txtSerial);
-            XoaBaoDo(cboTinhTrang);
-            XoaBaoDo(cboTrangThai);
-            XoaBaoDo(dpNgayMua);
-            XoaBaoDo(dpHanBaoHanh);
-        }
-
-        private void XoaThongBaoLoi(object sender, EventArgs e)
-        {
-            if (sender is Control control)
-                XoaBaoDo(control);
+            cboPhong.ClearValue(Control.BorderBrushProperty);
+            cboPhong.ClearValue(Control.BorderThicknessProperty);
         }
 
         private void DangKySuKienXoaBaoDo()
         {
-            cboHangHoa.SelectionChanged += XoaThongBaoLoi;
-            txtSerial.TextChanged += XoaThongBaoLoi;
-            cboTinhTrang.SelectionChanged += XoaThongBaoLoi;
-            cboTrangThai.SelectionChanged += XoaThongBaoLoi;
-            dpNgayMua.SelectedDateChanged += XoaThongBaoLoi;
-            dpHanBaoHanh.SelectedDateChanged += XoaThongBaoLoi;
-        }
-
-        private bool KiemTraDuLieu(out string thongBaoLoi)
-        {
-            thongBaoLoi = "";
-            XoaToanBoBaoDo();
-
-            if (cboHangHoa.SelectedValue == null)
-            {
-                DatBaoDo(cboHangHoa);
-                thongBaoLoi = "Vui lòng chọn tên thiết bị.";
-                return false;
-            }
-            if (string.IsNullOrWhiteSpace(txtSerial.Text))
-            {
-                DatBaoDo(txtSerial);
-                thongBaoLoi = "Số serial không được để trống.";
-                return false;
-            }
-            if (string.IsNullOrWhiteSpace(cboTinhTrang.Text))
-            {
-                DatBaoDo(cboTinhTrang);
-                thongBaoLoi = "Vui lòng nhập tình trạng thiết bị.";
-                return false;
-            }
-            if (string.IsNullOrWhiteSpace(cboTrangThai.Text))
-            {
-                DatBaoDo(cboTrangThai);
-                thongBaoLoi = "Vui lòng nhập trạng thái quản lý.";
-                return false;
-            }
-            if (dpNgayMua.SelectedDate.HasValue && dpNgayMua.SelectedDate.Value.Date > DateTime.Today)
-            {
-                DatBaoDo(dpNgayMua);
-                thongBaoLoi = "Ngày mua không được lớn hơn ngày hiện tại.";
-                return false;
-            }
-            if (dpNgayMua.SelectedDate.HasValue && dpHanBaoHanh.SelectedDate.HasValue)
-            {
-                if (dpHanBaoHanh.SelectedDate.Value.Date < dpNgayMua.SelectedDate.Value.Date)
-                {
-                    DatBaoDo(dpHanBaoHanh);
-                    thongBaoLoi = "Hạn bảo hành không được trước ngày mua.";
-                    return false;
-                }
-            }
-            return true;
+            cboPhong.SelectionChanged += (sender, e) => XoaToanBoBaoDo();
         }
 
         private void Luu_Click(object sender, RoutedEventArgs e)
         {
-            if (!dangThem && !dangSua)
+            if (!dangSua || thietBiDangChon == null || banGoc == null)
                 return;
 
-            string thongBaoLoi;
-            if (!KiemTraDuLieu(out thongBaoLoi))
+            if (cboPhong.SelectedIndex < 0)
             {
-                lblThongBao.Text = thongBaoLoi;
-                MessageBox.Show(thongBaoLoi, "Kiểm tra dữ liệu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                lblThongBao.Text = "Vui lòng chọn phòng hoặc chọn Chưa phân phòng.";
+                MessageBox.Show(lblThongBao.Text, "Phân phòng thiết bị",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            string? maPhong = cboPhong.SelectedValue as string;
+            if (string.IsNullOrWhiteSpace(maPhong))
+                maPhong = null;
+
+            if (maPhong == banGoc.MaPhong)
+            {
+                lblThongBao.Text = "Thiết bị đang ở đúng vị trí đã chọn, không có thay đổi.";
                 return;
             }
 
             try
             {
-                string maTB = "";
-                if (thietBiDangChon != null)
-                    maTB = thietBiDangChon.MaTB;
-
-                string maHH = cboHangHoa.SelectedValue.ToString();
-                string? maNCC = cboNhaCungCap.SelectedValue as string;
-                string? maPhong = cboPhong.SelectedValue as string;
-                if (string.IsNullOrWhiteSpace(maNCC))
-                    maNCC = null;
-                if (string.IsNullOrWhiteSpace(maPhong))
-                    maPhong = null;
-
-                string? ghiChu = txtGhiChu.Text.Trim();
-                if (ghiChu == "")
-                    ghiChu = null;
-
-                ET_THIETBI thietBi = new ET_THIETBI(
-                    maTB,
-                    maHH,
-                    txtSerial.Text.Trim(),
-                    dpNgayMua.SelectedDate,
-                    maNCC,
-                    maPhong,
-                    cboTinhTrang.Text.Trim(),
-                    dpHanBaoHanh.SelectedDate,
-                    cboTrangThai.Text.Trim(),
-                    ghiChu
-                );
-
-                bool thanhCong = false;
-                if (dangThem)
-                    thanhCong = busThietBi.themThietBi(thietBi);
-                else
-                    thanhCong = busThietBi.suaThietBi(thietBi, banGoc);
-
+                bool thanhCong = busThietBi.phanThietBiVaoPhong(banGoc.MaTB, maPhong, banGoc);
                 if (thanhCong)
                 {
-                    dangThem = false;
+                    string maTB = banGoc.MaTB;
                     dangSua = false;
-                    LoadDuLieuThietBi(thietBi.MaTB);
-                    MessageBox.Show("Lưu thông tin thiết bị thành công!", "Thông báo",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    lblThongBao.Text = "Không thể lưu thông tin thiết bị.";
-                    MessageBox.Show(lblThongBao.Text, "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    LoadDuLieuThietBi(maTB);
+                    MessageBox.Show(maPhong == null
+                        ? "Đã thu hồi thiết bị về trạng thái chưa phân phòng."
+                        : "Đã phân / điều chuyển thiết bị vào phòng thành công.",
+                        "Phân phòng thiết bị", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
             {
-                lblThongBao.Text = "Lỗi khi lưu thiết bị: " + ex.Message;
+                lblThongBao.Text = "Không thể phân phòng thiết bị: " + ex.Message;
                 MessageBox.Show(lblThongBao.Text, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void TaiLai_Click(object sender, RoutedEventArgs e)
         {
-            if (dangThem || dangSua)
+            if (dangSua)
             {
-                MessageBoxResult traLoi = MessageBox.Show("Thông tin đang nhập chưa lưu. Bạn có muốn tải lại?",
-                    "Trang thiết bị", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                MessageBoxResult traLoi = MessageBox.Show("Bạn đang chọn phòng nhưng chưa lưu. Bạn có muốn tải lại?",
+                    "Phân phòng thiết bị", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (traLoi != MessageBoxResult.Yes)
                     return;
             }
 
             string? maCanChon = null;
-            if (Grid_THIET_BI.SelectedItem is ThietBiDong dong)
+
+            if (dgvThietBi.SelectedItem is ThietBiDong dong)
                 maCanChon = dong.DuLieu.MaTB;
-            dangThem = false;
+
             dangSua = false;
             LoadDuLieuThietBi(maCanChon);
         }

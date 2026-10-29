@@ -1,5 +1,7 @@
 using System;
-using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using BUS;
@@ -7,298 +9,266 @@ using ET;
 
 namespace RangHamMat.Views
 {
-    // Kho chỉ xem dữ liệu, mọi thao tác nhập / xuất được thực hiện trong NhapXuatVatTu.
     public partial class Kho : UserControl
     {
-        public class KhoLuaChon
-        {
-            public string Ma { get; set; } = "";
-            public string Ten { get; set; } = "";
-        }
+        private readonly BUS_KHO busKho = new BUS_KHO();
+        private readonly BUS_NHANVIEN busNhanVien = new BUS_NHANVIEN();
 
-        public class KhoMatHang
-        {
-            public string MaKho { get; set; } = "";
-            public string MaHH { get; set; } = "";
-            public string TenHang { get; set; } = "";
-            public string LoaiHang { get; set; } = "";
-            public string DonViTinh { get; set; } = "";
-            public decimal SoLuong { get; set; }
-            public decimal MucToiThieu { get; set; }
-            public string SoLuongHienThi { get { return SoLuong.ToString("N2"); } }
-            public string TrangThaiTon
-            {
-                get
-                {
-                    if (SoLuong <= 0) return "Hết hàng";
-                    if (MucToiThieu > 0 && SoLuong <= MucToiThieu) return "Sắp hết";
-                    return "Còn hàng";
-                }
-            }
-        }
+        private DataTable danhSachTon = new DataTable();
+        private DataTable danhSachLo = new DataTable();
 
-        public class KhoLoHang
-        {
-            public string MaKho { get; set; } = "";
-            public string MaHH { get; set; } = "";
-            public string MaLo { get; set; } = "";
-            public string SoLo { get; set; } = "";
-            public decimal SoLuong { get; set; }
-            public DateTime? HanSuDung { get; set; }
-            public string SoLuongHienThi { get { return SoLuong.ToString("N2"); } }
-            public string HanDungHienThi
-            {
-                get
-                {
-                    if (HanSuDung.HasValue) return HanSuDung.Value.ToString("dd/MM/yyyy");
-                    return "Không có";
-                }
-            }
-        }
+        private string locTimKiem = "";
+        private string locTrangThai = "";
 
-        private readonly List<KhoMatHang> danhSachTon = new List<KhoMatHang>();
-        private readonly List<KhoLoHang> danhSachLo = new List<KhoLoHang>();
-        private readonly Dictionary<string, ET_KHO> khoTheoMa = new Dictionary<string, ET_KHO>();
         private bool dangTai;
         private bool daTai;
 
         public Kho()
         {
             InitializeComponent();
-            Loaded += Kho_Loaded;
+
+            Loaded += (sender, e) => { if (!daTai) hienThiDuLieu(); };
         }
 
-        private void Kho_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (!daTai) TaiDuLieu();
-        }
 
-        private string TaoKhoa(string a, string b)
+        //Hàm load dữ liệu lên cbo
+        public void hienThiDuLieu()
         {
-            return a + "\u001f" + b;
-        }
+            if (dangTai) return;
 
-        private string TaoKhoaLo(string a, string b, string c)
-        {
-            return a + "\u001f" + b + "\u001f" + c;
-        }
-
-        private bool DaGhiSo(string trangThai)
-        {
-            return string.Equals(trangThai, "Đã ghi sổ", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private void TaiDuLieu()
-        {
-            string maKhoCu = "";
-            if (cboKho.SelectedValue is string chon) maKhoCu = chon;
             dangTai = true;
             try
             {
-                danhSachTon.Clear();
-                danhSachLo.Clear();
-                khoTheoMa.Clear();
+                string? maKhoCu = cboKho.SelectedValue as string;
+                var cacKho = busKho.layToanBoKho().ToList();
 
-                Dictionary<string, ET_HANGHOA> danhMuc = new Dictionary<string, ET_HANGHOA>();
-                foreach (ET_HANGHOA hh in new BUS_HANGHOA().layToanBoHangHoa()) danhMuc[hh.MaHH] = hh;
-
-                Dictionary<string, string> tenLoai = new Dictionary<string, string>();
-                foreach (ET_LOAIHANGHOA loai in new BUS_LOAIHANGHOA().layToanBoLoaiHangHoa())
-                    tenLoai[loai.MaLoaiHH] = loai.TenLoaiHH;
-
-                Dictionary<string, decimal> mucCanhBao = new Dictionary<string, decimal>();
-                foreach (ET_VATTU vt in new BUS_VATTU().layToanBoVatTu()) mucCanhBao[vt.MaHH] = vt.MucTonToiThieu;
-                foreach (ET_THUOC thuoc in new BUS_THUOC().layToanBoThuoc()) mucCanhBao[thuoc.MaHH] = thuoc.MucTonToiThieu;
-
-                Dictionary<string, ET_LOHANGHOA> thongTinLo = new Dictionary<string, ET_LOHANGHOA>();
-                foreach (ET_LOHANGHOA lo in new BUS_LOHANGHOA().layToanBoLoHangHoa()) thongTinLo[lo.MaLo] = lo;
-
-                foreach (ET_KHO kho in new BUS_KHO().layToanBoKho()) khoTheoMa[kho.MaKho] = kho;
-
-                Dictionary<string, string> khoPhieuNhap = new Dictionary<string, string>();
-                foreach (ET_PHIEUNHAP phieu in new BUS_PHIEUNHAP().layToanBoPhieuNhap())
-                    if (DaGhiSo(phieu.TrangThai)) khoPhieuNhap[phieu.MaPN] = phieu.MaKho;
-
-                Dictionary<string, string> khoPhieuXuat = new Dictionary<string, string>();
-                foreach (ET_PHIEUXUAT phieu in new BUS_PHIEUXUAT().LayDanhSach())
-                    if (DaGhiSo(phieu.TrangThai)) khoPhieuXuat[phieu.MaPX] = phieu.MaKho;
-
-                Dictionary<string, decimal> tonHang = new Dictionary<string, decimal>();
-                Dictionary<string, decimal> tonLo = new Dictionary<string, decimal>();
-
-                foreach (ET_CHITIETPHIEUNHAP ct in new BUS_CHITIETPHIEUNHAP().layToanBoChiTietPhieuNhap())
-                {
-                    if (!khoPhieuNhap.ContainsKey(ct.MaPN)) continue;
-                    string maKho = khoPhieuNhap[ct.MaPN];
-                    string khoa = TaoKhoa(maKho, ct.MaHH);
-                    if (!tonHang.ContainsKey(khoa)) tonHang[khoa] = 0;
-                    tonHang[khoa] = tonHang[khoa] + ct.SoLuong;
-                    if (!string.IsNullOrWhiteSpace(ct.MaLo))
-                    {
-                        string khoaLo = TaoKhoaLo(maKho, ct.MaHH, ct.MaLo);
-                        if (!tonLo.ContainsKey(khoaLo)) tonLo[khoaLo] = 0;
-                        tonLo[khoaLo] = tonLo[khoaLo] + ct.SoLuong;
-                    }
-                }
-
-                foreach (ET_CHITIETPHIEUXUAT ct in new BUS_CHITIETPHIEUXUAT().LayDanhSach())
-                {
-                    if (!khoPhieuXuat.ContainsKey(ct.MaPX)) continue;
-                    string maKho = khoPhieuXuat[ct.MaPX];
-                    string khoa = TaoKhoa(maKho, ct.MaHH);
-                    if (!tonHang.ContainsKey(khoa)) tonHang[khoa] = 0;
-                    tonHang[khoa] = tonHang[khoa] - ct.SoLuong;
-                    if (!string.IsNullOrWhiteSpace(ct.MaLo))
-                    {
-                        string khoaLo = TaoKhoaLo(maKho, ct.MaHH, ct.MaLo);
-                        if (!tonLo.ContainsKey(khoaLo)) tonLo[khoaLo] = 0;
-                        tonLo[khoaLo] = tonLo[khoaLo] - ct.SoLuong;
-                    }
-                }
-
-                foreach (KeyValuePair<string, decimal> item in tonHang)
-                {
-                    string[] tach = item.Key.Split('\u001f');
-                    if (tach.Length != 2 || !danhMuc.ContainsKey(tach[1])) continue;
-                    if (!mucCanhBao.ContainsKey(tach[1])) continue;
-                    ET_HANGHOA hang = danhMuc[tach[1]];
-                    KhoMatHang dong = new KhoMatHang();
-                    dong.MaKho = tach[0];
-                    dong.MaHH = tach[1];
-                    dong.TenHang = hang.TenHH;
-                    dong.DonViTinh = hang.DonViTinh;
-                    dong.LoaiHang = "Khác";
-                    if (tenLoai.ContainsKey(hang.MaLoaiHH)) dong.LoaiHang = tenLoai[hang.MaLoaiHH];
-                    if (mucCanhBao.ContainsKey(hang.MaHH)) dong.MucToiThieu = mucCanhBao[hang.MaHH];
-                    dong.SoLuong = item.Value;
-                    danhSachTon.Add(dong);
-                }
-
-                foreach (KeyValuePair<string, decimal> item in tonLo)
-                {
-                    string[] tach = item.Key.Split('\u001f');
-                    if (tach.Length != 3 || !thongTinLo.ContainsKey(tach[2])) continue;
-                    ET_LOHANGHOA lo = thongTinLo[tach[2]];
-                    KhoLoHang dong = new KhoLoHang();
-                    dong.MaKho = tach[0];
-                    dong.MaHH = tach[1];
-                    dong.MaLo = lo.MaLo;
-                    dong.SoLo = lo.MaLo;
-                    if (!string.IsNullOrWhiteSpace(lo.SoLo)) dong.SoLo = lo.SoLo;
-                    dong.HanSuDung = lo.HanSuDung;
-                    dong.SoLuong = item.Value;
-                    danhSachLo.Add(dong);
-                }
-
-                List<KhoLuaChon> dsChon = new List<KhoLuaChon>();
-                foreach (ET_KHO k in khoTheoMa.Values) dsChon.Add(new KhoLuaChon { Ma = k.MaKho, Ten = k.TenKho });
-                dsChon.Sort(SoSanhKho);
-                cboKho.ItemsSource = dsChon;
+                cboKho.ItemsSource = cacKho;
                 cboKho.SelectedValue = maKhoCu;
-                if (cboKho.SelectedIndex < 0 && dsChon.Count > 0) cboKho.SelectedIndex = 0;
+
+                if (cboKho.SelectedIndex < 0 && cacKho.Count > 0)
+                {
+                    cboKho.SelectedIndex = 0; 
+                }
+
                 daTai = true;
-                dangTai = false;
-                ApDungBoLoc();
             }
             catch (Exception ex)
             {
+                daTai = false;
+                MessageBox.Show("Không thể tải danh sách kho: " + ex.Message,
+                    "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
                 dangTai = false;
-                MessageBox.Show("Không tải được dữ liệu kho: " + ex.Message, "Kho vật tư", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
+            if (daTai) TaiTonKho();
+        }
+
+        //hàm load dữ liệu lên gridview có kèm bộ lọc và tìm kiếm
+        private void TaiTonKho()
+        {
+            if (dangTai) return;
+
+            dangTai = true;
+            try
+            {
+                var kho = cboKho.SelectedItem as ET_KHO;
+                lblTenKho.Text = kho?.TenKho ?? "Danh sách tồn kho";
+                lblNguoiPhuTrach.Text = "Người phụ trách: Chưa xác định";
+
+                if(kho == null)
+                {
+                    lblMoTaKho.Text = "Chưa có kho";
+                    danhSachLo = new DataTable();
+                    danhSachTon = new DataTable();
+                }
+                else
+                {
+                    lblMoTaKho.Text = "Loại kho: " + kho.LoaiKho + " • " + kho.TrangThai;
+                    var nguoiPhuTrach = busNhanVien.layNhanVienTheoMa(kho.MaNV);
+                    lblNguoiPhuTrach.Text = "Người phụ trách: " + (nguoiPhuTrach?.HoTen ?? "Chưa xác định");
+                    danhSachLo = busKho.layLoTonTheoKho(kho.MaKho);
+                    danhSachTon = busKho.layTonKhoTheoKho(kho.MaKho);
+                }
+                               
+                lblLoSapHetHan.Text = danhSachLo.Columns.Count == 0 ? "0" : danhSachLo.AsEnumerable()
+                    .Count(r => r.Field<string>("CanhBaoHan") == "Sắp hết hạn").ToString();
+
+                //đếm số lượng mặt hàng
+                lblTongMatHang.Text = danhSachTon.AsEnumerable()
+                    .Count(r => r.Field<decimal>("SoLuongTon") > 0).ToString();
+
+                //đếm sl cần bổ sung
+                lblCanBoSung.Text = danhSachTon.AsEnumerable()
+                    .Count(r => r.Field<decimal>("SoLuongTon") < r.Field<decimal>("MucTonToiThieu")).ToString();
+
+                gridTonKho.ItemsSource = null;
+
+                if (danhSachTon.Columns.Count > 0)
+                {
+                    //search kết hợp text và cbo
+                    string dieuKien = locTimKiem;
+                    if (locTrangThai != "")
+                    {
+                        if (dieuKien != "")
+                            dieuKien += " AND ";
+
+                        dieuKien += locTrangThai;
+                    }
+                    danhSachTon.DefaultView.RowFilter = dieuKien;
+
+                    //sort theo tên HH bằng hàm của datatable
+                    danhSachTon.DefaultView.Sort = "TenHH ASC";
+
+                    gridTonKho.ItemsSource = danhSachTon.DefaultView;
+                    if (danhSachTon.DefaultView.Count > 0)
+                    {
+                        gridTonKho.SelectedIndex = 0;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                danhSachTon = new DataTable();
+                danhSachLo = new DataTable();
+                gridTonKho.ItemsSource = null;
+                lblTongMatHang.Text = "0";
+                lblCanBoSung.Text = "0";
+                lblLoSapHetHan.Text = "0";
+                lblNguoiPhuTrach.Text = "Người phụ trách: Chưa xác định";
+
+                MessageBox.Show("Không thể tải tồn kho: " + ex.Message,
+                    "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                dangTai = false;
             }
         }
 
-        private static int SoSanhKho(KhoLuaChon a, KhoLuaChon b)
+        private void cboKho_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            return string.Compare(a.Ten, b.Ten, StringComparison.CurrentCultureIgnoreCase);
+            if (daTai && !dangTai) TaiTonKho();
         }
 
-        private void ApDungBoLoc()
+        private void LamMoi_Click(object sender, RoutedEventArgs e)
         {
-            if (!daTai || dangTai) return;
-            string maKho = "";
-            if (cboKho.SelectedValue is string chon) maKho = chon;
-            if (khoTheoMa.ContainsKey(maKho))
+            hienThiDuLieu();
+        }
+
+        //tìm kiếm theo tên hàng hóa
+        private void txtTimKiem_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            //clone nội dung ra thành 1 bản đã đc lọc toàn bộ kí tự đặc biệt
+            string noiDung = Regex.Replace(txtTimKiem.Text, @"[^\p{L}\p{M}\p{N} ]", "");
+
+            //check xem trc và sau lọc có trùng nhau không
+            if (txtTimKiem.Text != noiDung)
             {
-                ET_KHO kho = khoTheoMa[maKho];
-                lblTenKho.Text = kho.TenKho;
-                lblMoTaKho.Text = "Loại kho: " + kho.LoaiKho + "  ·  Trạng thái: " + kho.TrangThai;
+                int viTri = txtTimKiem.SelectionStart;
+                //cập nhật lại text tìm kiếm = nội dung đã lọc ra
+                txtTimKiem.Text = noiDung;
+                txtTimKiem.SelectionStart = Math.Min(viTri, noiDung.Length);//đặt lại con trỏ chuột vào text
+                return;
+            }
+
+            string timKiem = noiDung.Trim();
+            locTimKiem = timKiem == "" ? "" : $"TenHH LIKE '%{timKiem}%'";
+
+            //ko có dữ liệu thì ko tìm
+            if (danhSachTon.Columns.Count == 0) return;
+
+            //Tìm kiếm kết hợp text và trạng thái
+            string dieuKien = locTimKiem;
+
+            if (locTrangThai != "")
+            {
+                if (dieuKien != "")
+                {
+                    dieuKien += " AND ";
+                }
+
+                dieuKien += locTrangThai;
+            }
+
+            danhSachTon.DefaultView.RowFilter = dieuKien;//tìm kiếm bằng rf của datatable, không truy db
+
+            //bind selected vào row đầu tiên
+            if (gridTonKho.SelectedItem == null && danhSachTon.DefaultView.Count > 0)
+            {
+                gridTonKho.SelectedIndex = 0; 
+            }
+        }
+
+        //Lọc danh sách theo cbo trạng thái
+        private void cboTrangThai_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            string trangThai = (cboTrangThai.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+            
+            //empty hoặc all thì ko lọc
+            if(trangThai == "" || trangThai == "Tất cả tình trạng")
+            {
+                locTrangThai = "";
             }
             else
             {
-                lblTenKho.Text = "Danh sách tồn kho";
-                lblMoTaKho.Text = "Chưa có kho";
+                locTrangThai = $"TrangThaiTon = '{trangThai}'";
+            }
+                            
+            if (danhSachTon.Columns.Count == 0) return;//dữ liệu ko có thì back về
+
+            //Tìm kiếm kết hợp text và trạng thái
+            string dieuKien = locTimKiem;
+
+            if (locTrangThai != "")
+            {
+                if (dieuKien != "")
+                {
+                    dieuKien += " AND ";
+                }
+
+                dieuKien += locTrangThai;
             }
 
-            string trangThai = "Tất cả tình trạng";
-            if (cboTrangThai.SelectedItem is ComboBoxItem muc)
+            danhSachTon.DefaultView.RowFilter = dieuKien;//tìm kiếm bằng rf của datatable, không truy db
+
+            //bind seleted row về hàng đầu tiên
+            if (gridTonKho.SelectedItem == null && danhSachTon.DefaultView.Count > 0)
             {
-                string? ten = Convert.ToString(muc.Content);
-                if (ten != null) trangThai = ten;
+                gridTonKho.SelectedIndex = 0; 
             }
-            string tim = txtTimKiem.Text.Trim();
-            int soMatHang = 0;
-            int sapHet = 0;
-            List<KhoMatHang> ketQua = new List<KhoMatHang>();
-            foreach (KhoMatHang hang in danhSachTon)
-            {
-                if (hang.MaKho != maKho) continue;
-                if (hang.SoLuong > 0) soMatHang++;
-                if (hang.TrangThaiTon == "Sắp hết" || hang.TrangThaiTon == "Hết hàng") sapHet++;
-                if (trangThai != "Tất cả tình trạng" && hang.TrangThaiTon != trangThai) continue;
-                if (tim.Length > 0)
-                {
-                    string chuoi = hang.TenHang + " " + hang.LoaiHang;
-                    if (chuoi.IndexOf(tim, StringComparison.OrdinalIgnoreCase) < 0) continue;
-                }
-                ketQua.Add(hang);
-            }
-            lblTongMatHang.Text = soMatHang.ToString();
-            lblCanBoSung.Text = sapHet.ToString();
-            gridTonKho.ItemsSource = ketQua;
-            if (ketQua.Count > 0) gridTonKho.SelectedIndex = 0;
-            else HienChiTiet(null);
         }
 
-        private void HienChiTiet(KhoMatHang? hang)
+        //click vào row để lấy dữ liệu
+        private void gridTonKho_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (hang == null)
+            if (gridTonKho.SelectedItem is DataRowView hang)
+            {
+                lblTenHang.Text = hang["TenHH"].ToString();
+                lblSoLuong.Text = Convert.ToDecimal(hang["SoLuongTon"]).ToString("N3");
+                lblMucToiThieu.Text = Convert.ToDecimal(hang["MucTonToiThieu"]).ToString("N3");
+
+                //lấy thông tin lô hàng từ hàng hóa show lên grid
+                if (danhSachLo.Columns.Count > 0)
+                {
+                    string maHH = hang["MaHH"].ToString()!;
+                    danhSachLo.DefaultView.RowFilter = $"MaHH = '{maHH}'";
+                    gridLoHang.ItemsSource = danhSachLo.DefaultView;
+                }
+                else
+                {
+                    gridLoHang.ItemsSource = null;
+                }
+            }
+            else
             {
                 lblTenHang.Text = "Chưa chọn mặt hàng";
                 lblSoLuong.Text = "—";
                 lblMucToiThieu.Text = "—";
                 gridLoHang.ItemsSource = null;
-                return;
             }
-            lblTenHang.Text = hang.TenHang;
-            lblSoLuong.Text = hang.SoLuong.ToString("N2") + " " + hang.DonViTinh;
-            lblMucToiThieu.Text = hang.MucToiThieu.ToString("N2");
-            List<KhoLoHang> lo = new List<KhoLoHang>();
-            foreach (KhoLoHang dong in danhSachLo)
-            {
-                if (dong.MaKho == hang.MaKho && dong.MaHH == hang.MaHH && dong.SoLuong > 0) lo.Add(dong);
-            }
-            gridLoHang.ItemsSource = lo;
-        }
-
-        private void Kho_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            ApDungBoLoc();
-        }
-
-        private void TonKho_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (!daTai || dangTai) return;
-            HienChiTiet(gridTonKho.SelectedItem as KhoMatHang);
-        }
-
-        private void BoLoc_Changed(object sender, EventArgs e)
-        {
-            ApDungBoLoc();
-        }
-
-        private void TaiLai_Click(object sender, RoutedEventArgs e)
-        {
-            TaiDuLieu();
         }
     }
 }

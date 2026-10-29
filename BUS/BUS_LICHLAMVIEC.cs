@@ -68,6 +68,12 @@ namespace BUS
             return data.dangKyCa(lich);
         }
 
+        public (int ThanhCong, int DaCo, int TrungGio, int DangNghi) dangKyTuan(string maNV, DateTime dauTuan)
+        {
+            if (string.IsNullOrWhiteSpace(maNV)) return (0, 0, 0, 0);
+            return XuLyLoi.ThucHien(() => data.dangKyTuan(maNV, dauTuan));
+        }
+
         public bool duyetCa(string maLLV, string maPhong)
             => !string.IsNullOrWhiteSpace(maLLV) && !string.IsNullOrWhiteSpace(maPhong)
                 && data.duyetCa(maLLV, maPhong);

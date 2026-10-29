@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
+using System.Text;
 using Dapper;
 using ET;
 
@@ -229,6 +231,100 @@ namespace DAL
                 new { MaPN = maPN }, transaction);
             if (ketQua != 1)
                 throw new InvalidOperationException("Phiếu nhập đã được người khác xử lý. Vui lòng tải lại.");
+
+            // Tạo tài sản ngay trong giao dịch ghi sổ, rollback toàn bộ nếu sinh serial thất bại.
+            // Phiếu nháp không có thiết bị; ghi sổ lại không thể sinh trùng do trạng thái đã khóa.
+            TaoThietBiTuLo(connection, transaction, maPN);
+        }
+
+        private static void TaoThietBiTuLo(IDbConnection connection, IDbTransaction? transaction, string maPN)
+        {
+            List<ET_CHITIETPHIEUNHAP> cacDong = new List<ET_CHITIETPHIEUNHAP>(connection.Query<ET_CHITIETPHIEUNHAP>(@"
+                SELECT c.* FROM dbo.CHI_TIET_PHIEU_NHAP c
+                JOIN dbo.HANG_HOA h ON h.MaHH=c.MaHH
+                JOIN dbo.LOAI_HANG_HOA lh ON lh.MaLoaiHH=h.MaLoaiHH
+                WHERE c.MaPN=@MaPN AND
+                    (lh.TenLoaiHH LIKE N'%Thiết bị%'
+                     OR h.MaLoaiHH IN ('LHH008','LHH009','LHH010'))
+                ORDER BY c.MaLo", new { MaPN = maPN }, transaction));
+
+            foreach (ET_CHITIETPHIEUNHAP dong in cacDong)
+            {
+                // Thiết bị là tài sản riêng lẻ; không thể tạo một phần của thiết bị.
+                if (dong.SoLuong <= 0 || dong.SoLuong != decimal.Truncate(dong.SoLuong)
+                    || dong.SoLuong > int.MaxValue)
+                    throw new InvalidOperationException("Số lượng lô thiết bị phải là số nguyên dương.");
+
+                ET_HANGHOA hang = connection.QuerySingle<ET_HANGHOA>(
+                    "SELECT * FROM dbo.HANG_HOA WHERE MaHH=@MaHH", new { dong.MaHH }, transaction);
+                ET_LOHANGHOA lo = connection.QuerySingle<ET_LOHANGHOA>(
+                    "SELECT * FROM dbo.LO_HANG_HOA WHERE MaLo=@MaLo", new { dong.MaLo }, transaction);
+                string tienTo = LayChuCaiDau(hang.TenHH);
+
+                for (int stt = 0; stt < (int)dong.SoLuong; stt++)
+                {
+                    // Serial duy nhất trên TOÀN BỘ bảng THIET_BI, không khởi động lại ở từng lô.
+                    // Giữ khóa trong giao dịch để hai người ghi sổ cùng loại không nhận cùng số.
+                    int ketQuaKhoa = connection.ExecuteScalar<int>(@"
+                        DECLARE @ketQua int;
+                        EXEC @ketQua=sys.sp_getapplock
+                            @Resource=@Resource, @LockMode='Exclusive',
+                            @LockOwner='Transaction', @LockTimeout=10000;
+                        SELECT @ketQua;",
+                        new { Resource = "RHM:Serial:" + tienTo }, transaction);
+                    if (ketQuaKhoa < 0)
+                        throw new InvalidOperationException("Không thể cấp serial thiết bị lúc này. Vui lòng thử lại.");
+
+                    long soThuTu = connection.ExecuteScalar<long>(@"
+                        SELECT COALESCE(MAX(TRY_CONVERT(bigint,
+                            SUBSTRING(SoSerial, LEN(@TienTo) + 1, 255))), 0)
+                        FROM dbo.THIET_BI WITH (UPDLOCK,HOLDLOCK)
+                        WHERE SoSerial LIKE @Mau",
+                        new { TienTo = tienTo, Mau = tienTo + "%" }, transaction);
+                    if (soThuTu == long.MaxValue)
+                        throw new InvalidOperationException("Đã hết số thứ tự serial thiết bị.");
+
+                    ET_THIETBI thietBi = new ET_THIETBI();
+                    thietBi.MaHH = dong.MaHH;
+                    thietBi.SoSerial = tienTo + (soThuTu + 1).ToString("D3", CultureInfo.InvariantCulture);
+                    thietBi.NgayMua = lo.NgayNhap.Date;
+                    thietBi.MaNCC = lo.MaNCC;
+                    thietBi.MaPhong = null;
+                    thietBi.TinhTrang = "Tốt";
+                    thietBi.HanBaoHanh = null;
+                    thietBi.TrangThai = "Chờ bàn giao";
+                    thietBi.GhiChu = "Tạo tự động khi ghi sổ phiếu " + maPN
+                        + "; Mã lô: " + dong.MaLo + "; Số lô: " + lo.SoLo;
+                    new DAL_THIETBI(transaction).themThietBi(thietBi);
+                }
+            }
+        }
+
+        private static string LayChuCaiDau(string tenThietBi)
+        {
+            // VD: "Máy đo huyết áp" -> MDHA, "Máy X-quang" -> MXQ.
+            string tenKhongDau = tenThietBi.Replace('Đ', 'D').Replace('đ', 'd')
+                .Normalize(NormalizationForm.FormD);
+            StringBuilder chuDau = new StringBuilder();
+            bool dauTu = true;
+            foreach (char kyTu in tenKhongDau)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(kyTu) == UnicodeCategory.NonSpacingMark)
+                    continue;
+                if (char.IsLetter(kyTu))
+                {
+                    if (dauTu)
+                        chuDau.Append(char.ToUpperInvariant(kyTu));
+                    dauTu = false;
+                }
+                else if (!char.IsDigit(kyTu))
+                    dauTu = true;
+            }
+            if (chuDau.Length == 0)
+                throw new InvalidOperationException("Tên thiết bị không có chữ cái để tạo serial.");
+            if (chuDau.Length > 235)
+                throw new InvalidOperationException("Tên thiết bị quá dài để tạo serial.");
+            return chuDau.ToString();
         }
     }
 }

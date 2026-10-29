@@ -112,14 +112,14 @@
                             <TextBlock Text="01  THÔNG TIN XUẤT KHO" Foreground="#1D67A7" FontSize="12" FontWeight="Bold" Margin="0,0,0,11"/>
                             <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <StackPanel><TextBlock Text="Kho xuất *" Style="{StaticResource XuatLabel}"/><ComboBox x:Name="cboKhoMoi" Style="{StaticResource XuatCombo}" DisplayMemberPath="Ten" SelectedValuePath="Ma" SelectionChanged="KhoMoi_SelectionChanged"/></StackPanel>
-                                <StackPanel Grid.Column="2"><TextBlock Text="Người lập *" Style="{StaticResource XuatLabel}"/><ComboBox x:Name="cboNguoiLap" Style="{StaticResource XuatCombo}" DisplayMemberPath="Ten" SelectedValuePath="Ma"/></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Text="Nhân viên xuất (tài khoản đang đăng nhập)" Style="{StaticResource XuatLabel}"/><ComboBox x:Name="cboNguoiLap" Style="{StaticResource XuatCombo}" DisplayMemberPath="Ten" SelectedValuePath="Ma" IsEnabled="False"/></StackPanel>
                             </Grid>
                             <Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <StackPanel><TextBlock Text="Loại nơi nhận" Style="{StaticResource XuatLabel}"/><ComboBox x:Name="cboLoaiNhan" Style="{StaticResource XuatCombo}" SelectionChanged="LoaiNhan_SelectionChanged" SelectedIndex="0"><ComboBoxItem Content="Sử dụng nội bộ" Tag="NoiBo"/><ComboBoxItem Content="Khoa" Tag="Khoa"/><ComboBoxItem Content="Phòng" Tag="Phong"/></ComboBox></StackPanel>
                                 <StackPanel Grid.Column="2"><TextBlock Text="Đơn vị nhận" Style="{StaticResource XuatLabel}"/><ComboBox x:Name="cboNoiNhan" Style="{StaticResource XuatCombo}" DisplayMemberPath="Ten" SelectedValuePath="Ma"/></StackPanel>
                             </Grid>
                             <Grid Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                <StackPanel><TextBlock Text="Ngày xuất *" Style="{StaticResource XuatLabel}"/><DatePicker x:Name="dpNgayXuat" Height="36"/></StackPanel>
+                                <StackPanel><TextBlock Text="Ngày giờ tạo phiếu" Style="{StaticResource XuatLabel}"/><TextBlock x:Name="lblNgayXuatMoi" Text="Tự động lấy khi lưu phiếu mới" Foreground="#714718" FontWeight="SemiBold" TextWrapping="Wrap"/></StackPanel>
                                 <StackPanel Grid.Column="2"><TextBlock Text="Lý do xuất *" Style="{StaticResource XuatLabel}"/><TextBox x:Name="txtLyDoMoi" Style="{StaticResource XuatInput}"/></StackPanel>
                             </Grid>
                             <TextBlock Text="Ghi chú phiếu" Style="{StaticResource XuatLabel}" Margin="0,12,0,5"/><TextBox x:Name="txtGhiChuMoi" Style="{StaticResource XuatInput}" Height="55" TextWrapping="Wrap" AcceptsReturn="True"/>

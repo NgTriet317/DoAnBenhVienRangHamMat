@@ -18,8 +18,8 @@ public partial class MainWindow : Window
     private static readonly HashSet<string> AllPages = new(StringComparer.Ordinal)
     {
         "TongQuan", "BenhNhan", "KhamDieuTri", "DichVuThucHien", "DonThuoc", "NhanSu", "ChungChiNhanVien", "CaLamViec",
-        "ThietBi", "BaoTri", "VatTu", "Kho", "DanhMucHangHoa", "NhaCungCap", "NhapXuatVatTu", "LichKham",
-        "DichVu", "HoaDon", "BangLuong", "ChinhSachLuong", "TaiKhoan", "BaoCao", "PhieuHuongDan",
+        "ThietBi", "BaoTri", "Kho", "DanhMucHangHoa", "NhaCungCap", "NhapXuatVatTu", "LichKham",
+        "DichVu", "HoaDon", "BangLuong", "ChamCong", "ChinhSachLuong", "TaiKhoan", "BaoCao", "PhieuHuongDan",
         "NhatKy", "XinNghiViec"
     };
 
@@ -76,6 +76,8 @@ public partial class MainWindow : Window
     /// </summary>
     internal void OpenApp(string tag)
     {
+        // Các liên kết cũ tới VatTu được đưa về Tồn kho, không mở màn hình đã bỏ.
+        if (tag == "VatTu") tag = "Kho";
         string cheDoNhapXuat = "";
         if (tag == "NhapKho")
         {
@@ -113,13 +115,13 @@ public partial class MainWindow : Window
             "CaLamViec" => new CaLamViec(PhienDangNhap.MaNV, PhienDangNhap.IsAdmin),
             "ThietBi" => new ThietBi(),
             "BaoTri" => new BaoTri(),
-            "VatTu" => new VatTu(),
             "Kho" => new Kho(),
             "DanhMucHangHoa" => new DanhMucHangHoa(),
             "NhaCungCap" => new NhaCungCap(),
             "NhapXuatVatTu" => new NhapXuatVatTu(),
             "HoaDon" => new HoaDon(),
             "BangLuong" => new BangLuong(),
+            "ChamCong" => new ChamCong(),
             "ChinhSachLuong" => new ChinhSachLuong(),
             "BaoCao" => new BaoCao(),
             "DichVu" => new DichVu(),
@@ -172,11 +174,8 @@ public partial class MainWindow : Window
             "KhamDieuTri" => new CuaSoKhamDieuTri(),
             "DonThuoc" => new CuaSoDonThuoc(),
             // Chi tiết nhân sự cần một ET_NHANVIEN cụ thể và là Window,
-            // không phải form UserControl tạo mới qua luồng chung này.
-            "CaLamViec" => new CuaSoCaLamViec(),
-            "ThietBi" => new CuaSoThietBi(),
-            "BaoTri" => new CuaSoBaoTri(),
-            "VatTu" => new CuaSoVatTu(),
+            // không phải form UserControl tạo mới qua luồng chung này.            
+            "BaoTri" => new CuaSoBaoTri(),            
             "NhaCungCap" => new CuaSoNhaCungCap(),
             "NhapXuatVatTu" => new CuaSoNhapXuatVatTu(),
             "HoaDon" => new CuaSoHoaDon(),

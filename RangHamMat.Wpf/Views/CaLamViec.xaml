@@ -240,6 +240,10 @@
                         <ComboBox x:Name="cboEmployee" Width="225" Height="37" Style="{StaticResource InputCombo}"
                                  DisplayMemberPath="Name"/>
                     </StackPanel>
+                    <Button x:Name="btnDangKyTuan" Style="{StaticResource PrimaryButton}"
+                            Content="✓  Đăng ký tuần" Click="btnDangKyTuan_Click"
+                            ToolTip="Đăng ký các ca hợp lệ của tuần đang xem, bỏ qua ca đã có hoặc trùng giờ"
+                            Margin="0,15,10,0" Visibility="Collapsed"/>
                     <Button x:Name="btnMyRequests" Style="{StaticResource PrimaryButton}"
                             Content="✉  Đăng ký của tôi" Click="btnXemDangKy_Click"
                             Margin="0,15,10,0" Visibility="Collapsed"/>

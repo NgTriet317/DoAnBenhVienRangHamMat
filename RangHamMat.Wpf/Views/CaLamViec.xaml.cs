@@ -54,6 +54,7 @@ public partial class CaLamViec : UserControl
         //nếu là nhân viên thì nút đăng ký ca sẽ hiển thị
         btnCreate.Visibility = IsManager ? Visibility.Visible : Visibility.Collapsed;
         btnMyRequests.Visibility = IsEmployee ? Visibility.Visible : Visibility.Collapsed;
+        btnDangKyTuan.Visibility = IsEmployee ? Visibility.Visible : Visibility.Collapsed;
         btnExport.Visibility = IsManager ? Visibility.Visible : Visibility.Collapsed;
         btnDongBoLichKham.Visibility = IsManager ? Visibility.Visible : Visibility.Collapsed;
         btnThongBaoDonXinNghi.Visibility = IsManager ? Visibility.Visible : Visibility.Collapsed;
@@ -444,6 +445,43 @@ public partial class CaLamViec : UserControl
         {
             MessageBox.Show("Lỗi đăng ký ca: " + ex.Message);
         }
+    }
+
+    // Đăng ký nhanh tất cả ca hợp lệ từ hôm nay đến cuối tuần đang xem.
+    private void btnDangKyTuan_Click(object sender, RoutedEventArgs e)
+    {
+        if (!IsEmployee) return;
+        int soCa = danhSachCaiDat.Count(x => x.NgayLam.Date >= DateTime.Today
+            && x.NgayLam.Date >= dauTuan && x.NgayLam.Date < dauTuan.AddDays(7));
+        if (soCa == 0)
+        {
+            MessageBox.Show("Tuần đang xem không có ca sắp tới để đăng ký.", "Đăng ký tuần",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        if (MessageBox.Show($"Đăng ký các ca hợp lệ trong tuần {dauTuan:dd/MM} - {dauTuan.AddDays(6):dd/MM/yyyy}?\n"
+                + "Ca đã có, trùng giờ hoặc nằm trong thời gian nghỉ được duyệt sẽ được bỏ qua.",
+                "Xác nhận đăng ký tuần", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            btnDangKyTuan.IsEnabled = false;
+            var ketQua = busLichLamViec.dangKyTuan(maNV, dauTuan);
+            LoadDuLieu();
+            MessageBox.Show($"Đăng ký thành công: {ketQua.ThanhCong} ca.\n"
+                + $"Đã đăng ký/phân công: {ketQua.DaCo} ca.\n"
+                + $"Trùng khung giờ: {ketQua.TrungGio} ca.\n"
+                + $"Trong thời gian nghỉ được duyệt: {ketQua.DangNghi} ca.\n\n"
+                + "Các ca vừa đăng ký đang chờ quản lý xác nhận.",
+                "Kết quả đăng ký tuần", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Không thể đăng ký tuần: " + ex.Message,
+                "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally { btnDangKyTuan.IsEnabled = true; }
     }
 
     // Chọn phòng trước khi xác nhận lịch làm việc cho nhân viên.

@@ -1,0 +1,132 @@
+<UserControl x:Class="RangHamMat.Views.ChamCong"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <Style x:Key="CCButton" TargetType="Button">
+            <Setter Property="Background" Value="#244D57"/><Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/><Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="15,10"/><Setter Property="Margin" Value="0,0,9,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style x:Key="CCInput" TargetType="TextBox">
+            <Setter Property="Height" Value="36"/><Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#D8E4E2"/>
+        </Style>
+        <Style x:Key="CCLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#5C706F"/><Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+    </UserControl.Resources>
+    <Grid Background="#F4F3EE">
+        <Grid Margin="0,0,16,16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/><RowDefinition Height="*" MinHeight="0"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <!-- Kiểu giao diện sổ đối soát khác phân hệ Kho: thanh tiêu đề xanh đêm, thống kê dạng dòng, vùng duyệt nền kem. -->
+            <Border Grid.Row="0" Background="#132E34" Padding="28,22" CornerRadius="0,0,18,18">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="NHÂN SỰ  /  SỔ ĐỐI SOÁT" FontWeight="Bold" FontSize="11" Foreground="#C7A96F"/>
+                        <TextBlock Text="Kiểm duyệt chấm công" Foreground="White" FontSize="29" FontWeight="Bold" Margin="0,6,0,3"/>
+                        <TextBlock Text="Ca làm thực tế • BQL xác nhận • Lưu vết trước khi lên lương" Foreground="#B5CAC9" FontSize="13"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="btnTaiLai" Content="↻  Tải lại" Style="{StaticResource CCButton}" Click="btnTaiLai_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <Border Grid.Row="1" Margin="22,18,6,0" Background="White" CornerRadius="12" Padding="17" BorderBrush="#DFE8E4" BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/><ColumnDefinition Width="80"/><ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="90"/><ColumnDefinition Width="18"/><ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="14"/><ColumnDefinition Width="164"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Kỳ chấm công" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,12,0"/>
+                    <ComboBox x:Name="cboThang" Grid.Column="1" Height="35" SelectionChanged="cboThang_SelectionChanged">
+                        <ComboBoxItem Content="01"/><ComboBoxItem Content="02"/><ComboBoxItem Content="03"/><ComboBoxItem Content="04"/>
+                        <ComboBoxItem Content="05"/><ComboBoxItem Content="06"/><ComboBoxItem Content="07"/><ComboBoxItem Content="08"/>
+                        <ComboBoxItem Content="09"/><ComboBoxItem Content="10"/><ComboBoxItem Content="11"/><ComboBoxItem Content="12"/>
+                    </ComboBox>
+                    <TextBox x:Name="txtNam" Grid.Column="3" Style="{StaticResource CCInput}" TextChanged="txtNam_TextChanged"/>
+                    <TextBox x:Name="txtTimKiem" Grid.Column="5" Style="{StaticResource CCInput}" TextChanged="txtTimKiem_TextChanged" ToolTip="Tìm mã hoặc tên nhân viên"/>
+                    <ComboBox x:Name="cboTrangThai" Grid.Column="7" Height="35" SelectionChanged="cboTrangThai_SelectionChanged" SelectedIndex="0">
+                        <ComboBoxItem Content="Tất cả trạng thái"/><ComboBoxItem Content="Chờ đối soát"/>
+                        <ComboBoxItem Content="Đã xác nhận"/><ComboBoxItem Content="Không hợp lệ"/>
+                    </ComboBox>
+                </Grid>
+            </Border>
+            <Grid Grid.Row="2" Margin="22,13,6,16">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Border Background="#DFECE8" Padding="16,12" CornerRadius="10"><StackPanel Orientation="Horizontal"><TextBlock Text="Tổng ca:  " Foreground="#425C5A"/><TextBlock x:Name="lblTongCa" Text="0" FontWeight="Bold" FontSize="17"/></StackPanel></Border>
+                <Border Grid.Column="2" Background="#FFF0D9" Padding="16,12" CornerRadius="10"><StackPanel Orientation="Horizontal"><TextBlock Text="Chờ đối soát:  " Foreground="#76502A"/><TextBlock x:Name="lblChoDuyet" Text="0" FontWeight="Bold" FontSize="17"/></StackPanel></Border>
+                <Border Grid.Column="4" Background="#E4EBF6" Padding="16,12" CornerRadius="10"><StackPanel Orientation="Horizontal"><TextBlock Text="Đã xác nhận:  " Foreground="#425675"/><TextBlock x:Name="lblDaDuyet" Text="0" FontWeight="Bold" FontSize="17"/></StackPanel></Border>
+            </Grid>
+            <Grid Grid.Row="3" Margin="22,0,6,0">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="8*"/><ColumnDefinition Width="15"/><ColumnDefinition Width="4*" MinWidth="345"/></Grid.ColumnDefinitions>
+                <Border Background="White" CornerRadius="13" BorderThickness="1" BorderBrush="#DFE8E4" Padding="0">
+                    <Grid>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <StackPanel Margin="18,16,18,12"><TextBlock Text="Danh sách ca làm" FontSize="18" FontWeight="Bold" Foreground="#16383E"/>
+                            <TextBlock Text="Chọn ca để duyệt (0,5 công/ca, không yêu cầu đủ 8 giờ); giữ Ctrl để duyệt nhiều ca" Foreground="#59706C" FontSize="11" Margin="0,5,0,0"/></StackPanel>
+                        <!-- Giới hạn chiều cao để DataGrid tự cuộn, không mở rộng theo toàn bộ số dòng. -->
+                        <DataGrid x:Name="gridChamCong" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True"
+                            CanUserAddRows="False" SelectionMode="Extended" SelectionUnit="FullRow"
+                            RowHeight="39" ColumnHeaderHeight="42" HeadersVisibility="Column" BorderThickness="0"
+                            MinHeight="0" VerticalAlignment="Stretch"
+                            ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                            ScrollViewer.CanContentScroll="True" EnableRowVirtualization="True" EnableColumnVirtualization="False"
+                            SelectionChanged="gridChamCong_SelectionChanged" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#ECF0EF">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Ngày" Binding="{Binding NgayLam, StringFormat=dd/MM}" Width="75"/>
+                                <DataGridTextColumn Header="Nhân viên" Binding="{Binding HoTen}" Width="2*" MinWidth="140"/>
+                                <DataGridTextColumn Header="Ca" Binding="{Binding MaCa}" Width="70"/>
+                                <DataGridTextColumn Header="Giờ vào" Binding="{Binding GioVao, StringFormat=HH:mm}" Width="80"/>
+                                <DataGridTextColumn Header="Giờ ra" Binding="{Binding GioRa, StringFormat=HH:mm}" Width="75"/>
+                                <DataGridTextColumn Header="Công" Binding="{Binding CongDuocTinh, StringFormat=N2}" Width="62"/>
+                                <DataGridTextColumn Header="Trạng thái" Binding="{Binding TrangThai}" Width="130"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock Grid.Row="2" x:Name="lblSoDong" Text="0 ca trong danh sách" Foreground="#627673" FontSize="12" Margin="18,12"/>
+                    </Grid>
+                </Border>
+                <Border Grid.Column="2" Background="#FFFDF6" BorderBrush="#E9DFC9" BorderThickness="1" CornerRadius="13" Padding="18">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="PHIẾU ĐỐI SOÁT CA" FontSize="11" FontWeight="Bold" Foreground="#A77A3A"/>
+                            <TextBlock x:Name="lblNhanVien" Text="Chọn một ca làm việc" FontSize="18" FontWeight="Bold" Margin="0,8,0,5" TextWrapping="Wrap" Foreground="#18383B"/>
+                            <TextBlock x:Name="lblThongTinCa" Text="—" Margin="0,0,0,15" Foreground="#6E7E79" TextWrapping="Wrap"/>
+                            <Border Background="#F1F1E8" Padding="13" CornerRadius="9" Margin="0,0,0,15">
+                                <StackPanel><TextBlock Text="Giờ ca theo CA_LAM" Foreground="#667B77" FontSize="11"/>
+                                    <TextBlock x:Name="lblKhungGio" Text="—" FontSize="17" FontWeight="SemiBold" Foreground="#22484B" Margin="0,5,0,0"/></StackPanel>
+                            </Border>
+                            <TextBlock Text="Kết quả đối soát" Style="{StaticResource CCLabel}"/>
+                            <ComboBox x:Name="cboKetQua" Height="37" Margin="0,0,0,12" SelectedIndex="0" SelectionChanged="cboKetQua_SelectionChanged">
+                                <ComboBoxItem Content="Hoàn tất"/><ComboBoxItem Content="Vắng"/><ComboBoxItem Content="Không hợp lệ"/>
+                            </ComboBox>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <StackPanel><TextBlock Text="Giờ vào (HH:mm)" Style="{StaticResource CCLabel}"/>
+                                    <TextBox x:Name="txtGioVao" Style="{StaticResource CCInput}"/></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Text="Giờ ra (HH:mm)" Style="{StaticResource CCLabel}"/>
+                                    <TextBox x:Name="txtGioRa" Style="{StaticResource CCInput}"/></StackPanel>
+                            </Grid>
+                            <TextBlock Text="Ghi chú / lý do điều chỉnh" Style="{StaticResource CCLabel}"/>
+                            <TextBox x:Name="txtLyDo" MaxLength="500" MinHeight="64" MaxHeight="105" Padding="9" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderBrush="#D8E4E2" Margin="0,0,0,13"/>
+                            <TextBlock x:Name="lblLichSu" TextWrapping="Wrap" Foreground="#4B7068" FontSize="11" Margin="0,0,0,10"/>
+                            <TextBlock x:Name="lblCanhBao" TextWrapping="Wrap" Foreground="#97552F" FontSize="12" Margin="0,0,0,12"/>
+                            <Button x:Name="btnDuyetMot" Content="✓  Lưu và duyệt ca" Click="btnDuyetMot_Click" Style="{StaticResource CCButton}" Margin="0,0,0,10"/>
+                            <Button x:Name="btnDuyetNhieu" Content="✓✓  Duyệt các ca đã chọn" Click="btnDuyetNhieu_Click" Style="{StaticResource CCButton}" Margin="0,0,0,10" Background="#A4753D"/>
+                            <TextBlock Text="Duyệt nhiều: chỉ dùng giờ đã ghi nhận trên từng lịch; nếu một ca sai thì hủy toàn bộ lượt duyệt." TextWrapping="Wrap" Foreground="#718078" FontSize="11"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+            <TextBlock Grid.Row="4" x:Name="lblThongBao" Margin="24,12,6,0" Foreground="#506765" TextWrapping="Wrap" FontSize="12"
+                Text="BQL duyệt công; chưa tự động tính lại hoặc chốt bảng lương."/>
+        </Grid>
+    </Grid>
+</UserControl>

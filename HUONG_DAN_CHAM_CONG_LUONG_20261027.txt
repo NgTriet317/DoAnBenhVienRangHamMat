@@ -1,0 +1,38 @@
+BẢN KIỂM TRA VÀ KHẮC PHỤC MÀN HÌNH CHẤM CÔNG / CHỐT LƯƠNG
+
+Nguồn: RHM_Project_Fixed.zip đã cung cấp trong cuộc trò chuyện.
+Phạm vi: ChamCong.xaml(.cs), BangLuong.xaml(.cs), BUS_BANGLUONG, DAL_BANGLUONG.
+Không sửa SQL cài đặt đang có, dữ liệu database, đơn nghỉ việc, nghỉ phép.
+
+THAY ĐỔI:
+- Bỏ ScrollViewer bao cả màn hình chấm công, cho DataGrid cuộn riêng.
+- Tắt ảo hóa cột và gỡ datasource cũ trước khi gán dữ liệu mới lúc chuyển tháng.
+- Bổ sung truy vấn ngày của SQL Server ở DAL/BUS, đồng nhất điều kiện chốt trên UI với stored procedure.
+- Mục lương nêu từng lý do chặn chốt cho nhân viên đang chọn.
+- Làm mới cùng kỳ không tự xóa cờ đã tính; chuyển kỳ vẫn buộc nhấn Tính lương trước khi chốt.
+- Ô thống kê ca chưa duyệt là tổng của cả tháng, KHÔNG phụ thuộc ô tìm nhân viên.
+
+CÁCH MỞ:
+1. Sao lưu dự án bạn đang sử dụng, rồi giải nén ZIP mới vào thư mục riêng.
+2. Mở BenhVienRangHamMat.sln bằng Visual Studio 2022.
+3. Clean / Rebuild Solution. Không chạy build cũ khi Visual Studio báo lỗi.
+4. Chọn Chấm công, chọn tháng 11/2026 rồi quay lại tháng 10/2026.
+   Kiểm tra cột/tiêu đề và thanh cuộn của DataGrid. Đảm bảo ca vẫn đúng.
+5. Vào Lương và hoa hồng, chọn tháng 10/2026 và NV005.
+   Xem mục lý do chưa chốt bên phải; chú ý ngày SQL Server.
+6. Đối soát ca nếu cần, sau đó bấm Tính lương kỳ này và xem lại phiếu.
+   Chỉ khi SQL Server thực sự đến từ ngày 05/11/2026 và đủ điều kiện mới có thể chốt.
+
+TRUY VẤN DIAGNOSTIC:
+SQL/08_KIEM_TRA_CHOT_LUONG_THANG10_2026.sql chỉ chứa lệnh đọc SELECT.
+Trước khi F5 trong SSMS, chọn đúng SQL Server/database mà WPF đang dùng.
+Cấu hình connection mặc định xem DAL/dbconnect.cs hoặc biến môi trường RHM_CONNECTION_STRING.
+Kết quả gồm: ngày SQL Server, phiếu tháng 10 của NV005, ca chưa xác nhận,
+ca chờ của toàn bộ nhân viên và các điều kiện chốt còn thiếu.
+Không dùng UPDATE/DELETE để ép chốt phiếu cũ chưa đủ điều kiện.
+
+GIỚI HẠN KIỂM THỬ:
+- Đã kiểm tra cú pháp XML/XAML, binding sự kiện cơ bản và kiểm tra mã nguồn.
+- Chưa thể chạy WPF + SQL Server thực tế trong môi trường xây dựng bản vá.
+- Nếu vẫn không chốt, gửi ảnh phần đối soát mới và kết quả của SQL diagnostic
+  (che dữ liệu cá nhân nếu cần) để xác định điều kiện cụ thể.
