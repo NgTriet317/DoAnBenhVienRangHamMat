@@ -1,0 +1,7 @@
+Changed database context to 'master'.
+name                                                                                                                             create_date
+-------------------------------------------------------------------------------------------------------------------------------- -----------------------
+RHM_Hospital_Test_RxDialog_20261029                                                                                              2026-10-29 16:20:10.143
+
+(1 rows affected)
+PASS: owned RxDialog fixture removed; QLBenhVienRangHamMat retained.

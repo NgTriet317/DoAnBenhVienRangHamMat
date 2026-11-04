@@ -1,0 +1,370 @@
+[
+    {
+        "Table":  "BANG_LUONG",
+        "Columns":  "[MaBL],[MaNV],[MaCSL],[TuNgay],[DenNgay],[SoCaTinh],[LuongCoBan],[SoCaDinhMuc],[LuongTheoCa],[TienHoaHong],[TongLuong],[TrangThai],[NgayChot],[GhiChu]",
+        "Keys":  "[MaBL]",
+        "QuotedName":  "[BANG_LUONG]",
+        "Hash":  "6B614EF7FAF987F5395924103C1354D33CF1E934E89659FC4B51CDA32F1D2F82",
+        "RowCount":  10
+    },
+    {
+        "Table":  "BAO_TRI_THIET_BI",
+        "Columns":  "[MaBT],[MaTB],[MaNV],[NgayBatDau],[NgayKetThuc],[NoiDung],[ChiPhi],[NgayBaoTriTiepTheo],[TrangThai],[GhiChu]",
+        "Keys":  "[MaBT]",
+        "QuotedName":  "[BAO_TRI_THIET_BI]",
+        "Hash":  "EDBD9772CCFCDBFDBAAD19AC61E7C719D43EB24F5082C40115076AAF38BE60B3",
+        "RowCount":  10
+    },
+    {
+        "Table":  "BENH_NHAN",
+        "Columns":  "[MaBN],[HoTenBN],[GioiTinh],[NgaySinh],[SDT],[DiaChi],[MaBHYT],[NhomMau],[TienSuBenh],[DiUng],[TrangThai]",
+        "Keys":  "[MaBN]",
+        "QuotedName":  "[BENH_NHAN]",
+        "Hash":  "F27A9ADE6A1AC416EA86240FC5922D60176D23C529AD5536CD4B65EA6707CFF1",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CA_LAM",
+        "Columns":  "[MaCa],[GioBatDau],[GioKetThuc],[TrangThai],[GhiChu]",
+        "Keys":  "[MaCa]",
+        "QuotedName":  "[CA_LAM]",
+        "Hash":  "F9BFCC17373301D7F4D2FB9A5F46B46043E240C9635991E9197AF0F2017DBA81",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CA_THEO_NGAY",
+        "Columns":  "[NgayLam],[MaCa]",
+        "Keys":  "[NgayLam],[MaCa]",
+        "QuotedName":  "[CA_THEO_NGAY]",
+        "Hash":  "0F69C67784C90C9E48F2E6398B9014F0C50B4D71BFFE53151981B8857599237A",
+        "RowCount":  5
+    },
+    {
+        "Table":  "CHI_TIET_DON_THUOC",
+        "Columns":  "[MaCTDT],[MaDT],[MaThuoc],[LieuDung],[SoLuong],[SoNgayDung],[HuongDan]",
+        "Keys":  "[MaCTDT]",
+        "QuotedName":  "[CHI_TIET_DON_THUOC]",
+        "Hash":  "DE6FD7CB1049E724F703B736DDA6C4CBCC1BD623FC194E6DD2FAAD1D2968FEC9",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHI_TIET_HOA_DON",
+        "Columns":  "[MaCTHD],[MaHD],[MaDVThucHien],[MaCTPX],[NoiDung],[DonGia],[ThanhTien]",
+        "Keys":  "[MaCTHD]",
+        "QuotedName":  "[CHI_TIET_HOA_DON]",
+        "Hash":  "606A5117E03B17C9508793DCF1901ECB0C67E999F479EE52B52258E6395BCCA8",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHI_TIET_KE_HOACH",
+        "Columns":  "[MaCTKH],[MaKHDT],[MaDV],[LanThu],[SoLuongDuKien],[DonGiaDuKien],[ThanhTienDuKien],[TrangThai],[GhiChu]",
+        "Keys":  "[MaCTKH]",
+        "QuotedName":  "[CHI_TIET_KE_HOACH]",
+        "Hash":  "A0E07C1542FEC461FFAD1846E86CB9B5FCAA3B97325179331C5F216E51E3C6F9",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHI_TIET_PHIEU_NHAP",
+        "Columns":  "[MaCTPN],[MaPN],[MaHH],[MaLo],[SoLuong],[DonGia],[ThanhTien],[GhiChu]",
+        "Keys":  "[MaCTPN]",
+        "QuotedName":  "[CHI_TIET_PHIEU_NHAP]",
+        "Hash":  "66C081EA69CDF0ACBD1F9C77AD8BE9DD58A64B96865A12BC05598AAE3EEDC6C0",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHI_TIET_PHIEU_XUAT",
+        "Columns":  "[MaCTPX],[MaPX],[MaHH],[MaLo],[MaCTDT],[SoLuong],[GhiChu]",
+        "Keys":  "[MaCTPX]",
+        "QuotedName":  "[CHI_TIET_PHIEU_XUAT]",
+        "Hash":  "9742084A61948C2F24ABFDDEA15083AFA682C5C417847D7861A6745B98164FFA",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHINH_SACH_LUONG",
+        "Columns":  "[MaCSL],[MaChucVu],[TenChinhSach],[PhienBan],[NgayHieuLuc],[NgayHetHieuLuc],[LuongCoBan],[SoCaDinhMuc],[CoSoHoaHong],[TyLeHoaHong],[MaNVDuyet],[NgayDuyet],[TrangThai]",
+        "Keys":  "[MaCSL]",
+        "QuotedName":  "[CHINH_SACH_LUONG]",
+        "Hash":  "91574C7F8EE05D3737FAEAECE7E3FA7AE1AC0932F1B72BE981ACFC8E4F639098",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHUC_VU",
+        "Columns":  "[MaChucVu],[TenChucVu],[MoTa]",
+        "Keys":  "[MaChucVu]",
+        "QuotedName":  "[CHUC_VU]",
+        "Hash":  "DEF38A7F6560D179EFA55BD053C55282564C9D4C2D95885A547F12AB0005A05F",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHUNG_CHI_NHAN_VIEN",
+        "Columns":  "[MaCC],[MaNV],[SoChungChi],[TenChungChi],[NgayCap],[NoiCap],[HanChungChi],[TrangThai],[GhiChu]",
+        "Keys":  "[MaCC]",
+        "QuotedName":  "[CHUNG_CHI_NHAN_VIEN]",
+        "Hash":  "498369779E8FD0076BAB93E69206ED7CA602BFBAFB3C56B36BD1CFDE2886E73E",
+        "RowCount":  10
+    },
+    {
+        "Table":  "CHUYEN_KHOA",
+        "Columns":  "[MaCK],[MaKhoa],[TenCK],[MoTa],[TrangThai]",
+        "Keys":  "[MaCK]",
+        "QuotedName":  "[CHUYEN_KHOA]",
+        "Hash":  "28689081A05DE41541660CD07C18EC7D0F1A1FE2AE1EF61D5263541F626FB3F4",
+        "RowCount":  10
+    },
+    {
+        "Table":  "DICH_VU",
+        "Columns":  "[MaDV],[TenDV],[NhomDV],[MaCK],[DonGia],[ThoiGianDuKien],[MoTa],[NgayApDung],[TrangThai]",
+        "Keys":  "[MaDV]",
+        "QuotedName":  "[DICH_VU]",
+        "Hash":  "BE0372A1EE90B52AF74B4604301738083D7A3604291535728CCBF79F67806AC4",
+        "RowCount":  10
+    },
+    {
+        "Table":  "DICH_VU_THUC_HIEN",
+        "Columns":  "[MaDVThucHien],[MaLS],[MaCTKH],[MaDV],[MaNVThucHien],[ThoiGianThucHien],[SoLuong],[DonGia],[ThanhTien],[KetQua],[TrangThai]",
+        "Keys":  "[MaDVThucHien]",
+        "QuotedName":  "[DICH_VU_THUC_HIEN]",
+        "Hash":  "20FD12024151FD33E1E7ECB3CED4EC09DBFAF44435018465CF88BDF0148A1545",
+        "RowCount":  10
+    },
+    {
+        "Table":  "DON_THUOC",
+        "Columns":  "[MaDT],[MaLS],[MaBS],[NgayKe],[LyDoThayThe],[TrangThai],[GhiChu]",
+        "Keys":  "[MaDT]",
+        "QuotedName":  "[DON_THUOC]",
+        "Hash":  "F2BFBFD7045D889D140867E90DF099F8FDF97179B376CFF91190A1D05CFDFAF6",
+        "RowCount":  10
+    },
+    {
+        "Table":  "DON_XIN_NGHI",
+        "Columns":  "[MaDonNghi],[MaNV],[TuNgay],[DenNgay],[LyDo],[NgayGui],[TrangThaiDuyet],[MaNVDuyet],[NgayDuyet],[GhiChu]",
+        "Keys":  "[MaDonNghi]",
+        "QuotedName":  "[DON_XIN_NGHI]",
+        "Hash":  "380CAD6B7E5B4350D893CEDC5022285A17031DAA099088C6980FB31C70A120A8",
+        "RowCount":  10
+    },
+    {
+        "Table":  "HANG_HOA",
+        "Columns":  "[MaHH],[TenHH],[MaLoaiHH],[DonViTinh],[MoTa],[TrangThai]",
+        "Keys":  "[MaHH]",
+        "QuotedName":  "[HANG_HOA]",
+        "Hash":  "6C712C6EDCF1AB3EE1F6E8EDD3281EFC225BB0DA882BB9AD7D935CA2EC33DCCF",
+        "RowCount":  30
+    },
+    {
+        "Table":  "HO_SO_BENH_AN",
+        "Columns":  "[MaHS],[MaBN],[NgayLap],[LyDoKhamBanDau],[GhiChu],[TrangThai]",
+        "Keys":  "[MaHS]",
+        "QuotedName":  "[HO_SO_BENH_AN]",
+        "Hash":  "4B2674F1CA639EFD6B3323ACDBE8479A6D14A90A5F154D18395190E3BCA1A698",
+        "RowCount":  10
+    },
+    {
+        "Table":  "HOA_DON",
+        "Columns":  "[MaHD],[MaLS],[MaNV],[NgayLap],[NgayXacNhan],[TongTien],[GiamGia],[SoTienPhaiThu],[TrangThai]",
+        "Keys":  "[MaHD]",
+        "QuotedName":  "[HOA_DON]",
+        "Hash":  "51A11EEB088B2849D07E81475186BC28A229A9EA83F5DD04DD3F431618AF9490",
+        "RowCount":  10
+    },
+    {
+        "Table":  "HOA_DON_NHAP",
+        "Columns":  "[MaHDN],[SoHoaDonNCC],[MaNCC],[MaNV],[NgayHoaDon],[TongTien],[TrangThai],[GhiChu]",
+        "Keys":  "[MaHDN]",
+        "QuotedName":  "[HOA_DON_NHAP]",
+        "Hash":  "0B30431168A88871D51F88CE433A269498C614FE124D2DE47CAE092AC448CEC4",
+        "RowCount":  10
+    },
+    {
+        "Table":  "KE_HOACH_DIEU_TRI",
+        "Columns":  "[MaKHDT],[MaLS],[MaBS],[NgayLap],[NgayBatDau],[NgayDuKienKetThuc],[TongTienDuKien],[TrangThai],[GhiChu]",
+        "Keys":  "[MaKHDT]",
+        "QuotedName":  "[KE_HOACH_DIEU_TRI]",
+        "Hash":  "0B94F8169EA8390FD71506AA83FC1D7948FBFD7FC1603D8A6E23D940DAF8DE24",
+        "RowCount":  10
+    },
+    {
+        "Table":  "KHO",
+        "Columns":  "[MaKho],[TenKho],[MaNV],[LoaiKho],[TrangThai]",
+        "Keys":  "[MaKho]",
+        "QuotedName":  "[KHO]",
+        "Hash":  "153C7BC1F0E42A6A098EBFD029ACF23867149729A49C203436E8114C47CC8FA2",
+        "RowCount":  10
+    },
+    {
+        "Table":  "KHOA",
+        "Columns":  "[MaKhoa],[TenKhoa],[DienThoai],[MoTa],[TrangThai]",
+        "Keys":  "[MaKhoa]",
+        "QuotedName":  "[KHOA]",
+        "Hash":  "D474A5530609D3FC27ACC439BE87C8199D6E5FE7B2480C10C0DC9811F7C39169",
+        "RowCount":  10
+    },
+    {
+        "Table":  "LICH_KHAM",
+        "Columns":  "[MaLich],[MaBN],[MaBS],[MaCa],[MaPhong],[MaDV],[NgayGioKham],[ThoiLuongDuKien],[UuTien],[LyDoKham],[LyDoThayDoi],[TrangThai],[GhiChu],[NgayTao],[NgayCapNhat]",
+        "Keys":  "[MaLich]",
+        "QuotedName":  "[LICH_KHAM]",
+        "Hash":  "5D1E6669D597809403B4FA28DA92F634E3E8413A594F83C20D35FF6773BF701D",
+        "RowCount":  10
+    },
+    {
+        "Table":  "LICH_LAM_VIEC",
+        "Columns":  "[MaLLV],[MaNV],[MaCa],[NgayLam],[MaPhong],[TrangThai],[TrangThaiHienDien],[GioVao],[GioRa],[GhiChu]",
+        "Keys":  "[MaLLV]",
+        "QuotedName":  "[LICH_LAM_VIEC]",
+        "Hash":  "0C0D050281124A33328F5E578C207ED695156E544BF0E32A5762203EAA6735F7",
+        "RowCount":  10
+    },
+    {
+        "Table":  "LICH_SU_KHAM_BENH",
+        "Columns":  "[MaLS],[MaPhieu],[MaBS],[MaPhong],[ThoiGianKham],[TrieuChung],[ChanDoan],[KeHoachXuLy],[TrangThai],[NgayXacNhan],[GhiChu]",
+        "Keys":  "[MaLS]",
+        "QuotedName":  "[LICH_SU_KHAM_BENH]",
+        "Hash":  "077C7E43ABED98E944123BAC4805F574D1197D694A07F25ED30B1AFEBC408A1E",
+        "RowCount":  10
+    },
+    {
+        "Table":  "LO_HANG_HOA",
+        "Columns":  "[MaLo],[MaHH],[MaNCC],[MaKho],[SoLo],[NgayNhap],[HanSuDung],[TrangThai]",
+        "Keys":  "[MaLo]",
+        "QuotedName":  "[LO_HANG_HOA]",
+        "Hash":  "71C9CBE2D933CC200BCF52DF7CF09F846626D694F03DF4AB1AF07F3EE18BBB25",
+        "RowCount":  10
+    },
+    {
+        "Table":  "LOAI_HANG_HOA",
+        "Columns":  "[MaLoaiHH],[TenLoaiHH],[MoTa],[TrangThai]",
+        "Keys":  "[MaLoaiHH]",
+        "QuotedName":  "[LOAI_HANG_HOA]",
+        "Hash":  "53064D8F7D5E7A13127D0F874D9A10844D154082D9F25E47EC8A3C1A1467A436",
+        "RowCount":  10
+    },
+    {
+        "Table":  "NHA_CUNG_CAP",
+        "Columns":  "[MaNCC],[TenNCC],[SDT],[Email],[DiaChi],[NguoiLienHe],[TrangThai]",
+        "Keys":  "[MaNCC]",
+        "QuotedName":  "[NHA_CUNG_CAP]",
+        "Hash":  "46F02931BA1AE04D439B528F9A68EC1C71A57401D90224CC3397C236A754292B",
+        "RowCount":  10
+    },
+    {
+        "Table":  "NHAN_VIEN",
+        "Columns":  "[MaNV],[HoTen],[GioiTinh],[NgaySinh],[SDT],[DiaChi],[MaChucVu],[MaCK],[BangCap],[NgayVaoLam],[TrangThai]",
+        "Keys":  "[MaNV]",
+        "QuotedName":  "[NHAN_VIEN]",
+        "Hash":  "26D81E316D21F4C71600051FEE1729DEEC014613DC9427132AF3AB45CDB2EF34",
+        "RowCount":  10
+    },
+    {
+        "Table":  "NHAT_KY_THAO_TAC",
+        "Columns":  "[MaNK],[MaTK],[ThoiGian],[HanhDong],[LoaiDoiTuong],[MaDoiTuong],[KetQua],[DuLieuTruoc],[DuLieuSau]",
+        "Keys":  "[MaNK]",
+        "QuotedName":  "[NHAT_KY_THAO_TAC]",
+        "Hash":  "C4043BC152E2692EEAAB4B4D4ABFAE0D33BF72EB0D7B43A71CBE89492C010ABB",
+        "RowCount":  10
+    },
+    {
+        "Table":  "PHAN_CONG_THAY_THE",
+        "Columns":  "[MaPCTT],[MaDonNghi],[MaLLVThayThe],[NgayXuLy],[TrangThai],[GhiChu]",
+        "Keys":  "[MaPCTT]",
+        "QuotedName":  "[PHAN_CONG_THAY_THE]",
+        "Hash":  "1CE4FCAB11414A32D951906FD17514D05AD7C05E33DB136A0C686B1514EB84D1",
+        "RowCount":  10
+    },
+    {
+        "Table":  "PHIEU_KHAM_BENH",
+        "Columns":  "[MaPhieu],[MaHS],[MaLich],[MaPhong],[MaBS],[MaNVTiepNhan],[MaDV],[SoThuTu],[ThoiGianTiepNhan],[LyDoKham],[TrangThai],[GhiChu]",
+        "Keys":  "[MaPhieu]",
+        "QuotedName":  "[PHIEU_KHAM_BENH]",
+        "Hash":  "0CE9E53F01CA9B1BD6FCAB43086648C3FA420B84B657402823D6810EC2DB1249",
+        "RowCount":  10
+    },
+    {
+        "Table":  "PHIEU_NHAP",
+        "Columns":  "[MaPN],[MaHDN],[MaKho],[MaNV],[NgayNhap],[TongTien],[TrangThai],[LyDo],[GhiChu]",
+        "Keys":  "[MaPN]",
+        "QuotedName":  "[PHIEU_NHAP]",
+        "Hash":  "082FFF80A5AAD27E3AEF0C7CE6B4B85285F84C63A6377DC1C1FF12DF83D5992D",
+        "RowCount":  10
+    },
+    {
+        "Table":  "PHIEU_XUAT",
+        "Columns":  "[MaPX],[MaKho],[MaNV],[MaKhoa],[MaPhong],[MaLS],[NgayXuat],[LyDo],[TrangThai],[GhiChu]",
+        "Keys":  "[MaPX]",
+        "QuotedName":  "[PHIEU_XUAT]",
+        "Hash":  "3E57677B731DBD6C69C996F5EC2E7CB1EFC8C1A3F22300A572EC93FCA5A278AC",
+        "RowCount":  10
+    },
+    {
+        "Table":  "PHONG",
+        "Columns":  "[MaPhong],[TenPhong],[MaKhoa],[LoaiPhong],[TinhTrang],[TrangThai]",
+        "Keys":  "[MaPhong]",
+        "QuotedName":  "[PHONG]",
+        "Hash":  "BB0F655A511E1F8968EBE700D65593AE32F6D4D2BFA9971C347EE40DEAAF6B96",
+        "RowCount":  10
+    },
+    {
+        "Table":  "TAI_KHOAN",
+        "Columns":  "[MaTK],[TenDangNhap],[MatKhauHash],[MaVaiTro],[MaNV],[MaKhoa],[MaPhong],[TrangThai]",
+        "Keys":  "[MaTK]",
+        "QuotedName":  "[TAI_KHOAN]",
+        "Hash":  "A8E1C7E521F695CA3C038A9593CE424F661DFABBFAD70BA55150E8FFE07178F6",
+        "RowCount":  10
+    },
+    {
+        "Table":  "THANH_TOAN",
+        "Columns":  "[MaTT],[MaHD],[MaNV],[NgayThanhToan],[SoTien],[LoaiGiaoDich],[PhuongThuc],[LyDo],[TrangThai]",
+        "Keys":  "[MaTT]",
+        "QuotedName":  "[THANH_TOAN]",
+        "Hash":  "03A04AB7F9619C6FA0989B2C4B9265259BC471E67BB0E9BA5614F86A7FB942EC",
+        "RowCount":  10
+    },
+    {
+        "Table":  "THIET_BI",
+        "Columns":  "[MaTB],[MaHH],[SoSerial],[NgayMua],[MaNCC],[MaPhong],[TinhTrang],[HanBaoHanh],[TrangThai],[GhiChu]",
+        "Keys":  "[MaTB]",
+        "QuotedName":  "[THIET_BI]",
+        "Hash":  "49D868B5ACF91BC346BC329C21BA745ECB09431A5AA17B1D0A4815D00A6514F6",
+        "RowCount":  10
+    },
+    {
+        "Table":  "THUOC",
+        "Columns":  "[MaThuoc],[MaHH],[HamLuong],[MucTonToiThieu],[DonGiaBan]",
+        "Keys":  "[MaThuoc]",
+        "QuotedName":  "[THUOC]",
+        "Hash":  "899DF124BC9305920989E94E3BCC617784961982380382238F5AB8C214EFB424",
+        "RowCount":  10
+    },
+    {
+        "Table":  "TINH_TRANG_BENH",
+        "Columns":  "[MaTTB],[MaLS],[LoaiTinhTrang],[MoTaTinhTrang],[MucDo],[GhiChu]",
+        "Keys":  "[MaTTB]",
+        "QuotedName":  "[TINH_TRANG_BENH]",
+        "Hash":  "F035B15F05A3FCF9BD77E17BA6C56880001D41E9B48D9C69BE0B3A193F581A96",
+        "RowCount":  10
+    },
+    {
+        "Table":  "VAI_TRO",
+        "Columns":  "[MaVaiTro],[TenVaiTro],[MoTa]",
+        "Keys":  "[MaVaiTro]",
+        "QuotedName":  "[VAI_TRO]",
+        "Hash":  "9EBE6ADDD729597DE7562EFD5C9E07553F5D283D5565652192B268C03BE40FD8",
+        "RowCount":  2
+    },
+    {
+        "Table":  "VAT_TU",
+        "Columns":  "[MaVT],[MaHH],[MucTonToiThieu]",
+        "Keys":  "[MaVT]",
+        "QuotedName":  "[VAT_TU]",
+        "Hash":  "7F6A1CFE53DEA6ED9245E93B41AA9112E2C1CE0FF603AE69A37778DB02FF3488",
+        "RowCount":  10
+    },
+    {
+        "Table":  "XAC_NHAN_DOI_LICH_KHAM",
+        "Columns":  "[MaDonNghi],[MaLich],[MaBSCu],[MaPhongCu],[MaBSMoi],[MaPhongMoi],[MaLLVThayThe],[MaCa],[NgayGioKham],[ThoiLuongDuKien],[MaNVXacNhan],[NgayXacNhan],[TrangThai]",
+        "Keys":  "[MaDonNghi],[MaLich]",
+        "QuotedName":  "[XAC_NHAN_DOI_LICH_KHAM]",
+        "Hash":  "5EE9173B1B564E61AFD2359A897C180B5EA83875A91A28537DF4202AAD4B3AA7",
+        "RowCount":  0
+    }
+]

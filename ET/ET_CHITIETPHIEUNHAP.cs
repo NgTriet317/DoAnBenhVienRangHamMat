@@ -10,13 +10,37 @@ namespace ET
     [Table("CHI_TIET_PHIEU_NHAP")]
     public class ET_CHITIETPHIEUNHAP
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaCTPN, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maCTPN = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaPN, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maPN = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaHH, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maHH = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaLo, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maLo;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính SoLuong, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal soLuong;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính DonGia, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal donGia;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính ThanhTien, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal thanhTien;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GhiChu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? ghiChu;
 
         /// <summary>

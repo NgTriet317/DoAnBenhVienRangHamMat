@@ -1,0 +1,17 @@
+PASS: Hàng chờ mặc định chỉ còn chờ/đang khám và giữ phiếu qua ngày
+PASS: Phân trang SQL có tổng số và không mất thứ tự
+PASS: Bác sĩ khác/DTO giả quyền không thấy hàng chờ riêng
+PASS: Admin xem tất cả hoặc lọc đúng bác sĩ
+PASS: Tiếp nhận thật qua BUS vào ngay hàng chờ đúng bác sĩ
+PASS: Bắt đầu/nhấn lặp/hoàn tất đúng lượt, ra khỏi hàng chờ vào lịch sử
+PASS: Tìm kiếm ký tự đặc biệt và kiểm tra bộ lọc
+PASS: Mở khám mặc định là hàng chờ, lịch sử nằm riêng
+PASS: Chọn tiếp nhận không tự khám, bấm mới mở đúng bệnh nhân
+PASS: Lượt đang khám ra khỏi bộ lọc Chờ khám vẫn giữ editor sau tải lại/lưu nháp
+PASS: Tải lại không tự chọn người khác khi phiếu bị hủy
+PASS: Admin lọc bác sĩ trong hàng chờ; lịch sử chỉ xem
+PASS: Phiếu vừa hủy ở máy khác không được bắt đầu khi danh sách còn cũ
+PASS: Bác sĩ đang mở trang tự thấy tiếp nhận mới từ quầy
+PASS: Nhiều trang và phiếu ngoài cache50 vẫn mở đúng người bệnh
+PASS: Giao diện hàng chờ dùng được ở1280x850,1024x768,800x600
+RESULT: 16 passed, 0 failed

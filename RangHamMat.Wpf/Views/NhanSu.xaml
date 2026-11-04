@@ -1,8 +1,10 @@
+<!-- Giao diện NhanSu: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl x:Class="RangHamMat.Views.NhanSu"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <UserControl.Resources>
+        <!-- Tài nguyên NhanSuTabStyle (Style) áp dụng cho TabItem. -->
         <Style x:Key="NhanSuTabStyle" TargetType="TabItem">
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -10,6 +12,7 @@
             <Setter Property="Margin" Value="0,0,8,0"/>
         </Style>
 
+        <!-- Tài nguyên NhanSuDataGridStyle (Style) áp dụng cho DataGrid. -->
         <Style x:Key="NhanSuDataGridStyle" TargetType="DataGrid">
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="IsReadOnly" Value="True"/>
@@ -21,12 +24,14 @@
             <Setter Property="BorderThickness" Value="0"/>
         </Style>
 
+        <!-- Tài nguyên FormLabel (Style) áp dụng cho TextBlock. -->
         <Style x:Key="FormLabel" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,0,0,6"/>
         </Style>
 
+        <!-- Tài nguyên FormTextBox (Style) áp dụng cho TextBox. -->
         <Style x:Key="FormTextBox" TargetType="TextBox">
             <Setter Property="Height" Value="40"/>
             <Setter Property="Padding" Value="10,0"/>
@@ -91,9 +96,11 @@
                                     <ColumnDefinition Width="150"/>
                                 </Grid.ColumnDefinitions>
 
+                                <!-- Ô nhập txtTimNhanVien. Chuyển sự kiện đến txtTimNhanVien_TextChanged trong code-behind. -->
                                 <TextBox x:Name="txtTimNhanVien" Height="40" Padding="10,0"
                                          VerticalContentAlignment="Center" TextChanged="txtTimNhanVien_TextChanged"/>
 
+                                <!-- Trường lựa chọn cboLocTrangThaiNhanVien. Chuyển sự kiện đến cboLocTrangThaiNhanVien_SelectionChanged trong code-behind. -->
                                 <ComboBox x:Name="cboLocTrangThaiNhanVien" Grid.Column="2"
                                           Height="40" SelectedIndex="0" SelectionChanged="cboLocTrangThaiNhanVien_SelectionChanged">
                                     <ComboBoxItem Content="Tất cả"/>
@@ -104,6 +111,7 @@
                             </Grid>
 
                             <Grid Grid.Row="2" >
+                                <!-- Danh sách dgvNhanVien. -->
                                 <DataGrid x:Name="dgvNhanVien" Background="White" Tag="Table:NHAN_VIEN" Style="{StaticResource NhanSuDataGridStyle}" MouseDoubleClick="dgvNhanVien_MouseDoubleClick">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Mã NV" Binding="{Binding MaNV}" Width="120"/>
@@ -151,10 +159,13 @@
 
                             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                                 <StackPanel Margin="20,3,20,18">
+                                    <!-- Thông tin hiển thị lblHoTen — Họ và tên *. -->
                                     <TextBlock x:Name="lblHoTen" Text="Họ và tên *" Style="{StaticResource FormLabel}"/>
+                                    <!-- Ô nhập txtHoTen. Chuyển sự kiện đến txtHoTen_TextChanged trong code-behind. -->
                                     <TextBox x:Name="txtHoTen" Style="{StaticResource FormTextBox}" TextChanged="txtHoTen_TextChanged"/>
 
                                     <TextBlock Text="Giới tính" Style="{StaticResource FormLabel}"/>
+                                    <!-- Trường lựa chọn cboGioiTinh. -->
                                     <ComboBox x:Name="cboGioiTinh" Height="40" Margin="0,0,0,14">
                                         <ComboBoxItem Content="Nam"/>
                                         <ComboBoxItem Content="Nữ"/>
@@ -162,24 +173,31 @@
                                     </ComboBox>
 
                                     <TextBlock Text="Ngày sinh *" Style="{StaticResource FormLabel}"/>
+                                    <!-- Trường lựa chọn dpNgaySinh. -->
                                     <DatePicker x:Name="dpNgaySinh" Height="40" Margin="0,0,0,14"/>
 
                                     <TextBlock Text="Số điện thoại *" Style="{StaticResource FormLabel}"/>
+                                    <!-- Ô nhập txtSDT. -->
                                     <TextBox x:Name="txtSDT" Style="{StaticResource FormTextBox}"/>
 
                                     <TextBlock Text="Chức vụ *" Style="{StaticResource FormLabel}"/>
+                                    <!-- Trường lựa chọn cboChucVu. -->
                                     <ComboBox x:Name="cboChucVu" DisplayMemberPath="TenChucVu" SelectedValuePath="MaChucVu" SelectedValue="{Binding MaChucVu,Mode=TwoWay}" Height="40" Margin="0,0,0,14"/>
 
                                     <TextBlock Text="Chuyên khoa" Style="{StaticResource FormLabel}"/>
+                                    <!-- Trường lựa chọn cboChuyenKhoa. -->
                                     <ComboBox x:Name="cboChuyenKhoa" DisplayMemberPath="TenCK" SelectedValuePath="MaCK" SelectedValue="{Binding MaCK, Mode=TwoWay}" Height="40" Margin="0,0,0,14"/>
 
                                     <TextBlock Text="Bằng cấp" Style="{StaticResource FormLabel}"/>
+                                    <!-- Ô nhập txtBangCap. -->
                                     <TextBox x:Name="txtBangCap" Style="{StaticResource FormTextBox}"/>
 
                                     <TextBlock Text="Ngày vào làm *" Style="{StaticResource FormLabel}"/>
+                                    <!-- Trường lựa chọn dpNgayVaoLam. -->
                                     <DatePicker x:Name="dpNgayVaoLam" Height="40" Margin="0,0,0,14"/>
 
                                     <TextBlock Text="Trạng thái" Style="{StaticResource FormLabel}"/>
+                                    <!-- Trường lựa chọn cboTrangThai. -->
                                     <ComboBox x:Name="cboTrangThai" Height="40" SelectedIndex="0" Margin="0,0,0,14">
                                         <ComboBoxItem Content="Đang làm việc"/>
                                         <ComboBoxItem Content="Tạm nghỉ"/>
@@ -187,6 +205,7 @@
                                     </ComboBox>
 
                                     <TextBlock Text="Địa chỉ" Style="{StaticResource FormLabel}"/>
+                                    <!-- Ô nhập txtDiaChi. -->
                                     <TextBox x:Name="txtDiaChi" MinHeight="70" Padding="10"
                                              AcceptsReturn="True" TextWrapping="Wrap"/>
                                 </StackPanel>
@@ -199,7 +218,9 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
+                                <!-- Nút thao tác btnLamMoiNhanVien — Làm mới. Chuyển sự kiện đến btnLamMoiNhanVien_Click trong code-behind. -->
                                 <Button x:Name="btnLamMoiNhanVien" Content="Làm mới" Height="42" Click="btnLamMoiNhanVien_Click"/>
+                                <!-- Nút thao tác btnThemNhanVien — Thêm nhân viên. Chuyển sự kiện đến btnThemNhanVien_Click trong code-behind. -->
                                 <Button x:Name="btnThemNhanVien" Grid.Column="2" Content="Thêm nhân viên"
                                         Style="{StaticResource Primary}" Height="42" Click="btnThemNhanVien_Click"/>
                             </Grid>
@@ -230,6 +251,7 @@
                                            Foreground="{StaticResource Muted}" FontSize="12" Margin="0,5,0,0"/>
                             </StackPanel>
 
+                            <!-- Danh sách dgvChucVu. -->
                             <DataGrid x:Name="dgvChucVu" Grid.Row="1" Tag="Table:dgvChucVu"
                                       Style="{StaticResource NhanSuDataGridStyle}">
                                 <DataGrid.Columns>
@@ -246,12 +268,15 @@
                             <TextBlock Text="Thêm chức vụ" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,18"/>
 
                             <TextBlock Text="Mã chức vụ (tự sinh)" Style="{StaticResource FormLabel}"/>
+                            <!-- Ô nhập txtMaChucVu — Tự động. -->
                             <TextBox x:Name="txtMaChucVu" Style="{StaticResource FormTextBox}" IsReadOnly="True" Text="Tự động"/>
 
                             <TextBlock Text="Tên chức vụ *" Style="{StaticResource FormLabel}"/>
+                            <!-- Ô nhập txtTenChucVu. -->
                             <TextBox x:Name="txtTenChucVu" Style="{StaticResource FormTextBox}"/>
 
                             <TextBlock Text="Mô tả" Style="{StaticResource FormLabel}"/>
+                            <!-- Ô nhập txtMoTaChucVu. -->
                             <TextBox x:Name="txtMoTaChucVu" MinHeight="120" Padding="10"
                                      AcceptsReturn="True" TextWrapping="Wrap" Margin="0,0,0,18"/>
 
@@ -262,7 +287,9 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
+                                <!-- Nút thao tác btnLamMoiChucVu — Làm mới. Chuyển sự kiện đến btnLamMoiChucVu_Click trong code-behind. -->
                                 <Button x:Name="btnLamMoiChucVu" Content="Làm mới" Height="42" Click="btnLamMoiChucVu_Click"/>
+                                <!-- Nút thao tác btnThemChucVu — Thêm chức vụ. Chuyển sự kiện đến btnThemChucVu_Click trong code-behind. -->
                                 <Button x:Name="btnThemChucVu" Grid.Column="2" Content="Thêm chức vụ"
                                         Style="{StaticResource Primary}" Height="42" Click="btnThemChucVu_Click"/>
                             </Grid>

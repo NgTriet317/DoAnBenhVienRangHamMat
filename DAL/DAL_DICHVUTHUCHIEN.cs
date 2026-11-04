@@ -8,7 +8,7 @@ namespace DAL
     /// <summary>
     /// Tầng truy cập SQL cho dịch vụ đã thực hiện trong bảng DICH_VU_THUC_HIEN. Ghi nhận dịch vụ thực tế, nhân viên, số lượng, giá và kết quả của lần khám; kiểm tra bước kế hoạch và giữ nguyên dịch vụ đã xác nhận. Dapper ánh xạ dòng SQL sang ET; ThucHien dùng giao dịch được truyền vào hoặc tự quản lý giao dịch cục bộ.
     /// </summary>
-    public class DAL_DICHVUTHUCHIEN : dbconnect
+    public partial class DAL_DICHVUTHUCHIEN : dbconnect
     {
         /// <summary>
         /// Tạo DAL quản lý dịch vụ đã thực hiện, chuyển giao dịch tùy chọn cho dbconnect để nhiều thao tác có thể dùng chung kết nối và phạm vi lưu.
@@ -49,26 +49,7 @@ namespace DAL
         /// <param name = "duLieu">ET chứa dữ liệu cần lưu; thêm mới sẽ được gán mã, và kiểm tra metadata có thể chuẩn hóa lại các giá trị ngay trên đối tượng.</param>
         /// <returns>true sau khi INSERT thành công; lỗi dữ liệu/SQL được phát ra bằng ngoại lệ. Giao dịch ngoài chỉ commit khi nơi gọi quyết định.</returns>
         public bool themDichVuThucHien(ET_DICHVUTHUCHIEN duLieu)
-        {
-            return ThucHien((connection, transaction) =>
-            {
-                duLieu.MaDVThucHien = TaoMa(connection, transaction, "DICH_VU_THUC_HIEN", "MaDVThucHien");
-                KiemTraNghiepVu(duLieu, null);
-                KiemTra<ET_DICHVUTHUCHIEN>(connection, transaction, "DICH_VU_THUC_HIEN", duLieu, null, null);
-                KiemTraLienKet(transaction, duLieu);
-                connection.Execute("""
-                    INSERT INTO dbo.[DICH_VU_THUC_HIEN] ([MaDVThucHien],[MaLS],[MaCTKH],
-                        [MaDV],[MaNVThucHien],[ThoiGianThucHien],
-                        [SoLuong],[DonGia],[KetQua],
-                        [TrangThai])
-                    VALUES (@MaDVThucHien,@MaLS,@MaCTKH,
-                        @MaDV,@MaNVThucHien,@ThoiGianThucHien,
-                        @SoLuong,@DonGia,@KetQua,
-                        @TrangThai)
-                    """, duLieu, transaction);
-                return true;
-            });
-        }
+        { throw new InvalidOperationException("Dịch vụ thực hiện chỉ xem lịch sử; hoàn tất dịch vụ trong khám điều trị."); }
 
         /// <summary>
         /// Sửa dịch vụ đã thực hiện: đọc và giữ khóa UPDLOCK/HOLDLOCK, báo lỗi nếu bản không còn, kiểm tra nghiệp vụ, chuẩn hóa ET và đối chiếu banGoc để phát hiện sửa đồng thời. Khi chỉ đổi trạng thái, chặn thay đổi các trường ngoài TrangThai/NgayXacNhan/NgayCapNhat/LyDoThayDoi; kiểm tra lại liên kết, sau đó UPDATE có tham số trong cùng giao dịch.
@@ -78,33 +59,7 @@ namespace DAL
         /// <param name = "chiDoiTrangThai">true để cấm thay đổi trường nội dung ngoài nhóm trường trạng thái cho phép; không tự đảm bảo mọi chuyển trạng thái đều hợp lệ.</param>
         /// <returns>true khi UPDATE chạy thành công; bản bị mất/thay đổi hoặc dữ liệu sai gây ngoại lệ. Không trả false để biểu thị lỗi.</returns>
         public bool suaDichVuThucHien(ET_DICHVUTHUCHIEN duLieu, ET_DICHVUTHUCHIEN? banGoc = null, bool chiDoiTrangThai = false)
-        {
-            return ThucHien((connection, transaction) =>
-            {
-                var hienTai = connection.QuerySingleOrDefault<ET_DICHVUTHUCHIEN>("SELECT * FROM dbo.[DICH_VU_THUC_HIEN] WITH(UPDLOCK,HOLDLOCK) WHERE [MaDVThucHien]=@Ma", new { Ma = duLieu.MaDVThucHien }, transaction);
-                if (hienTai is null)
-                {
-                    throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
-                }
-
-                KiemTraNghiepVu(duLieu, hienTai, chiDoiTrangThai);
-                KiemTra(connection, transaction, "DICH_VU_THUC_HIEN", duLieu, hienTai, banGoc);
-                if (chiDoiTrangThai)
-                {
-                    KiemTraChiDoiTrangThai(duLieu, hienTai);
-                }
-
-                KiemTraLienKet(transaction, duLieu);
-                connection.Execute("""
-                    UPDATE dbo.[DICH_VU_THUC_HIEN]
-                    SET [MaLS]=@MaLS,[MaCTKH]=@MaCTKH,[MaDV]=@MaDV,
-                        [MaNVThucHien]=@MaNVThucHien,[ThoiGianThucHien]=@ThoiGianThucHien,[SoLuong]=@SoLuong,
-                        [DonGia]=@DonGia,[KetQua]=@KetQua,[TrangThai]=@TrangThai
-                    WHERE [MaDVThucHien]=@MaDVThucHien
-                    """, duLieu, transaction);
-                return true;
-            });
-        }
+        { throw new InvalidOperationException("Dịch vụ thực hiện chỉ xem lịch sử; hoàn tất dịch vụ trong khám điều trị."); }
 
         /// <summary>
         /// Xóa dịch vụ đã thực hiện: đọc bản hiện tại với UPDLOCK/HOLDLOCK, báo lỗi nếu đã mất, kiểm tra nghiệp vụ, so banGoc khi có rồi DELETE theo mã trong dbo.DICH_VU_THUC_HIEN; toàn bộ thao tác giữ cùng giao dịch và lỗi ràng buộc SQL được phát ra.
@@ -113,21 +68,7 @@ namespace DAL
         /// <param name = "banGoc">Bản ET đã đọc trước khi thao tác; có giá trị để so với SQL và chặn ghi đè/xóa khi bản đã thay đổi, null để bỏ đối chiếu bản gốc.</param>
         /// <returns>true khi DELETE chạy thành công; không tồn tại, xung đột hoặc vi phạm SQL gây ngoại lệ.</returns>
         public bool xoaDichVuThucHien(string ma, ET_DICHVUTHUCHIEN? banGoc = null)
-        {
-            return ThucHien((connection, transaction) =>
-            {
-                var hienTai = connection.QuerySingleOrDefault<ET_DICHVUTHUCHIEN>("SELECT * FROM dbo.[DICH_VU_THUC_HIEN] WITH(UPDLOCK,HOLDLOCK) WHERE [MaDVThucHien]=@Ma", new { Ma = ma }, transaction);
-                if (hienTai is null)
-                {
-                    throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
-                }
-
-                KiemTraNghiepVu(hienTai, hienTai);
-                KiemTra(connection, transaction, "DICH_VU_THUC_HIEN", hienTai, hienTai, banGoc);
-                connection.Execute("DELETE FROM dbo.[DICH_VU_THUC_HIEN] WHERE [MaDVThucHien]=@Ma", new { Ma = ma }, transaction);
-                return true;
-            });
-        }
+        { throw new InvalidOperationException("Dịch vụ thực hiện chỉ xem lịch sử; hoàn tất dịch vụ trong khám điều trị."); }
 
         /// <summary>
         /// Nếu có mã bước kế hoạch, đọc bước và kế hoạch cha, chặn bản đã Hủy, lần theo hồ sơ của hai lần khám để yêu cầu cùng bệnh nhân và kiểm tra mã dịch vụ khớp bước; không chọn bước thì bỏ qua liên kết này.

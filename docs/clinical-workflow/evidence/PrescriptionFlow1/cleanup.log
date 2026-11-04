@@ -1,0 +1,12 @@
+Changed database context to 'master'.
+name                                                                                                                             create_date
+-------------------------------------------------------------------------------------------------------------------------------- -----------------------
+RHM_Hospital_Test_Rx_20261029                                                                                                    2026-10-29 11:45:14.093
+RHM_Hospital_Test_RxFinal_20261029                                                                                               2026-10-29 15:33:41.960
+REMOVED OWNED FIXTURE: RHM_Hospital_Test_Rx_20261029
+REMOVED OWNED FIXTURE: RHM_Hospital_Test_RxFinal_20261029
+PASS: two owned prescription fixtures removed, current database retained.
+Changed database context to 'QLBenhVienRangHamMat'.
+PrescriptionFlow  DrugGroups  Medicines
+----------------- ----------- -----------
+PrescriptionFlow1          20          62

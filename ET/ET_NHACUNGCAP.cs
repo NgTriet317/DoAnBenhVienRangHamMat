@@ -10,12 +10,33 @@ namespace ET
     [Table("NHA_CUNG_CAP")]
     public class ET_NHACUNGCAP
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaNCC, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maNCC = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TenNCC, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string tenNCC = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính SDT, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? sdt;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính Email, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string email = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính DiaChi, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? diaChi;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NguoiLienHe, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string nguoiLienHe = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
 
         /// <summary>

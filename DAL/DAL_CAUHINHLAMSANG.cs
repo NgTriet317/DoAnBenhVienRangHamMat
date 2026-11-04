@@ -1,0 +1,101 @@
+using System.Data;
+using System.Reflection;
+using Dapper;
+using Dapper.Contrib.Extensions;
+using ET;
+using Microsoft.Data.SqlClient;
+
+namespace DAL;
+
+/// <summary>Đọc/lưu cấu hình hỗ trợ trong cùng transaction với kiểm tra định danh và audit SQL.</summary>
+public abstract class DAL_CAUHINHLAMSANG<T> : dbconnect where T : class, new()
+{
+    /// <summary>
+    /// Quyền cho phép thao tác được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    private static readonly Type[] Allowed = [typeof(ET_NHOMTHUOCKEDON),typeof(ET_CAUHINHTHUOCKEDON)];
+    /// <summary>
+    /// Bảng được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    private static readonly string Table = Allowed.Contains(typeof(T)) ? typeof(T).GetCustomAttribute<TableAttribute>()!.Name : throw new InvalidOperationException("Entity ngoài hợp đồng cấu hình.");
+    /// <summary>
+    /// Các cột được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    private static readonly PropertyInfo[] Columns = typeof(T).GetProperties();
+    /// <summary>
+    /// Khóa được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
+    private static readonly PropertyInfo Key = Columns.Single(p => p.GetCustomAttribute<ExplicitKeyAttribute>() is not null);
+    /// <summary>
+    /// Khởi tạo cấu hình lâm sàng. Chuyển giao dịch tùy chọn cho lớp cơ sở; nơi cấp giao dịch chịu trách nhiệm kết thúc giao dịch đó.
+    /// </summary>
+    /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+    protected DAL_CAUHINHLAMSANG(IDbTransaction? transaction) : base(transaction) { }
+
+    /// <summary>
+    /// Đọc danh sách cấu hình theo điều kiện được truyền vào.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>DAL_QUYENNGHIEPVU.XacThuc</c>, <c>user.CoQuyen</c>, <c>DAL_QUYENNGHIEPVU.TuChoi</c>.</remarks>
+    /// <param name="nguoiDung">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+    /// <returns>Tập dữ liệu kiểu IReadOnlyList&lt;T&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
+    public IReadOnlyList<T> LayDanhSach(NguCanhNghiepVu nguoiDung) => ThucHien((db,tx) =>
+    {
+        var user=DAL_QUYENNGHIEPVU.XacThuc(db,tx,nguoiDung);
+        if(!user.CoQuyen(QuyenLamViec.CauHinhHoTro) && !user.LaAdmin) throw DAL_QUYENNGHIEPVU.TuChoi();
+        return (IReadOnlyList<T>)db.Query<T>($"SELECT * FROM dbo.[{Table}] ORDER BY [{Key.Name}]",transaction:tx).ToArray();
+    });
+
+    /// <summary>Chỉ lưu nội dung nháp. Phê duyệt mẫu/hướng dẫn phải qua đầu mối chuyên môn P05/P07.</summary>
+    public bool LuuNhap(T duLieu,NguCanhNghiepVu nguoiDung,T? banGoc=null) => ThucHien((db,tx) =>
+    {
+        ArgumentNullException.ThrowIfNull(duLieu);
+        var user=DAL_QUYENNGHIEPVU.XacThuc(db,tx,nguoiDung);
+        if(!user.CoQuyen(QuyenLamViec.CauHinhHoTro) && !user.LaAdmin) throw DAL_QUYENNGHIEPVU.TuChoi();
+        if(duLieu is ET_CAUHINHTHUOCKEDON c && (c.TrangThai!="Nháp" || c.MaNguoiDuyet is not null || c.NgayDuyet is not null))
+            throw new InvalidOperationException("Chỉ lưu cấu hình nháp; phê duyệt qua thao tác chuyên môn riêng.");
+        var id=(string?)Key.GetValue(duLieu);
+        var current=string.IsNullOrWhiteSpace(id) ? null : db.QuerySingleOrDefault<T>($"SELECT * FROM dbo.[{Table}] WITH(UPDLOCK,HOLDLOCK) WHERE [{Key.Name}]=@id",new{id},tx);
+        if(current is null)
+        {
+            if(typeof(T)==typeof(ET_CAUHINHTHUOCKEDON)) DAL_QUYENNGHIEPVU.KiemTraMa(id);
+            else
+            {
+                if(!string.IsNullOrWhiteSpace(id)) throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
+                Key.SetValue(duLieu,TaoMa(db,tx,Table,Key.Name));
+            }
+            if(banGoc is not null) throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
+        }
+        KiemTra(db,tx,Table,duLieu,current,banGoc);
+        var sql=current is null
+            ? $"INSERT dbo.[{Table}] ({string.Join(',',Columns.Select(p=>$"[{p.Name}]"))}) VALUES ({string.Join(',',Columns.Select(p=>"@"+p.Name))})"
+            : $"UPDATE dbo.[{Table}] SET {string.Join(',',Columns.Where(p=>p!=Key).Select(p=>$"[{p.Name}]=@{p.Name}"))} WHERE [{Key.Name}]=@{Key.Name}";
+        var previous=db.ExecuteScalar<string?>("SELECT CONVERT(nvarchar(128),SESSION_CONTEXT(N'RHM.MaTK'))",transaction:tx);
+        var succeeded=false;
+        try
+        {
+            db.Execute("EXEC sys.sp_set_session_context @key=N'RHM.MaTK',@value=@actor",new{actor=user.MaTK},tx);
+            db.Execute(sql,duLieu,tx);
+            succeeded=true;
+            return true;
+        }
+        finally
+        {
+            try { db.Execute("EXEC sys.sp_set_session_context @key=N'RHM.MaTK',@value=@actor",new{actor=previous},tx?.Connection is null?null:tx); }
+            catch
+            {
+                // Không để actor cũ lọt sang lệnh tiếp theo nếu kết nối/giao dịch bị hỏng.
+                if(db is SqlConnection connection) { SqlConnection.ClearPool(connection); connection.Close(); }
+                if(succeeded) throw;
+            }
+        }
+    });
+}
+
+/// <summary>
+/// Tầng truy cập dữ liệu nhóm thuốc kê đơn, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
+public sealed class DAL_NHOMTHUOCKEDON(IDbTransaction? transaction=null) : DAL_CAUHINHLAMSANG<ET_NHOMTHUOCKEDON>(transaction);
+/// <summary>
+/// Tầng truy cập dữ liệu cấu hình thuốc kê đơn, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
+/// </summary>
+public sealed class DAL_CAUHINHTHUOCKEDON(IDbTransaction? transaction=null) : DAL_CAUHINHLAMSANG<ET_CAUHINHTHUOCKEDON>(transaction);

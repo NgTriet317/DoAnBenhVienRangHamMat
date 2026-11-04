@@ -10,8 +10,17 @@ namespace ET
     [Table("VAT_TU")]
     public class ET_VATTU
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaVT, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maVT = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaHH, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maHH = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MucTonToiThieu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal mucTonToiThieu;
 
         /// <summary>

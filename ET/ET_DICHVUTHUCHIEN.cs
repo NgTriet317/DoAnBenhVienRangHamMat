@@ -11,16 +11,49 @@ namespace ET
     [Table("DICH_VU_THUC_HIEN")]
     public class ET_DICHVUTHUCHIEN
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaDVThucHien, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maDVThucHien = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaLS, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maLS = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaCTKH, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maCTKH;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaDV, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maDV = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaNVThucHien, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maNVThucHien = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính ThoiGianThucHien, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime thoiGianThucHien;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính SoLuong, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal soLuong;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính DonGia, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal donGia;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính ThanhTien, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal thanhTien;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính KetQua, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? ketQua;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
 
         /// <summary>

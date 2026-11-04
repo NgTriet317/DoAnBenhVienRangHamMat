@@ -1,0 +1,56 @@
+PASS: lưu bệnh nhân vào SQL giữ số 0 đầu, BHYT, dấu nháy và nullable
+PASS: cột computed và tổng kế hoạch được tính ở database
+PASS: xác nhận lần khám cập nhật trạng thái và ngày cùng một lệnh
+PASS: đơn nhiều dòng lưu liên kết và khóa nội dung sau xác nhận
+PASS: phát hiện bản ghi cũ khi cửa sổ khác đã sửa
+PASS: lỗi dòng thứ hai không để lại đơn hoặc thuốc khi rollback
+PASS: chặn bảng/trường ngoài phạm vi và không tự làm tròn số lượng
+PASS: số thập phân tiếng Việt không bị hiểu thành phân cách hàng nghìn
+PASS: xóa với phiên bản cũ không được mất thay đổi mới
+PASS: không sửa nội dung kế hoạch xác nhận qua cờ đổi trạng thái
+PASS: CRUD typed không báo stale do SQL làm tròn thời gian
+PASS: mã chữ đầu bảng với hậu tố tối thiểu ba chữ số
+PASS: DAL phiếu khám tự chặn tiếp nhận lịch đã hủy
+PASS: DAL/BUS danh mục bổ sung có CRUD typed và chống phiên bản cũ
+P12 persistence entity: ET_BAOTRITHIETBI
+P12 persistence entity: ET_BENHNHAN
+P12 persistence entity: ET_CALAM
+P12 persistence entity: ET_CHITIETDONTHUOC
+P12 persistence entity: ET_CHITIETHOADON
+P12 persistence entity: ET_CHITIETKEHOACH
+P12 persistence entity: ET_CHITIETPHIEUNHAP
+P12 persistence entity: ET_CHITIETPHIEUXUAT
+P12 persistence entity: ET_CHUCVU
+P12 persistence entity: ET_CHUNGCHINHANVIEN
+P12 persistence entity: ET_CHUYENKHOA
+P12 persistence entity: ET_DICHVU
+P12 persistence entity: ET_DICHVUTHUCHIEN
+P12 persistence entity: ET_DONTHUOC
+P12 persistence entity: ET_HANGHOA
+P12 persistence entity: ET_HOADON
+P12 persistence entity: ET_HOADONNHAP
+P12 persistence entity: ET_HOSOBENHAN
+P12 persistence entity: ET_KEHOACHDIEUTRI
+P12 persistence entity: ET_KHO
+P12 persistence entity: ET_KHOA
+P12 persistence entity: ET_LICHKHAM
+P12 persistence entity: ET_LICHLAMVIEC
+P12 persistence entity: ET_LICHSUKHAMBENH
+P12 persistence entity: ET_LOAIHANGHOA
+P12 persistence entity: ET_LOHANGHOA
+P12 persistence entity: ET_NHACUNGCAP
+P12 persistence entity: ET_NHANVIEN
+P12 persistence entity: ET_PHIEUKHAMBENH
+P12 persistence entity: ET_PHIEUNHAP
+P12 persistence entity: ET_PHIEUXUAT
+P12 persistence entity: ET_PHONG
+P12 persistence entity: ET_TAIKHOAN
+P12 persistence entity: ET_THANHTOAN
+P12 persistence entity: ET_THIETBI
+P12 persistence entity: ET_THUOC
+P12 persistence entity: ET_TINHTRANGBENH
+P12 persistence entity: ET_VAITRO
+P12 persistence entity: ET_VATTU
+PASS: 39 ET nền đọc SQL qua đúng BUS; 6 entity lâm sàng dùng suite quyền chuyên dụng
+PASS: phiếu nhập giữ tổng do trigger tính khi thêm và sửa typed
+SUCCESS: 16 kiểm tra nghiệp vụ SQL; mọi dữ liệu kiểm tra đã rollback.

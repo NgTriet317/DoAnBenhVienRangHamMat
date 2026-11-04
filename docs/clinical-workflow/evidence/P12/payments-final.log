@@ -1,0 +1,26 @@
+PASS: P09 alias mã yêu cầu đã trả hóa đơn vẫn khóa đúng đầu vào
+PASS: P09 alias mã yêu cầu không tái dùng cho lượt khác sau trả chứng từ cũ
+PASS: P09 nhiều lô có mã Unicode hợp lệ vẫn đối chiếu đúng nguồn
+PASS: P09 phải thu450000 đưa500000 thu450000 thối50000, xuất đủ và chờ giao
+PASS: P09 thiếu tiền không ghi bất kỳ bảng tài chính/tồn/nhật ký
+PASS: P09 chuyển khoản đúng tiền, có mã và xác nhận đối chiếu
+PASS: P09 cùng mã yêu cầu thử lại sau commit trả đúng kết quả đã lưu
+PASS: P09 cùng mã khác đầu vào bị từ chối, khác mã cùng lượt không thu lại
+PASS: P09 hai kết nối cùng mã và cùng lượt chỉ một bộ thu/xuất
+PASS: P09 hai kết nối khác mã cùng lượt chỉ một bộ thu/xuất
+PASS: P09 hai lượt khác kho riêng cùng thu không deadlock khi nhả khóa tồn
+PASS: P09 giá đổi hoặc tồn đổi sau xem bảng tính phải xem lại, không ghi
+PASS: P09 xuất lượt khác thay đổi tồn/token phải xem lại
+PASS: P09 thiếu tồn thuốc cuối đơn không xuất thuốc đầu hoặc ghi dở
+PASS: P09 lỗi INSERT thanh toán rollback cả xuất/HD/bàn giao và tồn
+PASS: P09 lỗi audit cuối rollback cả Thu/bàn giao/trạng thái phiếu
+PASS: P09 không thuốc hoàn tất, tổng0 có nguồn không tạo Thu0
+PASS: P09 mọi đơn hiệu lực đều xuất, nguồn snapshot không đổi theo tên danh mục
+PASS: P09 quyền thu đọc lại SQL, Admin/bác sĩ/dược sĩ không được ký thu
+PASS: P09 hóa đơn v2 chặn mọi lối ghi cũ, lịch sử vẫn đọc được
+PASS: P09 mã yêu cầu không tái dùng cho lượt khác
+PASS: P09 mã/token/tiền vượt giới hạn hoặc số lẻ không ghi
+PASS: P09 từ chối transaction ngoài, không trả thành công trước commit
+PASS: P09 lỗi mở kết nối trả thông báo nghiệp vụ, giữ yêu cầu thử lại
+PASS: P09 nguồn có lẻ đồng và hóa đơn cũ bắt đối chiếu, không thu thêm
+PaymentChecks: 25 PASS, 0 FAIL; fixture chỉ ở database P09Payments riêng.

@@ -10,8 +10,17 @@ namespace ET
     [Table("VAI_TRO")]
     public class ET_VAITRO
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaVaiTro, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maVaiTro = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TenVaiTro, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string tenVaiTro = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MoTa, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string moTa = string.Empty;
 
         /// <summary>

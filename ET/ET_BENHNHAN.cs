@@ -11,16 +11,49 @@ namespace ET
     [Table("BENH_NHAN")]
     public class ET_BENHNHAN
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaBN, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maBN = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính HoTenBN, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string hoTenBN = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GioiTinh, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? gioiTinh;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgaySinh, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime? ngaySinh;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính SDT, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? sdt;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính DiaChi, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? diaChi;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaBHYT, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maBHYT;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NhomMau, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? nhomMau;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TienSuBenh, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? tienSuBenh;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính DiUng, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? diUng;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
 
         /// <summary>

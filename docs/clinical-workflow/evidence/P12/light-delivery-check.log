@@ -1,0 +1,10 @@
+PASS: bốn project, Views XAML/code-behind, SQL52 bảng/version2 và cấu hình.
+SchemaVersion       TableCount
+------------------- -----------
+ClinicalWorkflow v2          52
+MaHD                                               MaLS                                               SoTienPhaiThu        DaThuRong                                ConPhaiTra
+-------------------------------------------------- -------------------------------------------------- -------------------- ---------------------------------------- ----------------------------------------
+HD004                                              LS004                                                         100000.00                                      .00                                100000.00
+HD005                                              LS005                                                         150000.00                                      .00                                150000.00
+HD031                                              CW88558bdecd784a6faa27f370a3679100LSA                         400000.00                                      .00                                400000.00
+PASS: database khớp schema2; kiểm tra SQL chỉ đọc.

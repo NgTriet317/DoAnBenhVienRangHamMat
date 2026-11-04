@@ -13,20 +13,25 @@ public static class TruongDuLieu
     /// Tra cột liên kết cha của từng loại hồ sơ để khóa lại khi chỉnh sửa, tránh chuyển bản ghi sang một hồ sơ khác.
     /// </summary>
     public static string OwnerField(string table) => table switch { "HO_SO_BENH_AN"=>"MaBN", "PHIEU_KHAM_BENH"=>"MaHS", "LICH_SU_KHAM_BENH"=>"MaPhieu", "TINH_TRANG_BENH" or "KE_HOACH_DIEU_TRI" or "DON_THUOC" or "DICH_VU_THUC_HIEN"=>"MaLS", "CHI_TIET_KE_HOACH"=>"MaKHDT", "CHI_TIET_DON_THUOC"=>"MaDT", _=>"" };
+    /// <summary>
+    /// Các bảng được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     public static readonly Dictionary<string,Dictionary<string,string>> Tables = new()
     {
+        ["NHA_CUNG_CAP"] = new() { ["MaNCC"] = "Mã nhà cung cấp", ["TenNCC"] = "Tên nhà cung cấp", ["SDT"] = "Số điện thoại", ["Email"] = "Email", ["DiaChi"] = "Địa chỉ", ["NguoiLienHe"] = "Người liên hệ", ["TrangThai"] = "Trạng thái" },
+        ["BAO_TRI_THIET_BI"] = new() { ["MaBT"] = "Mã bảo trì", ["MaTB"] = "Thiết bị", ["MaNV"] = "Nhân viên phụ trách", ["NgayBatDau"] = "Ngày bắt đầu", ["NgayKetThuc"] = "Ngày kết thúc", ["NoiDung"] = "Nội dung bảo trì", ["ChiPhi"] = "Chi phí", ["NgayBaoTriTiepTheo"] = "Bảo trì tiếp theo", ["TrangThai"] = "Trạng thái", ["GhiChu"] = "Ghi chú" },
         ["BENH_NHAN"] = new() { ["MaBN"] = "Mã bệnh nhân", ["HoTenBN"] = "Họ tên bệnh nhân", ["GioiTinh"] = "Giới tính", ["NgaySinh"] = "Ngày sinh", ["SDT"] = "Số điện thoại", ["DiaChi"] = "Địa chỉ", ["NhomMau"] = "Nhóm máu", ["TienSuBenh"] = "Tiền sử bệnh", ["DiUng"] = "Dị ứng", ["TrangThai"] = "Trạng thái" },
         ["HO_SO_BENH_AN"] = new() { ["MaHS"] = "Mã hồ sơ", ["MaBN"] = "Bệnh nhân", ["NgayLap"] = "Ngày lập", ["LyDoKhamBanDau"] = "Lý do khám ban đầu", ["GhiChu"] = "Ghi chú", ["TrangThai"] = "Trạng thái" },
         ["LICH_KHAM"] = new() { ["MaLich"] = "Mã lịch khám", ["MaBN"] = "Bệnh nhân", ["MaBS"] = "Bác sĩ", ["MaCa"] = "Ca làm", ["MaPhong"] = "Phòng", ["MaDV"] = "Dịch vụ dự kiến", ["NgayGioKham"] = "Ngày giờ khám", ["ThoiLuongDuKien"] = "Thời lượng dự kiến (phút)", ["UuTien"] = "Ưu tiên", ["LyDoKham"] = "Lý do khám", ["LyDoThayDoi"] = "Lý do thay đổi", ["TrangThai"] = "Trạng thái", ["GhiChu"] = "Ghi chú", ["NgayTao"] = "Ngày tạo", ["NgayCapNhat"] = "Ngày cập nhật" },
         ["LICH_SU_KHAM_BENH"] = new() { ["MaLS"] = "Mã lần khám", ["MaPhieu"] = "Phiếu tiếp nhận", ["MaBS"] = "Bác sĩ khám", ["MaPhong"] = "Phòng khám", ["ThoiGianKham"] = "Thời gian khám", ["TrieuChung"] = "Triệu chứng", ["ChanDoan"] = "Chẩn đoán", ["KeHoachXuLy"] = "Kế hoạch xử lý", ["TrangThai"] = "Trạng thái", ["NgayXacNhan"] = "Ngày xác nhận", ["GhiChu"] = "Ghi chú" },
-        ["TINH_TRANG_BENH"] = new() { ["MaTTB"] = "Mã tình trạng", ["MaLS"] = "Lần khám", ["LoaiTinhTrang"] = "Loại tình trạng", ["MoTaTinhTrang"] = "Mô tả tình trạng", ["MucDo"] = "Mức độ", ["GhiChu"] = "Ghi chú" },
+        ["TINH_TRANG_BENH"] = new() { ["MaTTB"] = "Mã tình trạng", ["MaLS"] = "Lần khám", ["LoaiTinhTrang"] = "Loại tình trạng", ["MoTaTinhTrang"] = "Mô tả tình trạng", ["GhiChu"] = "Ghi chú" },
         ["KE_HOACH_DIEU_TRI"] = new() { ["MaKHDT"] = "Mã kế hoạch", ["MaLS"] = "Lần khám khởi tạo", ["MaBS"] = "Bác sĩ lập", ["NgayLap"] = "Ngày lập", ["NgayBatDau"] = "Ngày bắt đầu", ["NgayDuKienKetThuc"] = "Ngày dự kiến kết thúc", ["TrangThai"] = "Trạng thái", ["GhiChu"] = "Ghi chú" },
         ["CHI_TIET_KE_HOACH"] = new() { ["MaCTKH"] = "Mã chi tiết kế hoạch", ["MaKHDT"] = "Kế hoạch điều trị", ["MaDV"] = "Dịch vụ", ["LanThu"] = "Lần thứ", ["SoLuongDuKien"] = "Số lượng dự kiến", ["DonGiaDuKien"] = "Đơn giá dự kiến", ["TrangThai"] = "Trạng thái", ["GhiChu"] = "Ghi chú" },
         ["DICH_VU_THUC_HIEN"] = new() { ["MaDVThucHien"] = "Mã thực hiện", ["MaLS"] = "Lần khám", ["MaCTKH"] = "Bước kế hoạch (nếu có)", ["MaDV"] = "Dịch vụ", ["MaNVThucHien"] = "Người thực hiện", ["ThoiGianThucHien"] = "Thời gian thực hiện", ["SoLuong"] = "Số lượng", ["DonGia"] = "Đơn giá thực hiện", ["KetQua"] = "Kết quả", ["TrangThai"] = "Trạng thái" },
         ["DON_THUOC"] = new() { ["MaDT"] = "Mã đơn thuốc", ["MaLS"] = "Lần khám", ["MaBS"] = "Bác sĩ kê", ["NgayKe"] = "Ngày kê", ["LyDoThayThe"] = "Lý do thay đổi chỉ định", ["TrangThai"] = "Trạng thái", ["GhiChu"] = "Ghi chú" },
         ["CHI_TIET_DON_THUOC"] = new() { ["MaCTDT"] = "Mã dòng thuốc", ["MaDT"] = "Đơn thuốc", ["MaThuoc"] = "Thuốc", ["LieuDung"] = "Liều dùng", ["SoLuong"] = "Số lượng", ["SoNgayDung"] = "Số ngày dùng", ["HuongDan"] = "Hướng dẫn" },
         ["PHIEU_KHAM_BENH"] = new() { ["MaPhieu"] = "MaPhieu", ["MaHS"] = "MaHS", ["MaLich"] = "MaLich", ["MaPhong"] = "MaPhong", ["MaBS"] = "MaBS", ["MaNVTiepNhan"] = "MaNVTiepNhan", ["MaDV"] = "MaDV", ["SoThuTu"] = "SoThuTu", ["ThoiGianTiepNhan"] = "ThoiGianTiepNhan", ["LyDoKham"] = "LyDoKham", ["TrangThai"] = "TrangThai", ["GhiChu"] = "GhiChu" },
-        ["THUOC"] = new() { ["MaThuoc"] = "MaThuoc", ["MaHH"] = "MaHH", ["HamLuong"] = "HamLuong", ["MucTonToiThieu"] = "MucTonToiThieu" },
+        ["THUOC"] = new() { ["MaThuoc"] = "MaThuoc", ["MaHH"] = "MaHH", ["HamLuong"] = "HamLuong", ["MucTonToiThieu"] = "MucTonToiThieu", ["MaNhomThuoc"] = "MaNhomThuoc" },
         ["HANG_HOA"] = new() { ["MaHH"] = "MaHH", ["TenHH"] = "TenHH", ["MaLoaiHH"] = "MaLoaiHH", ["DonViTinh"] = "DonViTinh", ["MoTa"] = "MoTa", ["TrangThai"] = "TrangThai" },
         ["NHAN_VIEN"] = new() { ["MaNV"] = "MaNV", ["HoTen"] = "HoTen", ["GioiTinh"] = "GioiTinh", ["NgaySinh"] = "NgaySinh", ["SDT"] = "SDT", ["DiaChi"] = "DiaChi", ["MaChucVu"] = "MaChucVu", ["MaCK"] = "MaCK", ["BangCap"] = "BangCap", ["NgayVaoLam"] = "NgayVaoLam", ["TrangThai"] = "TrangThai" },
         ["PHONG"] = new() { ["MaPhong"] = "MaPhong", ["TenPhong"] = "TenPhong", ["MaKhoa"] = "MaKhoa", ["LoaiPhong"] = "LoaiPhong", ["TinhTrang"] = "TinhTrang", ["TrangThai"] = "TrangThai" },
@@ -50,6 +55,19 @@ public static class TruongDuLieu
         Add("CHI_TIET_PHIEU_XUAT","MaCTPX MaPX MaHH MaLo MaCTDT SoLuong GhiChu");
         Add("KHO","MaKho TenKho MaNV LoaiKho TrangThai");
         Add("LO_HANG_HOA","MaLo MaHH MaKho MaNCC SoLo NgayNhap HanSuDung TrangThai");
+        Add("DM_TINH_TRANG_BENH","MaDMTT TenTinhTrang MoTa TrangThai");
+        Add("MAU_KE_HOACH_DIEU_TRI","MaMauKH MaDMTT MucDo TenMau PhienBan TrangThai MaBSDuyet NgayDuyet");
+        Add("CHI_TIET_MAU_KE_HOACH","MaCTMau MaMauKH MaDV ThuTu LanThu SoLuongDuKien NoiDung");
+        Add("NHOM_THUOC_KE_DON","MaNhomThuoc TenNhom MoTa TrangThai");
+        Add("CAU_HINH_THUOC_KE_DON","MaThuoc MaNhomThuoc DoiTuongApDung DuongDung LieuDungGoiY HuongDanGoiY PhienBan TrangThai MaNguoiDuyet NgayDuyet");
+        Add("BAN_GIAO_THUOC","MaDT MaHD MaPX TrangThai MaNVGiao ThoiGianGiao GhiChu");
+        foreach(var pair in new Dictionary<string,string>
+        {
+            ["KE_HOACH_DIEU_TRI"]="MaTTBNguon MaMauKH PhienBanMau",
+            ["CHI_TIET_KE_HOACH"]="NoiDungBuoc", ["LICH_SU_KHAM_BENH"]="KhongKeThuoc LyDoKhongKeThuoc",
+            ["DON_THUOC"]="MaDTThayThe", ["CHI_TIET_DON_THUOC"]="DuongDung TenThuocChot HamLuongChot DonViTinhChot PhienBanHuongDan",
+            ["HOA_DON"]="PhienBanQuyTrinh MaYeuCau DauVanTayYeuCau", ["THANH_TOAN"]="SoTienKhachDua TienThua MaThamChieu"
+        }) foreach(var field in pair.Value.Split(' ')) Tables[pair.Key][field]=field;
     }
     /// <summary>
     /// Đăng ký danh sách tên cột cho bảng bổ sung; khi chưa có nhãn tiếng Việt riêng thì dùng tên cột làm nhãn.
@@ -66,6 +84,13 @@ public static class TruongDuLieu
     // AI bổ sung: tên cột kỹ thuật được đổi sang nhãn người dùng hiểu trong thông báo nhập sai.
     private static readonly Dictionary<string,string> CommonLabels=new()
     {
+        ["MaDMTT"]="Danh mục tình trạng", ["MaTTBNguon"]="Tình trạng nguồn", ["MaMauKH"]="Mẫu kế hoạch",
+        ["PhienBanMau"]="Phiên bản mẫu", ["NoiDungBuoc"]="Nội dung bước", ["KhongKeThuoc"]="Không kê thuốc", ["LyDoKhongKeThuoc"]="Lý do không kê thuốc",
+        ["MaDTThayThe"]="Đơn thuốc được thay thế", ["DuongDung"]="Đường dùng", ["TenThuocChot"]="Tên thuốc lúc kê", ["HamLuongChot"]="Hàm lượng lúc kê",
+        ["DonViTinhChot"]="Đơn vị lúc kê", ["PhienBanHuongDan"]="Phiên bản hướng dẫn", ["SoTienKhachDua"]="Tiền khách đưa", ["TienThua"]="Tiền thối", ["MaThamChieu"]="Mã giao dịch",
+        ["TenTinhTrang"]="Tên tình trạng", ["TenMau"]="Tên mẫu", ["MaCTMau"]="Bước mẫu", ["PhienBan"]="Phiên bản", ["MaBSDuyet"]="Bác sĩ duyệt", ["NgayDuyet"]="Ngày duyệt",
+        ["MaNhomThuoc"]="Nhóm thuốc", ["TenNhom"]="Tên nhóm thuốc", ["DoiTuongApDung"]="Đối tượng áp dụng", ["LieuDungGoiY"]="Liều gợi ý", ["HuongDanGoiY"]="Hướng dẫn gợi ý",
+        ["MaNguoiDuyet"]="Người duyệt", ["MaNVGiao"]="Dược sĩ giao thuốc", ["ThoiGianGiao"]="Thời gian giao", ["ThuTu"]="Thứ tự", ["NoiDung"]="Nội dung",
         ["MaHS"]="Hồ sơ bệnh án", ["MaLich"]="Lịch hẹn", ["MaPhieu"]="Phiếu tiếp nhận", ["MaPhong"]="Phòng",
         ["MaBS"]="Bác sĩ", ["MaNVTiepNhan"]="Nhân viên tiếp nhận", ["MaNV"]="Nhân viên", ["MaDV"]="Dịch vụ",
         ["MaBN"]="Bệnh nhân", ["MaLS"]="Lần khám", ["MaChucVu"]="Chức vụ", ["MaCK"]="Chuyên khoa",

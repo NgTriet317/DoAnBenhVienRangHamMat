@@ -11,12 +11,33 @@ namespace ET
     [Table("CHI_TIET_HOA_DON")]
     public class ET_CHITIETHOADON
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaCTHD, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maCTHD = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaHD, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maHD = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaDVThucHien, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maDVThucHien;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaCTPX, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maCTPX;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NoiDung, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string noiDung = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính DonGia, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal? donGia;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính ThanhTien, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal thanhTien;
 
         /// <summary>
@@ -55,6 +76,8 @@ namespace ET
         /// Mã dòng chi tiết phiếu xuất; ánh xạ cột MaCTPX của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
         /// </summary>
         public string? MaCTPX { get => maCTPX; set => maCTPX = value; }
+        /// <summary>Dòng đơn đã ký, chưa xuất kho; được thay bằng các dòng xuất khi thu.</summary>
+        public string? MaCTDT { get; set; }
         /// <summary>
         /// Nội dung chứng từ hoặc khoản thu; ánh xạ cột NoiDung của bảng trong TableAttribute.
         /// </summary>

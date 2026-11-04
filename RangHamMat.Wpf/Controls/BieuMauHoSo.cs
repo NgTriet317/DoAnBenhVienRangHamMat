@@ -19,8 +19,11 @@ namespace RangHamMat.Controls;
 /// <summary>
 /// Cơ chế đọc/lưu biểu mẫu theo Tag DB và Time, quản lý snapshot chống ghi đè và ngữ cảnh bệnh nhân/liên kết cha.
 /// </summary>
-public static class BieuMauHoSo
+public static partial class BieuMauHoSo
 {
+    /// <summary>
+    /// Định danh dependency property đánh dấu dữ liệu đã lưu được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     public static readonly DependencyProperty SavedProperty = DependencyProperty.RegisterAttached("Saved", typeof(object), typeof(BieuMauHoSo));
     /// <summary>
     /// Đọc attached property Saved để màn hình cha biết bản ghi vừa lưu thành công từ biểu mẫu.
@@ -34,6 +37,9 @@ public static class BieuMauHoSo
     /// Trạng thái một form gồm bảng, bản ghi nguồn, liên kết cha, snapshot đầu/chi tiết và quan hệ các dòng con.
     /// </summary>
     private sealed record FormState(string Table, object? Record, CreationContext? Context, OriginalRow[] Originals, string ChildTable, string ChildField);
+    /// <summary>
+    /// Các trạng thái được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<UserControl, FormState> states = new();
     // ConditionalWeakTable giữ trạng thái theo form; form đóng và không còn tham chiếu có thể được thu hồi bộ nhớ.
     /// <summary>
@@ -88,6 +94,13 @@ public static class BieuMauHoSo
             if (element.Tag is not string tag || !(tag.StartsWith("DB:" + table + ".") || tag.StartsWith("Time:" + table + "."))) continue;
             var field = tag.Split('.')[1]; object? value = existing is null ? null : UiRecord.Get(existing, field);
             if (context is not null && context.ParentField == field) value = context.ParentValue;
+            if (DuLieuGiaoDien.PhamViLamSang && ((field == "MaBS" && table is "LICH_SU_KHAM_BENH" or "KE_HOACH_DIEU_TRI" or "DON_THUOC") || (field == "MaNVTiepNhan" && table == "PHIEU_KHAM_BENH")))
+            {
+                value = existing is null ? PhienDangNhap.MaNV : value;
+                element.IsEnabled = false;
+            }
+            if (DuLieuGiaoDien.PhamViLamSang && table == "DICH_VU_THUC_HIEN" &&
+                !DuLieuGiaoDien.NguoiDungLamSang.CoQuyen(QuyenLamViec.Kham) && field is not ("KetQua" or "ThoiGianThucHien")) element.IsEnabled = false;
             if (value is not null)
             {
                 if (element is TextBox text) text.Text = tag.StartsWith("Time:") && value is DateTime date ? date.ToString("HH:mm") : Convert.ToString(value, CultureInfo.CurrentCulture) ?? "";
@@ -105,6 +118,7 @@ public static class BieuMauHoSo
                 if (table == "CHI_TIET_KE_HOACH" && field == "MaDV" && DuLieuGiaoDien.Children("DICH_VU_THUC_HIEN", "MaCTKH", UiRecord.Get(existing, "MaCTKH")).Length > 0) element.IsEnabled = false;
             }
         }
+        TrackClinicalInput(form);
     }
     /// <summary>
     /// Duyệt cây logical của form, đọc các control có Tag DB:BANG.COT và ghép ngày với giờ HH:mm từ Tag Time; trả dictionary tên cột/giá trị để lưu.
@@ -123,7 +137,7 @@ public static class BieuMauHoSo
             if (time.Tag is string tag && tag.StartsWith("Time:" + table + "."))
             {
                 var field = tag.Split('.')[1];
-                if (!TimeSpan.TryParseExact(time.Text.Trim(), new[] { @"h\:mm", @"hh\:mm" }, CultureInfo.InvariantCulture, out var clock) || clock >= TimeSpan.FromDays(1)) throw new InvalidOperationException("Giờ phải có dạng HH:mm, từ 00:00 đến 23:59.");
+                if (!TimeSpan.TryParseExact(time.Text.Trim(), new[] { @"h\:mm", @"hh\:mm" }, CultureInfo.InvariantCulture, out var clock) || clock >= TimeSpan.FromDays(1)) throw new LoiNhapLieu(tag,"Giờ phải có dạng HH:mm, từ 00:00 đến 23:59.");
                 if (values.GetValueOrDefault(field) is DateTime day) values[field] = day.Date + clock;
             }
         // AI bổ sung: kiểm tra nội dung nhập ngay khi đọc, trước khi mở luồng ghi dữ liệu.
@@ -152,7 +166,7 @@ public static class BieuMauHoSo
                 "DON_THUOC" => new[] { "MaLS", "MaBS", "NgayKe" },
                 _ => Array.Empty<string>()
             };
-            foreach (var field in required) if (!values.TryGetValue(field, out var value) || string.IsNullOrWhiteSpace(Convert.ToString(value))) throw new InvalidOperationException("Vui lòng nhập/chọn " + TruongDuLieu.Label(table, field) + ".");
+            foreach (var field in required) if (!values.TryGetValue(field, out var value) || string.IsNullOrWhiteSpace(Convert.ToString(value))) throw new LoiNhapLieu(field,"Vui lòng nhập/chọn " + TruongDuLieu.Label(table, field) + ".");
             foreach (var pair in values)
                 if (DuLieuGiaoDien.ForeignTables.TryGetValue(pair.Key, out var target) && pair.Key != DuLieuGiaoDien.Key(table) && !string.IsNullOrWhiteSpace(Convert.ToString(pair.Value)) && DuLieuGiaoDien.Find(target, pair.Value) is null) throw new LoiNhapLieu(pair.Key,TruongDuLieu.Label(table,pair.Key)+" không còn trong danh mục. Hãy chọn lại.");
             if (GetRecord(form) is null || DuLieuGiaoDien.Find(table, UiRecord.Get(GetRecord(form)!, DuLieuGiaoDien.Key(table))) is null)
@@ -165,6 +179,9 @@ public static class BieuMauHoSo
         catch (LoiNhapLieu ex) { KiemTraNhapLieu.MarkError(form, ex); error = ex.Message; return false; }
         catch (Exception ex) when (ex is InvalidOperationException or FormatException or OverflowException or ArgumentOutOfRangeException) { error = ex.Message; return false; }
     }
+    /// <summary>
+    /// Định danh dependency property cho phạm vi bệnh nhân được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     public static readonly DependencyProperty PatientScopeProperty = DependencyProperty.RegisterAttached("PatientScope", typeof(string), typeof(BieuMauHoSo));
     /// <summary>
     /// Gắn mã bệnh nhân vào attached property của form để các danh mục liên kết chỉ hiện dữ liệu thuộc hồ sơ đó.

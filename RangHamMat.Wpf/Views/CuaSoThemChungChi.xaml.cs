@@ -8,12 +8,28 @@ using System.Windows.Media;
 
 namespace RangHamMat.Views;
 
+/// <summary>
+/// Phần xử lý cửa sổ thêm chứng chỉ của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+/// </summary>
 public partial class CuaSoThemChungChi : Window
 {
+    /// <summary>
+    /// Đối tượng nghiệp vụ chứng chỉ nhân viên được màn hình dùng để đọc/ghi dữ liệu.
+    /// </summary>
     private readonly BUS_CHUNGCHINHANVIEN _busChungChi = new();
+    /// <summary>
+    /// Đối tượng nghiệp vụ nhân viên được màn hình dùng để đọc/ghi dữ liệu.
+    /// </summary>
     private readonly BUS_NHANVIEN _busNhanVien = new();
+    /// <summary>
+    /// Đã thêm thành công.
+    /// </summary>
     public bool DaThemThanhCong { get; private set; }
 
+    /// <summary>
+    /// Khởi tạo cửa sổ thêm chứng chỉ. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+    /// </summary>
+    /// <param name="maNVDefault">Mã nhân viên mặc định xác định đối tượng cần xử lý.</param>
     public CuaSoThemChungChi(string? maNVDefault = null)
     {
         InitializeComponent();
@@ -23,6 +39,11 @@ public partial class CuaSoThemChungChi : Window
         DangKySuKienXoaBaoDo();
     }
 
+    /// <summary>
+    /// Nạp nhân viên cho trường lựa chọn hoặc danh sách hồ sơ trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>_busNhanVien.layToanBoNhanVien</c>, <c>.ToList</c>.</remarks>
+    /// <param name="maNVDefault">Mã nhân viên mặc định xác định đối tượng cần xử lý.</param>
     private void LoadDanhSachNhanVien(string? maNVDefault)
     {
         try
@@ -45,6 +66,9 @@ public partial class CuaSoThemChungChi : Window
         }
     }
 
+    /// <summary>
+    /// Đặt các trường của biểu mẫu mới về giá trị khởi đầu phù hợp.
+    /// </summary>
     private void KhoiTaoGiaTriBanDau()
     {
         txtMaCC.Text = "Tự động";
@@ -53,6 +77,12 @@ public partial class CuaSoThemChungChi : Window
         cboTrangThai.SelectedIndex = 0;
     }
 
+    /// <summary>
+    /// Tiếp nhận thay đổi trường nhập và xóa cảnh báo liên quan để chuẩn bị kiểm tra lại.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>XoaBaoDo</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Control_ThayDoiDuLieu(object? sender, EventArgs e)
     {
         if (sender is Control control)
@@ -61,6 +91,9 @@ public partial class CuaSoThemChungChi : Window
         }
     }
 
+    /// <summary>
+    /// Đăng ký sự kiện các trường nhập để gỡ đánh dấu lỗi khi người dùng chỉnh lại nội dung.
+    /// </summary>
     private void DangKySuKienXoaBaoDo()
     {
         txtMaCC.TextChanged += Control_ThayDoiDuLieu;
@@ -72,18 +105,31 @@ public partial class CuaSoThemChungChi : Window
         dpHanChungChi.SelectedDateChanged += Control_ThayDoiDuLieu;
     }
 
+    /// <summary>
+    /// Đánh dấu trường nhập không hợp lệ và lưu thông tin cần dùng khi gỡ cảnh báo.
+    /// </summary>
+    /// <param name="control">Giá trị điều khiển dùng khi thực hiện thao tác; kiểu Control.</param>
     private void DatBaoDo(Control control)
     {
         control.BorderBrush = Brushes.Red;
         control.BorderThickness = new Thickness(1.5);
     }
 
+    /// <summary>
+    /// Gỡ đánh dấu lỗi của trường đã được chỉnh sửa hoặc kiểm tra lại.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>control.ClearValue</c>.</remarks>
+    /// <param name="control">Giá trị điều khiển dùng khi thực hiện thao tác; kiểu Control.</param>
     private void XoaBaoDo(Control control)
     {
         control.ClearValue(BorderBrushProperty);
         control.ClearValue(BorderThicknessProperty);
     }
 
+    /// <summary>
+    /// Xóa các dấu lỗi còn trên biểu mẫu trước khi kiểm tra lại hoặc đặt lại dữ liệu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>XoaBaoDo</c>.</remarks>
     private void XoaToanBoBaoDo()
     {
         XoaBaoDo(txtMaCC);
@@ -95,6 +141,12 @@ public partial class CuaSoThemChungChi : Window
         XoaBaoDo(dpHanChungChi);
     }
 
+    /// <summary>
+    /// Kiểm tra các trường bắt buộc và định dạng; đánh dấu vị trí lỗi để người dùng sửa trước khi lưu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>XoaToanBoBaoDo</c>, <c>DatBaoDo</c>.</remarks>
+    /// <param name="thongBaoLoi">Giá trị thông báo lỗi dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     private bool KiemTraDuLieuDauVao(out string thongBaoLoi)
     {
         thongBaoLoi = string.Empty;
@@ -168,6 +220,12 @@ public partial class CuaSoThemChungChi : Window
         return hopLe;
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút thêm khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>KiemTraDuLieuDauVao</c>, <c>MessageBox.Show</c>, <c>.ToString</c>, <c>txtSoChungChi.Text.Trim</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnThem_Click(object sender, RoutedEventArgs e)
     {
         if (!KiemTraDuLieuDauVao(out string thongBaoLoi))
@@ -204,6 +262,12 @@ public partial class CuaSoThemChungChi : Window
         }
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút làm mới khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>XoaToanBoBaoDo</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnLamMoi_Click(object sender, RoutedEventArgs e)
     {
         txtMaCC.Text = "Tự động";
@@ -218,6 +282,12 @@ public partial class CuaSoThemChungChi : Window
         XoaToanBoBaoDo();
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút dòng khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Close</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnDong_Click(object sender, RoutedEventArgs e)
     {
         Close();

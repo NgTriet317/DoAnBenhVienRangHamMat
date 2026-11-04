@@ -1,0 +1,3 @@
+GUI account: demo_ck002_dem; draft: DEMO28_LS_CK002; mode: read-only verification
+PASS: Đăng nhập bác sĩ demo thật và mở được ô tình trạng trên database sử dụng
+RESULT: 1 passed, 0 failed

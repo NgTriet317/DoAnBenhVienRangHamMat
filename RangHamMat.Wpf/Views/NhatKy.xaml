@@ -13,6 +13,7 @@
     </StackPanel>
     <WrapPanel Grid.Row="1" Margin="0,0,0,20">
       <TextBlock Text="Loại hoạt động" VerticalAlignment="Center" Margin="0,0,12,0" />
+      <!-- Trường lựa chọn ActivityFilter. Chuyển sự kiện đến Filter_Changed trong code-behind. -->
       <ComboBox x:Name="ActivityFilter" Width="240" SelectedIndex="0" SelectionChanged="Filter_Changed">
         <ComboBoxItem Content="Tất cả hoạt động" />
         <ComboBoxItem Content="Đăng nhập" />

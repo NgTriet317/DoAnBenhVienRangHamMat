@@ -1,0 +1,13 @@
+Changed database context to 'master'.
+PASS: removed only four task-owned fixture databases; QLBenhVienRangHamMat retained.
+Changed database context to 'QLBenhVienRangHamMat'.
+TableCount
+----------
+52
+ActiveDoctors
+-------------
+14
+DemoDraftVisits
+---------------
+7
+DBCC execution completed. If DBCC printed error messages, contact your system administrator.

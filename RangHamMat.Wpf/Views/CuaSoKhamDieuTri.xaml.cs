@@ -13,8 +13,17 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class CuaSoKhamDieuTri : UserControl, IBieuMauLuu
 {
+    /// <summary>
+    /// Giá trị lưu nội bộ của thuộc tính Drafts, dùng bởi getter/setter tương ứng.
+    /// </summary>
     private readonly ObservableCollection<TreatmentDraft> planRows=new(), progressRows=new();
+    /// <summary>
+    /// Các dịch vụ được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private TreatmentServiceChoice[] services=Array.Empty<TreatmentServiceChoice>();
+    /// <summary>
+    /// Đã khởi tạo bảng được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private string initializedTable="";
     /// <summary>
     /// Khởi tạo biểu mẫu lần khám/tình trạng/kế hoạch/bước/dịch vụ thực hiện từ XAML.
@@ -45,6 +54,9 @@ public partial class CuaSoKhamDieuTri : UserControl, IBieuMauLuu
     /// </summary>
     private void InitializeDrafts()
     {
+        if (DuLieuGiaoDien.PhamViLamSang && Table == "DICH_VU_THUC_HIEN" && !DuLieuGiaoDien.NguoiDungLamSang.CoQuyen(ET.QuyenLamViec.Kham))
+            foreach (var column in ProgressDrafts.Columns)
+                column.IsReadOnly = column is not DataGridBoundColumn { Binding: System.Windows.Data.Binding { Path.Path: "Note" } };
         EditorTitle.Text=Table switch {"LICH_SU_KHAM_BENH"=>"Thông tin lần khám","TINH_TRANG_BENH"=>"Ghi nhận tình trạng bệnh","KE_HOACH_DIEU_TRI"=>"Kế hoạch điều trị","CHI_TIET_KE_HOACH"=>"Dịch vụ dự kiến",_=>"Dịch vụ thực hiện"};
         if(initializedTable==Table)return;initializedTable=Table;
         if(Table!="DICH_VU_THUC_HIEN")return;

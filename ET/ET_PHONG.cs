@@ -11,11 +11,29 @@ namespace ET
     [Table("PHONG")]
     public class ET_PHONG
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaPhong, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maPhong = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TenPhong, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string tenPhong = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaKhoa, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maKhoa = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính LoaiPhong, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string loaiPhong = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TinhTrang, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string tinhTrang = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
 
         /// <summary>

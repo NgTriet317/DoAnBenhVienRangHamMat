@@ -10,10 +10,25 @@ namespace ET
     [Table("CHUYEN_KHOA")]
     public class ET_CHUYENKHOA
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaCK, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maCK = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaKhoa, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maKhoa = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TenCK, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string tenCK = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MoTa, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string moTa = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
 
         /// <summary>

@@ -1,0 +1,87 @@
+{
+    "Date":  "2026-10-28T22:36:51",
+    "Branch":  "cai-to-quy-trinh-kham-6-chuc-nang",
+    "SourceBase":  "f2b2f02",
+    "ProductProjects":  [
+                            "RangHamMat.Wpf",
+                            "ET",
+                            "DAL",
+                            "BUS"
+                        ],
+    "ViewXamlCount":  62,
+    "Tests":  {
+                  "RedBeforeImplementation":  {
+                                                  "Passed":  1,
+                                                  "Failed":  9
+                                              },
+                  "UpgradedDatabase":  {
+                                           "Passed":  18,
+                                           "Failed":  0
+                                       },
+                  "FreshDatabasePublishedDlls":  {
+                                                     "Passed":  18,
+                                                     "Failed":  0
+                                                 },
+                  "AdminRegression":  {
+                                          "Passed":  12,
+                                          "Failed":  0
+                                      },
+                  "QueueRegression":  {
+                                          "Passed":  16,
+                                          "Failed":  0
+                                      },
+                  "DefaultDatabaseDoctorUi":  {
+                                                  "Passed":  1,
+                                                  "Failed":  0,
+                                                  "Account":  "demo_ck002_dem",
+                                                  "Mode":  "read-only SQL"
+                                              },
+                  "DefaultDatabaseAdminUi":  {
+                                                 "Passed":  3,
+                                                 "Failed":  0
+                                             },
+                  "DebugReleaseBuildAndSchema":  "passed"
+              },
+    "DefaultDatabase":  {
+                            "Server":  ".",
+                            "Database":  "QLBenhVienRangHamMat",
+                            "Tables":  52,
+                            "ActiveDoctors":  14,
+                            "NewDoctors":  12,
+                            "NewRooms":  7,
+                            "NewServices":  4,
+                            "NewSchedules":  224,
+                            "NewPatients":  14,
+                            "NewReceptions":  14,
+                            "NewDraftVisits":  7,
+                            "NewConditions":  7,
+                            "RemovedColumn":  "TINH_TRANG_BENH.MucDo",
+                            "OriginalRowsPreservedInAll52Tables":  true,
+                            "PreservationExcludesRemovedColumn":  true,
+                            "BackupVerified":  true,
+                            "BackupPath":  "C:\\Program Files\\Microsoft SQL Server\\MSSQL16.MSSQLSERVER\\MSSQL\\Backup\\QLBenhVienRangHamMat_before_simple_conditions_20261028_195234_d65bca37a4f24f60a0cbb159a58d9a78.bak"
+                        },
+    "Assemblies":  [
+                       {
+                           "Assembly":  "ET",
+                           "SHA256":  "BC2549E27314BB7FE081E9C89FB2D2C86E1DB045CA0B4D5F28CC1ED393636C70",
+                           "PublishedMatchesRelease":  true
+                       },
+                       {
+                           "Assembly":  "DAL",
+                           "SHA256":  "6CE2F48C3994697BF0EA5C9815A76467445D443E90B81CE18089F182490AD73F",
+                           "PublishedMatchesRelease":  true
+                       },
+                       {
+                           "Assembly":  "BUS",
+                           "SHA256":  "E87D7FCC689E9BA25418F041A6FEDF21F87AE6AD46E37CEC803615340677C91E",
+                           "PublishedMatchesRelease":  true
+                       },
+                       {
+                           "Assembly":  "RangHamMat.Wpf",
+                           "SHA256":  "77912527A8EDF1E31A22692A38C7CE46949FDE05EEED2BFC5E80D46DDBD9BAB7",
+                           "PublishedMatchesRelease":  true
+                       }
+                   ],
+    "Review":  "Independent read-only review: no correctness, authorization or data-safety findings; one trailing whitespace corrected."
+}

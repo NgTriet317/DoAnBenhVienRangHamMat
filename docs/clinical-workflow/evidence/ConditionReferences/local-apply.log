@@ -1,0 +1,12 @@
+BACKUP VERIFIED: C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Backup\QLBenhVienRangHamMat_before_condition_references_20261028_225907_f6db3c18b40e4458af97a29b5d46dcd1.bak
+Đã bỏ vị trí răng; nạp 6 tình trạng và định hướng có nguồn. Không tạo người thật, bảng giá hoặc chứng từ.
+PASS: toàn bộ dòng gốc của52 bảng giữ nguyên, ngoài MucDo/ViTriRang được bỏ theo yêu cầu.
+SoBang
+------
+52
+SoBacSi
+-------
+14
+MucDoDaBo
+---------
+NULL

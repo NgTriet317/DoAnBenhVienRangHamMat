@@ -4,6 +4,7 @@
 // Nhãn này ghi nhận phần hỗ trợ/chú thích;
 using RangHamMat;
 using RangHamMat.Views;
+using BUS;
 using System.Configuration;
 using System.Data;
 using System.Windows;
@@ -22,10 +23,24 @@ namespace wpftest
         {
             // AI bổ sung: bắt lỗi ngày nhập bằng bàn phím trên các DatePicker của ứng dụng.
             RangHamMat.Controls.KiemTraNhapLieu.Register();
+            PhienDangNhap.KhoiTaoPhienUngDung();
             var login = new DangNhap();
 
             if (login.ShowDialog() != true)
             {
+                Shutdown();
+                return;
+            }
+
+            // Khi mở ứng dụng, áp dụng các đơn đã tới ngày có hiệu lực trong lúc ứng dụng tắt.
+            try
+            {
+                new BUS_NHANVIEN().dongBoTrangThaiNghi();
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show("Không thể đồng bộ trạng thái nghỉ của nhân viên: " + ex.Message,
+                    "Lỗi đồng bộ nhân sự", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
                 return;
             }

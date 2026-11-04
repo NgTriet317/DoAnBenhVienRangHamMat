@@ -45,6 +45,27 @@ namespace BUS
         }
 
         /// <summary>
+        /// Đọc lịch khám cùng tên bệnh nhân, bác sĩ và phòng để hiển thị danh sách. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XuLyLoi.ThucHien</c>, <c>dalLichKham.layLichKhamHienThi</c>.</remarks>
+        /// <returns>Tập dữ liệu kiểu IEnumerable&lt;ET_LICHKHAM_HIENTHI&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
+        public IEnumerable<ET_LICHKHAM_HIENTHI> layLichKhamHienThi()
+        {
+            return XuLyLoi.ThucHien(() => dalLichKham.layLichKhamHienThi());
+        }
+
+        /// <summary>
+        /// Đọc một lịch khám theo mã kèm các dữ liệu tên cần cho phần chi tiết. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XuLyLoi.ThucHien</c>, <c>dalLichKham.layLichKhamHienThiTheoMa</c>.</remarks>
+        /// <param name="ma">Mã định danh của bản ghi cần xử lý.</param>
+        /// <returns>Đối tượng kiểu ET_LICHKHAM_HIENTHI được tìm hoặc tính toán; có thể null theo nhánh xử lý trong hàm.</returns>
+        public ET_LICHKHAM_HIENTHI? layLichKhamHienThiTheoMa(string ma)
+        {
+            return XuLyLoi.ThucHien(() => dalLichKham.layLichKhamHienThiTheoMa(ma));
+        }
+
+        /// <summary>
         /// Thêm lịch khám từ duLieu qua DAL_LICHKHAM.themLichKham; DAL cấp mã mới vào ET, chuẩn hóa/kiểm tra dữ liệu rồi INSERT
         /// trong giao dịch. Trả true khi hoàn tất; lỗi được phát lên thay vì trả false. Kiểm tra dữ liệu bắt buộc tại BUS trước
         /// khi gọi DAL. XuLyLoi chuyển lỗi SQL sang thông báo tiếng Việt và giữ lỗi gốc trong InnerException.
@@ -82,6 +103,16 @@ namespace BUS
             return XuLyLoi.ThucHien(() => dalLichKham.xoaLichKham(ma, banGoc));
         }
         /// <summary>
+        /// Đồng bộ các lịch khám với ca làm việc theo quy tắc liên kết của hệ thống. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>dalLichKham.dongBoLichKhamVaoCaLam</c>.</remarks>
+        /// <returns>Giá trị số được đọc, đếm hoặc tính toán trong hàm.</returns>
+        public int dongBoLichKhamVaoCaLam()
+        {
+            return dalLichKham.dongBoLichKhamVaoCaLam();
+        }
+
+        /// <summary>
         /// Yêu cầu mã bệnh nhân, bác sĩ, phòng và ca khám. Sai điều kiện sẽ ném InvalidOperationException ngay, ngăn thao tác
         /// thêm/sửa gọi DAL; không ghi dữ liệu.
         /// </summary>
@@ -92,6 +123,11 @@ namespace BUS
             if (string.IsNullOrWhiteSpace(record.MaBS)) throw new InvalidOperationException("Vui lòng nhập/chọn MaBS.");
             if (string.IsNullOrWhiteSpace(record.MaPhong)) throw new InvalidOperationException("Vui lòng nhập/chọn MaPhong.");
             if (string.IsNullOrWhiteSpace(record.MaCa)) throw new InvalidOperationException("Vui lòng nhập/chọn MaCa.");
+            if (record.TrangThai != "Hủy" && record.TrangThai != "Đã hủy" &&
+                record.TrangThai != "Hoàn thành" && record.TrangThai != "Đã khám" &&
+                record.TrangThai != "Đã đổi" && record.MucDoNghiemTrong=="Cao" &&
+                string.IsNullOrWhiteSpace(record.MaBSDuBi))
+                throw new InvalidOperationException("Lịch khám mức Cao bắt buộc có bác sĩ dự bị.");
         }
     }
 }

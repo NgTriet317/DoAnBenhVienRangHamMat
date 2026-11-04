@@ -1,0 +1,27 @@
+PASS: đăng nhập admin seed bằng PBKDF2 từ SQL, principal có tài khoản/nhân viên thật.
+PASS mở giao diện: TongQuan
+PASS mở giao diện: BenhNhan
+PASS mở giao diện: LichKham
+PASS mở giao diện: KhamDieuTri
+PASS mở giao diện: DichVuThucHien
+PASS mở giao diện: DonThuoc
+PASS mở giao diện: PhieuHuongDan
+PASS mở giao diện: NhanSu
+PASS mở giao diện: ChungChiNhanVien
+PASS mở giao diện: CaLamViec
+PASS mở giao diện: ThietBi
+PASS mở giao diện: BaoTri
+PASS mở giao diện: VatTu
+PASS mở giao diện: DanhMucHangHoa
+PASS mở giao diện: NhaCungCap
+PASS mở giao diện: NhapXuatVatTu
+PASS mở giao diện: NhapKho
+PASS mở giao diện: XuatKho
+PASS mở giao diện: HoaDon
+PASS mở giao diện: BangLuong
+PASS mở giao diện: ChinhSachLuong
+PASS mở giao diện: BaoCao
+PASS mở giao diện: DichVu
+PASS mở giao diện: TaiKhoan
+PASS mở giao diện: NhatKy
+PASS: 25/25 phân hệ mở đúng màn hình XAML từ trang chủ; không kiểm tra lưu ở các form mẫu.

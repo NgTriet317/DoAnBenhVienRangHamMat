@@ -1,0 +1,6 @@
+PASS: P12 review employee invalid-name giữ nhập liệu, báo lỗi, không thoát sự kiện/không báo lưu thành công.
+PASS: P12 review employee restore-sql giữ nhập liệu, báo lỗi, không thoát sự kiện/không báo lưu thành công.
+PASS: P12 review employee resign-sql giữ nhập liệu, báo lỗi, không thoát sự kiện/không báo lưu thành công.
+FAIL: P12 reception scope: Chọn bệnh nhân từ hồ sơ trước khi tiếp nhận.
+PASS: P12 guide matches main installer catalog.
+P12ReviewFixChecks: 4 PASS, 1 FAIL.

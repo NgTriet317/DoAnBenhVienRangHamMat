@@ -1,0 +1,23 @@
+Changed database context to 'master'.
+name                                                                                                                             create_date
+-------------------------------------------------------------------------------------------------------------------------------- -----------------------
+RHM_SimpleConditions_Test_20261028                                                                                               2026-10-29 10:19:02.323
+RHM_Hospital_Test_20261029                                                                                                       2026-10-29 10:26:05.250
+RHM_Hospital_Upgrade_Test_20261029                                                                                               2026-10-29 11:01:35.820
+RHM_Hospital_Test_Final_20261029                                                                                                 2026-10-29 11:15:45.723
+REMOVED OWNED FIXTURE: RHM_Hospital_Test_20261029
+REMOVED OWNED FIXTURE: RHM_Hospital_Test_Final_20261029
+REMOVED OWNED FIXTURE: RHM_Hospital_Upgrade_Test_20261029
+REMOVED OWNED FIXTURE: RHM_SimpleConditions_Test_20261028
+PASS: four owned fixture targets absent; QLBenhVienRangHamMat retained.
+Changed database context to 'QLBenhVienRangHamMat'.
+SchemaVersion       TableCount
+------------------- -----------
+ClinicalWorkflow v2          53
+MaHD                                               MaLS                                               SoTienPhaiThu        DaThuRong                                ConPhaiTra
+-------------------------------------------------- -------------------------------------------------- -------------------- ---------------------------------------- ----------------------------------------
+HD004                                              LS004                                                         100000.00                                      .00                                100000.00
+HD005                                              LS005                                                         150000.00                                      .00                                150000.00
+PatientsRetained
+----------------
+              11

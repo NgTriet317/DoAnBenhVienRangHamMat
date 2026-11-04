@@ -52,6 +52,8 @@ namespace DAL
         {
             return ThucHien((connection, transaction) =>
             {
+                KhoaPhanCong(connection, transaction);
+                KiemTraKhongDangNghi(connection, transaction, duLieu.MaNV, duLieu.NgayLam);
                 duLieu.MaLLV = TaoMa(connection, transaction, "LICH_LAM_VIEC", "MaLLV");
                 KiemTra<ET_LICHLAMVIEC>(connection, transaction, "LICH_LAM_VIEC", duLieu, null, null);
                 connection.Execute("""
@@ -85,6 +87,10 @@ namespace DAL
                     throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
                 }
 
+                KhoaPhanCong(connection, transaction);
+                if (duLieu.TrangThai != "Hủy" && duLieu.TrangThai != "Từ chối" &&
+                    duLieu.TrangThai != "Nghỉ phép" && duLieu.TrangThai != "Nghỉ việc")
+                    KiemTraKhongDangNghi(connection, transaction, duLieu.MaNV, duLieu.NgayLam);
                 KiemTra(connection, transaction, "LICH_LAM_VIEC", duLieu, hienTai, banGoc);
                 if (chiDoiTrangThai)
                 {
@@ -112,6 +118,7 @@ namespace DAL
         {
             return ThucHien((connection, transaction) =>
             {
+                KhoaPhanCong(connection, transaction);
                 var hienTai = connection.QuerySingleOrDefault<ET_LICHLAMVIEC>("SELECT * FROM dbo.[LICH_LAM_VIEC] WITH(UPDLOCK,HOLDLOCK) WHERE [MaLLV]=@Ma", new { Ma = ma }, transaction);
                 if (hienTai is null)
                 {
@@ -123,6 +130,39 @@ namespace DAL
                 return true;
             });
         }
+        /// <summary>
+        /// Khóa nguồn phân công trước khi đối chiếu và thay đổi lịch làm việc. Dùng application lock sở hữu bởi giao dịch; từ chối khi không lấy được khóa trong thời gian chờ.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>connection.ExecuteScalar&lt;int&gt;</c>.</remarks>
+        /// <param name="connection">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+        /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+        private void KhoaPhanCong(IDbConnection connection, IDbTransaction? transaction)
+        {
+            int k = connection.ExecuteScalar<int>(@"DECLARE @r int;
+                EXEC @r=sys.sp_getapplock @Resource=N'RHM:PhanCong',@LockMode='Exclusive',
+                @LockOwner='Transaction',@LockTimeout=10000; SELECT @r",transaction:transaction);
+            if (k<0) throw new InvalidOperationException("Lịch đang được cập nhật. Hãy thử lại.");
+        }
+
+        /// <summary>
+        /// Từ chối phân công khi nhân viên có lịch nghỉ áp dụng cho ngày đang xử lý. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>connection.ExecuteScalar&lt;int&gt;</c>.</remarks>
+        /// <param name="connection">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+        /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+        /// <param name="maNV">Mã nhân viên xác định đối tượng cần xử lý.</param>
+        /// <param name="ngayLam">Giá trị ngày làm dùng khi thực hiện thao tác; kiểu DateTime.</param>
+        private void KiemTraKhongDangNghi(IDbConnection connection, IDbTransaction? transaction,
+            string maNV, DateTime ngayLam)
+        {
+            int soDon = connection.ExecuteScalar<int>(@"SELECT COUNT(*) FROM dbo.DON_XIN_NGHI WITH(UPDLOCK,HOLDLOCK)
+                WHERE MaNV=@MaNV AND TrangThaiDuyet=N'Đã duyệt' AND TuNgay<=@Ngay
+                    AND (DenNgay>=@Ngay OR GhiChu LIKE N'%Loại đơn: Nghỉ việc%')",
+                new { MaNV=maNV, Ngay=ngayLam.Date }, transaction);
+            if (soDon>0)
+                throw new InvalidOperationException("Nhân viên đang trong thời gian nghỉ được duyệt, không thể phân công ca làm.");
+        }
+
         // Các hàm phục vụ đăng ký, duyệt ca và phân phòng theo tuần.
         public List<ET_LICHLAMVIEC> layLichTheoTuan(DateTime dauTuan)
         {
@@ -131,10 +171,18 @@ namespace DAL
                 new { TuNgay = dauTuan.Date, DenNgay = dauTuan.Date.AddDays(7) }, transaction).ToList());
         }
 
+        /// <summary>
+        /// Kiểm tra điều kiện nhân viên/ngày/phòng và tạo đăng ký ca làm việc. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>KhoaPhanCong</c>, <c>KiemTraKhongDangNghi</c>, <c>TaoMa</c>.</remarks>
+        /// <param name="lich">Giá trị lịch dùng khi thực hiện thao tác; kiểu ET_LICHLAMVIEC.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool dangKyCa(ET_LICHLAMVIEC lich)
         {
             return ThucHien((connection, transaction) =>
             {
+                KhoaPhanCong(connection, transaction);
+                KiemTraKhongDangNghi(connection, transaction, lich.MaNV, lich.NgayLam);
                 lich.MaLLV = TaoMa(connection, transaction, "LICH_LAM_VIEC", "MaLLV");
                 return connection.Execute(@"INSERT INTO dbo.LICH_LAM_VIEC
                     (MaLLV, MaNV, MaCa, NgayLam, MaPhong, TrangThai, TrangThaiHienDien, GioVao, GioRa, GhiChu)
@@ -146,14 +194,95 @@ namespace DAL
             });
         }
 
+        // Đăng ký nhanh các ca còn hợp lệ trong tuần, lưu trong một giao dịch.
+        // Không thay đổi quy tắc nghỉ phép / nghỉ việc của hệ thống.
+        public (int ThanhCong, int DaCo, int TrungGio, int DangNghi) dangKyTuan(string maNV, DateTime dauTuan)
+        {
+            return ThucHien((connection, transaction) =>
+            {
+                KhoaPhanCong(connection, transaction);
+                int thanhCong = 0, daCo = 0, trungGio = 0, dangNghi = 0;
+                var danhSachCa = connection.Query<ET_CA_THEO_NGAY>(@"
+                    SELECT DISTINCT NgayLam, MaCa FROM dbo.CA_THEO_NGAY
+                    WHERE NgayLam >= @TuNgay AND NgayLam < @DenNgay AND NgayLam >= @HomNay
+                    ORDER BY NgayLam, MaCa",
+                    new { TuNgay = dauTuan.Date, DenNgay = dauTuan.Date.AddDays(7), HomNay = DateTime.Today },
+                    transaction).ToList();
+
+                foreach (ET_CA_THEO_NGAY ca in danhSachCa)
+                {
+                    var thamSo = new { MaNV = maNV, ca.MaCa, NgayLam = ca.NgayLam.Date };
+                    // Chỉ ca bị từ chối mới cho phép đăng ký lại.
+                    if (connection.ExecuteScalar<int>(@"
+                        SELECT COUNT(*) FROM dbo.LICH_LAM_VIEC WITH(UPDLOCK,HOLDLOCK)
+                        WHERE MaNV=@MaNV AND MaCa=@MaCa AND NgayLam=@NgayLam
+                          AND TrangThai<>N'Từ chối'", thamSo, transaction) > 0)
+                    {
+                        daCo++;
+                        continue;
+                    }
+
+                    // Giữ đúng nguyên tắc đơn nghỉ đang sử dụng trong đăng ký một ca:
+                    // nghỉ phép chỉ chặn trong khoảng ngày, nghỉ việc chặn từ ngày hiệu lực.
+                    if (connection.ExecuteScalar<int>(@"
+                        SELECT COUNT(*) FROM dbo.DON_XIN_NGHI WITH(UPDLOCK,HOLDLOCK)
+                        WHERE MaNV=@MaNV AND TrangThaiDuyet=N'Đã duyệt' AND TuNgay<=@NgayLam
+                          AND (DenNgay>=@NgayLam OR GhiChu LIKE N'%Loại đơn: Nghỉ việc%')",
+                        thamSo, transaction) > 0)
+                    {
+                        dangNghi++;
+                        continue;
+                    }
+
+                    // Tránh đăng ký nhiều ca giao nhau trong cùng ngày (cả ca đang chờ duyệt).
+                    if (connection.ExecuteScalar<int>(@"
+                        SELECT COUNT(*) FROM dbo.LICH_LAM_VIEC lich WITH(UPDLOCK,HOLDLOCK)
+                        JOIN dbo.CA_LAM caKhac ON caKhac.MaCa=lich.MaCa
+                        JOIN dbo.CA_LAM caMoi ON caMoi.MaCa=@MaCa
+                        WHERE lich.MaNV=@MaNV AND lich.NgayLam=@NgayLam
+                          AND lich.TrangThai IN (N'Chờ xác nhận',N'Đã xác nhận')
+                          AND caKhac.GioBatDau < caMoi.GioKetThuc
+                          AND caMoi.GioBatDau < caKhac.GioKetThuc", thamSo, transaction) > 0)
+                    {
+                        trungGio++;
+                        continue;
+                    }
+
+                    string maLLV = TaoMa(connection, transaction, "LICH_LAM_VIEC", "MaLLV");
+                    thanhCong += connection.Execute(@"
+                        INSERT INTO dbo.LICH_LAM_VIEC
+                            (MaLLV, MaNV, MaCa, NgayLam, MaPhong, TrangThai,
+                             TrangThaiHienDien, GioVao, GioRa, GhiChu)
+                        VALUES (@MaLLV, @MaNV, @MaCa, @NgayLam, NULL, N'Chờ xác nhận',
+                                N'Chưa chấm công', NULL, NULL, NULL)",
+                        new { MaLLV = maLLV, MaNV = maNV, ca.MaCa, NgayLam = ca.NgayLam.Date }, transaction);
+                }
+                return (thanhCong, daCo, trungGio, dangNghi);
+            });
+        }
+
+        /// <summary>
+        /// Duyệt đăng ký ca sau khi kiểm tra nhân viên, ngày nghỉ và điều kiện phân công. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>KhoaPhanCong</c>, <c>connection.Execute</c>.</remarks>
+        /// <param name="maLLV">Mã lịch làm việc xác định đối tượng cần xử lý.</param>
+        /// <param name="maPhong">Mã phòng xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool duyetCa(string maLLV, string maPhong)
         {
-            return ThucHien((connection, transaction) => connection.Execute(@"
+            return ThucHien((connection, transaction) =>
+            {
+                KhoaPhanCong(connection, transaction);
+                return connection.Execute(@"
                 UPDATE lich
                 SET lich.TrangThai=N'Đã xác nhận', lich.MaPhong=@MaPhong
                 FROM dbo.LICH_LAM_VIEC lich
                 JOIN dbo.CA_LAM ca ON ca.MaCa=lich.MaCa
                 WHERE lich.MaLLV=@MaLLV AND lich.TrangThai=N'Chờ xác nhận'
+                AND NOT EXISTS (SELECT 1 FROM dbo.DON_XIN_NGHI don WITH(UPDLOCK,HOLDLOCK)
+                    WHERE don.MaNV=lich.MaNV AND don.TrangThaiDuyet=N'Đã duyệt'
+                      AND don.TuNgay<=lich.NgayLam
+                      AND (don.DenNgay>=lich.NgayLam OR don.GhiChu LIKE N'%Loại đơn: Nghỉ việc%'))
                 AND EXISTS (SELECT 1 FROM dbo.PHONG WHERE MaPhong=@MaPhong AND TrangThai=N'Đang hoạt động')
                 AND NOT EXISTS (
                     SELECT 1 FROM dbo.LICH_LAM_VIEC x WITH(UPDLOCK,HOLDLOCK)
@@ -163,9 +292,17 @@ namespace DAL
                       AND x.MaNV=lich.MaNV
                       AND caKhac.GioBatDau < ca.GioKetThuc
                       AND ca.GioBatDau < caKhac.GioKetThuc
-                )", new { MaLLV=maLLV, MaPhong=maPhong }, transaction) > 0);
+                )", new { MaLLV=maLLV, MaPhong=maPhong }, transaction) > 0;
+            });
         }
 
+        /// <summary>
+        /// Từ chối đăng ký ca và ghi thông tin phản hồi theo dữ liệu được truyền vào.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>connection.Execute</c>.</remarks>
+        /// <param name="maLLV">Mã lịch làm việc xác định đối tượng cần xử lý.</param>
+        /// <param name="lyDo">Giá trị lý do dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool tuChoiCa(string maLLV, string lyDo)
         {
             return ThucHien((connection, transaction) => connection.Execute(
@@ -173,6 +310,13 @@ namespace DAL
                 new { MaLLV=maLLV, LyDo=lyDo }, transaction) > 0);
         }
 
+        /// <summary>
+        /// Hủy đăng ký ca khi trạng thái hiện tại và quyền người thao tác cho phép.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>connection.Execute</c>.</remarks>
+        /// <param name="maLLV">Mã lịch làm việc xác định đối tượng cần xử lý.</param>
+        /// <param name="maNV">Mã nhân viên xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool huyDangKy(string maLLV, string maNV)
         {
             return ThucHien((connection, transaction) => connection.Execute(

@@ -1,0 +1,29 @@
+﻿KHAC PHUC XamlParseException - MAN HINH BANG LUONG
+================================================
+Nguon: repoclonemoinhat_main(5).zip cua ban.
+
+NGUYEN NHAN / KET QUA DOI CHIEU:
+- Lỗi: Set connectionId threw an exception; Button -> TextBlock, khi InitializeComponent().
+- Ban ZIP da gui co 387 file trong .vs/bin/obj, bao gom BangLuong.baml va BangLuong.g.cs; cac file da sinh co the khong dong bo voi XAML/C# trong source.
+- Source hien hanh da co PhieuLuongOverlay va su kien btnXemChiTiet_Click; chua thay loi sai ten ham trong XAML cua man hinh BangLuong.
+
+BAN XU LY:
+- Da LOAI BO toan bo .vs/, bin/, obj/ khoi ZIP cap nhat. Giữ nguyên các file logic nghiệp vụ và SQL.
+- Kem REBUILD_SACH_WPF.ps1 de xoa cache neu van con o may cua ban.
+- Vui long KHONG copy cac tep .dll/.baml/.g.cs cu vao project nua.
+
+CACH SU DUNG:
+1. Giai nen ZIP vao THU MUC MOI, KHONG de len thu muc dang mo trong VS.
+2. Dong Visual Studio va ung dung dang chay.
+3. Mo BenhVienRangHamMat.sln bang VS 2022, cau hinh Startup Project RangHamMat.Wpf.
+4. Build > Rebuild Solution. Neu build fail, KHONG chon run last successful build.
+5. Neu muon don cache thu cong, chay REBUILD_SACH_WPF.ps1 trong thu muc solution (script yeu cau xac nhan neu muon build bang dotnet).
+6. F5 -> Luong va hoa hong -> chon nhan vien -> Chi tiet phieu luong.
+   Mong doi: mo bang phieu luong noi bo, khong phai MessageBox 'Chi tiet phieu luong (chi xem)'.
+
+GIOI HAN XAC MINH:
+Co the kiem tra XAML theo cu phap va lien ket ten/su kien, nhung khong the chay WPF/SQL Server trong container Linux.
+Neu Visual Studio van bao Button -> TextBlock SAU khi Rebuild thanh cong: gui Output > Build va file BangLuong.g.cs tu obj moi.
+
+PHAM VI:
+KHONG thay doi nghiep vu nghi viec, nghi phep, cham cong, cong thuc luong, kho, vat tu, thiet bi hay database.

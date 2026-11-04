@@ -52,6 +52,7 @@ public partial class DangNhap : Window
             PhienDangNhap.MaNV = taiKhoan.MaNV;
             PhienDangNhap.TenDangNhap = taiKhoan.TenDangNhap;
             PhienDangNhap.IsAdmin = admin;
+            PhienDangNhap.KhoiTaoDinhDanhNghiepVu(taiKhoan.MaTK);
             DialogResult = true;
         }
         catch (Exception ex)
@@ -75,7 +76,7 @@ public partial class DangNhap : Window
             error="Vui lòng nhập mật khẩu.";
             RangHamMat.Controls.KiemTraNhapLieu.SetError(PasswordBox,error); PasswordBox.Focus();
         }
-        FormError.Text=error; return error.Length==0;
+        RangHamMat.Controls.KiemTraNhapLieu.ShowError(this,error); return error.Length==0;
     }
 
     /// <summary>

@@ -58,10 +58,10 @@ namespace DAL
                 connection.Execute("""
                     INSERT INTO dbo.[KE_HOACH_DIEU_TRI] ([MaKHDT],[MaLS],[MaBS],
                         [NgayLap],[NgayBatDau],[NgayDuKienKetThuc],
-                        [TrangThai],[GhiChu])
+                        [TrangThai],[GhiChu],[MaTTBNguon],[MaMauKH],[PhienBanMau])
                     VALUES (@MaKHDT,@MaLS,
                         @MaBS,@NgayLap,@NgayBatDau,
-                        @NgayDuKienKetThuc,@TrangThai,@GhiChu)
+                        @NgayDuKienKetThuc,@TrangThai,@GhiChu,@MaTTBNguon,@MaMauKH,@PhienBanMau)
                     """, duLieu, transaction);
                 return true;
             });
@@ -95,7 +95,7 @@ namespace DAL
                     UPDATE dbo.[KE_HOACH_DIEU_TRI]
                     SET [MaLS]=@MaLS,[MaBS]=@MaBS,[NgayLap]=@NgayLap,
                         [NgayBatDau]=@NgayBatDau,[NgayDuKienKetThuc]=@NgayDuKienKetThuc,[TrangThai]=@TrangThai,
-                        [GhiChu]=@GhiChu
+                        [GhiChu]=@GhiChu,[MaTTBNguon]=@MaTTBNguon,[MaMauKH]=@MaMauKH,[PhienBanMau]=@PhienBanMau
                     WHERE [MaKHDT]=@MaKHDT
                     """, duLieu, transaction);
                 return true;

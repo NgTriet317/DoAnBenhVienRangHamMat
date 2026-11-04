@@ -1,0 +1,4 @@
+PASS: Hai kết nối ký thay đơn, một chữ ký/audit và đổi hiệu lực cũ cùng giao dịch
+PASS: Hai cửa sổ sửa cùng nháp có một xung đột; hai yêu cầu thay cùng nguồn chỉ một nháp
+PASS: Caller ReadCommitted giữ điều kiện thuốc nguồn đến rollback
+PASS: Tồn không đổi sau kê/ký/thay đồng thời; fixture chữ ký chỉ ở database riêng

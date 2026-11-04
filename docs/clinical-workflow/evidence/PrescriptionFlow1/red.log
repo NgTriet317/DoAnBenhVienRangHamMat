@@ -1,0 +1,57 @@
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(33,211): warning CS8604: Possible null reference argument for parameter 'cnn' in 'int SqlMapper.ExecuteScalar<int>(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(48,301): warning CS8604: Possible null reference argument for parameter 'cnn' in 'decimal SqlMapper.ExecuteScalar<decimal>(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(51,260): warning CS8604: Possible null reference argument for parameter 'cnn' in 'string SqlMapper.QuerySingle<string>(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(61,13): warning CS8604: Possible null reference argument for parameter 'cnn' in 'int SqlMapper.Execute(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(63,137): warning CS8602: Dereference of a possibly null reference. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(67,249): warning CS8604: Possible null reference argument for parameter 'cnn' in 'ET_HOADON SqlMapper.QuerySingle<ET_HOADON>(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\Program.cs(77,160): warning CS8604: Possible null reference argument for parameter 'cnn' in 'string SqlMapper.QuerySingle<string>(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\HospitalWorkflowChecks\HospitalWorkflowChecks.csproj]
+FAIL: Kê đơn nằm trong khám sau thực hiện và trước tổng kết | Exception: Chưa có kê đơn trong khám
+FAIL: Kê đơn bỏ mẫu phiên bản, cấu hình và tải lại bỏ nháp | Exception: Còn mẫu/hướng dẫn/tải lại bỏ nháp
+FAIL: Nhóm thuốc độc lập mẫu và danh mục thuốc thực tế đa dạng | Exception: Thuốc chưa có nhóm trực tiếp
+PASS: Danh mục bệnh viện đa dạng và bản cài không tạo người giả
+PASS: Chọn nhanh chia nhóm RHM và gãy hàm có đúng dịch vụ SQL liên quan
+PASS: Hoàn tất chốt đủ dịch vụ và kế hoạch rồi lập đúng một hóa đơn
+PASS: Lỗi lập hóa đơn rollback toàn bộ lần hoàn tất trong transaction ngoài
+PASS: Lịch sử chỉ xem, không có thêm/sửa hoặc lượt chưa hoàn tất
+PASS: Điều dưỡng chỉ xem dòng được giao, thu ngân không xem kết quả lâm sàng
+PASS: Màn thu tiền hiển thị đúng hóa đơn đã lập và giá đã chốt
+PASS: Hóa đơn gồm thuốc đã ký trước thu, dùng lại khi thanh toán và retry
+PASS: Hoàn tất khám lập hóa đơn ngay
+PASS: Dịch vụ thực hiện không còn API phát sinh
+PASS: Database có liên kết tình trạng với dịch vụ thật
+PASS: Form có danh sách chọn dịch vụ liên quan
+PASS: Dịch vụ chọn sinh kế hoạch đầy đủ mã/giá và FK tình trạng
+PASS: Hai tình trạng cùng tên vẫn liên kết đúng dòng bác sĩ chọn
+PASS: Chọn dịch vụ thủ công tự điền giá và cập nhật tổng
+PASS: Đổi giá sau khi hiển thị được phát hiện và không tạo kế hoạch sai
+PASS: Cập nhật giá giữ nguyên bản nháp và lưu lại được
+PASS: Ngừng dịch vụ không còn được chọn; DAL chặn giá giả
+PASS: Đọc lại liên kết SQL mới và lọc đúng tình trạng
+PASS: Giao diện dịch vụ dùng được ở nhiều kích thước
+PASS: Schema và hợp đồng tình trạng không còn MucDo hoặc ViTriRang
+PASS: Tình trạng tự hiện đề xuất, lập nháp không ghi đè kế hoạch đang nhập
+PASS: Lưu tình trạng không cần mức độ hoặc danh mục
+PASS: Form thêm/sửa/xóa rõ ràng và lưu đọc lại đúng
+PASS: Gõ trực tiếp rồi Lưu nháp không cần bấm Thêm trước
+PASS: Thiếu tên giữ nội dung và không ghi dòng rỗng
+PASS: Màn khám không còn cấu hình/gợi ý mẫu
+PASS: Lịch sử và lượt đã xác nhận vẫn khóa nhập
+PASS: Bác sĩ khác và cờ quyền giả không ghi được tình trạng
+PASS: Hoàn tất khám với tình trạng đơn giản, không kê thuốc
+PASS: Xung đột SQL không ghi đè tình trạng
+PASS: Chọn dòng khác không làm mất tình trạng đang gõ
+PASS: Không xóa tình trạng đang liên kết kế hoạch
+PASS: Tab tình trạng có ô nhập thực, thấy được và lưu qua nút
+RESULT: 34 passed, 3 failed
+powershell : Kiểm tra quy trình bệnh viện thất bại.
+At line:2 char:1
++ powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraQuyT ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Kiểm tra quy trình bệnh viện thất bại.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+At D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\tools\KiemTraQuyTrinhBenhVien.ps1:21 char:25
++ ... ($LASTEXITCODE -ne 0){throw 'Kiểm tra quy trình bệnh viện thất bại.'}
++                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Kiểm tra quy trình bệnh viện thất bại.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Kiểm tra quy trình bệnh viện thất bại.
