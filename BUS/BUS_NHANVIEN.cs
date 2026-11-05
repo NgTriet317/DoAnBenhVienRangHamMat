@@ -9,6 +9,11 @@ namespace BUS
     {
         private readonly DAL_NHANVIEN data;
         public BUS_NHANVIEN(IDbTransaction? transaction = null) => data = new(transaction);
+        public void dongBoTrangThaiNghi()
+        {
+            data.dongBoTrangThaiNghi();
+        }
+
         public IEnumerable<ET_NHANVIEN> layToanBoNhanVien()
         {
             DAL_NHANVIEN dalNhanVien = data;

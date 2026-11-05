@@ -114,6 +114,8 @@ namespace DAL
                       AND TrangThai IN (N'Chờ xác nhận',N'Đã xác nhận')",
                     new { don.MaNV,don.TuNgay,don.DenNgay,MaDon=don.MaDonNghi },tx);
                 TaoCaNghiThieu(connection,tx,don,"Nghỉ phép");
+                // Đơn khẩn cấp có thể bắt đầu ngay hôm nay; đồng bộ trong cùng giao dịch.
+                new DAL_NHANVIEN(tx).dongBoTrangThaiNghi();
                 // Không đụng vào LICH_KHAM: mỗi lịch phải được chuyển thủ công.
                 tx.Commit();
                 return don.MaDonNghi;
@@ -568,6 +570,7 @@ namespace DAL
                     WHERE MaDonNghi=@MaDon AND TrangThaiDuyet=N'Chờ duyệt' AND MaNV<>@MaNguoiDuyet",
                     new { TrangThai=trangThai,MaNguoiDuyet=maNguoiDuyet,GhiChuTuChoi=ghiChuTuChoi,MaDon=maDon },tx);
                 if (soDong!=1) throw new InvalidOperationException("Không thể cập nhật đơn xin nghỉ.");
+                if (duyet) new DAL_NHANVIEN(tx).dongBoTrangThaiNghi();
                 tx.Commit();
                 return true;
             }

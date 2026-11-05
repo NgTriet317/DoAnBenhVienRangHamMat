@@ -1,4 +1,4 @@
-using BUS;
+﻿using BUS;
 using ET;
 using System;
 using System.Globalization;
@@ -138,6 +138,25 @@ namespace RangHamMat.Views
             cboCa.ItemsSource = dsCa;
             cboDichVu.ItemsSource = new BUS_DICHVU().layToanBoDichVu().ToList();
             cboBacSiDuBi.ItemsSource = LichKham.LayBacSi();
+        }
+
+        // Làm mới danh sách bác sĩ mà không xóa dữ liệu lịch đang nhập.
+        internal void NapLaiDanhSachBacSi()
+        {
+            string maBacSi = GiaTriChon(cboBacSi);
+            string maDuBi = GiaTriChon(cboBacSiDuBi);
+            var danhSach = LichKham.LayBacSi();
+            cboBacSi.ItemsSource = danhSach;
+            if (maBacSi.Length > 0) cboBacSi.SelectedValue = maBacSi;
+
+            // Không bỏ qua điều kiện dự bị cùng chức vụ và đang làm việc khi nạp lại.
+            if (cboBacSi.SelectedItem is ET_NHANVIEN bsChinh)
+                cboBacSiDuBi.ItemsSource = danhSach.Where(nv =>
+                    nv.MaNV != bsChinh.MaNV && nv.MaChucVu == bsChinh.MaChucVu &&
+                    nv.TrangThai == "Đang làm việc").ToList();
+            else
+                cboBacSiDuBi.ItemsSource = danhSach;
+            if (maDuBi.Length > 0) cboBacSiDuBi.SelectedValue = maDuBi;
         }
 
         // Tự điền giờ khám từ giờ bắt đầu của ca vừa chọn.

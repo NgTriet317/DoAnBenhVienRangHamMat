@@ -27,6 +27,13 @@ namespace RangHamMat.Views
             LoadDuLieuChucVu();
             LoadDuLieuChuyenKhoa();
             DangKySuKienXoaBaoDo();
+            IsVisibleChanged += NhanSu_IsVisibleChanged;
+        }
+
+        // Tải lại để phản ánh ngày nghỉ có hiệu lực khi quay về màn hình Nhân sự.
+        private void NhanSu_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (e.NewValue is true) LoadDuLieuNhanVien();
         }
 
         private void LoadDuLieuNhanVien()

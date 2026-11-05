@@ -1,4 +1,4 @@
-using BUS;
+﻿using BUS;
 using ET;
 using System;
 using System.Collections.Generic;
@@ -27,14 +27,16 @@ namespace RangHamMat.Views
             HienFormThem();
         }
 
-        // Chỉ lấy nhân viên có chức vụ bác sĩ.
+        // CV002 là mã bác sĩ chuẩn ở các phân hệ lâm sàng.
+        // Giữ nhận diện theo tên chức vụ cũ để không làm mất các vị trí bác sĩ tự tạo.
         internal static List<ET_NHANVIEN> LayBacSi()
         {
-            var chucVuBacSi = new BUS_CHUCVU().layToanBoChucVu()
-                .Where(cv => cv.TenChucVu.Contains("Bác sĩ", StringComparison.OrdinalIgnoreCase))
+            var maChucVuBacSi = new BUS_CHUCVU().layToanBoChucVu()
+                .Where(cv => string.Equals(cv.MaChucVu?.Trim(), "CV002", StringComparison.OrdinalIgnoreCase) ||
+                    (cv.TenChucVu?.Contains("Bác sĩ", StringComparison.OrdinalIgnoreCase) ?? false))
                 .Select(cv => cv.MaChucVu).ToList();
             return new BUS_NHANVIEN().layToanBoNhanVien()
-                .Where(nv => chucVuBacSi.Contains(nv.MaChucVu)).ToList();
+                .Where(nv => maChucVuBacSi.Contains(nv.MaChucVu)).ToList();
         }
 
         public LichKham()
@@ -51,6 +53,10 @@ namespace RangHamMat.Views
         {
             try
             {
+                // Nhân sự vừa đổi chức vụ phải có trong cả bộ lọc và biểu mẫu lập lịch.
+                NapDanhSachBacSi();
+                if (pnlBieuMau?.Content is ThemLichKham form)
+                    form.NapLaiDanhSachBacSi();
                 string maDangChon = "";
                 if (lstLichKham.SelectedItem is ET_LICHKHAM_HIENTHI lichDangChon)
                     maDangChon = lichDangChon.MaLich;
@@ -79,10 +85,18 @@ namespace RangHamMat.Views
 
         private void NapBoLoc()
         {
-            cboBacSi.ItemsSource = LayBacSi();
+            NapDanhSachBacSi();
             cboPhong.ItemsSource = new BUS_PHONG().layToanBoPhong().ToList();
             cboBacSi.SelectedIndex = -1;
             cboPhong.SelectedIndex = -1;
+        }
+
+        private void NapDanhSachBacSi()
+        {
+            // Giữ bộ lọc bác sĩ hiện tại khi làm mới, không xóa lựa chọn người dùng.
+            string maDangChon = cboBacSi.SelectedValue?.ToString() ?? "";
+            cboBacSi.ItemsSource = LayBacSi();
+            if (maDangChon.Length > 0) cboBacSi.SelectedValue = maDangChon;
         }
 
         private void ApDungBoLoc()
