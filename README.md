@@ -38,7 +38,7 @@ Biến môi trường RHM_CONNECTION_STRING được ưu tiên hơn file. Instan
 
 ## Bảo trì thiết bị theo serial
 
-Lịch sử bảo trì đã quản lý theo serial: chọn thiết bị hư hại → lưu chưa xác nhận/xác nhận → tiến hành → hoàn thành; tình trạng thiết bị được đồng bộ trong cùng giao dịch. Chỉ phiếu chưa xác nhận được sửa/hủy, lịch sử không xóa. Xem [hướng dẫn bảo trì theo serial](docs/database/BAO_TRI_SERIAL.md).
+Lịch sử bảo trì quản lý theo serial: chọn thiết bị hư hại để **lập phiếu bảo trì hoặc thanh lý**. Xác nhận phiếu chuyển thẳng **Đang thực hiện**, thiết bị chuyển **Đang bảo trì**; hoàn thành đưa thiết bị về Đang hoạt động. Tab **Thanh lý** lưu ngày, nhân viên, lý do, giá trị thu hồi và thông tin thiết bị tại lúc thanh lý; thiết bị được ngưng sử dụng, thu hồi khỏi phòng và không được sửa/xóa lịch sử. Các thay đổi SQL và dữ liệu giao diện cùng giao dịch. Chạy lại toàn bộ file SQL chính trước khi dùng bản mới. Xem [hướng dẫn bảo trì và thanh lý theo serial](docs/database/BAO_TRI_SERIAL.md).
 
 ## Luồng khám và thu tiền
 

@@ -4,14 +4,14 @@ Solution chỉ bốn project; file sinh trong bin/obj/PhatHanh không nằm tron
 
 ## ET
 
-- `ET/ClinicalExaminationContracts.cs`
-- `ET/ClinicalHandoverContracts.cs`
-- `ET/ClinicalNavigationContracts.cs`
-- `ET/ClinicalPaymentContracts.cs`
-- `ET/ClinicalPrescriptionContracts.cs`
-- `ET/ClinicalPricingContracts.cs`
-- `ET/ClinicalServiceContracts.cs`
-- `ET/ClinicalWorkflowContracts.cs`
+- `ET/ET_DULIEUKHAM.cs`
+- `ET/ET_DULIEUBANGIAOTHUOC.cs`
+- `ET/ET_DULIEUHOSOBENHAN.cs`
+- `ET/ET_DULIEUTHANHTOAN.cs`
+- `ET/ET_DULIEUKEDONTHUOC.cs`
+- `ET/ET_DULIEUTINHPHI.cs`
+- `ET/ET_DULIEUTHUCHIENDICHVU.cs`
+- `ET/ET_DULIEUQUYTRINHKHAM.cs`
 - `ET/ET.csproj`
 - `ET/ET_BANGIAOTHUOC.cs`
 - `ET/ET_BAOTRITHIETBI.cs`
@@ -87,10 +87,10 @@ Solution chỉ bốn project; file sinh trong bin/obj/PhatHanh không nằm tron
 - `DAL/DAL_CHUNGCHINHANVIEN.cs`
 - `DAL/DAL_CHUYENKHOA.cs`
 - `DAL/DAL_DICHVU.cs`
-- `DAL/DAL_DICHVUTHUCHIEN.Clinical.cs`
+- `DAL/DAL_DICHVUTHUCHIEN.LamSang.cs`
 - `DAL/DAL_DICHVUTHUCHIEN.cs`
 - `DAL/DAL_DON_XIN_NGHI.cs`
-- `DAL/DAL_DONTHUOC.Clinical.cs`
+- `DAL/DAL_DONTHUOC.LamSang.cs`
 - `DAL/DAL_DONTHUOC.cs`
 - `DAL/DAL_DONTHUOC.HuongDan.cs`
 - `DAL/DAL_HANGHOA.cs`
@@ -103,8 +103,8 @@ Solution chỉ bốn project; file sinh trong bin/obj/PhatHanh không nằm tron
 - `DAL/DAL_KHAMDIEUTRI.KeHoach.cs`
 - `DAL/DAL_KHAMDIEUTRI.Kham.cs`
 - `DAL/DAL_KHAMDIEUTRI.Mau.cs`
-- `DAL/DAL_KHAMDIEUTRI.Navigation.cs`
-- `DAL/DAL_KHAMDIEUTRI.Paging.cs`
+- `DAL/DAL_KHAMDIEUTRI.DieuHuong.cs`
+- `DAL/DAL_KHAMDIEUTRI.PhanTrang.cs`
 - `DAL/DAL_KHO.cs`
 - `DAL/DAL_KHOA.cs`
 - `DAL/DAL_LICHKHAM.cs`
@@ -123,8 +123,8 @@ Solution chỉ bốn project; file sinh trong bin/obj/PhatHanh không nằm tron
 - `DAL/DAL_TAIKHOAN.cs`
 - `DAL/DAL_THANHTOAN.cs`
 - `DAL/DAL_THANHTOANTRONGOI.cs`
-- `DAL/DAL_THANHTOANTRONGOI.Payment.cs`
-- `DAL/DAL_THANHTOANTRONGOI.Print.cs`
+- `DAL/DAL_THANHTOANTRONGOI.ThanhToan.cs`
+- `DAL/DAL_THANHTOANTRONGOI.InHoaDon.cs`
 - `DAL/DAL_THIETBI.cs`
 - `DAL/DAL_THUOC.cs`
 - `DAL/DAL_TIEPNHAN.cs`
@@ -153,10 +153,10 @@ Solution chỉ bốn project; file sinh trong bin/obj/PhatHanh không nằm tron
 - `BUS/BUS_CHUNGCHINHANVIEN.cs`
 - `BUS/BUS_CHUYENKHOA.cs`
 - `BUS/BUS_DICHVU.cs`
-- `BUS/BUS_DICHVUTHUCHIEN.Clinical.cs`
+- `BUS/BUS_DICHVUTHUCHIEN.LamSang.cs`
 - `BUS/BUS_DICHVUTHUCHIEN.cs`
 - `BUS/BUS_DON_XIN_NGHI.cs`
-- `BUS/BUS_DONTHUOC.Clinical.cs`
+- `BUS/BUS_DONTHUOC.LamSang.cs`
 - `BUS/BUS_DONTHUOC.cs`
 - `BUS/BUS_HANGHOA.cs`
 - `BUS/BUS_HOADON.cs`

@@ -59,7 +59,7 @@ public partial class CuaSoBaoTri : UserControl, IBieuMauLuu
         TruongNhap.IsEnabled = choSua;
         btnLuu.Visibility = btnXacNhan.Visibility = choSua ? Visibility.Visible : Visibility.Collapsed;
         btnLuu.IsEnabled = btnXacNhan.IsEnabled = choSua && maThietBi.Length > 0;
-        if (!choSua) txtHuongDan.Text = "Nội dung phiếu đã khóa. Các thao tác bắt đầu hoặc hoàn thành được thực hiện ở Lịch sử bảo trì.";
+        if (!choSua) txtHuongDan.Text = "Nội dung phiếu đã khóa. Hoàn thành bảo trì tại Lịch sử bảo trì.";
         if (maThietBi.Length == 0) FormError.Text = "Hãy đóng biểu mẫu và chọn đúng serial trong danh sách Thiết bị hư hại để lập phiếu.";
     }
 
@@ -96,7 +96,7 @@ public partial class CuaSoBaoTri : UserControl, IBieuMauLuu
         }
         // Trạng thái đích do nút thao tác quyết định; SQL lưu nội dung và thời điểm xác nhận cùng giao dịch.
         txtMaTB.Text = maThietBi;
-        txtTrangThai.Text = xacNhan ? "Đã xác nhận" : "Chưa xác nhận";
+        txtTrangThai.Text = xacNhan ? "Đang thực hiện" : "Chưa xác nhận";
         var success = BieuMauHoSo.TrySave(this, out _, out error);
         if (!success) txtTrangThai.Text = "Chưa xác nhận";
         return success;

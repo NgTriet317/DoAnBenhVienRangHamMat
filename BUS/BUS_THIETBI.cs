@@ -61,6 +61,10 @@ namespace BUS
         public bool capNhatTinhTrangThietBi(string maTB, string tinhTrangMoi, ET_THIETBI banGoc)
             => XuLyLoi.ThucHien(() => data.capNhatTinhTrangThietBi(maTB, tinhTrangMoi, banGoc));
 
+        /// <summary>Thanh lý một serial hư hại và giữ hồ sơ trong cùng giao dịch.</summary>
+        public bool thanhLyThietBi(string maTB, string maNV, string lyDo, decimal giaTri, ET_THIETBI banGoc)
+            => XuLyLoi.ThucHien(() => data.thanhLyThietBi(maTB, maNV, lyDo, giaTri, banGoc));
+
         // Chỉ phân hoặc thu hồi thiết bị có sẵn; không tạo mới hồ sơ thiết bị.
         public bool phanThietBiVaoPhong(string maTB, string? maPhong, ET_THIETBI banGoc)
             => XuLyLoi.ThucHien(() => data.phanThietBiVaoPhong(maTB, maPhong, banGoc));

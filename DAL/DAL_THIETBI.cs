@@ -172,6 +172,41 @@ namespace DAL
             });
         }
 
+        /// <summary>Khóa thiết bị, kiểm tra bản đã xem và ghi hồ sơ thanh lý cùng việc thu hồi phòng.</summary>
+        public bool thanhLyThietBi(string maTB, string maNV, string lyDo, decimal giaTri, ET_THIETBI banGoc)
+        {
+            ArgumentNullException.ThrowIfNull(banGoc);
+            lyDo = (lyDo ?? "").Trim();
+            if (lyDo.Length is 0 or > 1000) throw new InvalidOperationException("Nhập lý do thanh lý từ 1 đến 1000 ký tự.");
+            if (giaTri < 0 || giaTri > 9999999999999999.99m || decimal.Round(giaTri, 2) != giaTri)
+                throw new InvalidOperationException("Giá trị thu hồi không âm và có tối đa hai chữ số thập phân.");
+            return ThucHien((db, tx) =>
+            {
+                db.Execute("""
+                    IF COL_LENGTH(N'dbo.THIET_BI',N'NgayThanhLy') IS NULL
+                     THROW 52600,N'Chạy toàn bộ Database/QLBenhVienRangHamMat.sql để đồng bộ thanh lý.',1;
+                    EXEC dbo.usp_RHM_KiemTraBaoTriSerial;
+                    """, transaction: tx);
+                var current = db.QuerySingleOrDefault<ET_THIETBI>("SELECT * FROM dbo.THIET_BI WITH(UPDLOCK,HOLDLOCK) WHERE MaTB=@maTB", new { maTB }, tx)
+                    ?? throw new InvalidOperationException("Thiết bị không còn tồn tại. Vui lòng tải lại.");
+                KiemTra(db, tx, "THIET_BI", current, current, banGoc);
+                if (current.NgayThanhLy is not null || current.TinhTrang != "Hư hại" || current.TrangThai is "Ngưng sử dụng" or "Ngừng sử dụng")
+                    throw new InvalidOperationException("Chỉ thanh lý thiết bị hư hại chưa ngưng sử dụng.");
+                if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.BAO_TRI_THIET_BI WITH(UPDLOCK,HOLDLOCK) WHERE MaTB=@maTB AND TrangThai IN(N'Chưa xác nhận',N'Đã xác nhận',N'Đang thực hiện')", new { maTB }, tx) > 0)
+                    throw new InvalidOperationException("Thiết bị còn phiếu bảo trì mở. Hãy hủy phiếu chưa xác nhận hoặc hoàn tất bảo trì trước khi thanh lý.");
+                var tenNV = db.QuerySingleOrDefault<string>("SELECT HoTen FROM dbo.NHAN_VIEN WITH(HOLDLOCK) WHERE MaNV=@maNV AND TrangThai=N'Đang làm việc'", new { maNV }, tx)
+                    ?? throw new InvalidOperationException("Chọn nhân viên phụ trách đang làm việc.");
+                db.Execute("""
+                    UPDATE t SET NgayThanhLy=SYSDATETIME(),MaNVThanhLy=@maNV,LyDoThanhLy=@lyDo,GiaTriThanhLy=@giaTri,
+                     TenThietBiThanhLy=h.TenHH,TenPhongThanhLy=COALESCE(p.TenPhong,N'Chưa bố trí phòng'),TenNhanVienThanhLy=@tenNV,
+                     TinhTrang=N'Ngưng sử dụng',TrangThai=N'Ngưng sử dụng',MaPhong=NULL
+                    FROM dbo.THIET_BI t JOIN dbo.HANG_HOA h WITH(HOLDLOCK) ON h.MaHH=t.MaHH
+                     LEFT JOIN dbo.PHONG p WITH(HOLDLOCK) ON p.MaPhong=t.MaPhong WHERE t.MaTB=@maTB
+                    """, new { maTB, maNV, lyDo, giaTri, tenNV }, tx);
+                return true;
+            });
+        }
+
         // Phân phòng chỉ được phép cho thiết bị hoạt động; thu hồi thiết bị hư vẫn được phép.
         public bool phanThietBiVaoPhong(string maTB, string? maPhong, ET_THIETBI banGoc)
         {

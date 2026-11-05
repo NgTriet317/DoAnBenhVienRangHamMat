@@ -351,6 +351,13 @@ public static class DuLieuGiaoDien
                     var bus = new BUS_BAOTRITHIETBI(transaction);
                     saved = SaveEntity<ET_BAOTRITHIETBI>("MaBT", values, id, expected, statusOnly,
                         bus.themBaoTriThietBi, bus.suaBaoTriThietBi, bus.layBaoTriThietBiTheoMa);
+                    // Xác nhận khi lưu cũng bắt đầu bảo trì: đọc lại thiết bị trước khi thông báo giao diện.
+                    var asset = new BUS_THIETBI(transaction).layThietBiTheoMa(Convert.ToString(saved["MaTB"])!);
+                    if (asset is not null && Find("THIET_BI", asset.MaTB) is IDictionary<string, object?> cached)
+                    {
+                        cached.Clear();
+                        foreach (var field in Values(asset)) cached[field.Key] = field.Value;
+                    }
                     break;
                 }
             case "BENH_NHAN":
@@ -648,6 +655,26 @@ public static class DuLieuGiaoDien
             new BUS_NHATKY(transaction).GhiThayDoi(table,id,"CANCEL",Values(row).Keys,
                 new NguCanhNghiepVu{MaNV=PhienDangNhap.MaNV,MaTK=PhienDangNhap.MaTK},PhienDangNhap.MaPhien);
         Rows(table).Remove(row); UpdatePlanTotal(table, row); Notify();
+    }
+
+    /// <summary>Thanh lý và cập nhật cache cùng giao dịch; chỉ thông báo sau commit.</summary>
+    public static object ThanhLyThietBi(ET_THIETBI banGoc, string maNV, string lyDo, decimal giaTri)
+    {
+        if (!batching)
+        {
+            object? saved = null;
+            Transaction(() => { saved = ThanhLyThietBi(banGoc, maNV, lyDo, giaTri); return true; });
+            return saved!;
+        }
+        var bus = new BUS_THIETBI(transaction);
+        bus.thanhLyThietBi(banGoc.MaTB, maNV, lyDo, giaTri, banGoc);
+        var fresh = bus.layThietBiTheoMa(banGoc.MaTB) ?? throw new InvalidOperationException("Không đọc lại được hồ sơ thanh lý.");
+        var current = Find("THIET_BI", banGoc.MaTB) as IDictionary<string, object?>
+            ?? throw new InvalidOperationException("Thiết bị không còn trong danh sách. Hãy tải lại.");
+        current.Clear();
+        foreach (var field in Values(fresh)) current[field.Key] = field.Value;
+        Notify();
+        return current;
     }
 
     /// <summary>Lưu phiếu và đọc lại cả thiết bị trong giao dịch hiện tại; chỉ thông báo sau khi commit.</summary>

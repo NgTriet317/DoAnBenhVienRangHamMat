@@ -55,6 +55,15 @@ namespace ET
         /// Khởi tạo thực thể rỗng để Dapper hoặc cơ chế chuyển dictionary điền các cột; các giá trị mặc định chưa phải một bản ghi đã lưu.
         /// </summary>
         public ET_THIETBI() { }
+
+        /// <summary>Hồ sơ thanh lý bất biến; null đối với thiết bị chưa thanh lý.</summary>
+        public DateTime? NgayThanhLy { get; set; }
+        public string? MaNVThanhLy { get; set; }
+        public string? LyDoThanhLy { get; set; }
+        public decimal? GiaTriThanhLy { get; set; }
+        public string? TenThietBiThanhLy { get; set; }
+        public string? TenPhongThanhLy { get; set; }
+        public string? TenNhanVienThanhLy { get; set; }
         /// <summary>
         /// Nhận các giá trị cột qua tham số và gán cho thực thể; việc gọi constructor không ghi dữ liệu xuống SQL.
         /// </summary>

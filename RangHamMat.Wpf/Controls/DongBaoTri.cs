@@ -141,10 +141,6 @@ public sealed class DongBaoTri
     /// </summary>
     public bool ChoHuy => ChoSua;
     /// <summary>
-    /// Giá trị Chờ bắt đầu; được xác định bởi phần getter/setter của thuộc tính.
-    /// </summary>
-    public bool ChoBatDau => Status == "Đã xác nhận";
-    /// <summary>
     /// Giá trị Chờ hoàn thành; được xác định bởi phần getter/setter của thuộc tính.
     /// </summary>
     public bool ChoHoanThanh => Status == "Đang thực hiện";
@@ -154,7 +150,6 @@ public sealed class DongBaoTri
     public string HuongDan => Status switch
     {
         "Chưa xác nhận" => "Có thể sửa nội dung, xác nhận hoặc hủy phiếu.",
-        "Đã xác nhận" => "Nội dung đã khóa. Bắt đầu sẽ chuyển đúng thiết bị này sang Đang bảo trì.",
         "Đang thực hiện" => "Hoàn thành sẽ ghi giờ kết thúc và chuyển thiết bị sang Đang hoạt động.",
         _ => "Phiếu đã kết thúc, chỉ xem chi tiết."
     };

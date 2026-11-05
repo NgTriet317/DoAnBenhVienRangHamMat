@@ -38,7 +38,7 @@
     <!-- Ô nhập txtTrangThai — Chưa xác nhận. Kiểm tra đầu vào theo metadata BAO_TRI_THIET_BI.TrangThai. -->
     <TextBlock Text="Trạng thái phiếu" Style="{StaticResource FieldLabel}"/><TextBox x:Name="txtTrangThai" Tag="DB:BAO_TRI_THIET_BI.TrangThai" Text="Chưa xác nhận" IsReadOnly="True" AutomationProperties.Name="Trạng thái phiếu bảo trì"/>
     <!-- Thông tin hiển thị txtHuongDan — Sau xác nhận, nội dung phiếu được giữ nguyên. Thời điểm thực hiện và kết thúc được ghi tự động khi thao tác ở Lịch sử bảo trì.. -->
-    <TextBlock x:Name="txtHuongDan" Text="Sau xác nhận, nội dung phiếu được giữ nguyên. Thời điểm thực hiện và kết thúc được ghi tự động khi thao tác ở Lịch sử bảo trì." Style="{StaticResource HospitalMuted}" Margin="0,12,0,14"/>
+    <TextBlock x:Name="txtHuongDan" Text="Xác nhận sẽ khóa nội dung, chuyển phiếu sang Đang thực hiện và thiết bị sang Đang bảo trì. Chỉ xác nhận khi đã đến ngày bắt đầu dự kiến." Style="{StaticResource HospitalMuted}" Margin="0,12,0,14"/>
    </StackPanel>
   </ScrollViewer>
   <StackPanel Grid.Row="2" Margin="0,16,0,0">

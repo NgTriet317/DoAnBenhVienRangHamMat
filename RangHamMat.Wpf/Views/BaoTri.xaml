@@ -19,7 +19,7 @@
   <DockPanel Margin="0,0,0,18">
    <!-- Nút thao tác Tải lại — Tải lại. Chuyển sự kiện đến TaiLai_Click trong code-behind. -->
    <Button DockPanel.Dock="Right" Content="Tải lại" Click="TaiLai_Click" VerticalAlignment="Top"/>
-   <StackPanel><TextBlock Text="Bảo trì thiết bị" Style="{StaticResource HospitalHeading}"/><TextBlock Text="Lập phiếu từ thiết bị hư hại, xác nhận và theo dõi thực hiện theo từng serial." Style="{StaticResource HospitalMuted}"/></StackPanel>
+   <StackPanel><TextBlock Text="Bảo trì và thanh lý thiết bị" Style="{StaticResource HospitalHeading}"/><TextBlock Text="Chọn sửa chữa hoặc thanh lý thiết bị hư hại, theo dõi lịch sử theo từng serial." Style="{StaticResource HospitalMuted}"/></StackPanel>
   </DockPanel>
   <Border Grid.Row="1" Style="{StaticResource HospitalPanel}" Padding="20,14" Margin="0,0,0,12">
    <UniformGrid Columns="4">
@@ -42,7 +42,8 @@
        <!-- Ô nhập txtTimThietBi. Chuyển sự kiện đến TimThietBi_ThayDoi trong code-behind. -->
        <StackPanel Width="310" Margin="0,0,16,8"><TextBlock Text="Tìm serial, mã thiết bị, tên hoặc phòng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="txtTimThietBi" TextChanged="TimThietBi_ThayDoi" AutomationProperties.Name="Tìm thiết bị hư hại theo serial"/></StackPanel>
        <!-- Nút thao tác btnLapPhieu — Lập phiếu cho thiết bị đã chọn. Chuyển sự kiện đến Them_Click trong code-behind. -->
-       <Button x:Name="btnLapPhieu" Content="Lập phiếu cho thiết bị đã chọn" IsEnabled="False" Style="{StaticResource HospitalPrimary}" Click="Them_Click" VerticalAlignment="Bottom" Margin="0,0,0,8"/>
+       <Button x:Name="btnLapPhieu" Content="Lập phiếu bảo trì" IsEnabled="False" Style="{StaticResource HospitalPrimary}" Click="Them_Click" VerticalAlignment="Bottom" Margin="0,0,12,8"/>
+       <Button x:Name="btnThanhLy" Content="Thanh lý thiết bị" IsEnabled="False" Click="ThanhLy_Click" VerticalAlignment="Bottom" Margin="0,0,0,8"/>
       </WrapPanel>
      </Border>
      <Border Grid.Row="1" Style="{StaticResource HospitalPanel}" Padding="0">
@@ -62,7 +63,7 @@
       </Grid>
      </Border>
      <!-- Thông tin hiển thị txtSoThietBi. -->
-     <StackPanel Grid.Row="2" Margin="0,10,0,0"><TextBlock x:Name="txtSoThietBi" Style="{StaticResource HospitalMuted}"/><TextBlock Text="Chọn đúng serial để lập phiếu. Mỗi thiết bị chỉ có một phiếu đang xử lý." Style="{StaticResource HospitalMuted}" Margin="0,5,0,0"/></StackPanel>
+     <StackPanel Grid.Row="2" Margin="0,10,0,0"><TextBlock x:Name="txtSoThietBi" Style="{StaticResource HospitalMuted}"/><TextBlock Text="Chọn đúng serial để bảo trì hoặc thanh lý. Thiết bị còn phiếu bảo trì mở phải xử lý phiếu trước." Style="{StaticResource HospitalMuted}" Margin="0,5,0,0"/></StackPanel>
     </Grid>
    </TabItem>
    <TabItem Header="Lịch sử bảo trì">
@@ -140,11 +141,9 @@
            <!-- Nút thao tác Sửa nội dung — Sửa nội dung. Chuyển sự kiện đến Sua_Click trong code-behind. -->
            <Button Content="Sửa nội dung" Visibility="{Binding ChoSua, Converter={StaticResource HienKhiDung}}" Click="Sua_Click"/>
            <!-- Nút thao tác Xác nhận — Xác nhận. Chuyển sự kiện đến ChuyenTrangThai_Click trong code-behind. -->
-           <Button Content="Xác nhận" Visibility="{Binding ChoXacNhan, Converter={StaticResource HienKhiDung}}" Tag="Đã xác nhận" Click="ChuyenTrangThai_Click" Style="{StaticResource HospitalPrimary}"/>
+           <Button Content="Xác nhận" Visibility="{Binding ChoXacNhan, Converter={StaticResource HienKhiDung}}" Tag="Đang thực hiện" Click="ChuyenTrangThai_Click" Style="{StaticResource HospitalPrimary}"/>
            <!-- Nút thao tác Hủy phiếu — Hủy phiếu. Chuyển sự kiện đến ChuyenTrangThai_Click trong code-behind. -->
            <Button Content="Hủy phiếu" Visibility="{Binding ChoHuy, Converter={StaticResource HienKhiDung}}" Tag="Hủy" Click="ChuyenTrangThai_Click"/>
-           <!-- Nút thao tác Bắt đầu thực hiện — Bắt đầu thực hiện. Chuyển sự kiện đến ChuyenTrangThai_Click trong code-behind. -->
-           <Button Content="Bắt đầu thực hiện" Visibility="{Binding ChoBatDau, Converter={StaticResource HienKhiDung}}" Tag="Đang thực hiện" Click="ChuyenTrangThai_Click" Style="{StaticResource HospitalPrimary}"/>
            <!-- Nút thao tác Hoàn thành — Hoàn thành. Chuyển sự kiện đến ChuyenTrangThai_Click trong code-behind. -->
            <Button Content="Hoàn thành" Visibility="{Binding ChoHoanThanh, Converter={StaticResource HienKhiDung}}" Tag="Đã hoàn thành" Click="ChuyenTrangThai_Click" Style="{StaticResource HospitalPrimary}"/>
           </WrapPanel>
@@ -154,6 +153,46 @@
        </Grid>
       </Border>
      </Grid>
+    </Grid>
+   </TabItem>
+   <TabItem><TabItem.Header><TextBlock x:Name="txtTabThanhLy" Text="Thanh lý"/></TabItem.Header>
+    <Grid>
+     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <Border Style="{StaticResource HospitalPanel}" Padding="16,12" Margin="0,0,0,12">
+      <WrapPanel>
+       <StackPanel Width="300" Margin="0,0,12,8"><TextBlock Text="Tìm serial, thiết bị, nhân viên hoặc lý do" Style="{StaticResource FieldLabel}"/><TextBox x:Name="txtTimThanhLy" TextChanged="LocThanhLy_ThayDoi" AutomationProperties.Name="Tìm thiết bị đã thanh lý"/></StackPanel>
+       <StackPanel Width="135" Margin="0,0,12,8"><TextBlock Text="Thanh lý từ ngày" Style="{StaticResource FieldLabel}"/><DatePicker x:Name="dpThanhLyTu" SelectedDateChanged="LocThanhLy_ThayDoi"/></StackPanel>
+       <StackPanel Width="135" Margin="0,0,12,8"><TextBlock Text="Đến ngày" Style="{StaticResource FieldLabel}"/><DatePicker x:Name="dpThanhLyDen" SelectedDateChanged="LocThanhLy_ThayDoi"/></StackPanel>
+       <Button Content="Bỏ bộ lọc" Click="BoLocThanhLy_Click" VerticalAlignment="Bottom" Margin="0,0,0,8"/>
+      </WrapPanel>
+     </Border>
+     <Grid Grid.Row="1">
+      <Grid.RowDefinitions><RowDefinition Height="2*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <Border Style="{StaticResource HospitalPanel}" Padding="0"><Grid>
+       <DataGrid x:Name="GridThanhLy" FrozenColumnCount="2" RowHeight="56" SelectionChanged="ThanhLy_SelectionChanged" AutomationProperties.Name="Danh sách thiết bị đã thanh lý">
+        <DataGrid.Columns>
+         <DataGridTextColumn Header="Mã thiết bị" Binding="{Binding MaTB}" Width="110" ElementStyle="{StaticResource HospitalCellText}"/>
+         <DataGridTextColumn Header="Serial" Binding="{Binding SoSerial}" Width="170" ElementStyle="{StaticResource HospitalCellText}"/>
+         <DataGridTextColumn Header="Tên thiết bị" Binding="{Binding TenThietBi}" Width="*" MinWidth="180" ElementStyle="{StaticResource HospitalCellText}"/>
+         <DataGridTextColumn Header="Ngày thanh lý" Binding="{Binding NgayThanhLy, StringFormat=dd/MM/yyyy HH:mm}" Width="155" ElementStyle="{StaticResource HospitalCellText}"/>
+         <DataGridTextColumn Header="Nhân viên phụ trách" Binding="{Binding NhanVien}" Width="170" ElementStyle="{StaticResource HospitalCellText}"/>
+         <DataGridTextColumn Header="Giá trị thu hồi (đ)" Binding="{Binding GiaTri, StringFormat={}{0:N2}}" Width="155" ElementStyle="{StaticResource HospitalNumber}"/>
+        </DataGrid.Columns>
+       </DataGrid>
+       <TextBlock x:Name="KhongCoThanhLy" Text="Chưa có thiết bị đã thanh lý phù hợp bộ lọc." Style="{StaticResource HospitalMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+      </Grid></Border>
+      <Border Grid.Row="1" x:Name="ChiTietThanhLy" Style="{StaticResource HospitalPanel}" Margin="0,12,0,0" Padding="16" Visibility="Collapsed">
+       <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto"><StackPanel>
+        <TextBlock Text="{Binding TenThietBi}" FontWeight="SemiBold" FontSize="16"/>
+        <TextBlock TextWrapping="Wrap" Margin="0,8,0,0"><Run Text="Mã thiết bị: "/><Run Text="{Binding MaTB, Mode=OneWay}"/><Run Text=" · Serial: "/><Run Text="{Binding SoSerial, Mode=OneWay}"/></TextBlock>
+        <TextBlock TextWrapping="Wrap" Margin="0,8,0,0"><Run Text="Thanh lý lúc: "/><Run Text="{Binding NgayThanhLy, Mode=OneWay, StringFormat=dd/MM/yyyy HH:mm:ss}"/><Run Text=" · Giá trị thu hồi: "/><Run Text="{Binding GiaTri, Mode=OneWay, StringFormat={}{0:N2} đ}"/></TextBlock>
+        <WrapPanel Margin="0,8,0,8"><TextBlock Text="Phòng trước thanh lý: " FontWeight="SemiBold"/><TextBlock Text="{Binding TenPhong}" Margin="0,0,24,0"/><TextBlock Text="Nhân viên: " FontWeight="SemiBold"/><TextBlock Text="{Binding NhanVien}"/><TextBlock Text="{Binding MaNV, StringFormat={} ({0})}"/></WrapPanel>
+        <TextBlock Text="Lý do thanh lý" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding LyDo}" TextWrapping="Wrap"/>
+        <TextBlock Text="Đã ngưng sử dụng và thu hồi khỏi phòng. Hồ sơ thanh lý được giữ nguyên để tra cứu." Style="{StaticResource HospitalMuted}" Margin="0,8,0,0"/>
+       </StackPanel></ScrollViewer>
+      </Border>
+     </Grid>
+     <TextBlock Grid.Row="2" x:Name="txtSoThanhLy" Style="{StaticResource HospitalMuted}" Margin="0,10,0,0"/>
     </Grid>
    </TabItem>
   </TabControl>

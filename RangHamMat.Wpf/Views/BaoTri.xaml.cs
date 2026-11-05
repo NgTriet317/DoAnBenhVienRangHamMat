@@ -26,7 +26,7 @@ public partial class BaoTri : UserControl
     public BaoTri()
     {
         InitializeComponent();
-        cboTrangThai.ItemsSource = new[] { "Tất cả trạng thái", "Chưa xác nhận", "Đã xác nhận", "Đang thực hiện", "Đã hoàn thành", "Hủy" };
+        cboTrangThai.ItemsSource = new[] { "Tất cả trạng thái", "Chưa xác nhận", "Đang thực hiện", "Đã hoàn thành", "Hủy" };
         cboTrangThai.SelectedIndex = 0;
         HoTroGiaoDien.Observe(this, NapDanhSach);
         // Thiết bị có thể được sửa trực tiếp ở phân hệ khác: đọc lại SQL mỗi lần vào trang.
@@ -46,17 +46,21 @@ public partial class BaoTri : UserControl
                 .ThenByDescending(row => long.TryParse(string.Concat(UiRecord.Text(row, "MaBT").Where(char.IsDigit)), out var so) ? so : 0)
                 .Select(row => new DongBaoTri(row)).ToList();
             foreach (var nhom in danhSach.Where(row => row.Status != "Hủy").GroupBy(row => row.MaTB))
-                nhom.First().DenHan = nhom.First().NgayTiepTheo?.Date <= DateTime.Today;
+                nhom.First().DenHan = nhom.First().NgayTiepTheo?.Date <= DateTime.Today
+                    && DuLieuGiaoDien.Find("THIET_BI", nhom.Key) is object asset
+                    && UiRecord.Date(asset, "NgayThanhLy") is null
+                    && UiRecord.Text(asset, "TinhTrang") != "Ngưng sử dụng";
             var dangBaoTri = danhSach.Where(row => row.Status is "Chưa xác nhận" or "Đã xác nhận" or "Đang thực hiện").Select(row => row.MaTB).ToHashSet();
             thietBiHu = DuLieuGiaoDien.Rows("THIET_BI")
-                .Where(row => UiRecord.Text(row, "TinhTrang") == "Hư hại" && !dangBaoTri.Contains(UiRecord.Text(row, "MaTB")))
+                .Where(row => UiRecord.Text(row, "TinhTrang") == "Hư hại" && UiRecord.Date(row, "NgayThanhLy") is null
+                    && UiRecord.Text(row, "TrangThai") is not ("Ngưng sử dụng" or "Ngừng sử dụng") && !dangBaoTri.Contains(UiRecord.Text(row, "MaTB")))
                 .Select(row => new DongThietBiBaoTri(row)).OrderBy(row => row.TenThietBi).ThenBy(row => row.SoSerial).ToList();
             txtTongSo.Text = danhSach.Count.ToString();
             txtChuaXacNhan.Text = danhSach.Count(row => row.Status == "Chưa xác nhận").ToString();
             txtDangThucHien.Text = danhSach.Count(row => row.Status == "Đang thực hiện").ToString();
             txtHoanThanh.Text = danhSach.Count(row => row.Status == "Đã hoàn thành").ToString();
             sanSang = true;
-            LocThietBi(); LocDanhSach();
+            NapThanhLy(); LocThietBi(); LocDanhSach();
         }
         catch (InvalidOperationException ex) { txtLoi.Text = ex.Message + " Chọn Tải lại để thử lại."; }
     }
@@ -104,7 +108,7 @@ public partial class BaoTri : UserControl
         GridThietBiHu.ItemsSource = rows;
         GridThietBiHu.SelectedItem = rows.FirstOrDefault(row => row.MaTB == maDaChon);
         KhongCoThietBi.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        txtSoThietBi.Text = $"{rows.Count} / {thietBiHu.Count} thiết bị hư hại đang chờ lập phiếu";
+        txtSoThietBi.Text = $"{rows.Count} / {thietBiHu.Count} thiết bị hư hại chờ bảo trì hoặc thanh lý";
         txtHangDoi.Text = $"Thiết bị hư hại ({thietBiHu.Count})";
     }
 
@@ -169,7 +173,7 @@ public partial class BaoTri : UserControl
     /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
     /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void ThietBi_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        => btnLapPhieu.IsEnabled = GridThietBiHu.SelectedItem is DongThietBiBaoTri;
+        => btnThanhLy.IsEnabled = btnLapPhieu.IsEnabled = GridThietBiHu.SelectedItem is DongThietBiBaoTri;
     /// <summary>
     /// Xử lý thao tác thêm khi người dùng bấm nút tương ứng trên màn hình.
     /// </summary>
@@ -225,9 +229,9 @@ public partial class BaoTri : UserControl
         var workspace = HoTroGiaoDien.Workspace(this);
         if (workspace is null || !workspace.CanOpen("BaoTri")) return;
         if (sender is not Button { Tag: string target } || Grid_BAO_TRI_THIET_BI.SelectedItem is not DongBaoTri dong) return;
-        var hopLe = (dong.Status, target) is ("Chưa xác nhận", "Đã xác nhận") or ("Chưa xác nhận", "Hủy") or ("Đã xác nhận", "Đang thực hiện") or ("Đang thực hiện", "Đã hoàn thành");
+        var hopLe = (dong.Status, target) is ("Chưa xác nhận", "Đang thực hiện") or ("Chưa xác nhận", "Hủy") or ("Đang thực hiện", "Đã hoàn thành");
         if (!hopLe) return;
-        var action = target switch { "Đã xác nhận" => "Xác nhận phiếu và khóa nội dung", "Hủy" => "Hủy phiếu", "Đang thực hiện" => "Bắt đầu bảo trì", _ => "Hoàn thành bảo trì" };
+        var action = target switch { "Hủy" => "Hủy phiếu", "Đang thực hiện" => "Xác nhận phiếu và bắt đầu bảo trì", _ => "Hoàn thành bảo trì" };
         if (MessageBox.Show($"{action} {dong.MaBT}?\n{dong.TenThietBi} · Serial: {dong.SoSerial}", "Bảo trì thiết bị", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         try { DuLieuGiaoDien.ChuyenTrangThaiBaoTri(dong.Record, target); }
         catch (InvalidOperationException ex) { txtLoi.Text = ex.Message; }

@@ -48,6 +48,22 @@ static class Program
                 Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.columns c JOIN sys.types t ON t.user_type_id=c.user_type_id WHERE c.object_id=OBJECT_ID('dbo.BAO_TRI_THIET_BI') AND c.name=@name AND c.is_nullable=1 AND t.name='datetime2'",new{name})==1,"Missing nullable SQL timestamp "+name);
             }
         });
+        Case("Confirmation immediately starts maintenance",f=> {
+            var b=f.Add(Confirmed);
+            Assert(f.Read(b.MaBT).TrangThai==Running,"Confirmation must immediately become Đang thực hiện");
+            f.Asset("Đang bảo trì","Hư hại");
+            f.Recent(Time(f.Read(b.MaBT),"NgayXacNhan"));f.Recent(Time(f.Read(b.MaBT),"NgayThucHien"));
+        });
+        Case("Disposal keeps a permanent record and stops the selected serial",f=> {
+            var bus=new BUS_THIETBI(f.Tx);
+            var old=new BUS_THIETBI(f.Tx).layThietBiTheoMa(f.A)!;
+            bool ok=bus.thanhLyThietBi(f.A,f.Staff,"Hỏng không thể sửa",125000m,old);
+            Assert(ok,"Disposal returned false");
+            var row=f.Db.QuerySingle("SELECT * FROM dbo.THIET_BI WHERE MaTB=@id",new{id=f.A},f.Tx);
+            Assert((string)row.TinhTrang=="Ngưng sử dụng" && (string)row.TrangThai=="Ngưng sử dụng" && row.MaPhong==null,"Disposal did not release the room and stop the asset");
+            Assert(row.NgayThanhLy!=null && (string)row.MaNVThanhLy==f.Staff && (string)row.LyDoThanhLy=="Hỏng không thể sửa" && (decimal)row.GiaTriThanhLy==125000m,"Disposal record was not preserved");
+            Assert(new BUS_THIETBI(f.Tx).layThietBiTheoMa(f.B)!.TinhTrang=="Hư hại","Disposal changed another serial");
+        });
         Case("BUS draft is editable without changing physical or management state",f=> {
             var b=f.Add();var before=f.Read(b.MaBT);b.NoiDung="Nội dung nháp mới";b.ChiPhi=125m;
             Assert(f.Bus.suaBaoTriThietBi(b,before),"Draft edit returned false");
@@ -58,7 +74,7 @@ static class Program
             var b=f.Add();f.Move(b.MaBT,Confirmed);var confirmed=f.Read(b.MaBT);
             Assert(Time(confirmed,"NgayXacNhan")!=null,"Confirmation has no SQL timestamp");
             f.Recent(Time(confirmed,"NgayXacNhan"));
-            f.Asset("Hư hại","Hư hại");f.Move(b.MaBT,Running);var running=f.Read(b.MaBT);
+            f.Asset("Đang bảo trì","Hư hại");var running=f.Read(b.MaBT);
             Assert(Time(running,"NgayThucHien")!=null && Time(running,"NgayThucHien")>=Time(confirmed,"NgayXacNhan"),"Missing or reversed start timestamp");
             f.Recent(Time(running,"NgayThucHien"));
             f.Asset("Đang bảo trì","Hư hại");f.Move(b.MaBT,Finished);var done=f.Read(b.MaBT);
@@ -67,29 +83,29 @@ static class Program
             Assert(Time(done,"NgayXacNhan")==Time(confirmed,"NgayXacNhan") && Time(done,"NgayThucHien")==Time(running,"NgayThucHien"),"Lifecycle changed original timestamps");
             f.Asset("Đang hoạt động","Hư hại");
         });
-        Case("BUS direct confirmed insert stamps confirmation without starting maintenance",f=> {
-            var b=f.Add(Confirmed);Assert(Time(f.Read(b.MaBT),"NgayXacNhan")!=null,"No confirmation timestamp");f.Asset("Hư hại","Hư hại");
+        Case("BUS direct running insert stamps both timestamps",f=> {
+            var b=f.Add(Running);Assert(Time(b,"NgayXacNhan")==Time(b,"NgayThucHien") && Time(b,"NgayThucHien")!=null,"Confirmation and start must have the same SQL time");f.Asset("Đang bảo trì","Hư hại");
         });
         Case("BUS cancellation only preserves draft history and damaged serial",f=> {
             var b=f.Add();f.Move(b.MaBT,"Hủy");Assert(f.Read(b.MaBT).TrangThai=="Hủy","Draft cancellation not stored");f.Asset("Hư hại","Hư hại");
         });
-        foreach(string state in new[]{Confirmed,Running,Finished,"Hủy"})
+        foreach(string state in new[]{Running,Finished,"Hủy"})
         {
             string captured=state;
             Case("BUS freezes content in "+state,f=> {var b=f.At(captured);var old=f.Read(b.MaBT);b.NoiDung="forbidden";Reject(()=>f.Bus.suaBaoTriThietBi(b,old));});
             Case("SQL freezes content in "+state,f=> {var b=f.At(captured);RejectSql(()=>f.Exec("UPDATE dbo.BAO_TRI_THIET_BI SET ChiPhi=ChiPhi+1 WHERE MaBT=@id",new{id=b.MaBT}));});
         }
-        foreach(string state in new[]{Confirmed,Running,Finished})
+        foreach(string state in new[]{Running,Finished})
         {
             string captured=state;
             Case("BUS cannot cancel "+state,f=> {var b=f.At(captured);Reject(()=>f.Move(b.MaBT,"Hủy"));});
         }
-        foreach(string state in new[]{Draft,Confirmed,Running,Finished,"Hủy"})
+        foreach(string state in new[]{Draft,Running,Finished,"Hủy"})
         {
             string captured=state;
             Case("BUS cannot delete history in "+state,f=> {var b=f.At(captured);var old=f.Read(b.MaBT);Reject(()=>f.Bus.xoaBaoTriThietBi(b.MaBT,old));});
         }
-        foreach(var pair in new[]{(Draft,Running),(Draft,Finished),(Confirmed,Finished),(Running,Confirmed),(Finished,Running),("Hủy",Confirmed),(Confirmed,Confirmed),(Running,Running),(Finished,Finished)})
+        foreach(var pair in new[]{(Draft,Finished),(Running,Confirmed),(Finished,Running),("Hủy",Confirmed),(Running,Running),(Finished,Finished)})
         {
             var p=pair;Case($"BUS rejects transition {p.Item1} -> {p.Item2}",f=> {var b=f.At(p.Item1);Reject(()=>f.Move(b.MaBT,p.Item2));});
         }
@@ -103,34 +119,89 @@ static class Program
         });
         Case("BUS cannot reassign maintenance to another serial",f=> {var b=f.Add();var old=f.Read(b.MaBT);b.MaTB=f.B;Reject(()=>f.Bus.suaBaoTriThietBi(b,old));});
         Case("BUS one open record per serial",f=> {f.Add();Reject(()=>f.Add());});
-        foreach(string state in new[]{Running,Finished})
+        foreach(string state in new[]{Finished})
         {
             string captured=state;Case("BUS cannot insert "+state,f=>Reject(()=>f.Add(captured)));
         }
         Case("BUS confirms only damaged physical asset",f=> {f.Exec("UPDATE dbo.THIET_BI SET TinhTrang=N'Đang hoạt động' WHERE MaTB=@id",new{id=f.A});Reject(()=>f.Add(Confirmed));});
         Case("BUS cannot confirm retired physical asset",f=> {f.Exec("UPDATE dbo.THIET_BI SET TinhTrang=N'Ngưng sử dụng' WHERE MaTB=@id",new{id=f.A});Reject(()=>f.Add(Confirmed));});
         Case("SQL direct lifecycle also synchronizes exact serial",f=> {
-            var b=f.RawAdd();f.RawMove(b,Confirmed);Assert(f.Read(b).TrangThai==Confirmed && Time(f.Read(b),"NgayXacNhan")!=null,"SQL confirmation did not stamp");
-            f.RawMove(b,Running);f.Asset("Đang bảo trì","Hư hại");Assert(Time(f.Read(b),"NgayThucHien")!=null,"SQL start did not stamp");
+            var b=f.RawAdd();f.RawMove(b,Confirmed);Assert(f.Read(b).TrangThai==Running && Time(f.Read(b),"NgayXacNhan")!=null,"SQL confirmation did not stamp/start");
+            f.Asset("Đang bảo trì","Hư hại");Assert(Time(f.Read(b),"NgayThucHien")!=null,"SQL start did not stamp");
             f.RawMove(b,Finished);f.Asset("Đang hoạt động","Hư hại");Assert(f.Read(b).NgayKetThuc!=null,"SQL completion did not stamp");
         });
         Case("SQL duplicate open maintenance blocked",f=> {f.RawAdd();RejectSql(()=>f.RawAdd());});
         Case("SQL direct confirmed insert stamps lifecycle",f=> {var id=f.RawAdd(Confirmed);Assert(Time(f.Read(id),"NgayXacNhan")!=null,"SQL confirmed insert not stamped");});
-        Case("SQL cannot insert already running",f=>RejectSql(()=>f.RawAdd(Running)));
+        Case("SQL running insert confirms and starts immediately",f=>{var id=f.RawAdd(Running);f.Asset("Đang bảo trì","Hư hại");Assert(Time(f.Read(id),"NgayXacNhan")==Time(f.Read(id),"NgayThucHien"),"SQL running insert missing confirmation");});
         Case("SQL cannot insert already finished",f=>RejectSql(()=>f.RawAdd(Finished)));
-        Case("SQL cannot skip confirmation",f=> {var id=f.RawAdd();RejectSql(()=>f.RawMove(id,Running));});
-        Case("SQL cannot skip execution",f=> {var id=f.RawAdd(Confirmed);RejectSql(()=>f.RawMove(id,Finished));});
+        Case("SQL confirmation and execution are one transition",f=> {var id=f.RawAdd();f.RawMove(id,Running);f.Asset("Đang bảo trì","Hư hại");Assert(Time(f.Read(id),"NgayXacNhan")!=null,"Confirmation missing");});
+        Case("SQL cannot finish a draft without execution",f=> {var id=f.RawAdd();RejectSql(()=>f.RawMove(id,Finished));});
         Case("SQL cannot cancel confirmed",f=> {var id=f.RawAdd(Confirmed);RejectSql(()=>f.RawMove(id,"Hủy"));});
         Case("SQL cannot delete even draft history",f=> {var id=f.RawAdd();RejectSql(()=>f.Exec("DELETE dbo.BAO_TRI_THIET_BI WHERE MaBT=@id",new{id}));});
         Case("SQL cannot change linked serial identity",f=> {f.RawAdd();RejectSql(()=>f.Exec("UPDATE dbo.THIET_BI SET SoSerial=SoSerial+N'changed' WHERE MaTB=@id",new{id=f.A}));});
         Case("SQL cannot reassign maintenance serial",f=> {var id=f.RawAdd();RejectSql(()=>f.Exec("UPDATE dbo.BAO_TRI_THIET_BI SET MaTB=@asset WHERE MaBT=@id",new{id,asset=f.B}));});
         Case("SQL cannot manually mark asset under maintenance with no running record",f=>RejectSql(()=>f.Exec("UPDATE dbo.THIET_BI SET TinhTrang=N'Đang bảo trì' WHERE MaTB=@id",new{id=f.A})));
-        Case("SQL cannot manually change asset while running",f=> {var id=f.RawAdd(Confirmed);f.RawMove(id,Running);RejectSql(()=>f.Exec("UPDATE dbo.THIET_BI SET TinhTrang=N'Đang hoạt động' WHERE MaTB=@id",new{id=f.A}));});
+        Case("SQL cannot manually change asset while running",f=> {f.RawAdd(Confirmed);RejectSql(()=>f.Exec("UPDATE dbo.THIET_BI SET TinhTrang=N'Đang hoạt động' WHERE MaTB=@id",new{id=f.A}));});
         Case("SQL cannot tamper confirmation timestamp",f=> {var id=f.RawAdd(Confirmed);RejectSql(()=>f.Exec("UPDATE dbo.BAO_TRI_THIET_BI SET NgayXacNhan='20000101' WHERE MaBT=@id",new{id}));});
-        Case("SQL cannot tamper execution timestamp",f=> {var id=f.RawAdd(Confirmed);f.RawMove(id,Running);RejectSql(()=>f.Exec("UPDATE dbo.BAO_TRI_THIET_BI SET NgayThucHien='20000101' WHERE MaBT=@id",new{id}));});
+        Case("SQL cannot tamper execution timestamp",f=> {var id=f.RawAdd(Confirmed);RejectSql(()=>f.Exec("UPDATE dbo.BAO_TRI_THIET_BI SET NgayThucHien='20000101' WHERE MaBT=@id",new{id}));});
         Case("SQL rejects mixed valid and invalid lifecycle update atomically",f=> {
             var first=f.RawAdd(Confirmed);var second=f.RawAdd(Draft,f.B);
-            RejectSql(()=>f.Exec("UPDATE dbo.BAO_TRI_THIET_BI SET TrangThai=N'Đang thực hiện' WHERE MaBT IN(@first,@second)",new{first,second}));
+            RejectSql(()=>f.Exec("UPDATE dbo.BAO_TRI_THIET_BI SET TrangThai=N'Đã hoàn thành' WHERE MaBT IN(@first,@second)",new{first,second}));
+        });
+        foreach (var state in new[] { Draft, Running })
+        {
+            var captured = state;
+            Case("Disposal rejects an open maintenance record: " + state, f => { f.At(captured); Reject(() => f.DisposeAsset()); });
+        }
+        Case("Disposal rejects an active asset", f => { f.Exec("UPDATE dbo.THIET_BI SET TinhTrang=N'Đang hoạt động' WHERE MaTB=@id",new{id=f.A}); Reject(() => f.DisposeAsset()); });
+        Case("Disposal rejects a stopped asset", f => { f.Exec("UPDATE dbo.THIET_BI SET TinhTrang=N'Ngưng sử dụng' WHERE MaTB=@id",new{id=f.A}); Reject(() => f.DisposeAsset()); });
+        Case("Disposal rejects duplicate submission", f => { f.DisposeAsset(); Reject(() => f.DisposeAsset()); });
+        Case("Disposal rejects a stale asset snapshot", f => {
+            var bus=new BUS_THIETBI(f.Tx); var old=bus.layThietBiTheoMa(f.A)!;
+            f.Exec("UPDATE dbo.THIET_BI SET GhiChu=N'Người khác vừa sửa' WHERE MaTB=@id",new{id=f.A});
+            Reject(() => bus.thanhLyThietBi(f.A,f.Staff,"Hỏng",0m,old));
+            Assert(bus.layThietBiTheoMa(f.A)!.TinhTrang=="Hư hại","Stale write changed the asset");
+        });
+        foreach(var value in new[]{-1m,1.001m,10000000000000000m})
+        {
+            var captured=value; Case("Disposal rejects invalid recovery amount " + value, f => Reject(() => f.DisposeAsset(giaTri:captured)));
+        }
+        foreach(var reason in new[]{" ",new string('a',1001)})
+        {
+            var captured=reason; Case("Disposal rejects blank or oversized reason length " + reason.Length, f => Reject(() => f.DisposeAsset(lyDo:captured)));
+        }
+        Case("Disposal rejects an unknown staff member", f => Reject(() => f.DisposeAsset(maNV:"UNKNOWN")));
+        Case("Disposal supports full-length directory names", f => {
+            var longName=new string('A',230);
+            f.Exec("UPDATE dbo.HANG_HOA SET TenHH=@longName WHERE MaHH=(SELECT MaHH FROM dbo.THIET_BI WHERE MaTB=@id); UPDATE dbo.NHAN_VIEN SET HoTen=@longName WHERE MaNV=@staff",new{longName,id=f.A,staff=f.Staff});
+            f.DisposeAsset();var row=new BUS_THIETBI(f.Tx).layThietBiTheoMa(f.A)!;
+            Assert(row.TenThietBiThanhLy==longName && row.TenNhanVienThanhLy==longName,"Full directory names not retained");
+        });
+        Case("Disposal releases assigned room and snapshots original names", f => {
+            var room=f.Db.QueryFirst<string>("SELECT TOP(1) MaPhong FROM dbo.PHONG WHERE TrangThai=N'Đang hoạt động'",transaction:f.Tx);
+            f.Exec("UPDATE dbo.THIET_BI SET MaPhong=@room WHERE MaTB=@id",new{room,id=f.A});
+            var roomName=f.Db.QuerySingle<string>("SELECT TenPhong FROM dbo.PHONG WHERE MaPhong=@room",new{room},f.Tx);
+            f.DisposeAsset(); var row=new BUS_THIETBI(f.Tx).layThietBiTheoMa(f.A)!;
+            Assert(row.MaPhong is null && row.TenPhongThanhLy==roomName,"Original room missing from disposal history");f.Recent(row.NgayThanhLy);
+            var goodsName=row.TenThietBiThanhLy;var staffName=row.TenNhanVienThanhLy;
+            f.Exec("UPDATE dbo.HANG_HOA SET TenHH=N'Tên hàng mới' WHERE MaHH=@id",new{id=row.MaHH});
+            f.Exec("UPDATE dbo.NHAN_VIEN SET HoTen=N'Tên nhân viên mới' WHERE MaNV=@id",new{id=f.Staff});
+            f.Exec("UPDATE dbo.PHONG SET TenPhong=N'Tên phòng mới' WHERE MaPhong=@room",new{room});
+            row=new BUS_THIETBI(f.Tx).layThietBiTheoMa(f.A)!;
+            Assert(row.TenThietBiThanhLy==goodsName && row.TenNhanVienThanhLy==staffName && row.TenPhongThanhLy==roomName,"Directory edits changed disposal history");
+        });
+        foreach(var edit in new[]{"SoSerial=SoSerial+N'X'","NgayThanhLy=DATEADD(day,-1,NgayThanhLy)","LyDoThanhLy=N'Sửa lịch sử'","GiaTriThanhLy=1","TinhTrang=N'Đang hoạt động'","MaPhong=NULL"})
+        {
+            var captured=edit;Case("SQL freezes disposed record: " + edit, f=>{f.DisposeAsset();RejectSql(()=>f.Exec("UPDATE dbo.THIET_BI SET "+captured+" WHERE MaTB=@id",new{id=f.A}));});
+        }
+        Case("SQL cannot delete disposal history", f => { f.DisposeAsset();RejectSql(()=>f.Exec("DELETE dbo.THIET_BI WHERE MaTB=@id",new{id=f.A})); });
+        Case("Disposed serial cannot be maintained", f=> { f.DisposeAsset();Reject(()=>f.Add()); });
+        Case("Disposed serial cannot be assigned to a room", f=> { f.DisposeAsset();var bus=new BUS_THIETBI(f.Tx);Reject(()=>bus.phanThietBiVaoPhong(f.A,"P001",bus.layThietBiTheoMa(f.A)!)); });
+        Case("Cancelled draft remains in history after disposal", f=> {var b=f.Add();f.Move(b.MaBT,"Hủy");f.DisposeAsset();Assert(f.Read(b.MaBT).TrangThai=="Hủy","Disposal removed cancelled maintenance history");});
+        Case("Completed repairs remain in history after disposal", f=> {var b=f.At(Finished);var bus=new BUS_THIETBI(f.Tx);bus.capNhatTinhTrangThietBi(f.A,"Hư hại",bus.layThietBiTheoMa(f.A)!);f.DisposeAsset();Assert(f.Read(b.MaBT).TrangThai==Finished,"Disposal removed completed maintenance history");});
+        Case("Future maintenance can be drafted but cannot be confirmed early", f=> {
+            var b=f.Add();var old=f.Read(b.MaBT);b.NgayBatDau=DateTime.Today.AddDays(2);f.Bus.suaBaoTriThietBi(b,old);
+            Reject(()=>f.Move(b.MaBT,Running));
         });
         Check("Concurrent duplicate open inserts serialize until rollback",DuplicateRace);
         Check("Bulk warehouse DAL generates globally unique serials and rolls back",BulkImport);
@@ -252,6 +323,12 @@ static class Program
         /// <param name="sql">Giá trị SQL dùng khi thực hiện thao tác; kiểu string.</param>
         /// <param name="args">Giá trị đối số dùng khi thực hiện thao tác; kiểu object?.</param>
         public void Exec(string sql,object? args=null)=>Db.Execute(sql,args,Tx);
+
+        public void DisposeAsset(string lyDo="Thiết bị hỏng không thể sửa",decimal giaTri=0m,string? maNV=null)
+        {
+            var bus=new BUS_THIETBI(Tx);
+            Assert(bus.thanhLyThietBi(A,maNV??Staff,lyDo,giaTri,bus.layThietBiTheoMa(A)!),"Disposal returned false");
+        }
         /// <summary>
         /// Bước kiểm chứng đọc; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
         /// </summary>
@@ -291,7 +368,7 @@ static class Program
         /// <returns>Kết quả kiểu ET_BAOTRITHIETBI dùng cho bước xử lý tiếp theo.</returns>
         public ET_BAOTRITHIETBI At(string state)
         {
-            var b=Add();if(state=="Hủy")Move(b.MaBT,"Hủy");else if(state!=Draft){Move(b.MaBT,Confirmed);if(state!=Confirmed){Move(b.MaBT,Running);if(state==Finished)Move(b.MaBT,Finished);}}
+            var b=Add();if(state=="Hủy")Move(b.MaBT,"Hủy");else if(state!=Draft){Move(b.MaBT,Running);if(state==Finished)Move(b.MaBT,Finished);}
             return Read(b.MaBT);
         }
         /// <summary>

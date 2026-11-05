@@ -1,0 +1,94 @@
+using System.IO;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using BUS;
+using DAL;
+using Dapper;
+using RangHamMat;
+using RangHamMat.Controls;
+using RangHamMat.Views;
+
+// Bộ kiểm form thật có commit, chỉ chạy trên database thử riêng. Giữ hồ sơ thanh lý để kiểm tra chạy lại SQL.
+static class Program
+{
+    static int count;
+    [STAThread] static int Main(string[] args)
+    {
+        if(args.Length!=2 || !System.Text.RegularExpressions.Regex.IsMatch(args[1],"^RHM_Hospital_Test_[A-Za-z0-9_]+$"))return 2;
+        Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",$"Data Source={args[0]};Initial Catalog={args[1]};Integrated Security=True;TrustServerCertificate=True");
+        var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml",UriKind.Relative)});
+        MainWindow? home=null;Window? window=null;
+        try
+        {
+            PhienDangNhap.KhoiTaoPhienUngDung();var login=new DangNhap();
+            login.Left=-20000;login.Top=-20000;login.ShowInTaskbar=false;
+            login.Dispatcher.BeginInvoke(new Action(()=>{Get<TextBox>(login,"UsernameBox").Text="admin001";Get<PasswordBox>(login,"PasswordBox").Password="123456";Invoke(login,"DangNhap_Click",login,new RoutedEventArgs());if(login.DialogResult!=true)login.Close();}));
+            Check(login.ShowDialog()==true && PhienDangNhap.IsAdmin,"Đăng nhập Admin trên database thử");
+            home=new MainWindow();
+            var repair="UITL_R"+Guid.NewGuid().ToString("N");var disposal="UITL_D"+Guid.NewGuid().ToString("N");var rollback="UITL_B"+Guid.NewGuid().ToString("N");
+            using(var db=new dbconnect().MoKetNoi())
+            {
+                var goods=db.QueryFirst<string>("SELECT TOP(1) MaHH FROM dbo.THIET_BI ORDER BY MaTB");
+                db.Execute("INSERT dbo.THIET_BI(MaTB,MaHH,SoSerial,TinhTrang,TrangThai) VALUES(@repair,@goods,@repair,N'Hư hại',N'Chờ bàn giao'),(@disposal,@goods,@disposal,N'Hư hại',N'Chờ bàn giao'),(@rollback,@goods,@rollback,N'Hư hại',N'Chờ bàn giao')",new{repair,disposal,rollback,goods});
+            }
+            DuLieuGiaoDien.RefreshFromDatabase();
+            var page=new BaoTri();var workspace=new AppWorkspace(home,"Bảo trì","Admin",page);
+            window=new Window{Content=workspace,Width=1280,Height=900,ShowInTaskbar=false,Left=-20000,Top=-20000};window.Show();Pump();
+            var queue=Get<DataGrid>(page,"GridThietBiHu");queue.SelectedItem=queue.Items.OfType<DongThietBiBaoTri>().Single(r=>r.MaTB==repair);
+            Click(Get<Button>(page,"btnLapPhieu"));Pump();
+            var form=(CuaSoBaoTri)Get<ContentControl>(workspace,"ModalContent").Content;
+            Get<ComboBox>(form,"cboNhanVien").SelectedValue=PhienDangNhap.MaNV;Get<TextBox>(form,"txtNoiDung").Text="Kiểm tra xác nhận bắt đầu ngay";
+            Click(Get<Button>(form,"btnXacNhan"));Pump();
+            var receipt=DuLieuGiaoDien.Rows("BAO_TRI_THIET_BI").Single(r=>UiRecord.Text(r,"MaTB")==repair);
+            Check(UiRecord.Text(receipt,"TrangThai")=="Đang thực hiện","Lưu và xác nhận chuyển phiếu sang Đang thực hiện");
+            Check(UiRecord.Text(DuLieuGiaoDien.Find("THIET_BI",repair)!,"TinhTrang")=="Đang bảo trì","Lưu và xác nhận đồng bộ cache tình trạng thiết bị");
+            Check(Get<TabControl>(page,"CacDanhSach").SelectedIndex==1,"Sau lưu bảo trì mở đúng tab lịch sử");
+            Get<TabControl>(page,"CacDanhSach").SelectedIndex=0;queue.SelectedItem=queue.Items.OfType<DongThietBiBaoTri>().Single(r=>r.MaTB==disposal);
+            Click(Get<Button>(page,"btnThanhLy"));Pump();
+            var liquidation=(CuaSoThanhLy)Get<ContentControl>(workspace,"ModalContent").Content;
+            Check(!liquidation.Commit(out var error) && error.Contains("lý do"),"Thanh lý thiếu lý do giữ form để nhập lại");
+            Get<ComboBox>(liquidation,"cboNhanVien").SelectedValue=PhienDangNhap.MaNV;
+            Get<TextBox>(liquidation,"txtLyDo").Text="Thiết bị hỏng, chi phí sửa vượt giá trị sử dụng";
+            Get<TextBox>(liquidation,"txtGiaTri").Text="125000,50";Capture(liquidation,"form-thanh-ly.png");
+            var save=Nodes(liquidation).OfType<Button>().Single(b=>b.Content?.ToString()=="Xác nhận thanh lý");Click(save);Pump();
+            var asset=DuLieuGiaoDien.Find("THIET_BI",disposal)!;
+            Check(UiRecord.Date(asset,"NgayThanhLy") is not null && UiRecord.Text(asset,"TinhTrang")=="Ngưng sử dụng","Thanh lý thật lưu ngày và đồng bộ cache");
+            Check(Get<TabControl>(page,"CacDanhSach").SelectedIndex==2,"Sau thanh lý tự mở tab Thanh lý");
+            var grid=Get<DataGrid>(page,"GridThanhLy");
+            Check(grid.SelectedItem is DongThanhLy row && row.MaTB==disposal && row.GiaTri==125000.50m,"Tab Thanh lý chọn hồ sơ vừa lưu và đúng giá trị nhập theo định dạng Việt Nam");
+            Check(!queue.Items.OfType<DongThietBiBaoTri>().Any(r=>r.MaTB==disposal),"Thiết bị thanh lý rời danh sách chờ sửa");
+            Get<TextBox>(page,"txtTimThanhLy").Text=disposal;
+            Check(grid.Items.Count==1,"Tìm hồ sơ thanh lý theo serial");
+            Get<TextBox>(page,"txtTimThanhLy").Text="NO_RESULT_"+Guid.NewGuid();
+            Check(grid.Items.Count==0 && Get<TextBlock>(page,"KhongCoThanhLy").Visibility==Visibility.Visible,"Hiển thị danh sách thanh lý rỗng khi lọc");
+            Get<TextBox>(page,"txtTimThanhLy").Clear();grid.SelectedItem=grid.Items.OfType<DongThanhLy>().Single(r=>r.MaTB==disposal);Pump();Capture(page,"tab-thanh-ly.png");
+            var original=UiRecord.ChuyenDoi<ET.ET_THIETBI>(DuLieuGiaoDien.Values(DuLieuGiaoDien.Find("THIET_BI",rollback)!));
+            Check(!DuLieuGiaoDien.Transaction(()=>{DuLieuGiaoDien.ThanhLyThietBi(original,PhienDangNhap.MaNV,"Kiểm tra rollback",0);return false;}),"Giao dịch thanh lý có thể rollback");
+            var restored=DuLieuGiaoDien.Find("THIET_BI",rollback)!;
+            Check(UiRecord.Date(restored,"NgayThanhLy") is null && UiRecord.Text(restored,"TinhTrang")=="Hư hại","Rollback khôi phục cache thiết bị");
+            Check(new BUS_THIETBI().layThietBiTheoMa(rollback)!.NgayThanhLy is null,"Rollback giữ SQL và cache đồng bộ");
+            var equipment=new ThietBi();equipment.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
+            var equipmentGrid=Get<DataGrid>(equipment,"dgvThietBi");
+            Check(equipmentGrid.Items.OfType<ThietBiDong>().Single(r=>r.DuLieu.MaTB==disposal).TinhTrang=="Ngưng sử dụng","Trang thiết bị đọc đúng kết quả thanh lý");
+            Console.WriteLine($"RESULT UI: {count} passed");return 0;
+        }
+        catch(Exception ex){Console.WriteLine("FAIL UI: "+ex);return 1;}
+        finally{window?.Close();home?.Close();app.Shutdown();}
+    }
+    static T Get<T>(FrameworkElement parent,string name) where T:class => parent.FindName(name) as T ?? throw new Exception("Missing control "+name);
+    static object? Invoke(object target,string name,params object[] args)=>target.GetType().GetMethod(name,BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(target,args);
+    static void Click(Button button)=>button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent,button));
+    static void Check(bool ok,string name){if(!ok)throw new Exception(name);count++;Console.WriteLine("PASS UI "+name);}
+    static void Pump(){var frame=new DispatcherFrame();Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,new Action(()=>frame.Continue=false));Dispatcher.PushFrame(frame);}
+    static IEnumerable<DependencyObject> Nodes(DependencyObject node){yield return node;for(int i=0;i<VisualTreeHelper.GetChildrenCount(node);i++)foreach(var child in Nodes(VisualTreeHelper.GetChild(node,i)))yield return child;}
+    static void Capture(FrameworkElement element,string name)
+    {
+        Pump();var bitmap=new RenderTargetBitmap(Math.Max(1,(int)element.ActualWidth),Math.Max(1,(int)element.ActualHeight),96,96,PixelFormats.Pbgra32);bitmap.Render(element);
+        var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));Directory.CreateDirectory("obj/ThanhLyUiChecks");using var file=File.Create("obj/ThanhLyUiChecks/"+name);encoder.Save(file);
+    }
+}

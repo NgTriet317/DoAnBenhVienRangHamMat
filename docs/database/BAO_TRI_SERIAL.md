@@ -1,55 +1,42 @@
-# Bảo trì theo serial thiết bị
+# Bảo trì và thanh lý theo serial thiết bị
 
-Mỗi dòng THIET_BI là một tài sản vật lý có SoSerial duy nhất. Nhập kho số lượng lớn tiếp tục tạo từng thiết bị với serial riêng. Mỗi phiếu BAO_TRI_THIET_BI liên kết qua MaTB tới đúng tài sản đó; serial được hiển thị trực tiếp ở hàng chờ, lịch sử và biểu mẫu.
+Mỗi dòng THIET_BI là một thiết bị vật lý có SoSerial duy nhất. Lịch sử bảo trì và hồ sơ thanh lý gắn với đúng MaTB/serial đó; nhập kho nhiều thiết bị vẫn tạo từng serial riêng.
 
 ## Sử dụng
 
-1. Trong Trang thiết bị, đánh dấu đúng serial **Hư hại**. Khi mở Lịch sử bảo trì, tab **Thiết bị hư hại** đọc lại SQL và hiển thị các serial chưa có phiếu mở.
-2. Chọn serial rồi **Lập phiếu bảo trì**. Thiết bị/serial được khóa trên phiếu; chọn nhân viên phụ trách, ngày dự kiến, nhập nội dung, chi phí và lịch tiếp theo nếu có.
-3. **Lưu chưa xác nhận** cho phép mở lại sửa, xác nhận hoặc hủy. **Lưu và xác nhận** lưu nội dung và xác nhận trong cùng giao dịch. Xác nhận khóa nội dung, chưa bắt đầu bảo trì thực tế.
-4. Chọn phiếu **Đã xác nhận**, bấm **Tiến hành bảo trì**: phiếu chuyển **Đang thực hiện**, đúng serial đó chuyển **Đang bảo trì** tại Trang thiết bị.
-5. Bấm **Hoàn thành** ở phiếu đang thực hiện: hệ thống ghi giờ kết thúc SQL, chuyển phiếu **Đã hoàn thành** và serial trở lại **Đang hoạt động**.
-6. Chỉ phiếu **Chưa xác nhận** được **Hủy**. Phiếu hủy giữ nguyên lịch sử và thiết bị vẫn hư hại; có thể lập phiếu mới sau đó. Phiếu đã xác nhận không sửa nội dung hoặc hủy. Phiếu hoàn thành/hủy chỉ được xem.
+1. Trong Trang thiết bị, đánh dấu đúng serial **Hư hại**. Mở Lịch sử bảo trì, tab **Thiết bị hư hại** hiển thị các serial chưa có phiếu bảo trì mở và chưa ngưng sử dụng.
+2. Chọn serial rồi chọn **Lập phiếu bảo trì** hoặc **Thanh lý thiết bị**.
+3. Với bảo trì: chọn nhân viên, ngày dự kiến, nội dung, chi phí và lịch tiếp theo nếu có. **Lưu chưa xác nhận** giữ phiếu để sửa, xác nhận hoặc hủy. **Lưu và xác nhận**, hoặc **Xác nhận** trên phiếu nháp, lập tức chuyển phiếu sang **Đang thực hiện**, thiết bị sang **Đang bảo trì**; không còn bước/nút bắt đầu riêng. Giờ xác nhận và giờ thực hiện được ghi cùng lúc theo SQL Server. Ngày dự kiến tương lai chỉ lưu nháp, chưa xác nhận sớm.
+4. **Hoàn thành** ghi giờ kết thúc, chuyển phiếu sang **Đã hoàn thành**, thiết bị về **Đang hoạt động**. Chỉ phiếu **Chưa xác nhận** được sửa/hủy. Không xóa lịch sử.
+5. Với thanh lý: chọn nhân viên đang làm việc, nhập lý do và giá trị thu hồi (không âm; tối đa hai chữ số thập phân). Ví dụ nhập `125000,50`, không dùng dấu phân cách hàng nghìn. Bấm **Xác nhận thanh lý** để lưu hồ sơ, ngưng sử dụng thiết bị và thu hồi khỏi phòng cùng giao dịch.
+6. Sau lưu thanh lý, hệ thống mở tab **Thanh lý** và chọn đúng hồ sơ vừa lưu. Có thể tìm theo serial, mã/tên thiết bị, nhân viên, phòng hoặc lý do, lọc ngày, xem thông tin đầy đủ và tổng giá trị thu hồi theo bộ lọc.
 
-Tìm theo serial, mã/tên thiết bị, phòng, mã phiếu hoặc nhân viên. Hai cột mã và serial được giữ cố định khi cuộn ngang. Chọn **Tải lại** để đọc thay đổi từ phiên làm việc khác; màn Trang thiết bị đọc lại dữ liệu khi được mở lại.
+Thiết bị có phiếu bảo trì mở không được thanh lý. Muốn đổi hướng xử lý của phiếu nháp, hãy hủy phiếu rồi thanh lý từ hàng chờ; phiếu đã thực hiện cần hoàn tất bảo trì trước. Nếu thiết bị tiếp tục hư hại sau sửa, đánh dấu Hư hại rồi thực hiện thanh lý.
 
-## Quy tắc dữ liệu
+## Đồng bộ và bảo toàn dữ liệu
 
-- Một serial chỉ có một phiếu đang mở (Chưa xác nhận/Đã xác nhận/Đang thực hiện). Bảo vệ bằng unique index ở SQL, không chỉ kiểm giao diện.
-- MaTB của phiếu không đổi sau khi lưu. Serial và nguồn hàng hóa của tài sản có lịch sử bảo trì không được sửa để tránh đổi danh tính lịch sử.
-- Không xóa vật lý phiếu bảo trì, kể cả nháp. Không cho bỏ qua bước xác nhận/thực hiện hoặc khôi phục phiếu đã kết thúc.
-- NgayBatDau là ngày dự kiến. NgayXacNhan, NgayThucHien và NgayKetThuc do hệ thống ghi theo giờ SQL; không nhập/sửa tay. Không bắt đầu trước ngày dự kiến.
-- Chi phí không âm; lịch tiếp theo khi lập/sửa phiếu phải sau ngày dự kiến bắt đầu. Lịch hẹn có thể trở thành quá hạn khi một lần bảo trì kéo dài; lịch sử vẫn được giữ.
-- TinhTrang là tình trạng vật lý; TrangThai quản lý tài sản/phân phòng được giữ nguyên. Không tự ngưng hoặc đổi tình trạng của thiết bị đang có phiếu mở. Khi đang bảo trì, Trang thiết bị hiển thị đúng **Đang bảo trì**.
-- Chuyển trạng thái, giờ hệ thống và tình trạng thiết bị cùng commit/rollback; kiểm tra bản gốc để chặn ghi đè dữ liệu từ phiên cũ.
+- Một serial chỉ có một phiếu bảo trì mở; SQL có unique index và trigger bảo vệ ngoài kiểm tra giao diện.
+- Hồ sơ thanh lý lưu một lần ngay trên THIET_BI: NgayThanhLy, MaNVThanhLy, LyDoThanhLy, GiaTriThanhLy, TenThietBiThanhLy, TenPhongThanhLy, TenNhanVienThanhLy. Ngày do SQL ghi, tên thiết bị/phòng/nhân viên được chụp tại thời điểm thanh lý, không đổi theo danh mục sau này. Khóa ngoại nhân viên được giữ.
+- Khi thanh lý, TinhTrang và TrangThai chuyển **Ngưng sử dụng**, MaPhong được xóa để thu hồi thiết bị khỏi phòng. Lịch sử bảo trì, serial, ngày mua, nhà cung cấp và nguồn nhập được giữ nguyên. Không xóa hoặc khôi phục thiết bị đã thanh lý; trigger giữ nguyên hồ sơ kể cả khi ghi trực tiếp từ phân hệ khác.
+- Thiết bị đã thanh lý không còn trong hàng chờ bảo trì, không được phân phòng/lập phiếu mới và không xuất hiện trong lọc đến hạn bảo trì. Trang thiết bị đọc trạng thái Ngưng sử dụng; số thiết bị theo phòng không còn bao gồm tài sản này.
+- Thiết bị ngưng sử dụng trước đây chưa có hồ sơ thanh lý không được tự coi là đã thanh lý: không suy đoán ngày, nhân viên hoặc giá trị.
+- Giá trị thu hồi được lưu để tra cứu tài sản; không tự tạo hóa đơn bệnh nhân, giao dịch thu tiền khám hoặc phiếu xuất kho thuốc/vật tư.
+- Lưu/xác nhận bảo trì và thanh lý cập nhật SQL lẫn cache trong một giao dịch. Chỉ báo thay đổi sau commit; rollback khôi phục cả hai. Đối chiếu bản đã xem để chặn ghi đè từ phiên khác. **Tải lại** đọc thay đổi của phiên làm việc khác.
 
-## File SQL và dữ liệu cũ
+## Cài đặt và nâng cấp
 
-Chỉ chạy toàn bộ `Database/QLBenhVienRangHamMat.sql`. Pha6 bổ sung cho **THIET_BI** và **BAO_TRI_THIET_BI**, không tạo bảng mới; tổng vẫn60 bảng. Phần SQL tồn tại trước tác vụ được giữ nguyên. Hai cột mới của bảo trì là NgayXacNhan/NgayThucHien nullable, kèm CHECK, unique index, trigger bảo vệ/đồng bộ và thủ tục kiểm tra. Các khóa ngoại thiết bị/nhân viên và unique serial hiện có tiếp tục được dùng.
+Chạy toàn bộ `Database/QLBenhVienRangHamMat.sql` trước khi dùng bản ứng dụng mới; không cần file nâng cấp riêng. Pha 6 bổ sung trường/ràng buộc/trigger thanh lý trên THIET_BI và thay đổi vòng đời BAO_TRI_THIET_BI, không thêm bảng nghiệp vụ mới.
 
-Khi nâng cấp lần đầu:
+Phiếu cũ **Đã xác nhận** chuyển sang **Đang thực hiện** khi đồng bộ: giữ giờ xác nhận, nội dung và chi phí cũ, ghi giờ bắt đầu lúc đồng bộ và cập nhật đúng thiết bị. Nếu có phiếu đã xác nhận nhưng ngày dự kiến còn ở tương lai, pha nâng cấp dừng và rollback để đối chiếu lịch trước khi áp dụng; không tự sửa ngày đã khóa. Các phiếu hoàn thành/hủy và ngày thực tế của lịch sử được giữ nguyên. Dữ liệu bảo trì cũ chưa từng ghi giờ xác nhận/thực hiện tiếp tục hiển thị **Không có dữ liệu thời điểm**.
 
-- Nháp → Chưa xác nhận; Hoàn thành → Đã hoàn thành. Phiếu cũ Đã xác nhận đã có ngày kết thúc được coi là lịch sử Đã hoàn thành.
-- Tốt/Bình thường/Hoạt động tốt → Đang hoạt động; Hỏng/Cần bảo trì → Hư hại; Ngừng sử dụng → Ngưng sử dụng. Phiếu đang thực hiện đồng bộ đúng tài sản thành Đang bảo trì.
-- Giữ serial, mã liên kết, nội dung, chi phí và ngày kết thúc thực tế của lịch sử. Không suy đoán giờ xác nhận/thực hiện chưa từng được lưu; giao diện hiển thị **Không có dữ liệu thời điểm**.
-- Ngày kết thúc của nháp/lần đang làm cũ được giữ trong ghi chú như ngày dự kiến cũ, rồi trường NgayKetThuc dành cho lúc hoàn thành thực tế.
-- Nếu thiếu serial thật, nhiều phiếu mở cho cùng thiết bị, tình trạng không xác định hoặc thiết bị đã ngưng còn phiếu mở, pha nâng cấp dừng để đối chiếu; không tự xóa/hủy phiếu hoặc tạo serial thay thế.
-
-Sao lưu database trước khi áp dụng. Các lần kiểm bảo trì dùng database riêng. Ngày30/10, database chính đã được phục hồi và đồng bộ, gồm10 lịch sử bảo trì cũ đã hoàn thành; xem [phục hồi dữ liệu](PHUC_HOI_VA_DU_LIEU_SQL.md).
-
-## Kiểm chứng
+## Kiểm chứng ngày 05/11/2026
 
 ```powershell
-# Cài database thử và kiểm các nghiệp vụ khám/thu tiền hiện có:
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraQuyTrinhBenhVien.ps1 -TaoDatabaseKiemThu -Database RHM_Hospital_Test_MaintSerial_20261029
-# Kiểm vòng đời và SQL/DAL/BUS bảo trì:
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraBaoTriSerial.ps1 -Database RHM_Hospital_Test_MaintSerial_20261029
-# Kiểm schema đầy đủ trên database cần bàn giao:
-.\KiemTra.bat -KiemTraSql -Database QLBenhVienRangHamMat
+# Sau khi cài file SQL chính vào database thử có tiền tố RHM_Hospital_Test_:
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraBaoTriSerial.ps1 -Database RHM_Hospital_Test_AssetDisposal_20261105
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraThanhLyGiaoDien.ps1 -Database RHM_Hospital_Test_AssetDisposal_20261105
 ```
 
-Bộ kiểm bảo trì từ chối database ngoài tiền tố RHM_Hospital_Test_. Các ca nghiệp vụ/bulk nhập rollback. Ca đồng thời dùng một thiết bị đủ điều kiện đang có; nếu database thử trống, bộ kiểm tự tạo fixture riêng để hai kết nối cùng thấy rồi dọn đúng các dòng do nó tạo. Kiểm chứng trên database trống kết thúc với0 thiết bị,0 phiếu,0 danh mục fixture còn lại. Không chạy fixture lên database sử dụng. Bộ kiểm form thật lưu một số phiếu vào database thử riêng để kiểm cả commit và cache, không tạo vào database sử dụng.
+Bộ kiểm SQL/BUS/DAL rollback dữ liệu fixture: **78 ca đạt**, gồm xác nhận bắt đầu ngay, khóa nội dung, đồng thời lập phiếu, thanh lý trùng, phiếu mở, dữ liệu cũ, tên danh mục dài, lịch sử bất biến và bảo toàn nguồn nhập. Bộ kiểm WPF thật **15 ca đạt**, gồm lưu xác nhận, đồng bộ cache, biểu mẫu thanh lý, tự chọn tab/hồ sơ, tìm kiếm và rollback. Bộ kiểm WPF tạo/commit thiết bị riêng trên database thử và giữ lịch sử để kiểm tra chạy lại SQL; không chạy lên database sử dụng.
 
-Kết quả:58/58 kiểm tra bảo trì trên bản cài mới và bản hiện tại;32/32 kiểm SQL V9;47/47 khám/thu tiền; đăng nhập/mở27 phân hệ; build Debug/Release đạt. Form WPF thật đã kiểm lưu nháp, sửa, lưu và xác nhận, các bước trạng thái, khóa form cuối và rollback cả cache lẫn SQL. Kiểm nâng cấp/rerun giữ nội dung, tiền, serial, ngày lịch sử; schema và fingerprint dữ liệu của58 bảng khác không đổi. Rà soát độc lập không còn lỗi Critical/Important; thông báo thời điểm lịch sử thiếu đã được sửa để không hiển thị sai là chưa xác nhận.
-
-Nhật ký trong phiên kiểm chứng nằm tại obj/MaintenanceSerial_20261029, obj/MaintenanceSerialChecks và obj/MaintenanceUi_20261029.
+Kiểm hồi quy liên quan: **32 ca SQL V9**, **47 ca khám/thu tiền**; build Debug/Release thành công. Nâng cấp từ SQL cũ giữ giờ xác nhận, nội dung, chi phí và fingerprint lịch sử hoàn thành; chạy lại SQL trên database đã có hồ sơ thanh lý thành công. Bằng chứng trong `obj/thanh-ly-*.log` và ảnh form/tab tại `obj/ThanhLyUiChecks/`.

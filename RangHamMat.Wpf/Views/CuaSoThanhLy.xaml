@@ -1,0 +1,22 @@
+<UserControl x:Class="RangHamMat.Views.CuaSoThanhLy"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Language="vi-VN">
+ <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/BaoTriStyles.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
+ <Grid Background="White">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <StackPanel Margin="0,0,0,16"><TextBlock Text="Thanh lý thiết bị" Style="{StaticResource HospitalHeading}"/><TextBlock Text="Lưu hồ sơ thanh lý và ngưng sử dụng thiết bị vĩnh viễn." Style="{StaticResource HospitalMuted}"/></StackPanel>
+  <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+   <StackPanel Margin="0,0,12,0">
+    <Border Background="#EAF2FF" CornerRadius="8" Padding="16" Margin="0,0,0,18"><StackPanel><TextBlock x:Name="txtThietBi" TextWrapping="Wrap" FontSize="17" FontWeight="SemiBold"/><TextBlock x:Name="txtPhong" Style="{StaticResource HospitalMuted}" Margin="0,8,0,0"/></StackPanel></Border>
+    <TextBlock Text="Nhân viên phụ trách *" Style="{StaticResource FieldLabel}"/>
+    <ComboBox x:Name="cboNhanVien" DisplayMemberPath="Label" SelectedValuePath="Value" Margin="0,0,0,16" AutomationProperties.Name="Nhân viên phụ trách thanh lý"/>
+    <TextBlock Text="Lý do thanh lý *" Style="{StaticResource FieldLabel}"/>
+    <TextBox x:Name="txtLyDo" MaxLength="1000" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="100" VerticalScrollBarVisibility="Auto" Margin="0,0,0,16" AutomationProperties.Name="Lý do thanh lý"/>
+    <TextBlock Text="Giá trị thu hồi (đồng) *" Style="{StaticResource FieldLabel}"/>
+    <TextBox x:Name="txtGiaTri" Text="0" Margin="0,0,0,16" AutomationProperties.Name="Giá trị thu hồi thanh lý"/>
+    <TextBlock Text="Ví dụ: 125000 hoặc 125000,50. Nhập số liền, không có dấu phân cách hàng nghìn." Style="{StaticResource HospitalMuted}" Margin="0,0,0,12"/>
+    <TextBlock Text="Ngày thanh lý được ghi tự động. Thiết bị sẽ được thu hồi khỏi phòng; hồ sơ đã thanh lý chỉ được xem lại." Style="{StaticResource HospitalMuted}"/>
+   </StackPanel>
+  </ScrollViewer>
+  <StackPanel Grid.Row="2" Margin="0,16,0,0"><TextBlock x:Name="FormError" Foreground="#B42318" TextWrapping="Wrap" Margin="0,0,0,10" AutomationProperties.LiveSetting="Polite"/><WrapPanel HorizontalAlignment="Right"><Button Content="Đóng" Tag="DongCuaSo"/><Button Content="Xác nhận thanh lý" Tag="HoSoSave" Style="{StaticResource HospitalPrimary}"/></WrapPanel></StackPanel>
+ </Grid>
+</UserControl>

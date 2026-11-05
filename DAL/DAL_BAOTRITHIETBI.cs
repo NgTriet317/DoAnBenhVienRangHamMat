@@ -36,7 +36,8 @@ public class DAL_BAOTRITHIETBI : dbconnect
     /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     public bool themBaoTriThietBi(ET_BAOTRITHIETBI row)=>ThucHien((db,tx)=>{
         KiemTraSchema(db,tx);
-        if(row.TrangThai is not ("Chưa xác nhận" or "Đã xác nhận"))throw new InvalidOperationException("Phiếu mới chỉ được lưu Chưa xác nhận hoặc Đã xác nhận.");
+        if(row.TrangThai == "Đã xác nhận") row.TrangThai = "Đang thực hiện";
+        if(row.TrangThai is not ("Chưa xác nhận" or "Đang thực hiện"))throw new InvalidOperationException("Phiếu mới chỉ được lưu Chưa xác nhận hoặc Đang thực hiện.");
         KiemTraNhap(row);
         var asset=db.QuerySingleOrDefault<ET_THIETBI>("SELECT * FROM dbo.THIET_BI WITH(UPDLOCK,HOLDLOCK) WHERE MaTB=@ma",new{ma=row.MaTB},tx);
         if(asset is null || string.IsNullOrWhiteSpace(asset.SoSerial) || asset.TinhTrang!="Hư hại" || asset.TrangThai is "Ngưng sử dụng" or "Ngừng sử dụng")
@@ -67,7 +68,8 @@ public class DAL_BAOTRITHIETBI : dbconnect
         }
         if(current.TrangThai!="Chưa xác nhận")throw new InvalidOperationException("Chỉ phiếu Chưa xác nhận được chỉnh sửa; phiếu đã xác nhận/kết thúc được giữ nguyên.");
         if(row.MaTB!=current.MaTB)throw new InvalidOperationException("Không đổi serial của phiếu; hãy hủy phiếu chưa xác nhận và lập phiếu mới.");
-        if(row.TrangThai is not ("Chưa xác nhận" or "Đã xác nhận"))throw new InvalidOperationException("Dùng nút chuyển trạng thái của phiếu bảo trì.");
+        if(row.TrangThai == "Đã xác nhận") row.TrangThai = "Đang thực hiện";
+        if(row.TrangThai is not ("Chưa xác nhận" or "Đang thực hiện"))throw new InvalidOperationException("Dùng nút chuyển trạng thái của phiếu bảo trì.");
         if(row.NgayXacNhan!=current.NgayXacNhan || row.NgayThucHien!=current.NgayThucHien)throw new InvalidOperationException("Thời điểm xác nhận/thực hiện do hệ thống ghi.");
         KiemTraNhap(row);
         db.Execute("""
@@ -108,6 +110,8 @@ public class DAL_BAOTRITHIETBI : dbconnect
         IF OBJECT_ID(N'dbo.usp_RHM_KiemTraBaoTriSerial',N'P') IS NULL
          THROW 52600,N'Chạy toàn bộ Database/QLBenhVienRangHamMat.sql để đồng bộ bảo trì theo serial.',1;
         EXEC dbo.usp_RHM_KiemTraBaoTriSerial;
+        IF COL_LENGTH(N'dbo.THIET_BI',N'NgayThanhLy') IS NULL
+         THROW 52600,N'Chạy toàn bộ Database/QLBenhVienRangHamMat.sql để đồng bộ thanh lý và xác nhận bảo trì.',1;
         """,transaction:tx);
     /// <summary>
     /// Đọc bản dữ liệu có khóa phục vụ đối chiếu và cập nhật. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
@@ -129,7 +133,8 @@ public class DAL_BAOTRITHIETBI : dbconnect
     /// <param name="current">Giá trị hiện tại dùng khi thực hiện thao tác; kiểu ET_BAOTRITHIETBI.</param>
     /// <param name="target">Giá trị đích dùng khi thực hiện thao tác; kiểu string.</param>
     private static void Chuyen(IDbConnection db,IDbTransaction? tx,ET_BAOTRITHIETBI current,string target){
-        bool valid=(current.TrangThai,target) is ("Chưa xác nhận","Đã xác nhận") or ("Chưa xác nhận","Hủy") or ("Đã xác nhận","Đang thực hiện") or ("Đang thực hiện","Đã hoàn thành");
+        if(target == "Đã xác nhận") target = "Đang thực hiện";
+        bool valid=(current.TrangThai,target) is ("Chưa xác nhận","Đang thực hiện") or ("Chưa xác nhận","Hủy") or ("Đang thực hiện","Đã hoàn thành");
         if(!valid)throw new InvalidOperationException("Không thể chuyển phiếu từ "+current.TrangThai+" sang "+target+". Hãy tải lại và chọn thao tác phù hợp.");
         db.Execute("UPDATE dbo.BAO_TRI_THIET_BI SET TrangThai=@target WHERE MaBT=@ma",new{target,ma=current.MaBT},tx);
     }

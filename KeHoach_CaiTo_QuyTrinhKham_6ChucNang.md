@@ -356,7 +356,7 @@ Các tên rút gọn trong bảng đều là file dưới `Views/` với cả `.
 
 ### 10.2 BUS DAL và ET
 
-- Thêm `ET/ClinicalWorkflowContracts.cs` chứa DTO nghiệp vụ; các DTO không đặt tiền tố `ET_` vì không phải bảng SQL. Mỗi thực thể bảng mới tiếp tục có ET tương ứng theo quy ước dự án.
+- Thêm `ET/ET_DULIEUQUYTRINHKHAM.cs` chứa DTO nghiệp vụ; các DTO không đặt tiền tố `ET_` vì không phải bảng SQL. Mỗi thực thể bảng mới tiếp tục có ET tương ứng theo quy ước dự án.
 - Thêm các cặp `BUS/BUS_QUYENNGHIEPVU.cs` và `DAL/DAL_QUYENNGHIEPVU.cs`; `BUS_TIEPNHAN.cs` và `DAL_TIEPNHAN.cs`; `BUS_KHAMDIEUTRI.cs` và `DAL_KHAMDIEUTRI.cs`; `BUS_THANHTOANTRONGOI.cs` và `DAL_THANHTOANTRONGOI.cs`.
 - Mở rộng `BUS_DONTHUOC`/`DAL_DONTHUOC`, `BUS_CHITIETDONTHUOC`/`DAL_CHITIETDONTHUOC`, `BUS_DICHVUTHUCHIEN`/`DAL_DICHVUTHUCHIEN` cho nghiệp vụ có quyền. Cập nhật ET/BUS/DAL của đúng các bảng thêm cột ở phần 9.
 - Sáu bảng mới có tên lớp theo quy ước bỏ dấu gạch dưới: ví dụ `ET_DMTINHTRANGBENH`, `DAL_DMTINHTRANGBENH`, `BUS_DMTINHTRANGBENH`; tương tự `MAUKEHOACHDIEUTRI`, `CHITIETMAUKEHOACH`, `NHOMTHUOCKEDON`, `CAUHINHTHUOCKEDON`, `BANGIAOTHUOC`. Mỗi DAL phụ trách bảng của mình, các đầu mối nghiệp vụ điều phối giao dịch nhiều bảng.
@@ -367,7 +367,7 @@ Các tên rút gọn trong bảng đều là file dưới `Views/` với cả `.
 
 ### 10.3 Giao diện nghiệp vụ chuẩn cho các tác vụ
 
-Các kiểu nằm trong `ET/ClinicalWorkflowContracts.cs` trừ entity bảng. Dùng `IReadOnlyList<T>` cho danh sách, `decimal` cho tiền/lượng và `Guid` trong C# cho mã yêu cầu.
+Các kiểu nằm trong `ET/ET_DULIEUQUYTRINHKHAM.cs` trừ entity bảng. Dùng `IReadOnlyList<T>` cho danh sách, `decimal` cho tiền/lượng và `Guid` trong C# cho mã yêu cầu.
 
 ```csharp
 NguCanhNghiepVu BUS_QUYENNGHIEPVU.LayNguCanh(string maNV);
@@ -445,7 +445,7 @@ Không bắt đầu bằng thay toàn bộ XAML. Khóa hợp đồng dữ liệu
 
 ### P02 Quyền nghiệp vụ và giới hạn bác sĩ
 
-**Files:** Tạo `ET/ClinicalWorkflowContracts.cs`, cặp `BUS_QUYENNGHIEPVU`/`DAL_QUYENNGHIEPVU`, `Controls/ClinicalWorkflow/QuyenNghiepVu.cs`; sửa nhánh quyền trong `MainWindow.xaml.cs`, `AppWorkspace.xaml.cs`, `DieuHuongHoSo.cs`; tạo project kiểm tra `RangHamMat.ClinicalChecks` theo kiểu console hiện có.
+**Files:** Tạo `ET/ET_DULIEUQUYTRINHKHAM.cs`, cặp `BUS_QUYENNGHIEPVU`/`DAL_QUYENNGHIEPVU`, `Controls/ClinicalWorkflow/QuyenNghiepVu.cs`; sửa nhánh quyền trong `MainWindow.xaml.cs`, `AppWorkspace.xaml.cs`, `DieuHuongHoSo.cs`; tạo project kiểm tra `RangHamMat.ClinicalChecks` theo kiểu console hiện có.
 
 **Interfaces:** Cung cấp `LayNguCanh`; các API nghiệp vụ sau nhận `NguCanhNghiepVu` và tự xác minh lại. `CanOpen` giữ chữ ký, thêm kiểm tra hành động riêng thay vì dùng quyền mở để cho phép sửa.
 
