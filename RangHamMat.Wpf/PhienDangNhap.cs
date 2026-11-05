@@ -6,6 +6,15 @@ namespace RangHamMat;
 // Phiên tài khoản đã xác thực, dùng chung trong lần chạy ứng dụng.
 public static class PhienDangNhap
 {
+    public static string MaTK => accountCommitted ?? "";
+    public static Guid MaPhien { get; internal set; }
+    internal static void GanPhienAudit(Guid session)
+    {
+        if((Thread.CurrentPrincipal as ClaimsPrincipal)?.Identity is not ClaimsIdentity identity)
+            throw new InvalidOperationException("Chưa xác thực tài khoản.");
+        foreach(var old in identity.FindAll("RHM.MaPhien").ToArray())identity.RemoveClaim(old);
+        if(session!=Guid.Empty)identity.AddClaim(new Claim("RHM.MaPhien",session.ToString("D")));
+    }
     /// <summary>
     /// Mã nhân viên thực hiện hoặc được gán cho bản ghi.
     /// </summary>
@@ -141,6 +150,7 @@ public static class PhienDangNhap
             }
             finally{if(allow){MaNV=proposedEmployee;IsAdmin=proposedAdmin;TenDangNhap=proposedName;}}
         }
+        if (MaPhien != Guid.Empty && priorAccount != maTK) PhienNhatKy.KetThuc();
         var identity=new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, maTK),

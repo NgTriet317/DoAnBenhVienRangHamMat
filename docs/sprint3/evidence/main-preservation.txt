@@ -1,0 +1,2 @@
+PASS: 60 bảng hiện hữu không giảm số hàng; 62 bảng sau nâng cấp. Bảng hiện hữu đổi số hàng: .
+PASS: chạy lặp file SQL chính giữ nguyên số hàng cả 62 bảng.

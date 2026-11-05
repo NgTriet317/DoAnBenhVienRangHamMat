@@ -1,0 +1,3 @@
+Result                                                        TablesChecked
+------------------------------------------------------------- -------------
+PASS SQL-02: repeat migration preserves every table row count            62

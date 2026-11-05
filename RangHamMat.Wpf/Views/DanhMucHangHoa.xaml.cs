@@ -117,7 +117,7 @@ namespace RangHamMat.Views
                 if (NhomCuaMaLoai(loai.MaLoaiHH) == LayNhomDangChon())
                 {
                     loaiLoc.Add(new LuaChonDanhMuc(loai.MaLoaiHH, loai.TenLoaiHH));
-                    loaiNhap.Add(new LuaChonDanhMuc(loai.MaLoaiHH, loai.TenLoaiHH));
+                    if(loai.TrangThai=="Đang hoạt động")loaiNhap.Add(new LuaChonDanhMuc(loai.MaLoaiHH, loai.TenLoaiHH));
                 }
             }
             cboLoaiLoc.ItemsSource = loaiLoc;
@@ -372,6 +372,9 @@ namespace RangHamMat.Views
             lblMaDangChon.Text = "Mã mặt hàng: " + hangHoaDangChon.MaHH;
             txtMaHH.Text = hangHoaDangChon.MaHH;
             txtTenHH.Text = hangHoaDangChon.TenHH;
+            cboLoaiHangHoa.ItemsSource=danhSachLoai
+                .Where(x=>NhomCuaMaLoai(x.MaLoaiHH)==LayNhomDangChon()&&(x.TrangThai=="Đang hoạt động"||x.MaLoaiHH==hangHoaDangChon.MaLoaiHH))
+                .Select(x=>new LuaChonDanhMuc(x.MaLoaiHH,x.TenLoaiHH)).ToList();
             cboLoaiHangHoa.SelectedValue = hangHoaDangChon.MaLoaiHH;
             cboDonViTinh.Text = hangHoaDangChon.DonViTinh;
             cboTrangThai.Text = hangHoaDangChon.TrangThai;
@@ -406,6 +409,8 @@ namespace RangHamMat.Views
         /// <remarks>Các bước được phối hợp qua <c>txtTenHH.Clear</c>, <c>txtMoTa.Clear</c>, <c>txtHamLuong.Clear</c>.</remarks>
         private void XoaForm()
         {
+            cboLoaiHangHoa.ItemsSource=danhSachLoai.Where(x=>NhomCuaMaLoai(x.MaLoaiHH)==LayNhomDangChon()&&x.TrangThai=="Đang hoạt động")
+                .Select(x=>new LuaChonDanhMuc(x.MaLoaiHH,x.TenLoaiHH)).ToList();
             txtMaHH.Text = "Tự sinh khi lưu";
             txtTenHH.Clear();
             cboLoaiHangHoa.SelectedIndex = -1;

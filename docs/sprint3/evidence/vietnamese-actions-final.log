@@ -1,0 +1,219 @@
+PASS SQL single canonical installer includes Sprint 3
+PASS SQL canonical installer pass 1
+PASS SQL canonical installer pass 2
+PASS SQL full installer repeat preserves row counts
+PASS LOG-01/04 two independent login sessions
+PASS SCOPE reading patient list does not create an operation event
+PASS LOG-01 failed-login audit is rate limited per account
+PASS LOG-01 unknown account does not create fake account or orphan audit
+PASS CAT-05 legacy delete API is disabled
+PASS CAT-02/LOG-02 single atomic CREATE KHOA
+PASS CAT-01 persisted KHOA
+PASS CAT-03 duplicate rejected without success log KHOA
+PASS CAT-04 UPDATE KHOA
+PASS CAT-04 stale edit rejected KHOA
+PASS CAT-02/LOG-02 single atomic CREATE CHUYEN_KHOA
+PASS CAT-01 persisted CHUYEN_KHOA
+PASS CAT-03 duplicate rejected without success log CHUYEN_KHOA
+PASS CAT-04 UPDATE CHUYEN_KHOA
+PASS CAT-04 stale edit rejected CHUYEN_KHOA
+PASS CAT-02/LOG-02 single atomic CREATE PHONG
+PASS CAT-01 persisted PHONG
+PASS CAT-03 duplicate rejected without success log PHONG
+PASS CAT-04 UPDATE PHONG
+PASS CAT-04 stale edit rejected PHONG
+PASS CAT-02/LOG-02 single atomic CREATE DICH_VU
+PASS CAT-01 persisted DICH_VU
+PASS CAT-03 duplicate rejected without success log DICH_VU
+PASS CAT-04 UPDATE DICH_VU
+PASS CAT-04 stale edit rejected DICH_VU
+PASS CAT-02/LOG-02 single atomic CREATE DM_TINH_TRANG_BENH
+PASS CAT-01 persisted DM_TINH_TRANG_BENH
+PASS CAT-03 duplicate rejected without success log DM_TINH_TRANG_BENH
+PASS CAT-04 UPDATE DM_TINH_TRANG_BENH
+PASS CAT-04 stale edit rejected DM_TINH_TRANG_BENH
+PASS CAT-02/LOG-02 single atomic CREATE DICH_VU_TINH_TRANG
+PASS CAT-01 persisted DICH_VU_TINH_TRANG
+PASS CAT-03 duplicate rejected without success log DICH_VU_TINH_TRANG
+PASS CAT-04 UPDATE DICH_VU_TINH_TRANG
+PASS CAT-04 stale edit rejected DICH_VU_TINH_TRANG
+PASS CAT-02/LOG-02 single atomic CREATE CHUC_VU
+PASS CAT-01 persisted CHUC_VU
+PASS CAT-03 duplicate rejected without success log CHUC_VU
+PASS CAT-04 UPDATE CHUC_VU
+PASS CAT-04 stale edit rejected CHUC_VU
+PASS CAT-02/LOG-02 single atomic CREATE LOAI_HANG_HOA
+PASS CAT-01 persisted LOAI_HANG_HOA
+PASS CAT-03 duplicate rejected without success log LOAI_HANG_HOA
+PASS CAT-04 UPDATE LOAI_HANG_HOA
+PASS CAT-04 stale edit rejected LOAI_HANG_HOA
+PASS CAT-02/LOG-02 single atomic CREATE NHOM_THUOC_KE_DON
+PASS CAT-01 persisted NHOM_THUOC_KE_DON
+PASS CAT-03 duplicate rejected without success log NHOM_THUOC_KE_DON
+PASS CAT-04 UPDATE NHOM_THUOC_KE_DON
+PASS CAT-04 stale edit rejected NHOM_THUOC_KE_DON
+PASS CAT-02/LOG-02 single atomic CREATE NGAY_NGHI_LE
+PASS CAT-01 persisted NGAY_NGHI_LE
+PASS CAT-03 duplicate rejected without success log NGAY_NGHI_LE
+PASS CAT-04 UPDATE NGAY_NGHI_LE
+PASS CAT-04 stale edit rejected NGAY_NGHI_LE
+PASS CAT-05 DEACTIVATE NGAY_NGHI_LE
+PASS CAT-05 DEACTIVATE NHOM_THUOC_KE_DON
+PASS CAT-05 DEACTIVATE LOAI_HANG_HOA
+PASS CAT-05 DEACTIVATE CHUC_VU
+PASS CAT-05 DEACTIVATE DICH_VU_TINH_TRANG
+PASS CAT-05 DEACTIVATE DM_TINH_TRANG_BENH
+PASS CAT-05 DEACTIVATE DICH_VU
+PASS CAT-05 DEACTIVATE PHONG
+PASS CAT-05 DEACTIVATE CHUYEN_KHOA
+PASS CAT-05 DEACTIVATE KHOA
+PASS CAT-06 inactive parent blocks reactivation
+PASS CAT-06 REACTIVATE KHOA
+PASS CAT-06 REACTIVATE CHUYEN_KHOA
+PASS CAT-06 REACTIVATE PHONG
+PASS CAT-06 REACTIVATE DICH_VU
+PASS CAT-06 REACTIVATE DM_TINH_TRANG_BENH
+PASS CAT-06 REACTIVATE DICH_VU_TINH_TRANG
+PASS CAT-06 REACTIVATE CHUC_VU
+PASS CAT-06 REACTIVATE LOAI_HANG_HOA
+PASS CAT-06 REACTIVATE NHOM_THUOC_KE_DON
+PASS CAT-06 REACTIVATE NGAY_NGHI_LE
+PASS CAT-06 active child blocks parent deactivation
+PASS LOG-03 rollback removes mutation and audit
+PASS CAT-03 invalid input does not commit
+PASS CAT-03 no false success log
+PASS LOG-07 stable SQL paging
+PASS LOG-07 SQL filters
+PASS LOG-01/04 idempotent logout, other session stays open
+PASS SCOPE abnormal session does not create operation event
+PASS SCOPE old non-mutation event hidden: Tra cứu quy trình khám
+PASS SCOPE technical/read event excluded from change KPI: Tra cứu quy trình khám
+PASS SCOPE old non-mutation event hidden: Tra cứu dịch vụ
+PASS SCOPE technical/read event excluded from change KPI: Tra cứu dịch vụ
+PASS SCOPE old non-mutation event hidden: SESSION_ABNORMAL_END
+PASS SCOPE technical/read event excluded from change KPI: SESSION_ABNORMAL_END
+PASS SCOPE old non-mutation event hidden: VIEW_LOG
+PASS SCOPE technical/read event excluded from change KPI: VIEW_LOG
+PASS SCOPE old non-mutation event hidden: Đối chiếu yêu cầu thanh toán
+PASS SCOPE technical/read event excluded from change KPI: Đối chiếu yêu cầu thanh toán
+PASS LOG-05 stale heartbeat leaves unknown logout null
+PASS LOG-05 closed session cannot revive
+PASS LOG-06 locked account denied
+PASS LOG-06 forged admin rejected for catalog
+PASS LOG-06 forged admin rejected for audit
+PASS LOG-06 non-admin direct role mutation denied inside SQL transaction
+PASS LOG-02 HR account and stock triggers audit exactly once
+PASS LOG-02 audit identifies edited fields without recording personal values
+PASS LOG-02 cross-module audit excludes secrets and personal values
+PASS LOG-02 all thirty cross-module triggers installed
+PASS LOG-02 account lock has canonical event action
+PASS REG-01 legacy DAL rejects inactive catalog parent
+PASS LOG-02 existing SQL audit receives session UTC and event defaults
+PASS LOG-02 shared writer records field names only and excludes secrets
+PASS UI CAT-02 Save button persists KHOA : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI CAT-02 SQL reload KHOA
+PASS UI CAT-04 Save button edits KHOA
+PASS UI CAT-04 edit survives reload KHOA
+PASS UI CAT-02 Save button persists CHUYEN_KHOA : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI CAT-02 SQL reload CHUYEN_KHOA
+PASS UI CAT-04 Save button edits CHUYEN_KHOA
+PASS UI CAT-04 edit survives reload CHUYEN_KHOA
+PASS UI CAT-02 Save button persists PHONG : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI CAT-02 SQL reload PHONG
+PASS UI CAT-04 Save button edits PHONG
+PASS UI CAT-04 edit survives reload PHONG
+PASS UI CAT-02 Save button persists DICH_VU : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI CAT-02 SQL reload DICH_VU
+PASS UI CAT-04 Save button edits DICH_VU
+PASS UI CAT-04 edit survives reload DICH_VU
+PASS UI CAT-02 Save button persists DM_TINH_TRANG_BENH : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI CAT-02 SQL reload DM_TINH_TRANG_BENH
+PASS UI CAT-04 Save button edits DM_TINH_TRANG_BENH
+PASS UI CAT-04 edit survives reload DM_TINH_TRANG_BENH
+PASS UI CAT-02 Save button persists DICH_VU_TINH_TRANG : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI CAT-02 SQL reload DICH_VU_TINH_TRANG
+PASS UI CAT-04 Save button edits DICH_VU_TINH_TRANG
+PASS UI CAT-04 edit survives reload DICH_VU_TINH_TRANG
+PASS UI CAT-02 Save button persists CHUC_VU : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI CAT-02 SQL reload CHUC_VU
+PASS UI CAT-04 Save button edits CHUC_VU
+PASS UI CAT-04 edit survives reload CHUC_VU
+PASS UI CAT-02 Save button persists LOAI_HANG_HOA : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI CAT-02 SQL reload LOAI_HANG_HOA
+PASS UI CAT-04 Save button edits LOAI_HANG_HOA
+PASS UI CAT-04 edit survives reload LOAI_HANG_HOA
+PASS UI CAT-02 Save button persists NHOM_THUOC_KE_DON : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI CAT-02 SQL reload NHOM_THUOC_KE_DON
+PASS UI CAT-04 Save button edits NHOM_THUOC_KE_DON
+PASS UI CAT-04 edit survives reload NHOM_THUOC_KE_DON
+PASS UI CAT-02 Save button persists NGAY_NGHI_LE : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI CAT-02 SQL reload NGAY_NGHI_LE
+PASS UI CAT-04 Save button edits NGAY_NGHI_LE
+PASS UI CAT-04 edit survives reload NGAY_NGHI_LE
+PASS UI confirmation dialog answered NGAY_NGHI_LE
+PASS UI CAT-05/06 state button deactivates NGAY_NGHI_LE : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered NHOM_THUOC_KE_DON
+PASS UI CAT-05/06 state button deactivates NHOM_THUOC_KE_DON : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered LOAI_HANG_HOA
+PASS UI CAT-05/06 state button deactivates LOAI_HANG_HOA : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered CHUC_VU
+PASS UI CAT-05/06 state button deactivates CHUC_VU : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered DICH_VU_TINH_TRANG
+PASS UI CAT-05/06 state button deactivates DICH_VU_TINH_TRANG : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered DM_TINH_TRANG_BENH
+PASS UI CAT-05/06 state button deactivates DM_TINH_TRANG_BENH : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered DICH_VU
+PASS UI CAT-05/06 state button deactivates DICH_VU : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered PHONG
+PASS UI CAT-05/06 state button deactivates PHONG : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered CHUYEN_KHOA
+PASS UI CAT-05/06 state button deactivates CHUYEN_KHOA : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered KHOA
+PASS UI CAT-05/06 state button deactivates KHOA : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered KHOA
+PASS UI CAT-05/06 state button reactivates KHOA : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered CHUYEN_KHOA
+PASS UI CAT-05/06 state button reactivates CHUYEN_KHOA : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered PHONG
+PASS UI CAT-05/06 state button reactivates PHONG : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered DICH_VU
+PASS UI CAT-05/06 state button reactivates DICH_VU : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered DM_TINH_TRANG_BENH
+PASS UI CAT-05/06 state button reactivates DM_TINH_TRANG_BENH : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered DICH_VU_TINH_TRANG
+PASS UI CAT-05/06 state button reactivates DICH_VU_TINH_TRANG : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered CHUC_VU
+PASS UI CAT-05/06 state button reactivates CHUC_VU : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered LOAI_HANG_HOA
+PASS UI CAT-05/06 state button reactivates LOAI_HANG_HOA : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered NHOM_THUOC_KE_DON
+PASS UI CAT-05/06 state button reactivates NHOM_THUOC_KE_DON : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI confirmation dialog answered NGAY_NGHI_LE
+PASS UI CAT-05/06 state button reactivates NGAY_NGHI_LE : Đã lưu dữ liệu và nhật ký thao tác.
+PASS UI CAT-03 invalid form creates no success audit
+PASS UI CAT-03 required field displays inline validation
+PASS UI SQL loads catalog (1280, 850)
+PASS UI SQL loads audit (1280, 850)
+PASS UI Vietnamese action filter labels
+PASS UI Vietnamese UPDATE label filters by original SQL code
+PASS UI Vietnamese action detail
+PASS UI Vietnamese all-actions filter resets
+PASS UI SQL loads catalog (1024, 768)
+PASS UI SQL loads audit (1024, 768)
+PASS UI Vietnamese action filter labels
+PASS UI Vietnamese UPDATE label filters by original SQL code
+PASS UI Vietnamese action detail
+PASS UI Vietnamese all-actions filter resets
+PASS LOG-01 canceled Closing leaves session open
+PASS LOG-01 actual MainWindow Closed logs out exactly once
+PASS LOG-01 actual login creates audited session
+PASS LOG-01 real login-close cycle has exactly two events
+PASS LOG-04 two application processes started
+PASS LOG-04 processes have independent SQL sessions
+PASS LOG-05 killed process closes abnormally without fabricated logout
+PASS LOG-04 survivor process remains open
+PASS LOG-04 survivor process exits normally
+PASS CAT-04 two editor processes ready
+PASS CAT-04 concurrent processes finish
+PASS CAT-04 exactly one commit and one conflict across processes
+PASS ALL: 218 assertions

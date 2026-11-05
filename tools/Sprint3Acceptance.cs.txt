@@ -1,0 +1,210 @@
+using System.Data;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.Json;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Threading;
+using BUS;
+using DAL;
+using Dapper;
+using ET;
+using Microsoft.Data.SqlClient;
+using RangHamMat;
+using RangHamMat.Views;
+
+internal static partial class Program
+{
+    static void AuditDetailAcceptance(NhatKy ui,int width)
+    {
+        var table=new DataTable();
+        string[] columns=["MaNK","HoTen","TenDangNhap","HanhDong","KetQua","ThoiGianHienThi","PhanHe","LoaiDoiTuong","MaDoiTuong","MaPhien","DuLieuTruoc","DuLieuSau"];
+        foreach(var col in columns)table.Columns.Add(col,typeof(string));
+        var row=table.NewRow();
+        row["MaNK"]="NK_TEST_GIAO_DIEN";row["HoTen"]="Nhân viên kiểm thử";row["TenDangNhap"]="fixture_admin";
+        row["HanhDong"]="Cập nhật thông tin";row["KetQua"]="Thành công";row["ThoiGianHienThi"]="05/11/2026 14:30:00 UTC+7";
+        row["PhanHe"]="Quản lý danh mục hệ thống";row["LoaiDoiTuong"]="DICH_VU";row["MaDoiTuong"]="DV_KIEM_THU";row["MaPhien"]=Guid.NewGuid().ToString();
+        row["DuLieuTruoc"]="{\"TenDV\":\"Khám răng tổng quát\",\"DonGia\":100000}";
+        row["DuLieuSau"]="{\"TenDV\":\"Khám răng tổng quát và tư vấn\",\"DonGia\":150000}";table.Rows.Add(row);
+        var grid=(DataGrid)ui.FindName("AuditGrid");grid.ItemsSource=table.DefaultView;grid.SelectedItem=table.DefaultView[0];
+        ui.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
+        Check(((TextBlock)ui.FindName("DetailPerson")).Text=="Nhân viên kiểm thử"&&((TextBlock)ui.FindName("DetailObject")).Text.Contains("DV_KIEM_THU"),"UI detail groups actor and affected object");
+        Check(((ItemsControl)ui.FindName("DetailChanges")).Items.Count==2,"UI detail renders two before-after change cards");
+        Check(!((TextBlock)ui.FindName("Detail")).Text.Contains("{\""),"UI detail avoids raw JSON dump");
+        var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap((int)ui.ActualWidth,(int)ui.ActualHeight,96,96,System.Windows.Media.PixelFormats.Pbgra32);bitmap.Render(ui);
+        var png=new System.Windows.Media.Imaging.PngBitmapEncoder();png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using(var file=File.Create($"docs/sprint3/evidence/audit-detail-{width}.png"))png.Save(file);
+        ((ScrollViewer)ui.FindName("DetailContent")).ScrollToEnd();ui.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
+        var changesBitmap=new System.Windows.Media.Imaging.RenderTargetBitmap((int)ui.ActualWidth,(int)ui.ActualHeight,96,96,System.Windows.Media.PixelFormats.Pbgra32);changesBitmap.Render(ui);
+        var changesPng=new System.Windows.Media.Imaging.PngBitmapEncoder();changesPng.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(changesBitmap));
+        using(var file=File.Create($"docs/sprint3/evidence/audit-detail-changes-{width}.png"))changesPng.Save(file);
+        FindButtons(ui).Single(b=>Convert.ToString(b.ToolTip)=="Bỏ chọn bản ghi").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Check(((StackPanel)ui.FindName("DetailEmpty")).Visibility==Visibility.Visible&&((ItemsControl)ui.FindName("DetailChanges")).Items.Count==0,"UI close detail clears previous record");
+    }
+    static void CatalogUiAcceptance()
+    {
+        var ui=new DichVu();var window=new Window{Content=ui,Width=1280,Height=850,ShowInTaskbar=false,Left=-20000,Top=-20000};
+        window.Show();ui.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
+        try
+        {
+            var list=(ListBox)ui.FindName("CatalogList");
+            var bus=new BUS_DANHMUC();var actor=new BUS_QUYENNGHIEPVU().LayNguCanh("NV001");
+            var rows=new Dictionary<string,Dictionary<string,object?>>();
+            string prefix="UI_"+Guid.NewGuid().ToString("N")[..10];
+            foreach(var d in DanhMucHeThong.TatCa)
+            {
+                list.SelectedItem=d;ui.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
+                var inputs=(Dictionary<string,FrameworkElement>)typeof(DichVu).GetField("inputs",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(ui)!;
+                foreach(var f in d.Truong)
+                {
+                    var control=inputs[f.Cot];
+                    if(control is TextBox text)text.Text=f.Kieu switch{"decimal"=>"125000","int"=>"20",_=>f.Cot=="DienThoai"?"0900000000":prefix+f.Cot};
+                    else if(control is ComboBox combo)
+                    {
+                        if(f.BangCha is not null&&rows.TryGetValue(f.BangCha,out var parent))combo.SelectedValue=parent[DanhMucHeThong.Lay(f.BangCha).Khoa[0]];
+                        else combo.SelectedIndex=0;
+                    }
+                    else if(control is DatePicker date)date.SelectedDate=DateTime.Today.AddYears(80).AddDays(Environment.TickCount64%10000);
+                    else if(control is CheckBox flag)flag.IsChecked=true;
+                }
+                var save=FindButtons(ui).Single(b=>Convert.ToString(b.Content)=="Lưu");
+                save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                string message=((TextBlock)ui.FindName("Message")).Text;
+                Check(message.StartsWith("Đã lưu"),"UI CAT-02 Save button persists "+d.Bang+" : "+message);
+                var row=(Dictionary<string,object?>)typeof(DichVu).GetField("original",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(ui)!;
+                rows[d.Bang]=row;
+                Check(bus.Lay(d.Bang,"","",actor).Any(r=>d.Khoa.All(k=>Equals(r[k],row[k]))),"UI CAT-02 SQL reload "+d.Bang);
+                inputs=(Dictionary<string,FrameworkElement>)typeof(DichVu).GetField("inputs",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(ui)!;
+                var editable=d.Truong.FirstOrDefault(f=>f.Cot.StartsWith("Ten"))??d.Truong.First(f=>f.Cot=="NoiDungDeXuat");
+                ((TextBox)inputs[editable.Cot]).Text=prefix+" edited "+editable.Cot;
+                save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Check(((TextBlock)ui.FindName("Message")).Text.StartsWith("Đã lưu"),"UI CAT-04 Save button edits "+d.Bang);
+                var fresh=(Dictionary<string,object?>)typeof(DichVu).GetField("original",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(ui)!;
+                Check(Convert.ToString(bus.Lay(d.Bang,"","",actor).Single(r=>d.Khoa.All(k=>Equals(r[k],fresh[k])))[editable.Cot])==prefix+" edited "+editable.Cot,"UI CAT-04 edit survives reload "+d.Bang);
+                rows[d.Bang]=fresh;
+            }
+            foreach(var active in new[]{false,true})
+            foreach(var d in active?DanhMucHeThong.TatCa:DanhMucHeThong.TatCa.Reverse())
+            {
+                list.SelectedItem=d;
+                ((ComboBox)ui.FindName("StatusFilter")).SelectedIndex=2;
+                FindButtons(ui).Single(b=>Convert.ToString(b.Content)=="Tìm / Tải lại").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                var grid=(DataGrid)ui.FindName("CatalogGrid");
+                grid.SelectedItem=grid.Items.OfType<DataRowView>().Single(r=>d.Khoa.All(k=>Equals(r[k],rows[d.Bang][k])));
+                var confirm=Task.Run(()=>ConfirmOwnDialog());
+                ((Button)ui.FindName("StateButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Check(confirm.GetAwaiter().GetResult(),"UI confirmation dialog answered "+d.Bang);
+                var row=bus.Lay(d.Bang,"","",actor).Single(r=>d.Khoa.All(k=>Equals(r[k],rows[d.Bang][k])));
+                Check(Equals(row["TrangThai"],active?d.DangDung:d.NgungDung),"UI CAT-05/06 state button "+(active?"reactivates ":"deactivates ")+d.Bang+" : "+((TextBlock)ui.FindName("Message")).Text);
+                rows[d.Bang]=row;
+            }
+            list.SelectedItem=DanhMucHeThong.Lay("KHOA");
+            var invalidInputs=(Dictionary<string,FrameworkElement>)typeof(DichVu).GetField("inputs",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(ui)!;
+            ((TextBox)invalidInputs["TenKhoa"]).Text="";
+            using var checkDb=new SqlConnection(cs);int checkpoint=Count(checkDb);
+            FindButtons(ui).Single(b=>Convert.ToString(b.Content)=="Lưu").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(!((TextBlock)ui.FindName("Message")).Text.StartsWith("Đã lưu")&&Count(checkDb)==checkpoint,"UI CAT-03 invalid form creates no success audit");
+            Check(!string.IsNullOrWhiteSpace(RangHamMat.Controls.KiemTraNhapLieu.GetError(invalidInputs["TenKhoa"])),"UI CAT-03 required field displays inline validation");
+        }
+        finally{window.Close();}
+    }
+    private delegate bool EnumWindowProc(IntPtr hwnd,IntPtr data);
+    [DllImport("user32.dll")]static extern bool EnumWindows(EnumWindowProc callback,IntPtr data);
+    [DllImport("user32.dll",CharSet=CharSet.Unicode)]static extern int GetWindowText(IntPtr hwnd,StringBuilder text,int max);
+    [DllImport("user32.dll")]static extern uint GetWindowThreadProcessId(IntPtr hwnd,out uint process);
+    [DllImport("user32.dll")]static extern bool PostMessage(IntPtr hwnd,uint message,IntPtr wParam,IntPtr lParam);
+    static bool ConfirmOwnDialog()
+    {
+        var deadline=DateTime.UtcNow.AddSeconds(8);
+        while(DateTime.UtcNow<deadline)
+        {
+            bool answered=false;
+            EnumWindows((hwnd,_)=>
+            {
+                GetWindowThreadProcessId(hwnd,out var pid);if(pid!=(uint)Environment.ProcessId)return true;
+                var title=new StringBuilder(256);GetWindowText(hwnd,title,256);
+                if(title.ToString()!="Xác nhận")return true;
+                answered=PostMessage(hwnd,0x0111,new IntPtr(6),IntPtr.Zero);return false;
+            },IntPtr.Zero);
+            if(answered)return true;Thread.Sleep(10);
+        }
+        return false;
+    }
+    static IEnumerable<Button> FindButtons(DependencyObject node)
+    {
+        if(node is Button b)yield return b;
+        for(int i=0;i<VisualTreeHelper.GetChildrenCount(node);i++)foreach(var child in FindButtons(VisualTreeHelper.GetChild(node,i)))yield return child;
+    }
+    static int Worker(string[] args)
+    {
+        if(!System.Text.RegularExpressions.Regex.IsMatch(args[1],@"^RHM_Sprint3_Test_[A-Za-z0-9_]+$"))return 2;
+        cs=$"Data Source={args[0]};Initial Catalog={args[1]};Integrated Security=True;TrustServerCertificate=True";
+        Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",cs);
+        Principal("NV001","TK001");var actor=new BUS_QUYENNGHIEPVU().LayNguCanh("NV001");var logs=new BUS_NHATKY();var session=logs.BatDauPhien(actor);
+        File.WriteAllText(args[3],session.ToString());
+        try
+        {
+            if(args[2]=="--session-worker")
+            {
+                while(!File.Exists(args[4])){logs.Heartbeat(session,actor);Thread.Sleep(100);}
+            }
+            else
+            {
+                if(!SpinWait.SpinUntil(()=>File.Exists(args[4]),TimeSpan.FromSeconds(15)))return 3;
+                var row=JsonSerializer.Deserialize<Dictionary<string,JsonElement>>(File.ReadAllText(args[5]))!.ToDictionary(p=>p.Key,p=>(object?)(p.Value.ValueKind==JsonValueKind.Null?null:p.Value.GetString()));
+                var values= new Dictionary<string,object?>{{"TenKhoa","RACE_"+Environment.ProcessId},{"DienThoai","0900000000"},{"MoTa","FIXTURE race"}};
+                try{new BUS_DANHMUC().Luu("KHOA",values,row,actor,session);File.WriteAllText(args[6],"COMMIT");}
+                catch(InvalidOperationException ex) when(ex.Message.Contains("thay đổi bởi người khác")){File.WriteAllText(args[6],"CONFLICT");}
+            }
+            logs.KetThucPhien(session);return 0;
+        }
+        catch(Exception ex){Console.Error.WriteLine(ex);return 1;}
+    }
+    static Process StartWorker(params string[] args)
+    {
+        var start=new ProcessStartInfo("dotnet"){UseShellExecute=false,CreateNoWindow=true,WindowStyle=ProcessWindowStyle.Hidden};
+        start.ArgumentList.Add(Assembly.GetExecutingAssembly().Location);
+        var builder=new SqlConnectionStringBuilder(cs);start.ArgumentList.Add(builder.DataSource);start.ArgumentList.Add(builder.InitialCatalog);
+        foreach(var arg in args)start.ArgumentList.Add(arg);
+        return Process.Start(start)!;
+    }
+    static void ProcessAcceptance()
+    {
+        string dir=Path.GetFullPath("obj/Sprint3Processes/"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(dir);
+        using var db=new SqlConnection(cs);db.Open();Principal("NV001","TK001");var actor=new BUS_QUYENNGHIEPVU().LayNguCanh("NV001");var logs=new BUS_NHATKY();
+        using(var one=StartWorker("--session-worker",dir+"/one",dir+"/stop-one"))
+        using(var two=StartWorker("--session-worker",dir+"/two",dir+"/stop-two"))
+        {
+            try
+            {
+                Check(SpinWait.SpinUntil(()=>File.Exists(dir+"/one")&&File.Exists(dir+"/two"),TimeSpan.FromSeconds(12)),"LOG-04 two application processes started");
+                var first=Guid.Parse(File.ReadAllText(dir+"/one"));var second=Guid.Parse(File.ReadAllText(dir+"/two"));
+                Check(first!=second,"LOG-04 processes have independent SQL sessions");
+                one.Kill(true);one.WaitForExit();
+                db.Execute("UPDATE dbo.PHIEN_DANG_NHAP SET HoatDongCuoiUtc=DATEADD(minute,-6,SYSUTCDATETIME()) WHERE MaPhien=@first",new{first});
+                var auditSession=logs.BatDauPhien(actor);
+                Check(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.PHIEN_DANG_NHAP WHERE MaPhien=@first AND TrangThaiPhien=N'Kết thúc bất thường' AND DangXuatUtc IS NULL",new{first})==1,"LOG-05 killed process closes abnormally without fabricated logout");
+                Check(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.PHIEN_DANG_NHAP WHERE MaPhien=@second AND TrangThaiPhien=N'Đang mở'",new{second})==1,"LOG-04 survivor process remains open");
+                File.WriteAllText(dir+"/stop-two","");Check(two.WaitForExit(12000)&&two.ExitCode==0,"LOG-04 survivor process exits normally");logs.KetThucPhien(auditSession);
+            }
+            finally{if(!one.HasExited)one.Kill(true);if(!two.HasExited)two.Kill(true);}
+        }
+        var session=logs.BatDauPhien(actor);
+        var original=new BUS_DANHMUC().Luu("KHOA",new Dictionary<string,object?>{{"TenKhoa","RACE_"+Guid.NewGuid().ToString("N")},{"DienThoai","0900000000"},{"MoTa","fixture"}},null,actor,session);
+        File.WriteAllText(dir+"/original",JsonSerializer.Serialize(original));logs.KetThucPhien(session);
+        using var left=StartWorker("--race-worker",dir+"/left",dir+"/gate",dir+"/original",dir+"/left-result");
+        using var right=StartWorker("--race-worker",dir+"/right",dir+"/gate",dir+"/original",dir+"/right-result");
+        try
+        {
+            Check(SpinWait.SpinUntil(()=>File.Exists(dir+"/left")&&File.Exists(dir+"/right"),TimeSpan.FromSeconds(12)),"CAT-04 two editor processes ready");
+            File.WriteAllText(dir+"/gate","");Check(left.WaitForExit(12000)&&right.WaitForExit(12000)&&left.ExitCode==0&&right.ExitCode==0,"CAT-04 concurrent processes finish");
+            var outcomes=new[]{File.ReadAllText(dir+"/left-result"),File.ReadAllText(dir+"/right-result")};
+            Check(outcomes.Count(x=>x=="COMMIT")==1&&outcomes.Count(x=>x=="CONFLICT")==1,"CAT-04 exactly one commit and one conflict across processes");
+        }
+        finally{if(!left.HasExited)left.Kill(true);if(!right.HasExited)right.Kill(true);}
+    }
+}

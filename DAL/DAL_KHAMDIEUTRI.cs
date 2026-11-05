@@ -49,7 +49,7 @@ public sealed partial class DAL_KHAMDIEUTRI : dbconnect
                             WHERE own.MaHS=p.MaHS AND own.MaBS=@MaNV AND own.TrangThai<>N'Hủy')))))
                 """, new { maLS, user.MaNV, doctor, reception, user.LaAdmin }, tx);
             if (row is null) throw DAL_QUYENNGHIEPVU.TuChoi();
-            DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db, tx, user, "LICH_SU_KHAM_BENH", maLS);
+
             var canEdit = doctor && (user.LaAdmin || row.MaBS == user.MaNV && row.BacSiTiepNhan == user.MaNV) &&
                 row.TrangThai == "Nháp" && row.TrangThaiPhieu is "Chờ khám" or "Đang khám";
             return new LanKhamChiTiet(row, row.MaBN, row.MaHS, canEdit);
@@ -85,7 +85,7 @@ public sealed partial class DAL_KHAMDIEUTRI : dbconnect
                 """, new { maDT, user.MaNV, doctor, pharmacy, reception, user.LaAdmin }, tx);
             if (row is null) throw DAL_QUYENNGHIEPVU.TuChoi();
             var lines = db.Query<ET_CHITIETDONTHUOC>("SELECT * FROM dbo.CHI_TIET_DON_THUOC WHERE MaDT=@maDT ORDER BY MaCTDT", new { maDT }, tx).ToArray();
-            DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db, tx, user, "DON_THUOC", maDT);
+
             var canEdit = doctor && (user.LaAdmin || row.ChinhBacSi) && row.TrangThai == "Nháp" && row.TrangThaiLanKham == "Nháp"
                 && row.TrangThaiPhieu is "Chờ khám" or "Đang khám";
             return new DonThuocChiTiet(row, lines, row.MaBN, canEdit);

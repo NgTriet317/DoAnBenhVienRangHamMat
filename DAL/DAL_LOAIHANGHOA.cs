@@ -95,18 +95,7 @@ namespace DAL
         /// <returns>true khi DELETE chạy thành công; không tồn tại, xung đột hoặc vi phạm SQL gây ngoại lệ.</returns>
         public bool xoaLoaiHangHoa(string ma, ET_LOAIHANGHOA? banGoc = null)
         {
-            return ThucHien((connection, transaction) =>
-            {
-                var hienTai = connection.QuerySingleOrDefault<ET_LOAIHANGHOA>("SELECT * FROM dbo.[LOAI_HANG_HOA] WITH(UPDLOCK,HOLDLOCK) WHERE [MaLoaiHH]=@Ma", new { Ma = ma }, transaction);
-                if (hienTai is null)
-                {
-                    throw new InvalidOperationException("Bản ghi không còn tồn tại. Vui lòng tải lại.");
-                }
-
-                KiemTra(connection, transaction, "LOAI_HANG_HOA", hienTai, hienTai, banGoc);
-                connection.Execute("DELETE FROM dbo.[LOAI_HANG_HOA] WHERE [MaLoaiHH]=@Ma", new { Ma = ma }, transaction);
-                return true;
-            });
+            throw new InvalidOperationException("Không xóa vật lý danh mục. Sử dụng Ngừng sử dụng trong Quản lý danh mục hệ thống.");
         }
     }
 }

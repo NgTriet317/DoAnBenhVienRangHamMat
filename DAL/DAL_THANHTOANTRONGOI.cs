@@ -65,7 +65,7 @@ public sealed partial class DAL_THANHTOANTRONGOI : dbconnect
                 throw Error("MaHD", "Hóa đơn chờ thu đã có giao dịch; cần đối chiếu lịch sử.");
             if ((old.Length > 0 && !(old.Length == 1 && pending is not null)) || hasExports)
             {
-                DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db, tx, actor, "LICH_SU_KHAM_BENH", maLS);
+
                 var paid = old.Length == 1 && old[0].PhienBanQuyTrinh == 2 && old[0].TrangThai == "Đã xác nhận" && old[0].ConPhaiThu == 0;
                 return new BangTinhPhi(maLS, visit.MaBN, visit.HoTenBN, null, [], [], old, null, false,
                     paid ? "Đã thanh toán. Xem hóa đơn và trạng thái giao thuốc trong lịch sử." : "Lượt đã có chứng từ tài chính hoặc xuất thuốc. Đối chiếu lịch sử và số còn phải thu; không lập bảng thu mới.");

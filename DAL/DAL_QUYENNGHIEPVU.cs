@@ -107,25 +107,6 @@ public sealed partial class DAL_QUYENNGHIEPVU : dbconnect
     }
 
     /// <summary>
-    /// Ghi nhật ký tra cứu cho quản trị viên để theo dõi việc truy cập dữ liệu quy trình khám.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>TaoMa</c>, <c>db.Execute</c>.</remarks>
-    /// <param name="db">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
-    /// <param name="tx">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
-    /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
-    /// <param name="table">Giá trị bảng dùng khi thực hiện thao tác; kiểu string.</param>
-    /// <param name="id">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
-    internal static void GhiTraCuuAdmin(IDbConnection db, IDbTransaction? tx, NguCanhNghiepVu user, string table, string id)
-    {
-        if (!user.LaAdmin) return;
-        var maNK = TaoMa(db, tx, "NHAT_KY_THAO_TAC", "MaNK");
-        db.Execute("""
-            INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua)
-            VALUES(@maNK,@MaTK,SYSDATETIME(),N'Tra cứu quy trình khám',@table,@id,N'Thành công')
-            """, new { maNK, user.MaTK, table, id }, tx);
-    }
-
-    /// <summary>
     /// Kiểm tra mã định danh hợp lệ trước khi tra dữ liệu nghiệp vụ.
     /// </summary>
     /// <remarks>Các bước được phối hợp qua <c>TuChoi</c>.</remarks>

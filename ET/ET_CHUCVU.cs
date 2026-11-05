@@ -10,6 +10,7 @@ namespace ET
     [Table("CHUC_VU")]
     public class ET_CHUCVU
     {
+        public string TrangThai { get; set; } = "Đang hoạt động";
         /// <summary>
         /// Giá trị lưu nội bộ của thuộc tính MaChucVu, dùng bởi getter/setter tương ứng.
         /// </summary>

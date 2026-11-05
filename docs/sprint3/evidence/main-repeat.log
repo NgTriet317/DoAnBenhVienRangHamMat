@@ -1,0 +1,6 @@
+Đã bỏ MucDo; SimpleConditions v1. Dữ liệu các cột còn lại được giữ nguyên.
+Đã bỏ vị trí răng; nạp 6 tình trạng và định hướng có nguồn. Không tạo người thật, bảng giá hoặc chứng từ.
+Đã đồng bộ 8 dịch vụ tham khảo và 14 liên kết; giữ nguyên dữ liệu đã có.
+Đã đồng bộ PrescriptionFlow1, nhóm thuốc và danh mục thuốc có nguồn.
+Đã tạo/kiểm tra PHAN_QUYEN_VAI_TRO và khởi tạo quyền mặc định.
+Sprint 3: danh mục, nhật ký và phiên đăng nhập đã sẵn sàng.

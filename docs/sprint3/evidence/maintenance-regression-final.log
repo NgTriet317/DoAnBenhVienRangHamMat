@@ -1,0 +1,61 @@
+Maintenance serial checks: RHM_Hospital_Test_Unified; maintenance transactions roll back; owned race seed is removed
+PASS Maintenance model maps nullable lifecycle timestamps
+PASS BUS draft is editable without changing physical or management state
+PASS BUS lifecycle synchronizes only selected serial of identical goods
+PASS BUS direct confirmed insert stamps confirmation without starting maintenance
+PASS BUS cancellation only preserves draft history and damaged serial
+PASS BUS freezes content in Đã xác nhận
+PASS SQL freezes content in Đã xác nhận
+PASS BUS freezes content in Đang thực hiện
+PASS SQL freezes content in Đang thực hiện
+PASS BUS freezes content in Đã hoàn thành
+PASS SQL freezes content in Đã hoàn thành
+PASS BUS freezes content in Hủy
+PASS SQL freezes content in Hủy
+PASS BUS cannot cancel Đã xác nhận
+PASS BUS cannot cancel Đang thực hiện
+PASS BUS cannot cancel Đã hoàn thành
+PASS BUS cannot delete history in Chưa xác nhận
+PASS BUS cannot delete history in Đã xác nhận
+PASS BUS cannot delete history in Đang thực hiện
+PASS BUS cannot delete history in Đã hoàn thành
+PASS BUS cannot delete history in Hủy
+PASS BUS rejects transition Chưa xác nhận -> Đang thực hiện
+PASS BUS rejects transition Chưa xác nhận -> Đã hoàn thành
+PASS BUS rejects transition Đã xác nhận -> Đã hoàn thành
+PASS BUS rejects transition Đang thực hiện -> Đã xác nhận
+PASS BUS rejects transition Đã hoàn thành -> Đang thực hiện
+PASS BUS rejects transition Hủy -> Đã xác nhận
+PASS BUS rejects transition Đã xác nhận -> Đã xác nhận
+PASS BUS rejects transition Đang thực hiện -> Đang thực hiện
+PASS BUS rejects transition Đã hoàn thành -> Đã hoàn thành
+PASS BUS rejects stale draft update snapshot
+PASS BUS rejects stale lifecycle snapshot
+PASS BUS cannot reassign maintenance to another serial
+PASS BUS one open record per serial
+PASS BUS cannot insert Đang thực hiện
+PASS BUS cannot insert Đã hoàn thành
+PASS BUS confirms only damaged physical asset
+PASS BUS cannot confirm retired physical asset
+PASS SQL direct lifecycle also synchronizes exact serial
+PASS SQL duplicate open maintenance blocked
+PASS SQL direct confirmed insert stamps lifecycle
+PASS SQL cannot insert already running
+PASS SQL cannot insert already finished
+PASS SQL cannot skip confirmation
+PASS SQL cannot skip execution
+PASS SQL cannot cancel confirmed
+PASS SQL cannot delete even draft history
+PASS SQL cannot change linked serial identity
+PASS SQL cannot reassign maintenance serial
+PASS SQL cannot manually mark asset under maintenance with no running record
+PASS SQL cannot manually change asset while running
+PASS SQL cannot tamper confirmation timestamp
+PASS SQL cannot tamper execution timestamp
+PASS SQL rejects mixed valid and invalid lifecycle update atomically
+  Created an owned race fixture for the empty database; finally removes it
+PASS Concurrent duplicate open inserts serialize until rollback
+PASS Bulk warehouse DAL generates globally unique serials and rolls back
+PASS Failed bulk warehouse DAL leaves no partial document or serials
+PASS All fixture rows rolled back
+RESULT: 58 passed; 0 failed

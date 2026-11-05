@@ -66,7 +66,7 @@ public sealed partial class DAL_KHAMDIEUTRI
             Add<ET_NHANVIEN>("NHAN_VIEN"); Add<ET_PHONG>("PHONG"); Add<ET_CALAM>("CA_LAM");
             Add<ET_DICHVU>("DICH_VU"); Add<ET_THUOC>("THUOC"); Add<ET_HANGHOA>("HANG_HOA");
             Add<ET_KHO>("KHO"); Add<ET_LOHANGHOA>("LO_HANG_HOA");
-            DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db, tx, user, "PHAM_VI_HO_SO", user.MaNV);
+
             return new DuLieuHoSoTheoQuyen(user, data);
         });
 

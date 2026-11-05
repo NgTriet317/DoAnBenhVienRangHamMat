@@ -156,7 +156,7 @@ static class Program
    EXEC dbo.usp_RHM_KiemTraSchema;
    """,transaction:tx,commandTimeout:120);
   var tables=Read("SELECT t.object_id,t.name,s.name SchemaName FROM sys.tables t JOIN sys.schemas s ON s.schema_id=t.schema_id WHERE t.is_ms_shipped=0 ORDER BY s.name,t.name");
-  if(tables.Count!=60)throw new Exception("Source must contain exactly the 60 supported hospital tables.");
+  if(tables.Count is not (60 or 62))throw new Exception("Source must contain the supported 60-table legacy or 62-table Sprint 3 schema.");
   if(Read("SELECT 1 FROM sys.foreign_keys WHERE is_disabled=1 OR is_not_trusted=1 UNION ALL SELECT 1 FROM sys.check_constraints WHERE is_disabled=1 OR is_not_trusted=1").Count>0)throw new Exception("Source constraints are not active/trusted.");
   var manifests=new SortedDictionary<string,TableManifest>(StringComparer.Ordinal);
   var materialized=new Dictionary<int,(List<dynamic> Columns,List<List<object?>> Rows,string Table)>();

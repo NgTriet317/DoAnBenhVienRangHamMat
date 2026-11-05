@@ -45,7 +45,7 @@ public sealed partial class DAL_THANHTOANTRONGOI
             WHERE c.MaHD=@maHD ORDER BY c.MaCTHD
             """,new{maHD},tx).ToArray();
         var cash=payments.SingleOrDefault(t=>h.PhienBanQuyTrinh==2&&t.LoaiGiaoDich=="Thu"&&t.TrangThai=="Đã xác nhận");
-        DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db,tx,actor,"HOA_DON",maHD);
+
         return new BanInHoaDon(h,context.MaBN,context.HoTenBN,context.NguoiLap,collected,h.SoTienPhaiThu-collected,details,
             h.PhienBanQuyTrinh==2?cash?.SoTienKhachDua??0:null,h.PhienBanQuyTrinh==2?cash?.TienThua??0:null,cash?.PhuongThuc,cash?.MaThamChieu);
     });

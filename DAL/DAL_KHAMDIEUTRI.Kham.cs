@@ -24,7 +24,10 @@ public sealed partial class DAL_KHAMDIEUTRI
         var services=db.Query<ET_DICHVU>("SELECT d.* FROM dbo.DICH_VU d WHERE d.TrangThai=N'Đang hoạt động' OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_KE_HOACH c JOIN dbo.KE_HOACH_DIEU_TRI k ON k.MaKHDT=c.MaKHDT WHERE k.MaLS=@maLS AND c.MaDV=d.MaDV) ORDER BY d.TenDV,d.MaDV",new{maLS},tx).ToArray();
         var plans=db.Query<ET_KEHOACHDIEUTRI>("SELECT * FROM dbo.KE_HOACH_DIEU_TRI WITH(HOLDLOCK) WHERE MaLS=@maLS ORDER BY NgayLap,MaKHDT",new{maLS},tx).ToArray();
         var reference=db.Query<ET_DMTINHTRANGBENH>("SELECT * FROM dbo.DM_TINH_TRANG_BENH WHERE TrangThai=N'Đang áp dụng' ORDER BY TenTinhTrang,MaDMTT",transaction:tx).ToArray();
-        var related=db.Query<DichVuTinhTrang>("SELECT m.MaDMTT,d.MaDV,d.TenDV,d.DonGia,m.NoiDungDeXuat,m.ThuTu FROM dbo.DICH_VU_TINH_TRANG m JOIN dbo.DICH_VU d ON d.MaDV=m.MaDV JOIN dbo.DM_TINH_TRANG_BENH t ON t.MaDMTT=m.MaDMTT WHERE d.TrangThai=N'Đang hoạt động' AND t.TrangThai=N'Đang áp dụng' ORDER BY m.MaDMTT,m.ThuTu,d.MaDV",transaction:tx).ToArray();
+        // Migration Sprint 3 phải được cài trước khi dùng trạng thái liên kết; giữ khả năng đọc DB cũ.
+        bool hasLinkStatus=db.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.columns WHERE object_id=OBJECT_ID(N'dbo.DICH_VU_TINH_TRANG') AND name=N'TrangThai'",transaction:tx)>0;
+        string linkStatus=hasLinkStatus?" AND m.TrangThai=N'Đang hoạt động'":"";
+        var related=db.Query<DichVuTinhTrang>("SELECT m.MaDMTT,d.MaDV,d.TenDV,d.DonGia,m.NoiDungDeXuat,m.ThuTu FROM dbo.DICH_VU_TINH_TRANG m JOIN dbo.DICH_VU d ON d.MaDV=m.MaDV JOIN dbo.DM_TINH_TRANG_BENH t ON t.MaDMTT=m.MaDMTT WHERE d.TrangThai=N'Đang hoạt động' AND t.TrangThai=N'Đang áp dụng'"+linkStatus+" ORDER BY m.MaDMTT,m.ThuTu,d.MaDV",transaction:tx).ToArray();
         return new DuLieuKhongGianKham(s,patient,services,plans,reference,related);
     });
     /// <summary>

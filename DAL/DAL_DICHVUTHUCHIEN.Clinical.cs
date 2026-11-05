@@ -59,7 +59,7 @@ public partial class DAL_DICHVUTHUCHIEN
   foreach(var row in rows)if(!clinical&&!(a.CoQuyen(QuyenLamViec.CapNhatKetQuaDuocGiao)&&row.MaNVThucHien==a.MaNV))row.KetQua=null;
   var result=rows.Select(r=>new BanNhapThucHien(r,"",false,false,db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.CHI_TIET_HOA_DON WHERE MaDVThucHien=@id",new{id=r.MaDVThucHien},tx)>0,null,
    db.QuerySingle<string>("SELECT TenDV FROM dbo.DICH_VU WHERE MaDV=@MaDV",r,tx),db.QuerySingle<string>("SELECT HoTen FROM dbo.NHAN_VIEN WHERE MaNV=@MaNVThucHien",r,tx))).ToArray();
-  DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db,tx,a,"LICH_SU_KHAM_BENH",maLS);
+
   return new KhongGianThucHien(visit,false,[],result,[],[]);
  });
  /// <summary>

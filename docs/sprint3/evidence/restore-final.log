@@ -1,0 +1,10 @@
+Processed 1456 pages for database 'RHM_Sprint3_Test_Unified', file 'RHM_Sprint3_Test_Unified' on file 1.
+Processed 2 pages for database 'RHM_Sprint3_Test_Unified', file 'RHM_Sprint3_Test_Unified_log' on file 1.
+BACKUP DATABASE successfully processed 1458 pages in 0.024 seconds (474.446 MB/sec).
+The backup set on file 1 is valid.
+Processed 1456 pages for database 'RHM_Sprint3_Test_Restore_9561C4EA7DF84804B45AAB463513F55A', file 'RHM_Sprint3_Test_Unified' on file 1.
+Processed 2 pages for database 'RHM_Sprint3_Test_Restore_9561C4EA7DF84804B45AAB463513F55A', file 'RHM_Sprint3_Test_Unified_log' on file 1.
+RESTORE DATABASE successfully processed 1458 pages in 0.046 seconds (247.537 MB/sec).
+Result                                                                          RestoredDatabase
+------------------------------------------------------------------------------- --------------------------------------------------------------------------------------------------------------------------------
+PASS: backup CHECKSUM, restore isolated database, CHECKDB, row-count comparison RHM_Sprint3_Test_Restore_9561C4EA7DF84804B45AAB463513F55A

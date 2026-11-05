@@ -66,9 +66,21 @@ public partial class MainWindow : Window
                 e.Handled = true;
         };
         Closing+=(_,e)=>{if(!TryLeaveClinicalWork())e.Cancel=true;};
+        PhienNhatKy.LoiPhien+=ShowSessionError;
+        Closed+=(_,_)=>
+        {
+            PhienNhatKy.LoiPhien-=ShowSessionError;
+            try{PhienNhatKy.KetThuc();}
+            catch(Exception ex){MessageBox.Show("Không ghi được kết thúc phiên. Phiên sẽ được đối soát theo heartbeat. "+ex.Message,"Nhật ký phiên");}
+        };
         PhienDangNhap.TruocKhiDoiDinhDanh+=BeforeIdentityChange;
         PhienDangNhap.DinhDanhThayDoi+=IdentityChanged;
         Closed+=(_,_)=>{PhienDangNhap.TruocKhiDoiDinhDanh-=BeforeIdentityChange;PhienDangNhap.DinhDanhThayDoi-=IdentityChanged;};
+    }
+
+    private void ShowSessionError(string message)
+    {
+        detachedWorkError.Text=message;detachedWorkError.Visibility=Visibility.Visible;
     }
 
     /// <summary>

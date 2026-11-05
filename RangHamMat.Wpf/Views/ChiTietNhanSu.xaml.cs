@@ -47,8 +47,8 @@ public partial class ChiTietNhanSu : Window
     /// </summary>
     private void LoadDanhSachChucVuVaChuyenKhoa()
     {
-        cboChucVu.ItemsSource = new BUS_CHUCVU().layToanBoChucVu();
-        cboChuyenKhoa.ItemsSource = new BUS_CHUYENKHOA().layToanBoChuyenKhoa();
+        cboChucVu.ItemsSource = new BUS_CHUCVU().layToanBoChucVu().Where(x=>x.TrangThai=="Đang hoạt động"||x.MaChucVu==nhanVien.MaChucVu).ToArray();
+        cboChuyenKhoa.ItemsSource = new BUS_CHUYENKHOA().layToanBoChuyenKhoa().Where(x=>x.TrangThai=="Đang hoạt động"||x.MaCK==nhanVien.MaCK).ToArray();
     }
 
     /// <summary>

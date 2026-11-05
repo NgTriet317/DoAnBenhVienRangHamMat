@@ -65,7 +65,7 @@ public sealed partial class DAL_KHAMDIEUTRI
             if(!assigned)throw DAL_QUYENNGHIEPVU.TuChoi();
         }
         if(!user.LaAdmin&&rx is not null&&!(doctor&&rx.MaBS==user.MaNV&&visit?.MaBS==user.MaNV&&receipt?.MaBS==user.MaNV)&&!(visit?.TrangThai=="Đã xác nhận"&&rx.TrangThai is "Đã xác nhận" or "Ngừng áp dụng"))throw DAL_QUYENNGHIEPVU.TuChoi();
-        DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db,tx,user,"NGU_CANH_HO_SO",c.MaHD??c.MaDT??c.MaLS??c.MaPhieu??c.MaHS??c.MaBN??user.MaNV);
+
         return c;
     });
 }

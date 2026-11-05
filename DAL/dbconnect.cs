@@ -52,6 +52,14 @@ namespace DAL
             try
             {
                 connection.Open();
+                var principal=Thread.CurrentPrincipal as System.Security.Claims.ClaimsPrincipal;
+                var sessionClaim=principal?.FindFirst("RHM.MaPhien")?.Value;
+                if(Guid.TryParse(sessionClaim,out var auditSession))
+                {
+                    var account=principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    DAL_NHATKY.KiemTraPhien(connection,null,account??"",auditSession);
+                    connection.Execute("EXEC sys.sp_set_session_context @key=N'RHM.MaPhien',@value=@session",new{session=auditSession.ToString("D")});
+                }
                 return connection;
             }
             catch
@@ -462,6 +470,22 @@ namespace DAL
             var giaTriMoi = GiaTri(record);
             var giaTriHienTai = original is null ? null : GiaTri(original);
             var giaTriBanGoc = expected is null ? null : GiaTri(expected);
+            // Chỉ kiểm tra FK mới/được đổi; bản lịch sử giữ nguyên FK vẫn đọc/sửa được.
+            var danhMucCha = new (string Cot,string Bang,string Khoa,string HoatDong)[]
+            {
+                ("MaKhoa","KHOA","MaKhoa","Đang hoạt động"),("MaCK","CHUYEN_KHOA","MaCK","Đang hoạt động"),
+                ("MaPhong","PHONG","MaPhong","Đang hoạt động"),("MaDV","DICH_VU","MaDV","Đang hoạt động"),
+                ("MaChucVu","CHUC_VU","MaChucVu","Đang hoạt động"),("MaLoaiHH","LOAI_HANG_HOA","MaLoaiHH","Đang hoạt động"),
+                ("MaNhomThuoc","NHOM_THUOC_KE_DON","MaNhomThuoc","Đang áp dụng"),("MaDMTT","DM_TINH_TRANG_BENH","MaDMTT","Đang áp dụng")
+            };
+            foreach(var fk in danhMucCha)
+            {
+                if(table==fk.Bang||!giaTriMoi.TryGetValue(fk.Cot,out var id)||string.IsNullOrWhiteSpace(Convert.ToString(id)))continue;
+                if(giaTriHienTai is not null&&giaTriHienTai.TryGetValue(fk.Cot,out var oldId)&&Equals(oldId,id))continue;
+                if(db.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.columns WHERE object_id=OBJECT_ID(@parent) AND name=N'TrangThai'",new{parent="dbo."+fk.Bang},tx)==0)continue;
+                if(db.ExecuteScalar<int>($"SELECT COUNT(*) FROM dbo.[{fk.Bang}] WITH(HOLDLOCK) WHERE [{fk.Khoa}]=@id AND TrangThai=@active",new{id,active=fk.HoatDong},tx)!=1)
+                    throw new InvalidOperationException($"{fk.Cot}: chọn danh mục đang sử dụng.");
+            }
             var cacThuocTinh = TypeDescriptor.GetProperties(record);
             var cacQuyTacGhi = TypeDescriptor.GetProperties(typeof(T));
             foreach (Column cot in cacCot)

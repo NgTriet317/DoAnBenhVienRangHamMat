@@ -1,0 +1,19 @@
+using ET;
+if(HanhDongNhatKy.Nhan("LOGIN_SUCCESS")!="Đăng nhập thành công"||HanhDongNhatKy.Nhan("UPDATE")!="Cập nhật thông tin")throw new Exception("Vietnamese audit action labels");
+if(HanhDongNhatKy.Nhan("Lưu nháp khám")!="Lưu nháp khám")throw new Exception("Legacy Vietnamese labels preserved");
+if(HanhDongNhatKy.LuaChon.Single(x=>x.Ma=="LOGIN_FAILED").Ten!="Đăng nhập thất bại")throw new Exception("Filter keeps code and Vietnamese label");
+void Check(bool ok,string name){if(!ok)throw new Exception(name);Console.WriteLine("PASS "+name);}
+void Reject(Action action,string name){try{action();}catch(ArgumentException){Console.WriteLine("PASS "+name);return;}throw new Exception(name);}
+Check(DanhMucHeThong.TatCa.Count==10,"P0/P1 whitelist has ten catalogs");
+Reject(()=>DanhMucHeThong.Lay("TAI_KHOAN"),"Account table excluded");
+Reject(()=>DanhMucHeThong.Lay("DICH_VU]; DELETE dbo.TAI_KHOAN--"),"SQL identifier injection rejected");
+var service=DanhMucHeThong.Lay("DICH_VU");
+Reject(()=>service.ChuanHoa(new Dictionary<string,object?>{{"TenDV","Test"},{"DonGia",-1m}}),"Negative price rejected");
+Reject(()=>service.ChuanHoa(new Dictionary<string,object?>{{"MatKhauHash","secret"}}),"Unexpected field rejected");
+Check(DanhMucHeThong.Lay("DICH_VU_TINH_TRANG").Khoa.Length==2,"Composite key preserved");
+Check(DanhMucHeThong.Lay("DM_TINH_TRANG_BENH").DangDung=="Đang áp dụng","Clinical status preserved");
+var filter=new BoLocNhatKy{KichThuocTrang=25,Trang=1};
+filter.KiemTra();
+Reject(()=>new BoLocNhatKy{KichThuocTrang=100000}.KiemTra(),"Unbounded log request rejected");
+Reject(()=>new BoLocNhatKy{TuUtc=DateTime.UtcNow,DenUtc=DateTime.UtcNow.AddDays(-1)}.KiemTra(),"Reversed date range rejected");
+Console.WriteLine("Sprint 3 contract checks passed.");

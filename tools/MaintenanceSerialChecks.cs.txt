@@ -38,7 +38,7 @@ static class Program
             TrustServerCertificate=true, ConnectTimeout=8 }.ConnectionString;
         Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",cs);
         Console.WriteLine($"Maintenance serial checks: {args[1]}; maintenance transactions roll back; owned race seed is removed");
-        try {using var preflight=Open();Assert(preflight.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0")==60,"Expected the canonical 60-table schema");}
+        try {using var preflight=Open();Assert(preflight.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N'PHIEN_DANG_NHAP',N'PHAN_QUYEN_VAI_TRO')")==60,"Expected the canonical 60-table schema");}
         catch(Exception ex){Console.WriteLine("BLOCKED database preflight: "+ex.Message);return 2;}
         Check("Maintenance model maps nullable lifecycle timestamps",()=> {
             foreach(string name in new[]{"NgayXacNhan","NgayThucHien"})

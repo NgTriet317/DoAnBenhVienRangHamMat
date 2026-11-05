@@ -1,0 +1,5 @@
+PASS SQL single canonical installer includes Sprint 3
+PASS SQL canonical installer pass 1
+PASS SQL canonical installer pass 2
+PASS SQL full installer repeat preserves row counts
+PASS ALL: 4 assertions

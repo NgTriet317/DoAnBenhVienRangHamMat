@@ -31,6 +31,7 @@ public partial class DangNhap : Window
             if (taiKhoan == null || !taiKhoan.TrangThai.Equals("Đang hoạt động", StringComparison.OrdinalIgnoreCase)
                 || !KiemTraMatKhau(PasswordBox.Password, taiKhoan.MatKhauHash))
             {
+                if(taiKhoan is not null)new BUS_NHATKY().GhiDangNhapThatBai(taiKhoan.MaTK);
                 FormError.Text = "Tên đăng nhập, mật khẩu không đúng hoặc tài khoản bị khóa.";
                 return;
             }
@@ -53,6 +54,7 @@ public partial class DangNhap : Window
             PhienDangNhap.TenDangNhap = taiKhoan.TenDangNhap;
             PhienDangNhap.IsAdmin = admin;
             PhienDangNhap.KhoiTaoDinhDanhNghiepVu(taiKhoan.MaTK);
+            PhienNhatKy.BatDau();
             DialogResult = true;
         }
         catch (Exception ex)

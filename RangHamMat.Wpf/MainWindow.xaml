@@ -289,12 +289,12 @@
               </StackPanel>
             </Button>
             <!-- Thao tác của nút: gọi App_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
-            <Button Tag="DichVu" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Danh mục dịch vụ" ToolTip="Mở danh mục dịch vụ" CommandParameter="Hệ thống">
+            <Button Tag="DichVu" Click="App_Click" Style="{StaticResource AppTile}" AutomationProperties.Name="Quản lý danh mục hệ thống" ToolTip="Mở quản lý danh mục hệ thống" CommandParameter="Hệ thống">
               <StackPanel>
                 <Border Width="52" Height="52" CornerRadius="14" Background="{StaticResource AccentSoft}" HorizontalAlignment="Center" Margin="0,0,0,10">
                   <Path Data="M4,3 H20 V21 H4 Z M8,7 H16 M8,12 H16 M8,17 H16" Style="{StaticResource AppIcon}" />
                 </Border>
-                <TextBlock Text="Danh mục dịch vụ" TextAlignment="Center" TextWrapping="Wrap" FontWeight="SemiBold" Height="38" VerticalAlignment="Center" FontSize="14" />
+                <TextBlock Text="Quản lý danh mục hệ thống" TextAlignment="Center" TextWrapping="Wrap" FontWeight="SemiBold" Height="38" VerticalAlignment="Center" FontSize="14" />
                 <TextBlock Text="Hệ thống" TextAlignment="Center" FontSize="12" Foreground="{StaticResource Muted}" />
               </StackPanel>
             </Button>

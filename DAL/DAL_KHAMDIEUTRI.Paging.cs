@@ -41,7 +41,7 @@ public sealed partial class DAL_KHAMDIEUTRI
         using var reader=db.QueryMultiple(PatientScopeSql+", matches AS ("+source+") SELECT COUNT(*) FROM matches OPTION(RECOMPILE);"+PatientScopeSql+", matches AS ("+source+") SELECT "+fields+" FROM matches ORDER BY "+order+" OFFSET @offset ROWS FETCH NEXT @size ROWS ONLY OPTION(RECOMPILE)",p,tx);
         var total=reader.ReadSingle<int>();var rows=reader.Read<T>().ToArray();
         reader.Dispose();project?.Invoke(db,tx,rows);
-        DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db,tx,user,"TRANG_HO_SO",typeof(T).Name);
+
         return new TrangHoSo<T>(rows,total,filter.Trang,filter.KichThuocTrang);
     });
     /// <summary>
@@ -113,6 +113,6 @@ public sealed partial class DAL_KHAMDIEUTRI
               AND (@LaAdmin=1 OR (@doctor=1 AND l.MaBS=@MaNV AND p.MaBS=@MaNV) OR l.TrangThai=N'Đã xác nhận')
             ORDER BY h.MaLS OPTION(RECOMPILE)
             """,new{user.MaNV,user.LaAdmin,doctor,reception,finance,visit=maLS},tx).ToArray();
-        DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db,tx,user,"DANH_SACH_HOA_DON",maLS??user.MaNV);return (IReadOnlyList<string>)rows;
+        return (IReadOnlyList<string>)rows;
     });
 }

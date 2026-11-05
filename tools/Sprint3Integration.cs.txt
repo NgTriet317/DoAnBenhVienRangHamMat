@@ -1,0 +1,282 @@
+using System.Data;
+using System.IO;
+using System.Reflection;
+using System.Security.Claims;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using BUS;
+using DAL;
+using Dapper;
+using ET;
+using Microsoft.Data.SqlClient;
+using RangHamMat;
+using RangHamMat.Views;
+
+internal static partial class Program
+{
+    static string cs="";
+    static int passed;
+    static void Check(bool condition,string name){if(!condition)throw new Exception(name);passed++;Console.WriteLine("PASS "+name);}
+    static void Reject(Action action,string name){try{action();}catch(Exception ex) when(ex is ArgumentException or InvalidOperationException or UnauthorizedAccessException){passed++;Console.WriteLine("PASS "+name);return;}throw new Exception(name);}
+    static int Count(SqlConnection db)=>db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC");
+    static void Principal(string nv,string tk)=>Thread.CurrentPrincipal=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.NameIdentifier,tk),new(DinhDanhNghiepVu.MaNhanVienClaim,nv)],DinhDanhNghiepVu.KieuXacThuc));
+    [STAThread] static int Main(string[] args)
+    {
+        if(args.Length>=3&&args[2].EndsWith("-worker",StringComparison.Ordinal))return Worker(args);
+        if(args.Length is <2 or >3||!System.Text.RegularExpressions.Regex.IsMatch(args[1],@"^RHM_(Sprint3|Hospital)_Test_[A-Za-z0-9_]+$"))throw new Exception("Isolated test database required.");
+        cs=$"Data Source={args[0]};Initial Catalog={args[1]};Integrated Security=True;TrustServerCertificate=True";
+        Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",cs);
+        try{if(args.Length==3)Install(args[0],args[1]);if(args.Length<3||args[2]!="--install-only")Run();Console.WriteLine($"PASS ALL: {passed} assertions");return 0;}
+        catch(Exception ex){Console.Error.WriteLine(ex);return 1;}
+    }
+    static void Install(string server,string database)
+    {
+        // Đọc file SQL sản phẩm duy nhất, chỉ đổi tên DB/loại snapshot trong bộ nhớ cho fixture cách ly.
+        string sql=File.ReadAllText("Database/QLBenhVienRangHamMat.sql");
+        Check(sql.Contains("-- BEGIN SPRINT 3 THANH TAN")&&!File.Exists("Database/Sprint3_ThanhTan.sql"),"SQL single canonical installer includes Sprint 3");
+        sql=System.Text.RegularExpressions.Regex.Replace(sql,@"(?s)-- BEGIN RHM DATA SNAPSHOT:.*?-- END RHM DATA SNAPSHOT","-- Snapshot omitted only for isolated test fixtures.");
+        sql=sql.Replace("QLBenhVienRangHamMat",database);
+        using var connection=new SqlConnection($"Data Source={server};Initial Catalog=master;Integrated Security=True;TrustServerCertificate=True");connection.Open();
+        Dictionary<string,long>? previous=null;
+        for(int pass=1;pass<=2;pass++)
+        {
+            foreach(var batch in System.Text.RegularExpressions.Regex.Split(sql,@"^\s*GO\s*$",System.Text.RegularExpressions.RegexOptions.Multiline|System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                if(!string.IsNullOrWhiteSpace(batch))connection.Execute(batch,commandTimeout:180);
+            var counts=connection.Query<(string Table,long Rows)>("SELECT t.name,SUM(p.row_count) FROM sys.tables t JOIN sys.dm_db_partition_stats p ON p.object_id=t.object_id AND p.index_id IN(0,1) GROUP BY t.name").ToDictionary(r=>r.Table,r=>r.Rows);
+            Check(counts.ContainsKey("PHIEN_DANG_NHAP"),"SQL canonical installer pass "+pass);
+            if(previous is not null)Check(previous.Count==counts.Count&&previous.All(p=>counts.TryGetValue(p.Key,out var rows)&&rows==p.Value),"SQL full installer repeat preserves row counts");
+            previous=counts;
+        }
+    }
+    static void Run()
+    {
+        using var db=new SqlConnection(cs);db.Open();
+        Principal("NV001","TK001");var actor=new BUS_QUYENNGHIEPVU().LayNguCanh("NV001");
+        var logs=new BUS_NHATKY();int before=Count(db);
+        var session=logs.BatDauPhien(actor);var other=logs.BatDauPhien(actor);
+        Check(session!=other&&db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC WHERE MaPhien IN(@session,@other) AND HanhDong=N'LOGIN_SUCCESS'",new{session,other})==2,"LOG-01/04 two independent login sessions");
+        var catalog=new BUS_DANHMUC();
+        int readCheckpoint=Count(db);
+        new BUS_KHAMDIEUTRI().LayTrangBenhNhan(new BoLocDanhSachHoSo(),actor);
+        Check(Count(db)==readCheckpoint,"SCOPE reading patient list does not create an operation event");
+        logs.GhiDangNhapThatBai("TK001");int failedOnce=Count(db);logs.GhiDangNhapThatBai("TK001");
+        Check(Count(db)==failedOnce,"LOG-01 failed-login audit is rate limited per account");
+        logs.GhiDangNhapThatBai("S3_ACCOUNT_NOT_FOUND");
+        Check(Count(db)==failedOnce,"LOG-01 unknown account does not create fake account or orphan audit");
+        bool softDeleteOnly=false;
+        try{new DAL_DICHVU().xoaDichVu("S3_DO_NOT_DELETE");}
+        catch(InvalidOperationException ex){softDeleteOnly=ex.Message.Contains("Không xóa vật lý");}
+        Check(softDeleteOnly,"CAT-05 legacy delete API is disabled");
+        var created=new Dictionary<string,Dictionary<string,object?>>();
+        string tag="S3_"+Guid.NewGuid().ToString("N")[..12];
+        foreach(var d in DanhMucHeThong.TatCa)
+        {
+            var values=new Dictionary<string,object?>();
+            foreach(var field in d.Truong)
+            {
+                object? value=field.Kieu switch{"decimal"=>120000m,"int"=>30,"date"=>DateTime.Today.AddYears(70).AddDays(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NGAY_NGHI_LE")),"bool"=>true,_=>tag+field.Cot};
+                if(field.LuaChon is not null)value=field.LuaChon[0];
+                if(field.BangCha is not null)
+                {
+                    var p=DanhMucHeThong.Lay(field.BangCha);
+                    value=created.TryGetValue(p.Bang,out var parent)?parent[p.Khoa[0]]:catalog.Lay(p.Bang,"",p.DangDung,actor).First()[p.Khoa[0]];
+                }
+                if(field.Cot=="DienThoai")value="0900000000";
+                if(field.Cot=="LoaiPhong")value="Phòng khám chuyên khoa";
+                if(field.Cot=="TinhTrang")value="Đang sử dụng";
+                values[field.Cot]=value;
+            }
+            int n=Count(db);
+            var row=catalog.Luu(d.Bang,values,null,actor,session);created[d.Bang]=row;
+            Check(Count(db)==n+1,"CAT-02/LOG-02 single atomic CREATE "+d.Bang);
+            Check(catalog.Lay(d.Bang,"", "",actor).Any(r=>d.Khoa.All(k=>Equals(r[k],row[k]))),"CAT-01 persisted "+d.Bang);
+            int duplicateCheckpoint=Count(db);bool duplicateRejected=false;
+            try{catalog.Luu(d.Bang,values,null,actor,session);}
+            catch(ArgumentException){duplicateRejected=true;}
+            catch(SqlException ex) when(ex.Number is 2601 or 2627){duplicateRejected=true;}
+            Check(duplicateRejected&&Count(db)==duplicateCheckpoint,"CAT-03 duplicate rejected without success log "+d.Bang);
+            var update=values.ToDictionary(p=>p.Key,p=>p.Value);
+            var editable=d.Truong.FirstOrDefault(f=>f.Cot.StartsWith("Ten"))??d.Truong.First(f=>f.Cot=="NoiDungDeXuat");
+            update[editable.Cot]=Convert.ToString(update[editable.Cot])+" updated";
+            n=Count(db);var changed=catalog.Luu(d.Bang,update,row,actor,session);
+            Check(Count(db)==n+1,"CAT-04 UPDATE "+d.Bang);
+            Reject(()=>catalog.Luu(d.Bang,values,row,actor,session),"CAT-04 stale edit rejected "+d.Bang);
+            created[d.Bang]=changed;
+        }
+        // Ngừng con trước cha theo thứ tự FK; sau đó khôi phục cha trước con.
+        var reverse=DanhMucHeThong.TatCa.Reverse().ToArray();
+        foreach(var d in reverse)
+        {
+            var row=created[d.Bang];var values=d.Truong.ToDictionary(f=>f.Cot,f=>row[f.Cot]);int n=Count(db);
+            created[d.Bang]=catalog.Luu(d.Bang,values,row,actor,session,false);
+            Check(Count(db)==n+1,"CAT-05 DEACTIVATE "+d.Bang);
+        }
+        foreach(var d in DanhMucHeThong.TatCa)
+        {
+            if(d.Bang=="KHOA")
+            {
+                var child=created["CHUYEN_KHOA"];var definition=DanhMucHeThong.Lay("CHUYEN_KHOA");
+                Reject(()=>catalog.Luu(definition.Bang,definition.Truong.ToDictionary(f=>f.Cot,f=>child[f.Cot]),child,actor,session,true),"CAT-06 inactive parent blocks reactivation");
+            }
+            var row=created[d.Bang];int n=Count(db);
+            created[d.Bang]=catalog.Luu(d.Bang,d.Truong.ToDictionary(f=>f.Cot,f=>row[f.Cot]),row,actor,session,true);
+            Check(Count(db)==n+1,"CAT-06 REACTIVATE "+d.Bang);
+        }
+        var khoa=DanhMucHeThong.Lay("KHOA");var parentRow=created[khoa.Bang];
+        Reject(()=>catalog.Luu(khoa.Bang,khoa.Truong.ToDictionary(f=>f.Cot,f=>parentRow[f.Cot]),parentRow,actor,session,false),"CAT-06 active child blocks parent deactivation");
+        int checkpoint=Count(db);
+        using(var tx=db.BeginTransaction())
+        {
+            new DAL_DANHMUC(tx).Luu("KHOA",new Dictionary<string,object?>{{"TenKhoa",tag+"rollback"},{"DienThoai","0900000000"},{"MoTa","rollback"}},null,actor,session);
+            tx.Rollback();
+        }
+        Check(Count(db)==checkpoint&&db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.KHOA WHERE TenKhoa=@name",new{name=tag+"rollback"})==0,"LOG-03 rollback removes mutation and audit");
+        Reject(()=>catalog.Luu("KHOA",new Dictionary<string,object?>{{"TenKhoa",""}},null,actor,session),"CAT-03 invalid input does not commit");
+        Check(Count(db)==checkpoint,"CAT-03 no false success log");
+        var first=logs.LayTrang(new BoLocNhatKy{KichThuocTrang=25},actor);
+        var second=logs.LayTrang(new BoLocNhatKy{KichThuocTrang=25,Trang=2},actor);
+        Check(first.Dong.Count==25&&!first.Dong.Select(r=>r["MaNK"]).Intersect(second.Dong.Select(r=>r["MaNK"])).Any(),"LOG-07 stable SQL paging");
+        var only=logs.LayTrang(new BoLocNhatKy{HanhDong="DEACTIVATE",TaiKhoan="admin001",KichThuocTrang=25},actor);
+        Check(only.Dong.Count>=10&&only.Dong.All(r=>Convert.ToString(r["HanhDong"])=="DEACTIVATE"),"LOG-07 SQL filters");
+        logs.KetThucPhien(session);int ended=Count(db);logs.KetThucPhien(session);
+        Check(ended==Count(db)&&db.ExecuteScalar<string>("SELECT TrangThaiPhien FROM dbo.PHIEN_DANG_NHAP WHERE MaPhien=@other",new{other})=="Đang mở","LOG-01/04 idempotent logout, other session stays open");
+        db.Execute("UPDATE dbo.PHIEN_DANG_NHAP SET HoatDongCuoiUtc=DATEADD(minute,-6,SYSUTCDATETIME()) WHERE MaPhien=@other",new{other});
+        var last=logs.BatDauPhien(actor);
+        Check(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC WHERE MaPhien=@other AND HanhDong=N'SESSION_ABNORMAL_END'",new{other})==0,"SCOPE abnormal session does not create operation event");
+        foreach(var ignored in new[]{"Tra cứu quy trình khám","Tra cứu dịch vụ","SESSION_ABNORMAL_END","VIEW_LOG","Đối chiếu yêu cầu thanh toán"})
+        {
+            int changesBefore=logs.ThongKe(actor).ThayDoi;
+            db.Execute("INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua) VALUES(@id,N'TK001',SYSDATETIME(),@ignored,N'S3_SCOPE',N'scope',N'Thành công')",new{id="S3_"+Guid.NewGuid().ToString("N"),ignored});
+            Check(logs.LayTrang(new BoLocNhatKy{HanhDong=ignored},actor).Tong==0,"SCOPE old non-mutation event hidden: "+ignored);
+            Check(logs.ThongKe(actor).ThayDoi==changesBefore,"SCOPE technical/read event excluded from change KPI: "+ignored);
+        }
+        Check(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.PHIEN_DANG_NHAP WHERE MaPhien=@other AND TrangThaiPhien=N'Kết thúc bất thường' AND DangXuatUtc IS NULL",new{other})==1,"LOG-05 stale heartbeat leaves unknown logout null");
+        Reject(()=>logs.Heartbeat(other,actor),"LOG-05 closed session cannot revive");
+        db.Execute("UPDATE dbo.TAI_KHOAN SET TrangThai=N'Khóa' WHERE MaTK=N'TK001'");
+        try{Reject(()=>logs.Heartbeat(last,actor),"LOG-06 locked account denied");}
+        finally{db.Execute("UPDATE dbo.TAI_KHOAN SET TrangThai=N'Đang hoạt động' WHERE MaTK=N'TK001'");}
+        // Tài khoản User riêng trong database kiểm thử; không đụng tài khoản thật.
+        db.Execute("""
+          IF NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN WHERE MaNV=N'S3_NV_USER')
+          BEGIN
+           INSERT dbo.NHAN_VIEN(MaNV,HoTen,MaChucVu,NgayVaoLam,TrangThai) VALUES(N'S3_NV_USER',N'FIXTURE Sprint 3',N'CV001',CONVERT(date,SYSDATETIME()),N'Đang làm việc');
+           INSERT dbo.TAI_KHOAN(MaTK,TenDangNhap,MatKhauHash,MaVaiTro,MaNV,TrangThai) SELECT N'S3_TK_USER',N's3_fixture_user',MatKhauHash,N'VTRO002',N'S3_NV_USER',N'Đang hoạt động' FROM dbo.TAI_KHOAN WHERE MaTK=N'TK001';
+          END
+          """);
+        Principal("S3_NV_USER","S3_TK_USER");var user=new NguCanhNghiepVu{MaNV="S3_NV_USER",MaTK="S3_TK_USER",LaAdmin=true};
+        Reject(()=>catalog.Lay("KHOA","","",user),"LOG-06 forged admin rejected for catalog");
+        Reject(()=>logs.LayTrang(new BoLocNhatKy(),user),"LOG-06 forged admin rejected for audit");
+        var userSession=logs.BatDauPhien(user);
+        ((System.Security.Claims.ClaimsIdentity)((System.Security.Claims.ClaimsPrincipal)Thread.CurrentPrincipal!).Identity!).AddClaim(new System.Security.Claims.Claim("RHM.MaPhien",userSession.ToString("D")));
+        bool deniedRoleWrite=false;
+        using(var restricted=new dbconnect().BatDauGiaoDich())
+        {
+            try{restricted.Connection!.Execute("UPDATE dbo.VAI_TRO SET MoTa=N'FIXTURE should be denied' WHERE MaVaiTro=N'VTRO002'",transaction:restricted);}
+            catch(SqlException ex) when(ex.Number==53023){deniedRoleWrite=true;}
+            finally{if(restricted.Connection is not null)restricted.Rollback();}
+        }
+        logs.KetThucPhien(userSession);
+        Check(deniedRoleWrite,"LOG-06 non-admin direct role mutation denied inside SQL transaction");
+        Principal("NV001","TK001");
+        var identity=(ClaimsIdentity)((ClaimsPrincipal)Thread.CurrentPrincipal!).Identity!;
+        identity.AddClaim(new Claim("RHM.MaPhien",last.ToString("D")));
+        try
+        {
+            using var tx=new dbconnect().BatDauGiaoDich();
+            var cx=tx.Connection!;
+            int start=cx.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC",transaction:tx);
+            cx.Execute("UPDATE dbo.NHAN_VIEN SET HoTen=N'FIXTURE changed' WHERE MaNV=N'S3_NV_USER'; UPDATE dbo.TAI_KHOAN SET TenDangNhap=N's3_fixture_changed' WHERE MaTK=N'S3_TK_USER'; INSERT dbo.KHO(MaKho,TenKho,MaNV,LoaiKho,TrangThai) VALUES(N'S3_KHO_AUDIT',N'FIXTURE kho',N'NV001',N'Kho thuốc',N'Đang hoạt động');",transaction:tx);
+            Check(cx.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC",transaction:tx)==start+3,"LOG-02 HR account and stock triggers audit exactly once");
+            Check(cx.QuerySingle<string>("SELECT DuLieuSau FROM dbo.NHAT_KY_THAO_TAC WHERE MaPhien=@last AND LoaiDoiTuong=N'NHAN_VIEN' AND MaDoiTuong=N'S3_NV_USER'",new{last},tx).Contains("HoTen"),"LOG-02 audit identifies edited fields without recording personal values");
+            Check(cx.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC WHERE MaPhien=@last AND LoaiDoiTuong IN(N'NHAN_VIEN',N'TAI_KHOAN',N'KHO') AND (DuLieuSau LIKE N'%MatKhau%' OR DuLieuSau LIKE N'%FIXTURE changed%')",new{last},tx)==0,"LOG-02 cross-module audit excludes secrets and personal values");
+            Check(cx.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.triggers WHERE name LIKE N'TR_S3_Audit_%' AND is_disabled=0",transaction:tx)==30,"LOG-02 all thirty cross-module triggers installed");
+            cx.Execute("UPDATE dbo.TAI_KHOAN SET TrangThai=N'Khóa' WHERE MaTK=N'S3_TK_USER'",transaction:tx);
+            Check(cx.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC WHERE MaPhien=@last AND HanhDong=N'ACCOUNT_LOCK' AND MaDoiTuong=N'S3_TK_USER'",new{last},tx)==1,"LOG-02 account lock has canonical event action");
+            cx.Execute("UPDATE dbo.KHOA SET TrangThai=N'Không sử dụng' WHERE MaKhoa=@id",new{id=created["KHOA"]["MaKhoa"]},tx);
+            Reject(()=>new DAL_CHUYENKHOA(tx).themChuyenKhoa(new ET_CHUYENKHOA{MaKhoa=Convert.ToString(created["KHOA"]["MaKhoa"])!,TenCK="FIXTURE rejected",MoTa="fixture",TrangThai="Đang hoạt động"}),"REG-01 legacy DAL rejects inactive catalog parent");
+            tx.Connection!.Execute("""
+              INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua)
+              VALUES(@id,N'TK001',SYSDATETIME(),N'UPDATE',N'S3_TEST',N'fixture',N'Thành công')
+              """,new{id="S3_"+Guid.NewGuid().ToString("N")},tx);
+            Check(tx.Connection.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC WHERE LoaiDoiTuong=N'S3_TEST' AND MaPhien=@last AND ThoiGianUtc IS NOT NULL AND MaSuKien IS NOT NULL",new{last},tx)==1,"LOG-02 existing SQL audit receives session UTC and event defaults");
+            tx.Rollback();
+        }
+        finally{identity.RemoveClaim(identity.FindFirst("RHM.MaPhien")!);}
+        using(var tx=new dbconnect().BatDauGiaoDich())
+        {
+            var writer=new BUS_NHATKY(tx);
+            writer.GhiThayDoi("BENH_NHAN","S3_FIXTURE","UPDATE",["HoTenBN","MatKhauHash"],actor,last);
+            var payload=tx.Connection!.QuerySingle<string>("SELECT TOP(1) DuLieuSau FROM dbo.NHAT_KY_THAO_TAC WHERE MaDoiTuong=N'S3_FIXTURE' ORDER BY ThoiGianUtc DESC",transaction:tx);
+            Check(payload.Contains("HoTenBN")&&!payload.Contains("MatKhau"),"LOG-02 shared writer records field names only and excludes secrets");
+            tx.Rollback();
+        }
+        CaptureUi(last);
+        ProcessAcceptance();
+        logs.KetThucPhien(last);
+    }
+    static void CaptureUi(Guid session)
+    {
+        var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml",UriKind.Relative)});
+        PhienDangNhap.MaNV="NV001";PhienDangNhap.TenDangNhap="admin001";PhienDangNhap.IsAdmin=true;PhienDangNhap.KhoiTaoDinhDanhNghiepVu("TK001");
+        typeof(PhienDangNhap).GetProperty("MaPhien")!.SetValue(null,session);
+        CatalogUiAcceptance();
+        foreach(var size in new[]{(1280,850),(1024,768)})
+        foreach(var catalog in new[]{true,false})
+        {
+            UserControl control=catalog?new DichVu():new NhatKy();
+            var window=new Window{Content=control,Width=size.Item1,Height=size.Item2,ShowInTaskbar=false,Left=-20000,Top=-20000};
+            window.Show();control.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
+            Check(string.IsNullOrWhiteSpace((control.FindName("Message") as TextBlock)?.Text),"UI SQL loads "+(catalog?"catalog":"audit")+" "+size);
+            if(!catalog)
+            {
+                var actions=(ComboBox)control.FindName("ActionFilter");
+                Check(actions.Items.OfType<LuaChonHanhDongNhatKy>().All(x=>!x.Ten.Contains('_')),"UI Vietnamese action filter labels");
+                actions.SelectedValue="UPDATE";
+                FindButtons(control).Single(b=>Convert.ToString(b.Content)=="Tải lại").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                var filter=(BoLocNhatKy)typeof(NhatKy).GetField("applied",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(control)!;
+                var entries=((DataGrid)control.FindName("AuditGrid")).Items.OfType<DataRowView>().ToArray();
+                Check(filter.HanhDong=="UPDATE"&&entries.Length>0&&entries.All(r=>Convert.ToString(r["HanhDong"])=="Cập nhật thông tin"),"UI Vietnamese UPDATE label filters by original SQL code");
+                ((DataGrid)control.FindName("AuditGrid")).SelectedItem=entries[0];
+                Check(((TextBlock)control.FindName("DetailAction")).Text=="Cập nhật thông tin"&&((ScrollViewer)control.FindName("DetailContent")).Visibility==Visibility.Visible,"UI Vietnamese action detail card");
+                FindButtons(control).Single(b=>Convert.ToString(b.Content)=="Xóa lọc").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Check(Convert.ToString(actions.SelectedValue)=="","UI Vietnamese all-actions filter resets");
+                Check(((StackPanel)control.FindName("DetailEmpty")).Visibility==Visibility.Visible,"UI detail returns to empty state after reload");
+                AuditDetailAcceptance((NhatKy)control,size.Item1);
+            }
+            var bmp=new RenderTargetBitmap((int)control.ActualWidth,(int)control.ActualHeight,96,96,PixelFormats.Pbgra32);bmp.Render(control);
+            var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bmp));
+            using(var file=File.Create($"docs/sprint3/evidence/{(catalog?"catalog":"audit")}-{size.Item1}.png"))png.Save(file);
+            window.Close();
+        }
+        var main=new MainWindow{ShowInTaskbar=false,Left=-20000,Top=-20000};
+        main.Show();main.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
+        System.ComponentModel.CancelEventHandler cancel=(_,e)=>e.Cancel=true;
+        main.Closing+=cancel;main.Close();
+        using(var verify=new SqlConnection(cs))
+        {
+            Check(verify.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.PHIEN_DANG_NHAP WHERE MaPhien=@session AND DangXuatUtc IS NULL AND TrangThaiPhien=N'Đang mở'",new{session})==1,"LOG-01 canceled Closing leaves session open");
+        }
+        main.Closing-=cancel;main.Close();
+        using(var verify=new SqlConnection(cs))
+            Check(verify.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC WHERE MaPhien=@session AND HanhDong=N'LOGOUT'",new{session})==1,"LOG-01 actual MainWindow Closed logs out exactly once");
+        var login=new DangNhap{ShowInTaskbar=false,Left=-20000,Top=-20000};
+        login.Dispatcher.BeginInvoke(new Action(()=>
+        {
+            ((TextBox)login.FindName("UsernameBox")).Text="admin001";
+            ((PasswordBox)login.FindName("PasswordBox")).Password="123456";
+            typeof(DangNhap).GetMethod("DangNhap_Click",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance)!.Invoke(login,[login,new RoutedEventArgs()]);
+            if(login.IsVisible)login.DialogResult=false;
+        }),DispatcherPriority.ApplicationIdle);
+        Check(login.ShowDialog()==true&&PhienDangNhap.MaPhien!=Guid.Empty,"LOG-01 actual login creates audited session");
+        var loggedIn=PhienDangNhap.MaPhien;
+        var loggedMain=new MainWindow{ShowInTaskbar=false,Left=-20000,Top=-20000};loggedMain.Show();loggedMain.Close();
+        using(var verify=new SqlConnection(cs))
+            Check(verify.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC WHERE MaPhien=@loggedIn AND HanhDong IN(N'LOGIN_SUCCESS',N'LOGOUT')",new{loggedIn})==2,"LOG-01 real login-close cycle has exactly two events");
+        typeof(PhienDangNhap).GetProperty("MaPhien")!.SetValue(null,Guid.Empty);
+        app.Shutdown();
+    }
+}

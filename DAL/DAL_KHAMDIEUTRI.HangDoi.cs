@@ -60,7 +60,7 @@ public sealed partial class DAL_KHAMDIEUTRI
                 OFFSET @offset ROWS FETCH NEXT @size ROWS ONLY;
                 """,args,tx);
             var count=reader.ReadSingle<int>();var rows=reader.Read<HangDoiKhamItem>().ToArray();reader.Dispose();
-            DAL_QUYENNGHIEPVU.GhiTraCuuAdmin(db,tx,user,"HANG_CHO_KHAM",doctor??user.MaNV);
+
             return new TrangHoSo<HangDoiKhamItem>(rows,count,boLoc.Trang,boLoc.KichThuocTrang);
         });
 }

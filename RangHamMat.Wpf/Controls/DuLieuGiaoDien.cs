@@ -432,6 +432,9 @@ public static class DuLieuGiaoDien
                 }
             default: throw new InvalidOperationException("Chứng từ này phải được xử lý qua BUS của bảng tương ứng.");
         }
+        if(PhienDangNhap.MaPhien!=Guid.Empty)
+            new BUS_NHATKY(transaction).GhiThayDoi(table,Convert.ToString(saved[Key(table)])??"",id is null?"CREATE":"UPDATE",values.Keys,
+                new NguCanhNghiepVu{MaNV=PhienDangNhap.MaNV,MaTK=PhienDangNhap.MaTK},PhienDangNhap.MaPhien);
         return saved;
     }
     /// <summary>
@@ -641,6 +644,9 @@ public static class DuLieuGiaoDien
             if (tables.Any(t => t.Key != table && t.Value.Any(r => UiRecord.Text(r, foreign.Key) == id)))
                 throw new InvalidOperationException("Bản ghi đang có dữ liệu liên kết. Không thể xóa.");
         DeleteRecord(table, id, Values(row));
+        if(PhienDangNhap.MaPhien!=Guid.Empty)
+            new BUS_NHATKY(transaction).GhiThayDoi(table,id,"CANCEL",Values(row).Keys,
+                new NguCanhNghiepVu{MaNV=PhienDangNhap.MaNV,MaTK=PhienDangNhap.MaTK},PhienDangNhap.MaPhien);
         Rows(table).Remove(row); UpdatePlanTotal(table, row); Notify();
     }
 
