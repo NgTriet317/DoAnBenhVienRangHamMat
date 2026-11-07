@@ -20,7 +20,8 @@ public sealed record ChartTick(string Label, double Top);
 /// </summary>
 public sealed record ChartPlotPoint(string Label, double LabelLeft, double LabelWidth, double PrimaryLeft, double SecondaryLeft,
     double BarWidth, double PrimaryTop, double SecondaryTop, double PrimaryHeight, double SecondaryHeight,
-    double DotLeft, double DotTop, string PrimaryTip, string SecondaryTip, bool ShowBars, bool ShowDot);
+    double DotLeft, double DotTop, string PrimaryTip, string SecondaryTip, bool ShowBars, bool ShowDot,
+    double SecondaryDotTop = 0);
 
 /// <summary>Biểu đồ báo cáo có bố cục hiện hữu trong XAML; C# chỉ theo dõi nguồn và tính thang đo/tọa độ cho binding.</summary>
 public sealed partial class ChartView : UserControl, INotifyPropertyChanged
@@ -39,6 +40,8 @@ public sealed partial class ChartView : UserControl, INotifyPropertyChanged
     public static readonly DependencyProperty UnitProperty = DependencyProperty.Register(nameof(Unit), typeof(string), typeof(ChartView), new PropertyMetadata("VNĐ", OnPresentationChanged));
     /// <summary>Đơn vị tooltip do chuyên đề cung cấp; chuỗi rỗng cho dữ liệu đếm có tên chỉ tiêu rõ ràng.</summary>
     public string Unit { get => (string)GetValue(UnitProperty); set => SetValue(UnitProperty, value); }
+    public static readonly DependencyProperty SecondaryUnitProperty = DependencyProperty.Register(nameof(SecondaryUnit), typeof(string), typeof(ChartView), new PropertyMetadata(null, OnPresentationChanged));
+    public string? SecondaryUnit { get => (string?)GetValue(SecondaryUnitProperty); set => SetValue(SecondaryUnitProperty, value); }
     /// <summary>
     /// Được theo dõi được giữ trong phạm vi lớp để các thao tác dùng lại.
     /// </summary>
@@ -57,6 +60,8 @@ public sealed partial class ChartView : UserControl, INotifyPropertyChanged
     public ChartPlotPoint[] PlotPoints { get; private set; } = Array.Empty<ChartPlotPoint>();
     /// <summary>Tập tọa độ hình học của đường; Polyline được khai báo trong XAML.</summary>
     public PointCollection LinePoints { get; private set; } = new();
+    public PointCollection SecondaryLinePoints { get; private set; } = new();
+    public double ZeroTop { get; private set; }
     /// <summary>Chiều rộng vùng vẽ hiện có dùng để kéo đường lưới đến mép phải.</summary>
     public double PlotWidth { get; private set; }
     /// <summary>Có ít nhất một điểm số hữu hạn không âm sau khi lọc đầu vào.</summary>
@@ -105,20 +110,27 @@ public sealed partial class ChartView : UserControl, INotifyPropertyChanged
     {
         PlotWidth = Math.Max(0, PlotArea.ActualWidth);
         var height = Math.Max(0, PlotArea.ActualHeight);
-        var data = (Points ?? Array.Empty<ChartPoint>()).Where(p => double.IsFinite(p.Primary) && double.IsFinite(p.Secondary) && p.Primary >= 0 && p.Secondary >= 0).ToArray();
-        var max = data.Length == 0 ? 1 : Math.Ceiling(Math.Max(4, data.Max(p => Math.Max(p.Primary, p.Secondary))) / 4) * 4;
-        Ticks = Enumerable.Range(0, 5).Select(i => new ChartTick(data.Length == 0 ? "" : (max * (4 - i) / 4).ToString("N0"), height * i / 4)).ToArray();
+        var data = (Points ?? Array.Empty<ChartPoint>()).Where(p => double.IsFinite(p.Primary) && double.IsFinite(p.Secondary)).ToArray();
+        var max = data.Length == 0 ? 1 : Math.Max(0,data.Max(p => Math.Max(p.Primary,p.Secondary)));
+        var min = data.Length == 0 ? 0 : Math.Min(0,data.Min(p => Math.Min(p.Primary,p.Secondary)));
+        if(max==min)max=min+1;
+        var range=max-min;
+        double Y(double value)=>height*(max-value)/range;
+        ZeroTop=Y(0);
+        Ticks = Enumerable.Range(0, 5).Select(i => new ChartTick(data.Length == 0 ? "" : (max-range*i/4).ToString(Unit=="VNĐ"?"N0":"0.##"), height*i/4)).ToArray();
         var step = data.Length == 0 ? 0 : PlotWidth / data.Length;
         var bar = Math.Max(1, Math.Min(30, step * .3));
-        LinePoints = new PointCollection(data.Select((p, i) => new Point((i + .5) * step, height - p.Primary / max * height)));
+        LinePoints = new PointCollection(data.Select((p, i) => new Point((i + .5) * step, Y(p.Primary))));
+        SecondaryLinePoints = new PointCollection(data.Select((p, i) => new Point((i + .5) * step, Y(p.Secondary))));
         PlotPoints = data.Select((p, i) =>
         {
-            var center = (i + .5) * step; var primaryHeight = p.Primary / max * height; var secondaryHeight = p.Secondary / max * height;
+            var center = (i + .5) * step; var primaryY=Y(p.Primary);var secondaryY=Y(p.Secondary);
+            var secondUnit=SecondaryUnit??Unit;
             return new ChartPlotPoint(p.Label, i * step, step, center - bar - 2, center + 2, bar,
-                height - primaryHeight, height - secondaryHeight, primaryHeight, secondaryHeight, center - 3.5, height - primaryHeight - 3.5,
+                Math.Min(ZeroTop,primaryY), Math.Min(ZeroTop,secondaryY), Math.Abs(primaryY-ZeroTop), Math.Abs(secondaryY-ZeroTop), center - 3.5, primaryY - 3.5,
                 $"{p.PeriodDescription ?? p.Label} · {PrimaryLabel}: {p.Primary.ToString(Unit == "VNĐ" ? "N2" : "N0")} {Unit}".TrimEnd(),
-                $"{p.PeriodDescription ?? p.Label} · {SecondaryLabel}: {p.Secondary.ToString(Unit == "VNĐ" ? "N2" : "N0")} {Unit}".TrimEnd(), !IsLine, IsLine);
+                $"{p.PeriodDescription ?? p.Label} · {SecondaryLabel}: {p.Secondary.ToString(secondUnit == "VNĐ" ? "N2" : "N0")} {secondUnit}".TrimEnd(), !IsLine, IsLine,secondaryY-3.5);
         }).ToArray();
-        foreach (var name in new[] { nameof(Ticks), nameof(PlotPoints), nameof(LinePoints), nameof(PlotWidth), nameof(HasData), nameof(ShowLine) }) PropertyChanged?.Invoke(this, new(name));
+        foreach (var name in new[] { nameof(Ticks), nameof(PlotPoints), nameof(LinePoints), nameof(SecondaryLinePoints), nameof(ZeroTop), nameof(PlotWidth), nameof(HasData), nameof(ShowLine) }) PropertyChanged?.Invoke(this, new(name));
     }
 }

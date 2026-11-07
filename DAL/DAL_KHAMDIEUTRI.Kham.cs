@@ -93,7 +93,9 @@ public sealed partial class DAL_KHAMDIEUTRI
             ET_TINHTRANGBENH? current=null;
             if(!string.IsNullOrEmpty(r.MaTTB) && (!old.TryGetValue(r.MaTTB,out current)||!keys.Add(r.MaTTB)))throw DAL_QUYENNGHIEPVU.TuChoi();
             var name=r.LoaiTinhTrang?.Trim()??"";
-            var row=new ET_TINHTRANGBENH {MaTTB=current?.MaTTB??"",MaLS=visit.MaLS,MaDMTT=current?.MaDMTT,LoaiTinhTrang=name,MoTaTinhTrang=string.IsNullOrWhiteSpace(r.MoTaTinhTrang)?name:r.MoTaTinhTrang.Trim(),GhiChu=r.GhiChu};
+            var code=string.IsNullOrWhiteSpace(r.MaDMTT)?null:r.MaDMTT.Trim();
+            var catalog=code is null?null:db.QuerySingleOrDefault<ET_DMTINHTRANGBENH>("SELECT * FROM dbo.DM_TINH_TRANG_BENH WITH(HOLDLOCK) WHERE MaDMTT=@code",new{code},tx);
+            var row=new ET_TINHTRANGBENH {MaTTB=current?.MaTTB??"",MaLS=visit.MaLS,MaDMTT=QuyTacMaTinhTrang.KiemTra(code,name,catalog,current),LoaiTinhTrang=name,MoTaTinhTrang=string.IsNullOrWhiteSpace(r.MoTaTinhTrang)?name:r.MoTaTinhTrang.Trim(),GhiChu=r.GhiChu};
             Required(row.LoaiTinhTrang,"TinhTrang","Nhập tình trạng bệnh.");
             KiemTra(db,tx,"TINH_TRANG_BENH",row,current,null);
             incoming.Add(row);

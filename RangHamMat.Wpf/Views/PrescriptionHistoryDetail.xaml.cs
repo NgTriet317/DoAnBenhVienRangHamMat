@@ -1,7 +1,6 @@
 using System.Data;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using BUS;
 using ET;
 using RangHamMat.Controls.ClinicalWorkflow;
@@ -90,16 +89,15 @@ public partial class PrescriptionHistoryDetail : UserControl, IClinicalPendingWo
     {
         canPrint = false;
         ChiTiet = null;
-        PrescriptionViewer.Document = null;
-        SourceText.Text = PatientText.Text = HandoverText.Text = "";
+        DataContext = null;
+        HandoverText.Text = "";
+        PrescriptionViewer.ScrollToTop();
         UpdateRights();
         var detail = prescriptions.LayChiTietCoQuyen(OrderId, actor);
         if (detail.MaBN != source.MaBN || detail.DonThuoc.MaLS != source.MaLS || detail.DonThuoc.MaDT != OrderId
             || detail.DonThuoc.TrangThai is not ("Đã xác nhận" or "Ngừng áp dụng"))
             throw new LoiKhamException("MaDT", "Đơn không còn thuộc lịch sử đã kê trong ngữ cảnh đang mở. Tải lại danh sách.");
-        SourceText.Text = $"Đơn #{OrderId} · Lượt #{source.MaLS} · {detail.DonThuoc.TrangThai}";
-        PatientText.Text = $"{source.HoTenBN} · Mã {source.MaBN} · Ngày sinh {source.NgaySinh?.ToString("dd/MM/yyyy") ?? "chưa ghi nhận"}\nBác sĩ: {source.TenBS} · Ngày kê {detail.DonThuoc.NgayKe:dd/MM/yyyy HH:mm}";
-        PrescriptionViewer.Document = HistoryDocument(detail);
+        DataContext = DonThuocTrinhBay.TuLichSu(source, detail);
         canPrint = false;
         StatusText.Text = "Nội dung đơn chỉ đọc.";
         if (detail.DonThuoc.TrangThai == "Đã xác nhận" && (actor.LaAdmin || actor.CoQuyen(QuyenLamViec.Kham) || actor.CoQuyen(QuyenLamViec.GiaoThuoc)))
@@ -107,7 +105,7 @@ public partial class PrescriptionHistoryDetail : UserControl, IClinicalPendingWo
             try
             {
                 var signed = ReadSigned();
-                PrescriptionViewer.Document = DonThuocDocument.Tao(signed);
+                DataContext = DonThuocTrinhBay.TuBanIn(signed) with { DienThoai = source.SDT ?? "" };
                 canPrint = true;
             }
             catch (LoiKhamException ex) { StatusText.Text = ex.Message; }
@@ -148,26 +146,6 @@ public partial class PrescriptionHistoryDetail : UserControl, IClinicalPendingWo
     {
         if (patient != source.MaBN || visit != source.MaLS || prescription != OrderId)
             throw new LoiKhamException("MaDT", "Nguồn đơn đã đổi. Mở lại đúng bệnh nhân và lần khám.");
-    }
-    /// <summary>
-    /// Tạo nguồn dữ liệu tài liệu từ đơn thuốc lịch sử đã đọc.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>document.Blocks.Add</c>.</remarks>
-    /// <param name="detail">Giá trị chi tiết dùng khi thực hiện thao tác; kiểu DonThuocChiTiet.</param>
-    /// <returns>Kết quả kiểu FlowDocument dùng cho bước xử lý tiếp theo.</returns>
-    private FlowDocument HistoryDocument(DonThuocChiTiet detail)
-    {
-        var document = new FlowDocument { FontFamily = new System.Windows.Media.FontFamily("Segoe UI"), FontSize = 14, PagePadding = new Thickness(12), ColumnWidth = 900 };
-        document.Blocks.Add(new Paragraph(new Bold(new Run("Nội dung đơn thuốc"))) { FontSize = 20 });
-        document.Blocks.Add(new Paragraph(new Run("Chẩn đoán: " + source.ChanDoan)));
-        foreach (var line in detail.CacDong)
-        {
-            // Đơn cũ thiếu thông tin chốt chỉ hiện mã nguồn, không tra ngược danh mục/cache hiện tại.
-            var name = string.IsNullOrWhiteSpace(line.TenThuocChot) ? "Thuốc #" + line.MaThuoc : line.TenThuocChot;
-            document.Blocks.Add(new Paragraph(new Run($"{name} · {line.HamLuongChot}\nLượng: {line.SoLuong:0.###} {line.DonViTinhChot} · {line.SoNgayDung} ngày\nLiều: {line.LieuDung} · Đường dùng: {line.DuongDung}\nHướng dẫn: {line.HuongDan}")));
-        }
-        if (!string.IsNullOrWhiteSpace(detail.DonThuoc.GhiChu)) document.Blocks.Add(new Paragraph(new Run("Ghi chú: " + detail.DonThuoc.GhiChu)));
-        return document;
     }
     /// <summary>
     /// Hiển thị dữ liệu bàn giao hiện tại cùng thông tin nhân viên/thời điểm nếu đã giao.

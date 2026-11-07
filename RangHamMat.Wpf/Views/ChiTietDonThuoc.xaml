@@ -25,8 +25,22 @@
     <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Margin="0,16,0,0"><TextBlock Text="Chẩn đoán của lần khám" Style="{StaticResource HospitalMuted}"/><TextBlock Text="{Binding Diagnosis}" TextWrapping="Wrap" Margin="0,5,0,0"/></StackPanel>
    </Grid></Border>
    <TextBlock Text="Thuốc kê" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
-   <!-- Bảng chi tiết: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. -->
-   <DataGrid ItemsSource="{Binding Lines}" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" RowHeight="46" ColumnHeaderHeight="48" MinHeight="80" MaxHeight="420" GridLinesVisibility="Horizontal" HeadersVisibility="Column" BorderBrush="#DCE5F0" FontSize="13" ScrollViewer.HorizontalScrollBarVisibility="Auto"><DataGrid.Columns><DataGridTextColumn Header="Thuốc / hàm lượng" Binding="{Binding Label}" Width="2*" MinWidth="160" ElementStyle="{StaticResource HospitalCellText}"/><DataGridTextColumn Header="Liều dùng" Binding="{Binding LieuDung}" Width="*" MinWidth="130" ElementStyle="{StaticResource HospitalCellText}"/><DataGridTextColumn Header="Số lượng" Binding="{Binding SoLuong}" Width="80" MinWidth="80" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}"/><DataGridTextColumn Header="Đơn vị" Binding="{Binding Unit}" Width="75" MinWidth="75" ElementStyle="{StaticResource HospitalCellText}"/><DataGridTextColumn Header="Số ngày" Binding="{Binding SoNgayDung}" Width="75" MinWidth="75" ElementStyle="{StaticResource HospitalNumber}" HeaderStyle="{StaticResource HospitalNumberHeader}"/><DataGridTextColumn Header="Hướng dẫn" Binding="{Binding HuongDan}" Width="2*" MinWidth="180" ElementStyle="{StaticResource HospitalCellText}"/></DataGrid.Columns></DataGrid>
+   <!-- Dòng thuốc tự giãn chiều cao để đọc đủ liều dùng và hướng dẫn dài. -->
+   <ItemsControl ItemsSource="{Binding Lines}">
+    <ItemsControl.ItemTemplate><DataTemplate>
+     <Border BorderBrush="#DDE5ED" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,10">
+      <StackPanel>
+       <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="110"/></Grid.ColumnDefinitions>
+        <TextBlock Text="{Binding Label}" FontWeight="SemiBold" FontSize="16" Foreground="#234D68" TextWrapping="Wrap" Margin="0,0,12,0"/>
+        <StackPanel Grid.Column="1"><TextBlock FontWeight="SemiBold" TextAlignment="Right"><Run Text="{Binding SoLuong, Mode=OneWay}"/> <Run Text="{Binding Unit, Mode=OneWay}"/></TextBlock><TextBlock Text="{Binding SoNgayDung, StringFormat={}{0} ngày}" FontSize="12" Foreground="#526477" TextAlignment="Right" Margin="0,4,0,0"/></StackPanel>
+       </Grid>
+       <TextBlock TextWrapping="Wrap" Margin="0,12,0,4"><Bold>Liều dùng: </Bold><Run Text="{Binding LieuDung, Mode=OneWay}"/></TextBlock>
+       <TextBlock TextWrapping="Wrap" Margin="0,0,0,8"><Bold>Đường dùng: </Bold><Run Text="{Binding DuongDung, Mode=OneWay}"/></TextBlock>
+       <Border Background="#F7F9FB" CornerRadius="5" Padding="10"><TextBlock TextWrapping="Wrap" LineHeight="22"><Bold>Hướng dẫn: </Bold><Run Text="{Binding HuongDan, Mode=OneWay}"/></TextBlock></Border>
+      </StackPanel>
+     </Border>
+    </DataTemplate></ItemsControl.ItemTemplate>
+   </ItemsControl>
    <TextBlock Text="{Binding LinesNote}" Style="{StaticResource HospitalMuted}" Margin="0,8,0,0"/>
    <TextBlock Text="Ghi chú" Style="{StaticResource HospitalMuted}" Margin="0,16,0,5"/><TextBlock Text="{Binding Note}" TextWrapping="Wrap"/><TextBlock Text="Lý do thay đổi chỉ định" Style="{StaticResource HospitalMuted}" Margin="0,16,0,5"/><TextBlock Text="{Binding Reason}" TextWrapping="Wrap"/>
    <TextBlock Text="Đơn thuốc thuộc lần khám. Đơn đã xác nhận được giữ nguyên; khi đổi chỉ định, kê một đơn mới độc lập." Style="{StaticResource HospitalMuted}" TextWrapping="Wrap" Margin="0,16,0,0"/>

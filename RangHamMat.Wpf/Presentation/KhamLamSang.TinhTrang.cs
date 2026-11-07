@@ -57,6 +57,7 @@ public partial class KhamLamSang
         var name=ConditionNameEditor.Text.Trim();
         if(name.Length==0)throw new LoiKhamException("TinhTrang","Nhập tình trạng bệnh trước khi thêm hoặc lưu.");
         var row=forceNew?new TinhTrangKhamNhap():selectedCondition??new TinhTrangKhamNhap();
+        row.MaDMTT=QuyTacMaTinhTrang.TuLuaChon(name,ConditionReferencePicker.SelectedItem as ET_DMTINHTRANGBENH,forceNew?null:selectedCondition);
         row.LoaiTinhTrang=name;row.MoTaTinhTrang=string.IsNullOrWhiteSpace(ConditionDetailEditor.Text)?name:ConditionDetailEditor.Text.Trim();
         row.GhiChu=string.IsNullOrWhiteSpace(ConditionNoteEditor.Text)?null:ConditionNoteEditor.Text.Trim();
         if(!conditions.Contains(row))conditions.Add(row);
@@ -79,7 +80,7 @@ public partial class KhamLamSang
         }
         selectedCondition=ConditionList.SelectedItem as TinhTrangKhamNhap;
         var original=loading;loading=true;
-        try{ConditionNameEditor.Text=selectedCondition?.LoaiTinhTrang??"";ConditionDetailEditor.Text=selectedCondition?.MoTaTinhTrang??"";ConditionNoteEditor.Text=selectedCondition?.GhiChu??"";conditionInputDirty=false;}
+        try{ConditionReferencePicker.SelectedItem=referenceConditions.FirstOrDefault(x=>x.MaDMTT==selectedCondition?.MaDMTT);ConditionNameEditor.Text=selectedCondition?.LoaiTinhTrang??"";ConditionDetailEditor.Text=selectedCondition?.MoTaTinhTrang??"";ConditionNoteEditor.Text=selectedCondition?.GhiChu??"";conditionInputDirty=false;}
         finally{loading=original;}
         UpdateConditionRights();RefreshRecommendation();
     }

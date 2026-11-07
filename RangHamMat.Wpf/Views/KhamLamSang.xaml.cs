@@ -138,7 +138,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
             snapshot=saved;var v=saved.LanKham;ClinicalIdentity.Text=$"Lần khám {v.MaLS} · phiếu {v.MaPhieu} · bác sĩ {v.MaBS} · {v.TrangThai}";
             SymptomsEditor.Text=v.TrieuChung;DiagnosisEditor.Text=v.ChanDoan;TreatmentEditor.Text=v.KeHoachXuLy;ClinicalNote.Text=v.GhiChu??"";
             NoPrescription.IsChecked=v.KhongKeThuoc==1;NoPrescriptionReason.Text=v.LyDoKhongKeThuoc??"";conditions.Clear();
-            foreach(var t in saved.TinhTrang)conditions.Add(new(){MaTTB=t.MaTTB,LoaiTinhTrang=t.LoaiTinhTrang,MoTaTinhTrang=t.MoTaTinhTrang,GhiChu=t.GhiChu});
+            foreach(var t in saved.TinhTrang)conditions.Add(new(){MaTTB=t.MaTTB,MaDMTT=t.MaDMTT,LoaiTinhTrang=t.LoaiTinhTrang,MoTaTinhTrang=t.MoTaTinhTrang,GhiChu=t.GhiChu});
             ClearConditionInput();dirty=false;UpdateRights();
         }
         finally{loading=prior;}

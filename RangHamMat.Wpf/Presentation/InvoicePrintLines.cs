@@ -14,6 +14,7 @@ namespace RangHamMat.Views;
 public sealed record InvoicePrintLine(string Description, decimal SoLuong, decimal DonGia, decimal ThanhTien,
     IReadOnlyList<string> MaCTPX)
 {
+    public int Number { get; init; }
     /// <summary>
     /// Đơn vị.
     /// </summary>
@@ -55,9 +56,9 @@ public static class InvoicePrintLines
             Row = r,
             Source = string.IsNullOrEmpty(Text(r, "MaCTDT")) ? "row:" + i : "rx:" + Text(r, "MaDT") + ":" + Text(r, "MaCTDT"),
             Description = Text(r, "NoiDung"), Price = Convert.ToDecimal(r["DonGiaChot"]),Unit=Text(r,"DonViTinh")
-        }).GroupBy(r => (r.Source, r.Description, r.Price,r.Unit)).Select(g => new InvoicePrintLine(
+        }).GroupBy(r => (r.Source, r.Description, r.Price,r.Unit)).Select((g, index) => new InvoicePrintLine(
             g.Key.Description, g.Sum(r => Convert.ToDecimal(r.Row["SoLuong"])), g.Key.Price,
             g.Sum(r => Convert.ToDecimal(r.Row["ThanhTien"])),
-            g.Select(r => Text(r.Row, "MaCTPX")).Where(id => id.Length > 0).Distinct().ToArray()){Unit=g.Key.Unit}).ToArray();
+            g.Select(r => Text(r.Row, "MaCTPX")).Where(id => id.Length > 0).Distinct().ToArray()){Unit=g.Key.Unit, Number=index+1}).ToArray();
     }
 }

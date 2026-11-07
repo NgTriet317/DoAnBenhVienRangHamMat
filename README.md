@@ -36,6 +36,12 @@ Máy mới cần cài SQL Server2016SP1 trở lên, mở toàn bộ file SQL ch�
 
 Biến môi trường RHM_CONNECTION_STRING được ưu tiên hơn file. Instance có tên cần viết hai dấu gạch chéo trong JSON, ví dụ TEN_MAY\\SQLEXPRESS. Giữ toàn bộ thư mục PhatHanh khi chuyển máy, không chỉ chép exe.
 
+## Báo cáo và thống kê Sprint3
+
+Tổng quan ưu tiên lượt khám, bệnh nhân duy nhất, thu ròng và tỷ lệ lượt đã phân loại; bảng **Bệnh/tình trạng thường gặp** đặt ngay sau KPI, xếp theo số người hoặc số lượt. Xem [thống kê trọng tâm và nguyên nhân dữ liệu bệnh lý hiện chưa đủ](docs/sprint3/BAO_CAO_TRONG_TAM.md). Luồng Chọn nhanh của bác sĩ giữ mã tình trạng khi lưu lượt khám mới; không tự gán mã cho hồ sơ cũ.
+
+Phân hệ Báo cáo mở cho nhân viên có phiên hợp lệ, có dashboard và thống kê tình trạng theo mã, giữ đủ 18 chuyên đề cũ. Hỗ trợ MoM/YoY, so sánh hai năm, chuỗi tối đa 24 tháng, MTD, CSV và phân quyền riêng cho chi tiết tài chính/lương/kho. Xem [hướng dẫn, định nghĩa KPI và bằng chứng kiểm thử](docs/sprint3/BAO_CAO_TRIEN_KHAI.md). Chạy `powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraBaoCao.ps1 -Sql -Render` để kiểm báo cáo bằng SQL và render WPF; không cần chạy thêm SQL nâng cấp cho thay đổi báo cáo này.
+
 ## Bảo trì thiết bị theo serial
 
 Lịch sử bảo trì quản lý theo serial: chọn thiết bị hư hại để **lập phiếu bảo trì hoặc thanh lý**. Xác nhận phiếu chuyển thẳng **Đang thực hiện**, thiết bị chuyển **Đang bảo trì**; hoàn thành đưa thiết bị về Đang hoạt động. Tab **Thanh lý** lưu ngày, nhân viên, lý do, giá trị thu hồi và thông tin thiết bị tại lúc thanh lý; thiết bị được ngưng sử dụng, thu hồi khỏi phòng và không được sửa/xóa lịch sử. Các thay đổi SQL và dữ liệu giao diện cùng giao dịch. Chạy lại toàn bộ file SQL chính trước khi dùng bản mới. Xem [hướng dẫn bảo trì và thanh lý theo serial](docs/database/BAO_TRI_SERIAL.md).

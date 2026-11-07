@@ -15,7 +15,7 @@ public partial class InvoiceDocument : UserControl, IDocumentPaginatorSource
     public InvoiceDocument() => InitializeComponent();
 
     /// <summary>AI hỗ trợ: paginator mặc định theo trang gần khổ A4 để preview và smoke kiểm tra cùng cơ chế in.</summary>
-    public DocumentPaginator DocumentPaginator => CreatePaginator(new Size(780, 1100));
+    public DocumentPaginator DocumentPaginator => CreatePaginator(new Size(794, 1123));
 
     /// <summary>AI hỗ trợ: materialize một bản chứng từ XAML riêng với cùng dữ liệu, tránh đổi chiều rộng màn hình khi in.</summary>
     /// <remarks>AI đã tạo/chỉnh sửa phần xử lý giao diện này: AI hỗ trợ: materialize một bản chứng từ XAML riêng với cùng dữ liệu, tránh đổi chiều rộng màn hình khi in.</remarks>
@@ -29,6 +29,8 @@ internal sealed class InvoiceVisualPaginator : DocumentPaginator
     /// Giá trị lưu nội bộ của thuộc tính PageSize, dùng bởi getter/setter tương ứng.
     /// </summary>
     private const double Padding = 34;
+    private const double FooterHeight = 28;
+    private const double ContinuationHeight = 28;
     /// <summary>
     /// Giá trị lưu nội bộ của thuộc tính Source, dùng bởi getter/setter tương ứng.
     /// </summary>
@@ -60,7 +62,7 @@ internal sealed class InvoiceVisualPaginator : DocumentPaginator
         get => pageSize;
         set
         {
-            if (!double.IsFinite(value.Width) || !double.IsFinite(value.Height) || value.Width <= 2 * Padding + 30 || value.Height <= 2 * Padding + 30)
+            if (!double.IsFinite(value.Width) || !double.IsFinite(value.Height) || value.Width <= 2 * Padding + 30 || value.Height <= 2 * Padding + FooterHeight + ContinuationHeight + 30)
                 throw new ArgumentOutOfRangeException(nameof(value), "Vùng in quá nhỏ để trình bày hóa đơn.");
             pageSize = value;
             Paginate();
@@ -75,14 +77,26 @@ internal sealed class InvoiceVisualPaginator : DocumentPaginator
     {
         if (pageNumber < 0 || pageNumber >= slices.Length) return DocumentPage.Missing;
         var slice = slices[pageNumber];
+        var contentTop = Padding + (pageNumber > 0 ? ContinuationHeight : 0);
         var visual = new DrawingVisual();
         using (var drawing = visual.RenderOpen())
         {
             drawing.DrawRectangle(Brushes.White, null, new Rect(pageSize));
             var brush = new VisualBrush(document) { ViewboxUnits = BrushMappingMode.Absolute, Viewbox = slice, Stretch = Stretch.Fill, AlignmentX = AlignmentX.Left, AlignmentY = AlignmentY.Top };
-            drawing.DrawRectangle(brush, null, new Rect(Padding, Padding, slice.Width, slice.Height));
+            drawing.DrawRectangle(brush, null, new Rect(Padding, contentTop, slice.Width, slice.Height));
+            if (pageNumber > 0)
+            {
+                var code = Convert.ToString(document.DataContext?.GetType().GetProperty("Code")?.GetValue(document.DataContext));
+                drawing.DrawText(PageText(code + " · Tiếp theo"), new Point(Padding, Padding));
+            }
+            var footerTop = pageSize.Height - Padding - FooterHeight + 6;
+            drawing.DrawLine(new Pen(new SolidColorBrush(Color.FromRgb(211, 222, 231)), 0.7),
+                new Point(Padding, footerTop), new Point(pageSize.Width - Padding, footerTop));
+            drawing.DrawText(PageText("BỆNH VIỆN RĂNG HÀM MẶT"), new Point(Padding, footerTop + 7));
+            var counter = PageText($"Trang {pageNumber + 1} / {PageCount}");
+            drawing.DrawText(counter, new Point(pageSize.Width - Padding - counter.Width, footerTop + 7));
         }
-        var content = new Rect(Padding, Padding, slice.Width, slice.Height);
+        var content = new Rect(Padding, contentTop, slice.Width, slice.Height);
         return new DocumentPage(visual, pageSize, new Rect(pageSize), content);
     }
 
@@ -91,17 +105,24 @@ internal sealed class InvoiceVisualPaginator : DocumentPaginator
     private void Paginate()
     {
         var width = pageSize.Width - 2 * Padding;
-        var height = pageSize.Height - 2 * Padding;
+        var height = pageSize.Height - 2 * Padding - FooterHeight;
         document.Width = width;
         document.Measure(new Size(width, double.PositiveInfinity));
         document.Arrange(new Rect(0, 0, width, document.DesiredSize.Height));
         document.UpdateLayout();
         var bands = TextBands(document).OrderBy(band => band.Top).ToArray();
+        var groups = KeepTogetherBands(document).ToArray();
         var pages = new List<Rect>();
         var top = 0d;
         while (top < document.ActualHeight)
         {
-            var bottom = Math.Min(top + height, document.ActualHeight);
+            var available = height - (pages.Count > 0 ? ContinuationHeight : 0);
+            var bottom = Math.Min(top + available, document.ActualHeight);
+            // Dòng thường, khối tổng và chữ ký vừa một trang được giữ trọn khối.
+            // Mô tả cao hơn trang vẫn được tách theo dòng chữ ở bước sau.
+            var crossingGroup = groups.FirstOrDefault(group => group.Height <= available && group.Top > top + 0.01
+                && group.Top < bottom - 0.01 && group.Bottom > bottom + 0.01);
+            if (crossingGroup.Height > 0) bottom = crossingGroup.Top;
             // Lùi về đầu dòng giao biên trang; lặp để tránh cắt dòng ở cột bên cạnh.
             while (bands.FirstOrDefault(band => band.Top < bottom - 0.01 && band.Bottom > bottom + 0.01) is { Height: > 0 } crossing)
                 bottom = crossing.Top;
@@ -110,6 +131,21 @@ internal sealed class InvoiceVisualPaginator : DocumentPaginator
             top = bottom;
         }
         slices = pages.ToArray();
+    }
+
+    private static FormattedText PageText(string value) => new(value,
+        System.Globalization.CultureInfo.GetCultureInfo("vi-VN"), FlowDirection.LeftToRight,
+        new Typeface("Segoe UI"), 10, new SolidColorBrush(Color.FromRgb(82, 100, 119)), 1);
+
+    private IEnumerable<Rect> KeepTogetherBands(DependencyObject current)
+    {
+        if (current is FrameworkElement { Tag: "KeepTogether", ActualHeight: > 0 } element)
+        {
+            var position = element.TranslatePoint(new Point(0, 0), document);
+            yield return new Rect(position.X, position.Y, element.ActualWidth, element.ActualHeight);
+        }
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(current); index++)
+            foreach (var band in KeepTogetherBands(VisualTreeHelper.GetChild(current, index))) yield return band;
     }
 
     /// <summary>AI hỗ trợ: đọc dải từng dòng TextBlock theo LineHeight XAML, kể cả mô tả có hàng nghìn ký tự.</summary>

@@ -94,6 +94,11 @@ public partial class MainWindow : Window
     internal bool CanOpen(string module)
     {
         module = module switch { "VatTu" => "Kho", "NhapKho" or "XuatKho" => "NhapXuatVatTu", _ => module };
+        if(module=="BaoCao")
+        {
+            try { return new BUS.BUS_BAOCAO().LayQuyen().HasFlag(ET.QuyenBaoCao.XemTongHop); }
+            catch(Exception ex) when(ex is InvalidOperationException or UnauthorizedAccessException or System.Data.Common.DbException) { return false; }
+        }
         if (!QuyenNghiepVu.LaPhanHe(module)) return RolePermissions[CurrentRole].Contains(module);
         try { return QuyenNghiepVu.CoTheMo(module, QuyenNghiepVu.LayNguCanh()); }
         catch (InvalidOperationException) { return false; }

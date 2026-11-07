@@ -11,6 +11,9 @@
     <!-- Dapper/Dapper.Contrib ánh xạ ET; SqlClient cung cấp kết nối và giao dịch SQL Server. -->
     <PackageReference Include="Dapper" Version="2.1.89" />
     <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
+    <PackageReference Include="fo-dicom" Version="5.2.6" />
+    <PackageReference Include="fo-dicom.Desktop" Version="4.0.8" />
+    <PackageReference Include="fo-dicom.Imaging.ImageSharp" Version="5.2.6" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
   </ItemGroup>
 

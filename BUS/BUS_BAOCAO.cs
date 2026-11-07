@@ -8,6 +8,20 @@ namespace BUS;
 /// </summary>
 public sealed class BUS_BAOCAO
 {
+    public QuyenBaoCao LayQuyen() => new DAL_BAOCAO().LayQuyen();
+    public (LuaChonThongKe[] ChuyenKhoa,LuaChonThongKe[] DichVu) LayDanhMucLoc() => new DAL_BAOCAO().LayDanhMucLoc();
+    public void GhiTruyCap(string ma,string hanhDong,DateTime tu,DateTime den) => new DAL_BAOCAO().GhiTruyCap(ma,hanhDong,tu,den);
+    public void KiemTraXuat(string ma,bool gomChiTiet=false) => new DAL_BAOCAO().KiemTraXuat(ma,gomChiTiet);
+    public ET_DONGBAOCAO[] DocChiTiet(string ma, DateTime tu, DateTime den, int canhBao=30)
+        => new DAL_BAOCAO().DocChiTiet(ma,tu,den,canhBao);
+    public KetQuaBenhLy DocBenhLy(KySoSanh ky, string? maCK = null, string? maDV = null)
+        => new DAL_BAOCAO().DocBenhLy(ky,maCK,maDV);
+
+    public ET_DONGBAOCAO[] Doc(string ma, DateTime tuNgay, DateTime denNgay, int canhBao = 30)
+    {
+        // DAL không tin cờ quyền do caller truyền; xác thực principal, phiên và vai trò SQL mỗi lần đọc.
+        return new DAL_BAOCAO().Doc(ma,tuNgay,denNgay,canhBao);
+    }
     /// <summary>
     /// Đọc báo cáo theo chuyên đề, thời gian và các bộ lọc được truyền vào; ánh xạ dữ liệu cho bước tổng hợp/hiển thị.
     /// </summary>
@@ -27,6 +41,6 @@ public sealed class BUS_BAOCAO
             throw new ArgumentException("Ngày báo cáo nằm ngoài phạm vi hỗ trợ.");
         if (canhBao is not (30 or 60 or 90)) throw new ArgumentException("Ngưỡng cảnh báo phải là 30, 60 hoặc 90 ngày.");
         if (ma == "14" && tuNgay.Date != denNgay.Date) throw new ArgumentException("Hạn dùng phải kiểm tra tại một ngày chốt.");
-        return new DAL_BAOCAO().Doc(ma, tuNgay, denNgay, canhBao);
+        return Doc(ma, tuNgay, denNgay, canhBao);
     }
 }

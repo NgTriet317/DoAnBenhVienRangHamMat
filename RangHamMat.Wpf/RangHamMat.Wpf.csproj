@@ -11,6 +11,9 @@
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <!-- Metadata kiểm tra nhập liệu được nhúng vào assembly; giao diện đối chiếu tên/kiểu/giới hạn cột. -->
     <EmbeddedResource Include="Controls\QuyTacNhapLieu.xml" />
+    <PackageReference Include="fo-dicom" Version="5.2.6" />
+    <PackageReference Include="fo-dicom.Desktop" Version="4.0.8" />
+    <PackageReference Include="fo-dicom.Imaging.ImageSharp" Version="5.2.6" />
     <!-- Giao diện gọi nghiệp vụ qua BUS và dùng ET cho dữ liệu; DAL được dẫn vào qua BUS. -->
     <ProjectReference Include="..\BUS\BUS.csproj" />
     <ProjectReference Include="..\ET\ET.csproj" />

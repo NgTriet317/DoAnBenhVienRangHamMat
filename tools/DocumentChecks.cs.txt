@@ -1,0 +1,360 @@
+using System.Data;
+using System.Globalization;
+using System.IO;
+using System.IO.Compression;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using System.Windows.Xps.Packaging;
+using System.Xml.Linq;
+using ET;
+using RangHamMat.Controls;
+using RangHamMat.Views;
+
+internal static class Program
+{
+    static string evidence = "";
+    static readonly Dictionary<string, string[]> pagesByDocument = new();
+    static readonly Size A4 = new(794, 1123);
+    [STAThread]
+    static int Main(string[] args)
+    {
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("vi-VN");
+        SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+        var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml", UriKind.Relative) });
+        // Cô lập cache trong tiến trình kiểm chứng; mọi nguồn chứng từ dưới đây là fixture, không kết nối SQL.
+        typeof(DuLieuGiaoDien).GetField("loaded", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.SetValue(null, true);
+        evidence = Path.Combine(args[0], "obj/DocumentChecks/evidence");
+        Directory.CreateDirectory(evidence);
+        int failures = 0, count = 0;
+        void Check(string name, Action test)
+        {
+            count++;
+            try { test(); Console.WriteLine("PASS " + name); }
+            catch (Exception ex) { failures++; Console.WriteLine("FAIL " + name + ": " + ex.GetBaseException().Message); }
+        }
+
+        Check("Bản xem trước RxCard có cùng tài liệu dùng khi in", () =>
+        {
+            var card = new RxCard(History());
+            var preview = new XemTruocDonThuoc(card);
+            Require(preview.DonDaDoc is not null, "Bản xem trước chưa dùng tài liệu in.");
+            var pages = ((ItemsControl)preview.FindName("PrescriptionPages")).ItemsSource.Cast<TrangDonThuoc>().ToArray();
+            Require(pages.Length > 0 && ReferenceEquals(pages[0].BoPhanTrang.Source, preview.DonDaDoc), "Nguồn hiển thị khác nguồn in.");
+            Snapshot((FrameworkElement)preview.Content, "xem-truoc-don-thuoc", new(860, 740));
+            preview.Close();
+        });
+        Check("Đơn thuốc ngắn đủ nội dung, in được một trang A4", () =>
+        {
+            var paginator = Paginator(DonThuocDocument.Tao(Prescription(3)));
+            Require(paginator.PageCount == 1, "Đơn 3 thuốc phải vừa một trang A4.");
+            var text = Export(paginator, "don-thuoc");
+            Require(text.Contains("RXEND03") && text.Contains("NOTEEND"), "Mất thuốc hoặc ghi chú cuối khi in.");
+        });
+        Check("Đơn nhiều thuốc và hướng dẫn vượt một trang vẫn in đủ", () =>
+        {
+            var source = Prescription(24, true);
+            var paginator = Paginator(DonThuocDocument.Tao(source));
+            Require(paginator.PageCount > 2 && paginator.PageCount < 30, "Phân trang không hợp lý.");
+            var text = Export(paginator, "don-thuoc-dai");
+            for (var i = 1; i <= 24; i++) Require(text.Contains($"RXEND{i:00}"), "Mất dòng thuốc " + i);
+            Require(text.Contains("NOTEEND"), "Mất ghi chú cuối.");
+            Require(pagesByDocument["don-thuoc-dai"].All(page => page.Contains(source.Nguon.Don.MaDT) && page.Contains("Trang")), "Trang đơn thuốc thiếu mã đơn hoặc số trang.");
+        });
+        Check("Bản xem trước đơn dài cuộn tới hết nội dung", () =>
+        {
+            var preview = new XemTruocDonThuoc(() => Prescription(24, true));
+            var root = (FrameworkElement)preview.Content;
+            Snapshot(root, "xem-truoc-don-dai", new(860, 740));
+            var outerScroll = (ScrollViewer)preview.FindName("PreviewScroll");
+            Require(outerScroll.ScrollableHeight > 1000, "Không có vùng cuộn cho đơn dài.");
+            outerScroll.ScrollToEnd();
+            Snapshot(root, "xem-truoc-don-dai-cuoi", new(860, 740));
+            preview.Close();
+        });
+        Check("Tên thuốc không bị tách khỏi phần đầu chỉ định khi sang trang", () =>
+        {
+            var source = Prescription(30);
+            for (int i = 0; i < source.Nguon.CacDong.Count; i++)
+            {
+                var line = source.Nguon.CacDong[i];
+                line.TenThuocChot += $" PGNAME{i+1:00}";
+                line.LieuDung = $"Mỗi lần theo chỉ định PGDOSE{i+1:00}";
+                line.HuongDan = $"Dùng theo chỉ định đã kê PGGUIDE{i+1:00}";
+            }
+            Export(Paginator(DonThuocDocument.Tao(source)), "don-thuoc-bien-trang");
+            var pages = pagesByDocument["don-thuoc-bien-trang"];
+            for (int i = 1; i <= 30; i++)
+            {
+                var page = pages.Single(text => text.Contains($"PGNAME{i:00}"));
+                Require(page.Contains($"PGDOSE{i:00}") && page.Contains($"PGGUIDE{i:00}"), "Tên thuốc bị tách khỏi chỉ định: " + i);
+            }
+        });
+        Check("Bản xem trước hiển thị đủ các trang sẽ được in", () =>
+        {
+            var preview = new XemTruocDonThuoc(() => Prescription(24));
+            Snapshot((FrameworkElement)preview.Content, "xem-truoc-phan-trang", new(900, 780));
+            var pages = Descendants<DocumentPageView>((DependencyObject)preview.Content).ToArray();
+            Require(pages.Length > 1, "Bản xem trước chưa hiển thị các trang in.");
+            Require(pages.Length == pages[0].DocumentPaginator.PageCount && pages.Select(page => page.PageNumber).Distinct().Count() == pages.Length, "Bản xem trước thiếu hoặc trùng trang.");
+            preview.Close();
+        });
+        Check("In đơn đọc lại nguồn và chặn đổi mã", () =>
+        {
+            var source = Prescription(3);
+            var preview = new XemTruocDonThuoc(() => source);
+            bool sent = false;
+            source = source with { Nguon = source.Nguon with { Don = new ET_DONTHUOC { MaDT = "KHAC" } } };
+            Require(!preview.TryPrint(_ => sent = true, A4, out var error) && !sent && !string.IsNullOrWhiteSpace(error), "Nguồn đổi mã vẫn được in.");
+            preview.Close();
+        });
+        Check("Không mở bản in cho đơn nháp", () =>
+        {
+            var source = History(); source.TrangThai = "Nháp";
+            try { new XemTruocDonThuoc(new RxCard(source)); }
+            catch (LoiKhamException) { return; }
+            throw new Exception("Cho in đơn nháp.");
+        });
+        Check("Hóa đơn ngắn đủ tổng tiền và thông tin", () =>
+        {
+            var (header, lines) = Invoice(3);
+            var preview = new XemTruocHoaDon(header, lines);
+            var document = (InvoiceDocument)preview.FindName("InvoiceDocument");
+            var paginator = document.CreatePaginator(A4);
+            Require(paginator.PageCount == 1, "Hóa đơn 3 dòng không vừa A4.");
+            var text = Export(paginator, "hoa-don");
+            Require(text.Contains("INVEND03") && text.Contains("270.000"), "Mất dòng hoặc tổng tiền.");
+            Snapshot((FrameworkElement)preview.Content, "xem-truoc-hoa-don", new(860, 740));
+            preview.Close();
+        });
+        Check("Hóa đơn nhiều dòng và mô tả dài vẫn đủ nội dung cuối", () =>
+        {
+            var (header, lines) = Invoice(48);
+            lines.Rows[2]["NoiDung"] = string.Concat(Enumerable.Repeat("Nội dung dịch vụ và thuốc có mô tả rất dài cần giữ đủ. ", 110)) + " INVLONGEND";
+            var preview = new XemTruocHoaDon(header, lines);
+            var document = (InvoiceDocument)preview.FindName("InvoiceDocument");
+            var paginator = document.CreatePaginator(A4);
+            Require(paginator.PageCount > 2 && paginator.PageCount < 30, "Phân trang hóa đơn không hợp lý.");
+            var text = Export(paginator, "hoa-don-dai");
+            for (var i = 1; i <= 48; i++) if(i != 3) Require(text.Split($"INVEND{i:00}").Length == 2, "Dòng hóa đơn bị mất hoặc được đếm từ vùng ngoài trang: " + i);
+            Require(text.Contains("INVLONGEND") && text.Contains("270.000"), "Mất mô tả dài hoặc tổng tiền cuối.");
+            var pages = pagesByDocument["hoa-don-dai"];
+            Require(pages.Single(page => page.Contains("Tổng tiền")).Contains("Còn phải trả"), "Khối tổng tiền bị chia trang.");
+            Require(pages.Single(page => page.Contains("NGƯỜI LẬP HÓA ĐƠN")).Contains("Trần Thu Hà"), "Chữ ký bị tách khỏi họ tên.");
+            preview.Close();
+        });
+        Check("Nguồn hóa đơn đổi mã không được gửi máy in", () =>
+        {
+            var source = new BanInHoaDon(new ET_HOADON { MaHD = "HD01", TrangThai = "Đã xác nhận", NgayLap = DateTime.Now }, "BN01", "Nguyễn Văn An", "Trần Thu Hà", 0, 0, Array.Empty<DongInHoaDon>(), null, null, null, null);
+            var preview = new XemTruocHoaDon(() => source);
+            source = source with { HoaDon = new ET_HOADON { MaHD = "KHAC" } };
+            bool sent = false;
+            Require(!preview.TryPrint(_ => sent = true, A4, out _) && !sent, "Cho in nguồn đổi mã.");
+            preview.Close();
+        });
+        Check("Chi tiết đơn lịch sử thiếu snapshot giữ mã thuốc và chỉ định cũ", () =>
+        {
+            var source = History(); source.CacDong[0].TenThuocChot = "";
+            source.CacDong[0].HamLuongChot = ""; source.CacDong[0].DonViTinhChot = "";
+            var document = DonThuocDocument.TaoLichSu(source, new(source, source.CacDong, source.MaBN, false));
+            var text = Export(Paginator(document), "lich-su-thieu-snapshot");
+            Require(text.Contains("Thuốc #TH1") && text.Contains("RXEND01") && text.Contains("RXEND03"), "Mất mã hoặc chỉ định của đơn cũ.");
+        });
+        Check("Bản in RxCard lịch sử thiếu snapshot không đoán tên hoặc đơn vị", () =>
+        {
+            var history = History(); history.CacDong[0].TenThuocChot = "";
+            history.CacDong[0].HamLuongChot = ""; history.CacDong[0].DonViTinhChot = "";
+            DuLieuGiaoDien.Replace("THUOC", new[] { new { MaThuoc = "TH1", MaHH = "HH01", HamLuong = "250 mg" } });
+            DuLieuGiaoDien.Replace("HANG_HOA", new[] { new { MaHH = "HH01", TenHH = "Tên mới trong danh mục", DonViTinh = "hộp" } });
+            DuLieuGiaoDien.Replace("CHI_TIET_DON_THUOC", history.CacDong);
+            foreach (var card in new[] { new RxCard(history), new RxCard(new ET_DONTHUOC { MaDT = history.MaDT, MaLS = history.MaLS, MaBS = history.MaBS, NgayKe = history.NgayKe, TrangThai = "Đã xác nhận" }) })
+            {
+                var document = DonThuocDocument.Tao(card);
+                var text = Export(Paginator(document), card.Record is DongLichSuDon ? "rx-snapshot-dto" : "rx-snapshot-cu");
+                Require(text.Contains("Thuốc #TH1") && !text.Contains("Tên mới trong danh mục") && !text.Contains("hộp"), "Bản in đơn cũ đang lấy tên hoặc đơn vị danh mục hiện tại.");
+            }
+            DuLieuGiaoDien.Replace("THUOC", Array.Empty<object>()); DuLieuGiaoDien.Replace("HANG_HOA", Array.Empty<object>());
+            DuLieuGiaoDien.Replace("CHI_TIET_DON_THUOC", Array.Empty<object>());
+        });
+        Check("Bố cục chi tiết đơn thuốc ở khung rộng và hẹp", () =>
+        {
+            var source = Showcase();
+            // Đọc XAML thật và tách sự kiện để chỉ render bố cục; không gọi constructor có truy vấn nghiệp vụ.
+            var view = LoadLayout(Path.Combine(args[0], "RangHamMat.Wpf/Views/PrescriptionHistoryDetail.xaml"));
+            void Text(string name, string value) => ((TextBlock)view.FindName(name)).Text = value;
+            view.DataContext = DonThuocTrinhBay.TuBanIn(source) with { DienThoai = "0901234567" };
+            Text("HandoverText", "Hóa đơn #HD000028 · Chờ giao"); Text("StatusText", "Nội dung đơn chỉ đọc.");
+            var viewer = (ScrollViewer)view.FindName("PrescriptionViewer");
+            Snapshot(view, "chi-tiet-don-thuoc", new(740, 820));
+            Snapshot(view, "chi-tiet-don-thuoc-toan-bo", new(740, 1540));
+            Snapshot(view, "chi-tiet-don-thuoc-hep", new(360, 740));
+            Require(viewer.ActualWidth <= 360 && viewer.ActualHeight > 120, "Khung thông tin làm mất vùng đọc thuốc.");
+            viewer.ScrollToVerticalOffset(310);
+            Snapshot(view, "chi-tiet-thuoc-hep", new(360, 740));
+            viewer.ScrollToTop();
+            var handover = (Border)view.FindName("HandoverPanel");
+            Descendants<Expander>(handover).Single().IsExpanded = true;
+            Snapshot(view, "chi-tiet-ban-giao-hep", new(360, 740));
+            Require(((Button)view.FindName("GiveButton")).ActualHeight >= 32, "Không truy cập được thao tác bàn giao.");
+            var legacy = LoadLayout(Path.Combine(args[0], "RangHamMat.Wpf/Views/ChiTietDonThuoc.xaml"));
+            legacy.DataContext = new RxCard(History());
+            Snapshot(legacy, "chi-tiet-don-thuoc-cu", new(1000, 820));
+        });
+        Check("In lại cùng đơn và lỗi máy in giữ nguyên trạng thái", () =>
+        {
+            var source = Prescription(3);
+            var preview = new XemTruocDonThuoc(() => source);
+            Require(preview.TryPrint(p => Require(p.PageCount > 0, "Thiếu trang in."), A4, out _), "Không in được đúng nguồn.");
+            Require(!preview.TryPrint(_ => throw new IOException("Printer unavailable"), A4, out var error) && error is not null, "Không báo lỗi máy in.");
+            Require(source.Nguon.Don.TrangThai == "Đã xác nhận", "Lỗi in làm đổi trạng thái đơn.");
+            preview.Close();
+        });
+        Check("Render mẫu đơn thuốc hoàn chỉnh", () =>
+        {
+            var source = Showcase();
+            Export(Paginator(DonThuocDocument.Tao(source)), "don-thuoc-mau");
+            var preview = new XemTruocDonThuoc(() => source);
+            Snapshot((FrameworkElement)preview.Content, "xem-truoc-don-thuoc-mau", new(920, 820));
+            preview.Close();
+        });
+        Check("Tên, hàm lượng và đường dùng dài không tràn thẻ thuốc 360px", () =>
+        {
+            var source = Showcase();
+            var line = source.Nguon.CacDong[0];
+            line.TenThuocChot = string.Concat(Enumerable.Repeat("Tên thuốc có mô tả dài ", 8));
+            line.HamLuongChot = string.Concat(Enumerable.Repeat("Hàm lượng theo chỉ định ", 7));
+            line.DuongDung = string.Concat(Enumerable.Repeat("Đường dùng đã lưu ", 8));
+            var view = LoadLayout(Path.Combine(args[0], "RangHamMat.Wpf/Views/PrescriptionHistoryDetail.xaml"));
+            view.DataContext = DonThuocTrinhBay.TuBanIn(source);
+            Snapshot(view, "chi-tiet-noi-dung-dai-hep", new(360, 740));
+            var list = (ItemsControl)view.FindName("MedicationList");
+            foreach (var text in Descendants<TextBlock>(list))
+            {
+                var bounds = text.TransformToAncestor(list).TransformBounds(new Rect(0, 0, text.ActualWidth, text.ActualHeight));
+                Require(bounds.Left >= -1 && bounds.Right <= list.ActualWidth + 1, "Chữ vượt cạnh thẻ: " + text.Text[..Math.Min(text.Text.Length, 30)]);
+                if (text.Text == line.HamLuongChot || text.Text == line.DuongDung)
+                    Require(text.TextWrapping == TextWrapping.Wrap, "Nội dung dài không xuống dòng.");
+            }
+        });
+        Console.WriteLine($"RESULT {count - failures}/{count} passed; evidence: {evidence}");
+        app.Shutdown();
+        return failures == 0 ? 0 : 1;
+    }
+
+    static BanInDonThuoc Prescription(int count, bool lengthy = false)
+    {
+        var history = History(count);
+        if (lengthy) history.CacDong[1].HuongDan = string.Concat(Enumerable.Repeat("Hướng dẫn dài được lưu trong chỉ định. ", 220)) + " RXEND02";
+        return new(new(history, history.CacDong, history.MaBN, "", false, false), history.HoTenBN, history.TenBS, history.ChanDoan, history.NgaySinh);
+    }
+    static BanInDonThuoc Showcase()
+    {
+        var source = Prescription(3);
+        source.Nguon.Don.GhiChu = "Tái khám theo lịch hẹn của bác sĩ. Mang theo đơn thuốc khi đến tái khám.";
+        foreach (var line in source.Nguon.CacDong) line.HuongDan = "Dùng theo đúng chỉ định trên đơn, theo hướng dẫn của bác sĩ.";
+        var third = source.Nguon.CacDong[2];
+        third.TenThuocChot = "Dung dịch chăm sóc răng miệng"; third.HamLuongChot = "250 ml";
+        third.SoLuong = 1; third.DonViTinhChot = "chai"; third.DuongDung = "Súc miệng"; third.LieuDung = "Theo chỉ định trên đơn";
+        return source;
+    }
+    static DongLichSuDon History(int count = 3) => new()
+    {
+        MaDT = "DT000042", MaLS = "LS000125", MaBN = "BN000018", MaBS = "BS001", HoTenBN = "Nguyễn Văn An", NgaySinh = new(1991, 4, 18),
+        TenBS = "Trần Thị Minh Anh", NgayKe = new(2026, 11, 7, 9, 30, 0), TrangThai = "Đã xác nhận", SDT = "0901234567",
+        ChanDoan = "Viêm quanh răng, viêm lợi và theo dõi sau điều trị.", GhiChu = "Tái khám theo lịch hẹn của bác sĩ. NOTEEND",
+        CacDong = Enumerable.Range(1, count).Select(i => new ET_CHITIETDONTHUOC { MaDT = "DT000042", MaCTDT = "CT" + i, MaThuoc = "TH" + i, TenThuocChot = new[] { "Amoxicillin", "Paracetamol", "Chlorhexidine" }[(i-1)%3], HamLuongChot = "500 mg", DonViTinhChot = "viên", LieuDung = "Mỗi lần 1 viên, ngày 3 lần", DuongDung = "Uống", SoLuong = 15, SoNgayDung = 5, HuongDan = $"Dùng theo chỉ định đã kê, sau bữa ăn. RXEND{i:00}" }).ToArray()
+    };
+    static (DataRow, DataTable) Invoice(int count)
+    {
+        var h = new DataTable();
+        foreach (var key in new[] { "MaHD", "MaBN", "HoTenBN", "MaLS", "NguoiLap", "TrangThai" }) h.Columns.Add(key);
+        h.Columns.Add("NgayLap", typeof(DateTime));
+        foreach (var key in new[] { "TongTien", "GiamGia", "SoTienPhaiThu", "DaThu", "ConPhaiThu" }) h.Columns.Add(key, typeof(decimal));
+        var row = h.Rows.Add("HD000028", "BN000018", "Nguyễn Văn An", "LS000125", "Trần Thu Hà", "Đã xác nhận", new DateTime(2026, 11, 7, 9, 45, 0), 300000m, 30000m, 270000m, 200000m, 70000m);
+        var lines = new DataTable();
+        foreach (var key in new[] { "NoiDung", "DonViTinh", "MaCTPX" }) lines.Columns.Add(key);
+        foreach (var key in new[] { "SoLuong", "DonGiaChot", "ThanhTien" }) lines.Columns.Add(key, typeof(decimal));
+        for (int i = 1; i <= count; i++) lines.Rows.Add($"{new[] { "Khám chuyên khoa răng hàm mặt", "Lấy cao răng và đánh bóng", "Thuốc điều trị theo đơn" }[(i-1)%3]} INVEND{i:00}", "lần", "", 1m, 100000m, 100000m);
+        return (row, lines);
+    }
+    static DocumentPaginator Paginator(FlowDocument document)
+    {
+        return DonThuocDocument.PhanTrang(document, A4);
+    }
+    static string Export(DocumentPaginator paginator, string name)
+    {
+        paginator.ComputePageCount();
+        for (int i = 0; i < paginator.PageCount; i++)
+        {
+            var page = paginator.GetPage(i);
+            Require(page != DocumentPage.Missing && page.Size == A4, "Trang in thiếu hoặc sai kích thước.");
+            if(i == 0 || i == paginator.PageCount-1) Save(page.Visual, page.Size, name + $"-trang-{i+1}");
+        }
+        var path = Path.Combine(evidence, name + ".xps");
+        if (File.Exists(path)) File.Delete(path);
+        using (var xps = new XpsDocument(path, FileAccess.Write)) XpsDocument.CreateXpsDocumentWriter(xps).Write(paginator);
+        using var zip = ZipFile.OpenRead(path);
+        var pages = zip.Entries.Where(x => x.FullName.EndsWith(".fpage")).Select(entry =>
+        {
+            using var stream = entry.Open();
+            return VisibleText(XDocument.Load(stream));
+        }).ToArray();
+        pagesByDocument[name] = pages;
+        return string.Concat(pages);
+    }
+    static string VisibleText(XDocument xml)
+    {
+        // XPS của VisualBrush chứa cả chứng từ trong resources mỗi trang. Chỉ đếm glyph nằm trong Viewbox/Clip.
+        var words = new List<string>();
+        foreach (var glyph in xml.Descendants().Where(node => node.Name.LocalName == "Glyphs"))
+        {
+            var brush = glyph.Ancestors().FirstOrDefault(node => node.Name.LocalName == "VisualBrush");
+            var boundary = brush ?? xml.Root!;
+            var point = new Point(double.Parse((string)glyph.Attribute("OriginX")!, CultureInfo.InvariantCulture),
+                double.Parse((string)glyph.Attribute("OriginY")!, CultureInfo.InvariantCulture));
+            bool visible = true;
+            foreach (var node in new[] { glyph }.Concat(glyph.Ancestors()).TakeWhile(node => node != boundary))
+            {
+                if (node.Attribute("Clip") is { } clip && !Geometry.Parse(clip.Value).FillContains(point)) visible = false;
+                if (node.Attribute("RenderTransform") is { } transform) point = Matrix.Parse(transform.Value).Transform(point);
+            }
+            var viewport = brush?.Attribute("Viewbox") is { } box ? Rect.Parse(box.Value)
+                : new Rect(0, 0, double.Parse((string)xml.Root!.Attribute("Width")!, CultureInfo.InvariantCulture),
+                    double.Parse((string)xml.Root.Attribute("Height")!, CultureInfo.InvariantCulture));
+            if (visible && viewport.Contains(point)) words.Add((string?)glyph.Attribute("UnicodeString") ?? "");
+        }
+        return string.Concat(words);
+    }
+    static void Snapshot(FrameworkElement view, string name, Size size)
+    {
+        view.Measure(size); view.Arrange(new Rect(size)); view.UpdateLayout();
+        Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+        Save(view, size, name);
+    }
+    static UserControl LoadLayout(string path)
+    {
+        var xml = XDocument.Load(path);
+        var events = new[] { "Click", "Checked", "Unchecked" };
+        foreach (var attribute in xml.Descendants().Attributes().Where(a =>
+            a.Name == XName.Get("Class", "http://schemas.microsoft.com/winfx/2006/xaml") || events.Contains(a.Name.LocalName)).ToArray()) attribute.Remove();
+        return (UserControl)System.Windows.Markup.XamlReader.Parse(xml.ToString());
+    }
+    static void Save(Visual visual, Size size, string name)
+    {
+        var bitmap = new RenderTargetBitmap((int)Math.Ceiling(size.Width), (int)Math.Ceiling(size.Height), 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(visual);
+        var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(bitmap));
+        using var output = File.Create(Path.Combine(evidence, name + ".png")); png.Save(output);
+    }
+    static IEnumerable<T> Descendants<T>(DependencyObject node) where T : DependencyObject
+    {
+        if(node is T match) yield return match;
+        for(int i=0; i<VisualTreeHelper.GetChildrenCount(node); i++) foreach(var child in Descendants<T>(VisualTreeHelper.GetChild(node,i))) yield return child;
+    }
+    static void Require(bool value, string message) { if(!value) throw new Exception(message); }
+}

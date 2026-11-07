@@ -1,0 +1,41 @@
+﻿PASS BC-02/05 engine so sánh tồn tại
+PASS BC-01 giữ 18 chuyên đề và bổ sung tổng quan/tình trạng
+PASS Thống kê trọng tâm: giữ mã tình trạng bác sĩ đã chọn
+PASS Mã bệnh chỉ lấy từ lựa chọn, không đoán từ tên nhập tự do
+PASS Xếp bệnh thường khám phân biệt người với lượt tái khám
+PASS TC-03 MoM tháng 10 so tháng 9
+PASS TC-04 YoY và hai năm
+PASS BC-05 từ chối kỳ gốc tương lai/chưa hoàn chỉnh
+PASS BC-10 nguồn CSV tổng quan bao gồm thống kê mã
+PASS TC-05/06 mốc 0, âm và thiếu dữ liệu
+PASS TC-05 kỳ gốc 0 vẫn diễn giải tăng tuyệt đối
+PASS TC-13 không cộng khác mặt hàng/đơn vị
+PASS TC-07 MTD cắt cùng ngày và tháng ngắn hơn
+PASS BC-05 đủ 12 tháng và giới hạn 24 tháng
+PASS BC-09/10 chuỗi 12 tháng, CSV số âm và metadata
+PASS BC-06 tách quyền lương, kho, lâm sàng
+PASS BC-08 giữ cột âm và mốc 0
+PASS TC-02 khách không thể gọi DAL lương trực tiếp
+PASS TC-08/09/10/11 SQL fixture tạm: trùng mã, tái khám, thiếu mã và lịch sử
+PASS TC-01 Admin đọc đủ 20 chuyên đề
+PASS BC-09 drill-down tài chính theo quyền Admin
+PASS BC-01 hồi quy cơ cấu lương theo nhân viên
+PASS BC-06 kiểm lại quyền chi tiết trước xuất Admin
+PASS TC-12/14 đối soát thu/hoàn và trạng thái ghi sổ Admin
+PASS BC-04 số bệnh nhân toàn kỳ không cộng trùng các tháng
+PASS TC-17 render WPF Admin
+PASS TC-15/16 phản hồi cũ, mất kết nối và khóa xuất
+PASS BC-04 bộ lọc bệnh lý không phát sinh
+PASS Tổng quan ưu tiên bệnh nhân và giải thích thiếu mã
+PASS Chọn danh mục cùng tên vẫn lưu mã vào dòng đang soạn
+PASS BC-06 DAL từ chối phiên hết hạn Admin
+PASS TC-01 nhân viên đọc tổng hợp, chặn lương
+PASS BC-09 drill-down tài chính theo quyền User
+PASS BC-06 kiểm lại quyền chi tiết trước xuất User
+PASS TC-12/14 đối soát thu/hoàn và trạng thái ghi sổ User
+PASS BC-04 số bệnh nhân toàn kỳ không cộng trùng các tháng
+PASS TC-17 render WPF User
+PASS TC-15/16 phản hồi cũ, mất kết nối và khóa xuất
+PASS BC-04 bộ lọc bệnh lý không phát sinh
+PASS Tổng quan ưu tiên bệnh nhân và giải thích thiếu mã
+PASS BC-06 DAL từ chối phiên hết hạn User

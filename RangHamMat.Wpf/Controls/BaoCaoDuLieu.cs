@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using BUS;
+using ET;
 
 namespace RangHamMat.Controls;
 
@@ -80,25 +81,31 @@ public static class BaoCaoDuLieu
     /// </summary>
     public static IReadOnlyList<ChuyenDeBaoCao> DanhMuc { get; } = new ChuyenDeBaoCao[]
     {
-        new("02", "Khám chữa bệnh", "Hồ sơ bệnh nhân", "Theo dõi hồ sơ mới và hoạt động tiếp nhận, khám chữa bệnh.",
+        new("00", "Tổng quan", "Tổng quan điều hành", "Nhu cầu khám, bệnh nhân thực tế, thu ròng và mức đầy đủ của thống kê bệnh lý.",
+            new[]{"Lượt khám xác nhận", "Bệnh nhân duy nhất", "Thu ròng", "Lượt khám đã phân loại"},new[]{"lượt", "người", "VNĐ", "%"},
+            "LICH_SU_KHAM_BENH · THANH_TOAN · TINH_TRANG_BENH · DM_TINH_TRANG_BENH · PHIEU_KHAM_BENH · HO_SO_BENH_AN", "Chỉ lượt khám Đã xác nhận theo ThoiGianKham; bệnh nhân DISTINCT MaBN trên toàn kỳ qua phiếu/hồ sơ, không cộng số người giữa các tháng. Thu ròng = Thu − Hoàn theo NgayThanhToan, Đã xác nhận. Bao phủ = lượt có ít nhất một mã / tổng lượt xác nhận × 100%; không có lượt thì để trống. Tình trạng DISTINCT (MaLS,MaDMTT); không suy từ chẩn đoán tự do, che nhóm dưới 5 bệnh nhân."),
+        new("20", "Khám & bệnh lý", "Bệnh/tình trạng thường gặp", "Bệnh nhân đến khám những bệnh/tình trạng nào; xếp theo số người hoặc số lượt khám.",
+            new[]{"Lượt khám xác nhận", "Bệnh nhân duy nhất", "Lượt có mã tình trạng", "Lượt chưa phân loại"},new[]{"lượt", "người", "lượt", "lượt"},
+            "LICH_SU_KHAM_BENH → TINH_TRANG_BENH → DM_TINH_TRANG_BENH · PHIEU_KHAM_BENH → HO_SO_BENH_AN", "Theo ThoiGianKham, chỉ Đã xác nhận. DISTINCT (MaLS,MaDMTT) và MaBN theo từng mã; không suy luận từ chẩn đoán tự do. Một lượt có nhiều mã; tỷ trọng có thể cộng >100%. Đây là tần suất khám tại bệnh viện, không phải tỷ lệ mắc trong cộng đồng. Nhóm dưới 5 bệnh nhân được ẩn số liệu."),
+        new("02", "Khám & bệnh lý", "Hồ sơ bệnh nhân", "Theo dõi hồ sơ mới và hoạt động tiếp nhận, khám chữa bệnh.",
             new[]{"Hồ sơ bệnh án mới", "Phiếu tiếp nhận", "Lượt khám xác nhận", "Hồ sơ có ghi chú"}, new[]{"hồ sơ", "phiếu", "lượt", "hồ sơ"},
             "HO_SO_BENH_AN · PHIEU_KHAM_BENH · LICH_SU_KHAM_BENH", "Hồ sơ mới tính theo NgayLap; không diễn giải thành số bệnh nhân mới. Mỗi loại phát sinh dùng ngày nghiệp vụ riêng."),
-        new("03", "Khám chữa bệnh", "Tiếp nhận và phiếu khám", "Phân biệt tiếp nhận từ lịch hẹn và bệnh nhân đến trực tiếp.",
+        new("03", "Khám & bệnh lý", "Tiếp nhận và phiếu khám", "Phân biệt tiếp nhận từ lịch hẹn và bệnh nhân đến trực tiếp.",
             new[]{"Tổng phiếu tiếp nhận", "Phiếu có lịch hẹn", "Phiếu tự đến", "Phiếu hủy"}, new[]{"phiếu", "phiếu", "phiếu", "phiếu"},
             "PHIEU_KHAM_BENH", "Theo ThoiGianTiepNhan. Có lịch khi MaLich được điền; trạng thái là trạng thái hiện tại."),
-        new("04", "Khám chữa bệnh", "Lịch khám và điều phối", "Theo dõi lịch hẹn và cơ cấu trạng thái trong khoảng đã chọn.",
+        new("04", "Khám & bệnh lý", "Lịch khám và điều phối", "Theo dõi lịch hẹn và cơ cấu trạng thái trong khoảng đã chọn.",
             new[]{"Tổng lịch hẹn", "Lịch đã khám", "Lịch hủy", "Lịch có dịch vụ"}, new[]{"lịch", "lịch", "lịch", "lịch"},
             "LICH_KHAM", "Theo NgayGioKham, không theo ngày tạo. Trạng thái hiện tại không phải lịch sử thay đổi lịch hoặc điều phối."),
-        new("05", "Khám chữa bệnh", "Khám và điều trị", "Đối chiếu các lần khám và tình trạng xác nhận hồ sơ.",
+        new("05", "Khám & bệnh lý", "Khám và điều trị", "Đối chiếu các lần khám và tình trạng xác nhận hồ sơ.",
             new[]{"Tổng lượt khám", "Lượt đã xác nhận", "Lượt nháp", "Có chẩn đoán"}, new[]{"lượt", "lượt", "lượt", "lượt"},
             "LICH_SU_KHAM_BENH", "Theo ThoiGianKham. Lượt khám xác nhận được đếm từ bản ghi gốc, không JOIN chi tiết gây trùng."),
-        new("06", "Khám chữa bệnh", "Kế hoạch điều trị", "Theo dõi các kế hoạch được lập trong kỳ và giá trị dự kiến.",
+        new("06", "Khám & bệnh lý", "Kế hoạch điều trị", "Theo dõi các kế hoạch được lập trong kỳ và giá trị dự kiến.",
             new[]{"Kế hoạch mới", "Có ngày bắt đầu", "Giá trị dự kiến", "Có hạn hoàn tất"}, new[]{"kế hoạch", "kế hoạch", "VNĐ", "kế hoạch"},
             "KE_HOACH_DIEU_TRI", "Lọc theo NgayLap; ngày bắt đầu và hạn hoàn tất phản ánh thông tin hiện tại của kế hoạch. Giá trị dự kiến không phải tiền đã thu."),
-        new("07", "Khám chữa bệnh", "Dịch vụ thực hiện", "Theo dõi các bản ghi dịch vụ và giá trị đã xác nhận.",
+        new("07", "Khám & bệnh lý", "Dịch vụ thực hiện", "Theo dõi các bản ghi dịch vụ và giá trị đã xác nhận.",
             new[]{"Bản ghi dịch vụ", "Đã xác nhận", "Đã hủy", "Giá trị xác nhận"}, new[]{"bản ghi", "bản ghi", "bản ghi", "VNĐ"},
             "DICH_VU_THUC_HIEN", "Theo ThoiGianThucHien. Giá trị chỉ cộng ThanhTien của bản đã xác nhận; không coi là tiền thực thu."),
-        new("08", "Khám chữa bệnh", "Đơn thuốc", "Theo dõi đơn kê và cơ cấu trạng thái xác nhận.",
+        new("08", "Khám & bệnh lý", "Đơn thuốc", "Theo dõi đơn kê và cơ cấu trạng thái xác nhận.",
             new[]{"Tổng đơn kê", "Đã xác nhận", "Đơn nháp", "Đơn hủy"}, new[]{"đơn", "đơn", "đơn", "đơn"},
             "DON_THUOC", "Theo NgayKe; không suy ra lượng thuốc đã cấp phát từ trạng thái đơn kê."),
         new("09", "Tài chính", "Thu – hoàn bệnh viện", "Đối chiếu tiền thu, tiền hoàn và thu ròng đã xác nhận.",
@@ -107,33 +114,33 @@ public static class BaoCaoDuLieu
         new("10", "Tài chính", "Hóa đơn bệnh viện", "Theo dõi hóa đơn lập trong kỳ và số tiền phải thu.",
             new[]{"Hóa đơn đã lập", "Đã xác nhận", "Hóa đơn hủy", "Phải thu đã xác nhận"}, new[]{"hóa đơn", "hóa đơn", "hóa đơn", "VNĐ"},
             "HOA_DON", "Theo NgayLap. SoTienPhaiThu của hóa đơn xác nhận là giá trị phải thu, không phải tiền đã thu."),
-        new("11", "Tài chính", "Lương và hoa hồng", "Theo dõi quỹ lương và hoa hồng theo kỳ đã chốt.",
+        new("11", "Vận hành", "Lương và hoa hồng", "Theo dõi quỹ lương và hoa hồng theo kỳ đã chốt.",
             new[]{"Lương đã chốt", "Hoa hồng chốt", "Tổng quỹ lương", "Ca tính lương"}, new[]{"VNĐ", "VNĐ", "VNĐ", "ca"},
             "BANG_LUONG · NHAN_VIEN", "Theo ngày chốt, chỉ lấy bảng lương Đã chốt. Lương theo ca, hoa hồng, tổng lương và số ca lấy đúng giá trị đã lưu; không cộng nháp hoặc bản hủy."),
-        new("12", "Kho và vật tư", "Nhập – xuất kho", "Theo dõi phiếu nhập, xuất đã ghi sổ và phiếu hủy.",
+        new("12", "Kho & hàng hóa", "Nhập – xuất kho", "Theo dõi phiếu nhập, xuất đã ghi sổ và phiếu hủy.",
             new[]{"Phiếu nhập ghi sổ", "Phiếu xuất ghi sổ", "Phiếu nhập hủy", "Phiếu xuất hủy"}, new[]{"phiếu", "phiếu", "phiếu", "phiếu"},
             "PHIEU_NHAP · PHIEU_XUAT", "Theo NgayNhap / NgayXuat. Đây là số chứng từ, không phải số lượng hàng hóa hoặc doanh thu kho."),
-        new("13", "Kho và vật tư", "Dòng hàng vật tư", "Đối chiếu nhập, xuất theo từng mặt hàng và đơn vị tính.",
+        new("13", "Kho & hàng hóa", "Dòng hàng vật tư", "Đối chiếu nhập, xuất theo từng mặt hàng và đơn vị tính.",
             new[]{"Dòng nhập ghi sổ", "Dòng xuất ghi sổ", "Giá trị nhập ghi sổ", "Mặt hàng có phát sinh"}, new[]{"dòng", "dòng", "VNĐ", "mặt hàng"},
             "CHI_TIET_PHIEU_NHAP · CHI_TIET_PHIEU_XUAT · HANG_HOA", "Theo ngày nhập / xuất của phiếu Đã ghi sổ. Mặt hàng đếm khác nhau trong từng kỳ và cả khoảng, không cộng các kỳ để ra tổng mặt hàng. Số lượng chỉ cộng theo cùng mã hàng và đơn vị tại bảng chi tiết."),
-        new("14", "Kho và vật tư", "Hạn dùng lô hàng", "Rà soát lô hàng đến hạn theo ngày chốt và ngưỡng cảnh báo.",
+        new("14", "Kho & hàng hóa", "Hạn dùng lô hàng", "Rà soát lô hàng đến hạn theo ngày chốt và ngưỡng cảnh báo.",
             new[]{"Lô có hạn dùng", "Đã quá hạn", "Sắp đến hạn", "Lô thuốc đến / quá hạn"}, new[]{"lô", "lô", "lô", "lô"},
             "LO_HANG_HOA · HANG_HOA · THUOC", "Kiểm tra danh mục lô đã nhập đến ngày chốt, chưa hủy. Quá hạn khi hạn dùng trước ngày chốt; sắp đến hạn trong 30/60/90 ngày kể cả ngày chốt. Không suy ra số dư tồn kho hoặc số lô còn hàng tại ngày chốt.", true, true),
-        new("15", "Kho và vật tư", "Nhà cung cấp", "Theo dõi hóa đơn mua từ nhà cung cấp trong kỳ.",
+        new("15", "Kho & hàng hóa", "Nhà cung cấp", "Theo dõi hóa đơn mua từ nhà cung cấp trong kỳ.",
             new[]{"Hóa đơn mua", "Hóa đơn nháp", "Hóa đơn hủy", "Giá trị xác nhận"}, new[]{"hóa đơn", "hóa đơn", "hóa đơn", "VNĐ"},
             "HOA_DON_NHAP", "Theo NgayHoaDon; giá trị chỉ lấy hóa đơn Đã xác nhận, không cộng lại giá trị phiếu nhập hoặc lô hàng."),
-        new("16", "Nhân sự và vận hành", "Nhân sự và hiện diện", "Đối chiếu hiện diện trên các ca làm việc đã xác nhận.",
+        new("16", "Vận hành", "Nhân sự và hiện diện", "Đối chiếu hiện diện trên các ca làm việc đã xác nhận.",
             new[]{"Ca đã xác nhận", "Ca có mặt", "Ca vắng mặt", "Chưa ghi hiện diện"}, new[]{"ca", "ca", "ca", "ca"},
             "LICH_LAM_VIEC", "Theo NgayLam; chỉ ca đã xác nhận. Hiện diện là trạng thái hiện tại, chưa có ảnh chụp lịch sử theo ngày duyệt."),
-        new("17", "Nhân sự và vận hành", "Phân ca", "Theo dõi ca được phân và cơ cấu xác nhận lịch làm việc.",
+        new("17", "Vận hành", "Phân ca", "Theo dõi ca được phân và cơ cấu xác nhận lịch làm việc.",
             new[]{"Ca được phân", "Ca đã xác nhận", "Ca chờ xác nhận", "Ca hủy"}, new[]{"ca", "ca", "ca", "ca"},
             "LICH_LAM_VIEC", "Theo NgayLam; cơ cấu trạng thái lấy từ bản ghi hiện tại. Một dòng lịch làm việc được tính là một ca được phân."),
-        new("18", "Nhân sự và vận hành", "Đơn nghỉ và duyệt", "Theo dõi đơn nghỉ, kết quả duyệt và bố trí thay thế.",
+        new("18", "Vận hành", "Đơn nghỉ và duyệt", "Theo dõi đơn nghỉ, kết quả duyệt và bố trí thay thế.",
             new[]{"Đơn gửi trong kỳ", "Hiện đã được duyệt", "Ngày nghỉ của đơn duyệt", "Thay thế đã xác nhận"}, new[]{"đơn", "đơn", "ngày lịch", "ca"},
             "DON_XIN_NGHI · PHAN_CONG_THAY_THE", "Chọn đơn theo ngày gửi. Trạng thái duyệt và thay thế là trạng thái hiện tại của các đơn đó, không phải lịch sử duyệt. Số ngày lịch thuộc toàn khoảng nghỉ của đơn đã duyệt; không tính nghỉ việc không xác định ngày kết thúc."),
-        new("19", "Nhân sự và vận hành", "Thiết bị và bảo trì", "Theo dõi công việc bảo trì và chi phí được xác nhận.",
-            new[]{"Lượt bảo trì", "Đã xác nhận", "Đã kết thúc, xác nhận", "Chi phí xác nhận"}, new[]{"lượt", "lượt", "lượt", "VNĐ"},
-            "BAO_TRI_THIET_BI", "Theo NgayBatDau; chi phí chỉ tính bản đã xác nhận. Không suy ra thiết bị quá hạn từ số lần bảo trì.")
+        new("19", "Vận hành", "Thiết bị và bảo trì", "Theo dõi công việc bảo trì và chi phí được xác nhận.",
+            new[]{"Lượt bảo trì", "Đang thực hiện", "Đã hoàn thành", "Chi phí thực hiện"}, new[]{"lượt", "lượt", "lượt", "VNĐ"},
+            "BAO_TRI_THIET_BI", "Theo NgayBatDau; chi phí tính bản Đang thực hiện/Đã hoàn thành theo quy trình hiện hành. Không suy ra thiết bị quá hạn từ số lần bảo trì.")
     };
 
     /// <summary>
@@ -146,6 +153,10 @@ public static class BaoCaoDuLieu
         .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark))
         .Replace('đ', 'd').Replace('Đ', 'D').ToLowerInvariant();
 
+    public static DongThongKeBenh[] XepHangBenh(IEnumerable<DongThongKeBenh> rows,bool theoBenhNhan=true) => rows
+        .OrderByDescending(x=>theoBenhNhan?x.SoBenhNhan??-1:x.SoLuotKham??-1)
+        .ThenByDescending(x=>theoBenhNhan?x.SoLuotKham??-1:x.SoBenhNhan??-1).ThenBy(x=>x.TenTinhTrang).ToArray();
+
     /// <summary>
     /// Đọc báo cáo theo chuyên đề, thời gian và các bộ lọc được truyền vào; ánh xạ dữ liệu cho bước tổng hợp/hiển thị.
     /// </summary>
@@ -157,73 +168,16 @@ public static class BaoCaoDuLieu
     /// <returns>Tập dữ liệu kiểu PhatSinhBaoCao[] theo điều kiện và phạm vi xử lý của hàm.</returns>
     public static PhatSinhBaoCao[] Doc(string ma, DateTime? tuNgay = null, DateTime? denNgay = null, int canhBao = 30)
     {
-        if (!PhienDangNhap.IsAdmin) throw new UnauthorizedAccessException("Tài khoản hiện tại không có quyền đọc báo cáo.");
         if (!DanhMuc.Any(r => r.Ma == ma)) throw new ArgumentException("Chuyên đề báo cáo không tồn tại.");
-        var rows = new List<PhatSinhBaoCao>();
-        static int Co(bool value) => value ? 1 : 0;
-        switch (ma)
-        {
-            case "11": case "13": case "14": case "18":
-                var from = tuNgay?.Date ?? (ma == "14" ? DateTime.Today : new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1));
-                var to = denNgay?.Date ?? DateTime.Today;
-                rows.AddRange(new BUS_BAOCAO().Doc(ma, from, to, canhBao, PhienDangNhap.IsAdmin).Select(r => new PhatSinhBaoCao(
-                    r.Ngay, r.Mot, r.Hai, r.Ba, r.Bon, r.Nhom, r.GiaTriCoCau,
-                    new ChiTietBaoCao(r.Ma, r.Ten, ma == "14" ? r.Nhom : r.PhanLoai, r.DonVi, r.NgayChiTiet, r.DenNgayChiTiet,
-                        r.ChiTietMot, r.ChiTietHai, r.ChiTietBa, r.ChiTietBon, r.TrangThai, r.GhiChu))));
-                break;
-            case "02":
-                rows.AddRange(new BUS_HOSOBENHAN().layToanBoHoSoBenhAn().Select(r => new PhatSinhBaoCao(r.NgayLap, 1, 0, 0, Co(!string.IsNullOrWhiteSpace(r.GhiChu)), r.TrangThai)));
-                rows.AddRange(new BUS_PHIEUKHAMBENH().layToanBoPhieuKhamBenh().Select(r => new PhatSinhBaoCao(r.ThoiGianTiepNhan, 0, 1, 0, 0)));
-                rows.AddRange(new BUS_LICHSUKHAMBENH().layToanBoLichSuKhamBenh().Where(r => r.TrangThai == "Đã xác nhận").Select(r => new PhatSinhBaoCao(r.ThoiGianKham, 0, 0, 1, 0)));
-                break;
-            case "03":
-                rows.AddRange(new BUS_PHIEUKHAMBENH().layToanBoPhieuKhamBenh().Select(r => new PhatSinhBaoCao(r.ThoiGianTiepNhan, 1, Co(!string.IsNullOrWhiteSpace(r.MaLich)), Co(string.IsNullOrWhiteSpace(r.MaLich)), Co(r.TrangThai == "Hủy"), r.TrangThai)));
-                break;
-            case "04":
-                rows.AddRange(new BUS_LICHKHAM().layToanBoLichKham().Select(r => new PhatSinhBaoCao(r.NgayGioKham, 1, Co(r.TrangThai == "Đã khám"), Co(r.TrangThai == "Hủy"), Co(!string.IsNullOrWhiteSpace(r.MaDV)), r.TrangThai)));
-                break;
-            case "05":
-                rows.AddRange(new BUS_LICHSUKHAMBENH().layToanBoLichSuKhamBenh().Select(r => new PhatSinhBaoCao(r.ThoiGianKham, 1, Co(r.TrangThai == "Đã xác nhận"), Co(r.TrangThai == "Nháp"), Co(!string.IsNullOrWhiteSpace(r.ChanDoan)), r.TrangThai)));
-                break;
-            case "06":
-                rows.AddRange(new BUS_KEHOACHDIEUTRI().layToanBoKeHoachDieuTri().Select(r => new PhatSinhBaoCao(r.NgayLap, 1, Co(r.NgayBatDau.HasValue), r.TongTienDuKien, Co(r.NgayDuKienKetThuc.HasValue), r.TrangThai)));
-                break;
-            case "07":
-                rows.AddRange(new BUS_DICHVUTHUCHIEN().layToanBoDichVuThucHien().Select(r => new PhatSinhBaoCao(r.ThoiGianThucHien, 1, Co(r.TrangThai == "Đã xác nhận"), Co(r.TrangThai == "Hủy"), r.TrangThai == "Đã xác nhận" ? r.ThanhTien : 0, r.TrangThai)));
-                break;
-            case "08":
-                rows.AddRange(new BUS_DONTHUOC().layToanBoDonThuoc().Select(r => new PhatSinhBaoCao(r.NgayKe, 1, Co(r.TrangThai == "Đã xác nhận"), Co(r.TrangThai == "Nháp"), Co(r.TrangThai == "Hủy"), r.TrangThai)));
-                break;
-            case "09":
-                rows.AddRange(new BUS_THANHTOAN().LayDanhSach().Where(r => r.TrangThai == "Đã xác nhận").Select(r => new PhatSinhBaoCao(r.NgayThanhToan,
-                    r.LoaiGiaoDich == "Thu" ? r.SoTien : 0, r.LoaiGiaoDich == "Hoàn" ? r.SoTien : 0,
-                    r.LoaiGiaoDich == "Thu" ? r.SoTien : -r.SoTien, 1, r.LoaiGiaoDich + " · " + r.PhuongThuc, r.SoTien)));
-                break;
-            case "10":
-                rows.AddRange(new BUS_HOADON().LayDanhSach().Select(r => new PhatSinhBaoCao(r.NgayLap, 1, Co(r.TrangThai == "Đã xác nhận"), Co(r.TrangThai == "Hủy"), r.TrangThai == "Đã xác nhận" ? r.SoTienPhaiThu : 0, r.TrangThai)));
-                break;
-            case "12":
-                rows.AddRange(new BUS_PHIEUNHAP().layToanBoPhieuNhap().Select(r => new PhatSinhBaoCao(r.NgayNhap, Co(r.TrangThai == "Đã ghi sổ"), 0, Co(r.TrangThai == "Hủy"), 0, "Nhập · " + r.TrangThai)));
-                rows.AddRange(new BUS_PHIEUXUAT().LayDanhSach().Select(r => new PhatSinhBaoCao(r.NgayXuat, 0, Co(r.TrangThai == "Đã ghi sổ"), 0, Co(r.TrangThai == "Hủy"), "Xuất · " + r.TrangThai)));
-                break;
-            case "15":
-                rows.AddRange(new BUS_HOADONNHAP().layToanBoHoaDonNhap().Select(r => new PhatSinhBaoCao(r.NgayHoaDon, 1, Co(r.TrangThai == "Nháp"), Co(r.TrangThai == "Hủy"), r.TrangThai == "Đã xác nhận" ? r.TongTien : 0, r.TrangThai)));
-                break;
-            case "16":
-                rows.AddRange(new BUS_LICHLAMVIEC().layToanBoLichLamViec().Where(r => r.TrangThai == "Đã xác nhận").Select(r => new PhatSinhBaoCao(r.NgayLam, 1,
-                    Co(r.TrangThaiHienDien == "Có mặt"), Co(r.TrangThaiHienDien == "Vắng mặt"), Co(r.TrangThaiHienDien != "Có mặt" && r.TrangThaiHienDien != "Vắng mặt"), r.TrangThaiHienDien)));
-                break;
-            case "17":
-                rows.AddRange(new BUS_LICHLAMVIEC().layToanBoLichLamViec().Select(r => new PhatSinhBaoCao(r.NgayLam, 1, Co(r.TrangThai == "Đã xác nhận"), Co(r.TrangThai == "Chờ xác nhận"), Co(r.TrangThai == "Hủy"), r.TrangThai)));
-                break;
-            case "19":
-                rows.AddRange(new BUS_BAOTRITHIETBI().layToanBoBaoTriThietBi().Select(r => new PhatSinhBaoCao(r.NgayBatDau, 1, Co(r.TrangThai == "Đã xác nhận"), Co(r.TrangThai == "Đã xác nhận" && r.NgayKetThuc.HasValue), r.TrangThai == "Đã xác nhận" ? r.ChiPhi : 0, r.TrangThai)));
-                break;
-            default: throw new ArgumentException("Chuyên đề báo cáo không tồn tại.");
-        }
-        return rows.ToArray();
+        var from = tuNgay?.Date ?? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-1);
+        var to = denNgay?.Date ?? from.AddMonths(1).AddDays(-1);
+        var bus=new BUS_BAOCAO();
+        var rows=bus.Doc(ma,from,to,canhBao).Select(r => new PhatSinhBaoCao(
+            r.Ngay,r.Mot,r.Hai,r.Ba,r.Bon,r.Nhom,r.GiaTriCoCau,
+            ma == "13" ? new ChiTietBaoCao(r.Ma,r.Ten,r.PhanLoai,
+                r.DonVi,r.NgayChiTiet,r.DenNgayChiTiet,r.ChiTietMot,r.ChiTietHai,r.ChiTietBa,r.ChiTietBon,r.TrangThai,r.GhiChu) : null)).ToArray();
+        return rows;
     }
-
     /// <summary>Lọc trước khi nhóm kỳ. Không lấy thêm ngày ngoài khoảng cho tuần/tháng giao nhau.</summary>
     public static KetQuaBaoCao TongHop(string ma, IEnumerable<PhatSinhBaoCao> source, DateTime tu, DateTime den, string nhom)
     {
@@ -283,6 +237,8 @@ public static class BaoCaoDuLieu
     /// <returns>Tập dữ liệu kiểu string[] theo điều kiện và phạm vi xử lý của hàm.</returns>
     public static string[] CotChiTiet(string ma) => ma switch
     {
+        "09" => new[]{"Mã thanh toán", "Phương thức", "Loại giao dịch", "Đơn vị", "Ngày thanh toán", "", "Số tiền (VNĐ)", "Thu ròng (VNĐ)", "", "", "Trạng thái", "Hóa đơn"},
+        "10" => new[]{"Mã hóa đơn", "Loại chứng từ", "", "Đơn vị", "Ngày lập", "", "Phải thu (VNĐ)", "", "", "", "Trạng thái", "Lưu ý"},
         "11" => new[]{"Mã bảng lương", "Nhân viên", "Mã nhân viên", "", "Ngày chốt", "", "Lương theo ca (VNĐ)", "Hoa hồng (VNĐ)", "Tổng lương (VNĐ)", "Số ca", "Trạng thái", "Kỳ lương"},
         "13" => new[]{"Mã hàng", "Tên hàng", "", "Đơn vị tính", "", "", "Số lượng nhập", "Số lượng xuất", "Giá trị nhập (VNĐ)", "", "", ""},
         "14" => new[]{"Mã lô", "Tên hàng", "Phân loại hạn dùng", "Đơn vị tính", "Hạn sử dụng", "Ngày nhập lô", "Số ngày tới hạn", "", "", "", "Trạng thái lô", "Số lô / kho"},
@@ -326,6 +282,7 @@ public static class BaoCaoDuLieu
         if (headers.Length > 0)
         {
             Line(); Line("Bảng chi tiết");
+            if(report.Ma is "09" or "10" or "11" or "14" or "18")Line("Giới hạn chi tiết","Tối đa 200 dòng; chỉ số tổng hợp tính trên toàn kỳ.");
             var visible = Enumerable.Range(0, headers.Length).Where(i => headers[i].Length > 0).ToArray();
             Line(visible.Select(i => headers[i]).ToArray());
             foreach (var row in data.ChiTiet)

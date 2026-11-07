@@ -7,6 +7,9 @@ namespace RangHamMat;
 public static class PhienDangNhap
 {
     public static string MaTK => accountCommitted ?? "";
+    /// <summary>Chỉ biểu thị phiên đã gắn định danh; quyền báo cáo được DAL xác thực lại với SQL.</summary>
+    public static bool DaDangNhap => (Thread.CurrentPrincipal as ClaimsPrincipal)?.Identities
+        .Any(x => x.IsAuthenticated && x.AuthenticationType == DinhDanhNghiepVu.KieuXacThuc) == true;
     public static Guid MaPhien { get; internal set; }
     internal static void GanPhienAudit(Guid session)
     {

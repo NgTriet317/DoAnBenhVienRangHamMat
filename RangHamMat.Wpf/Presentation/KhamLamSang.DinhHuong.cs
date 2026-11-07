@@ -101,7 +101,9 @@ public partial class KhamLamSang
  private void Reference_Selected(object sender,SelectionChangedEventArgs e)
  {
   if(loading||ConditionReferencePicker.SelectedItem is not ET_DMTINHTRANGBENH r)return;
-  if(conditionInputDirty){loading=true;try{ConditionReferencePicker.SelectedItem=DinhHuongDieuTri.Tim(ConditionNameEditor.Text,referenceConditions);}finally{loading=false;}ClinicalError.Text="Lưu hoặc Bỏ nhập trước khi chọn tình trạng khác.";return;}
+  if(conditionInputDirty){loading=true;try{ConditionReferencePicker.SelectedItem=e.RemovedItems.OfType<ET_DMTINHTRANGBENH>().FirstOrDefault();}finally{loading=false;}ClinicalError.Text="Lưu hoặc Bỏ nhập trước khi chọn tình trạng khác.";return;}
+  // Chọn mã là một thay đổi dù tên hiển thị trùng tên đang có và không phát TextChanged.
+  conditionInputDirty=true;
   ConditionNameEditor.Text=r.TenTinhTrang;
  }
  /// <summary>

@@ -4,7 +4,7 @@ using ET;
 namespace DAL;
 
 /// <summary>Các truy vấn SELECT báo cáo; dùng cấu hình kết nối database chung của dự án.</summary>
-public sealed class DAL_BAOCAO : dbconnect
+public sealed partial class DAL_BAOCAO : dbconnect
 {
     /// <summary>
     /// Đọc báo cáo theo chuyên đề, thời gian và các bộ lọc được truyền vào; ánh xạ dữ liệu cho bước tổng hợp/hiển thị.
@@ -16,7 +16,19 @@ public sealed class DAL_BAOCAO : dbconnect
     /// <param name="canhBao">Giá trị cảnh báo dùng khi thực hiện thao tác; kiểu int.</param>
     /// <returns>Tập dữ liệu kiểu ET_DONGBAOCAO[] theo điều kiện và phạm vi xử lý của hàm.</returns>
     public ET_DONGBAOCAO[] Doc(string ma, DateTime tuNgay, DateTime denNgay, int canhBao)
+        => DocNoiBo(ma,tuNgay,denNgay,canhBao,false);
+
+    public ET_DONGBAOCAO[] DocChiTiet(string ma, DateTime tuNgay, DateTime denNgay, int canhBao)
+        => DocNoiBo(ma,tuNgay,denNgay,canhBao,true);
+
+    private ET_DONGBAOCAO[] DocNoiBo(string ma, DateTime tuNgay, DateTime denNgay, int canhBao, bool chiTiet)
     {
+        KiemTraDinhDang(ma, tuNgay, denNgay, canhBao);
+        KiemTraPrincipal();
+        if (chiTiet && ma is ("09" or "10")) return DocChiTietTaiChinh(ma,tuNgay,denNgay);
+        if (chiTiet && ma is not ("11" or "13" or "14" or "18")) throw new ArgumentException("Chuyên đề không có chi tiết.");
+        if (ma == "20") return DocLuotBenh(new(tuNgay.Date,denNgay.Date.AddDays(1)));
+        if (ma is not ("11" or "13" or "14" or "18")) return DocTongHop(ma, tuNgay, denNgay);
         // Chỉ chọn SQL có sẵn; mã chuyên đề không được nối vào câu truy vấn.
         var sql = ma switch
         {
@@ -95,6 +107,35 @@ public sealed class DAL_BAOCAO : dbconnect
             _ => throw new ArgumentException("Không có nguồn báo cáo cho mã chuyên đề này.", nameof(ma))
         };
         using var connection = MoKetNoi();
+        var rights = XacThucQuyen(connection, ma);
+        if (chiTiet && (ma is "13" or "14") && !rights.HasFlag(QuyenBaoCao.XemKhoChiTiet))
+            throw new UnauthorizedAccessException("Không có quyền xem chi tiết kho.");
+        if (chiTiet)
+        {
+            sql = sql.Replace("SELECT bl.NgayChot", "SELECT TOP (200) bl.NgayChot")
+                .Replace("SELECT @TuNgay AS Ngay", "SELECT TOP (200) @TuNgay AS Ngay")
+                .Replace("SELECT d.NgayGui", "SELECT TOP (200) d.NgayGui");
+            if(ma=="13")sql=$"SELECT TOP (200) * FROM ({sql}) s ORDER BY Ngay,Ma,GhiChu";
+        }
+        else
+        {
+            var order = sql.LastIndexOf("ORDER BY",StringComparison.OrdinalIgnoreCase);
+            if (order >= 0) sql=sql[..order];
+            if (ma == "13")
+                sql = $"""
+                    SELECT CONVERT(date,Ngay) AS Ngay,SUM(Mot) AS Mot,SUM(Hai) AS Hai,SUM(Ba) AS Ba,0 AS Bon,
+                      Nhom,SUM(GiaTriCoCau) AS GiaTriCoCau,Ma,Ten,PhanLoai,DonVi,
+                      SUM(ChiTietMot) AS ChiTietMot,SUM(ChiTietHai) AS ChiTietHai,SUM(ChiTietBa) AS ChiTietBa,
+                      N'Tổng hợp theo mặt hàng và đơn vị' AS GhiChu FROM ({sql}) s
+                    GROUP BY CONVERT(date,Ngay),Nhom,Ma,Ten,PhanLoai,DonVi
+                    """;
+            else
+                sql = $"""
+                    SELECT CONVERT(date,Ngay) AS Ngay,SUM(Mot) AS Mot,SUM(Hai) AS Hai,SUM(Ba) AS Ba,SUM(Bon) AS Bon,
+                      {(ma is "11" or "14"?"Nhom":"N'Tổng hợp'")} AS Nhom,SUM(GiaTriCoCau) AS GiaTriCoCau
+                    FROM ({sql}) s GROUP BY CONVERT(date,Ngay){(ma is "11" or "14"?",Nhom":"")}
+                    """;
+        }
         return connection.Query<ET_DONGBAOCAO>(sql, new
         {
             TuNgay = tuNgay.Date,

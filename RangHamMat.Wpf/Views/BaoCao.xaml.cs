@@ -9,6 +9,8 @@ using System.Windows.Data;
 using System.Windows.Media;
 using Microsoft.Win32;
 using RangHamMat.Controls;
+using ET;
+using BUS;
 
 namespace RangHamMat.Views;
 
@@ -77,7 +79,7 @@ public sealed class NhomBaoCao : INotifyPropertyChanged
 /// <param name="DonVi">Giá trị đơn vị dùng khi thực hiện thao tác; kiểu string.</param>
 /// <param name="Mau">Giá trị mẫu dùng khi thực hiện thao tác; kiểu string.</param>
 /// <param name="GhiChu">Giá trị ghi chú dùng khi thực hiện thao tác; kiểu string.</param>
-public sealed record ChiSoBaoCao(string Ten, string GiaTri, string DonVi, string Mau, string GhiChu);
+public sealed record ChiSoBaoCao(string Ten, string GiaTri, string DonVi, string Mau, string GhiChu,string BienDong="");
 
 /// <summary>XAML giữ toàn bộ bố cục. Code-behind chọn chuyên đề, tải snapshot chỉ đọc và xuất bảng tổng hợp.</summary>
 public partial class BaoCao : UserControl
@@ -151,12 +153,28 @@ public partial class BaoCao : UserControl
     public BaoCao(Func<string, PhatSinhBaoCao[]>? read)
     {
         this.read = read;
-        menu = BaoCaoDuLieu.DanhMuc.Select(item => new MucBaoCao(item)).ToArray();
+        try { quyen = new BUS_BAOCAO().LayQuyen(); }
+        catch (Exception ex) when (ex is InvalidOperationException or UnauthorizedAccessException or System.Data.Common.DbException) { loiQuyen = ex.Message; }
+        menu = BaoCaoDuLieu.DanhMuc.Where(item => ChinhSachBaoCao.ChoPhep(item.Ma,quyen)).Select(item => new MucBaoCao(item)).ToArray();
         groups = menu.GroupBy(item => item.ChuyenDe.Nhom).Select(group => new NhomBaoCao
-        { Ten = group.Key, CacMuc = group.ToArray(), MoRong = group.Key == "Khám chữa bệnh" }).ToArray();
+        { Ten = group.Key, CacMuc = group.ToArray(), MoRong = group.Key == "Tổng quan" }).ToArray();
         InitializeComponent();
-        FromDate.SelectedDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-        ToDate.SelectedDate = DateTime.Today; AsOfDate.SelectedDate = DateTime.Today; PeriodMode.SelectedIndex = 0;
+        if(quyen.HasFlag(QuyenBaoCao.XemTongHop))
+        {
+            try
+            {
+                var catalogs=new BUS_BAOCAO().LayDanhMucLoc();
+                SpecialtyCode.ItemsSource=new[]{new LuaChonThongKe("","Tất cả chuyên khoa")}.Concat(catalogs.ChuyenKhoa);
+                ServiceCode.ItemsSource=new[]{new LuaChonThongKe("","Tất cả dịch vụ")}.Concat(catalogs.DichVu);
+                SpecialtyCode.SelectedIndex=ServiceCode.SelectedIndex=0;
+            }
+            catch(Exception ex) when(ex is InvalidOperationException or UnauthorizedAccessException or System.Data.Common.DbException) { loiQuyen=ex.Message; }
+        }
+        FromDate.SelectedDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-1);
+        ToDate.SelectedDate = new DateTime(DateTime.Today.Year,DateTime.Today.Month,1).AddDays(-1); AsOfDate.SelectedDate = DateTime.Today; PeriodMode.SelectedIndex = 2;
+        BaselineYear.Text = (DateTime.Today.Year-1).ToString();
+        Loaded += (_,_) => PhienDangNhap.DinhDanhThayDoi += PhienBaoCaoThayDoi;
+        Unloaded += (_,_) => PhienDangNhap.DinhDanhThayDoi -= PhienBaoCaoThayDoi;
         // DatePicker có thể giữ SelectedDate cũ khi gõ sai: mọi lần sửa text đều khóa xuất ngay.
         AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(NgayDangSua), true);
         Unloaded += (_, _) => XoaKetQua();
@@ -166,7 +184,8 @@ public partial class BaoCao : UserControl
             XoaKetQua(); ThongBao("Dữ liệu hệ thống đã được làm mới. Nhấn Tải báo cáo để cập nhật kết quả.");
         });
         ready = true;
-        HienDanhMuc(); ChonBaoCao("02");
+        HienDanhMuc(); ChonBaoCao("00");
+        if (loiQuyen is not null) ThongBao("Không xác thực được quyền báo cáo. Đăng nhập lại hoặc kiểm tra kết nối dữ liệu.",true);
     }
 
     /// <summary>
@@ -176,7 +195,7 @@ public partial class BaoCao : UserControl
     /// <param name="ma">Mã định danh của bản ghi cần xử lý.</param>
     public void ChonBaoCao(string ma)
     {
-        if (!PhienDangNhap.IsAdmin)
+        if (!ChinhSachBaoCao.ChoPhep(ma,quyen))
         {
             XoaKetQua(); LoadButton.IsEnabled = false;
             ThongBao("Tài khoản hiện tại không có quyền xem báo cáo. Vui lòng liên hệ quản trị viên.", true);
@@ -185,11 +204,16 @@ public partial class BaoCao : UserControl
         var report = BaoCaoDuLieu.DanhMuc.Single(item => item.Ma == ma);
         if (selected?.Ma == ma) return;
         selected = report;
-        foreach (var group in groups) group.MoRong = group.CacMuc.Any(item => item.ChuyenDe.Ma == ma);
+        foreach (var group in groups) group.MoRong = ShowAllTopics.IsChecked!=true || group.CacMuc.Any(item => item.ChuyenDe.Ma == ma);
         changingSelection = true;
         try { foreach (var item in menu) item.DuocChon = item.ChuyenDe.Ma == ma; }
         finally { changingSelection = false; }
         ReportTitle.Text = report.Ten; ReportDescription.Text = report.MoTa;
+        ChartMetric.ItemsSource = report.ChiSo;
+        ChartMetric.SelectedIndex = report.Ma == "09" ? 2 : 0;
+        ClinicalFilters.Visibility = report.Ma == "20" ? Visibility.Visible : Visibility.Collapsed;
+        if(report.Ma is "00" or "20")PeriodMode.SelectedIndex=2;
+        ComparisonFields.Visibility = report.TheoThoiDiem ? Visibility.Collapsed : Visibility.Visible;
         SourceText.Text = report.Nguon; RuleText.Text = report.QuyTac;
         ReportChart.PrimaryLabel = report.ChiSo[0]; ReportChart.SecondaryLabel = report.ChiSo[1];
         ReportChart.Unit = report.Ma is "09" or "11" ? "VNĐ" : "";
@@ -232,13 +256,14 @@ public partial class BaoCao : UserControl
     private void HienDanhMuc()
     {
         if (!ready) return;
-        if (!PhienDangNhap.IsAdmin) { ReportCatalog.ItemsSource = null; CatalogCount.Text = "Chưa được cấp quyền"; return; }
+        if (!CoQuyenChuyenDe) { ReportCatalog.ItemsSource = null; CatalogCount.Text = "Chưa được cấp quyền"; return; }
         var keyword = BaoCaoDuLieu.BoDau(ReportSearch.Text.Trim());
         var words = keyword.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var filtered = keyword.Length == 0 ? groups : groups.Select(group => new NhomBaoCao
-        { Ten = group.Ten, MoRong = true, CacMuc = group.CacMuc.Where(item => words.All(word => item.ChuyenDe.TuKhoa.Contains(word))).ToArray() }).Where(group => group.SoLuong > 0).ToArray();
+        var all=ShowAllTopics.IsChecked==true||keyword.Length>0;
+        var filtered = groups.Select(group => new NhomBaoCao
+        { Ten = group.Ten, MoRong = true, CacMuc = group.CacMuc.Where(item => (all||item.ChuyenDe.Ma is "00" or "20" or "09" or "13" or "14")&&words.All(word => item.ChuyenDe.TuKhoa.Contains(word))).ToArray() }).Where(group => group.SoLuong > 0).ToArray();
         ReportCatalog.ItemsSource = filtered;
-        CatalogCount.Text = keyword.Length == 0 ? $"{groups.Length} nhóm · {menu.Length} chuyên đề" : $"{filtered.Sum(group => group.SoLuong)} / {menu.Length} chuyên đề";
+        CatalogCount.Text = $"{filtered.Sum(group => group.SoLuong)} / {menu.Length} chuyên đề · "+(all?"Toàn bộ":"Chỉ số trọng tâm");
         NoSearchResults.Visibility = filtered.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
     /// <summary>
@@ -249,15 +274,19 @@ public partial class BaoCao : UserControl
     private void CauHinhChiTiet(ChuyenDeBaoCao report)
     {
         var headers = BaoCaoDuLieu.CotChiTiet(report.Ma);
+        if(report.Ma=="14"&&!quyen.HasFlag(QuyenBaoCao.XemKhoChiTiet))headers=Array.Empty<string>();
+        if((report.Ma is "09" or "10")&&!quyen.HasFlag(QuyenBaoCao.XemTaiChinhChiTiet))headers=Array.Empty<string>();
         DetailsPanel.Visibility = headers.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         if (headers.Length == 0) return;
         DetailsTitle.Text = report.Ma switch
         {
+            "09" => "Thanh toán xác nhận", "10"=>"Hóa đơn trong kỳ",
             "11" => "Bảng lương đã chốt", "13" => "Nhập – xuất theo mặt hàng",
             "14" => "Danh sách lô theo hạn dùng", _ => "Các đơn gửi trong kỳ"
         };
         DetailsHint.Text = report.Ma switch
         {
+            "09" or "10" => "Chứng từ theo phạm vi tài chính được cấp; tối đa 200 dòng, không kèm danh tính bệnh nhân.",
             "11" => "Giá trị đã chốt từ bảng lương; có mã bảng lương và nhân viên để đối chiếu.",
             "13" => "Mỗi dòng là một mặt hàng và đơn vị tính. Không cộng gộp số lượng của các đơn vị khác nhau.",
             "14" => "Danh mục lô đã nhập đến ngày chốt; số ngày âm nghĩa là đã quá hạn. Bảng không thể hiện số dư tồn kho.",
@@ -270,7 +299,7 @@ public partial class BaoCao : UserControl
             columns[i].Header = headers[i]; columns[i].Visibility = headers[i].Length == 0 ? Visibility.Collapsed : Visibility.Visible;
             if (i is >= 6 and <= 9)
             {
-                var format = report.Ma == "11" && i < 9 || report.Ma == "13" && i == 8 ? "N2"
+                var format = (report.Ma is "09" or "10") || report.Ma == "11" && i < 9 || report.Ma == "13" && i == 8 ? "N2"
                     : report.Ma == "13" ? "N3" : "N0";
                 columns[i].Binding = new Binding(new[] { "Mot", "Hai", "Ba", "Bon" }[i - 6])
                 { Mode = BindingMode.OneWay, StringFormat = format, ConverterCulture = Vietnamese, TargetNullValue = "—" };
@@ -303,6 +332,8 @@ public partial class BaoCao : UserControl
     private void BoLoc_Changed(object sender, RoutedEventArgs e)
     {
         if (!ready || selected is null) return;
+        ComparisonMode.IsEnabled = MonthToDate.IsEnabled = PeriodMode.SelectedIndex == 2;
+        BaselineYear.IsEnabled = PeriodMode.SelectedIndex == 2 && ComparisonMode.SelectedIndex == 3;
         XoaKetQua();
         ThongBao(selected.DaKetNoi ? "Bộ lọc đã thay đổi. Nhấn Tải báo cáo để cập nhật kết quả." : "Chuyên đề chưa tích hợp nguồn dữ liệu; chưa có số liệu để tải hoặc xuất.");
         KiemTraNgay(out _, out _);
@@ -344,9 +375,12 @@ public partial class BaoCao : UserControl
         try
         {
             var today = DateTime.Today;
-            FromDate.SelectedDate = (sender as Button)?.Tag as string switch
-            { "Today" => today, "Week" => today.AddDays(-6), _ => new DateTime(today.Year, today.Month, 1) };
-            ToDate.SelectedDate = today;
+            var month=new DateTime(today.Year,today.Month,1);
+            var tag=(sender as Button)?.Tag as string;
+            FromDate.SelectedDate = tag switch
+            { "Year" => month.AddMonths(-12),"LastYear"=>new DateTime(today.Year-1,1,1),"LastMonth"=>month.AddMonths(-1), _ => month };
+            ToDate.SelectedDate = tag=="LastYear"?new DateTime(today.Year-1,12,31):tag=="Month"?today:month.AddDays(-1);
+            MonthToDate.IsChecked=tag=="Month";PeriodMode.SelectedIndex=2;
         }
         finally { ready = true; }
         BoLoc_Changed(sender, e);
@@ -399,23 +433,72 @@ public partial class BaoCao : UserControl
     {
         if (loading) return;
         XoaKetQua();
-        if (!PhienDangNhap.IsAdmin) { ThongBao("Tài khoản hiện tại không có quyền đọc báo cáo.", true); return; }
+        if (!CoQuyenChuyenDe) { ThongBao("Tài khoản hiện tại không có quyền đọc báo cáo.", true); return; }
         if (selected is null || !selected.DaKetNoi) { ThongBao("Chuyên đề chưa tích hợp nguồn dữ liệu."); return; }
         if (!KiemTraNgay(out var from, out var to)) { ThongBao("Kiểm tra lại bộ lọc ngày trước khi tải báo cáo.", true); return; }
         var report = selected; var mode = report.TheoThoiDiem ? "Ngày" : (PeriodMode.SelectedItem as ComboBoxItem)?.Content as string ?? "Ngày";
+        BoLocThongKe? filter = null;
+        if (!report.TheoThoiDiem && mode == "Tháng")
+        {
+            try
+            {
+                filter = DocBoLoc();
+                var periods = SoSanhThongKe.TaoCacKy(filter,DateTime.Today);
+                from = periods[0].HienTai.TuNgay; to = periods[^1].HienTai.DenExclusive.AddDays(-1);
+            }
+            catch(ArgumentException ex) { LoiBoLoc(ex.Message); ThongBao(ex.Message,true); return; }
+        }
+        if ((report.Ma is "00" or "20") && mode != "Tháng") { ThongBao("Tổng quan và bệnh lý sử dụng kỳ Tháng để đếm đúng bệnh nhân duy nhất.",true); return; }
         var threshold = (ExpiryThreshold.SelectedIndex + 1) * 30;
         var request = ++version;
         loading = true; LoadButton.IsEnabled = false; LoadButton.Content = "Đang tải…"; LoadingProgress.Visibility = Visibility.Visible;
         ThongBao("Đang đọc dữ liệu báo cáo. Bạn có thể tiếp tục chọn chuyên đề hoặc điều chỉnh bộ lọc.");
         try
         {
-            var data = await Task.Run(() => BaoCaoDuLieu.TongHop(report.Ma,
-                read is null ? BaoCaoDuLieu.Doc(report.Ma, from, to, threshold) : read(report.Ma), from, to, mode));
+            quyen=await Task.Run(()=>new BUS_BAOCAO().LayQuyen());
+            if(request!=version)return;
+            if(!CoQuyenChuyenDe)throw new UnauthorizedAccessException("Không còn quyền xem chuyên đề.");
+            var packet = await Task.Run(() =>
+            {
+                PhatSinhBaoCao[] Read(string id,DateTime start,DateTime end) => read is null ? BaoCaoDuLieu.Doc(id,start,end,threshold) : read(id);
+                var comparison = filter is null ? null : DuLieuSoSanhBaoCao.Doc(report,filter,Read);
+                KetQuaBaoCao data;
+                if(report.Ma is "00" or "20")
+                {
+                    var disease=comparison?.BenhLy??throw new InvalidOperationException("Không đủ dữ liệu thống kê theo bộ lọc.");
+                    var q=disease.ChatLuong;
+                    var totals=comparison!.TongCong;
+                    data=new(new("Tổng kỳ",totals[0].HienTai??0,totals[1].HienTai??0,totals[2].HienTai??0,totals[3].HienTai),
+                        comparison!.CacKy.Select((p,i)=>new DongBaoCao($"Tháng {p.HienTai.TuNgay:MM/yyyy}",
+                            comparison.CacDong[i*4].HienTai??0,comparison.CacDong[i*4+1].HienTai??0,
+                            comparison.CacDong[i*4+2].HienTai??0,comparison.CacDong[i*4+3].HienTai,p.HienTai.TuNgay,p.HienTai.DenExclusive.AddDays(-1))).ToArray(),
+                        Array.Empty<CoCauBaoCao>(),report.Ma=="20"?q.TongLuot:Read("00",from,to).Length,Array.Empty<ChiTietBaoCao>());
+                }
+                else data = BaoCaoDuLieu.TongHop(report.Ma,Read(report.Ma,from,to),from,to,mode);
+                if(read is null && (report.Ma is "11" or "18" || report.Ma=="14"&&quyen.HasFlag(QuyenBaoCao.XemKhoChiTiet)
+                    ||(report.Ma is "09" or "10")&&quyen.HasFlag(QuyenBaoCao.XemTaiChinhChiTiet)))
+                {
+                    var details=new BUS_BAOCAO().DocChiTiet(report.Ma,from,to,threshold);
+                    data=data with {ChiTiet=details.Select(r=>new ChiTietBaoCao(r.Ma,r.Ten,report.Ma=="14"?r.Nhom:r.PhanLoai,
+                        r.DonVi,r.NgayChiTiet,r.DenNgayChiTiet,r.ChiTietMot,r.ChiTietHai,r.ChiTietBa,r.ChiTietBon,r.TrangThai,r.GhiChu)).ToArray()};
+                }
+                return (Data:data, Comparison:comparison);
+            });
             if (request != version) return;
-            if (!PhienDangNhap.IsAdmin) { ThongBao("Phiên hiện tại không còn quyền xem báo cáo.", true); return; }
+            quyen = await Task.Run(() => new BUS_BAOCAO().LayQuyen());
+            if (request != version) return;
+            if (!CoQuyenChuyenDe) { ThongBao("Phiên hiện tại không còn quyền xem báo cáo.", true); return; }
+            var data=packet.Data;
+            if((report.Ma is "09" or "10" or "11" or "14" or "18")&&!ChinhSachBaoCao.ChoPhepChiTiet(report.Ma,quyen))
+                data=data with {ChiTiet=Array.Empty<ChiTietBaoCao>()};
+            CauHinhChiTiet(report);
             result = data; appliedFrom = from; appliedTo = to; appliedMode = mode; appliedThreshold = threshold;
+            soSanh=packet.Comparison;
             HienKetQua(report, data);
-            ThongBao(report.TheoThoiDiem ? $"Đã kiểm tra {data.ChiTiet.Length} lô · Ngày chốt {from:dd/MM/yyyy} · Ngưỡng {threshold} ngày · Cập nhật {DateTime.Now:HH:mm:ss}"
+            HienSoSanh(report);
+            if(report.Ma is "09" or "10" or "11" or "18")await Task.Run(()=>new BUS_BAOCAO().GhiTruyCap(report.Ma,"VIEW_REPORT",from,to));
+            if(request!=version)return;
+            ThongBao(report.TheoThoiDiem ? $"Đã kiểm tra {data.Tong.Mot:N0} lô · Ngày chốt {from:dd/MM/yyyy} · Ngưỡng {threshold} ngày · Cập nhật {DateTime.Now:HH:mm:ss}"
                 : data.SoPhatSinh == 0 ? $"Không có phát sinh trong khoảng {from:dd/MM/yyyy} – {to:dd/MM/yyyy}. Các kỳ trong bảng có giá trị 0."
                 : $"Đã tải {from:dd/MM/yyyy} – {to:dd/MM/yyyy} · Nhóm theo {mode.ToLowerInvariant()} · Cập nhật {DateTime.Now:HH:mm:ss}", false, true);
         }
@@ -432,7 +515,7 @@ public partial class BaoCao : UserControl
         finally
         {
             loading = false; LoadingProgress.Visibility = Visibility.Collapsed;
-            LoadButton.IsEnabled = PhienDangNhap.IsAdmin && selected?.DaKetNoi == true;
+            LoadButton.IsEnabled = CoQuyenChuyenDe && selected?.DaKetNoi == true;
             if (!Equals(LoadButton.Content, "Thử lại")) LoadButton.Content = selected?.DaKetNoi == true ? "Tải báo cáo" : "Chưa tích hợp dữ liệu";
         }
     }
@@ -444,6 +527,12 @@ public partial class BaoCao : UserControl
     private void XoaKetQua()
     {
         version++; result = null; ExportButton.IsEnabled = false; ReportGrid.ItemsSource = null;
+        soSanh=null; ComparisonGrid.ItemsSource=null; DiseaseGrid.ItemsSource=null;
+        ComparisonPanel.Visibility=Visibility.Collapsed;
+        DiseasePanel.Visibility=selected?.Ma is "00" or "20"?Visibility.Visible:Visibility.Collapsed;
+        DiseaseQuality.Text="Chưa tải dữ liệu bệnh lý. Chọn kỳ và tải báo cáo để xem số bệnh nhân theo từng bệnh/tình trạng.";
+        DiseaseEmpty.Text="Bảng xếp hạng sẽ có số bệnh nhân duy nhất và số lượt khám riêng.";
+        DiseaseEmpty.Visibility=Visibility.Visible;DecisionAdvice.Text="";
         ReportChart.Points = Array.Empty<ChartPoint>(); CompositionItems.ItemsSource = null;
         ReportChart.MinWidth = 0; DetailsGrid.ItemsSource = null; DetailsCount.Text = "Chưa tải dữ liệu";
         DetailsEmpty.Visibility = Visibility.Visible; DetailsEmpty.Text = "Tải báo cáo để xem chi tiết từ dữ liệu nguồn.";
@@ -495,8 +584,8 @@ public partial class BaoCao : UserControl
         DetailsGrid.ItemsSource = data.ChiTiet;
         DetailsEmpty.Visibility = data.ChiTiet.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         DetailsEmpty.Text = "Không có dữ liệu chi tiết phù hợp với bộ lọc.";
-        DetailsCount.Text = $"{data.ChiTiet.Length} dòng · " + (report.TheoThoiDiem ? $"Ngày chốt {appliedFrom:dd/MM/yyyy} · Ngưỡng {appliedThreshold} ngày" : $"{appliedFrom:dd/MM/yyyy} – {appliedTo:dd/MM/yyyy}");
-        ExportButton.IsEnabled = PhienDangNhap.IsAdmin;
+        DetailsCount.Text = $"{data.ChiTiet.Length} dòng · " + (report.Ma is "09" or "10" or "11" or "14" or "18" ? "Chi tiết tối đa 200 dòng; KPI tính trên toàn kỳ · " : "") + (report.TheoThoiDiem ? $"Ngày chốt {appliedFrom:dd/MM/yyyy} · Ngưỡng {appliedThreshold} ngày" : $"{appliedFrom:dd/MM/yyyy} – {appliedTo:dd/MM/yyyy}");
+        ExportButton.IsEnabled = CoQuyenChuyenDe && quyen.HasFlag(QuyenBaoCao.Xuat);
     }
     /// <summary>
     /// Cập nhật nội dung và cách hiển thị vùng thông báo của màn hình.
@@ -518,18 +607,22 @@ public partial class BaoCao : UserControl
     /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Xuat_Click(object sender, RoutedEventArgs e)
     {
-        if (!PhienDangNhap.IsAdmin || result is null || selected is null || loading) return;
+        if (!CoQuyenChuyenDe || result is null || selected is null || loading) return;
         var data = result; var report = selected; var generation = version;
         var dialog = new SaveFileDialog { Title = "Xuất " + report.Ten, Filter = "Báo cáo CSV (*.csv)|*.csv", DefaultExt = ".csv", AddExtension = true,
             FileName = $"BaoCao_{report.Ma}_{appliedFrom:yyyyMMdd}_{appliedTo:yyyyMMdd}.csv" };
-        if (dialog.ShowDialog() != true || generation != version || !PhienDangNhap.IsAdmin) return;
+        if (dialog.ShowDialog() != true || generation != version || !CoQuyenChuyenDe) return;
         try
         {
+            var sensitiveDetails=(report.Ma is "09" or "10" or "11" or "14" or "18")&&data.ChiTiet.Length>0;
+            new BUS_BAOCAO().KiemTraXuat(report.Ma,sensitiveDetails);
+            new BUS_BAOCAO().GhiTruyCap(report.Ma,"EXPORT_REPORT",appliedFrom,appliedTo);
             File.WriteAllText(dialog.FileName, BaoCaoDuLieu.TaoCsv(report, data, appliedFrom, appliedTo, appliedMode,
-                PhienDangNhap.TenDangNhap, DateTime.Now, appliedThreshold), new UTF8Encoding(true));
+                PhienDangNhap.TenDangNhap, DateTime.Now, appliedThreshold) + soSanh?.TaoCsv(PhienDangNhap.TenDangNhap,DateTime.Now), new UTF8Encoding(true));
             ThongBao("Đã xuất CSV: " + Path.GetFileName(dialog.FileName), false, true);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch(UnauthorizedAccessException ex) { XoaKetQua();ThongBao("Không thể xuất báo cáo: "+ex.Message,true); }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or System.Data.Common.DbException)
         { ThongBao("Không ghi được tệp. Kiểm tra quyền thư mục hoặc đóng tệp đang mở rồi xuất lại.", true); }
     }
     /// <summary>

@@ -1,0 +1,6 @@
+﻿FAIL BC-05 từ chối kỳ gốc tương lai/chưa hoàn chỉnh: Kỳ gốc tương lai/chưa đủ bị coi là 0 hợp lệ.
+FAIL BC-10 nguồn CSV tổng quan bao gồm thống kê mã: Nguồn tổng quan thiếu thống kê bệnh lý xuất kèm.
+FAIL BC-06 kiểm lại quyền chi tiết trước xuất Admin: Xuất chưa kiểm phạm vi chi tiết đã cache.
+FAIL BC-04 bộ lọc bệnh lý không phát sinh: Trạng thái vẫn dùng lượt không thuộc bộ lọc.
+FAIL BC-06 kiểm lại quyền chi tiết trước xuất User: Xuất chưa kiểm phạm vi chi tiết đã cache.
+FAIL BC-04 bộ lọc bệnh lý không phát sinh: Trạng thái vẫn dùng lượt không thuộc bộ lọc.

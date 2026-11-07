@@ -95,6 +95,8 @@ public sealed class DichVuTinhTrang
 /// </summary>
 public sealed class TinhTrangKhamNhap
 {
+    /// <summary>Mã do bác sĩ chọn từ danh mục; nhập tự do không tự sinh mã.</summary>
+    public string? MaDMTT {get;set;}
     /// <summary>
     /// Mã tình trạng bệnh ghi nhận trong lần khám. Có thể để null khi dữ liệu chưa được cung cấp.
     /// </summary>

@@ -24,6 +24,7 @@
     <ItemsControl.ItemTemplate><DataTemplate><Rectangle Height="1" Width="{Binding PlotWidth, RelativeSource={RelativeSource AncestorType={x:Type ui:ChartView}}}" Fill="{DynamicResource Line}"/></DataTemplate></ItemsControl.ItemTemplate>
    </ItemsControl>
    <Polyline Points="{Binding LinePoints}" Stroke="{DynamicResource Accent}" StrokeThickness="2" Visibility="{Binding ShowLine, Converter={StaticResource VisibleWhenTrue}}" IsHitTestVisible="False"/>
+   <Polyline Points="{Binding SecondaryLinePoints}" Stroke="{DynamicResource AccentDark}" StrokeThickness="2" Visibility="{Binding ShowLine, Converter={StaticResource VisibleWhenTrue}}" IsHitTestVisible="False"/>
    <ItemsControl ItemsSource="{Binding PlotPoints}">
     <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
     <ItemsControl.ItemTemplate><DataTemplate>
@@ -31,6 +32,7 @@
       <Rectangle Canvas.Left="{Binding PrimaryLeft}" Canvas.Top="{Binding PrimaryTop}" Width="{Binding BarWidth}" Height="{Binding PrimaryHeight}" Fill="{DynamicResource Accent}" ToolTip="{Binding PrimaryTip}" Visibility="{Binding ShowBars, Converter={StaticResource VisibleWhenTrue}}"/>
       <Rectangle Canvas.Left="{Binding SecondaryLeft}" Canvas.Top="{Binding SecondaryTop}" Width="{Binding BarWidth}" Height="{Binding SecondaryHeight}" Fill="{DynamicResource AccentDark}" ToolTip="{Binding SecondaryTip}" Visibility="{Binding ShowBars, Converter={StaticResource VisibleWhenTrue}}"/>
       <Ellipse Canvas.Left="{Binding DotLeft}" Canvas.Top="{Binding DotTop}" Width="7" Height="7" Fill="{DynamicResource Accent}" ToolTip="{Binding PrimaryTip}" Visibility="{Binding ShowDot, Converter={StaticResource VisibleWhenTrue}}"/>
+      <Ellipse Canvas.Left="{Binding DotLeft}" Canvas.Top="{Binding SecondaryDotTop}" Width="7" Height="7" Fill="{DynamicResource AccentDark}" ToolTip="{Binding SecondaryTip}" Visibility="{Binding ShowDot, Converter={StaticResource VisibleWhenTrue}}"/>
      </Canvas>
     </DataTemplate></ItemsControl.ItemTemplate>
    </ItemsControl>
