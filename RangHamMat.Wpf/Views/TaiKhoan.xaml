@@ -1,110 +1,425 @@
-<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của TaiKhoan.xaml; các vùng liên quan: Tài khoản, Grid_TAI_KHOAN, Vai trò, Grid_VAI_TRO. -->
-<!-- AI hỗ trợ: bổ sung chú thích cho tài khoản. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.TaiKhoan">
-  <Grid>
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="*" />
-    </Grid.RowDefinitions>
-    <StackPanel>
-      <TextBlock Text="Tài khoản và vai trò" Style="{StaticResource Title}" />
-      <TextBlock Text="Nhấp đúp vào một dòng để xem chi tiết. Chọn Thêm để tạo mới." Style="{StaticResource Subtitle}" />
-    </StackPanel>
-    <WrapPanel Grid.Row="1" Margin="0,0,0,20" />
-    <TabControl Grid.Row="2">
-      <!-- Nhóm Tài khoản: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
-      <TabItem Header="Tài khoản">
-        <Grid Margin="0,20,0,0">
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-          </Grid.RowDefinitions>
-          <DockPanel Margin="0,0,0,18">
-            <WrapPanel DockPanel.Dock="Right">
-              <!-- Nút điều hướng MoCuaSo:TaiKhoan: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-              <Button Content="Thêm tài khoản" Tag="MoCuaSo:TaiKhoan" CommandParameter="TAI_KHOAN" Style="{StaticResource Primary}" />
-            </WrapPanel>
-            <TextBlock Text="Tài khoản" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-          </DockPanel>
-          <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
-            <Grid>
-              <!-- Bảng Grid_TAI_KHOAN: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:TAI_KHOAN cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
-              <DataGrid Tag="Table:TAI_KHOAN" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_TAI_KHOAN" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
-                <DataGrid.Columns>
-                  <DataGridTextColumn Header="Mã tài khoản" SortMemberPath="MaTK" Width="155" Binding="{Binding MaTK}" />
-                  <DataGridTextColumn Header="Tên đăng nhập" SortMemberPath="TenDangNhap" Width="155" Binding="{Binding TenDangNhap}" />
-                  <DataGridTextColumn Header="Vai trò" SortMemberPath="MaVaiTro" Width="155" Binding="{Binding MaVaiTro}" />
-                  <DataGridTextColumn Header="Nhân viên" SortMemberPath="MaNV" Width="155" Binding="{Binding MaNV}" />
-                  <DataGridTextColumn Header="Trạng thái" SortMemberPath="TrangThai" Width="155" Binding="{Binding TrangThai}" />
-                </DataGrid.Columns>
-              </DataGrid>
-              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
-                <StackPanel.Style>
-                  <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
-                  <Style TargetType="StackPanel">
-                    <Setter Property="Visibility" Value="Collapsed" />
-                    <Style.Triggers>
-                      <DataTrigger Binding="{Binding HasItems, ElementName=Grid_TAI_KHOAN}" Value="False">
-                        <Setter Property="Visibility" Value="Visible" />
-                      </DataTrigger>
-                    </Style.Triggers>
-                  </Style>
-                </StackPanel.Style>
-                <TextBlock Text="Chưa có tài khoản" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
-                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
-                <!-- Nút điều hướng MoCuaSo:TaiKhoan: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                <Button Content="Thêm mới" Tag="MoCuaSo:TaiKhoan" CommandParameter="TAI_KHOAN" HorizontalAlignment="Center" />
-              </StackPanel>
-            </Grid>
-          </Border>
+<UserControl xmlns:views="clr-namespace:RangHamMat.Views" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.TaiKhoan" Background="Transparent">
+    <UserControl.Resources>
+        <!-- Dùng các tài nguyên Title, Card, Primary có sẵn trong dự án; bảng sử dụng style cục bộ. -->
+        <Style x:Key="TaiKhoanTab" TargetType="TabItem">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="20,11"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+        <!-- Tự khai báo kiểu DataGrid; không phụ thuộc HospitalTable -->
+        <Style x:Key="TaiKhoanBang" TargetType="DataGrid">
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="CanUserDeleteRows" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="RowHeaderWidth" Value="0"/>
+            <Setter Property="RowHeight" Value="46"/>
+            <Setter Property="ColumnHeaderHeight" Value="45"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#E9EEF5"/>
+            <Setter Property="AlternatingRowBackground" Value="#F7FAFE"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+        </Style>
+        <Style x:Key="TaiKhoanNhan" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+        <Style x:Key="TaiKhoanGiaTri" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style x:Key="TrangThaiTaiKhoan" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#B45309"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding TrangThai}" Value="Đang hoạt động">
+                    <Setter Property="Foreground" Value="#15803D"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+<!-- Checkbox quyền dùng chung trong tất cả cột chủ đề. -->
+<DataTemplate x:Key="MucPhanQuyenTheoNhom">
+    <CheckBox IsChecked="{Binding DuocTruyCap, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+              IsEnabled="{Binding CoTheSua}"
+              ToolTip="{Binding MaPhanHe}"
+              Padding="3,4" Margin="0,3,0,3"
+              VerticalContentAlignment="Center">
+        <TextBlock Text="{Binding TenPhanHe}" TextWrapping="Wrap"
+                   FontSize="12.5" Foreground="#28435C"/>
+    </CheckBox>
+</DataTemplate>
+<Style x:Key="KhungNhomPhanQuyen" TargetType="Border">
+    <Setter Property="Background" Value="#F8FAFE"/>
+    <Setter Property="BorderBrush" Value="#DCE6F1"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Padding" Value="14,14,14,12"/>
+    <Setter Property="Margin" Value="0,0,12,0"/>
+</Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Tiêu đề trang; không đặt thêm thanh điều hướng vì AppWorkspace đã có. -->
+        <Grid Margin="0,0,0,18">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Tài khoản và vai trò" Style="{StaticResource Title}"/>
+                <TextBlock Text="Quản lý tài khoản nhân sự, tình trạng truy cập và danh mục vai trò." Style="{StaticResource Subtitle}" Margin="0,3,0,0"/>
+            </StackPanel>
+            <Button Grid.Column="1" Content="↻  Làm mới" Padding="18,10" Click="LamMoi_Click" VerticalAlignment="Center"/>
         </Grid>
-      </TabItem>
-      <!-- Nhóm Vai trò: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
-      <TabItem Header="Vai trò">
-        <Grid Margin="0,20,0,0">
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-          </Grid.RowDefinitions>
-          <DockPanel Margin="0,0,0,18">
-            <WrapPanel DockPanel.Dock="Right">
-              <!-- Nút điều hướng MoCuaSo:TaiKhoan: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-              <Button Content="Thêm vai trò" Tag="MoCuaSo:TaiKhoan" CommandParameter="VAI_TRO" Style="{StaticResource Primary}" />
-            </WrapPanel>
-            <TextBlock Text="Vai trò" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-          </DockPanel>
-          <Border Style="{StaticResource Card}" Padding="0" Grid.Row="1">
-            <Grid>
-              <!-- Bảng Grid_VAI_TRO: các cột Binding đọc dữ liệu từ ItemsSource; chọn dòng mở/thao tác trên bản ghi nguồn, không tự tạo một bản SQL. Tag Table:VAI_TRO cho workspace biết bảng khi mở chi tiết bằng nhấp đúp. -->
-              <DataGrid Tag="Table:VAI_TRO" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" ScrollViewer.HorizontalScrollBarVisibility="Auto" x:Name="Grid_VAI_TRO" ToolTip="Nhấp đúp vào dòng dữ liệu để xem chi tiết." SelectionMode="Single" SelectionUnit="FullRow">
-                <DataGrid.Columns>
-                  <DataGridTextColumn Header="Mã vai trò" SortMemberPath="MaVaiTro" Width="155" Binding="{Binding MaVaiTro}" />
-                  <DataGridTextColumn Header="Tên vai trò" SortMemberPath="TenVaiTro" Width="155" Binding="{Binding TenVaiTro}" />
-                  <DataGridTextColumn Header="Mô tả" SortMemberPath="MoTa" Width="155" Binding="{Binding MoTa}" />
-                </DataGrid.Columns>
-              </DataGrid>
-              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,54,24,12">
-                <StackPanel.Style>
-                  <!-- Style mặc định cho StackPanel: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. -->
-                  <Style TargetType="StackPanel">
-                    <Setter Property="Visibility" Value="Collapsed" />
-                    <Style.Triggers>
-                      <DataTrigger Binding="{Binding HasItems, ElementName=Grid_VAI_TRO}" Value="False">
-                        <Setter Property="Visibility" Value="Visible" />
-                      </DataTrigger>
-                    </Style.Triggers>
-                  </Style>
-                </StackPanel.Style>
-                <TextBlock Text="Chưa có vai trò" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" />
-                <TextBlock Text="Thông tin sẽ hiển thị tại đây khi có dữ liệu." TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,10,0,22" />
-                <!-- Nút điều hướng MoCuaSo:TaiKhoan: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-                <Button Content="Thêm mới" Tag="MoCuaSo:TaiKhoan" CommandParameter="VAI_TRO" HorizontalAlignment="Center" />
-              </StackPanel>
-            </Grid>
-          </Border>
+
+        <!-- Thẻ thống kê lấy số liệu thật trong TaiKhoan.xaml.cs. -->
+        <Grid Grid.Row="1" Margin="0,0,0,18">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="20,16">
+                <StackPanel>
+                    <TextBlock Text="TỔNG TÀI KHOẢN" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Muted}"/>
+                    <TextBlock x:Name="lblTongTaiKhoan" Text="0" FontSize="28" FontWeight="Bold" Foreground="#173550" Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="20,16">
+                <StackPanel>
+                    <TextBlock Text="ĐANG HOẠT ĐỘNG" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Muted}"/>
+                    <TextBlock x:Name="lblDangHoatDong" Text="0" FontSize="28" FontWeight="Bold" Foreground="#15803D" Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="4" Style="{StaticResource Card}" Padding="20,16">
+                <StackPanel>
+                    <TextBlock Text="KHÔNG HOẠT ĐỘNG" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Muted}"/>
+                    <TextBlock x:Name="lblKhongHoatDong" Text="0" FontSize="28" FontWeight="Bold" Foreground="#B45309" Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="6" Style="{StaticResource Card}" Padding="20,16">
+                <StackPanel>
+                    <TextBlock Text="VAI TRÒ" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Muted}"/>
+                    <TextBlock x:Name="lblTongVaiTro" Text="0" FontSize="28" FontWeight="Bold" Foreground="#2468CD" Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
         </Grid>
-      </TabItem>
-    </TabControl>
-  </Grid>
+
+        <TabControl Grid.Row="2" Background="Transparent" BorderThickness="0">
+            <!-- ====================== TÀI KHOẢN ====================== -->
+            <TabItem Header="Tài khoản" Style="{StaticResource TaiKhoanTab}">
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.75*" MinWidth="440"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="1*" MinWidth="300"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource Card}" Padding="0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Margin="22,20,22,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Danh sách tài khoản" Style="{StaticResource SectionTitle}"/>
+                                    <TextBlock Text="Chọn một dòng để sửa trực tiếp ở khung bên phải." FontSize="12" Foreground="{StaticResource Muted}" Margin="0,5,0,0"/>
+                                </StackPanel>
+                                <Button x:Name="btnThemTaiKhoan" Grid.Column="1" Content="+  Thêm tài khoản" Click="btnThemTaiKhoan_Click" Style="{StaticResource Primary}" ToolTip="Tạo tài khoản đăng nhập cho nhân viên" VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <Grid Grid.Row="1" Margin="22,0,22,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="1.1*"/>
+                                    </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Tìm tài khoản" Style="{StaticResource TaiKhoanNhan}"/>
+                                    <TextBox x:Name="txtTimTaiKhoan" Height="40" ToolTip="Tìm theo mã, tên đăng nhập hoặc nhân viên" TextChanged="txtTimTaiKhoan_TextChanged"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Vai trò" Style="{StaticResource TaiKhoanNhan}"/>
+                                    <ComboBox x:Name="cboVaiTro" Height="40" SelectionChanged="cboVaiTro_SelectionChanged"/>
+                                </StackPanel>
+                                </Grid>
+
+                            <Border Grid.Row="2" BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1"/>
+                            <!-- Không dùng Tag="Table:TAI_KHOAN" vì cửa sổ RecordDetails
+                                 chung có thể làm lộ cột MatKhauHash của ET. -->
+                            <DataGrid Grid.Row="3" x:Name="Grid_TAI_KHOAN" Style="{StaticResource TaiKhoanBang}" SelectionChanged="Grid_TAI_KHOAN_SelectionChanged">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Mã TK" Binding="{Binding MaTK}" Width="92" MinWidth="82"/>
+                                    <DataGridTextColumn Header="Tên đăng nhập" Binding="{Binding TenDangNhap}" Width="1.2*" MinWidth="130"/>
+                                    <DataGridTextColumn Header="Nhân viên" Binding="{Binding HoTen}" Width="1.3*" MinWidth="140"/>
+                                    <DataGridTextColumn Header="Vai trò" Binding="{Binding TenVaiTro}" Width="1*" MinWidth="118"/>
+                                    <DataGridTemplateColumn Header="Trạng thái" Width="135" MinWidth="125">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding TrangThai}" Style="{StaticResource TrangThaiTaiKhoan}" VerticalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Grid Grid.Row="4" Margin="22,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Không hiển thị mật khẩu hoặc mã băm." FontSize="12" Foreground="{StaticResource Muted}"/>
+                                <TextBlock x:Name="lblKetQuaTaiKhoan" Grid.Column="1" Text="0 tài khoản" FontSize="12" Foreground="{StaticResource Muted}"/>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Vùng thông tin chi tiết bên phải -->
+                    <Border Grid.Column="2" Style="{StaticResource Card}" Padding="0">
+                        <Grid xmlns:views="clr-namespace:RangHamMat.Views">
+ <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+ <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+  <views:CuaSoTaiKhoan x:Name="editorTaiKhoan"/>
+ </ScrollViewer>
+ <Border Grid.Row="1" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="16,12">
+  <StackPanel>
+   <Grid>
+    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+    <Button x:Name="btnKhoaTaiKhoan" Grid.Column="0" Content="Khóa tài khoản" Click="btnKhoaTaiKhoan_Click" IsEnabled="False" Background="#FFF1F1" Foreground="#B42318" BorderBrush="#FECACA"/>
+    <Button x:Name="btnKhoiPhucTaiKhoan" Grid.Column="2" Content="Khôi phục" Click="btnKhoiPhucTaiKhoan_Click" IsEnabled="False" Background="#E8F8EF" Foreground="#17603A" BorderBrush="#A7E3C0"/>
+   </Grid>
+   <TextBlock x:Name="lblThongBaoTaiKhoan" Text="Chọn tài khoản để sửa, hoặc bấm Thêm để tạo mới." FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,8,0,0"/>
+  </StackPanel>
+ </Border>
+</Grid></Border>
+                </Grid>
+            </TabItem>
+
+
+<!-- ======================== VAI TRÒ ======================== -->
+<TabItem Header="Vai trò" Style="{StaticResource TaiKhoanTab}">
+    <!-- Ưu tiên không gian cho chi tiết và phân quyền: thu bảng còn 300px. -->
+    <Grid Margin="0,16,0,0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300" MinWidth="280"/>
+            <ColumnDefinition Width="14"/>
+            <ColumnDefinition Width="*" MinWidth="550"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- CỘT TRÁI: Danh sách vai trò -->
+        <Border Grid.Column="0" Style="{StaticResource Card}" Padding="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Margin="17,18,17,14">
+                    <TextBlock Text="Danh sách vai trò" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock Text="Chọn vai trò để chỉnh sửa và phân quyền ở bên phải."
+                               FontSize="12" Foreground="{StaticResource Muted}"
+                               TextWrapping="Wrap" Margin="0,6,0,10"/>
+                    <Button x:Name="btnThemVaiTro" Content="+  Thêm vai trò"
+                            Style="{StaticResource Primary}"
+                            Click="btnThemVaiTro_Click" HorizontalAlignment="Stretch"
+                            ToolTip="Tạo vai trò mới trong hệ thống"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Margin="17,0,17,12">
+                    <TextBlock Text="Tìm mã hoặc tên vai trò"
+                               Style="{StaticResource TaiKhoanNhan}"/>
+                    <TextBox x:Name="txtTimVaiTro" Height="40"
+                             TextChanged="txtTimVaiTro_TextChanged"/>
+                </StackPanel>
+
+                <!-- Giảm số cột để bảng gọn, nội dung mô tả xem ở chi tiết. -->
+                <DataGrid Grid.Row="2" x:Name="Grid_VAI_TRO"
+                          Style="{StaticResource TaiKhoanBang}"
+                          SelectionChanged="Grid_VAI_TRO_SelectionChanged">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Mã" Binding="{Binding MaVaiTro}" Width="78"/>
+                        <DataGridTextColumn Header="Tên vai trò" Binding="{Binding TenVaiTro}"
+                                            Width="*" MinWidth="115"/>
+                        <DataGridTextColumn Header="Số TK" Binding="{Binding SoTaiKhoan}"
+                                            Width="64"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <Grid Grid.Row="3" Margin="17,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Danh mục vai trò" FontSize="11"
+                               Foreground="{StaticResource Muted}"/>
+                    <TextBlock x:Name="lblKetQuaVaiTro" Grid.Column="1"
+                               Text="0 vai trò" FontSize="11"
+                               Foreground="{StaticResource Muted}"/>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- CỘT PHẢI: Cùng một khung cho biểu mẫu chi tiết và ma trận quyền. -->
+        <Border Grid.Column="2" Style="{StaticResource Card}" Padding="0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <Border Background="#EAF2FF" CornerRadius="14,14,0,0"
+                            Padding="20,16">
+                        <StackPanel>
+                            <TextBlock Text="CHI TIẾT VAI TRÒ VÀ PHÂN QUYỀN"
+                                       FontSize="16" FontWeight="Bold" Foreground="#173550"/>
+                            <TextBlock Text="Chỉnh sửa thông tin, sau đó chọn các phân hệ được phép truy cập."
+                                       FontSize="12" Foreground="#536F90"
+                                       Margin="0,5,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Biểu mẫu thêm/sửa hiện hữu; hoàn toàn không mở popup. -->
+                    <views:CuaSoTaiKhoan x:Name="editorVaiTro"/>
+
+                    <Border BorderBrush="{StaticResource Line}"
+                            BorderThickness="0,1,0,0" Margin="20,4,20,0"/>
+
+                    <Grid Margin="20,17,20,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="PHÂN QUYỀN THEO NHÓM CHỨC NĂNG"
+                                       FontSize="14" FontWeight="Bold" Foreground="#173550"/>
+                            <TextBlock Text="Tích các phân hệ được phép mở cho vai trò đang chọn."
+                                       FontSize="12" Foreground="{StaticResource Muted}"
+                                       TextWrapping="Wrap" Margin="0,5,0,0"/>
+                        </StackPanel>
+                        <Border Grid.Column="1" Background="#EAF2FF"
+                                CornerRadius="7" Padding="10,6"
+                                VerticalAlignment="Center" Margin="8,0,0,0">
+                            <TextBlock Text="25 phân hệ · 5 nhóm"
+                                       FontSize="11" Foreground="#205D9F"
+                                       FontWeight="SemiBold"/>
+                        </Border>
+                    </Grid>
+
+                    <!-- Năm cột chủ đề nằm ngay bên trong chi tiết vai trò.
+                         Khi không đủ ngang, chỉ vùng quyền cuộn ngang; bảng bên trái vẫn cố định. -->
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Disabled"
+                                  Margin="20,0,20,0">
+<UniformGrid Columns="5" MinWidth="950">
+                            <Border Style="{StaticResource KhungNhomPhanQuyen}">
+                                <StackPanel>
+                                    <TextBlock Text="01  NHÂN SỰ &amp; LƯƠNG"
+                                               FontWeight="Bold" FontSize="12.5" Foreground="#2163A1"
+                                               TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                    <TextBlock Text="7 quyền" Foreground="#75879C" FontSize="11" Margin="0,0,0,10"/>
+                                    <ItemsControl x:Name="lstQuyenNhanSu"
+                                                  ItemTemplate="{StaticResource MucPhanQuyenTheoNhom}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource KhungNhomPhanQuyen}">
+                                <StackPanel>
+                                    <TextBlock Text="02  KHÁM CHỮA BỆNH"
+                                               FontWeight="Bold" FontSize="12.5" Foreground="#2163A1"
+                                               TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                    <TextBlock Text="7 quyền" Foreground="#75879C" FontSize="11" Margin="0,0,0,10"/>
+                                    <ItemsControl x:Name="lstQuyenKhamBenh"
+                                                  ItemTemplate="{StaticResource MucPhanQuyenTheoNhom}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource KhungNhomPhanQuyen}">
+                                <StackPanel>
+                                    <TextBlock Text="03  KHO &amp; THIẾT BỊ"
+                                               FontWeight="Bold" FontSize="12.5" Foreground="#2163A1"
+                                               TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                    <TextBlock Text="6 quyền" Foreground="#75879C" FontSize="11" Margin="0,0,0,10"/>
+                                    <ItemsControl x:Name="lstQuyenKhoThietBi"
+                                                  ItemTemplate="{StaticResource MucPhanQuyenTheoNhom}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource KhungNhomPhanQuyen}">
+                                <StackPanel>
+                                    <TextBlock Text="04  TÀI CHÍNH &amp; BÁO CÁO"
+                                               FontWeight="Bold" FontSize="12.5" Foreground="#2163A1"
+                                               TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                    <TextBlock Text="2 quyền" Foreground="#75879C" FontSize="11" Margin="0,0,0,10"/>
+                                    <ItemsControl x:Name="lstQuyenTaiChinh"
+                                                  ItemTemplate="{StaticResource MucPhanQuyenTheoNhom}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource KhungNhomPhanQuyen}" Margin="0">
+                                <StackPanel>
+                                    <TextBlock Text="05  HỆ THỐNG"
+                                               FontWeight="Bold" FontSize="12.5" Foreground="#2163A1"
+                                               TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                    <TextBlock Text="3 quyền" Foreground="#75879C" FontSize="11" Margin="0,0,0,10"/>
+                                    <ItemsControl x:Name="lstQuyenHeThong"
+                                                  ItemTemplate="{StaticResource MucPhanQuyenTheoNhom}"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+                    </ScrollViewer>
+
+                    <Grid Margin="20,16,20,22">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="lblThongBaoQuyen"
+                                       Text="Chọn vai trò để cấu hình quyền truy cập."
+                                       Foreground="{StaticResource Muted}"
+                                       FontSize="12" TextWrapping="Wrap"/>
+                            <TextBlock Text="Quyền mở phân hệ không thay thế quyền nghiệp vụ bên trong."
+                                       FontSize="11" Foreground="{StaticResource Muted}"
+                                       Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <Button x:Name="btnLuuPhanQuyen" Grid.Column="1"
+                                Content="Lưu quyền cho vai trò"
+                                Style="{StaticResource Primary}"
+                                Click="btnLuuPhanQuyen_Click" IsEnabled="False"
+                                Padding="16,11" Margin="12,0,0,0"
+                                VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</TabItem>
+        </TabControl>
+    </Grid>
 </UserControl>

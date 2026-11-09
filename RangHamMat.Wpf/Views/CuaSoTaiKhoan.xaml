@@ -1,136 +1,103 @@
-<!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của CuaSoTaiKhoan.xaml; các vùng liên quan: Tài khoản, Vai trò. -->
-<!-- AI hỗ trợ: bổ sung chú thích cho biểu mẫu tài khoản. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.CuaSoTaiKhoan">
-  <Grid>
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="*" />
-      <RowDefinition Height="Auto" />
-    </Grid.RowDefinitions>
-    <StackPanel>
-      <TextBlock Text="Tài khoản và vai trò · Thêm mới" Style="{StaticResource Title}" />
-      <TextBlock Text="Điền lần lượt từng nhóm thông tin. Dấu * là trường bắt buộc." Style="{StaticResource Subtitle}" />
-    </StackPanel>
-    <!-- Thành phần EditorTabs. -->
-    <TabControl x:Name="EditorTabs" Grid.Row="1">
-      <!-- Nhóm Tài khoản: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
-      <TabItem Header="Tài khoản" Tag="Table:TAI_KHOAN" Visibility="Collapsed">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
-            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-              <StackPanel>
-                <TextBlock Text="Thông tin tài khoản" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                <WrapPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                    <TextBlock Text="Tên đăng nhập *" Margin="0,0,0,6" />
-                    <!-- Trường Tên đăng nhập tài khoản (TAI_KHOAN.TenDangNhap): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <ContentControl Style="{StaticResource TruongNhapLieu}">
-                     <TextBox Tag="DB:TAI_KHOAN.TenDangNhap" AutomationProperties.Name="Tên đăng nhập" MaxLength="100" />
-                    </ContentControl>
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                    <TextBlock Text="Mật khẩu mới *" Margin="0,0,0,6" />
-                    <!-- Trường MatKhau (TAI_KHOAN.MatKhau): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <ContentControl Style="{StaticResource TruongNhapLieu}">
-                     <PasswordBox Tag="DB:TAI_KHOAN.MatKhau" AutomationProperties.Name="Mật khẩu mới" />
-                    </ContentControl>
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn vai trò">
-                    <TextBlock Text="Vai trò *" Margin="0,0,0,6" />
-                    <!-- Trường Mã vai trò (TAI_KHOAN.MaVaiTro): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <ContentControl Style="{StaticResource TruongNhapLieu}">
-                     <ComboBox Tag="DB:TAI_KHOAN.MaVaiTro" AutomationProperties.Name="Vai trò" />
-                    </ContentControl>
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Chọn nhân viên">
-                    <TextBlock Text="Nhân viên *" Margin="0,0,0,6" />
-                    <!-- Trường Mã nhân viên (TAI_KHOAN.MaNV): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <ContentControl Style="{StaticResource TruongNhapLieu}">
-                     <ComboBox Tag="DB:TAI_KHOAN.MaNV" AutomationProperties.Name="Nhân viên" />
-                    </ContentControl>
-                  </StackPanel>
-                </WrapPanel>
-              </StackPanel>
-            </Border>
-            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-              <StackPanel>
-                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                <WrapPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
-                    <TextBlock Text="Mã tài khoản" Margin="0,0,0,6" />
-                    <!-- Trường Mã tài khoản (TAI_KHOAN.MaTK): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. Ô chỉ đọc, không cho nhập lại mã/giá trị nguồn. -->
-                    <TextBox Tag="DB:TAI_KHOAN.MaTK" AutomationProperties.Name="Mã tài khoản" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
-                  </StackPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                    <TextBlock Text="Trạng thái *" Margin="0,0,0,6" />
-                    <!-- Trường Trạng thái nghiệp vụ của bản ghi (TAI_KHOAN.TrangThai): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <ContentControl Style="{StaticResource TruongNhapLieu}">
-                     <TextBox Tag="DB:TAI_KHOAN.TrangThai" AutomationProperties.Name="Trạng thái" MaxLength="50" />
-                    </ContentControl>
-                  </StackPanel>
-                </WrapPanel>
-              </StackPanel>
-            </Border>
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
-      <!-- Nhóm Vai trò: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
-      <TabItem Header="Vai trò" Tag="Table:VAI_TRO" Visibility="Collapsed">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel MaxWidth="1220" HorizontalAlignment="Left" Margin="0,20,12,0">
-            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-              <StackPanel>
-                <TextBlock Text="Thông tin vai trò" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                <WrapPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                    <TextBlock Text="Tên vai trò *" Margin="0,0,0,6" />
-                    <!-- Trường Tên vai trò (VAI_TRO.TenVaiTro): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <ContentControl Style="{StaticResource TruongNhapLieu}">
-                     <TextBox Tag="DB:VAI_TRO.TenVaiTro" AutomationProperties.Name="Tên vai trò" MaxLength="255" />
-                    </ContentControl>
-                  </StackPanel>
-                </WrapPanel>
-              </StackPanel>
-            </Border>
-            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-              <StackPanel>
-                <TextBlock Text="Nội dung và ghi chú" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                <WrapPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="">
-                    <TextBlock Text="Mô tả" Margin="0,0,0,6" />
-                    <!-- Trường Mô tả thông tin danh mục (VAI_TRO.MoTa): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
-                    <ContentControl Style="{StaticResource TruongNhapLieu}">
-                     <TextBox Tag="DB:VAI_TRO.MoTa" AutomationProperties.Name="Mô tả" Height="68" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
-                    </ContentControl>
-                  </StackPanel>
-                </WrapPanel>
-              </StackPanel>
-            </Border>
-            <Border Style="{StaticResource Card}" Margin="0,0,0,20">
-              <StackPanel>
-                <TextBlock Text="Thông tin quản lý" Style="{StaticResource SectionTitle}" Margin="0,0,0,20" />
-                <WrapPanel>
-                  <StackPanel Width="270" Margin="0,0,20,20" ToolTip="Tự sinh khi lưu">
-                    <TextBlock Text="Mã vai trò" Margin="0,0,0,6" />
-                    <!-- Trường Mã vai trò (VAI_TRO.MaVaiTro): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. Ô chỉ đọc, không cho nhập lại mã/giá trị nguồn. -->
-                    <TextBox Tag="DB:VAI_TRO.MaVaiTro" AutomationProperties.Name="Mã vai trò" IsReadOnly="True" Text="Tự sinh" Background="{StaticResource Canvas}" />
-                  </StackPanel>
-                </WrapPanel>
-              </StackPanel>
-            </Border>
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
-    </TabControl>
-    <Border Grid.Row="2" Padding="0,18,0,0">
-      <WrapPanel>
-        <!-- Nút điều hướng DongCuaSo: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-        <Button Content="Quay lại danh sách" Tag="DongCuaSo" />
-        <Button Content="Lưu thông tin" IsEnabled="False" Style="{StaticResource Primary}" ToolTip="Bản giao diện chưa kết nối lưu dữ liệu" />
-        <!-- Nút điều hướng VeTrangChu: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
-        <Button Content="Về màn hình chính" Tag="VeTrangChu" />
-        <TextBlock Text="Bản giao diện • Chưa lưu dữ liệu" VerticalAlignment="Center" Foreground="{StaticResource Muted}" Margin="12,0,0,0" />
+<UserControl x:Class="RangHamMat.Views.CuaSoTaiKhoan"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent">
+  <UserControl.Resources>
+    <Style x:Key="NhoForm" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Foreground" Value="#536B84"/>
+      <Setter Property="Margin" Value="0,0,0,5"/>
+    </Style>
+  </UserControl.Resources>
+  <StackPanel Margin="19,18,19,14">
+    <TextBlock x:Name="lblTieuDe" Text="Thông tin tài khoản" FontSize="19" FontWeight="Bold"
+               Foreground="#173550" TextWrapping="Wrap"/>
+    <TextBlock x:Name="lblHuongDan" Text="Chọn dòng để sửa hoặc nhấn Thêm để tạo mới."
+               FontSize="12" TextWrapping="Wrap" Foreground="#71859B" Margin="0,5,0,16"/>
+
+    <StackPanel x:Name="pnlTaiKhoan">
+      <TextBlock Text="Mã tài khoản" Style="{StaticResource NhoForm}"/>
+      <TextBox x:Name="txtMaTaiKhoan" Height="38" IsReadOnly="True"
+               Background="#F1F4F8" Margin="0,0,0,11"/>
+      <TextBlock Text="Tên đăng nhập *" Style="{StaticResource NhoForm}"/>
+      <TextBox x:Name="txtTenDangNhap" Height="38" MaxLength="100" Margin="0,0,0,11"/>
+      <TextBlock Text="Nhân viên *" Style="{StaticResource NhoForm}"/>
+      <ComboBox x:Name="cboNhanVien" Height="38" Margin="0,0,0,11"/>
+      <TextBlock Text="Vai trò *" Style="{StaticResource NhoForm}"/>
+      <ComboBox x:Name="cboVaiTro" Height="38" Margin="0,0,0,11"/>
+      <TextBlock Text="Trạng thái (tự động)" Style="{StaticResource NhoForm}"/>
+      <Border BorderBrush="#DCE6F1" Background="#F5F8FC" BorderThickness="1" CornerRadius="7"
+              Padding="12,10" Margin="0,0,0,11">
+        <TextBlock x:Name="lblTrangThai" Text="Đang hoạt động" Foreground="#15803D"
+                   FontSize="13" FontWeight="SemiBold"/>
+      </Border>
+      <!-- Cấu trúc SQL: CK_TAI_KHOAN_1 chỉ cho phép MaKhoa HOẶC MaPhong có giá trị. -->
+      <TextBlock Text="Liên kết khoa / phòng" Style="{StaticResource NhoForm}"/>
+      <WrapPanel Margin="0,1,0,11">
+        <RadioButton x:Name="rbKhongLienKet" Content="Không liên kết" GroupName="PhamViTaiKhoan"
+                     Checked="PhamVi_Checked" IsChecked="True" Margin="0,0,12,6"/>
+        <RadioButton x:Name="rbTheoKhoa" Content="Theo khoa" GroupName="PhamViTaiKhoan"
+                     Checked="PhamVi_Checked" Margin="0,0,12,6"/>
+        <RadioButton x:Name="rbTheoPhong" Content="Theo phòng" GroupName="PhamViTaiKhoan"
+                     Checked="PhamVi_Checked" Margin="0,0,0,6"/>
       </WrapPanel>
-    </Border>
-  </Grid>
+      <StackPanel x:Name="pnlChonKhoa" Margin="0,0,0,10">
+        <TextBlock x:Name="lblChonKhoa" Text="Khoa" Style="{StaticResource NhoForm}"/>
+        <ComboBox x:Name="cboKhoa" Height="38" SelectionChanged="cboKhoa_SelectionChanged"/>
+      </StackPanel>
+      <StackPanel x:Name="pnlChonPhong" Margin="0,0,0,10" Visibility="Collapsed">
+        <TextBlock Text="Phòng thuộc khoa đã chọn" Style="{StaticResource NhoForm}"/>
+        <ComboBox x:Name="cboPhong" Height="38"/>
+      </StackPanel>
+      <TextBlock Text="Theo phòng: chọn khoa để lọc phòng; hệ thống chỉ lưu mã phòng vì phòng đã thuộc khoa."
+                 FontSize="11" Foreground="#71859B" TextWrapping="Wrap" Margin="0,0,0,12"/>
+      <TextBlock Text="Mật khẩu mới" Style="{StaticResource NhoForm}"/>
+      <PasswordBox x:Name="pwdMatKhau" Height="38" MaxLength="128" Margin="0,0,0,11"/>
+      <TextBlock Text="Xác nhận mật khẩu" Style="{StaticResource NhoForm}"/>
+      <PasswordBox x:Name="pwdXacNhan" Height="38" MaxLength="128" Margin="0,0,0,7"/>
+      <TextBlock x:Name="lblMatKhau" Text="Để trống khi sửa nếu không đổi mật khẩu."
+                 Foreground="#71859B" FontSize="11" TextWrapping="Wrap"/>
+    </StackPanel>
+
+    <StackPanel x:Name="pnlVaiTro" Visibility="Collapsed">
+      <!-- Bố cục ngang gọn để các nhóm quyền nằm ngay sau chi tiết vai trò. -->
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="220"/>
+          <ColumnDefinition Width="16"/>
+          <ColumnDefinition Width="*" MinWidth="200"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Column="0">
+          <TextBlock Text="Mã vai trò" Style="{StaticResource NhoForm}"/>
+          <TextBox x:Name="txtMaVaiTro" Height="38" Background="#F1F4F8"
+                   IsReadOnly="True" Margin="0,0,0,12"/>
+          <TextBlock Text="Tên vai trò *" Style="{StaticResource NhoForm}"/>
+          <TextBox x:Name="txtTenVaiTro" MaxLength="255" Height="38"
+                   Margin="0,0,0,12"/>
+        </StackPanel>
+        <StackPanel Grid.Column="2">
+          <TextBlock Text="Mô tả vai trò" Style="{StaticResource NhoForm}"/>
+          <TextBox x:Name="txtMoTa" Height="105" TextWrapping="Wrap"
+                   AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                   Margin="0,0,0,8"/>
+          <TextBlock Text="Lưu vai trò trước, sau đó chọn quyền các phân hệ bên dưới."
+                     FontSize="11" Foreground="#71859B" TextWrapping="Wrap"/>
+        </StackPanel>
+      </Grid>
+    </StackPanel>
+
+    <TextBlock x:Name="lblLoi" Foreground="#B42318" TextWrapping="Wrap" FontSize="12"
+               Margin="0,14,0,9"/>
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="9"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+      <Button Grid.Column="0" Content="Hoàn tác" Click="Huy_Click" Padding="8,9"/>
+      <Button x:Name="btnLuu" Grid.Column="2" Style="{StaticResource Primary}"
+              Content="Lưu thông tin" Padding="8,9" Click="Luu_Click"/>
+    </Grid>
+  </StackPanel>
 </UserControl>
