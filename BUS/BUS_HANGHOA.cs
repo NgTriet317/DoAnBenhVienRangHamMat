@@ -34,11 +34,28 @@ namespace BUS
             return XuLyLoi.ThucHien(() => dalHangHoa.layToanBoHangHoa());
         }
 
+        /// <summary>
+        /// Đọc danh mục hàng hóa cùng thông tin chi tiết theo nhóm để hiển thị/quản lý. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XuLyLoi.ThucHien</c>, <c>dalHangHoa.layDanhMucChiTiet</c>.</remarks>
+        /// <returns>Kết quả kiểu DataTable dùng cho bước xử lý tiếp theo.</returns>
         public DataTable layDanhMucChiTiet()
         {
             return XuLyLoi.ThucHien(() => dalHangHoa.layDanhMucChiTiet());
         }
 
+        /// <summary>
+        /// Kiểm tra và lưu thông tin danh mục hàng hóa cùng phần chi tiết của loại hàng. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XuLyLoi.ThucHien</c>, <c>dalHangHoa.luuDanhMucChiTiet</c>.</remarks>
+        /// <param name="duLieu">Giá trị hàng hóa được truyền vào để đọc, kiểm tra hoặc cập nhật trong thao tác này.</param>
+        /// <param name="banGoc">Bản dữ liệu trước khi chỉnh sửa để đối chiếu với giá trị hiện tại.</param>
+        /// <param name="nhom">Giá trị nhóm dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="mucTon">Giá trị mục tồn dùng khi thực hiện thao tác; kiểu decimal.</param>
+        /// <param name="hamLuong">Giá trị hàm lượng dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="giaBan">Giá trị giá bản dùng khi thực hiện thao tác; kiểu decimal.</param>
+        /// <param name="dangThem">Giá trị đang thêm dùng khi thực hiện thao tác; kiểu bool.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool luuDanhMucChiTiet(ET_HANGHOA duLieu, ET_HANGHOA? banGoc,
             string nhom, decimal mucTon, string hamLuong, decimal giaBan, bool dangThem)
         {
@@ -46,6 +63,13 @@ namespace BUS
                 duLieu, banGoc, nhom, mucTon, hamLuong, giaBan, dangThem));
         }
 
+        /// <summary>
+        /// Xóa mục danh mục và phần chi tiết khi dữ liệu chưa bị nghiệp vụ khác ràng buộc. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XuLyLoi.ThucHien</c>, <c>dalHangHoa.xoaDanhMucChiTiet</c>.</remarks>
+        /// <param name="ma">Mã định danh của bản ghi cần xử lý.</param>
+        /// <param name="banGoc">Bản dữ liệu trước khi chỉnh sửa để đối chiếu với giá trị hiện tại.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool xoaDanhMucChiTiet(string ma, ET_HANGHOA? banGoc)
         {
             return XuLyLoi.ThucHien(() => dalHangHoa.xoaDanhMucChiTiet(ma, banGoc));

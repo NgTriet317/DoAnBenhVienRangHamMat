@@ -13,34 +13,105 @@ using System.Windows.Media;
 
 namespace RangHamMat.Views;
 
+/// <summary>
+/// Phần xử lý ca làm việc của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+/// </summary>
 public partial class CaLamViec : UserControl
 {
+    /// <summary>
+    /// Đối tượng nghiệp vụ ca làm được màn hình dùng để đọc/ghi dữ liệu.
+    /// </summary>
     private BUS_CALAM busCaLam = new();
+    /// <summary>
+    /// Đối tượng nghiệp vụ lịch làm việc được màn hình dùng để đọc/ghi dữ liệu.
+    /// </summary>
     private BUS_LICHLAMVIEC busLichLamViec = new();
+    /// <summary>
+    /// Đối tượng nghiệp vụ ngày được màn hình dùng để đọc/ghi dữ liệu.
+    /// </summary>
     private BUS_CA_THEO_NGAY busCaiDatCa = new();
+    /// <summary>
+    /// Đối tượng nghiệp vụ phòng được màn hình dùng để đọc/ghi dữ liệu.
+    /// </summary>
     private BUS_PHONG busPhong = new();
+    /// <summary>
+    /// Danh sách phòng dùng trong ca làm việc được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private List<ET_PHONG> danhSachPhong = new();
+    /// <summary>
+    /// Danh sách nhân viên dùng trong ca làm việc được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private List<ET_NHANVIEN> danhSachNhanVien = new();
 
+    /// <summary>
+    /// Danh sách ca dùng trong ca làm việc được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private List<ET_CALAM> danhSachCa = new();
+    /// <summary>
+    /// Danh sách lịch dùng trong ca làm việc được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private List<ET_LICHLAMVIEC> danhSachLich = new();
+    /// <summary>
+    /// Danh sách cài đặt dùng trong ca làm việc được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private List<ET_CA_THEO_NGAY> danhSachCaiDat = new();
+    /// <summary>
+    /// Danh sách ca chọn dùng trong ca làm việc được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private List<ET_CALAM> danhSachCaChon = new();
+    /// <summary>
+    /// Tất ca ca được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private List<CaTrongNgay> tatCaCa = new();
+    /// <summary>
+    /// Ca hiển thị được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private List<CaTrongNgay> caHienThi = new();
 
+    /// <summary>
+    /// Đầu tuần được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private DateTime dauTuan = LayDauTuan(DateTime.Today);
+    /// <summary>
+    /// Ngày đang cài đặt được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private DateTime ngayDangCaiDat;
+    /// <summary>
+    /// Đang từ chối được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private DangKyCa? dangTuChoi;
+    /// <summary>
+    /// Đang duyệt được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private DangKyCa? dangDuyet;
+    /// <summary>
+    /// Mã nhân viên thực hiện hoặc được gán cho bản ghi được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private string maNV = "";
+    /// <summary>
+    /// Cờ Đã khôi tạo; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool daKhoiTao;
 
+    /// <summary>
+    /// Là quản lý.
+    /// </summary>
     public bool IsManager { get; private set; }
+    /// <summary>
+    /// Giá trị Là nhân viên; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public bool IsEmployee => !IsManager && !string.IsNullOrWhiteSpace(maNV);
 
+    /// <summary>
+    /// Khởi tạo ca làm việc.
+    /// </summary>
     public CaLamViec() : this(RangHamMat.PhienDangNhap.MaNV, RangHamMat.PhienDangNhap.IsAdmin) { }
 
+    /// <summary>
+    /// Khởi tạo ca làm việc. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+    /// </summary>
+    /// <param name="maNhanVien">Mã nhân viên xác định đối tượng cần xử lý.</param>
+    /// <param name="laQuanLy">Giá trị là quản lý dùng khi thực hiện thao tác; kiểu bool.</param>
     public CaLamViec(string maNhanVien, bool laQuanLy)
     {
         InitializeComponent();
@@ -88,6 +159,11 @@ public partial class CaLamViec : UserControl
         }
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút thông báo đơn xin nghỉ khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnThongBaoDonXinNghi_Click(object sender, RoutedEventArgs e)
     {
         if (!IsManager) return;
@@ -97,6 +173,12 @@ public partial class CaLamViec : UserControl
         DonXinNghiOverlay.Visibility = Visibility.Visible;
     }
 
+    /// <summary>
+    /// Quay từ màn hình quản lý đơn nghỉ về lịch ca và cập nhật các dữ liệu liên quan.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>CapNhatThongBaoDonXinNghi</c>, <c>LoadDuLieu</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void DonXinNghi_QuayLai(object? sender, EventArgs e)
     {
         DonXinNghiOverlay.Visibility = Visibility.Collapsed;
@@ -105,6 +187,12 @@ public partial class CaLamViec : UserControl
         LoadDuLieu();
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút đồng bộ lịch khám khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>bus.dongBoLichKhamVaoCaLam</c>, <c>LoadDuLieu</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnDongBoLichKham_Click(object sender, RoutedEventArgs e)
     {
         if (!IsManager) return;
@@ -328,6 +416,11 @@ public partial class CaLamViec : UserControl
         txtFootHint.Text = "Nhân viên đăng ký ca, quản lý xác nhận trong chi tiết ca.";
     }
 
+    /// <summary>
+    /// Mở thông tin ca làm được chọn và cập nhật các thao tác theo trạng thái của ca.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ca.Date.ToString</c>.</remarks>
+    /// <param name="ca">Giá trị ca dùng khi thực hiện thao tác; kiểu CaTrongNgay.</param>
     private void MoChiTiet(CaTrongNgay ca)
     {
         DetailContent.DataContext = ca;
@@ -346,29 +439,58 @@ public partial class CaLamViec : UserControl
         else MoChiTiet(caMoi);
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút tuần trước khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>dauTuan.AddDays</c>, <c>LoadDuLieu</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnTuanTruoc_Click(object sender, RoutedEventArgs e)
     {
         dauTuan = dauTuan.AddDays(-7);
         LoadDuLieu();
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút tuần sau khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>dauTuan.AddDays</c>, <c>LoadDuLieu</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnTuanSau_Click(object sender, RoutedEventArgs e)
     {
         dauTuan = dauTuan.AddDays(7);
         LoadDuLieu();
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút tuần hiển thị tải khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>LayDauTuan</c>, <c>LoadDuLieu</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnTuanHienTai_Click(object sender, RoutedEventArgs e)
     {
         dauTuan = LayDauTuan(DateTime.Today);
         LoadDuLieu();
     }
 
+    /// <summary>
+    /// Tiếp nhận thay đổi bộ lọc và cập nhật trạng thái/dữ liệu phụ thuộc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>HienThiLich</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void BoLoc_ThayDoi(object sender, RoutedEventArgs e)
     {
         HienThiLich();
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút xem tuần khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnXemTuan_Click(object sender, RoutedEventArgs e)
     {
         WeekView.Visibility = Visibility.Visible;
@@ -381,6 +503,11 @@ public partial class CaLamViec : UserControl
         btnWeekView.Foreground = Brushes.Blue;
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút xem danh sách khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnXemDanhSach_Click(object sender, RoutedEventArgs e)
     {
         WeekView.Visibility = Visibility.Collapsed;
@@ -393,21 +520,43 @@ public partial class CaLamViec : UserControl
         btnListView.Foreground = Brushes.Blue;
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút chi tiết ca khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>MoChiTiet</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnChiTietCa_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button btn && btn.Tag is CaTrongNgay ca) MoChiTiet(ca);
     }
 
+    /// <summary>
+    /// Mở nội dung hoặc thao tác chi tiết của bảng ca làm việc khi người dùng bấm đúp.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>MoChiTiet</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void dgvCaLamViec_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (ShiftGrid.SelectedItem is CaTrongNgay ca) MoChiTiet(ca);
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút đóng chi tiết khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnDongChiTiet_Click(object sender, RoutedEventArgs e)
     {
         DetailOverlay.Visibility = Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// Xử lý thao tác chuột trên nền chi tiết theo vị trí người dùng chọn.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void NenChiTiet_MouseDown(object sender, MouseButtonEventArgs e)
     {
         DetailOverlay.Visibility = Visibility.Collapsed;
@@ -513,6 +662,12 @@ public partial class CaLamViec : UserControl
         }
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút xác nhận duyệt khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>busLichLamViec.duyetCa</c>, <c>LoadDuLieu</c>, <c>CapNhatChiTiet</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnXacNhanDuyet_Click(object sender, RoutedEventArgs e)
     {
         if (!IsManager || dangDuyet == null || cboPhongDuyet.SelectedItem is not ET_PHONG phong)
@@ -540,12 +695,23 @@ public partial class CaLamViec : UserControl
         }
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút dòng duyệt khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnDongDuyet_Click(object sender, RoutedEventArgs e)
     {
         dangDuyet = null;
         ApproveOverlay.Visibility = Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút từ chối ca khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>txtRejectReason.Clear</c>, <c>dk.Shift.Date.ToString</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnTuChoiCa_Click(object sender, RoutedEventArgs e)
     {
         if (!IsManager || sender is not Button btn || btn.Tag is not DangKyCa dk) return;
@@ -556,6 +722,12 @@ public partial class CaLamViec : UserControl
         RejectOverlay.Visibility = Visibility.Visible;
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút xác nhận từ chối khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>txtRejectReason.Text.Trim</c>, <c>MessageBox.Show</c>, <c>busLichLamViec.tuChoiCa</c>, <c>LoadDuLieu</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnXacNhanTuChoi_Click(object sender, RoutedEventArgs e)
     {
         if (!IsManager || dangTuChoi == null) return;
@@ -586,22 +758,42 @@ public partial class CaLamViec : UserControl
         }
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút dòng từ chối khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnDongTuChoi_Click(object sender, RoutedEventArgs e)
     {
         RejectOverlay.Visibility = Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// Xử lý thao tác chuột trên nền từ chối theo vị trí người dùng chọn.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void NenTuChoi_MouseDown(object sender, MouseButtonEventArgs e)
     {
         RejectOverlay.Visibility = Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút xem đăng ký khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>HienThiDangKy</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnXemDangKy_Click(object sender, RoutedEventArgs e)
     {
         HienThiDangKy();
         MyRequestsOverlay.Visibility = Visibility.Visible;
     }
 
+    /// <summary>
+    /// Hiển thị các đăng ký ca và thông tin chờ duyệt của phạm vi đang xem.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>danhSach.Add</c>.</remarks>
     private void HienThiDangKy()
     {
         List<DangKyCa> danhSach = new();
@@ -622,6 +814,12 @@ public partial class CaLamViec : UserControl
         EmptyMyRequests.Visibility = danhSach.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút hủy đăng ký khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>busLichLamViec.huyDangKy</c>, <c>LoadDuLieu</c>, <c>HienThiDangKy</c>, <c>MessageBox.Show</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnHuyDangKy_Click(object sender, RoutedEventArgs e)
     {
         if (!IsEmployee || sender is not Button btn || btn.Tag is not DangKyCa dk) return;
@@ -641,16 +839,32 @@ public partial class CaLamViec : UserControl
         }
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút dòng danh sách đăng ký khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnDongDanhSachDangKy_Click(object sender, RoutedEventArgs e)
     {
         MyRequestsOverlay.Visibility = Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// Xử lý thao tác chuột trên nền danh sách đăng ký theo vị trí người dùng chọn.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void NenDanhSachDangKy_MouseDown(object sender, MouseButtonEventArgs e)
     {
         MyRequestsOverlay.Visibility = Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút cài đặt ca khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>danhSachCaiDat.Any</c>, <c>danhSachCaChon.Add</c>, <c>ca.GioBatDau.ToString</c>, <c>ca.GioKetThuc.ToString</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnCaiDatCa_Click(object sender, RoutedEventArgs e)
     {
         if (!IsManager || sender is not Button btn || btn.Tag is not DateTime ngay) return;
@@ -681,6 +895,12 @@ public partial class CaLamViec : UserControl
         SetShiftOverlay.Visibility = Visibility.Visible;
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút lưu cài đặt ca khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>busCaiDatCa.themCaTheoNgay</c>, <c>LoadDuLieu</c>, <c>MessageBox.Show</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnLuuCaiDatCa_Click(object sender, RoutedEventArgs e)
     {
         if (!IsManager || cboCaCoSan.SelectedIndex < 0) return;
@@ -707,6 +927,12 @@ public partial class CaLamViec : UserControl
         }
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút bộ ca khôi ngày khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>ca.Date.ToString</c>, <c>busCaiDatCa.xoaCaTheoNgay</c>, <c>LoadDuLieu</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnBoCaKhoiNgay_Click(object sender, RoutedEventArgs e)
     {
         if (!IsManager || sender is not Button btn || btn.Tag is not CaTrongNgay ca) return;
@@ -731,16 +957,32 @@ public partial class CaLamViec : UserControl
         }
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút dòng cài đặt ca khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnDongCaiDatCa_Click(object sender, RoutedEventArgs e)
     {
         SetShiftOverlay.Visibility = Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// Xử lý thao tác chuột trên nền cài đặt ca theo vị trí người dùng chọn.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void NenCaiDatCa_MouseDown(object sender, MouseButtonEventArgs e)
     {
         SetShiftOverlay.Visibility = Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút mở tạo ca khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>CapNhatXemTruoc</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnMoTaoCa_Click(object sender, RoutedEventArgs e)
     {
         if (!IsManager) return;
@@ -751,6 +993,12 @@ public partial class CaLamViec : UserControl
         CreateOverlay.Visibility = Visibility.Visible;
     }
 
+    /// <summary>
+    /// Phản ánh lựa chọn hộp chọn ngày tạo ca vào dữ liệu và phần hiển thị liên quan.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>dauTuan.AddDays</c>, <c>CapNhatXemTruoc</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void cboNgayTaoCa_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!daKhoiTao || cbCreateDay.SelectedIndex < 0) return;
@@ -758,16 +1006,32 @@ public partial class CaLamViec : UserControl
         CapNhatXemTruoc();
     }
 
+    /// <summary>
+    /// Đồng bộ ngày tạo ca vừa chọn với các trường phụ thuộc và phần xem trước.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>CapNhatXemTruoc</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void dpNgayTaoCa_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
     {
         CapNhatXemTruoc();
     }
 
+    /// <summary>
+    /// Tiếp nhận thay đổi thông tin tạo ca và cập nhật trạng thái/dữ liệu phụ thuộc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>CapNhatXemTruoc</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void ThongTinTaoCa_Changed(object sender, RoutedEventArgs e)
     {
         CapNhatXemTruoc();
     }
 
+    /// <summary>
+    /// Cập nhật phần xem trước ca từ ngày, giờ và nội dung người dùng đang nhập.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>.ToString</c>.</remarks>
     private void CapNhatXemTruoc()
     {
         if (!daKhoiTao) return;
@@ -776,6 +1040,12 @@ public partial class CaLamViec : UserControl
         txtCreatePreviewSub.Text = txtCreateStart.Text + " - " + txtCreateEnd.Text + " · mẫu ca chưa lưu";
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút lưu ca làm khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>TimeSpan.TryParse</c>, <c>MessageBox.Show</c>, <c>.ToString</c>, <c>busCaLam.themCaLam</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnLuuCaLam_Click(object sender, RoutedEventArgs e)
     {
         if (!IsManager) return;
@@ -811,11 +1081,21 @@ public partial class CaLamViec : UserControl
         }
     }
 
+    /// <summary>
+    /// Xử lý thao tác nút dòng tạo ca khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void btnDongTaoCa_Click(object sender, RoutedEventArgs e)
     {
         CreateOverlay.Visibility = Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// Xử lý thao tác chuột trên nền tạo ca theo vị trí người dùng chọn.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void NenTaoCa_MouseDown(object sender, MouseButtonEventArgs e)
     {
         CreateOverlay.Visibility = Visibility.Collapsed;
@@ -885,52 +1165,169 @@ public partial class CaLamViec : UserControl
 // Các lớp nhỏ dùng để hiển thị dữ liệu trên giao diện XAML.
 public class NhanVienCa
 {
+    /// <summary>
+    /// Tên.
+    /// </summary>
     public string Name { get; set; } = "";
+    /// <summary>
+    /// Mã.
+    /// </summary>
     public string Code { get; set; } = "";
+    /// <summary>
+    /// Chữ cái đầu.
+    /// </summary>
     public string Initials { get; set; } = "NV";
+    /// <summary>
+    /// Khoa.
+    /// </summary>
     public string Department { get; set; } = "";
 }
 
+/// <summary>
+/// Phần xử lý đăng ký ca của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+/// </summary>
 public class DangKyCa
 {
+    /// <summary>
+    /// Mã lịch làm việc.
+    /// </summary>
     public string MaLLV { get; set; } = "";
+    /// <summary>
+    /// Ca.
+    /// </summary>
     public CaTrongNgay Shift { get; set; } = new();
+    /// <summary>
+    /// Người.
+    /// </summary>
     public NhanVienCa Person { get; set; } = new();
+    /// <summary>
+    /// Trạng thái.
+    /// </summary>
     public string Status { get; set; } = "";
+    /// <summary>
+    /// Ghi chú đối chiếu.
+    /// </summary>
     public string ReviewNote { get; set; } = "";
+    /// <summary>
+    /// Giá trị Nhãn đối chiếu; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string ReviewCaption => Status;
+    /// <summary>
+    /// Giá trị Nhãn thời điểm gửi; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string SubmittedCaption => "";
+    /// <summary>
+    /// Giá trị Tổng kết; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string Summary => Shift.Date.ToString("dd/MM/yyyy") + " - " + Shift.TimeRange;
+    /// <summary>
+    /// Giá trị Có thể hủy; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public bool CanCancel => Status == "Chờ xác nhận";
 }
 
+/// <summary>
+/// Phần xử lý ca trong ngày của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+/// </summary>
 public class CaTrongNgay
 {
+    /// <summary>
+    /// Mã ca làm việc.
+    /// </summary>
     public string MaCa { get; set; } = "";
+    /// <summary>
+    /// Ngày.
+    /// </summary>
     public DateTime Date { get; set; }
+    /// <summary>
+    /// Tên.
+    /// </summary>
     public string Name { get; set; } = "";
+    /// <summary>
+    /// Khoảng thời gian.
+    /// </summary>
     public string TimeRange { get; set; } = "";
+    /// <summary>
+    /// Kiểu.
+    /// </summary>
     public string Type { get; set; } = "";
+    /// <summary>
+    /// Ghi chú.
+    /// </summary>
     public string Note { get; set; } = "";
+    /// <summary>
+    /// Vị trí.
+    /// </summary>
     public string Location { get; set; } = "Chưa phân phòng";
+    /// <summary>
+    /// Nghỉ giữa ca thời gian.
+    /// </summary>
     public string BreakTime { get; set; } = "";
+    /// <summary>
+    /// Nhãn thời lượng.
+    /// </summary>
     public string DurationCaption { get; set; } = "";
+    /// <summary>
+    /// Trạng thái.
+    /// </summary>
     public string Status { get; set; } = "";
+    /// <summary>
+    /// Đã phân công.
+    /// </summary>
     public List<NhanVienCa> Assigned { get; set; } = new();
+    /// <summary>
+    /// Các yêu cầu.
+    /// </summary>
     public List<DangKyCa> Requests { get; set; } = new();
+    /// <summary>
+    /// Lịch sử.
+    /// </summary>
     public List<DangKyCa> History { get; set; } = new();
+    /// <summary>
+    /// Giá trị Số mục đã phân công; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public int AssignedCount => Assigned.Count;
+    /// <summary>
+    /// Giá trị Số yêu cầu; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public int RequestCount => Requests.Count;
+    /// <summary>
+    /// Giá trị Có các yêu cầu; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public bool HasRequests => Requests.Count > 0;
+    /// <summary>
+    /// Giá trị Nhãn số mục đã phân công; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string AssignedLabel => AssignedCount + " nhân viên";
+    /// <summary>
+    /// Giá trị Nhãn số yêu cầu; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string RequestLabel => RequestCount + " yêu cầu";
 }
 
+/// <summary>
+/// Phần xử lý ngày trong tuần của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+/// </summary>
 public class NgayTrongTuan
 {
+    /// <summary>
+    /// Ngày.
+    /// </summary>
     public DateTime Date { get; set; }
+    /// <summary>
+    /// Tên ngày.
+    /// </summary>
     public string DayName { get; set; } = "";
+    /// <summary>
+    /// Ngày nhãn.
+    /// </summary>
     public string DateLabel { get; set; } = "";
+    /// <summary>
+    /// Các ca.
+    /// </summary>
     public List<CaTrongNgay> Shifts { get; set; } = new();
+    /// <summary>
+    /// Giá trị Số lượng; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public int Count => Shifts.Count;
 }

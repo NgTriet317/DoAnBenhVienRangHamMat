@@ -1,0 +1,16 @@
+{
+    "Date":  "2026-10-28",
+    "Database":  "QLBenhVienRangHamMat",
+    "TableCount":  52,
+    "PreservedOriginalTables":  46,
+    "Admin":  "admin001",
+    "Job":  "CV001",
+    "FreshChecks":  12,
+    "UpgradedChecks":  12,
+    "PublishedChecks":  12,
+    "DefaultDatabaseGuiChecks":  3,
+    "HomepageModules":  26,
+    "PublishedWpfSha256":  "3DC0A4201C7AFEF56D2B07A1822650E1DFD314D422DB67B0321B2B13708D8B59",
+    "PublishedSqlSha256":  "7D3C90FC445ABCF986450257E9ECD4B2DD6C5F3A8CC19F3F2174A56079125234",
+    "FixtureRemoved":  true
+}

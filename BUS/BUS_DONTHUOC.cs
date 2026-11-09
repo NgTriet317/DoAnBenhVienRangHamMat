@@ -9,8 +9,23 @@ namespace BUS
     /// Tầng nghiệp vụ đơn thuốc, cung cấp thao tác cho giao diện và chuyển truy cập dữ liệu đến DAL_DONTHUOC. Các lời gọi DAL
     /// được bọc XuLyLoi để đổi SqlException sang InvalidOperationException tiếng Việt; lỗi nghiệp vụ khác giữ nguyên.
     /// </summary>
-    public class BUS_DONTHUOC
+    public partial class BUS_DONTHUOC
     {
+        /// <summary>
+        /// Đọc các dòng đơn thuốc sau khi kiểm tra quyền và phạm vi chứng từ.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XuLyLoi.ThucHien</c>, <c>clinical.LayDonThuoc</c>.</remarks>
+        /// <param name="maDT">Mã đơn thuốc xác định đối tượng cần xử lý.</param>
+        /// <param name="nguoiDung">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
+        /// <returns>Kết quả kiểu DonThuocChiTiet dùng cho bước xử lý tiếp theo.</returns>
+        public DonThuocChiTiet LayChiTietCoQuyen(string maDT, NguCanhNghiepVu nguoiDung)
+            => XuLyLoi.ThucHien(() => clinical.LayDonThuoc(maDT, nguoiDung));
+
+        /// <summary>
+        /// Đối tượng truy cập dữ liệu khám điều trị phục vụ các thao tác của lớp.
+        /// </summary>
+        private readonly DAL_KHAMDIEUTRI clinical;
+
         /// <summary>
         /// Đối tượng DAL_DONTHUOC thực hiện truy vấn/ghi đơn thuốc trong giao dịch được truyền vào constructor.
         /// </summary>
@@ -23,6 +38,7 @@ namespace BUS
         public BUS_DONTHUOC(IDbTransaction? transaction = null)
         {
             dalDonThuoc = new DAL_DONTHUOC(transaction);
+            clinical = new DAL_KHAMDIEUTRI(transaction);
         }
 
         /// <summary>

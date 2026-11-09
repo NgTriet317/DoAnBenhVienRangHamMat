@@ -12,22 +12,64 @@ using System.Windows.Controls;
 
 namespace RangHamMat.Views
 {
+    /// <summary>
+    /// Phần xử lý danh mục hàng hóa của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public partial class DanhMucHangHoa : UserControl
     {
+        /// <summary>
+        /// Đối tượng nghiệp vụ hàng hóa được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private readonly BUS_HANGHOA busHangHoa = new BUS_HANGHOA();
+        /// <summary>
+        /// Đối tượng nghiệp vụ loại hàng hóa được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private readonly BUS_LOAIHANGHOA busLoaiHangHoa = new BUS_LOAIHANGHOA();
 
+        /// <summary>
+        /// Danh sách hàng hóa dùng trong danh mục hàng hóa được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private DataTable danhSachHangHoa = new DataTable();
+        /// <summary>
+        /// Danh sách loại dùng trong danh mục hàng hóa được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private List<ET_LOAIHANGHOA> danhSachLoai = new List<ET_LOAIHANGHOA>();
+        /// <summary>
+        /// Hàng hóa đang chọn được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private ET_HANGHOA? hangHoaDangChon;
+        /// <summary>
+        /// Bản dữ liệu gốc được giữ để đối chiếu trước khi cập nhật hoặc khôi phục nội dung đang sửa.
+        /// </summary>
         private ET_HANGHOA? banGoc;
+        /// <summary>
+        /// Lọc tìm kiểm được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string locTimKiem = "";
+        /// <summary>
+        /// Lọc loại được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string locLoai = "";
+        /// <summary>
+        /// Lọc trạng thái được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string locTrangThai = "";
+        /// <summary>
+        /// Cờ Đang thêm; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool dangThem;
+        /// <summary>
+        /// Cờ Đang sửa; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool dangSua;
+        /// <summary>
+        /// Cờ Đã tải dữ liệu; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool daTaiDuLieu;
 
+        /// <summary>
+        /// Khởi tạo danh mục hàng hóa. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+        /// </summary>
         public DanhMucHangHoa()
         {
             InitializeComponent();
@@ -51,11 +93,19 @@ namespace RangHamMat.Views
             return "";
         }
 
+        /// <summary>
+        /// Đọc nhóm hàng của lựa chọn hiện tại để áp dụng danh mục và quy tắc tương ứng.
+        /// </summary>
+        /// <returns>Chuỗi kết quả của thao tác lấy nhóm đang chọn.</returns>
         private string LayNhomDangChon()
         {
             return (tabNhomHangHoa.SelectedItem as TabItem)?.Tag as string ?? "Thuoc";
         }
 
+        /// <summary>
+        /// Nạp danh mục tương ứng tab đang chọn và đặt lại các lựa chọn phụ thuộc.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>NhomCuaMaLoai</c>, <c>LayNhomDangChon</c>, <c>loaiLoc.Add</c>, <c>loaiNhap.Add</c>.</remarks>
         private void CapNhatDanhMucTheoTab()
         {
             bool daTai = daTaiDuLieu;
@@ -78,6 +128,10 @@ namespace RangHamMat.Views
             daTaiDuLieu = daTai;
         }
 
+        /// <summary>
+        /// Cập nhật thống kê theo nhóm danh mục của tab hiện tại.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>LayNhomDangChon</c>, <c>Array.Empty&lt;DataRow&gt;</c>, <c>danhSachHangHoa.Select</c>, <c>hangTheoTab.Length.ToString</c>.</remarks>
         private void CapNhatThongKeTheoTab()
         {
             string nhom = LayNhomDangChon();
@@ -109,6 +163,11 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Nạp dữ liệu từ các lớp nghiệp vụ, chuẩn bị danh sách lựa chọn và đồng bộ vùng hiển thị của màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>busHangHoa.layDanhMucChiTiet</c>, <c>busLoaiHangHoa.layToanBoLoaiHangHoa</c>, <c>CapNhatDanhMucTheoTab</c>, <c>hang[&quot;TrangThai&quot;].ToString</c>.</remarks>
+        /// <param name="maCanChon">Mã cần chọn xác định đối tượng cần xử lý.</param>
         private void LoadDuLieu(string? maCanChon = null)
         {
             try
@@ -170,6 +229,12 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn nhóm hàng hóa vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ReferenceEquals</c>, <c>CapNhatDanhMucTheoTab</c>, <c>CapNhatThongKeTheoTab</c>, <c>LayNhomDangChon</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void NhomHangHoa_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!daTaiDuLieu || !ReferenceEquals(e.Source, sender) || dangThem || dangSua) return;
@@ -187,6 +252,12 @@ namespace RangHamMat.Views
             else HienTrangThaiTrong();
         }
 
+        /// <summary>
+        /// Tiếp nhận thay đổi ô nhập tìm kiểm và cập nhật trạng thái/dữ liệu phụ thuộc.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>Regex.Replace</c>, <c>noiDung.Trim</c>, <c>LayNhomDangChon</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void txtTimKiem_TextChanged(object sender, TextChangedEventArgs e)
         {
             string noiDung = Regex.Replace(txtTimKiem.Text, @"[^\p{L}\p{M}\p{N} ]", "");
@@ -211,6 +282,12 @@ namespace RangHamMat.Views
             if (Grid_HANG_HOA.SelectedItem == null && danhSachHangHoa.DefaultView.Count > 0) Grid_HANG_HOA.SelectedIndex = 0;
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn hộp chọn loại lọc vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>LayNhomDangChon</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void cboLoaiLoc_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string maLoai = cboLoaiLoc.SelectedValue as string ?? "";
@@ -226,6 +303,12 @@ namespace RangHamMat.Views
             if (Grid_HANG_HOA.SelectedItem == null && danhSachHangHoa.DefaultView.Count > 0) Grid_HANG_HOA.SelectedIndex = 0;
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn hộp chọn trạng thái lọc vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>trangThai.Replace</c>, <c>LayNhomDangChon</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void cboTrangThaiLoc_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string trangThai = cboTrangThaiLoc.SelectedItem as string ?? "";
@@ -242,6 +325,12 @@ namespace RangHamMat.Views
             if (Grid_HANG_HOA.SelectedItem == null && danhSachHangHoa.DefaultView.Count > 0) Grid_HANG_HOA.SelectedIndex = 0;
         }
 
+        /// <summary>
+        /// Xử lý thao tác xóa lọc khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>txtTimKiem.Clear</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void XoaLoc_Click(object sender, RoutedEventArgs e)
         {
             txtTimKiem.Clear();
@@ -249,6 +338,12 @@ namespace RangHamMat.Views
             cboTrangThaiLoc.SelectedIndex = 0;
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn danh sách vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>HienChiTiet</c>, <c>HienTrangThaiTrong</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void DanhSach_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!daTaiDuLieu || dangThem || dangSua) return;
@@ -256,6 +351,11 @@ namespace RangHamMat.Views
             else HienTrangThaiTrong();
         }
 
+        /// <summary>
+        /// Đưa dữ liệu mục đang chọn vào vùng chi tiết, đồng thời cập nhật các nút thao tác liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>hang[&quot;MaHH&quot;].ToString</c>, <c>hang[&quot;TenHH&quot;].ToString</c>, <c>hang[&quot;MaLoaiHH&quot;].ToString</c>, <c>hang[&quot;DonViTinh&quot;].ToString</c>.</remarks>
+        /// <param name="hang">Giá trị hàng dùng khi thực hiện thao tác; kiểu DataRowView.</param>
         private void HienChiTiet(DataRowView hang)
         {
             hangHoaDangChon = new ET_HANGHOA(
@@ -283,6 +383,10 @@ namespace RangHamMat.Views
             DoiCheDo(false);
         }
 
+        /// <summary>
+        /// Đặt vùng chi tiết về trạng thái chưa có bản ghi được chọn.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XoaForm</c>, <c>DoiCheDo</c>.</remarks>
         private void HienTrangThaiTrong()
         {
             hangHoaDangChon = null;
@@ -296,6 +400,10 @@ namespace RangHamMat.Views
             DoiCheDo(false);
         }
 
+        /// <summary>
+        /// Xóa nội dung biểu mẫu và đặt lại các lựa chọn hoặc trạng thái đang chỉnh.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>txtTenHH.Clear</c>, <c>txtMoTa.Clear</c>, <c>txtHamLuong.Clear</c>.</remarks>
         private void XoaForm()
         {
             txtMaHH.Text = "Tự sinh khi lưu";
@@ -310,6 +418,10 @@ namespace RangHamMat.Views
             lblThongBao.Text = "";
         }
 
+        /// <summary>
+        /// Chuyển chế độ xem/thêm/sửa và cập nhật các trường, nút theo chế độ được chọn.
+        /// </summary>
+        /// <param name="choPhepNhap">Giá trị chờ phép nhập dùng khi thực hiện thao tác; kiểu bool.</param>
         private void DoiCheDo(bool choPhepNhap)
         {
             Grid_HANG_HOA.IsEnabled = !choPhepNhap;
@@ -339,6 +451,12 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Xử lý thao tác thêm mới khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XoaForm</c>, <c>DoiCheDo</c>, <c>txtTenHH.Focus</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void ThemMoi_Click(object sender, RoutedEventArgs e)
         {
             hangHoaDangChon = null;
@@ -354,6 +472,12 @@ namespace RangHamMat.Views
             txtTenHH.Focus();
         }
 
+        /// <summary>
+        /// Xử lý thao tác sửa khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>DoiCheDo</c>, <c>txtTenHH.Focus</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void Sua_Click(object sender, RoutedEventArgs e)
         {
             if (hangHoaDangChon == null) return;
@@ -364,6 +488,12 @@ namespace RangHamMat.Views
             txtTenHH.Focus();
         }
 
+        /// <summary>
+        /// Xử lý thao tác hủy khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>LoadDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void Huy_Click(object sender, RoutedEventArgs e)
         {
             dangThem = false;
@@ -372,6 +502,12 @@ namespace RangHamMat.Views
             LoadDuLieu(maCanChon);
         }
 
+        /// <summary>
+        /// Xử lý thao tác lưu khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>txtTenHH.Text.Trim</c>, <c>cboDonViTinh.Text.Trim</c>, <c>cboTrangThai.Text.Trim</c>, <c>txtMoTa.Text.Trim</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void Luu_Click(object sender, RoutedEventArgs e)
         {
             if (!dangThem && !dangSua) return;
@@ -451,6 +587,12 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Xử lý thao tác xóa khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>busHangHoa.xoaDanhMucChiTiet</c>, <c>LoadDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void Xoa_Click(object sender, RoutedEventArgs e)
         {
             if (hangHoaDangChon == null || dangThem || dangSua) return;
@@ -474,6 +616,12 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Xử lý thao tác tải lại khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>LoadDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void TaiLai_Click(object sender, RoutedEventArgs e)
         {
             if (dangThem || dangSua) return;

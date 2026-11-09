@@ -1,0 +1,14 @@
+PASS: P10 chưa thu không có hàng chờ, không giao được
+PASS: P10 giao đúng người phiên, lặp trả đúng người/giờ cũ và không xuất lại
+PASS: P10 nhiều đơn chỉ hoàn tất phiếu khi giao hết
+PASS: P10 hai kết nối giao cùng đơn chỉ một chuyển trạng thái
+PASS: P10 đọc chi tiết đồng thời xác nhận giao không đảo thứ tự khóa
+PASS: P10 quyền giao đọc lại SQL, cờ giả và tài khoản khóa bị chặn
+PASS: P10 hàng chờ phân trang/lọc đúng mã, chỉ trạng thái hợp lệ
+PASS: P10 xem hướng dẫn và tên chốt, không lấy lại danh mục mới
+PASS: P10 lỗi audit cuối rollback giao và trạng thái phiếu
+PASS: P10 thử lại thanh toán phản ánh đơn đã giao, không đổi tài chính
+PASS: P10 bản in hóa đơn đọc mã đã commit, giữ ngày/giá/tiền chốt
+PASS: P10 in lịch sử giữ phần lẻ và tiền còn phải thu
+PASS: P10 đọc bản in kiểm tra quyền và từ chối transaction chưa commit
+HandoverChecks: 13 PASS, 0 FAIL; commit chỉ trên DB P10Handover riêng.

@@ -10,6 +10,12 @@ namespace DAL
     // Không dùng đường này để cấp thuốc theo đơn khám (MaLS / MaCTDT).
     public class DAL_XUATKHO : dbconnect
     {
+        /// <summary>
+        /// Đọc tồn từng lô trong kho để người dùng chọn nguồn xuất phù hợp.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>connection.Query&lt;ET_TONLOXUAT&gt;</c>.</remarks>
+        /// <param name="maKho">Mã kho xác định đối tượng cần xử lý.</param>
+        /// <returns>Tập dữ liệu kiểu List&lt;ET_TONLOXUAT&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
         public List<ET_TONLOXUAT> LayTonTheoLo(string maKho)
         {
             return ThucHien((connection, transaction) =>
@@ -35,6 +41,21 @@ namespace DAL
                     new { MaKho = maKho }, transaction).ToList());
         }
 
+        /// <summary>
+        /// Kiểm tra và lưu đầu phiếu cùng các dòng hàng; nội dung được ghi theo trạng thái và quyền hiện tại. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>connection.ExecuteScalar&lt;int&gt;</c>, <c>connection.QuerySingleOrDefault&lt;ET_PHIEUXUAT&gt;</c>, <c>connection.Execute</c>.</remarks>
+        /// <param name="maPX">Mã phiếu xuất xác định đối tượng cần xử lý.</param>
+        /// <param name="maKho">Mã kho xác định đối tượng cần xử lý.</param>
+        /// <param name="maNV">Mã nhân viên xác định đối tượng cần xử lý.</param>
+        /// <param name="maKhoa">Mã khóa xác định đối tượng cần xử lý.</param>
+        /// <param name="maPhong">Mã phòng xác định đối tượng cần xử lý.</param>
+        /// <param name="ngayXuat">Giá trị ngày xuất dùng khi thực hiện thao tác; kiểu DateTime.</param>
+        /// <param name="lyDo">Giá trị lý do dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <param name="ghiChu">Giá trị ghi chú dùng khi thực hiện thao tác; kiểu string?.</param>
+        /// <param name="dong">Giá trị dòng dùng khi thực hiện thao tác; kiểu List&lt;ET_DONGXUATMOI&gt;.</param>
+        /// <param name="ghiSo">Giá trị ghi sổ dùng khi thực hiện thao tác; kiểu bool.</param>
+        /// <returns>Chuỗi kết quả của thao tác lưu phiếu.</returns>
         public string LuuPhieu(string? maPX, string maKho, string maNV, string? maKhoa,
             string? maPhong, DateTime ngayXuat, string lyDo, string? ghiChu,
             List<ET_DONGXUATMOI> dong, bool ghiSo)
@@ -112,6 +133,11 @@ namespace DAL
             });
         }
 
+        /// <summary>
+        /// Kiểm tra phiếu và ghi sổ nhập/xuất để các thay đổi tồn kho có hiệu lực theo nghiệp vụ.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>GhiSoNoiBo</c>.</remarks>
+        /// <param name="maPX">Mã phiếu xuất xác định đối tượng cần xử lý.</param>
         public void GhiSo(string maPX)
         {
             ThucHien((connection, transaction) =>
@@ -121,6 +147,13 @@ namespace DAL
             });
         }
 
+        /// <summary>
+        /// Thực hiện phần ghi sổ phiếu xuất trong phạm vi giao dịch đang được điều phối. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>connection.QuerySingleOrDefault&lt;ET_PHIEUXUAT&gt;</c>, <c>connection.ExecuteScalar&lt;int&gt;</c>, <c>connection.Query&lt;ET_CHITIETPHIEUXUAT&gt;</c>, <c>maHang.Contains</c>.</remarks>
+        /// <param name="connection">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+        /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+        /// <param name="maPX">Mã phiếu xuất xác định đối tượng cần xử lý.</param>
         private static void GhiSoNoiBo(IDbConnection connection, IDbTransaction? transaction, string maPX)
         {
             ET_PHIEUXUAT? p = connection.QuerySingleOrDefault<ET_PHIEUXUAT>(

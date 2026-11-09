@@ -121,12 +121,44 @@ public sealed class DAL_THANHTOAN : dbconnect
     /// <param name = "reason">Lý do giao dịch; bắt buộc có nội dung khi Hoàn, được Trim trước khi ghi.</param>
     /// <returns>Mã giao dịch thu/hoàn Đã xác nhận vừa ghi.</returns>
     public string RecordPayment(string invoiceId, string employeeId, decimal amount, string type, string method, string? reason)
+        => RecordPaymentCore(invoiceId, employeeId, amount, type, method, reason, null, null);
+
+    /// <summary>
+    /// Ghi khoản thu trong giao dịch dùng chung của đầu mối thanh toán.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>RecordPaymentCore</c>.</remarks>
+    /// <param name="invoiceId">Giá trị mã hóa đơn dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="employeeId">Giá trị nhân viên mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="amount">Giá trị số tiền dùng khi thực hiện thao tác; kiểu decimal.</param>
+    /// <param name="method">Giá trị phương thức dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="given">Giá trị đã giao dùng khi thực hiện thao tác; kiểu decimal.</param>
+    /// <param name="reference">Giá trị tham khảo dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <returns>Chuỗi kết quả của thao tác bản ghi được điều phối thanh toán.</returns>
+    internal string RecordCoordinatedPayment(string invoiceId, string employeeId, decimal amount, string method, decimal given, string? reference)
+        => RecordPaymentCore(invoiceId, employeeId, amount, "Thu", method, null, given, reference);
+
+    /// <summary>
+    /// Thực hiện phần kiểm tra và lưu khoản thanh toán theo dữ liệu chứng từ hiện tại.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>KiemTraNhanVien</c>, <c>DAL_HOADON.LockInvoice</c>, <c>DAL_HOADON.KiemTraHoaDonLegacy</c>.</remarks>
+    /// <param name="invoiceId">Giá trị mã hóa đơn dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="employeeId">Giá trị nhân viên mã dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="amount">Giá trị số tiền dùng khi thực hiện thao tác; kiểu decimal.</param>
+    /// <param name="type">Giá trị kiểu dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="method">Giá trị phương thức dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="reason">Giá trị lý do dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <param name="given">Giá trị đã giao dùng khi thực hiện thao tác; kiểu decimal?.</param>
+    /// <param name="reference">Giá trị tham khảo dùng khi thực hiện thao tác; kiểu string?.</param>
+    /// <returns>Chuỗi kết quả của thao tác bản ghi thanh toán xử lý lõi.</returns>
+    private string RecordPaymentCore(string invoiceId, string employeeId, decimal amount, string type, string method, string? reason, decimal? given, string? reference)
     {
         return ThucHien((db, tx) =>
         {
             KiemTraNhanVien(db, tx, employeeId);
             // Khóa hóa đơn trước khi tính thu ròng để hai giao dịch không cùng dùng một số tiền còn có thể thu/hoàn.
             var invoice = DAL_HOADON.LockInvoice(db, tx, invoiceId);
+            if (given is null) DAL_HOADON.KiemTraHoaDonLegacy(invoice);
+            else if (invoice.PhienBanQuyTrinh != 2) throw new InvalidOperationException("Cần hóa đơn quy trình 2.");
             if (invoice.TrangThai != "Đã xác nhận")
             {
                 throw new InvalidOperationException("Xác nhận hóa đơn trước khi thu hoặc hoàn tiền.");
@@ -179,9 +211,9 @@ public sealed class DAL_THANHTOAN : dbconnect
 
             var paymentId = TaoMa(db, tx, "THANH_TOAN", "MaTT");
             db.Execute("""
-            INSERT dbo.THANH_TOAN(MaTT,MaHD,MaNV,NgayThanhToan,SoTien,LoaiGiaoDich,PhuongThuc,LyDo,TrangThai)
-            VALUES(@paymentId,@invoiceId,@employeeId,SYSDATETIME(),@amount,@type,@method,@reason,N'Đã xác nhận')
-            """, new { paymentId, invoiceId, employeeId, amount, type, method = method.Trim(), reason = reason?.Trim() }, tx);
+            INSERT dbo.THANH_TOAN(MaTT,MaHD,MaNV,NgayThanhToan,SoTien,LoaiGiaoDich,PhuongThuc,LyDo,TrangThai,SoTienKhachDua,TienThua,MaThamChieu)
+            VALUES(@paymentId,@invoiceId,@employeeId,SYSDATETIME(),@amount,@type,@method,@reason,N'Đã xác nhận',@given,@change,@reference)
+            """, new { paymentId, invoiceId, employeeId, amount, type, method = method.Trim(), reason = reason?.Trim(), given, change = given - amount, reference }, tx);
             return paymentId;
         });
     }

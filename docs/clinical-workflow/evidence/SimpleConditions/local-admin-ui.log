@@ -1,0 +1,6 @@
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\AdminQuyenChecks\Program.cs(67,13): warning CS8604: Possible null reference argument for parameter 'cnn' in 'int SqlMapper.Execute(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\AdminQuyenChecks\AdminQuyenChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\AdminQuyenChecks\Program.cs(136,16): warning CS8604: Possible null reference argument for parameter 'cnn' in 'int SqlMapper.ExecuteScalar<int>(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\AdminQuyenChecks\AdminQuyenChecks.csproj]
+PASS: Đăng nhập Admin thật bằng mật khẩu seed
+PASS: Admin mở toàn bộ 26 mục trang chủ
+PASS: Admin truy cập bàn giao từ màn hình Đơn thuốc
+RESULT: 3 passed, 0 failed

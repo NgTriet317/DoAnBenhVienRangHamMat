@@ -10,15 +10,45 @@ namespace ET
     [Table("LICH_LAM_VIEC")]
     public class ET_LICHLAMVIEC
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaLLV, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maLLV = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaNV, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maNV = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaCa, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maCa = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgayLam, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime ngayLam;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaPhong, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maPhong;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThaiHienDien, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThaiHienDien = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GioVao, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime? gioVao;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GioRa, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime? gioRa;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GhiChu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? ghiChu;
 
         /// <summary>

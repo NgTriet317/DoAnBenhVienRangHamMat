@@ -1,0 +1,4 @@
+Changed database context to 'master'.
+MatchedTables Result
+------------- ----------------------------------------------------------------------------
+           52 PASS: COPY_ONLY CHECKSUM / VERIFYONLY / RESTORE / CHECKDB / all table hashes

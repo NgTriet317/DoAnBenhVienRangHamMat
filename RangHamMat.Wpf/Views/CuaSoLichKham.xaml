@@ -16,8 +16,10 @@
       <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
     <StackPanel Margin="0,0,0,16">
+      <!-- Thông tin hiển thị EditorTitle — Đặt lịch khám qua điện thoại. -->
       <TextBlock x:Name="EditorTitle" Text="Đặt lịch khám qua điện thoại" Style="{StaticResource HospitalHeading}"/>
       <TextBlock Text="Ghi nhận người đặt hẹn, thời gian, bác sĩ và phòng khám. Chỉ tiếp nhận khi bệnh nhân đến bệnh viện." Style="{StaticResource HospitalMuted}"/>
+      <!-- Thông tin hiển thị PatientPhone. -->
       <TextBlock x:Name="PatientPhone" Foreground="{StaticResource AccentDark}" Margin="0,8,0,0"/>
     </StackPanel>
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -37,6 +39,7 @@
             <TextBlock Text="Bệnh nhân" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Mã bệnh nhân (LICH_KHAM.MaBN): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
             <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <!-- Trường lựa chọn PatientPicker. Chuyển sự kiện đến Schedule_Changed trong code-behind. Kiểm tra đầu vào theo metadata LICH_KHAM.MaBN. -->
              <ComboBox x:Name="PatientPicker" Tag="DB:LICH_KHAM.MaBN" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Schedule_Changed"/>
             </ContentControl>
           </StackPanel>
@@ -44,6 +47,7 @@
             <TextBlock Text="Bác sĩ" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Mã bác sĩ, liên kết danh mục nhân viên (LICH_KHAM.MaBS): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
             <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <!-- Trường lựa chọn DoctorPicker. Chuyển sự kiện đến Schedule_Changed trong code-behind. Kiểm tra đầu vào theo metadata LICH_KHAM.MaBS. -->
              <ComboBox x:Name="DoctorPicker" Tag="DB:LICH_KHAM.MaBS" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Schedule_Changed"/>
             </ContentControl>
           </StackPanel>
@@ -51,6 +55,7 @@
             <TextBlock Text="Ca làm" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Mã ca làm việc (LICH_KHAM.MaCa): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
             <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <!-- Trường lựa chọn ShiftPicker. Chuyển sự kiện đến Schedule_Changed trong code-behind. Kiểm tra đầu vào theo metadata LICH_KHAM.MaCa. -->
              <ComboBox x:Name="ShiftPicker" Tag="DB:LICH_KHAM.MaCa" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Schedule_Changed"/>
             </ContentControl>
           </StackPanel>
@@ -58,6 +63,7 @@
             <TextBlock Text="Phòng" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Mã phòng (LICH_KHAM.MaPhong): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
             <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <!-- Trường lựa chọn RoomPicker. Chuyển sự kiện đến Schedule_Changed trong code-behind. Kiểm tra đầu vào theo metadata LICH_KHAM.MaPhong. -->
              <ComboBox x:Name="RoomPicker" Tag="DB:LICH_KHAM.MaPhong" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Schedule_Changed"/>
             </ContentControl>
           </StackPanel>
@@ -65,6 +71,7 @@
             <TextBlock Text="Dịch vụ dự kiến" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Mã dịch vụ (LICH_KHAM.MaDV): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
             <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <!-- Trường lựa chọn ComboBox. Chuyển sự kiện đến Schedule_Changed trong code-behind. Kiểm tra đầu vào theo metadata LICH_KHAM.MaDV. -->
              <ComboBox Tag="DB:LICH_KHAM.MaDV" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Schedule_Changed"/>
             </ContentControl>
           </StackPanel>
@@ -77,10 +84,12 @@
               </Grid.ColumnDefinitions>
               <!-- Trường Ngày/giờ hẹn khám (LICH_KHAM.NgayGioKham): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
               <ContentControl Style="{StaticResource TruongNhapLieu}">
+               <!-- Trường lựa chọn AppointmentDate. Chuyển sự kiện đến Schedule_Changed trong code-behind. Kiểm tra đầu vào theo metadata LICH_KHAM.NgayGioKham. -->
                <DatePicker x:Name="AppointmentDate" Tag="DB:LICH_KHAM.NgayGioKham" SelectedDateChanged="Schedule_Changed"/>
               </ContentControl>
               <!-- Ô giờ LICH_KHAM.NgayGioKham: nhập HH:mm, ghép với ngày của trường DB cùng tên trong BieuMauHoSo.Read trước khi lưu. -->
               <ContentControl Style="{StaticResource TruongNhapLieu}" Margin="8,0,0,0" Grid.Column="1">
+               <!-- Ô nhập StartTime. Chuyển sự kiện đến Schedule_Changed trong code-behind. -->
                <TextBox x:Name="StartTime" Tag="Time:LICH_KHAM.NgayGioKham" TextChanged="Schedule_Changed"/>
               </ContentControl>
             </Grid>
@@ -89,6 +98,7 @@
             <TextBlock Text="Thời lượng dự kiến (phút)" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Thời lượng dự kiến của lịch hẹn tính bằng phút (LICH_KHAM.ThoiLuongDuKien): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
             <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <!-- Ô nhập Duration — 30. Chuyển sự kiện đến Schedule_Changed trong code-behind. Kiểm tra đầu vào theo metadata LICH_KHAM.ThoiLuongDuKien. -->
              <TextBox x:Name="Duration" Tag="DB:LICH_KHAM.ThoiLuongDuKien" Text="30" TextChanged="Schedule_Changed"/>
             </ContentControl>
           </StackPanel>
@@ -96,6 +106,7 @@
             <TextBlock Text="Ưu tiên" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Mức ưu tiên lịch hẹn (LICH_KHAM.UuTien): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
             <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <!-- Ô nhập Priority — 0. Kiểm tra đầu vào theo metadata LICH_KHAM.UuTien. -->
              <TextBox x:Name="Priority" Tag="DB:LICH_KHAM.UuTien" Text="0"/>
             </ContentControl>
           </StackPanel>
@@ -110,6 +121,7 @@
             <TextBlock Text="Lý do thay đổi" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Lý do thay đổi lịch hẹn (LICH_KHAM.LyDoThayDoi): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
             <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <!-- Ô nhập ChangeReason. Kiểm tra đầu vào theo metadata LICH_KHAM.LyDoThayDoi. -->
              <TextBox x:Name="ChangeReason" Tag="DB:LICH_KHAM.LyDoThayDoi" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"/>
             </ContentControl>
           </StackPanel>
@@ -122,14 +134,19 @@
             <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}"/>
             <!-- Trường Ghi chú bổ sung (LICH_KHAM.GhiChu): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
             <ContentControl Style="{StaticResource TruongNhapLieu}">
+             <!-- Ô nhập Notes. Kiểm tra đầu vào theo metadata LICH_KHAM.GhiChu. -->
              <TextBox x:Name="Notes" Tag="DB:LICH_KHAM.GhiChu" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"/>
             </ContentControl>
           </StackPanel>
         </ItemsControl>
+        <!-- Vùng bố cục ConflictPanel. -->
         <Border x:Name="ConflictPanel" Visibility="Collapsed" Background="#FFF8EB" Padding="12" Margin="0,0,16,16">
           <StackPanel>
+            <!-- Thông tin hiển thị ConflictText. -->
             <TextBlock x:Name="ConflictText" Foreground="#854D0E" TextWrapping="Wrap"/>
+            <!-- Thành phần OverlapAccepted — Đã kiểm tra và vẫn xếp lịch chồng giờ. -->
             <CheckBox x:Name="OverlapAccepted" Content="Đã kiểm tra và vẫn xếp lịch chồng giờ" Margin="0,10,0,6"/>
+            <!-- Ô nhập OverlapReason. -->
             <TextBox x:Name="OverlapReason" ToolTip="Lý do xếp lịch chồng giờ"/>
           </StackPanel>
         </Border>
@@ -143,6 +160,7 @@
           <!-- Nút điều hướng HoSoSave: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
           <Button x:Name="SaveButton" Content="Lưu lịch hẹn" Tag="HoSoSave" Style="{StaticResource HospitalPrimary}"/>
         </WrapPanel>
+        <!-- Thông tin hiển thị FormError. -->
         <TextBlock x:Name="FormError" Foreground="#B42318" TextWrapping="Wrap"/>
       </DockPanel>
     </Border>

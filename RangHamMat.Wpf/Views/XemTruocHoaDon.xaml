@@ -10,6 +10,7 @@
     <local:InvoiceDocument x:Name="InvoiceDocument" Width="712"/>
    </Border>
   </ScrollViewer>
+  <!-- Thông tin hiển thị PrintStatus — Chọn máy in hoặc Microsoft Print to PDF. Hóa đơn nhiều dòng tự chia trang.. -->
   <TextBlock x:Name="PrintStatus" Grid.Row="2" Text="Chọn máy in hoặc Microsoft Print to PDF. Hóa đơn nhiều dòng tự chia trang." TextWrapping="Wrap" Margin="16,10" FontSize="12"/>
  </Grid>
 </Window>

@@ -1,0 +1,12 @@
+PASS: bốn project, Views XAML/code-behind, SQL53 bảng/HospitalWorkflow3/PrescriptionFlow1 và cấu hình.
+SchemaVersion       TableCount
+------------------- -----------
+ClinicalWorkflow v2          53
+MaHD                                               MaLS                                               SoTienPhaiThu        DaThuRong                                ConPhaiTra
+-------------------------------------------------- -------------------------------------------------- -------------------- ---------------------------------------- ----------------------------------------
+HD004                                              LS004                                                         100000.00                                      .00                                100000.00
+HD005                                              LS005                                                         150000.00                                      .00                                150000.00
+PrescriptionFlow  DrugGroups  Medicines
+----------------- ----------- -----------
+PrescriptionFlow1          20          62
+PASS: HospitalWorkflow3/PrescriptionFlow1, schema53 bảng và ràng buộc đúng; kiểm tra SQL chỉ đọc.

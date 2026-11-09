@@ -1,0 +1,4 @@
+Changed database context to 'master'.
+Changed database context to 'RHM_ClinicalWorkflow_Test_P09Payments_P12Fresh_20261027'.
+Msg 50001, Level 16, State 1, Server DESKTOP-C9VCE8A, Line 12
+Database đã có bảng. Hãy chọn database trống; script không xóa dữ liệu cũ.

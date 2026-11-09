@@ -1,17 +1,21 @@
+<!-- Giao diện ChamCong: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl x:Class="RangHamMat.Views.ChamCong"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <UserControl.Resources>
+        <!-- Tài nguyên CCButton (Style) áp dụng cho Button. -->
         <Style x:Key="CCButton" TargetType="Button">
             <Setter Property="Background" Value="#244D57"/><Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="SemiBold"/><Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="15,10"/><Setter Property="Margin" Value="0,0,9,0"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
+        <!-- Tài nguyên CCInput (Style) áp dụng cho TextBox. -->
         <Style x:Key="CCInput" TargetType="TextBox">
             <Setter Property="Height" Value="36"/><Setter Property="Padding" Value="10,6"/>
             <Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#D8E4E2"/>
         </Style>
+        <!-- Tài nguyên CCLabel (Style) áp dụng cho TextBlock. -->
         <Style x:Key="CCLabel" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#5C706F"/><Setter Property="FontSize" Value="12"/>
             <Setter Property="Margin" Value="0,0,0,6"/>
@@ -34,6 +38,7 @@
                         <TextBlock Text="Ca làm thực tế • BQL xác nhận • Lưu vết trước khi lên lương" Foreground="#B5CAC9" FontSize="13"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Nút thao tác btnTaiLai — ↻ Tải lại. Chuyển sự kiện đến btnTaiLai_Click trong code-behind. -->
                         <Button x:Name="btnTaiLai" Content="↻  Tải lại" Style="{StaticResource CCButton}" Click="btnTaiLai_Click"/>
                     </StackPanel>
                 </Grid>
@@ -46,13 +51,17 @@
                         <ColumnDefinition Width="14"/><ColumnDefinition Width="164"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Kỳ chấm công" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,12,0"/>
+                    <!-- Trường lựa chọn cboThang. Chuyển sự kiện đến cboThang_SelectionChanged trong code-behind. -->
                     <ComboBox x:Name="cboThang" Grid.Column="1" Height="35" SelectionChanged="cboThang_SelectionChanged">
                         <ComboBoxItem Content="01"/><ComboBoxItem Content="02"/><ComboBoxItem Content="03"/><ComboBoxItem Content="04"/>
                         <ComboBoxItem Content="05"/><ComboBoxItem Content="06"/><ComboBoxItem Content="07"/><ComboBoxItem Content="08"/>
                         <ComboBoxItem Content="09"/><ComboBoxItem Content="10"/><ComboBoxItem Content="11"/><ComboBoxItem Content="12"/>
                     </ComboBox>
+                    <!-- Ô nhập txtNam. Chuyển sự kiện đến txtNam_TextChanged trong code-behind. -->
                     <TextBox x:Name="txtNam" Grid.Column="3" Style="{StaticResource CCInput}" TextChanged="txtNam_TextChanged"/>
+                    <!-- Ô nhập txtTimKiem. Chuyển sự kiện đến txtTimKiem_TextChanged trong code-behind. -->
                     <TextBox x:Name="txtTimKiem" Grid.Column="5" Style="{StaticResource CCInput}" TextChanged="txtTimKiem_TextChanged" ToolTip="Tìm mã hoặc tên nhân viên"/>
+                    <!-- Trường lựa chọn cboTrangThai. Chuyển sự kiện đến cboTrangThai_SelectionChanged trong code-behind. -->
                     <ComboBox x:Name="cboTrangThai" Grid.Column="7" Height="35" SelectionChanged="cboTrangThai_SelectionChanged" SelectedIndex="0">
                         <ComboBoxItem Content="Tất cả trạng thái"/><ComboBoxItem Content="Chờ đối soát"/>
                         <ComboBoxItem Content="Đã xác nhận"/><ComboBoxItem Content="Không hợp lệ"/>
@@ -90,6 +99,7 @@
                                 <DataGridTextColumn Header="Trạng thái" Binding="{Binding TrangThai}" Width="130"/>
                             </DataGrid.Columns>
                         </DataGrid>
+                        <!-- Thông tin hiển thị lblSoDong — 0 ca trong danh sách. -->
                         <TextBlock Grid.Row="2" x:Name="lblSoDong" Text="0 ca trong danh sách" Foreground="#627673" FontSize="12" Margin="18,12"/>
                     </Grid>
                 </Border>
@@ -97,34 +107,46 @@
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel>
                             <TextBlock Text="PHIẾU ĐỐI SOÁT CA" FontSize="11" FontWeight="Bold" Foreground="#A77A3A"/>
+                            <!-- Thông tin hiển thị lblNhanVien — Chọn một ca làm việc. -->
                             <TextBlock x:Name="lblNhanVien" Text="Chọn một ca làm việc" FontSize="18" FontWeight="Bold" Margin="0,8,0,5" TextWrapping="Wrap" Foreground="#18383B"/>
+                            <!-- Thông tin hiển thị lblThongTinCa — —. -->
                             <TextBlock x:Name="lblThongTinCa" Text="—" Margin="0,0,0,15" Foreground="#6E7E79" TextWrapping="Wrap"/>
                             <Border Background="#F1F1E8" Padding="13" CornerRadius="9" Margin="0,0,0,15">
                                 <StackPanel><TextBlock Text="Giờ ca theo CA_LAM" Foreground="#667B77" FontSize="11"/>
+                                    <!-- Thông tin hiển thị lblKhungGio — —. -->
                                     <TextBlock x:Name="lblKhungGio" Text="—" FontSize="17" FontWeight="SemiBold" Foreground="#22484B" Margin="0,5,0,0"/></StackPanel>
                             </Border>
                             <TextBlock Text="Kết quả đối soát" Style="{StaticResource CCLabel}"/>
+                            <!-- Trường lựa chọn cboKetQua. Chuyển sự kiện đến cboKetQua_SelectionChanged trong code-behind. -->
                             <ComboBox x:Name="cboKetQua" Height="37" Margin="0,0,0,12" SelectedIndex="0" SelectionChanged="cboKetQua_SelectionChanged">
                                 <ComboBoxItem Content="Hoàn tất"/><ComboBoxItem Content="Vắng"/><ComboBoxItem Content="Không hợp lệ"/>
                             </ComboBox>
                             <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <StackPanel><TextBlock Text="Giờ vào (HH:mm)" Style="{StaticResource CCLabel}"/>
+                                    <!-- Ô nhập txtGioVao. -->
                                     <TextBox x:Name="txtGioVao" Style="{StaticResource CCInput}"/></StackPanel>
                                 <StackPanel Grid.Column="2"><TextBlock Text="Giờ ra (HH:mm)" Style="{StaticResource CCLabel}"/>
+                                    <!-- Ô nhập txtGioRa. -->
                                     <TextBox x:Name="txtGioRa" Style="{StaticResource CCInput}"/></StackPanel>
                             </Grid>
                             <TextBlock Text="Ghi chú / lý do điều chỉnh" Style="{StaticResource CCLabel}"/>
+                            <!-- Ô nhập txtLyDo. -->
                             <TextBox x:Name="txtLyDo" MaxLength="500" MinHeight="64" MaxHeight="105" Padding="9" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderBrush="#D8E4E2" Margin="0,0,0,13"/>
+                            <!-- Thông tin hiển thị lblLichSu. -->
                             <TextBlock x:Name="lblLichSu" TextWrapping="Wrap" Foreground="#4B7068" FontSize="11" Margin="0,0,0,10"/>
+                            <!-- Thông tin hiển thị lblCanhBao. -->
                             <TextBlock x:Name="lblCanhBao" TextWrapping="Wrap" Foreground="#97552F" FontSize="12" Margin="0,0,0,12"/>
+                            <!-- Nút thao tác btnDuyetMot — ✓ Lưu và duyệt ca. Chuyển sự kiện đến btnDuyetMot_Click trong code-behind. -->
                             <Button x:Name="btnDuyetMot" Content="✓  Lưu và duyệt ca" Click="btnDuyetMot_Click" Style="{StaticResource CCButton}" Margin="0,0,0,10"/>
+                            <!-- Nút thao tác btnDuyetNhieu — ✓✓ Duyệt các ca đã chọn. Chuyển sự kiện đến btnDuyetNhieu_Click trong code-behind. -->
                             <Button x:Name="btnDuyetNhieu" Content="✓✓  Duyệt các ca đã chọn" Click="btnDuyetNhieu_Click" Style="{StaticResource CCButton}" Margin="0,0,0,10" Background="#A4753D"/>
                             <TextBlock Text="Duyệt nhiều: chỉ dùng giờ đã ghi nhận trên từng lịch; nếu một ca sai thì hủy toàn bộ lượt duyệt." TextWrapping="Wrap" Foreground="#718078" FontSize="11"/>
                         </StackPanel>
                     </ScrollViewer>
                 </Border>
             </Grid>
+            <!-- Thông tin hiển thị lblThongBao — BQL duyệt công; chưa tự động tính lại hoặc chốt bảng lương.. -->
             <TextBlock Grid.Row="4" x:Name="lblThongBao" Margin="24,12,6,0" Foreground="#506765" TextWrapping="Wrap" FontSize="12"
                 Text="BQL duyệt công; chưa tự động tính lại hoặc chốt bảng lương."/>
         </Grid>

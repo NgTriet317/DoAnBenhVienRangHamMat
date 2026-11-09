@@ -11,6 +11,7 @@
       <TextBlock Text="Dịch vụ và danh mục khám · Thêm mới" Style="{StaticResource Title}" />
       <TextBlock Text="Điền lần lượt từng nhóm thông tin. Dấu * là trường bắt buộc." Style="{StaticResource Subtitle}" />
     </StackPanel>
+    <!-- Thành phần EditorTabs. -->
     <TabControl x:Name="EditorTabs" Grid.Row="1">
       <!-- Nhóm Dịch vụ: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
       <TabItem Header="Dịch vụ" Tag="Table:DICH_VU" Visibility="Collapsed">

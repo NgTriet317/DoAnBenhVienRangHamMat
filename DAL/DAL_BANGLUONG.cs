@@ -18,6 +18,13 @@ namespace DAL
             return Convert.ToInt32(lenh.ExecuteScalar()) == 1;
         }
 
+        /// <summary>
+        /// Đọc phiếu lương theo tháng/năm để hiển thị và đối soát.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>suDungSchemaV9</c>, <c>CreateConnection</c>, <c>ketNoi.CreateCommand</c>, <c>lenh.Parameters.Add</c>.</remarks>
+        /// <param name="tuNgay">Giá trị từ ngày dùng khi thực hiện thao tác; kiểu DateTime.</param>
+        /// <param name="denNgay">Giá trị đến ngày dùng khi thực hiện thao tác; kiểu DateTime.</param>
+        /// <returns>Kết quả kiểu DataTable dùng cho bước xử lý tiếp theo.</returns>
         public DataTable layBangLuongTheoKy(DateTime tuNgay, DateTime denNgay)
         {
             bool laV9 = suDungSchemaV9();
@@ -29,11 +36,12 @@ namespace DAL
                     b.CongTruDiTre,b.CongThucTe,b.SoCaTinh,b.LuongCoBan,
                     b.LuongTheoCa,b.TienHoaHong,b.TienPhuCap,b.TienTangCa,
                     b.TienBaoHiem,b.TienKhauTruKhac,b.TongLuong,b.TrangThai,
-                    b.NgayChot,b.GhiChu
+                    b.NgayChot,b.GhiChu,b.PhienBanTinhLuong
                   FROM dbo.BANG_LUONG b
                   JOIN dbo.NHAN_VIEN n ON n.MaNV=b.MaNV
                   LEFT JOIN dbo.CHUC_VU cv ON cv.MaChucVu=n.MaChucVu
-                  WHERE b.TuNgay=@TuNgay AND b.DenNgay=@DenNgay
+                  WHERE (b.TuNgay=@TuNgay AND b.DenNgay=@DenNgay)
+                     OR (b.PhienBanTinhLuong=8 AND b.TuNgay<=@DenNgay AND b.DenNgay>=@TuNgay)
                   ORDER BY n.HoTen,b.MaNV" : @"SELECT b.MaBL,b.MaNV,n.HoTen,
                     ISNULL(cv.TenChucVu,N'Chưa phân loại') AS TenChucVu,
                     b.MaCSL,b.TuNgay,b.DenNgay,CAST(b.SoCaDinhMuc AS DECIMAL(7,2)) AS CongChuan,
@@ -44,7 +52,7 @@ namespace DAL
                     CAST(0 AS DECIMAL(18,2)) AS TienTangCa,
                     CAST(0 AS DECIMAL(18,2)) AS TienBaoHiem,
                     CAST(0 AS DECIMAL(18,2)) AS TienKhauTruKhac,
-                    b.TongLuong,b.TrangThai,b.NgayChot,b.GhiChu
+                    b.TongLuong,b.TrangThai,b.NgayChot,b.GhiChu,CAST(8 AS INT) AS PhienBanTinhLuong
                   FROM dbo.BANG_LUONG b JOIN dbo.NHAN_VIEN n ON n.MaNV=b.MaNV
                   LEFT JOIN dbo.CHUC_VU cv ON cv.MaChucVu=n.MaChucVu
                   WHERE b.TuNgay<=@DenNgay AND b.DenNgay>=@TuNgay
@@ -58,6 +66,13 @@ namespace DAL
             return ketQua;
         }
 
+        /// <summary>
+        /// Đếm các ca công còn chờ xử lý trong kỳ phục vụ đối soát lương.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>suDungSchemaV9</c>, <c>CreateConnection</c>, <c>ketNoi.CreateCommand</c>, <c>lenh.Parameters.Add</c>.</remarks>
+        /// <param name="tuNgay">Giá trị từ ngày dùng khi thực hiện thao tác; kiểu DateTime.</param>
+        /// <param name="denNgay">Giá trị đến ngày dùng khi thực hiện thao tác; kiểu DateTime.</param>
+        /// <returns>Giá trị số được đọc, đếm hoặc tính toán trong hàm.</returns>
         public int demCongChoDoiSoat(DateTime tuNgay, DateTime denNgay)
         {
             if (!suDungSchemaV9()) return -1; // Schema cũ chưa có CHAM_CONG.
@@ -154,6 +169,13 @@ namespace DAL
             return ketQua;
         }
 
+        /// <summary>
+        /// Gọi nghiệp vụ tính lương cho kỳ được chỉ định; giữ phiếu đã chốt theo quy tắc SQL và đối soát đầu vào.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>CreateConnection</c>, <c>ketNoi.CreateCommand</c>, <c>lenh.Parameters.Add</c>, <c>ketNoi.Open</c>.</remarks>
+        /// <param name="tuNgay">Giá trị từ ngày dùng khi thực hiện thao tác; kiểu DateTime.</param>
+        /// <param name="denNgay">Giá trị đến ngày dùng khi thực hiện thao tác; kiểu DateTime.</param>
+        /// <param name="maNVQuanLy">Mã nhân viên quản lý xác định đối tượng cần xử lý.</param>
         public void tinhLuongTheoKy(DateTime tuNgay, DateTime denNgay, string maNVQuanLy)
         {
             using var ketNoi = CreateConnection();
@@ -168,6 +190,15 @@ namespace DAL
             lenh.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// Chốt một phiếu lương sau khi đối chiếu số công, tổng tiền và hoa hồng mà người dùng đã xem.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>CreateConnection</c>, <c>ketNoi.CreateCommand</c>, <c>lenh.Parameters.Add</c>, <c>ketNoi.Open</c>.</remarks>
+        /// <param name="maBL">Mã bảng lương xác định đối tượng cần xử lý.</param>
+        /// <param name="maNVQuanLy">Mã nhân viên quản lý xác định đối tượng cần xử lý.</param>
+        /// <param name="congDaXem">Giá trị công đã xem dùng khi thực hiện thao tác; kiểu decimal.</param>
+        /// <param name="tongDaXem">Giá trị tổng đã xem dùng khi thực hiện thao tác; kiểu decimal.</param>
+        /// <param name="hoaHongDaXem">Giá trị hóa hồng đã xem dùng khi thực hiện thao tác; kiểu decimal.</param>
         public void chotLuongNhanVien(string maBL, string maNVQuanLy, decimal congDaXem,
             decimal tongDaXem, decimal hoaHongDaXem)
         {

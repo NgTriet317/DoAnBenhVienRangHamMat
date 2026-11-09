@@ -8,20 +8,76 @@ namespace RangHamMat.Controls;
 public sealed record ChuyenDeBaoCao(string Ma, string Nhom, string Ten, string MoTa,
     string[] ChiSo, string[] DonVi, string Nguon, string QuyTac, bool DaKetNoi = true, bool TheoThoiDiem = false)
 {
+    /// <summary>
+    /// Giá trị Từ khóa tìm kiếm áp dụng cho danh sách; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string TuKhoa => BaoCaoDuLieu.BoDau(Ten + " " + Nhom);
 }
 
+/// <summary>
+/// Gói dữ liệu phát sinh báo cáo truyền giữa các bước xử lý; các thành phần được khai báo ngay trong kiểu.
+/// </summary>
+/// <param name="Ngay">Giá trị ngày dùng khi thực hiện thao tác; kiểu DateTime.</param>
+/// <param name="Mot">Giá trị một dùng khi thực hiện thao tác; kiểu decimal.</param>
+/// <param name="Hai">Giá trị hai dùng khi thực hiện thao tác; kiểu decimal.</param>
+/// <param name="Ba">Giá trị ba dùng khi thực hiện thao tác; kiểu decimal.</param>
+/// <param name="Bon">Giá trị bốn dùng khi thực hiện thao tác; kiểu decimal.</param>
+/// <param name="Nhom">Giá trị nhóm dùng khi thực hiện thao tác; kiểu string.</param>
+/// <param name="GiaTriCoCau">Giá trị giá trị cơ cấu dùng khi thực hiện thao tác; kiểu decimal.</param>
+/// <param name="ChiTiet">Giá trị chi tiết dùng khi thực hiện thao tác; kiểu ChiTietBaoCao?.</param>
 public sealed record PhatSinhBaoCao(DateTime Ngay, decimal Mot, decimal Hai, decimal Ba, decimal Bon,
     string Nhom = "", decimal GiaTriCoCau = 1, ChiTietBaoCao? ChiTiet = null);
+/// <summary>
+/// Gói dữ liệu chi tiết báo cáo truyền giữa các bước xử lý; các thành phần được khai báo ngay trong kiểu.
+/// </summary>
+/// <param name="Ma">Giá trị mã dùng khi thực hiện thao tác; kiểu string.</param>
+/// <param name="Ten">Giá trị tên dùng khi thực hiện thao tác; kiểu string.</param>
+/// <param name="PhanLoai">Giá trị phân loại dùng khi thực hiện thao tác; kiểu string.</param>
+/// <param name="DonVi">Giá trị đơn vị dùng khi thực hiện thao tác; kiểu string.</param>
+/// <param name="Ngay">Giá trị ngày dùng khi thực hiện thao tác; kiểu DateTime?.</param>
+/// <param name="DenNgay">Giá trị đến ngày dùng khi thực hiện thao tác; kiểu DateTime?.</param>
+/// <param name="Mot">Giá trị một dùng khi thực hiện thao tác; kiểu decimal?.</param>
+/// <param name="Hai">Giá trị hai dùng khi thực hiện thao tác; kiểu decimal?.</param>
+/// <param name="Ba">Giá trị ba dùng khi thực hiện thao tác; kiểu decimal?.</param>
+/// <param name="Bon">Giá trị bốn dùng khi thực hiện thao tác; kiểu decimal?.</param>
+/// <param name="TrangThai">Giá trị trạng thái dùng khi thực hiện thao tác; kiểu string.</param>
+/// <param name="GhiChu">Giá trị ghi chú dùng khi thực hiện thao tác; kiểu string.</param>
 public sealed record ChiTietBaoCao(string Ma, string Ten, string PhanLoai, string DonVi, DateTime? Ngay, DateTime? DenNgay,
     decimal? Mot, decimal? Hai, decimal? Ba, decimal? Bon, string TrangThai, string GhiChu);
+/// <summary>
+/// Gói dữ liệu dòng báo cáo truyền giữa các bước xử lý; các thành phần được khai báo ngay trong kiểu.
+/// </summary>
+/// <param name="Ky">Giá trị kỳ dùng khi thực hiện thao tác; kiểu string.</param>
+/// <param name="Mot">Giá trị một dùng khi thực hiện thao tác; kiểu decimal.</param>
+/// <param name="Hai">Giá trị hai dùng khi thực hiện thao tác; kiểu decimal.</param>
+/// <param name="Ba">Giá trị ba dùng khi thực hiện thao tác; kiểu decimal.</param>
+/// <param name="Bon">Giá trị bốn dùng khi thực hiện thao tác; kiểu decimal?.</param>
+/// <param name="TuKy">Giá trị từ kỳ dùng khi thực hiện thao tác; kiểu DateTime?.</param>
+/// <param name="DenKy">Giá trị đến kỳ dùng khi thực hiện thao tác; kiểu DateTime?.</param>
 public sealed record DongBaoCao(string Ky, decimal Mot, decimal Hai, decimal Ba, decimal? Bon, DateTime? TuKy = null, DateTime? DenKy = null);
+/// <summary>
+/// Gói dữ liệu cơ cấu báo cáo truyền giữa các bước xử lý; các thành phần được khai báo ngay trong kiểu.
+/// </summary>
+/// <param name="Ten">Giá trị tên dùng khi thực hiện thao tác; kiểu string.</param>
+/// <param name="GiaTri">Giá trị giá trị dùng khi thực hiện thao tác; kiểu decimal.</param>
+/// <param name="TiLe">Giá trị tỉ lệ dùng khi thực hiện thao tác; kiểu double.</param>
 public sealed record CoCauBaoCao(string Ten, decimal GiaTri, double TiLe);
+/// <summary>
+/// Gói dữ liệu kết quả báo cáo truyền giữa các bước xử lý; các thành phần được khai báo ngay trong kiểu.
+/// </summary>
+/// <param name="Tong">Giá trị tổng dùng khi thực hiện thao tác; kiểu DongBaoCao.</param>
+/// <param name="CacKy">Giá trị các kỳ dùng khi thực hiện thao tác; kiểu DongBaoCao[].</param>
+/// <param name="CoCau">Giá trị cơ cấu dùng khi thực hiện thao tác; kiểu CoCauBaoCao[].</param>
+/// <param name="SoPhatSinh">Giá trị số phát sinh dùng khi thực hiện thao tác; kiểu int.</param>
+/// <param name="ChiTiet">Giá trị chi tiết dùng khi thực hiện thao tác; kiểu ChiTietBaoCao[].</param>
 public sealed record KetQuaBaoCao(DongBaoCao Tong, DongBaoCao[] CacKy, CoCauBaoCao[] CoCau, int SoPhatSinh, ChiTietBaoCao[] ChiTiet);
 
 /// <summary>Đọc qua BUS hiện có. Chỉ tổng hợp trong bộ nhớ; không ghi hoặc sửa chứng từ.</summary>
 public static class BaoCaoDuLieu
 {
+    /// <summary>
+    /// Dữ liệu danh mục phục vụ lựa chọn trên giao diện.
+    /// </summary>
     public static IReadOnlyList<ChuyenDeBaoCao> DanhMuc { get; } = new ChuyenDeBaoCao[]
     {
         new("02", "Khám chữa bệnh", "Hồ sơ bệnh nhân", "Theo dõi hồ sơ mới và hoạt động tiếp nhận, khám chữa bệnh.",
@@ -80,10 +136,25 @@ public static class BaoCaoDuLieu
             "BAO_TRI_THIET_BI", "Theo NgayBatDau; chi phí chỉ tính bản đã xác nhận. Không suy ra thiết bị quá hạn từ số lần bảo trì.")
     };
 
+    /// <summary>
+    /// Chuẩn hóa chuỗi và loại dấu tiếng Việt phục vụ tìm kiếm/so khớp không phân biệt dấu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>value.Normalize</c>, <c>CharUnicodeInfo.GetUnicodeCategory</c>.</remarks>
+    /// <param name="value">Giá trị string được truyền vào để đọc, kiểm tra hoặc cập nhật trong thao tác này.</param>
+    /// <returns>Chuỗi kết quả của thao tác bỏ dấu.</returns>
     public static string BoDau(string value) => string.Concat(value.Normalize(NormalizationForm.FormD)
         .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark))
         .Replace('đ', 'd').Replace('Đ', 'D').ToLowerInvariant();
 
+    /// <summary>
+    /// Đọc báo cáo theo chuyên đề, thời gian và các bộ lọc được truyền vào; ánh xạ dữ liệu cho bước tổng hợp/hiển thị.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>DanhMuc.Any</c>, <c>rows.AddRange</c>, <c>Co</c>, <c>rows.ToArray</c>.</remarks>
+    /// <param name="ma">Mã định danh của bản ghi cần xử lý.</param>
+    /// <param name="tuNgay">Giá trị từ ngày dùng khi thực hiện thao tác; kiểu DateTime?.</param>
+    /// <param name="denNgay">Giá trị đến ngày dùng khi thực hiện thao tác; kiểu DateTime?.</param>
+    /// <param name="canhBao">Giá trị cảnh báo dùng khi thực hiện thao tác; kiểu int.</param>
+    /// <returns>Tập dữ liệu kiểu PhatSinhBaoCao[] theo điều kiện và phạm vi xử lý của hàm.</returns>
     public static PhatSinhBaoCao[] Doc(string ma, DateTime? tuNgay = null, DateTime? denNgay = null, int canhBao = 30)
     {
         if (!PhienDangNhap.IsAdmin) throw new UnauthorizedAccessException("Tài khoản hiện tại không có quyền đọc báo cáo.");
@@ -204,6 +275,12 @@ public static class BaoCaoDuLieu
         return new(Sum("Tổng kỳ", data), rows, categories.Select(r => new CoCauBaoCao(r.Ten, r.GiaTri, max == 0 ? 0 : (double)(r.GiaTri / max * 100))).ToArray(), data.Length, details);
     }
 
+    /// <summary>
+    /// Chọn các cột và nhãn chi tiết phù hợp với chuyên đề báo cáo.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Array.Empty&lt;string&gt;</c>.</remarks>
+    /// <param name="ma">Mã định danh của bản ghi cần xử lý.</param>
+    /// <returns>Tập dữ liệu kiểu string[] theo điều kiện và phạm vi xử lý của hàm.</returns>
     public static string[] CotChiTiet(string ma) => ma switch
     {
         "11" => new[]{"Mã bảng lương", "Nhân viên", "Mã nhân viên", "", "Ngày chốt", "", "Lương theo ca (VNĐ)", "Hoa hồng (VNĐ)", "Tổng lương (VNĐ)", "Số ca", "Trạng thái", "Kỳ lương"},
@@ -213,6 +290,19 @@ public static class BaoCaoDuLieu
         _ => Array.Empty<string>()
     };
 
+    /// <summary>
+    /// Dựng nội dung CSV từ dữ liệu báo cáo với định dạng và escape các ô theo quy tắc xuất file.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>value.TrimStart</c>, <c>value.Replace</c>, <c>csv.AppendLine</c>, <c>cells.Select</c>.</remarks>
+    /// <param name="report">Giá trị báo cáo dùng khi thực hiện thao tác; kiểu ChuyenDeBaoCao.</param>
+    /// <param name="data">Giá trị dữ liệu dùng khi thực hiện thao tác; kiểu KetQuaBaoCao.</param>
+    /// <param name="tu">Giá trị từ dùng khi thực hiện thao tác; kiểu DateTime.</param>
+    /// <param name="den">Giá trị đến dùng khi thực hiện thao tác; kiểu DateTime.</param>
+    /// <param name="nhom">Giá trị nhóm dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="nguoiXuat">Giá trị người xuất dùng khi thực hiện thao tác; kiểu string.</param>
+    /// <param name="lucXuat">Giá trị lúc xuất dùng khi thực hiện thao tác; kiểu DateTime.</param>
+    /// <param name="canhBao">Giá trị cảnh báo dùng khi thực hiện thao tác; kiểu int.</param>
+    /// <returns>Chuỗi kết quả của thao tác tạo CSV.</returns>
     public static string TaoCsv(ChuyenDeBaoCao report, KetQuaBaoCao data, DateTime tu, DateTime den, string nhom, string nguoiXuat, DateTime lucXuat, int canhBao = 30)
     {
         static string Cell(string value)

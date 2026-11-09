@@ -1,3 +1,4 @@
+<!-- Giao diện ChiTietLichKham: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <Window x:Class="RangHamMat.Views.ChiTietLichKham"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -5,11 +6,13 @@
         WindowStartupLocation="CenterOwner" ResizeMode="CanResize"
         Background="#F5F8FD" ShowInTaskbar="False">
     <Window.Resources>
+        <!-- Tài nguyên ChiTietNhan (Style) áp dụng cho TextBlock. -->
         <Style x:Key="ChiTietNhan" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#6B7C90"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Margin" Value="0,0,0,5"/>
         </Style>
+        <!-- Tài nguyên ChiTietGiaTri (Style) áp dụng cho TextBlock. -->
         <Style x:Key="ChiTietGiaTri" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#18385E"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -17,6 +20,7 @@
             <Setter Property="TextWrapping" Value="Wrap"/>
             <Setter Property="Margin" Value="0,0,0,19"/>
         </Style>
+        <!-- Tài nguyên ChiTietThe (Style) áp dụng cho Border. -->
         <Style x:Key="ChiTietThe" TargetType="Border">
             <Setter Property="Background" Value="White"/>
             <Setter Property="CornerRadius" Value="15"/>
@@ -102,10 +106,13 @@
         <Border Grid.Row="2" Background="White" CornerRadius="13" BorderBrush="#E0E9F4"
                 BorderThickness="1" Padding="13" Margin="0,12,0,0">
             <DockPanel LastChildFill="False">
+                <!-- Thông tin hiển thị txtGhiChuSua — Có thể chỉnh sửa lịch chưa hoàn tất.. -->
                 <TextBlock x:Name="txtGhiChuSua" DockPanel.Dock="Left" Foreground="#667D95"
                            VerticalAlignment="Center" Text="Có thể chỉnh sửa lịch chưa hoàn tất."/>
+                <!-- Nút thao tác Đóng — Đóng. Chuyển sự kiện đến btnDong_Click trong code-behind. -->
                 <Button DockPanel.Dock="Right" Content="Đóng" Width="90" Height="38"
                         Margin="10,0,0,0" Click="btnDong_Click"/>
+                <!-- Nút thao tác btnSua — Chỉnh sửa. Chuyển sự kiện đến btnSua_Click trong code-behind. -->
                 <Button x:Name="btnSua" DockPanel.Dock="Right" Content="Chỉnh sửa"
                         Width="120" Height="38" Style="{StaticResource Primary}"
                         Click="btnSua_Click"/>

@@ -1,13 +1,22 @@
+<!-- Tài nguyên giao diện BaoCaoStyles: các style/template được màn hình tham chiếu bằng khóa hoặc kiểu điều khiển. -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
  <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/HospitalStyles.xaml"/></ResourceDictionary.MergedDictionaries>
+ <!-- Tài nguyên ReportMuted (Style) áp dụng cho TextBlock. -->
  <Style x:Key="ReportMuted" TargetType="TextBlock"><Setter Property="Foreground" Value="#586D85"/><Setter Property="FontSize" Value="13"/><Setter Property="TextWrapping" Value="Wrap"/></Style>
+ <!-- Tài nguyên ReportSection (Style) áp dụng cho TextBlock. -->
  <Style x:Key="ReportSection" TargetType="TextBlock"><Setter Property="FontSize" Value="16"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#102F54"/></Style>
+ <!-- Tài nguyên ReportPanel (Style) áp dụng cho Border. -->
  <Style x:Key="ReportPanel" TargetType="Border" BasedOn="{StaticResource HospitalPanel}"><Setter Property="Padding" Value="18,16"/></Style>
+ <!-- Tài nguyên ReportAction (Style) áp dụng cho Button. -->
  <Style x:Key="ReportAction" TargetType="Button" BasedOn="{StaticResource HospitalSecondary}"><Setter Property="MinHeight" Value="40"/><Setter Property="Margin" Value="0"/></Style>
+ <!-- Tài nguyên ReportPrimary (Style) áp dụng cho Button. -->
  <Style x:Key="ReportPrimary" TargetType="Button" BasedOn="{StaticResource ReportAction}"><Setter Property="Background" Value="#2468CD"/><Setter Property="Foreground" Value="White"/><Setter Property="BorderBrush" Value="#2468CD"/></Style>
+ <!-- Tài nguyên ReportShortcut (Style) áp dụng cho Button. -->
  <Style x:Key="ReportShortcut" TargetType="Button" BasedOn="{StaticResource ReportAction}"><Setter Property="MinHeight" Value="32"/><Setter Property="Padding" Value="10,5"/><Setter Property="FontSize" Value="12"/><Setter Property="Margin" Value="0,0,6,6"/></Style>
+ <!-- Tài nguyên ReportNavItem (Style) áp dụng cho RadioButton. -->
  <Style x:Key="ReportNavItem" TargetType="RadioButton">
   <Setter Property="MinHeight" Value="40"/><Setter Property="Padding" Value="12,10"/><Setter Property="Margin" Value="0,2"/><Setter Property="Foreground" Value="#354B64"/><Setter Property="Background" Value="Transparent"/><Setter Property="Cursor" Value="Hand"/><Setter Property="FontSize" Value="13"/>
+  <!-- Vùng bố cục NavSurface. -->
   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="RadioButton"><Border x:Name="NavSurface" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="7" BorderThickness="1" BorderBrush="Transparent"><ContentPresenter VerticalAlignment="Center" RecognizesAccessKey="True"/></Border><ControlTemplate.Triggers>
    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="NavSurface" Property="Background" Value="#F0F4FA"/></Trigger>
    <Trigger Property="IsChecked" Value="True"><Setter TargetName="NavSurface" Property="Background" Value="#EAF2FF"/><Setter Property="Foreground" Value="#1D5AAC"/><Setter Property="FontWeight" Value="SemiBold"/></Trigger>
@@ -15,19 +24,25 @@
    <Trigger Property="IsEnabled" Value="False"><Setter Property="Foreground" Value="#66768A"/></Trigger>
   </ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
  </Style>
+ <!-- Tài nguyên ReportGroup (Style) áp dụng cho Expander. -->
  <Style x:Key="ReportGroup" TargetType="Expander">
   <Setter Property="Margin" Value="0,6,0,2"/>
   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Expander"><StackPanel>
    <ToggleButton IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" Padding="6,10" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0" Cursor="Hand">
+    <!-- Vùng bố cục GroupSurface. -->
     <ToggleButton.Template><ControlTemplate TargetType="ToggleButton"><Border x:Name="GroupSurface" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="1" CornerRadius="5"><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/></Grid.ColumnDefinitions><ContentPresenter/><Path x:Name="Arrow" Grid.Column="1" Data="M1,1 L5,5 L1,9" Stroke="#586D85" StrokeThickness="1.5" Width="10" Height="10" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5"/></Grid></Border><ControlTemplate.Triggers><Trigger Property="IsChecked" Value="True"><Setter TargetName="Arrow" Property="RenderTransform"><Setter.Value><RotateTransform Angle="90"/></Setter.Value></Setter></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="GroupSurface" Property="Background" Value="#F3F6FA"/></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="GroupSurface" Property="BorderBrush" Value="#2468CD"/></Trigger></ControlTemplate.Triggers></ControlTemplate></ToggleButton.Template>
     <ContentPresenter Content="{TemplateBinding Header}"/>
    </ToggleButton>
+   <!-- Thành phần GroupBody. -->
    <ContentPresenter x:Name="GroupBody" Visibility="Collapsed" Content="{TemplateBinding Content}"/>
   </StackPanel><ControlTemplate.Triggers><Trigger Property="IsExpanded" Value="True"><Setter TargetName="GroupBody" Property="Visibility" Value="Visible"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
  </Style>
+ <!-- Tài nguyên ReportNumber (Style) áp dụng cho TextBlock. -->
  <Style x:Key="ReportNumber" TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Right"/><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="Margin" Value="0"/><Setter Property="FontSize" Value="13"/></Style>
+ <!-- Tài nguyên ReportPeriod (Style) áp dụng cho TextBlock. -->
  <Style x:Key="ReportPeriod" TargetType="TextBlock" BasedOn="{StaticResource ReportNumber}"><Setter Property="HorizontalAlignment" Value="Left"/></Style>
  <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource HospitalTableHeader}"><Setter Property="MinHeight" Value="48"/><Setter Property="ContentTemplate"><Setter.Value><DataTemplate><TextBlock Text="{Binding}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap"/></DataTemplate></Setter.Value></Setter></Style>
+ <!-- Tài nguyên ReportNumberHeader (Style) áp dụng cho DataGridColumnHeader. -->
  <Style x:Key="ReportNumberHeader" TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
   <Setter Property="HorizontalContentAlignment" Value="Right"/>
   <Setter Property="ContentTemplate"><Setter.Value><DataTemplate><TextBlock Text="{Binding}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Right"/></DataTemplate></Setter.Value></Setter>

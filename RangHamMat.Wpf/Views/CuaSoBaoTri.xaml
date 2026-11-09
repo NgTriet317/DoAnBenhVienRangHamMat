@@ -1,59 +1,50 @@
+﻿<!-- Giao diện CuaSoBaoTri: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl x:Class="RangHamMat.Views.CuaSoBaoTri"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Language="vi-VN">
  <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/BaoTriStyles.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
- <Grid>
+ <Grid Background="White">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-  <StackPanel Margin="0,0,0,18"><TextBlock x:Name="txtTieuDe" Text="Thêm lần bảo trì" Style="{StaticResource HospitalHeading}"/><TextBlock Text="Chọn thiết bị và nhân viên phụ trách. Các trường có dấu * là bắt buộc." Style="{StaticResource HospitalMuted}"/></StackPanel>
-  <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+  <!-- Thông tin hiển thị txtTieuDe — Lập phiếu bảo trì. -->
+  <StackPanel Margin="0,0,0,16"><TextBlock x:Name="txtTieuDe" Text="Lập phiếu bảo trì" Style="{StaticResource HospitalHeading}"/><TextBlock Text="Lưu phiếu để tiếp tục chỉnh sửa hoặc xác nhận để khóa nội dung và chuyển sang thực hiện." Style="{StaticResource HospitalMuted}"/></StackPanel>
+  <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" SizeChanged="NoiDung_SizeChanged">
    <StackPanel Margin="0,0,12,0">
-    <TextBlock Text="Thiết bị và phụ trách" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,16"/>
-    <Grid>
-     <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="20"/><ColumnDefinition/></Grid.ColumnDefinitions>
-     <StackPanel>
-      <TextBlock Text="Thiết bị *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,16">
-       <ComboBox x:Name="cboThietBi" Tag="DB:BAO_TRI_THIET_BI.MaTB" DisplayMemberPath="Label" SelectedValuePath="Value" AutomationProperties.Name="Thiết bị"/>
-      </ContentControl>
-      <TextBlock Text="Ngày bắt đầu *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,16">
-       <DatePicker x:Name="dpBatDau" Tag="DB:BAO_TRI_THIET_BI.NgayBatDau" AutomationProperties.Name="Ngày bắt đầu"/>
-      </ContentControl>
-      <TextBlock Text="Chi phí (đồng) *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,16">
-       <TextBox x:Name="txtChiPhi" Text="0" Tag="DB:BAO_TRI_THIET_BI.ChiPhi" AutomationProperties.Name="Chi phí"/>
-      </ContentControl>
-     </StackPanel>
-     <StackPanel Grid.Column="2">
-      <TextBlock Text="Nhân viên phụ trách *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,16">
-       <ComboBox x:Name="cboNhanVien" Tag="DB:BAO_TRI_THIET_BI.MaNV" DisplayMemberPath="Label" SelectedValuePath="Value" AutomationProperties.Name="Nhân viên phụ trách"/>
-      </ContentControl>
-      <TextBlock Text="Ngày kết thúc / giờ (24 giờ)" Style="{StaticResource FieldLabel}"/>
-      <Grid Margin="0,0,0,16"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="10"/><ColumnDefinition Width="85"/></Grid.ColumnDefinitions><ContentControl Style="{StaticResource TruongNhapLieu}">
-       <DatePicker x:Name="dpKetThuc" Tag="DB:BAO_TRI_THIET_BI.NgayKetThuc" AutomationProperties.Name="Ngày kết thúc"/>
-      </ContentControl><ContentControl Style="{StaticResource TruongNhapLieu}" Grid.Column="2">
-       <TextBox x:Name="txtGioKetThuc" Text="00:00" Tag="Time:BAO_TRI_THIET_BI.NgayKetThuc" AutomationProperties.Name="Giờ kết thúc" ToolTip="Giờ kết thúc HH:mm, từ 00:00 đến 23:59."/>
-      </ContentControl></Grid>
-      <TextBlock Text="Ngày bảo trì tiếp theo" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,16">
-       <DatePicker x:Name="dpTiepTheo" Tag="DB:BAO_TRI_THIET_BI.NgayBaoTriTiepTheo" AutomationProperties.Name="Ngày bảo trì tiếp theo"/>
-      </ContentControl>
-     </StackPanel>
-    </Grid>
-    <TextBlock Text="Nội dung bảo trì *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,16">
-     <TextBox x:Name="txtNoiDung" Tag="DB:BAO_TRI_THIET_BI.NoiDung" AutomationProperties.Name="Nội dung bảo trì" AcceptsReturn="True" TextWrapping="Wrap" Height="90" VerticalScrollBarVisibility="Auto"/>
-    </ContentControl>
-    <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,16">
-     <TextBox x:Name="txtGhiChu" Tag="DB:BAO_TRI_THIET_BI.GhiChu" AutomationProperties.Name="Ghi chú" AcceptsReturn="True" TextWrapping="Wrap" Height="65" VerticalScrollBarVisibility="Auto"/>
-    </ContentControl>
-    <Grid>
-     <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="20"/><ColumnDefinition/></Grid.ColumnDefinitions>
-     <StackPanel><TextBlock Text="Trạng thái *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}">
-      <ComboBox x:Name="cboTrangThai" Tag="DB:BAO_TRI_THIET_BI.TrangThai" SelectedIndex="0" AutomationProperties.Name="Trạng thái"><ComboBoxItem Content="Nháp"/><ComboBoxItem Content="Đang thực hiện"/><ComboBoxItem Content="Hoàn thành"/><ComboBoxItem Content="Đã xác nhận"/><ComboBoxItem Content="Hủy"/></ComboBox>
-     </ContentControl></StackPanel>
-     <StackPanel Grid.Column="2"><TextBlock Text="Mã lần bảo trì" Style="{StaticResource FieldLabel}"/><TextBox Tag="DB:BAO_TRI_THIET_BI.MaBT" Text="Tự sinh khi lưu" IsReadOnly="True" Background="{StaticResource HospitalCanvas}" AutomationProperties.Name="Mã lần bảo trì"/></StackPanel>
-    </Grid>
-    <TextBlock Text="Khi hoàn thành / xác nhận, cần có ngày kết thúc. Lần đã kết thúc được giữ nguyên để tra cứu." Style="{StaticResource HospitalMuted}" Margin="0,14,0,14"/>
+    <Border Background="#EAF2FF" BorderBrush="#C6DAF5" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,18">
+     <StackPanel><TextBlock Text="THIẾT BỊ ĐÃ CHỌN" Style="{StaticResource FieldLabel}"/><TextBlock x:Name="txtTenThietBi" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock x:Name="txtSerial" Text="Chưa chọn serial thiết bị" FontSize="18" FontWeight="SemiBold" Foreground="#1D5AAC" TextWrapping="Wrap" Margin="0,6,0,0"/><TextBlock x:Name="txtPhong" Style="{StaticResource HospitalMuted}" Margin="0,6,0,0"/></StackPanel>
+    </Border>
+    <!-- Thành phần TruongThongTin. -->
+    <UniformGrid x:Name="TruongThongTin" Columns="2" Margin="0,0,-12,0">
+     <!-- Ô nhập txtMaTB. Kiểm tra đầu vào theo metadata BAO_TRI_THIET_BI.MaTB. -->
+     <StackPanel Margin="0,0,12,16"><TextBlock Text="Mã thiết bị" Style="{StaticResource FieldLabel}"/><TextBox x:Name="txtMaTB" Tag="DB:BAO_TRI_THIET_BI.MaTB" IsReadOnly="True" AutomationProperties.Name="Mã thiết bị cố định"/></StackPanel>
+     <StackPanel Margin="0,0,12,16"><TextBlock Text="Mã phiếu bảo trì" Style="{StaticResource FieldLabel}"/><TextBox Tag="DB:BAO_TRI_THIET_BI.MaBT" Text="Tự sinh khi lưu" IsReadOnly="True" AutomationProperties.Name="Mã phiếu bảo trì"/></StackPanel>
+    </UniformGrid>
+    <!-- Vùng bố cục TruongNhap. -->
+    <StackPanel x:Name="TruongNhap">
+     <!-- Thành phần TruongKeHoach. -->
+     <UniformGrid x:Name="TruongKeHoach" Columns="2" Margin="0,0,-12,0">
+      <!-- Trường lựa chọn cboNhanVien. Kiểm tra đầu vào theo metadata BAO_TRI_THIET_BI.MaNV. -->
+      <StackPanel Margin="0,0,12,16"><TextBlock Text="Nhân viên phụ trách *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="cboNhanVien" Tag="DB:BAO_TRI_THIET_BI.MaNV" DisplayMemberPath="Label" SelectedValuePath="Value" AutomationProperties.Name="Nhân viên phụ trách"/></ContentControl></StackPanel>
+      <!-- Trường lựa chọn dpBatDau. Kiểm tra đầu vào theo metadata BAO_TRI_THIET_BI.NgayBatDau. -->
+      <StackPanel Margin="0,0,12,16"><TextBlock Text="Ngày bắt đầu dự kiến *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><DatePicker x:Name="dpBatDau" Tag="DB:BAO_TRI_THIET_BI.NgayBatDau" AutomationProperties.Name="Ngày bắt đầu dự kiến"/></ContentControl></StackPanel>
+      <!-- Ô nhập txtChiPhi — 0. Kiểm tra đầu vào theo metadata BAO_TRI_THIET_BI.ChiPhi. -->
+      <StackPanel Margin="0,0,12,16"><TextBlock Text="Chi phí (đồng) *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="txtChiPhi" Text="0" Tag="DB:BAO_TRI_THIET_BI.ChiPhi" AutomationProperties.Name="Chi phí"/></ContentControl></StackPanel>
+      <!-- Trường lựa chọn dpTiepTheo. Kiểm tra đầu vào theo metadata BAO_TRI_THIET_BI.NgayBaoTriTiepTheo. -->
+      <StackPanel Margin="0,0,12,16"><TextBlock Text="Ngày bảo trì tiếp theo" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><DatePicker x:Name="dpTiepTheo" Tag="DB:BAO_TRI_THIET_BI.NgayBaoTriTiepTheo" AutomationProperties.Name="Ngày bảo trì tiếp theo"/></ContentControl></StackPanel>
+     </UniformGrid>
+     <!-- Ô nhập txtNoiDung. Kiểm tra đầu vào theo metadata BAO_TRI_THIET_BI.NoiDung. -->
+     <TextBlock Text="Nội dung bảo trì *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,16"><TextBox x:Name="txtNoiDung" Tag="DB:BAO_TRI_THIET_BI.NoiDung" AutomationProperties.Name="Nội dung bảo trì" AcceptsReturn="True" TextWrapping="Wrap" Height="90" VerticalScrollBarVisibility="Auto"/></ContentControl>
+     <!-- Ô nhập txtGhiChu. Kiểm tra đầu vào theo metadata BAO_TRI_THIET_BI.GhiChu. -->
+     <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,16"><TextBox x:Name="txtGhiChu" Tag="DB:BAO_TRI_THIET_BI.GhiChu" AutomationProperties.Name="Ghi chú" AcceptsReturn="True" TextWrapping="Wrap" Height="65" VerticalScrollBarVisibility="Auto"/></ContentControl>
+    </StackPanel>
+    <!-- Ô nhập txtTrangThai — Chưa xác nhận. Kiểm tra đầu vào theo metadata BAO_TRI_THIET_BI.TrangThai. -->
+    <TextBlock Text="Trạng thái phiếu" Style="{StaticResource FieldLabel}"/><TextBox x:Name="txtTrangThai" Tag="DB:BAO_TRI_THIET_BI.TrangThai" Text="Chưa xác nhận" IsReadOnly="True" AutomationProperties.Name="Trạng thái phiếu bảo trì"/>
+    <!-- Thông tin hiển thị txtHuongDan — Sau xác nhận, nội dung phiếu được giữ nguyên. Thời điểm thực hiện và kết thúc được ghi tự động khi thao tác ở Lịch sử bảo trì.. -->
+    <TextBlock x:Name="txtHuongDan" Text="Sau xác nhận, nội dung phiếu được giữ nguyên. Thời điểm thực hiện và kết thúc được ghi tự động khi thao tác ở Lịch sử bảo trì." Style="{StaticResource HospitalMuted}" Margin="0,12,0,14"/>
    </StackPanel>
   </ScrollViewer>
   <StackPanel Grid.Row="2" Margin="0,16,0,0">
+   <!-- Thông tin hiển thị FormError. -->
    <TextBlock x:Name="FormError" Foreground="#B42318" TextWrapping="Wrap" Margin="0,0,0,10" AutomationProperties.LiveSetting="Polite"/>
-   <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><Button Content="Hủy bỏ" Tag="DongCuaSo"/><Button Content="Lưu lần bảo trì" Tag="HoSoSave" Style="{StaticResource HospitalPrimary}" IsDefault="True"/></StackPanel>
+   <WrapPanel HorizontalAlignment="Right"><Button Content="Đóng" Tag="DongCuaSo"/><Button x:Name="btnLuu" Content="Lưu chưa xác nhận" Tag="HoSoSave" Click="Luu_Click" IsDefault="True"/><Button x:Name="btnXacNhan" Content="Lưu và xác nhận" Tag="HoSoSave" Click="Luu_Click" Style="{StaticResource HospitalPrimary}"/></WrapPanel>
   </StackPanel>
  </Grid>
 </UserControl>

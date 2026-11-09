@@ -11,12 +11,33 @@ namespace ET
     [Table("CHI_TIET_PHIEU_XUAT")]
     public class ET_CHITIETPHIEUXUAT
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaCTPX, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maCTPX = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaPX, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maPX = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaHH, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maHH = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaLo, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maLo;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaCTDT, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maCTDT;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính SoLuong, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private decimal soLuong;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GhiChu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string ghiChu = string.Empty;
 
         /// <summary>

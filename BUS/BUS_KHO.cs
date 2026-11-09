@@ -80,21 +80,45 @@ namespace BUS
             return XuLyLoi.ThucHien(() => dalKho.xoaKho(ma, banGoc));
         }
 
+        /// <summary>
+        /// Đọc tồn tổng hợp các mặt hàng của kho được chọn. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XuLyLoi.ThucHien</c>, <c>dalKho.layTonKhoTheoKho</c>.</remarks>
+        /// <param name="maKho">Mã kho xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả kiểu DataTable dùng cho bước xử lý tiếp theo.</returns>
         public DataTable layTonKhoTheoKho(string maKho)
         {
             return XuLyLoi.ThucHien(() => dalKho.layTonKhoTheoKho(maKho));
         }
 
+        /// <summary>
+        /// Đọc các lô còn tồn của kho được chỉ định. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>XuLyLoi.ThucHien</c>, <c>dalKho.layLoTonTheoKho</c>.</remarks>
+        /// <param name="maKho">Mã kho xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả kiểu DataTable dùng cho bước xử lý tiếp theo.</returns>
         public DataTable layLoTonTheoKho(string maKho)
         {
             return XuLyLoi.ThucHien(() => dalKho.layLoTonTheoKho(maKho));
         }
 
+        /// <summary>
+        /// Tra tên hàng hóa theo mã cho dữ liệu hiển thị kho. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>dalKho.layTenHHTheoMa</c>.</remarks>
+        /// <param name="MaHH">Mã hàng hóa xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả kiểu ET_HANGHOA dùng cho bước xử lý tiếp theo.</returns>
         public ET_HANGHOA layTenHHTheoMa(string MaHH)
         {
             return dalKho.layTenHHTheoMa(MaHH);
         }
 
+        /// <summary>
+        /// Tra tên loại hàng hóa theo mã phục vụ lọc và hiển thị. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>dalKho.layTenLHHTheoMa</c>.</remarks>
+        /// <param name="MaLHH">Mã loại hàng hóa xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả kiểu ET_LOAIHANGHOA dùng cho bước xử lý tiếp theo.</returns>
         public ET_LOAIHANGHOA layTenLHHTheoMa(string MaLHH)
         {
             return dalKho.layTenLHHTheoMa(MaLHH);

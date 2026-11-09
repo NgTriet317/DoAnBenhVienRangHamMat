@@ -1,0 +1,12 @@
+PASS: removed only four task-owned fixture databases.
+Changed database context to 'QLBenhVienRangHamMat'.
+TablesRetained
+--------------
+            53
+ConditionServiceLinks
+---------------------
+                   14
+NewReferenceServices
+--------------------
+                   8
+DBCC execution completed. If DBCC printed error messages, contact your system administrator.

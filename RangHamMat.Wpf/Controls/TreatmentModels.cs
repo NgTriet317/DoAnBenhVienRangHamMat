@@ -50,7 +50,13 @@ public sealed class TreatmentVisit
     /// Mã hoặc nhãn lượt tiếp nhận liên kết với lần khám.
     /// </summary>
     public string Receipt => DuLieuGiaoDien.Lookup("MaPhieu", UiRecord.Get(Record, "MaPhieu"));
+    /// <summary>
+    /// Giá trị lưu nội bộ của thuộc tính MaBS, dùng bởi getter/setter tương ứng.
+    /// </summary>
     private string? doctor,room;
+    /// <summary>
+    /// Giá trị lưu nội bộ của thuộc tính TrieuChung, dùng bởi getter/setter tương ứng.
+    /// </summary>
     private string symptom="",diagnosis="",note="",handling="";
     /// <summary>
     /// Đánh dấu thông tin khám đang nhập đã khác với bản đã lưu; dùng giữ nháp khi làm mới dữ liệu con.
@@ -277,10 +283,6 @@ public sealed class TreatmentRow
     /// </summary>
     public string Description => UiRecord.Text(Record,"MoTaTinhTrang");
     /// <summary>
-    /// Mức độ tình trạng bệnh đã ghi trong lần khám.
-    /// </summary>
-    public string Severity => UiRecord.Text(Record,"MucDo");
-    /// <summary>
     /// Ghi chú của bản ghi/dòng nháp để hiển thị hoặc nhập bổ sung trước khi lưu.
     /// </summary>
     public string Note => UiRecord.Text(Record,"GhiChu");
@@ -344,6 +346,9 @@ public static class TreatmentMoney
 /// </summary>
 public sealed class TreatmentDraft : INotifyPropertyChanged
 {
+    /// <summary>
+    /// Thông báo thay đổi thuộc tính cho các thành phần đã đăng ký theo dõi.
+    /// </summary>
     public event PropertyChangedEventHandler? PropertyChanged;
     /// <summary>
     /// Tham chiếu bản ghi cũ của dòng nháp; null nghĩa là thêm mới, có giá trị nghĩa là sửa dòng đang có.
@@ -377,6 +382,9 @@ public sealed class TreatmentDraft : INotifyPropertyChanged
     /// Trạng thái hiển thị của bản ghi; với bước kế hoạch có thể được suy ra thêm từ lượng thực hiện đã xác nhận.
     /// </summary>
     public string Status { get; set; }="Nháp";
+    /// <summary>
+    /// Giá trị lưu nội bộ của thuộc tính Quantity, dùng bởi getter/setter tương ứng.
+    /// </summary>
     private decimal quantity=1,price;
     /// <summary>
     /// Số lượng của dòng nháp/chi tiết; thay đổi ở TreatmentDraft sẽ phát thông báo để tính lại tổng.

@@ -11,17 +11,53 @@ namespace ET
     [Table("PHIEU_KHAM_BENH")]
     public class ET_PHIEUKHAMBENH
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaPhieu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maPhieu = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaHS, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maHS = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaLich, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maLich;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaPhong, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maPhong = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaBS, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maBS;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaNVTiepNhan, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maNVTiepNhan = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaDV, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? maDV;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính SoThuTu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private int soThuTu;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính ThoiGianTiepNhan, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime thoiGianTiepNhan;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính LyDoKham, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string lyDoKham = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GhiChu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? ghiChu;
 
         /// <summary>

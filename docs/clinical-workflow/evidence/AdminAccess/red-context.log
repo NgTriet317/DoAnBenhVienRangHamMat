@@ -1,0 +1,18 @@
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\AdminQuyenChecks\Program.cs(71,13): warning CS8604: Possible null reference argument for parameter 'cnn' in 'int SqlMapper.Execute(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\AdminQuyenChecks\AdminQuyenChecks.csproj]
+D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\AdminQuyenChecks\Program.cs(140,16): warning CS8604: Possible null reference argument for parameter 'cnn' in 'int SqlMapper.ExecuteScalar<int>(IDbConnection cnn, string sql, object? param = null, IDbTransaction? transaction = null, int? commandTimeout = null, CommandType? commandType = null)'. [D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\AdminQuyenChecks\AdminQuyenChecks.csproj]
+PASS: Đăng nhập Admin thật bằng mật khẩu seed
+PASS: Admin mở toàn bộ 26 mục trang chủ
+FAIL: Admin truy cập bàn giao từ màn hình Đơn thuốc | Exception: Đổi nguồn trong bàn giao còn giữ bệnh nhân cũ
+RESULT: 2 passed, 1 failed
+powershell : Kiểm tra quyền Admin thất bại.
+At line:2 char:1
++ powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraQuye ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Kiểm tra quyền Admin thất bại.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+At D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\tools\KiemTraQuyenAdmin.ps1:17 char:25
++ if($LASTEXITCODE -ne 0){throw 'Kiểm tra quyền Admin thất bại.'}
++                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Kiểm tra quyền Admin thất bại.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Kiểm tra quyền Admin thất bại.

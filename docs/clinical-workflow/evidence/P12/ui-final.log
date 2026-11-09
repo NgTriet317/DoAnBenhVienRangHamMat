@@ -1,0 +1,41 @@
+PASS: P08 phân trang giữ trọn dòng truy vết CTPX ở nhiều khổ giấy
+PASS: P08 tab mới giữ vị trí mở hóa đơn của giao diện legacy
+PASS: P08 xem bảng phí thực, đổi nguồn xóa bảng cũ và không ghi tài chính
+PASS: P08 gộp bản in theo dòng đơn/giá chốt, giữ mã CTPX và phần lẻ
+PASS: P07 preview gắn đúng mã đơn dù editor đổi nguồn và đọc lại hiệu lực
+PASS: P07 cấu hình tìm được thuốc ngoài 100 kết quả đầu
+PASS: P07 cấu hình mới giữ mã thuốc khi chặn đổi nguồn và tải lại được
+PASS: P07 cửa sổ in trực tiếp từ chối bản nháp
+PASS: P07 lịch sử/in dùng tên đơn vị chốt và từ chối cửa sổ in nháp
+PASS: P07 form chung không tạo đơn thiếu dòng hoặc xóa bỏ nguồn nháp
+PASS: P07 chọn nhiều thuốc, chống trùng, lưu và in snapshot đã ký
+PASS: P07 cấu hình cần bác sĩ duyệt và áp hướng dẫn có xác nhận phù hợp
+PASS: P06 chọn lượt không tự khóa bộ chọn về một bệnh nhân
+PASS: P06 form chung không bỏ qua kiểm tra nguồn và xóa nháp
+PASS: P06 tách dự kiến/thực tế, chọn bước giữ dịch vụ và ký riêng
+PASS: P06 điều dưỡng chỉ thấy và sửa kết quả dòng được giao
+PASS: Kế hoạch cũ vẫn hiện dịch vụ đã ngừng hoạt động
+PASS: Bảo vệ nháp đang nhập thật: ConditionGrid
+PASS: Bảo vệ nháp đang nhập thật: PlanSteps
+PASS: Bảo vệ nháp đang nhập thật: PlanStart
+PASS: Bảo vệ nháp đang nhập thật: TemplateSteps
+PASS: Bảo vệ nháp đang nhập thật: NewCategoryName
+PASS: Màn khám bắt đầu từ hàng đợi và không làm mất nháp khi đổi bộ lọc
+PASS: Không gian khám giữ nháp qua tab, ký riêng và khóa sau hoàn tất
+PASS: Cấu hình mẫu Admin chỉ soạn, bác sĩ duyệt bằng định danh phiên
+PASS: Lịch sử lịch hẹn không mở nút sửa, xác nhận hoặc hủy
+PERF: 1000 BN/10000 lượt, trang đầu và tính lần khám gần nhất: 18ms
+PASS: Lần khám gần nhất của đường cache legacy không quét lại từng hồ sơ
+PASS: WPF tiếp nhận lưu hồ sơ/phiếu rồi mới tải cache và báo hàng đợi
+PASS: Danh sách tìm ngày sinh và giữ mã bệnh nhân khi chọn
+PASS: Tiếp nhận đổi dịch vụ xóa bác sĩ/phòng, không cho nhập nhân viên và số thứ tự
+PASS: Bốn tab hồ sơ cho xem lịch hẹn dù không mở module lập lịch
+PASS: Quyền mở năm module lâm sàng tách khỏi quyền module cũ
+PASS: SQL scope cấp vào view khám, bác sĩ không sửa hồ sơ hành chính
+PASS: Đổi phiên xóa collection cũ trước khi tải phạm vi mới
+PASS: Lịch hẹn trong hồ sơ không gọi nguồn toàn viện trước lọc
+PASS: Lịch khám độc lập giữ nguồn và thao tác cũ
+PASS: Dược sĩ có view đơn chỉ đọc, không ký hoặc tạo đơn
+PASS: Gọi ghi trực tiếp qua cache vẫn bị DAL từ chối và rollback
+PASS: Hóa đơn lịch sử chỉ đọc, không cấp hoặc thu lại qua nút cũ
+ClinicalUiChecks: 39 PASS, 0 FAIL; fixture tiếp nhận đã dọn, không giữ chứng từ SQL.

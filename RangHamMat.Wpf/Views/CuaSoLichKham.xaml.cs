@@ -12,7 +12,13 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class CuaSoLichKham : UserControl,IBieuMauLuu
 {
+    /// <summary>
+    /// Cờ Sẵn sàng; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool ready;
+    /// <summary>
+    /// Cờ Đổi lịch; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool reschedule;
     /// <summary>
     /// Khởi tạo biểu mẫu đặt/hẹn lại lịch khám từ XAML.

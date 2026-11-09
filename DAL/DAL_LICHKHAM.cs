@@ -68,6 +68,11 @@ namespace DAL
             LEFT JOIN dbo.CA_LAM ca ON ca.MaCa=l.MaCa
             LEFT JOIN dbo.NHAN_VIEN duBi ON duBi.MaNV=l.MaBSDuBi";
 
+        /// <summary>
+        /// Đọc lịch khám cùng tên bệnh nhân, bác sĩ và phòng để hiển thị danh sách.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>connection.Query&lt;ET_LICHKHAM_HIENTHI&gt;</c>.</remarks>
+        /// <returns>Tập dữ liệu kiểu IEnumerable&lt;ET_LICHKHAM_HIENTHI&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
         public IEnumerable<ET_LICHKHAM_HIENTHI> layLichKhamHienThi()
         {
             return ThucHien((connection, transaction) =>
@@ -75,6 +80,12 @@ namespace DAL
                     transaction: transaction).ToArray());
         }
 
+        /// <summary>
+        /// Đọc một lịch khám theo mã kèm các dữ liệu tên cần cho phần chi tiết.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>connection.QuerySingleOrDefault&lt;ET_LICHKHAM_HIENTHI&gt;</c>.</remarks>
+        /// <param name="ma">Mã định danh của bản ghi cần xử lý.</param>
+        /// <returns>Đối tượng kiểu ET_LICHKHAM_HIENTHI được tìm hoặc tính toán; có thể null theo nhánh xử lý trong hàm.</returns>
         public ET_LICHKHAM_HIENTHI? layLichKhamHienThiTheoMa(string ma)
         {
             return ThucHien((connection, transaction) =>
@@ -188,6 +199,13 @@ namespace DAL
             if (ketQua<0) throw new InvalidOperationException("Lịch đang được thay đổi bởi người khác. Vui lòng thử lại.");
         }
 
+        /// <summary>
+        /// Kiểm tra mức độ lịch khám và điều kiện bác sĩ dự bị trước khi lưu lịch. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>connection.ExecuteScalar&lt;int&gt;</c>.</remarks>
+        /// <param name="connection">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+        /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+        /// <param name="lich">Giá trị lịch dùng khi thực hiện thao tác; kiểu ET_LICHKHAM.</param>
         private void KiemTraNghiemTrongVaDuBi(IDbConnection connection, IDbTransaction? transaction, ET_LICHKHAM lich)
         {
             if (lich.MucDoNghiemTrong!="Thấp" && lich.MucDoNghiemTrong!="Trung bình" && lich.MucDoNghiemTrong!="Cao")
@@ -219,6 +237,13 @@ namespace DAL
             if (trung>0) throw new InvalidOperationException("Bác sĩ dự bị đã được xếp hoặc giữ dự bị cho lịch trùng giờ.");
         }
 
+        /// <summary>
+        /// Kiểm tra ngày nghỉ của nhân viên và đồng bộ ca liên quan đến lịch khám. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>connection.ExecuteScalar&lt;int&gt;</c>, <c>connection.QuerySingleOrDefault&lt;ET_CALAM&gt;</c>, <c>batDau.Add</c>, <c>TimeSpan.FromMinutes</c>.</remarks>
+        /// <param name="connection">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+        /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+        /// <param name="lich">Giá trị lịch dùng khi thực hiện thao tác; kiểu ET_LICHKHAM.</param>
         private void KiemTraNghiVaDongBoCa(IDbConnection connection, IDbTransaction? transaction, ET_LICHKHAM lich)
         {
             // Lịch đã hủy/hoàn thành không tự tạo ca làm mới.

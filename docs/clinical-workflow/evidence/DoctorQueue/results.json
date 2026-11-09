@@ -1,0 +1,21 @@
+{
+    "Date":  "2026-10-28",
+    "Baseline":  "deea996",
+    "SourceChecks":  16,
+    "PublishedChecks":  16,
+    "AdminRegressionChecks":  12,
+    "DefaultDoctorGuiChecks":  1,
+    "DefaultAdminGuiChecks":  3,
+    "HomepageModules":  26,
+    "DefaultDatabase":  "QLBenhVienRangHamMat",
+    "SchemaTables":  52,
+    "MigrationRequired":  false,
+    "ViewportSizes":  [
+                          "1280x850",
+                          "1024x768",
+                          "800x600"
+                      ],
+    "PublishedWpfSha256":  "2FB34AFDA22D30E71689E29E6C271EBB666CECDF1743964702523F423193EB67",
+    "ReleaseWpfSha256":  "2FB34AFDA22D30E71689E29E6C271EBB666CECDF1743964702523F423193EB67",
+    "FixturesRemoved":  true
+}

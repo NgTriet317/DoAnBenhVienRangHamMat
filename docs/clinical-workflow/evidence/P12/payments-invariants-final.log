@@ -1,0 +1,9 @@
+ModernInvoices FullPayments PendingHandover BoundAdditionalRequests
+-------------- ------------ --------------- -----------------------
+            24           22              16                       4
+PASS: mọi hóa đơn v2 đã commit thu đủ, xuất đúng và không lặp; yêu cầu đối chiếu có ràng buộc.
+TrangThai                                          SoDon
+-------------------------------------------------- -----------
+Chờ giao                                                    13
+Đã giao                                                      3
+PASS: bàn giao đúng nguồn, người/giờ; không giao lặp, phiếu chỉ hoàn tất khi giao hết.

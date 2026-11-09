@@ -8,9 +8,18 @@ namespace RangHamMat.Views;
 /// <summary>Danh bạ đối tác, đọc SQL qua cache chung và giữ bản nguồn khi mở form sửa.</summary>
 public partial class NhaCungCap : UserControl
 {
+    /// <summary>
+    /// Danh sách  dùng trong nhà cung cấp được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private List<DongNhaCungCap> danhSach = new();
+    /// <summary>
+    /// Cờ Sẵn sàng; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool sanSang;
 
+    /// <summary>
+    /// Khởi tạo nhà cung cấp. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+    /// </summary>
     public NhaCungCap()
     {
         InitializeComponent();
@@ -19,6 +28,10 @@ public partial class NhaCungCap : UserControl
         HoTroGiaoDien.Observe(this, NapDanhSach);
     }
 
+    /// <summary>
+    /// Nạp các danh mục cần tra tên, đọc danh sách nguồn rồi cập nhật bộ lọc và lựa chọn hiện tại.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>DuLieuGiaoDien.Rows</c>, <c>UiRecord.Text</c>, <c>danhSach.Count.ToString</c>, <c>danhSach.Count</c>.</remarks>
     private void NapDanhSach()
     {
         try
@@ -35,6 +48,10 @@ public partial class NhaCungCap : UserControl
         catch (InvalidOperationException ex) { txtLoi.Text = ex.Message + " Chọn Tải lại để thử lại."; }
     }
 
+    /// <summary>
+    /// Lọc danh sách nguồn theo tiêu chí trên giao diện mà không thay đổi dữ liệu trong SQL.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>txtTimKiem.Text.Trim</c>, <c>danhSach.Where</c>, <c>row.TuKhoa.Contains</c>, <c>ketQua.FirstOrDefault</c>.</remarks>
     private void LocDanhSach()
     {
         if (!sanSang) return;
@@ -51,17 +68,40 @@ public partial class NhaCungCap : UserControl
         txtLoi.Text = "";
     }
 
+    /// <summary>
+    /// Tiếp nhận thay đổi bộ lọc và cập nhật trạng thái/dữ liệu phụ thuộc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>LocDanhSach</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void BoLoc_ThayDoi(object sender, RoutedEventArgs e) => LocDanhSach();
+    /// <summary>
+    /// Xử lý thao tác bộ lọc khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>txtTimKiem.Clear</c>, <c>LocDanhSach</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void BoLoc_Click(object sender, RoutedEventArgs e)
     {
         sanSang = false; txtTimKiem.Clear(); cboTrangThai.SelectedIndex = 0;
         sanSang = true; LocDanhSach();
     }
+    /// <summary>
+    /// Xử lý thao tác tải lại khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>DuLieuGiaoDien.RefreshFromDatabase</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void TaiLai_Click(object sender, RoutedEventArgs e)
     {
         try { DuLieuGiaoDien.RefreshFromDatabase(); }
         catch (InvalidOperationException ex) { txtLoi.Text = ex.Message + " Chọn Tải lại để thử lại."; }
     }
+    /// <summary>
+    /// Phản ánh lựa chọn danh sách vào dữ liệu và phần hiển thị liên quan.
+    /// </summary>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void DanhSach_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         ChiTiet.DataContext = Grid_NHA_CUNG_CAP.SelectedItem;
@@ -69,11 +109,28 @@ public partial class NhaCungCap : UserControl
         ChuaChon.Visibility = ChiTiet.DataContext is null ? Visibility.Visible : Visibility.Collapsed;
         txtThongBao.Text = "";
     }
+    /// <summary>
+    /// Xử lý thao tác thêm khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>MoBieuMau</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Them_Click(object sender, RoutedEventArgs e) => MoBieuMau(null);
+    /// <summary>
+    /// Xử lý thao tác sửa khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>MoBieuMau</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Sua_Click(object sender, RoutedEventArgs e)
     {
         if (Grid_NHA_CUNG_CAP.SelectedItem is DongNhaCungCap dong) MoBieuMau(dong.Record);
     }
+    /// <summary>
+    /// Mở cửa sổ biểu mẫu tương ứng bản ghi/chế độ được chọn, rồi cập nhật danh sách sau khi lưu.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>HoTroGiaoDien.Workspace</c>, <c>workspace.CanOpen</c>, <c>BieuMauHoSo.Configure</c>, <c>workspace.ShowModal</c>.</remarks>
+    /// <param name="banGoc">Bản dữ liệu trước khi chỉnh sửa để đối chiếu với giá trị hiện tại.</param>
     private void MoBieuMau(object? banGoc)
     {
         var workspace = HoTroGiaoDien.Workspace(this);
@@ -82,6 +139,12 @@ public partial class NhaCungCap : UserControl
         BieuMauHoSo.Configure(form, "NHA_CUNG_CAP", banGoc);
         workspace.ShowModal(form);
     }
+    /// <summary>
+    /// Xử lý thao tác xóa khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>DuLieuGiaoDien.Delete</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Xoa_Click(object sender, RoutedEventArgs e)
     {
         if (Grid_NHA_CUNG_CAP.SelectedItem is not DongNhaCungCap { ChoXoa: true } dong) return;
@@ -89,6 +152,12 @@ public partial class NhaCungCap : UserControl
         try { DuLieuGiaoDien.Delete("NHA_CUNG_CAP", dong.Record); }
         catch (InvalidOperationException ex) { txtLoi.Text = ex.Message; }
     }
+    /// <summary>
+    /// Xử lý thao tác sao chép khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Clipboard.SetText</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void SaoChep_Click(object sender, RoutedEventArgs e)
     {
         if (Grid_NHA_CUNG_CAP.SelectedItem is not DongNhaCungCap dong) return;
@@ -100,6 +169,12 @@ public partial class NhaCungCap : UserControl
         }
         catch (ExternalException) { txtLoi.Text = "Chưa thể sao chép. Vui lòng thử lại."; }
     }
+    /// <summary>
+    /// Điều chỉnh phần hiển thị theo kích thước thực tế của nội dung.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Grid.SetRowSpan</c>, <c>Grid.SetColumn</c>, <c>Grid.SetRow</c>, <c>Grid.SetColumnSpan</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void NoiDung_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         var hep = e.NewSize.Width < 900;
@@ -117,22 +192,71 @@ public partial class NhaCungCap : UserControl
 /// <summary>Chỉ chuẩn bị nhãn và số liên kết; ET và các câu SQL nằm trong các tầng hiện có.</summary>
 public sealed class DongNhaCungCap
 {
+    /// <summary>
+    /// Bản ghi.
+    /// </summary>
     public object Record { get; }
+    /// <summary>
+    /// Giá trị Mã nhà cung cấp; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string MaNCC => UiRecord.Text(Record, "MaNCC");
+    /// <summary>
+    /// Giá trị Tên nhà cung cấp; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string TenNCC => UiRecord.Text(Record, "TenNCC");
+    /// <summary>
+    /// Giá trị Người liên hệ; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string NguoiLienHe => UiRecord.Text(Record, "NguoiLienHe");
+    /// <summary>
+    /// Giá trị Email; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string Email => UiRecord.Text(Record, "Email");
+    /// <summary>
+    /// Giá trị Trạng thái; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string TrangThai => UiRecord.Text(Record, "TrangThai");
+    /// <summary>
+    /// Giá trị Điện thoại; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string DienThoai => string.IsNullOrWhiteSpace(UiRecord.Text(Record, "SDT")) ? "Chưa có số điện thoại" : UiRecord.Text(Record, "SDT");
+    /// <summary>
+    /// Giá trị Địa chỉ; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string DiaChi => string.IsNullOrWhiteSpace(UiRecord.Text(Record, "DiaChi")) ? "Chưa cập nhật địa chỉ" : UiRecord.Text(Record, "DiaChi");
+    /// <summary>
+    /// Số thiết bị.
+    /// </summary>
     public int SoThietBi { get; }
+    /// <summary>
+    /// Số lô hàng.
+    /// </summary>
     public int SoLoHang { get; }
+    /// <summary>
+    /// Số hóa đơn nhập.
+    /// </summary>
     public int SoHoaDonNhap { get; }
+    /// <summary>
+    /// Giá trị Chờ xóa; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public bool ChoXoa => SoThietBi + SoLoHang + SoHoaDonNhap == 0;
+    /// <summary>
+    /// Giá trị Thông tin liên kết; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string ThongTinLienKet => $"{SoThietBi} thiết bị · {SoLoHang} lô hàng · {SoHoaDonNhap} hóa đơn nhập";
+    /// <summary>
+    /// Giá trị Hướng dẫn xóa; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string HuongDanXoa => ChoXoa ? "Chỉ xóa nhà cung cấp chưa có dữ liệu liên kết." : "Đã có dữ liệu liên kết. Chọn Cập nhật và chuyển Ngừng hoạt động nếu ngừng hợp tác.";
+    /// <summary>
+    /// Giá trị Từ khóa tìm kiếm áp dụng cho danh sách; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public string TuKhoa => string.Join(" ", MaNCC, TenNCC, NguoiLienHe, UiRecord.Text(Record, "SDT"), Email, UiRecord.Text(Record, "DiaChi"));
 
+    /// <summary>
+    /// Khởi tạo dòng nhà cung cấp.
+    /// </summary>
+    /// <param name="record">Giá trị bản ghi dùng khi thực hiện thao tác; kiểu object.</param>
     public DongNhaCungCap(object record)
     {
         Record = record;

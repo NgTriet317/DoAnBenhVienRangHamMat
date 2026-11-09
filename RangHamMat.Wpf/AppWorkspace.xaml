@@ -14,6 +14,7 @@
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
     </Grid.RowDefinitions>
+    <!-- Vùng bố cục ShellBar. -->
     <Border x:Name="ShellBar" Background="White" BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="24,12">
       <Grid>
         <Grid.ColumnDefinitions>
@@ -28,11 +29,14 @@
             <TextBlock Text="Màn hình chính" VerticalAlignment="Center"/>
           </StackPanel>
         </Button>
+        <!-- Thông tin hiển thị AppTitle. -->
         <TextBlock x:Name="AppTitle" Grid.Column="1" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
         <WrapPanel Grid.Column="2">
           <!-- Thao tác Tải lại dữ liệu: gọi Reload_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
           <Button x:Name="btnTaiLaiDuLieu" Content="Tải lại dữ liệu" Click="Reload_Click" ToolTip="Đọc lại dữ liệu từ SQL Server"/>
+          <!-- Thông tin hiển thị RoleLabel. -->
           <TextBlock x:Name="RoleLabel" Grid.Column="2" Foreground="{StaticResource Muted}" VerticalAlignment="Center" FontSize="12" Margin="20,0,16,0"/>
+          <!-- Nút thao tác btnXinNghiViec — Xin nghỉ việc. Chuyển sự kiện đến XinNghiViec_Click trong code-behind. -->
           <Button x:Name="btnXinNghiViec" Content="Xin nghỉ việc" Style="{StaticResource Primary}" Click="XinNghiViec_Click"
                   AutomationProperties.Name="Mở đơn xin nghỉ phép hoặc nghỉ việc" Margin="0,0,0,0"/>
         </WrapPanel>
@@ -40,9 +44,11 @@
     </Border>
     <!-- Vùng Workspace: hiển thị nội dung/danh sách được code-behind hoặc Binding cung cấp; DataTemplate quyết định cách trình bày mỗi đối tượng. -->
     <ContentControl x:Name="Workspace" Grid.Row="1" Margin="24,20"/>
+    <!-- Vùng bố cục ModalLayer. -->
     <Grid x:Name="ModalLayer" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" Grid.RowSpan="2" Visibility="Collapsed" Background="#660F172A" Panel.ZIndex="50">
       <!-- Nút điều hướng DongCuaSo: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
       <Button Tag="DongCuaSo" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Focusable="False"/>
+      <!-- Vùng bố cục ModalFrame. -->
       <Border Background="White" CornerRadius="8" x:Name="ModalFrame" Margin="28" MaxWidth="1160" MaxHeight="850" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderBrush="{StaticResource Line}" BorderThickness="1">
         <Grid>
           <Grid.RowDefinitions>

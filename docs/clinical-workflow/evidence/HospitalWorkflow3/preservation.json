@@ -1,0 +1,426 @@
+[
+    {
+        "Table":  "BAN_GIAO_THUOC",
+        "OriginalRows":  0,
+        "PreservedRows":  0,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "BANG_LUONG",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "BAO_TRI_THIET_BI",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "BENH_NHAN",
+        "OriginalRows":  25,
+        "PreservedRows":  11,
+        "RemovedOwnedDemoRows":  14,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "CA_LAM",
+        "OriginalRows":  12,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  2,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "CA_THEO_NGAY",
+        "OriginalRows":  37,
+        "PreservedRows":  5,
+        "RemovedOwnedDemoRows":  32,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "CAU_HINH_THUOC_KE_DON",
+        "OriginalRows":  0,
+        "PreservedRows":  0,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "CHI_TIET_DON_THUOC",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "CHI_TIET_HOA_DON",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "CHI_TIET_KE_HOACH",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "CHI_TIET_MAU_KE_HOACH",
+        "OriginalRows":  0,
+        "PreservedRows":  0,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "CHI_TIET_PHIEU_NHAP",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "CHI_TIET_PHIEU_XUAT",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "CHINH_SACH_LUONG",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "CHUC_VU",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "CHUNG_CHI_NHAN_VIEN",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "CHUYEN_KHOA",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "DICH_VU",
+        "OriginalRows":  22,
+        "PreservedRows":  18,
+        "RemovedOwnedDemoRows":  4,
+        "AddedRows":  32,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "DICH_VU_THUC_HIEN",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "DICH_VU_TINH_TRANG",
+        "OriginalRows":  14,
+        "PreservedRows":  14,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  98,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "DM_TINH_TRANG_BENH",
+        "OriginalRows":  6,
+        "PreservedRows":  6,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  41,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "DON_THUOC",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "DON_XIN_NGHI",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "HANG_HOA",
+        "OriginalRows":  30,
+        "PreservedRows":  30,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "HO_SO_BENH_AN",
+        "OriginalRows":  25,
+        "PreservedRows":  11,
+        "RemovedOwnedDemoRows":  14,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "HOA_DON",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "HOA_DON_NHAP",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "KE_HOACH_DIEU_TRI",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "KHO",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "KHOA",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "LICH_KHAM",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "LICH_LAM_VIEC",
+        "OriginalRows":  234,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  224,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "LICH_SU_KHAM_BENH",
+        "OriginalRows":  18,
+        "PreservedRows":  11,
+        "RemovedOwnedDemoRows":  7,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "LO_HANG_HOA",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "LOAI_HANG_HOA",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "MAU_KE_HOACH_DIEU_TRI",
+        "OriginalRows":  0,
+        "PreservedRows":  0,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "NHA_CUNG_CAP",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "NHAN_VIEN",
+        "OriginalRows":  22,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  12,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "NHAT_KY_THAO_TAC",
+        "OriginalRows":  382,
+        "PreservedRows":  382,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  41,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "NHOM_THUOC_KE_DON",
+        "OriginalRows":  0,
+        "PreservedRows":  0,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "PHAN_CONG_THAY_THE",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "PHIEU_KHAM_BENH",
+        "OriginalRows":  25,
+        "PreservedRows":  11,
+        "RemovedOwnedDemoRows":  14,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "PHIEU_NHAP",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "PHIEU_XUAT",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "PHONG",
+        "OriginalRows":  17,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  7,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "TAI_KHOAN",
+        "OriginalRows":  22,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  12,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "THANH_TOAN",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "THIET_BI",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "THUOC",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "TINH_TRANG_BENH",
+        "OriginalRows":  18,
+        "PreservedRows":  11,
+        "RemovedOwnedDemoRows":  7,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "VAI_TRO",
+        "OriginalRows":  2,
+        "PreservedRows":  2,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "VAT_TU",
+        "OriginalRows":  10,
+        "PreservedRows":  10,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    },
+    {
+        "Table":  "XAC_NHAN_DOI_LICH_KHAM",
+        "OriginalRows":  0,
+        "PreservedRows":  0,
+        "RemovedOwnedDemoRows":  0,
+        "AddedRows":  0,
+        "OriginalSurvivorsMatch":  true
+    }
+]

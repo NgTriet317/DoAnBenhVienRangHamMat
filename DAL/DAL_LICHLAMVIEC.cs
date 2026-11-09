@@ -130,6 +130,12 @@ namespace DAL
                 return true;
             });
         }
+        /// <summary>
+        /// Khóa nguồn phân công trước khi đối chiếu và thay đổi lịch làm việc. Dùng application lock sở hữu bởi giao dịch; từ chối khi không lấy được khóa trong thời gian chờ.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>connection.ExecuteScalar&lt;int&gt;</c>.</remarks>
+        /// <param name="connection">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+        /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
         private void KhoaPhanCong(IDbConnection connection, IDbTransaction? transaction)
         {
             int k = connection.ExecuteScalar<int>(@"DECLARE @r int;
@@ -138,6 +144,14 @@ namespace DAL
             if (k<0) throw new InvalidOperationException("Lịch đang được cập nhật. Hãy thử lại.");
         }
 
+        /// <summary>
+        /// Từ chối phân công khi nhân viên có lịch nghỉ áp dụng cho ngày đang xử lý. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>connection.ExecuteScalar&lt;int&gt;</c>.</remarks>
+        /// <param name="connection">Kết nối SQL đang dùng; các lệnh trong thao tác này thực thi trên kết nối đó.</param>
+        /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
+        /// <param name="maNV">Mã nhân viên xác định đối tượng cần xử lý.</param>
+        /// <param name="ngayLam">Giá trị ngày làm dùng khi thực hiện thao tác; kiểu DateTime.</param>
         private void KiemTraKhongDangNghi(IDbConnection connection, IDbTransaction? transaction,
             string maNV, DateTime ngayLam)
         {
@@ -157,6 +171,12 @@ namespace DAL
                 new { TuNgay = dauTuan.Date, DenNgay = dauTuan.Date.AddDays(7) }, transaction).ToList());
         }
 
+        /// <summary>
+        /// Kiểm tra điều kiện nhân viên/ngày/phòng và tạo đăng ký ca làm việc. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>KhoaPhanCong</c>, <c>KiemTraKhongDangNghi</c>, <c>TaoMa</c>.</remarks>
+        /// <param name="lich">Giá trị lịch dùng khi thực hiện thao tác; kiểu ET_LICHLAMVIEC.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool dangKyCa(ET_LICHLAMVIEC lich)
         {
             return ThucHien((connection, transaction) =>
@@ -241,6 +261,13 @@ namespace DAL
             });
         }
 
+        /// <summary>
+        /// Duyệt đăng ký ca sau khi kiểm tra nhân viên, ngày nghỉ và điều kiện phân công. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>KhoaPhanCong</c>, <c>connection.Execute</c>.</remarks>
+        /// <param name="maLLV">Mã lịch làm việc xác định đối tượng cần xử lý.</param>
+        /// <param name="maPhong">Mã phòng xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool duyetCa(string maLLV, string maPhong)
         {
             return ThucHien((connection, transaction) =>
@@ -269,6 +296,13 @@ namespace DAL
             });
         }
 
+        /// <summary>
+        /// Từ chối đăng ký ca và ghi thông tin phản hồi theo dữ liệu được truyền vào.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>connection.Execute</c>.</remarks>
+        /// <param name="maLLV">Mã lịch làm việc xác định đối tượng cần xử lý.</param>
+        /// <param name="lyDo">Giá trị lý do dùng khi thực hiện thao tác; kiểu string.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool tuChoiCa(string maLLV, string lyDo)
         {
             return ThucHien((connection, transaction) => connection.Execute(
@@ -276,6 +310,13 @@ namespace DAL
                 new { MaLLV=maLLV, LyDo=lyDo }, transaction) > 0);
         }
 
+        /// <summary>
+        /// Hủy đăng ký ca khi trạng thái hiện tại và quyền người thao tác cho phép.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>ThucHien</c>, <c>connection.Execute</c>.</remarks>
+        /// <param name="maLLV">Mã lịch làm việc xác định đối tượng cần xử lý.</param>
+        /// <param name="maNV">Mã nhân viên xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
         public bool huyDangKy(string maLLV, string maNV)
         {
             return ThucHien((connection, transaction) => connection.Execute(

@@ -197,6 +197,12 @@ namespace DAL
             });
         }
 
+        /// <summary>
+        /// Tra tên hàng hóa theo mã cho dữ liệu hiển thị kho.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>CreateConnection</c>, <c>connection.Query&lt;ET_HANGHOA&gt;</c>.</remarks>
+        /// <param name="maHH">Mã hàng hóa xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả kiểu ET_HANGHOA dùng cho bước xử lý tiếp theo.</returns>
         public ET_HANGHOA layTenHHTheoMa(string maHH)
         {
             using var connection = CreateConnection();
@@ -204,6 +210,12 @@ namespace DAL
             return connection.Query<ET_HANGHOA>("SELECT * FROM dbo.[HANG_HOA] WHERE [MaHH]=@Ma", new {Ma = maHH}).FirstOrDefault();
         }
 
+        /// <summary>
+        /// Tra tên loại hàng hóa theo mã phục vụ lọc và hiển thị.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>CreateConnection</c>, <c>connection.Query&lt;ET_LOAIHANGHOA&gt;</c>.</remarks>
+        /// <param name="maLHH">Mã loại hàng hóa xác định đối tượng cần xử lý.</param>
+        /// <returns>Kết quả kiểu ET_LOAIHANGHOA dùng cho bước xử lý tiếp theo.</returns>
         public ET_LOAIHANGHOA layTenLHHTheoMa(string maLHH)
         {
             using var connection = CreateConnection();

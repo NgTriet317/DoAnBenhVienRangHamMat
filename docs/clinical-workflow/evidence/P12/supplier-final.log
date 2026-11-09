@@ -1,0 +1,4 @@
+PASS: dữ liệu SQL, thông tin liên hệ, số liên kết, thống kê, tìm kiếm, lọc, trạng thái rỗng và bố cục 1366/1024.
+PASS: nút thêm/lưu/sửa, nhập liệu bắt buộc/email, mã tự cấp, số 0 đầu, nullable, đổi trạng thái, chặn form cũ, xóa đối tác chưa liên kết.
+PASS: BUS/DAL kiểm tra tên, email, người liên hệ, điện thoại, độ dài, trạng thái; chặn sửa/xóa đồng thời và xóa nhà cung cấp đã liên kết cả ba bảng.
+PASS: toàn bộ kiểm tra nhà cung cấp, dữ liệu ghi thử đã rollback.

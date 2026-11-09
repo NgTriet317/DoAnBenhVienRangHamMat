@@ -1,11 +1,11 @@
 <!-- PHẦN AI ĐÃ THỰC HIỆN: AI đã bổ sung giải thích bố cục XAML, nguồn binding, trường nhập và kết nối sự kiện sang code-behind của CuaSoBenhNhan.xaml; các vùng liên quan: Bệnh nhân, Thông tin cơ bản, Thông tin sức khỏe, Hồ sơ bệnh án. -->
 <!-- AI hỗ trợ: bổ sung chú thích cho biểu mẫu bệnh nhân/bệnh án. XAML khai báo giao diện và binding; các handler được giải thích trong file C# tương ứng. Nhãn này ghi nhận phần hỗ trợ/chú thích; -->
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:ui="clr-namespace:RangHamMat.Controls" xmlns:views="clr-namespace:RangHamMat.Views" x:Class="RangHamMat.Views.CuaSoBenhNhan" FontFamily="Segoe UI" Language="vi-VN" UseLayoutRounding="True" SnapsToDevicePixels="True">
+<UserControl xmlns:clinical="clr-namespace:RangHamMat.Controls.ClinicalWorkflow" clinical:ClinicalLayout.IsEnabled="True" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:ui="clr-namespace:RangHamMat.Controls" xmlns:views="clr-namespace:RangHamMat.Views" x:Class="RangHamMat.Views.CuaSoBenhNhan" FontFamily="Segoe UI" Language="vi-VN" UseLayoutRounding="True" SnapsToDevicePixels="True">
   <UserControl.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
-        <!-- Nạp tài nguyên /RangHamMat.Wpf;component/Themes/HospitalStyles.xaml để các control dùng cùng màu, font, template và trạng thái của ứng dụng. -->
-        <ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/HospitalStyles.xaml"/>
+        <!-- Nạp tài nguyên /RangHamMat.Wpf;component/Themes/ClinicalWorkflowStyles.xaml để các control dùng cùng màu, font, template và trạng thái của ứng dụng. -->
+        <ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/ClinicalWorkflowStyles.xaml"/>
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
   </UserControl.Resources>
@@ -15,7 +15,9 @@
       <RowDefinition Height="*"/>
       <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
+    <!-- Thông tin hiển thị EditorTitle — Thông tin bệnh nhân. -->
     <TextBlock x:Name="EditorTitle" Text="Thông tin bệnh nhân" FontWeight="SemiBold" Margin="0,0,0,16" Style="{StaticResource HospitalHeading}"/>
+    <!-- Thành phần EditorTabs. -->
     <TabControl x:Name="EditorTabs" Grid.Row="1" Style="{StaticResource HospitalEditorTabs}">
       <!-- Nhóm Bệnh nhân: tách phần xem/nhập của nghiệp vụ này; đổi tab chỉ đổi nội dung đang hiển thị. -->
       <TabItem Tag="Table:BENH_NHAN" Header="Bệnh nhân">
@@ -59,6 +61,7 @@
                   <TextBlock Text="Ngày sinh" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Ngày sinh được cung cấp (BENH_NHAN.NgaySinh): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                   <ContentControl Style="{StaticResource TruongNhapLieu}">
+                   <!-- Trường lựa chọn BirthDate. Kiểm tra đầu vào theo metadata BENH_NHAN.NgaySinh. -->
                    <DatePicker x:Name="BirthDate" Tag="DB:BENH_NHAN.NgaySinh" AutomationProperties.Name="Ngày sinh" ToolTip="Có thể để trống khi chưa biết ngày sinh"/>
                   </ContentControl>
                 </StackPanel>
@@ -186,6 +189,7 @@
       </TabItem>
     </TabControl>
     <Border Grid.Row="2" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
+      <!-- Thành phần CreateMedical — Lập hồ sơ bệnh án sau khi lưu. -->
       <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><CheckBox x:Name="CreateMedical" Content="Lập hồ sơ bệnh án sau khi lưu" IsChecked="True" Margin="0,0,0,10" VerticalAlignment="Center"/>
         <DockPanel Grid.Row="1"><WrapPanel DockPanel.Dock="Right">
           <!-- Nút điều hướng DongCuaSo: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
@@ -193,6 +197,7 @@
           <!-- Nút điều hướng HoSoSave: AppWorkspace.Navigate bắt sự kiện Click nổi bọt, dùng CommandParameter nếu cần liên kết cha hoặc bản ghi nguồn. -->
           <Button Content="Lưu" Tag="HoSoSave" Style="{StaticResource HospitalPrimary}"/>
         </WrapPanel>
+        <!-- Thông tin hiển thị FormError. -->
         <TextBlock x:Name="FormError" Foreground="#B42318" TextWrapping="Wrap" VerticalAlignment="Center"/>
       </DockPanel>
     </Grid></Border>

@@ -4,10 +4,20 @@ using System.Windows;
 
 namespace RangHamMat.Views
 {
+    /// <summary>
+    /// Phần xử lý chi tiết lịch khám của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public partial class ChiTietLichKham : Window
     {
+        /// <summary>
+        /// Lịch hiển thị tải được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private ET_LICHKHAM lichHienTai;
 
+        /// <summary>
+        /// Khởi tạo chi tiết lịch khám. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+        /// </summary>
+        /// <param name="lich">Giá trị lịch dùng khi thực hiện thao tác; kiểu ET_LICHKHAM.</param>
         public ChiTietLichKham(ET_LICHKHAM lich)
         {
             InitializeComponent();
@@ -31,6 +41,11 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút sửa khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnSua_Click(object sender, RoutedEventArgs e)
         {
             if (lichHienTai == null) return;
@@ -48,6 +63,12 @@ namespace RangHamMat.Views
             Content = formSua;
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút dòng khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>Close</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnDong_Click(object sender, RoutedEventArgs e)
         {
             Close();

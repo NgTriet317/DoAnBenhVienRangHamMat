@@ -1,0 +1,12 @@
+BACKUP VERIFIED: C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Backup\QLBenhVienRangHamMat_before_related_services_20261028_233823_31e8c6ddc1cc41d59db7ec5bbd91ad4f.bak
+Đã đồng bộ 8 dịch vụ tham khảo và 14 liên kết; giữ nguyên dữ liệu đã có.
+PASS: toàn bộ dòng gốc của52 bảng giữ nguyên, (migration09 không sửa bất kỳ cột cũ nào).
+SoBang
+------
+53
+SoBacSi
+-------
+14
+MucDoDaBo
+---------
+NULL

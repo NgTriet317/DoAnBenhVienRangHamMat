@@ -10,15 +10,39 @@ using ET;
 
 namespace RangHamMat.Views
 {
+    /// <summary>
+    /// Phần xử lý chấm công của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+    /// </summary>
     public partial class ChamCong : UserControl
     {
+        /// <summary>
+        /// Đối tượng nghiệp vụ chấm công được màn hình dùng để đọc/ghi dữ liệu.
+        /// </summary>
         private readonly BUS_CHAMCONG busChamCong = new BUS_CHAMCONG();
+        /// <summary>
+        /// Danh sách công dùng trong chấm công được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private DataTable danhSachCong = new DataTable();
+        /// <summary>
+        /// Lọc tìm kiểm được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string locTimKiem = "";
+        /// <summary>
+        /// Lọc trạng thái được giữ trong phạm vi lớp để các thao tác dùng lại.
+        /// </summary>
         private string locTrangThai = "";
+        /// <summary>
+        /// Cờ Đã tải; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool daTai;
+        /// <summary>
+        /// Cờ Đang tải; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+        /// </summary>
         private bool dangTai;
 
+        /// <summary>
+        /// Khởi tạo chấm công. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+        /// </summary>
         public ChamCong()
         {
             InitializeComponent();
@@ -27,6 +51,10 @@ namespace RangHamMat.Views
             Loaded += (sender, e) => { if (!daTai) hienThiDuLieu(); };
         }
 
+        /// <summary>
+        /// Đưa các dòng chấm công đã nạp lên giao diện và đồng bộ thông tin chi tiết.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>int.TryParse</c>, <c>busChamCong.layChamCongTheoThang</c>, <c>danhSachCong.Rows.Count.ToString</c>, <c>danhSachCong.AsEnumerable</c>.</remarks>
         public void hienThiDuLieu()
         {
             if (dangTai) return;
@@ -71,6 +99,9 @@ namespace RangHamMat.Views
             finally { dangTai = false; }
         }
 
+        /// <summary>
+        /// Lọc dữ liệu đã nạp theo từ khóa và các lựa chọn kỳ/trạng thái của màn hình.
+        /// </summary>
         private void locDuLieu()
         {
             if (danhSachCong.Columns.Count == 0) return;
@@ -80,6 +111,12 @@ namespace RangHamMat.Views
             lblSoDong.Text = $"{danhSachCong.DefaultView.Count:N0} ca đang hiển thị";
         }
 
+        /// <summary>
+        /// Tiếp nhận thay đổi ô nhập tìm kiểm và cập nhật trạng thái/dữ liệu phụ thuộc.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>Regex.Replace</c>, <c>noiDung.Trim</c>, <c>locDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void txtTimKiem_TextChanged(object sender, TextChangedEventArgs e)
         {
             string noiDung = Regex.Replace(txtTimKiem.Text, @"[^\p{L}\p{M}\p{N} ]", "");
@@ -95,6 +132,12 @@ namespace RangHamMat.Views
             if (daTai && !dangTai) locDuLieu();
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn hộp chọn trạng thái vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>.ToString</c>, <c>locDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void cboTrangThai_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string trangThai = (cboTrangThai.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
@@ -102,18 +145,42 @@ namespace RangHamMat.Views
             if (daTai && !dangTai) locDuLieu();
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn hộp chọn tháng vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>hienThiDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void cboThang_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (daTai && !dangTai) hienThiDuLieu();
         }
 
+        /// <summary>
+        /// Tiếp nhận thay đổi ô nhập năm và cập nhật trạng thái/dữ liệu phụ thuộc.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>int.TryParse</c>, <c>hienThiDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void txtNam_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (daTai && !dangTai && txtNam.Text.Length == 4 && int.TryParse(txtNam.Text, out _)) hienThiDuLieu();
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút tải lại khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>hienThiDuLieu</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnTaiLai_Click(object sender, RoutedEventArgs e) => hienThiDuLieu();
 
+        /// <summary>
+        /// Phản ánh lựa chọn bảng hiển thị chấm công vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>xoaChiTiet</c>, <c>vao.ToString</c>, <c>ra.ToString</c>, <c>hang[&quot;TrangThai&quot;].ToString</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void gridChamCong_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (gridChamCong.SelectedItem is not DataRowView hang) { xoaChiTiet(); return; }
@@ -150,6 +217,11 @@ namespace RangHamMat.Views
             btnDuyetNhieu.IsEnabled = duocDuyet && gridChamCong.SelectedItems.Count > 1;
         }
 
+        /// <summary>
+        /// Phản ánh lựa chọn hộp chọn kết quả vào dữ liệu và phần hiển thị liên quan.
+        /// </summary>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void cboKetQua_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (txtGioVao == null || btnDuyetMot == null) return;
@@ -158,6 +230,9 @@ namespace RangHamMat.Views
             txtGioRa.IsEnabled = hoanTat;
         }
 
+        /// <summary>
+        /// Xóa nội dung chi tiết và lựa chọn đang xem trên màn hình.
+        /// </summary>
         private void xoaChiTiet()
         {
             lblNhanVien.Text = "Chọn một ca làm việc";
@@ -170,6 +245,12 @@ namespace RangHamMat.Views
             btnDuyetNhieu.IsEnabled = false;
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút duyệt một khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>.ToString</c>, <c>TimeSpan.TryParseExact</c>, <c>txtGioVao.Text.Trim</c>, <c>txtGioRa.Text.Trim</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnDuyetMot_Click(object sender, RoutedEventArgs e)
         {
             if (!PhienDangNhap.IsAdmin || gridChamCong.SelectedItem is not DataRowView hang) return;
@@ -210,6 +291,12 @@ namespace RangHamMat.Views
             }
         }
 
+        /// <summary>
+        /// Xử lý thao tác nút duyệt nhiều khi người dùng bấm nút tương ứng trên màn hình.
+        /// </summary>
+        /// <remarks>Các bước được phối hợp qua <c>gridChamCong.SelectedItems.OfType&lt;DataRowView&gt;</c>, <c>ds.Add</c>, <c>hang[&quot;MaLLV&quot;].ToString</c>, <c>hang[&quot;TrangThai&quot;].ToString</c>.</remarks>
+        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnDuyetNhieu_Click(object sender, RoutedEventArgs e)
         {
             if (!PhienDangNhap.IsAdmin) return;

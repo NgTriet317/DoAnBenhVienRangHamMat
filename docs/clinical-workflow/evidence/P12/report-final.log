@@ -1,0 +1,2 @@
+PASS SQL: lương chốt, dòng vật tư/đơn vị, hạn dùng 30/60/90 ngày và đơn nghỉ/thay thế đối soát SELECT độc lập; không ghi dữ liệu.
+PASS: 18 chuyên đề / 4 nhóm; một điểm mỗi ngày/tuần/tháng; tìm không dấu; thu ròng âm; CSV; quyền; lỗi; phản hồi cũ không ghi đè.

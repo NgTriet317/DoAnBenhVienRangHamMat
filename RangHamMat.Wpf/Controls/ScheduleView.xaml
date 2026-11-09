@@ -8,7 +8,9 @@
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="54"/><RowDefinition Height="*"/></Grid.RowDefinitions>
   <!-- Sự kiện chỉ đổi ngày đang xem; việc lấy nguồn/lưu lịch vẫn thuộc màn hình cha. -->
   <WrapPanel>
+   <!-- Nút thao tác Tuần trước — Tuần trước. Chuyển sự kiện đến Previous_Click trong code-behind. -->
    <Button Content="Tuần trước" Click="Previous_Click"/><Button Content="Hôm nay" Click="Today_Click"/><Button Content="Tuần sau" Click="Next_Click"/>
+   <!-- Trường lựa chọn WeekDate. Chuyển sự kiện đến Date_Changed trong code-behind. -->
    <DatePicker x:Name="WeekDate" Width="150" Margin="8,0,16,0" SelectedDateChanged="Date_Changed" AutomationProperties.Name="Chọn ngày trong tuần cần xem"/>
    <TextBlock Text="Lịch theo tuần · khung giờ 00:00–24:00" VerticalAlignment="Center"/>
   </WrapPanel>
@@ -26,6 +28,7 @@
     </ItemsControl>
    </Grid>
   </ScrollViewer>
+  <!-- Thành phần CalendarScroll. -->
   <ScrollViewer x:Name="CalendarScroll" Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" ScrollChanged="CalendarScroll_Changed">
    <Grid Width="{Binding BoardWidth}" Height="1152"><Grid.ColumnDefinitions><ColumnDefinition Width="68"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
     <ItemsControl ItemsSource="{Binding HourLabels}"><ItemsControl.ItemTemplate><DataTemplate><TextBlock Height="48" Text="{Binding}" Foreground="{DynamicResource Muted}" Padding="8,4,8,0"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>

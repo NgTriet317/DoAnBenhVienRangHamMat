@@ -1,0 +1,10 @@
+TableCount  Patients    Histories   Receipts    Invoices    InvoiceTotal                             NetPaid                                  Stock
+----------- ----------- ----------- ----------- ----------- ---------------------------------------- ---------------------------------------- ----------------------------------------
+         52          10          10          10          10                                732500.00                                467500.00                                 4014.000
+FixturePatients FixtureEmployees FixtureAccounts FixtureSchedules ConditionCatalogRows TemplateRows
+--------------- ---------------- --------------- ---------------- -------------------- ------------
+              0                0               0                0                    0            0
+PASS: Dữ liệu baseline và tồn giữ nguyên, fixture đã dọn, không seed điều trị.
+Prescriptions PrescriptionLines DrugGroups  DrugGuidance
+------------- ----------------- ----------- ------------
+           10                10           0            0

@@ -5,15 +5,24 @@
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries><!-- Nạp tài nguyên /RangHamMat.Wpf;component/Themes/KieuHienThiHoSo.xaml để các control dùng cùng màu, font, template và trạng thái của ứng dụng. -->
       <ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/KieuHienThiHoSo.xaml"/></ResourceDictionary.MergedDictionaries>
+      <!-- Tài nguyên BoolVisibility (BooleanToVisibilityConverter) dùng lại qua khóa XAML. -->
       <BooleanToVisibilityConverter x:Key="BoolVisibility"/>
+      <!-- Tài nguyên AppointmentMenu (ContextMenu) dùng lại qua khóa XAML. -->
       <ContextMenu x:Key="AppointmentMenu" x:Shared="False" DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+        <!-- Thành phần Chi tiết lịch hẹn — Chi tiết lịch hẹn. Chuyển sự kiện đến Details_Click trong code-behind. -->
         <MenuItem Header="Chi tiết lịch hẹn" Click="Details_Click"/>
+        <!-- Thành phần Sửa / Hẹn lại — Sửa / Hẹn lại. Chuyển sự kiện đến Reschedule_Click trong code-behind. -->
         <MenuItem Header="Sửa / Hẹn lại" Click="Reschedule_Click"/>
         <Separator/>
+        <!-- Thành phần Nháp / Chờ xác nhận — Nháp / Chờ xác nhận. Chuyển sự kiện đến Status_Click trong code-behind. -->
         <MenuItem Header="Nháp / Chờ xác nhận" Tag="Nháp" Click="Status_Click"/>
+        <!-- Thành phần Đã xác nhận — Đã xác nhận. Chuyển sự kiện đến Status_Click trong code-behind. -->
         <MenuItem Header="Đã xác nhận" Tag="Đã xác nhận" Click="Status_Click"/>
+        <!-- Thành phần Chờ khám — Chờ khám. Chuyển sự kiện đến Status_Click trong code-behind. -->
         <MenuItem Header="Chờ khám" Tag="Chờ khám" Click="Status_Click"/>
+        <!-- Thành phần Hoàn thành — Hoàn thành. Chuyển sự kiện đến Status_Click trong code-behind. -->
         <MenuItem Header="Hoàn thành" Tag="Hoàn thành" Click="Status_Click"/>
+        <!-- Thành phần Hủy hẹn — Hủy hẹn. Chuyển sự kiện đến Status_Click trong code-behind. -->
         <MenuItem Header="Hủy hẹn" Tag="Hủy" Click="Status_Click"/>
       </ContextMenu>
       <!-- Style AppointmentButton cho Button: các Setter định nghĩa thuộc tính hiển thị, Trigger đổi trạng thái khi hover/focus/disabled hoặc dữ liệu đổi. Kế thừa {StaticResource BaseButton} để dùng chung template và hành vi control. -->
@@ -52,9 +61,11 @@
     </Border>
     <Grid Grid.Row="1" Visibility="{Binding IsTimeView, Converter={StaticResource BoolVisibility}}">
       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+      <!-- Thành phần HeaderScroll. -->
       <ScrollViewer x:Name="HeaderScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" IsHitTestVisible="False">
         <Grid Width="{Binding BoardWidth}"><Grid.ColumnDefinitions><ColumnDefinition Width="72"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,1,1" Background="White" Panel.ZIndex="20"><Border.RenderTransform><TranslateTransform X="{Binding HorizontalOffset, ElementName=TimeScroll}"/></Border.RenderTransform></Border><ItemsControl Grid.Column="1" ItemsSource="{Binding Days}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding Columns}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,1,1" Background="{Binding DaySurface}" Padding="4,12"><TextBlock Text="{Binding Heading}" TextAlignment="Center" FontWeight="SemiBold" Foreground="{StaticResource AccentDark}"/></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></Grid>
       </ScrollViewer>
+      <!-- Thành phần TimeScroll. -->
       <ScrollViewer Grid.Row="1" x:Name="TimeScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" ScrollChanged="TimeScroll_Changed">
         <Grid Width="{Binding BoardWidth}" Height="{Binding TimeHeight}"><Grid.ColumnDefinitions><ColumnDefinition Width="72"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
           <ItemsControl ItemsSource="{Binding TimeLabels}" Panel.ZIndex="20"><ItemsControl.RenderTransform><TranslateTransform X="{Binding HorizontalOffset, ElementName=TimeScroll}"/></ItemsControl.RenderTransform><ItemsControl.ItemTemplate><DataTemplate><Border Height="60" BorderBrush="{StaticResource Line}" BorderThickness="0,0,1,1" Background="White"><TextBlock Text="{Binding}" FontSize="11" Foreground="{StaticResource Muted}" TextAlignment="Right" Margin="0,4,9,0"/></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>

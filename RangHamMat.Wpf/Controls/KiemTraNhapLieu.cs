@@ -21,10 +21,25 @@ public sealed class LoiNhapLieu(string field, string message) : InvalidOperation
 /// <summary>Chặn dữ liệu sai trước khi gọi BUS; ràng buộc nghiệp vụ và SQL vẫn được kiểm tra lại khi lưu.</summary>
 public static class KiemTraNhapLieu
 {
+    /// <summary>
+    /// Các quy tắc được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly Dictionary<string, Dictionary<string, XElement>> rules = LoadRules();
+    /// <summary>
+    /// Cờ Đã đăng ký; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private static bool registered;
+    /// <summary>
+    /// Định danh dependency property đánh dấu ngày không hợp lệ được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly DependencyProperty InvalidDateProperty=DependencyProperty.RegisterAttached("InvalidDate",typeof(string),typeof(KiemTraNhapLieu),new PropertyMetadata(""));
+    /// <summary>
+    /// Định danh dependency property lưu thông báo lỗi trên điều khiển được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     public static readonly DependencyProperty ErrorProperty = DependencyProperty.RegisterAttached("Error", typeof(string), typeof(KiemTraNhapLieu), new PropertyMetadata(""));
+    /// <summary>
+    /// Định danh dependency property cho trạng thái có lỗi được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     public static readonly DependencyProperty HasErrorProperty = DependencyProperty.RegisterAttached("HasError", typeof(bool), typeof(KiemTraNhapLieu), new PropertyMetadata(false));
     /// <summary>Cờ cho trigger XAML đổi viền khi có lỗi nhập liệu.</summary>
     public static bool GetHasError(DependencyObject target) => (bool)target.GetValue(HasErrorProperty);
@@ -228,8 +243,8 @@ public static class KiemTraNhapLieu
             values.TryGetValue("NgayKetThuc", out var ngayKetThuc); values.TryGetValue("TrangThai", out var trangThai);
             values.TryGetValue("NgayBatDau", out var ngayBatDau); values.TryGetValue("NgayBaoTriTiepTheo", out var ngayTiepTheo);
             var ketThuc = ngayKetThuc as DateTime?;
-            if (values.ContainsKey("NgayKetThuc") && (Convert.ToString(trangThai) is "Hoàn thành" or "Đã xác nhận") && ketThuc is null)
-                throw new LoiNhapLieu("NgayKetThuc", "Vui lòng nhập ngày kết thúc khi hoàn thành bảo trì.");
+            if ((Convert.ToString(trangThai) is "Chưa xác nhận" or "Đã xác nhận") && ketThuc is not null)
+                throw new LoiNhapLieu("NgayKetThuc", "Ngày kết thúc do hệ thống ghi khi hoàn thành bảo trì.");
             var moc = ketThuc ?? ngayBatDau as DateTime?;
             if (moc is not null && ngayTiepTheo is DateTime tiepTheo && tiepTheo.Date <= moc.Value.Date)
                 throw new LoiNhapLieu("NgayBaoTriTiepTheo", "Ngày bảo trì tiếp theo phải sau ngày kết thúc hoặc ngày bắt đầu.");

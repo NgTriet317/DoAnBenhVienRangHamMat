@@ -33,9 +33,15 @@ public sealed partial class ChartView : UserControl, INotifyPropertyChanged
     public static readonly DependencyProperty SecondaryLabelProperty = DependencyProperty.Register(nameof(SecondaryLabel), typeof(string), typeof(ChartView), new PropertyMetadata("", OnPresentationChanged));
     /// <summary>Chọn biểu đồ đường hoặc cột; dùng dependency property để thay chế độ sau Loaded vẫn cập nhật.</summary>
     public static readonly DependencyProperty IsLineProperty = DependencyProperty.Register(nameof(IsLine), typeof(bool), typeof(ChartView), new PropertyMetadata(false, OnPresentationChanged));
+    /// <summary>
+    /// Giá trị lưu nội bộ của thuộc tính Unit, dùng bởi getter/setter tương ứng.
+    /// </summary>
     public static readonly DependencyProperty UnitProperty = DependencyProperty.Register(nameof(Unit), typeof(string), typeof(ChartView), new PropertyMetadata("VNĐ", OnPresentationChanged));
     /// <summary>Đơn vị tooltip do chuyên đề cung cấp; chuỗi rỗng cho dữ liệu đếm có tên chỉ tiêu rõ ràng.</summary>
     public string Unit { get => (string)GetValue(UnitProperty); set => SetValue(UnitProperty, value); }
+    /// <summary>
+    /// Được theo dõi được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private INotifyCollectionChanged? observed;
     /// <summary>Nguồn điểm báo cáo; control không tự lấy hoặc tính tổng tiền từ SQL.</summary>
     public IEnumerable<ChartPoint>? Points { get => (IEnumerable<ChartPoint>?)GetValue(PointsProperty); set => SetValue(PointsProperty, value); }

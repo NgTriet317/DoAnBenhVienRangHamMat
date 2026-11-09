@@ -11,11 +11,29 @@ namespace ET
     [Table("HANG_HOA")]
     public class ET_HANGHOA
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaHH, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maHH = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TenHH, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string tenHH = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaLoaiHH, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maLoaiHH = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính DonViTinh, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string donViTinh = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MoTa, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string moTa = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
 
         /// <summary>

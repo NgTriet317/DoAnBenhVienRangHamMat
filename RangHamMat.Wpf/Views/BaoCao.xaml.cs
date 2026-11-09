@@ -12,45 +12,142 @@ using RangHamMat.Controls;
 
 namespace RangHamMat.Views;
 
+/// <summary>
+/// Phần xử lý mục báo cáo của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+/// </summary>
 public sealed class MucBaoCao : INotifyPropertyChanged
 {
+    /// <summary>
+    /// Chuyên đề.
+    /// </summary>
     public ChuyenDeBaoCao ChuyenDe { get; }
+    /// <summary>
+    /// Cờ Được chọn; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool duocChon;
+    /// <summary>
+    /// Giá trị Được chọn; được xác định bởi phần getter/setter của thuộc tính. Phát PropertyChanged khi gán để binding cập nhật nội dung liên quan.
+    /// </summary>
     public bool DuocChon { get => duocChon; set { if (duocChon == value) return; duocChon = value; PropertyChanged?.Invoke(this, new(nameof(DuocChon))); } }
+    /// <summary>
+    /// Khởi tạo mục báo cáo.
+    /// </summary>
+    /// <param name="chuyenDe">Giá trị chuyên đề dùng khi thực hiện thao tác; kiểu ChuyenDeBaoCao.</param>
     public MucBaoCao(ChuyenDeBaoCao chuyenDe) => ChuyenDe = chuyenDe;
+    /// <summary>
+    /// Thông báo thay đổi thuộc tính cho các thành phần đã đăng ký theo dõi.
+    /// </summary>
     public event PropertyChangedEventHandler? PropertyChanged;
 }
+/// <summary>
+/// Phần xử lý nhóm báo cáo của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
+/// </summary>
 public sealed class NhomBaoCao : INotifyPropertyChanged
 {
+    /// <summary>
+    /// Tên.
+    /// </summary>
     public string Ten { get; init; } = "";
+    /// <summary>
+    /// Các mục.
+    /// </summary>
     public MucBaoCao[] CacMuc { get; init; } = Array.Empty<MucBaoCao>();
+    /// <summary>
+    /// Giá trị Số lượng của dòng dữ liệu; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public int SoLuong => CacMuc.Length;
+    /// <summary>
+    /// Cờ Mở rộng; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool moRong;
+    /// <summary>
+    /// Giá trị Mở rộng; được xác định bởi phần getter/setter của thuộc tính. Phát PropertyChanged khi gán để binding cập nhật nội dung liên quan.
+    /// </summary>
     public bool MoRong { get => moRong; set { if (moRong == value) return; moRong = value; PropertyChanged?.Invoke(this, new(nameof(MoRong))); } }
+    /// <summary>
+    /// Thông báo thay đổi thuộc tính cho các thành phần đã đăng ký theo dõi.
+    /// </summary>
     public event PropertyChangedEventHandler? PropertyChanged;
 }
+/// <summary>
+/// Gói dữ liệu chỉ số báo cáo truyền giữa các bước xử lý; các thành phần được khai báo ngay trong kiểu.
+/// </summary>
+/// <param name="Ten">Giá trị tên dùng khi thực hiện thao tác; kiểu string.</param>
+/// <param name="GiaTri">Giá trị giá trị dùng khi thực hiện thao tác; kiểu string.</param>
+/// <param name="DonVi">Giá trị đơn vị dùng khi thực hiện thao tác; kiểu string.</param>
+/// <param name="Mau">Giá trị mẫu dùng khi thực hiện thao tác; kiểu string.</param>
+/// <param name="GhiChu">Giá trị ghi chú dùng khi thực hiện thao tác; kiểu string.</param>
 public sealed record ChiSoBaoCao(string Ten, string GiaTri, string DonVi, string Mau, string GhiChu);
 
 /// <summary>XAML giữ toàn bộ bố cục. Code-behind chọn chuyên đề, tải snapshot chỉ đọc và xuất bảng tổng hợp.</summary>
 public partial class BaoCao : UserControl
 {
+    /// <summary>
+    /// Định danh dependency property quy định số cột chỉ số thống kê được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     public static readonly DependencyProperty KpiColumnsProperty = DependencyProperty.Register(nameof(KpiColumns), typeof(int), typeof(BaoCao), new PropertyMetadata(4));
+    /// <summary>
+    /// Giá trị Chỉ số tổng hợp các cột; được xác định bởi phần getter/setter của thuộc tính.
+    /// </summary>
     public int KpiColumns { get => (int)GetValue(KpiColumnsProperty); set => SetValue(KpiColumnsProperty, value); }
+    /// <summary>
+    /// Tiếng Việt được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly CultureInfo Vietnamese = CultureInfo.GetCultureInfo("vi-VN");
+    /// <summary>
+    /// Bảng màu được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private static readonly string[] Colors = { "#2468CD", "#087A73", "#76519E", "#986010" };
+    /// <summary>
+    /// Đọc được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly Func<string, PhatSinhBaoCao[]>? read;
+    /// <summary>
+    /// Trình đơn được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly MucBaoCao[] menu;
+    /// <summary>
+    /// Các nhóm được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private readonly NhomBaoCao[] groups;
+    /// <summary>
+    /// Đang chọn được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private ChuyenDeBaoCao? selected;
+    /// <summary>
+    /// Kết quả được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private KetQuaBaoCao? result;
+    /// <summary>
+    /// Cờ Sẵn sàng, Đang thay đổi lựa chọn, Cờ đang điền dữ liệu, dùng tránh xử lý lại sự kiện phát sinh do cập nhật giao diện; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
+    /// </summary>
     private bool ready, changingSelection, loading;
+    /// <summary>
+    /// Phiên bản được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private int version;
+    /// <summary>
+    /// Đã áp dụng từ đã áp dụng đến được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private DateTime appliedFrom, appliedTo;
+    /// <summary>
+    /// Đã áp dụng chế độ được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private string appliedMode = "Ngày";
+    /// <summary>
+    /// Đã áp dụng ngưỡng được giữ trong phạm vi lớp để các thao tác dùng lại.
+    /// </summary>
     private int appliedThreshold = 30;
 
+    /// <summary>
+    /// Khởi tạo báo cáo.
+    /// </summary>
     public BaoCao() : this(null) { }
 
+    /// <summary>
+    /// Khởi tạo báo cáo. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
+    /// </summary>
+    /// <param name="read">Giá trị đọc dùng khi thực hiện thao tác; kiểu Func&lt;string, PhatSinhBaoCao[]&gt;?.</param>
     public BaoCao(Func<string, PhatSinhBaoCao[]>? read)
     {
         this.read = read;
@@ -72,6 +169,11 @@ public partial class BaoCao : UserControl
         HienDanhMuc(); ChonBaoCao("02");
     }
 
+    /// <summary>
+    /// Chọn chuyên đề báo cáo và đặt các bộ lọc, chỉ số, cột chi tiết tương ứng.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>XoaKetQua</c>, <c>ThongBao</c>, <c>BaoCaoDuLieu.DanhMuc.Single</c>, <c>group.CacMuc.Any</c>.</remarks>
+    /// <param name="ma">Mã định danh của bản ghi cần xử lý.</param>
     public void ChonBaoCao(string ma)
     {
         if (!PhienDangNhap.IsAdmin)
@@ -123,6 +225,10 @@ public partial class BaoCao : UserControl
         ReportScroll.ScrollToTop();
     }
 
+    /// <summary>
+    /// Hiển thị danh sách chuyên đề để người dùng chọn báo cáo cần xem.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>BaoCaoDuLieu.BoDau</c>, <c>ReportSearch.Text.Trim</c>, <c>keyword.Split</c>, <c>groups.Select</c>.</remarks>
     private void HienDanhMuc()
     {
         if (!ready) return;
@@ -135,6 +241,11 @@ public partial class BaoCao : UserControl
         CatalogCount.Text = keyword.Length == 0 ? $"{groups.Length} nhóm · {menu.Length} chuyên đề" : $"{filtered.Sum(group => group.SoLuong)} / {menu.Length} chuyên đề";
         NoSearchResults.Visibility = filtered.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
+    /// <summary>
+    /// Thiết lập các cột chi tiết theo chuyên đề báo cáo đang chọn.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>BaoCaoDuLieu.CotChiTiet</c>.</remarks>
+    /// <param name="report">Giá trị báo cáo dùng khi thực hiện thao tác; kiểu ChuyenDeBaoCao.</param>
     private void CauHinhChiTiet(ChuyenDeBaoCao report)
     {
         var headers = BaoCaoDuLieu.CotChiTiet(report.Ma);
@@ -166,11 +277,29 @@ public partial class BaoCao : UserControl
             }
         }
     }
+    /// <summary>
+    /// Tiếp nhận thay đổi tìm kiểm và cập nhật trạng thái/dữ liệu phụ thuộc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>HienDanhMuc</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void TimKiem_Changed(object sender, TextChangedEventArgs e) => HienDanhMuc();
+    /// <summary>
+    /// Tiếp nhận thay đổi chuyên đề và cập nhật trạng thái/dữ liệu phụ thuộc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>ChonBaoCao</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void ChuyenDe_Changed(object sender, RoutedEventArgs e)
     {
         if (ready && !changingSelection && sender is RadioButton { DataContext: MucBaoCao item }) ChonBaoCao(item.ChuyenDe.Ma);
     }
+    /// <summary>
+    /// Tiếp nhận thay đổi bộ lọc và cập nhật trạng thái/dữ liệu phụ thuộc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>XoaKetQua</c>, <c>ThongBao</c>, <c>KiemTraNgay</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void BoLoc_Changed(object sender, RoutedEventArgs e)
     {
         if (!ready || selected is null) return;
@@ -178,12 +307,24 @@ public partial class BaoCao : UserControl
         ThongBao(selected.DaKetNoi ? "Bộ lọc đã thay đổi. Nhấn Tải báo cáo để cập nhật kết quả." : "Chuyên đề chưa tích hợp nguồn dữ liệu; chưa có số liệu để tải hoặc xuất.");
         KiemTraNgay(out _, out _);
     }
+    /// <summary>
+    /// Nhận diện nội dung ngày còn đang chỉnh để tránh dùng dữ liệu chưa hợp lệ.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>VisualTreeHelper.GetParent</c>, <c>BoLoc_Changed</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void NgayDangSua(object sender, TextChangedEventArgs e)
     {
         if (!ready || e.OriginalSource is not DependencyObject element) return;
         for (DependencyObject? node = element; node is not null && node != this; node = VisualTreeHelper.GetParent(node))
             if (node is DatePicker) { BoLoc_Changed(sender, e); break; }
     }
+    /// <summary>
+    /// Kiểm tra dấu lỗi hoặc nội dung ngày chưa hợp lệ của bộ lọc.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>XoaKetQua</c>, <c>LoiBoLoc</c>, <c>ThongBao</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void NgayKhongHopLe(object? sender, DatePickerDateValidationErrorEventArgs e)
     {
         e.ThrowException = false;
@@ -191,6 +332,12 @@ public partial class BaoCao : UserControl
         XoaKetQua(); LoiBoLoc("Ngày không hợp lệ. Vui lòng nhập theo định dạng dd/MM/yyyy.");
         ThongBao("Ngày vừa nhập không hợp lệ. Hãy sửa ngày hoặc chọn lại trên lịch.", true);
     }
+    /// <summary>
+    /// Xử lý thao tác chọn nhanh khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>today.AddDays</c>, <c>BoLoc_Changed</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void ChonNhanh_Click(object sender, RoutedEventArgs e)
     {
         ready = false;
@@ -204,8 +351,19 @@ public partial class BaoCao : UserControl
         finally { ready = true; }
         BoLoc_Changed(sender, e);
     }
+    /// <summary>
+    /// Hiển thị lỗi của bộ lọc và ngăn dùng tiêu chí chưa hợp lệ để tải báo cáo.
+    /// </summary>
+    /// <param name="message">Nội dung thông báo được chuyển đến nơi gọi hoặc hiển thị cho người dùng.</param>
     private void LoiBoLoc(string message)
     { FilterError.Text = message; FilterError.Visibility = message.Length == 0 ? Visibility.Collapsed : Visibility.Visible; }
+    /// <summary>
+    /// Kiểm tra khoảng ngày theo quy tắc bộ lọc của báo cáo.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>KiemTraNhapLieu.ReadDate</c>, <c>ReadDate</c>, <c>LoiBoLoc</c>.</remarks>
+    /// <param name="from">Giá trị từ dùng khi thực hiện thao tác; kiểu DateTime.</param>
+    /// <param name="to">Giá trị đến dùng khi thực hiện thao tác; kiểu DateTime.</param>
+    /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     private bool KiemTraNgay(out DateTime from, out DateTime to)
     {
         from = default; to = default;
@@ -225,7 +383,18 @@ public partial class BaoCao : UserControl
         LoiBoLoc(""); return true;
     }
 
+    /// <summary>
+    /// Xử lý thao tác tải khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>TaiBaoCaoAsync</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private async void Tai_Click(object sender, RoutedEventArgs e) => await TaiBaoCaoAsync();
+    /// <summary>
+    /// Đọc báo cáo bất đồng bộ theo các tiêu chí đã kiểm tra, cập nhật kết quả và trạng thái đang tải.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>XoaKetQua</c>, <c>ThongBao</c>, <c>KiemTraNgay</c>, <c>Task.Run</c>.</remarks>
+    /// <returns>Tác vụ bất đồng bộ để nơi gọi theo dõi thời điểm kết thúc và kết quả xử lý.</returns>
     public async Task TaiBaoCaoAsync()
     {
         if (loading) return;
@@ -268,6 +437,10 @@ public partial class BaoCao : UserControl
         }
     }
 
+    /// <summary>
+    /// Xóa các bảng/chỉ số kết quả đang hiển thị khi đổi chuyên đề hoặc cần đặt lại màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Array.Empty&lt;ChartPoint&gt;</c>, <c>LoiBoLoc</c>, <c>HienChiSo</c>.</remarks>
     private void XoaKetQua()
     {
         version++; result = null; ExportButton.IsEnabled = false; ReportGrid.ItemsSource = null;
@@ -281,6 +454,11 @@ public partial class BaoCao : UserControl
         TrendTitle.Text = "Xu hướng theo " + ((PeriodMode.SelectedItem as ComboBoxItem)?.Content as string ?? "Ngày").ToLowerInvariant();
         LoiBoLoc(""); HienChiSo(null);
     }
+    /// <summary>
+    /// Đưa các chỉ số tổng hợp của báo cáo lên vùng thống kê.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>selected.ChiSo.Select</c>, <c>values[i]!.Value.ToString</c>.</remarks>
+    /// <param name="total">Giá trị tổng dùng khi thực hiện thao tác; kiểu DongBaoCao?.</param>
     private void HienChiSo(DongBaoCao? total)
     {
         if (selected is null) { MetricItems.ItemsSource = null; return; }
@@ -289,6 +467,12 @@ public partial class BaoCao : UserControl
             values is null || values[i] is null ? "—" : values[i]!.Value.ToString(selected.DonVi[i] is "VNĐ" or "%" ? "N2" : "N0", Vietnamese),
             selected.DonVi[i], Colors[i], selected.QuyTac)).ToArray();
     }
+    /// <summary>
+    /// Hiển thị các dòng kết quả và dữ liệu biểu đồ/chi tiết của báo cáo đã tải.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>HienChiSo</c>, <c>appliedMode.ToLowerInvariant</c>, <c>Array.Empty&lt;ChartPoint&gt;</c>, <c>data.CacKy.Select</c>.</remarks>
+    /// <param name="report">Giá trị báo cáo dùng khi thực hiện thao tác; kiểu ChuyenDeBaoCao.</param>
+    /// <param name="data">Giá trị dữ liệu dùng khi thực hiện thao tác; kiểu KetQuaBaoCao.</param>
     private void HienKetQua(ChuyenDeBaoCao report, KetQuaBaoCao data)
     {
         HienChiSo(data.Tong); ReportGrid.ItemsSource = data.CacKy;
@@ -314,12 +498,24 @@ public partial class BaoCao : UserControl
         DetailsCount.Text = $"{data.ChiTiet.Length} dòng · " + (report.TheoThoiDiem ? $"Ngày chốt {appliedFrom:dd/MM/yyyy} · Ngưỡng {appliedThreshold} ngày" : $"{appliedFrom:dd/MM/yyyy} – {appliedTo:dd/MM/yyyy}");
         ExportButton.IsEnabled = PhienDangNhap.IsAdmin;
     }
+    /// <summary>
+    /// Cập nhật nội dung và cách hiển thị vùng thông báo của màn hình.
+    /// </summary>
+    /// <param name="message">Nội dung thông báo được chuyển đến nơi gọi hoặc hiển thị cho người dùng.</param>
+    /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu bool.</param>
+    /// <param name="success">Giá trị thành công dùng khi thực hiện thao tác; kiểu bool.</param>
     private void ThongBao(string message, bool error = false, bool success = false)
     {
         PageStatus.Text = message;
         PageStatus.Foreground = (Brush)new BrushConverter().ConvertFromString(error ? "#A12D26" : success ? "#176344" : "#1D5AAC")!;
         StatusSurface.Background = (Brush)new BrushConverter().ConvertFromString(error ? "#FFF0EE" : success ? "#E9F5EE" : "#EAF2FF")!;
     }
+    /// <summary>
+    /// Xử lý thao tác xuất khi người dùng bấm nút tương ứng trên màn hình.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>dialog.ShowDialog</c>, <c>File.WriteAllText</c>, <c>BaoCaoDuLieu.TaoCsv</c>, <c>ThongBao</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Xuat_Click(object sender, RoutedEventArgs e)
     {
         if (!PhienDangNhap.IsAdmin || result is null || selected is null || loading) return;
@@ -336,6 +532,12 @@ public partial class BaoCao : UserControl
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         { ThongBao("Không ghi được tệp. Kiểm tra quyền thư mục hoặc đóng tệp đang mở rồi xuất lại.", true); }
     }
+    /// <summary>
+    /// Điều chỉnh phần hiển thị theo kích thước thực tế của nội dung.
+    /// </summary>
+    /// <remarks>Các bước được phối hợp qua <c>Grid.SetColumn</c>, <c>Grid.SetRow</c>.</remarks>
+    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
+    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void NoiDung_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         var compact = e.NewSize.Width < 820;

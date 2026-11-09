@@ -11,10 +11,25 @@ namespace ET
     [Table("CA_LAM")]
     public class ET_CALAM
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaCa, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maCa = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GioBatDau, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private TimeSpan gioBatDau;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GioKetThuc, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private TimeSpan gioKetThuc;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GhiChu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? ghiChu;
 
         /// <summary>

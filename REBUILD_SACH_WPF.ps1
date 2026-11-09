@@ -1,4 +1,12 @@
-﻿# Chay tai thu muc chua file BenhVienRangHamMat.sln. Khong sua database va ma nguon.
+﻿<#
+.SYNOPSIS
+Dọn cache build và cache Visual Studio trước khi dựng lại ứng dụng.
+.DESCRIPTION
+Khi được chạy, script xóa các thư mục bin/obj được liệt kê và .vs; sau đó hỏi có restore/build Debug không. Dừng WPF và Visual Studio trước khi dọn các thư mục bộ nhớ đệm.
+.NOTES
+Các đường dẫn làm việc được tính từ vị trí script; lỗi được dừng và báo cho nơi gọi.
+#>
+# Chay tai thu muc chua file BenhVienRangHamMat.sln. Khong sua database va ma nguon.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $solution = Join-Path $root 'BenhVienRangHamMat.sln'

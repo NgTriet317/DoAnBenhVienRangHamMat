@@ -1,3 +1,4 @@
+<!-- Giao diện CuaSoThemChungChi: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <Window x:Class="RangHamMat.Views.CuaSoThemChungChi"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -7,6 +8,7 @@
         WindowStartupLocation="CenterOwner">
 
     <Window.Resources>
+        <!-- Tài nguyên FormLabel (Style) áp dụng cho TextBlock. -->
         <Style x:Key="FormLabel" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -14,6 +16,7 @@
             <Setter Property="Margin" Value="0,0,0,5"/>
         </Style>
 
+        <!-- Tài nguyên FormTextBox (Style) áp dụng cho TextBox. -->
         <Style x:Key="FormTextBox" TargetType="TextBox">
             <Setter Property="Height" Value="40"/>
             <Setter Property="Padding" Value="10,0"/>
@@ -21,6 +24,7 @@
             <Setter Property="Margin" Value="0,0,0,14"/>
         </Style>
 
+        <!-- Tài nguyên SectionHeader (Style) áp dụng cho TextBlock. -->
         <Style x:Key="SectionHeader" TargetType="TextBlock">
             <Setter Property="FontSize" Value="17"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -65,22 +69,27 @@
 
                             <StackPanel>
                                 <TextBlock Text="Mã chứng chỉ (tự sinh)" Style="{StaticResource FormLabel}"/>
+                                <!-- Ô nhập txtMaCC. -->
                                 <TextBox x:Name="txtMaCC" Style="{StaticResource FormTextBox}" IsReadOnly="True"/>
                             </StackPanel>
 
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Nhân viên *" Style="{StaticResource FormLabel}"/>
+                                <!-- Trường lựa chọn cboNhanVien. -->
                                 <ComboBox x:Name="cboNhanVien" DisplayMemberPath="HoTen" SelectedValuePath="MaNV" Height="40" Margin="0,0,0,14"/>
                             </StackPanel>
                         </Grid>
 
                         <TextBlock Text="Số chứng chỉ *" Style="{StaticResource FormLabel}"/>
+                        <!-- Ô nhập txtSoChungChi. -->
                         <TextBox x:Name="txtSoChungChi" Style="{StaticResource FormTextBox}"/>
 
                         <TextBlock Text="Tên chứng chỉ *" Style="{StaticResource FormLabel}"/>
+                        <!-- Ô nhập txtTenChungChi. -->
                         <TextBox x:Name="txtTenChungChi" Style="{StaticResource FormTextBox}"/>
 
                         <TextBlock Text="Nơi cấp chứng chỉ *" Style="{StaticResource FormLabel}"/>
+                        <!-- Ô nhập txtNoiCap. -->
                         <TextBox x:Name="txtNoiCap" Style="{StaticResource FormTextBox}"/>
                     </StackPanel>
                 </Border>
@@ -91,12 +100,15 @@
                         <TextBlock Text="Thời hạn &amp; Trạng thái" Style="{StaticResource SectionHeader}"/>
 
                         <TextBlock Text="Ngày cấp *" Style="{StaticResource FormLabel}"/>
+                        <!-- Trường lựa chọn dpNgayCap. -->
                         <DatePicker x:Name="dpNgayCap" Height="40" Margin="0,0,0,14"/>
 
                         <TextBlock Text="Hạn chứng chỉ (bỏ trống nếu vô thời hạn)" Style="{StaticResource FormLabel}"/>
+                        <!-- Trường lựa chọn dpHanChungChi. -->
                         <DatePicker x:Name="dpHanChungChi" Height="40" Margin="0,0,0,14"/>
 
                         <TextBlock Text="Trạng thái *" Style="{StaticResource FormLabel}"/>
+                        <!-- Trường lựa chọn cboTrangThai. -->
                         <ComboBox x:Name="cboTrangThai" Height="40" SelectedIndex="0" Margin="0,0,0,14">
                             <ComboBoxItem Content="Còn hiệu lực"/>
                             <ComboBoxItem Content="Sắp hết hạn"/>
@@ -104,6 +116,7 @@
                         </ComboBox>
 
                         <TextBlock Text="Ghi chú" Style="{StaticResource FormLabel}"/>
+                        <!-- Ô nhập txtGhiChu. -->
                         <TextBox x:Name="txtGhiChu" MinHeight="75" Padding="10" TextWrapping="Wrap"
                                  AcceptsReturn="True" Margin="0,0,0,14"/>
                     </StackPanel>
@@ -126,12 +139,15 @@
                        Foreground="{StaticResource Muted}" FontSize="12"
                        VerticalAlignment="Center"/>
 
+            <!-- Nút thao tác btnLamMoi — Làm mới. Chuyển sự kiện đến btnLamMoi_Click trong code-behind. -->
             <Button Grid.Column="1" x:Name="btnLamMoi"
                     Content="Làm mới" Width="95" Height="40" Click="btnLamMoi_Click"/>
 
+            <!-- Nút thao tác btnDong — Hủy bỏ. Chuyển sự kiện đến btnDong_Click trong code-behind. -->
             <Button Grid.Column="3" x:Name="btnDong"
                     Content="Hủy bỏ" Width="95" Height="40" Click="btnDong_Click"/>
 
+            <!-- Nút thao tác btnThem — Thêm chứng chỉ. Chuyển sự kiện đến btnThem_Click trong code-behind. -->
             <Button Grid.Column="5" x:Name="btnThem"
                     Content="Thêm chứng chỉ" Width="140" Height="40"
                     Style="{StaticResource Primary}" Click="btnThem_Click"/>

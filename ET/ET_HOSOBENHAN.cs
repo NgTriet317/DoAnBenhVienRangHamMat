@@ -11,11 +11,29 @@ namespace ET
     [Table("HO_SO_BENH_AN")]
     public class ET_HOSOBENHAN
     {
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaHS, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maHS = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính MaBN, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string maBN = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính NgayLap, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private DateTime ngayLap;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính LyDoKhamBanDau, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string lyDoKhamBanDau = string.Empty;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính GhiChu, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string? ghiChu;
+        /// <summary>
+        /// Giá trị lưu nội bộ của thuộc tính TrangThai, dùng bởi getter/setter tương ứng.
+        /// </summary>
         private string trangThai = string.Empty;
 
         /// <summary>
