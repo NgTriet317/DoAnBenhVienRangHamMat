@@ -1,47 +1,24 @@
-using BUS;
+﻿using BUS;
 using ET;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace RangHamMat.Views;
 
-/// <summary>
-/// Phần xử lý đơn xin nghỉ quản lý của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
-/// </summary>
 public partial class DonXinNghiQuanLy : UserControl
 {
-    /// <summary>
-    /// Đối tượng nghiệp vụ đơn xin nghỉ được màn hình dùng để đọc/ghi dữ liệu.
-    /// </summary>
     private BUS_DON_XIN_NGHI bus = new BUS_DON_XIN_NGHI();
-    /// <summary>
-    /// Danh sách  dùng trong đơn xin nghỉ quản lý được giữ trong phạm vi lớp để các thao tác dùng lại.
-    /// </summary>
     private List<ET_DON_XIN_NGHI_HIENTHI> danhSach = new List<ET_DON_XIN_NGHI_HIENTHI>();
-    /// <summary>
-    /// Đơn đang xem được giữ trong phạm vi lớp để các thao tác dùng lại.
-    /// </summary>
     private ET_DON_XIN_NGHI_HIENTHI? donDangXem;
-    /// <summary>
-    /// Cờ Đã nạp dữ liệu; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
-    /// </summary>
     private bool daNapDuLieu;
-    /// <summary>
-    /// Đối tượng nghiệp vụ phòng được màn hình dùng để đọc/ghi dữ liệu.
-    /// </summary>
     private BUS_PHONG busPhong = new BUS_PHONG();
 
-    /// <summary>
-    /// Thông báo quay lại cho các thành phần đã đăng ký theo dõi.
-    /// </summary>
     public event EventHandler? QuayLai;
 
-    /// <summary>
-    /// Khởi tạo đơn xin nghỉ quản lý. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
-    /// </summary>
     public DonXinNghiQuanLy()
     {
         InitializeComponent();
@@ -55,10 +32,6 @@ public partial class DonXinNghiQuanLy : UserControl
         TaiDuLieu();
     }
 
-    /// <summary>
-    /// Đọc lại dữ liệu theo phạm vi hiện tại, áp dụng bộ lọc và cập nhật danh sách/chi tiết.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>bus.layDanhSachDon</c>, <c>cboChuyenKhoaDon.Items.Clear</c>, <c>cboChuyenKhoaDon.Items.Add</c>, <c>cboChuyenKhoaDon.Items.Contains</c>.</remarks>
     private void TaiDuLieu()
     {
         try
@@ -91,10 +64,6 @@ public partial class DonXinNghiQuanLy : UserControl
         }
     }
 
-    /// <summary>
-    /// Lọc danh sách nguồn theo tiêu chí trên giao diện mà không thay đổi dữ liệu trong SQL.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>txtTenNhanVien.Text.Trim</c>, <c>mucTrangThai.Content.ToString</c>, <c>don.HoTen.IndexOf</c>, <c>ketQua.Add</c>.</remarks>
     private void LocDanhSach()
     {
         if (!daNapDuLieu) return;
@@ -127,45 +96,21 @@ public partial class DonXinNghiQuanLy : UserControl
         txtSoDon.Text = ketQua.Count + " đơn hiển thị / " + danhSach.Count + " đơn · " + choDuyet + " chờ duyệt";
     }
 
-    /// <summary>
-    /// Tiếp nhận thay đổi bộ lọc và cập nhật trạng thái/dữ liệu phụ thuộc.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>LocDanhSach</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void BoLoc_ThayDoi(object sender, RoutedEventArgs e)
     {
         if (daNapDuLieu) LocDanhSach();
     }
 
-    /// <summary>
-    /// Xử lý thao tác tải lại khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>TaiDuLieu</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void TaiLai_Click(object sender, RoutedEventArgs e)
     {
         TaiDuLieu();
     }
 
-    /// <summary>
-    /// Xử lý thao tác quay lại khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>QuayLai</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void QuayLai_Click(object sender, RoutedEventArgs e)
     {
         if (QuayLai != null) QuayLai(this, EventArgs.Empty);
     }
 
-    /// <summary>
-    /// Mở nội dung hoặc thao tác chi tiết của bảng đơn xin nghỉ khi người dùng bấm đúp.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>don.TuNgay.ToString</c>, <c>don.DenNgay.ToString</c>, <c>don.GhiChu.LastIndexOf</c>, <c>don.GhiChu.Substring</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void dgvDonXinNghi_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (dgvDonXinNghi.SelectedItem is not ET_DON_XIN_NGHI_HIENTHI don) return;
@@ -173,9 +118,10 @@ public partial class DonXinNghiQuanLy : UserControl
         txtMaDon.Text = "Mã đơn: " + don.MaDonNghi;
         txtHoTen.Text = don.HoTen;
         txtThongTinNhanVien.Text = don.TenCK;
-        txtLoaiDon.Text = don.LoaiDon;
+        txtLoaiDon.Text = don.LoaiNghi != "Chưa xác định" ? don.LoaiNghi : don.LoaiDon;
         txtTrangThaiChiTiet.Text = don.TrangThaiDuyet;
         txtThoiGian.Text = don.TuNgay.ToString("dd/MM/yyyy") + " – " + don.DenNgay.ToString("dd/MM/yyyy");
+        TaiThongTinQuyPhepDon(don);
         txtLyDo.Text = don.LyDo;
         txtGhiChu.Text = don.GhiChu;
         if (!string.IsNullOrWhiteSpace(don.LyDoKhongDuyet) && !string.IsNullOrWhiteSpace(don.GhiChu))
@@ -209,10 +155,6 @@ public partial class DonXinNghiQuanLy : UserControl
         ChiTietOverlay.Visibility = Visibility.Visible;
     }
 
-    /// <summary>
-    /// Nạp các ca của đơn nghỉ đang chọn để quản lý phân công người thay.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>bus.layCaCanThayThe</c>, <c>donDangXem.TuNgay.ToString</c>, <c>donDangXem.DenNgay.ToString</c>, <c>bus.layNhanVienThayThe</c>.</remarks>
     private void TaiCaCanThayThe()
     {
         if (donDangXem == null) return;
@@ -251,11 +193,6 @@ public partial class DonXinNghiQuanLy : UserControl
         }
     }
 
-    /// <summary>
-    /// Tiếp nhận thay đổi chọn ca cần thay và cập nhật trạng thái/dữ liệu phụ thuộc.
-    /// </summary>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void ChonCaCanThay_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (cboPhongThay == null) return;
@@ -271,12 +208,6 @@ public partial class DonXinNghiQuanLy : UserControl
         }
     }
 
-    /// <summary>
-    /// Xử lý thao tác phân công thay thế khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>cboNhanVienThay.SelectedValue.ToString</c>, <c>cboPhongThay.SelectedValue.ToString</c>, <c>bus.phanCongThayThe</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void PhanCongThayThe_Click(object sender, RoutedEventArgs e)
     {
         if (!PhienDangNhap.IsAdmin || donDangXem == null) return;
@@ -303,12 +234,6 @@ public partial class DonXinNghiQuanLy : UserControl
         }
     }
 
-    /// <summary>
-    /// Xử lý thao tác hủy phân công thay thế khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>bus.huyPhanCongThayThe</c>, <c>TaiCaCanThayThe</c>, <c>TaiLichKhamCanXacNhan</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void HuyPhanCongThayThe_Click(object sender, RoutedEventArgs e)
     {
         if (!PhienDangNhap.IsAdmin || donDangXem == null) return;
@@ -330,10 +255,6 @@ public partial class DonXinNghiQuanLy : UserControl
         }
     }
 
-    /// <summary>
-    /// Nạp các lịch khám bị ảnh hưởng bởi đơn nghỉ cần đối chiếu và xác nhận.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>bus.layLichKhamCanXacNhan</c>.</remarks>
     private void TaiLichKhamCanXacNhan()
     {
         if (donDangXem == null) return;
@@ -363,12 +284,6 @@ public partial class DonXinNghiQuanLy : UserControl
         }
     }
 
-    /// <summary>
-    /// Tiếp nhận thay đổi chọn lịch cần xác nhận và cập nhật trạng thái/dữ liệu phụ thuộc.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>lich.NgayGioKham.ToString</c>, <c>lich.NgayXacNhan.Value.ToString</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void ChonLichCanXacNhan_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (btnXacNhanLichKham == null) return;
@@ -390,12 +305,6 @@ public partial class DonXinNghiQuanLy : UserControl
         }
     }
 
-    /// <summary>
-    /// Xử lý thao tác xác nhận lịch khám khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>lich.NgayGioKham.ToString</c>, <c>bus.xacNhanTungLichKham</c>, <c>TaiLichKhamCanXacNhan</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void XacNhanLichKham_Click(object sender, RoutedEventArgs e)
     {
         if (!PhienDangNhap.IsAdmin || donDangXem == null) return;
@@ -424,23 +333,55 @@ public partial class DonXinNghiQuanLy : UserControl
         }
     }
 
-    /// <summary>
-    /// Xử lý thao tác đóng chi tiết khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void DongChiTiet_Click(object sender, RoutedEventArgs e)
     {
         ChiTietOverlay.Visibility = Visibility.Collapsed;
         donDangXem = null;
     }
 
-    /// <summary>
-    /// Xử lý thao tác duyệt đơn khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>LuuXuLyDon</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
+    private void TaiThongTinQuyPhepDon(ET_DON_XIN_NGHI_HIENTHI don)
+    {
+        if (!string.Equals(don.LoaiNghi, "Nghỉ phép năm", StringComparison.OrdinalIgnoreCase))
+        {
+            txtThongTinQuyPhepDuyet.Text = "Loại nghỉ: " + don.LoaiNghi +
+                ". Không trừ quỹ phép năm theo cơ chế này.";
+            return;
+        }
+        try
+        {
+            var busPhep = new BUS_QUYPHEP();
+            if (don.TuNgay.Year != don.DenNgay.Year)
+            {
+                txtThongTinQuyPhepDuyet.Text = "Đơn qua năm mới. SQL kiểm tra quỹ từng năm riêng khi duyệt; " +
+                    "không cộng phép dư năm trước.";
+                return;
+            }
+            DataTable q = busPhep.layQuyPhep(don.MaNV, don.TuNgay.Year);
+            int soNgay = busPhep.demNgayDuKien(don.MaNV, don.TuNgay, don.DenNgay);
+            decimal con = q.Rows.Count == 0 ? 0 : Convert.ToDecimal(q.Rows[0]["PhepConKhaDung"]);
+            if (don.TrangThaiDuyet == "Đã duyệt")
+            {
+                DataTable ngayDaGhi = busPhep.layNgayPhepNhanVien(don.MaNV, don.TuNgay.Year);
+                int soNgayDaGhi = 0;
+                foreach (DataRow hang in ngayDaGhi.Rows)
+                    if (hang["MaDonNghi"].ToString() == don.MaDonNghi) soNgayDaGhi++;
+                txtThongTinQuyPhepDuyet.Text = $"Đơn đã duyệt: {soNgayDaGhi} ngày phép = {soNgayDaGhi * 0.5m:0.##} công. " +
+                    $"Quỹ còn khả dụng của năm {don.TuNgay.Year}: {con:0.##} ngày.";
+            }
+            else
+            {
+                txtThongTinQuyPhepDuyet.Text = $"Quỹ khả dụng năm {don.TuNgay.Year}: {con:0.##} ngày. " +
+                    $"Dự kiến cần {soNgay} ngày phép = {soNgay * 0.5m:0.##} công. " +
+                    (soNgay > con ? "Cảnh báo: dự kiến vượt quỹ, SQL sẽ từ chối duyệt." :
+                    "Ngày chính thức sẽ được SQL kiểm tra lúc duyệt.");
+            }
+        }
+        catch (Exception ex)
+        {
+            txtThongTinQuyPhepDuyet.Text = "Không thể đối chiếu quỹ phép: " + ex.Message;
+        }
+    }
+
     private void DuyetDon_Click(object sender, RoutedEventArgs e)
     {
         if (donDangXem == null) return;
@@ -451,12 +392,6 @@ public partial class DonXinNghiQuanLy : UserControl
         LuuXuLyDon(true, "");
     }
 
-    /// <summary>
-    /// Xử lý thao tác không duyệt khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>txtNhapLyDoTuChoi.Focus</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void KhongDuyet_Click(object sender, RoutedEventArgs e)
     {
         NhapLyDoTuChoi.Visibility = Visibility.Visible;
@@ -465,12 +400,6 @@ public partial class DonXinNghiQuanLy : UserControl
         txtNhapLyDoTuChoi.Focus();
     }
 
-    /// <summary>
-    /// Xử lý thao tác hủy từ chối khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>txtNhapLyDoTuChoi.Clear</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void HuyTuChoi_Click(object sender, RoutedEventArgs e)
     {
         NhapLyDoTuChoi.Visibility = Visibility.Collapsed;
@@ -479,12 +408,6 @@ public partial class DonXinNghiQuanLy : UserControl
         txtNhapLyDoTuChoi.Clear();
     }
 
-    /// <summary>
-    /// Xử lý thao tác xác nhận từ chối khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>txtNhapLyDoTuChoi.Focus</c>, <c>LuuXuLyDon</c>, <c>txtNhapLyDoTuChoi.Text.Trim</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void XacNhanTuChoi_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(txtNhapLyDoTuChoi.Text))
@@ -499,12 +422,6 @@ public partial class DonXinNghiQuanLy : UserControl
         LuuXuLyDon(false, txtNhapLyDoTuChoi.Text.Trim());
     }
 
-    /// <summary>
-    /// Gửi kết quả duyệt/từ chối đơn với người xử lý và lý do, rồi làm mới dữ liệu.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>bus.xuLyDon</c>, <c>TaiDuLieu</c>.</remarks>
-    /// <param name="duyet">Giá trị duyệt dùng khi thực hiện thao tác; kiểu bool.</param>
-    /// <param name="lyDo">Giá trị lý do dùng khi thực hiện thao tác; kiểu string.</param>
     private void LuuXuLyDon(bool duyet, string lyDo)
     {
         if (!PhienDangNhap.IsAdmin || donDangXem == null) return;
@@ -542,12 +459,6 @@ public partial class DonXinNghiQuanLy : UserControl
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
-    /// <summary>
-    /// Xử lý thao tác thêm đơn khẩn cấp khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>txtLyDoKhanCap.Clear</c>, <c>txtGhiChuKhanCap.Clear</c>, <c>MessageBox.Show</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void ThemDonKhanCap_Click(object sender, RoutedEventArgs e)
     {
         if (!PhienDangNhap.IsAdmin) return;
@@ -569,11 +480,6 @@ public partial class DonXinNghiQuanLy : UserControl
         }
     }
 
-    /// <summary>
-    /// Tiếp nhận thay đổi khẩn cấp ngày và cập nhật trạng thái/dữ liệu phụ thuộc.
-    /// </summary>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void KhanCapNgay_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (dpKhanCapDenNgay == null || dpKhanCapTuNgay.SelectedDate == null) return;
@@ -582,22 +488,11 @@ public partial class DonXinNghiQuanLy : UserControl
             dpKhanCapDenNgay.SelectedDate = dpKhanCapTuNgay.SelectedDate;
     }
 
-    /// <summary>
-    /// Xử lý thao tác dòng khẩn cấp khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void DongKhanCap_Click(object sender, RoutedEventArgs e)
     {
         KhanCapOverlay.Visibility = Visibility.Collapsed;
     }
 
-    /// <summary>
-    /// Xử lý thao tác lưu khẩn cấp khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>MessageBox.Show</c>, <c>cboNhanVienKhanCap.SelectedValue.ToString</c>, <c>txtLyDoKhanCap.Text.Trim</c>, <c>txtGhiChuKhanCap.Text.Trim</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void LuuKhanCap_Click(object sender, RoutedEventArgs e)
     {
         if (!PhienDangNhap.IsAdmin) return;
