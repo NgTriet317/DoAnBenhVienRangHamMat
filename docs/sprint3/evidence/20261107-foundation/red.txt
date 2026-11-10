@@ -1,0 +1,32 @@
+FAIL: Schema, trusted constraints and active triggers: Missing Sprint 3 foundation schema
+FAIL: Old receipts remain ordinary with zero fee: Invalid column name 'LoaiKham'.
+FAIL: Ordinary INSERT defaults and Dapper mapping: Invalid column name 'LoaiKham'.
+FAIL: Ordinary fee cannot be 30000: Invalid column name 'LoaiKham'.
+FAIL: Service fee cannot be zero: Invalid column name 'LoaiKham'.
+FAIL: Receipt type/fee cannot change after admission: Invalid column name 'LoaiKham'.
+FAIL: Surcharge is a separate 30000 line and invoice total is 330000: Invalid column name 'LoaiKham'.
+FAIL: Same receipt cannot be billed twice: Invalid column name 'LoaiKham'.
+FAIL: Fee cannot point at an ordinary receipt: Invalid column name 'LoaiKham'.
+FAIL: Fee cannot point at another visit: Invalid column name 'LoaiKham'.
+FAIL: Fee cannot mix with a service source: Invalid column name 'LoaiKham'.
+FAIL: Fee price must be exactly 30000: Invalid column name 'LoaiKham'.
+FAIL: Fee price cannot be NULL (CHECK must be explicit): Invalid column name 'LoaiKham'.
+FAIL: Discount cannot consume the mandatory fee: Invalid column name 'LoaiKham'.
+FAIL: Discount may cover the entire base amount: Invalid column name 'LoaiKham'.
+FAIL: Confirming invoice without fee is blocked: Invalid column name 'LoaiKham'.
+FAIL: Sealing completion invoice without fee is blocked: Invalid column name 'LoaiKham'.
+FAIL: Complete service invoice seals and confirms with one fee: Invalid column name 'LoaiKham'.
+FAIL: Sealed surcharge cannot be removed: Invalid column name 'LoaiKham'.
+FAIL: Valid X-ray metadata round-trips and hides without deletion: Invalid column name 'LoaiKham'.
+FAIL: Reject unsafe storage path: ../escape.png: Invalid column name 'LoaiKham'.
+FAIL: Reject unsafe storage path: C:\private.png: Invalid column name 'LoaiKham'.
+FAIL: Reject unsafe storage path: /root.png: Invalid column name 'LoaiKham'.
+FAIL: Reject unsafe storage path: a\b.png: Invalid column name 'LoaiKham'.
+FAIL: Reject unsafe storage path: //host/a.png: Invalid column name 'LoaiKham'.
+FAIL: Image MIME must agree with extension: Invalid column name 'LoaiKham'.
+FAIL: Image over 20 MiB cannot be registered: Invalid column name 'LoaiKham'.
+FAIL: Image hash must be hexadecimal SHA256: Invalid column name 'LoaiKham'.
+FAIL: Image cannot move to another visit: Invalid column name 'LoaiKham'.
+FAIL: Image cannot link a service from another visit: Invalid column name 'LoaiKham'.
+FAIL: Image metadata cannot be hard-deleted: Invalid column name 'LoaiKham'.
+RESULT: 0 passed, 31 failed

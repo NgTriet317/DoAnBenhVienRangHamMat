@@ -1,0 +1,3 @@
+PASS: Đăng nhập Admin và mở đủ 27 phân hệ trên database sạch/hiện tại
+PASS: Màn dịch vụ chỉ có lịch sử, không có nút phát sinh
+RESULT: 2 passed, 0 failed

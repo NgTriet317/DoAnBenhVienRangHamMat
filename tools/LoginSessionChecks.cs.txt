@@ -1,0 +1,86 @@
+using System.IO;
+using System.Reflection;
+using System.Security.Claims;
+using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using ET;
+using RangHamMat;
+
+static class Program
+{
+    static int count;
+    static readonly Assembly assembly = typeof(PhienDangNhap).Assembly;
+    static readonly BindingFlags methods = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+
+    [STAThread] static int Main(string[] args)
+    {
+        var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml", UriKind.Relative) });
+        MainWindow? home = null;
+        try
+        {
+            PhienDangNhap.KhoiTaoPhienUngDung();
+            home = new MainWindow();
+            Check(home.FindName("LogoutButton") is Button { Content: "Đăng xuất", IsEnabled: true }, "Màn hình chính có nút Đăng xuất");
+
+            var storeType = assembly.GetType("RangHamMat.KhoPhienDangNhap") ?? throw new Exception("Thiếu kho lưu phiên đăng nhập");
+            var path = Path.Combine(args[0], "session-" + Guid.NewGuid().ToString("N"), "login.dat");
+            var store = Activator.CreateInstance(storeType, methods, null, new object[] { path }, null)!;
+            var account = new ET_TAIKHOAN("TK_SESSION", "staff-session", "password-hash-session", "VT_USER", "NV_SESSION", null, null, "Đang hoạt động");
+            Check(Call(store, "Doc") is null, "Chưa có phiên lưu thì yêu cầu đăng nhập");
+            Call(store, "Luu", account);
+            Check(File.Exists(path), "Đăng nhập lưu phiên xuống đĩa");
+            var bytes = File.ReadAllBytes(path);
+            var text = Encoding.UTF8.GetString(bytes);
+            Check(!text.Contains("TK_SESSION") && !text.Contains("staff-session") && !text.Contains("password-hash-session"), "Tệp phiên không chứa tài khoản hoặc mật khẩu dạng rõ");
+            var secondStore = Activator.CreateInstance(storeType, methods, null, new object[] { path }, null)!;
+            var saved = Call(secondStore, "Doc")!;
+            Check(saved is not null && (bool)Call(saved, "KhopTaiKhoan", account)!, "Mở lại kho lưu vẫn khôi phục đúng tài khoản");
+            account.MatKhauHash = "changed-password-hash";
+            Check(!(bool)Call(saved!, "KhopTaiKhoan", account)!, "Đổi mật khẩu vô hiệu phiên cũ");
+            account.MatKhauHash = "password-hash-session";
+            account.MaTK = "OTHER_ACCOUNT";
+            Check(!(bool)Call(saved!, "KhopTaiKhoan", account)!, "Không khôi phục nhầm tài khoản");
+            account.MaTK = "TK_SESSION";
+            account.MaNV = "OTHER_EMPLOYEE";
+            Check(!(bool)Call(saved!, "KhopTaiKhoan", account)!, "Đổi nhân viên gắn với tài khoản yêu cầu đăng nhập lại");
+            account.MaNV = "NV_SESSION";
+            account.TrangThai = "Đã khóa";
+            Check(!(bool)Call(saved!, "KhopTaiKhoan", account)!, "Tài khoản bị khóa không tự đăng nhập");
+            account.TrangThai = "Đang hoạt động";
+            bytes[bytes.Length / 2] ^= 0x40;
+            File.WriteAllBytes(path, bytes);
+            Check(Call(store, "Doc") is null, "Tệp phiên bị sửa không được chấp nhận");
+            File.WriteAllText(path, "invalid session");
+            Check(Call(store, "Doc") is null, "Tệp phiên hỏng trở về đăng nhập");
+            Call(store, "Luu", account);
+            Call(store, "Xoa");
+            Check(!File.Exists(path) && Call(secondStore, "Doc") is null, "Đăng xuất xóa phiên cho lần mở kế tiếp");
+            Call(store, "Xoa");
+
+            PhienDangNhap.MaNV = "NV_SESSION";
+            PhienDangNhap.TenDangNhap = "staff-session";
+            PhienDangNhap.IsAdmin = true;
+            PhienDangNhap.KhoiTaoDinhDanhNghiepVu("TK_SESSION");
+            var cleared = false;
+            PhienDangNhap.DinhDanhThayDoi += () => cleared = !PhienDangNhap.DaDangNhap;
+            var clear = typeof(PhienDangNhap).GetMethod("XoaDinhDanh", methods) ?? throw new Exception("Thiếu thao tác xóa định danh");
+            clear.Invoke(null, null);
+            Check(!PhienDangNhap.DaDangNhap && PhienDangNhap.MaTK == "" && PhienDangNhap.MaNV == "" && PhienDangNhap.TenDangNhap == "" && !PhienDangNhap.IsAdmin && PhienDangNhap.MaPhien == Guid.Empty, "Đăng xuất xóa toàn bộ định danh và quyền hiện tại");
+            Check(cleared && !(Thread.CurrentPrincipal as ClaimsPrincipal)!.Claims.Any(), "Đăng xuất thông báo xóa cache và loại bỏ các claim");
+            Console.WriteLine($"RESULT: {count} passed");
+            return 0;
+        }
+        catch (Exception ex) { Console.WriteLine("FAIL: " + ex.GetBaseException()); return 1; }
+        finally { home?.Close(); app.Shutdown(); }
+    }
+
+    static object? Call(object target, string method, params object[] args) => target.GetType().GetMethod(method, methods)!.Invoke(target, args);
+    static void Check(bool condition, string name)
+    {
+        if (!condition) throw new Exception(name);
+        count++;
+        Console.WriteLine("PASS: " + name);
+    }
+}

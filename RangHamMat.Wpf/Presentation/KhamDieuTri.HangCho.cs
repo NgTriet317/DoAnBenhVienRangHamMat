@@ -65,10 +65,19 @@ public partial class KhamDieuTri
     /// <param name="row">Giá trị hàng đợi khám mục được truyền vào để đọc, kiểm tra hoặc cập nhật trong thao tác này.</param>
     private void PreviewReceipt(HangDoiKhamItem row)
     {
-        QueuePatientText.Text=row.HoTenBN;QueueReceiptText.Text=$"{row.MaBN} · phiếu {row.MaPhieu} · số {row.SoThuTu} · sinh {row.NgaySinh:dd/MM/yyyy}";
-        QueueArrivalText.Text=$"Tiếp nhận: {row.ThoiGianTiepNhan:dd/MM/yyyy HH:mm:ss} · {row.TrangThai}";
-        QueueDoctorText.Text=$"{row.TenBS} ({row.MaBS})\n{row.TenPhong} ({row.MaPhong})\nDịch vụ: {row.TenDV}";QueueReasonText.Text=row.LyDoKham;
+        var receiptChanged=QueuePreview.DataContext is not HangDoiKhamItem previous||previous.MaPhieu!=row.MaPhieu;
+        QueuePreview.DataContext=row;
+        QueuePatientText.Text=row.HoTenBN;QueueReceiptText.Text=row.MaPhieu;
+        QueueArrivalText.Text=$"{row.ThoiGianTiepNhan:dd/MM/yyyy · HH:mm:ss}";
+        QueueDoctorText.Text=!string.IsNullOrWhiteSpace(row.TenBS)?row.TenBS:
+            string.IsNullOrWhiteSpace(row.MaBS)?"Chưa phân công":"Chưa cập nhật tên bác sĩ";
+        QueueRoomText.Text=!string.IsNullOrWhiteSpace(row.TenPhong)?row.TenPhong:
+            string.IsNullOrWhiteSpace(row.MaPhong)?"Chưa phân phòng":"Chưa cập nhật tên phòng";
+        QueueServiceText.Text=!string.IsNullOrWhiteSpace(row.TenDV)?row.TenDV:
+            string.IsNullOrWhiteSpace(row.MaDV)?"Chưa đăng ký dịch vụ":"Chưa cập nhật tên dịch vụ";
+        QueueReasonText.Text=string.IsNullOrWhiteSpace(row.LyDoKham)?"Chưa ghi nhận lý do khám.":row.LyDoKham;
         QueueStartButton.Content=row.ThaoTac;QueueStartButton.IsEnabled=allowed("KhamDieuTri");QueuePreview.Visibility=Visibility.Visible;DetailEmpty.Visibility=Visibility.Collapsed;
+        if(receiptChanged)QueueDetailsScroll.ScrollToTop();
     }
     /// <summary>
     /// Xử lý thao tác bắt đầu hàng đợi khi người dùng bấm nút tương ứng trên màn hình.

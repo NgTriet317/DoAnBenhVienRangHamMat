@@ -1,0 +1,11 @@
+{
+    "Protocol":  "RHM.XR04.KitResult.v1",
+    "Mode":  "Compare",
+    "Machine":  "DESKTOP-C9VCE8A",
+    "StartedUtc":  "\/Date(1794287450244)\/",
+    "Status":  "FAIL",
+    "ReadyForDeployment":  false,
+    "Scope":  "SingleHostOperation",
+    "Failure":  "Chưa đạt hai máy: Hai proof cùng hostname; không phải hai máy",
+    "FinishedUtc":  "\/Date(1794287450282)\/"
+}

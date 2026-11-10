@@ -1,0 +1,33 @@
+PASS Every direct ET table/property exists in SQL
+PASS V9 salary/attendance tables, procedures and active protection triggers
+PASS DAL appointment display query
+PASS DAL monthly attendance query
+PASS DAL V9 payroll display and reconciliation queries
+PASS DAL short completed shift is 0.5 day with audit source
+PASS DAL full salary calculation, leave, lateness, adjustments and source commission
+PASS Paid holiday is excluded from standard days
+PASS DAL salary closing after month end +5 days
+PASS Closing before month end +5 days
+PASS Stale viewed salary cannot be closed
+PASS Unapproved attendance blocks closing
+PASS Pending leave blocks closing
+PASS Paid attendance overlapping approved leave blocks closing
+PASS Unclassified positive adjustment blocks closing
+PASS Unapproved salary document blocks closing
+PASS Unpaid service commission blocks closing
+PASS Closed salary is immutable
+PASS Closed attendance is immutable
+PASS Closed schedule attendance fields are immutable
+PASS Open schedule cannot move into a closed salary period
+PASS Closed salary details are immutable
+PASS Closed commission is immutable
+PASS V9 rows cannot be downgraded to legacy money
+PASS Historical money snapshots cannot be edited
+PASS Public schema check detects missing V9 trigger
+PASS Public schema check detects missing V9 index
+PASS Public schema check detects missing attendance CHECK
+PASS Public schema check detects missing attendance uniqueness
+PASS Partial-period legacy salary remains visible by calendar month
+PASS Full-month calculation cannot overlap unreconciled legacy period
+PASS Fixture rows and source documents were rolled back
+RESULT: 32 passed; 0 failed

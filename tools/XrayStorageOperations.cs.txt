@@ -1,0 +1,124 @@
+using System.Security.Cryptography;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using BUS;
+using DAL;
+using Dapper;
+using ET;
+using Microsoft.Data.SqlClient;
+
+// Operations use the operator's Windows/SQL permissions. No application identity is forged.
+static class Program
+{
+    static readonly JsonSerializerOptions Json=new(){WriteIndented=true};
+    static Dictionary<string,string> input=new();
+    static int Main(string[] args)
+    {
+        try
+        {
+            for(int i=0;i<args.Length;i+=2){if(i+1>=args.Length||!args[i].StartsWith("--"))throw new ArgumentException("Invalid argument pair");input.Add(args[i][2..],args[i+1]);}
+            var mode=Required("mode");var database=Required("db");ValidateDatabase(database);
+            if(mode=="KhoiPhuc"){Restore();return 0;}
+            using var db=Connect(database);Lock(db);
+            var rows=ReadImages(db);var store=Store(Required("root"));var issues=store.KiemTra(rows);
+            if(mode=="KiemTra")
+            {
+                foreach(var issue in issues)Console.WriteLine($"ISSUE {issue.Loai}: {issue.TenTep} [{issue.MaAnh}]");
+                Console.WriteLine($"RESULT: {rows.Length} metadata, {issues.Count} storage issues; no files deleted");return issues.Count==0?0:1;
+            }
+            if(mode!="SaoLuu")throw new ArgumentException("Unknown operation");
+            if(issues.Any(i=>i.Loai is not("TepKhongDangKy" or "TepTam")))throw new InvalidOperationException("Không sao lưu hoàn tất khi có tệp tham chiếu bị mất, lỗi hoặc sai hash.");
+            var output=CreateNewDirectory(Path.Combine(Required("output"),"XrayBackup_"+DateTime.UtcNow.ToString("yyyyMMdd_HHmmss")+"_"+Guid.NewGuid().ToString("N")));
+            var incomplete=Path.Combine(output,"INCOMPLETE.txt");File.WriteAllText(incomplete,"Backup is incomplete until manifest.json exists and this marker is removed.");
+            var sqlFile=Path.Combine(SqlDirectory(db),"RHM_Xray_"+Guid.NewGuid().ToString("N")+".bak");
+            if(File.Exists(sqlFile))throw new IOException("SQL backup path already exists.");
+            db.Execute("BACKUP DATABASE "+Quote(database)+" TO DISK=@sqlFile WITH COPY_ONLY,CHECKSUM",new{sqlFile},commandTimeout:180);
+            db.Execute("RESTORE VERIFYONLY FROM DISK=@sqlFile WITH CHECKSUM",new{sqlFile},commandTimeout:180);
+            var copiedSql=Path.Combine(output,"database.bak");File.Copy(sqlFile,copiedSql,false);
+            var imagesPath=CreateNewDirectory(Path.Combine(output,"images"));
+            foreach(var image in rows)
+            {
+                var bytes=store.DocTep(image);File.WriteAllBytes(Path.Combine(imagesPath,image.TenTepLuu),bytes);
+            }
+            var destination=Store(imagesPath,true);if(destination.KiemTra(rows).Count!=0)throw new IOException("Bản sao kho ảnh không khớp metadata.");
+            var manifest=new Manifest(1,database,DateTime.UtcNow,HashFile(copiedSql),rows);
+            File.WriteAllText(Path.Combine(output,"manifest.json"),JsonSerializer.Serialize(manifest,Json));File.Delete(incomplete);
+            Console.WriteLine("SQL_SERVER_BACKUP="+sqlFile);Console.WriteLine("BACKUP_COMPLETE="+output);
+            Console.WriteLine($"PASS: verified SQL COPY_ONLY/CHECKSUM and {rows.Length} referenced images (including hidden); {issues.Count} unregistered/temporary files left untouched.");
+            return 0;
+        }
+        catch(Exception ex){Console.WriteLine("FAIL: "+ex.Message);return 1;}
+    }
+    static void Restore()
+    {
+        var database=Required("new-db");
+        if(!Regex.IsMatch(database,"^RHM_Hospital_Test_[A-Za-z0-9_]+$"))throw new ArgumentException("Only a new isolated restore database is allowed.");
+        using var master=Connect("master");
+        if(master.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.databases WHERE name=@database",new{database})!=0)throw new InvalidOperationException("Database đích đã tồn tại; không ghi đè.");
+        var archive=Path.GetFullPath(Required("archive"));
+        if(File.Exists(Path.Combine(archive,"INCOMPLETE.txt")))throw new InvalidOperationException("Bản sao chưa hoàn tất.");
+        var manifest=JsonSerializer.Deserialize<Manifest>(File.ReadAllText(Path.Combine(archive,"manifest.json")))??throw new InvalidOperationException("Missing manifest");
+        if(manifest.Version!=1)throw new InvalidOperationException("Unsupported backup manifest");
+        var backup=Path.Combine(archive,"database.bak");
+        if((File.GetAttributes(backup)&FileAttributes.ReparsePoint)!=0||HashFile(backup)!=manifest.SqlSha256)throw new IOException("SQL backup checksum does not match manifest.");
+        var source=Store(Path.Combine(archive,"images"),true);
+        if(source.KiemTra(manifest.Images).Count!=0)throw new IOException("Bản sao ảnh không khớp manifest.");
+        var targetPath=CreateNewDirectory(Required("root"));var target=Store(targetPath);target.ThuMucGoc();
+        var incomplete=Path.Combine(targetPath,"INCOMPLETE_RESTORE.txt");File.WriteAllText(incomplete,"Restore is incomplete.");
+        foreach(var image in manifest.Images)File.WriteAllBytes(Path.Combine(targetPath,image.TenTepLuu),source.DocTep(image));
+        var sqlCopy=Path.Combine(SqlDirectory(master),"RHM_Xray_Restore_"+Guid.NewGuid().ToString("N")+".bak");File.Copy(backup,sqlCopy,false);
+        master.Execute("RESTORE VERIFYONLY FROM DISK=@sqlCopy WITH CHECKSUM",new{sqlCopy},commandTimeout:180);
+        var files=master.Query<SqlFile>("RESTORE FILELISTONLY FROM DISK=@sqlCopy",new{sqlCopy}).ToArray();
+        if(files.Length==0||files.Any(f=>f.Type is not("D" or "L")))throw new InvalidOperationException("Unsupported SQL file layout");
+        var dataDirectory=master.ExecuteScalar<string>(@"SELECT COALESCE(CONVERT(nvarchar(4000),SERVERPROPERTY('InstanceDefaultDataPath')),(SELECT TOP(1) LEFT(physical_name,LEN(physical_name)-CHARINDEX(N'\',REVERSE(physical_name))+1) FROM sys.master_files WHERE database_id=1 AND type=0))");
+        var logDirectory=master.ExecuteScalar<string>(@"SELECT COALESCE(CONVERT(nvarchar(4000),SERVERPROPERTY('InstanceDefaultLogPath')),(SELECT TOP(1) LEFT(physical_name,LEN(physical_name)-CHARINDEX(N'\',REVERSE(physical_name))+1) FROM sys.master_files WHERE database_id=1 AND type=1))");
+        if(string.IsNullOrWhiteSpace(dataDirectory)||string.IsNullOrWhiteSpace(logDirectory))throw new InvalidOperationException("SQL Server data/log paths are unavailable.");
+        var suffix=Guid.NewGuid().ToString("N");
+        var moves=files.Select((f,i)=>"MOVE "+Literal(f.LogicalName)+" TO "+Literal(Path.Combine(f.Type=="L"?logDirectory:dataDirectory,database+"_"+suffix+"_"+i+(f.Type=="L"?".ldf":".mdf"))));
+        master.Execute("RESTORE DATABASE "+Quote(database)+" FROM DISK=@sqlCopy WITH "+string.Join(",",moves)+",CHECKSUM,RECOVERY",new{sqlCopy},commandTimeout:180);
+        using var restored=Connect(database);var actual=ReadImages(restored);
+        if(JsonSerializer.Serialize(actual,Json)!=JsonSerializer.Serialize(manifest.Images,Json))throw new IOException("Restored SQL metadata differs from backed-up image manifest.");
+        if(target.KiemTra(actual).Any(i=>i.TenTep!="INCOMPLETE_RESTORE.txt"))throw new IOException("Restored files do not match SQL metadata.");
+        var violations=restored.Query("DBCC CHECKCONSTRAINTS WITH ALL_CONSTRAINTS,NO_INFOMSGS",commandTimeout:120).ToArray();
+        if(violations.Length!=0)throw new InvalidOperationException("Restored database has constraint violations.");
+        File.Delete(incomplete);
+        Console.WriteLine("RESTORE_COMPLETE="+database);Console.WriteLine("RESTORED_ROOT="+targetPath);Console.WriteLine($"PASS: {actual.Length} image files and SQL metadata restored; hidden assets retained.");
+    }
+    static string Required(string key)=>input.TryGetValue(key,out var value)&&!string.IsNullOrWhiteSpace(value)?value:throw new ArgumentException("Missing --"+key);
+    static void ValidateDatabase(string database){if(!Regex.IsMatch(database,"^[A-Za-z0-9_]+$"))throw new ArgumentException("Invalid database name");}
+    static string Quote(string database)=>"["+database.Replace("]","]]")+"]";
+    static string Literal(string value)=>"N'"+value.Replace("'","''")+"'";
+    static SqlConnection Connect(string database)
+    {
+        var db=new SqlConnection(new SqlConnectionStringBuilder{DataSource=Required("server"),InitialCatalog=database,IntegratedSecurity=true,TrustServerCertificate=true,ConnectTimeout=8}.ConnectionString);
+        db.Open();return db;
+    }
+    static void Lock(SqlConnection db)
+    {
+        var code=db.ExecuteScalar<int>("DECLARE @r int; EXEC @r=sys.sp_getapplock @Resource=N'RHM:Xray:Storage',@LockMode='Exclusive',@LockOwner='Session',@LockTimeout=30000; SELECT @r");
+        if(code<0)throw new InvalidOperationException("Image storage is busy; run again after uploads complete.");
+    }
+    static ET_ANHXQUANGLANKHAM[] ReadImages(SqlConnection db)=>db.Query<ET_ANHXQUANGLANKHAM>("SELECT * FROM dbo.ANH_XQUANG_LAN_KHAM ORDER BY MaAnh").ToArray();
+    static KhoLuuAnhXquang Store(string root,bool? local=null)=>new(new CauHinhKhoAnh{ThuMucDungChung=root,ChoPhepDuongDanCucBo=local??input.GetValueOrDefault("local")=="true"});
+    static string HashFile(string path){using var stream=File.OpenRead(path);return Convert.ToHexString(SHA256.HashData(stream));}
+    static string CreateNewDirectory(string path)
+    {
+        var full=Path.GetFullPath(path);
+        if(Directory.Exists(full)&&Directory.EnumerateFileSystemEntries(full).Any())throw new IOException("Thư mục đích phải mới hoặc rỗng; không ghi đè.");
+        for(DirectoryInfo? parent=new(full);parent is not null;parent=parent.Parent)
+            if(parent.Exists&&(parent.Attributes&FileAttributes.ReparsePoint)!=0)throw new IOException("Destination must not pass through a linked directory.");
+        Directory.CreateDirectory(full);return full;
+    }
+    static string SqlDirectory(SqlConnection db)
+    {
+        if(input.TryGetValue("sql-directory",out var directory))return Path.GetFullPath(directory);
+        var machine=db.ExecuteScalar<string>("SELECT CONVERT(nvarchar(128),SERVERPROPERTY('MachineName'))");
+        if(!string.Equals(machine,Environment.MachineName,StringComparison.OrdinalIgnoreCase))throw new ArgumentException("Remote SQL Server requires --sql-directory as a shared UNC directory accessible to SQL service and this tool.");
+        var path=db.ExecuteScalar<string?>("SELECT CONVERT(nvarchar(4000),SERVERPROPERTY('InstanceDefaultBackupPath'))");
+        if(string.IsNullOrWhiteSpace(path))path=db.ExecuteScalar<string>(@"DECLARE @p nvarchar(4000); EXEC master.dbo.xp_instance_regread N'HKEY_LOCAL_MACHINE',N'Software\Microsoft\MSSQLServer\MSSQLServer',N'BackupDirectory',@p OUTPUT; SELECT @p");
+        if(string.IsNullOrWhiteSpace(path))throw new InvalidOperationException("Specify a SQL-service writable backup directory.");
+        return path;
+    }
+    sealed record Manifest(int Version,string Database,DateTime CreatedUtc,string SqlSha256,ET_ANHXQUANGLANKHAM[] Images);
+    sealed class SqlFile {public string LogicalName{get;set;}="";public string Type{get;set;}="";}
+}

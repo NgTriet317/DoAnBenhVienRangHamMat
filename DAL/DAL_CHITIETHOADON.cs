@@ -76,10 +76,10 @@ public sealed class DAL_CHITIETHOADON : dbconnect
     public DataTable GetInvoiceDetails(string invoiceId)
     {
         return Query("""
-        SELECT c.MaCTHD,c.MaHD,c.MaDVThucHien,c.MaCTPX,COALESCE(c.MaCTDT,x.MaCTDT) MaCTDT,c.NoiDung,c.DonGia,c.ThanhTien,
-            COALESCE(s.SoLuong,x.SoLuong,d.SoLuong) SoLuong,
+        SELECT c.MaCTHD,c.MaHD,c.MaDVThucHien,c.MaCTPX,COALESCE(c.MaCTDT,x.MaCTDT) MaCTDT,c.MaPhieuPhuThu,c.NoiDung,c.DonGia,c.ThanhTien,
+            CASE WHEN c.MaPhieuPhuThu IS NOT NULL THEN CAST(1 AS decimal(18,3)) ELSE COALESCE(s.SoLuong,x.SoLuong,d.SoLuong) END SoLuong,
             COALESCE(s.DonGia,c.DonGia) DonGiaChot,
-            CASE WHEN c.MaDVThucHien IS NOT NULL THEN N'Dịch vụ' WHEN c.MaCTDT IS NOT NULL THEN N'Thuốc theo đơn' ELSE N'Thuốc đã cấp' END Loai,
+            CASE WHEN c.MaPhieuPhuThu IS NOT NULL THEN N'Phụ thu khám dịch vụ' WHEN c.MaDVThucHien IS NOT NULL THEN N'Dịch vụ' WHEN c.MaCTDT IS NOT NULL THEN N'Thuốc theo đơn' ELSE N'Thuốc đã cấp' END Loai,
             d.MaDT,l.SoLo,COALESCE(d.DonViTinhChot,hh.DonViTinh) DonViTinh
         FROM dbo.CHI_TIET_HOA_DON c
         LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
@@ -96,17 +96,22 @@ public sealed class DAL_CHITIETHOADON : dbconnect
     /// </summary>
     internal const string CompletionChargesSql = """
         SELECT s.MaDVThucHien,CAST(NULL AS nvarchar(50)) MaCTPX,CAST(NULL AS nvarchar(50)) MaCTDT,
-            d.TenDV NoiDung,CAST(NULL AS decimal(18,2)) DonGia,s.ThanhTien
+            d.TenDV NoiDung,CAST(NULL AS decimal(18,2)) DonGia,s.ThanhTien,CAST(NULL AS nvarchar(50)) MaPhieuPhuThu
         FROM dbo.DICH_VU_THUC_HIEN s WITH(HOLDLOCK) JOIN dbo.DICH_VU d ON d.MaDV=s.MaDV
         WHERE s.MaLS=@visitId AND s.TrangThai=N'Đã xác nhận'
           AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WITH(HOLDLOCK) WHERE c.MaDVThucHien=s.MaDVThucHien)
         UNION ALL
         SELECT NULL,NULL,c.MaCTDT,c.TenThuocChot+N' '+c.HamLuongChot,t.DonGiaBan,
-            CAST(ROUND(c.SoLuong*t.DonGiaBan,2) AS decimal(18,2))
+            CAST(ROUND(c.SoLuong*t.DonGiaBan,2) AS decimal(18,2)),NULL
         FROM dbo.DON_THUOC r WITH(HOLDLOCK) JOIN dbo.CHI_TIET_DON_THUOC c WITH(HOLDLOCK) ON c.MaDT=r.MaDT
         JOIN dbo.THUOC t WITH(HOLDLOCK) ON t.MaThuoc=c.MaThuoc
         WHERE r.MaLS=@visitId AND r.TrangThai=N'Đã xác nhận'
           AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON h WITH(HOLDLOCK) WHERE h.MaCTDT=c.MaCTDT)
+        UNION ALL
+        SELECT NULL,NULL,NULL,N'Phụ thu khám dịch vụ (chọn bác sĩ)',p.PhiPhuThuDichVu,p.PhiPhuThuDichVu,p.MaPhieu
+        FROM dbo.LICH_SU_KHAM_BENH l WITH(HOLDLOCK) JOIN dbo.PHIEU_KHAM_BENH p WITH(HOLDLOCK) ON p.MaPhieu=l.MaPhieu
+        WHERE l.MaLS=@visitId AND p.LoaiKham=N'Dịch vụ' AND p.PhiPhuThuDichVu>0
+          AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WITH(HOLDLOCK) WHERE c.MaPhieuPhuThu=p.MaPhieu)
         """;
 
     /// <summary>
@@ -114,19 +119,24 @@ public sealed class DAL_CHITIETHOADON : dbconnect
     /// </summary>
     internal const string EligibleChargesSql = """
         SELECT s.MaDVThucHien,CAST(NULL AS nvarchar(50)) MaCTPX,d.TenDV NoiDung,s.SoLuong,
-            s.DonGia DonGiaChot,CAST(NULL AS decimal(18,2)) DonGia,s.ThanhTien,N'Dịch vụ' Loai
+            s.DonGia DonGiaChot,CAST(NULL AS decimal(18,2)) DonGia,s.ThanhTien,N'Dịch vụ' Loai,CAST(NULL AS nvarchar(50)) MaPhieuPhuThu
         FROM dbo.DICH_VU_THUC_HIEN s JOIN dbo.DICH_VU d ON d.MaDV=s.MaDV
         WHERE s.MaLS=@visitId AND s.TrangThai=N'Đã xác nhận'
             AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaDVThucHien=s.MaDVThucHien)
         UNION ALL
         SELECT NULL,x.MaCTPX,COALESCE(NULLIF(ct.TenThuocChot,N''),hh.TenHH)+N' '+COALESCE(NULLIF(ct.HamLuongChot,N''),t.HamLuong),x.SoLuong,t.DonGiaBan,t.DonGiaBan,
-            CAST(ROUND(x.SoLuong*t.DonGiaBan,2) AS decimal(18,2)),N'Thuốc đã cấp'
+            CAST(ROUND(x.SoLuong*t.DonGiaBan,2) AS decimal(18,2)),N'Thuốc đã cấp',NULL
         FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX
         JOIN dbo.CHI_TIET_DON_THUOC ct ON ct.MaCTDT=x.MaCTDT
         JOIN dbo.DON_THUOC dt ON dt.MaDT=ct.MaDT JOIN dbo.THUOC t WITH(HOLDLOCK) ON t.MaThuoc=ct.MaThuoc
         JOIN dbo.HANG_HOA hh ON hh.MaHH=x.MaHH
         WHERE p.MaLS=@visitId AND dt.MaLS=@visitId AND p.TrangThai=N'Đã ghi sổ'
             AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaCTPX=x.MaCTPX)
+        UNION ALL
+        SELECT NULL,NULL,N'Phụ thu khám dịch vụ (chọn bác sĩ)',CAST(1 AS decimal(18,3)),p.PhiPhuThuDichVu,p.PhiPhuThuDichVu,p.PhiPhuThuDichVu,N'Phụ thu khám dịch vụ',p.MaPhieu
+        FROM dbo.LICH_SU_KHAM_BENH l WITH(HOLDLOCK) JOIN dbo.PHIEU_KHAM_BENH p WITH(HOLDLOCK) ON p.MaPhieu=l.MaPhieu
+        WHERE l.MaLS=@visitId AND p.LoaiKham=N'Dịch vụ' AND p.PhiPhuThuDichVu>0
+          AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WITH(HOLDLOCK) WHERE c.MaPhieuPhuThu=p.MaPhieu)
         """;
     /// <summary>
     /// Trả bảng khoản thu chưa nằm trên hóa đơn nào của lần khám: dịch vụ Đã xác nhận và thuốc từ phiếu xuất Đã ghi sổ; giá thuốc lấy từ danh mục hiện hành.
@@ -148,7 +158,7 @@ public sealed class DAL_CHITIETHOADON : dbconnect
     internal static void ThemChiTiet(IDbConnection db, IDbTransaction? tx, string invoiceId, ET_CHITIETHOADON charge)
     {
         var detailId = TaoMa(db, tx, "CHI_TIET_HOA_DON", "MaCTHD");
-        db.Execute("INSERT dbo.CHI_TIET_HOA_DON(MaCTHD,MaHD,MaDVThucHien,MaCTPX,MaCTDT,NoiDung,DonGia) VALUES(@detailId,@invoiceId,@MaDVThucHien,@MaCTPX,@MaCTDT,@NoiDung,@DonGia)", new { detailId, invoiceId, charge.MaDVThucHien, charge.MaCTPX, charge.MaCTDT, charge.NoiDung, charge.DonGia }, tx);
+        db.Execute("INSERT dbo.CHI_TIET_HOA_DON(MaCTHD,MaHD,MaDVThucHien,MaCTPX,MaCTDT,MaPhieuPhuThu,NoiDung,DonGia) VALUES(@detailId,@invoiceId,@MaDVThucHien,@MaCTPX,@MaCTDT,@MaPhieuPhuThu,@NoiDung,@DonGia)", new { detailId, invoiceId, charge.MaDVThucHien, charge.MaCTPX, charge.MaCTDT, charge.MaPhieuPhuThu, charge.NoiDung, charge.DonGia }, tx);
     }
 
     /// <summary>

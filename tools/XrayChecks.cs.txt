@@ -1,0 +1,280 @@
+using System.Data;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
+using System.Security.Cryptography;
+using System.Security.Claims;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Controls;
+using BUS;
+using DAL;
+using Dapper;
+using ET;
+
+static class XrayCheckEntry { [STAThread] static int Main(string[] args)=>Program.XrayChecks(args); }
+internal static partial class Program
+{
+    static string xrayRoot="";
+    static int imageSeed;
+    internal static int XrayChecks(string[] args)
+    {
+        if(args.Length is not(2 or 4)||!System.Text.RegularExpressions.Regex.IsMatch(args[1],"^RHM_Hospital_Test_[A-Za-z0-9_]+$"))throw new Exception("Isolated DB required");
+        cs=$"Data Source={args[0]};Initial Catalog={args[1]};Integrated Security=True;TrustServerCertificate=True;";Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",cs);
+        if(args.Length==4)
+        {
+            Assert(args[2]=="--restore","Unknown verification mode");xrayRoot=System.IO.Path.GetFullPath(args[3]);
+            var restoreApp=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
+            Check("XR04 BUS mở được ảnh từ SQL đã restore và kho ở đường dẫn khác",()=>{
+                var a=XrayActor();using var db=DbXray();var photos=db.Query<ET_ANHXQUANGLANKHAM>("SELECT * FROM dbo.ANH_XQUANG_LAN_KHAM WHERE TrangThai=N'Đang sử dụng'").ToArray();
+                Assert(photos.Length>0,"Restore fixture needs active photos");foreach(var photo in photos)Open(photo,a);
+                Assert(((IReadOnlyList<SuCoKhoAnh>)XrayCall(XrayBus(),"KiemTraKho",XrayActor("NV001"))).Count==0,"Restored store is inconsistent");
+            });
+            Check("XR UI cửa sổ ảnh gốc mở được sau restore và phóng thu thực tế",()=>{
+                using var db=DbXray();var photo=db.QueryFirst<ET_ANHXQUANGLANKHAM>("SELECT * FROM dbo.ANH_XQUANG_LAN_KHAM WHERE TrangThai=N'Đang sử dụng'");
+                var viewer=new RangHamMat.Views.XemAnhXquang((DuLieuAnhXquang)Open(photo,XrayActor()));viewer.Show();
+                try
+                {
+                    Pump();Control<Slider>(viewer,"Zoom").Value=2;Pump();var image=Control<System.Windows.Controls.Image>(viewer,"FullImage");
+                    Assert(image.Source is not null&&image.LayoutTransform is ScaleTransform scale&&scale.ScaleX==2&&scale.ScaleY==2,"Cửa sổ ảnh không nạp hoặc không phóng thu");
+                    var content=(FrameworkElement)viewer.Content;var bitmap=new RenderTargetBitmap((int)content.ActualWidth,(int)content.ActualHeight,96,96,PixelFormats.Pbgra32);bitmap.Render(content);
+                    var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));System.IO.Directory.CreateDirectory("obj/RhmFinal");using var output=System.IO.File.Create("obj/RhmFinal/xray-fullview.png");encoder.Save(output);
+                }
+                finally{viewer.Close();}
+            });
+            restoreApp.Shutdown();
+            Console.WriteLine($"RESULT: {passed} passed, {failed} failed");return failed==0?0:1;
+        }
+        xrayRoot=System.IO.Path.GetFullPath("obj/XrayEvidence/store-"+Guid.NewGuid().ToString("N"));System.IO.Directory.CreateDirectory(xrayRoot);
+        Console.WriteLine("XRAY_DATABASE="+args[1]);Console.WriteLine("XRAY_ROOT="+xrayRoot);
+        SeedXrayDatabase();
+        Check("XR01 PNG và JPEG lưu nguyên byte, metadata đúng MaLS, audit UTC",()=>{
+            foreach(var jpeg in new[]{false,true})
+            {
+                var bytes=TestImage(jpeg);var user=XrayActor();var row=Upload(bytes,jpeg?"fixture.jpg":"fixture.png",user);
+                Assert(row.MaLS=="TC_LS"&&row.MaNVUpload=="NV002"&&row.KichThuocBytes==bytes.Length&&row.Sha256==Convert.ToHexString(SHA256.HashData(bytes)),"Sai metadata");
+                Assert(!row.TenTepLuu.Contains("fixture")&&System.IO.File.ReadAllBytes(System.IO.Path.Combine(xrayRoot,row.DuongDanTuongDoi)).SequenceEqual(bytes),"Đã đổi ảnh gốc hoặc dùng tên nhận diện");
+                var opened=Open(row,user);var data=(byte[])opened.GetType().GetProperty("NoiDung")!.GetValue(opened)!;Assert(data.SequenceEqual(bytes),"Mở sai ảnh");
+                using var db=DbXray();Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC WHERE MaDoiTuong=@id AND HanhDong IN(N'XR_UPLOAD',N'XR_VIEW') AND ThoiGianUtc IS NOT NULL",new{id=row.MaAnh})>=2,"Thiếu audit tải/xem");
+            }
+        });
+        Check("XR01 retry cùng nội dung trên cùng MaLS không nhân metadata/tệp",()=>{
+            var bytes=TestImage();var user=XrayActor();var one=Upload(bytes,"fixture.png",user);var two=Upload(bytes,"fixture.png",user);Assert(one.MaAnh==two.MaAnh,"Upload lặp tạo ảnh trùng");
+        });
+        foreach(var name in new[]{"../escape.png","folder/escape.png","C:\\escape.png","image.dcm","image.gif"})
+            Check("XR02 từ chối tên/định dạng: "+name,()=>ExpectInvalid(()=>Upload(TestImage(),name,XrayActor())));
+        Check("XR02 nội dung JPEG giả đuôi PNG bị chặn",()=>ExpectInvalid(()=>Upload(TestImage(true),"fixture.png",XrayActor())));
+        Check("XR02 ảnh hỏng không sinh metadata/tệp",()=>{
+            var before=System.IO.Directory.GetFiles(xrayRoot,"*.png").Length;ExpectInvalid(()=>Upload([137,80,78,71,13,10,26,10,0,0],"broken.png",XrayActor()));
+            Assert(System.IO.Directory.GetFiles(xrayRoot,"*.png").Length==before,"Lưu tệp hỏng");
+        });
+        Check("XR02 chặn dung lượng 20 MiB trước decode",()=>ExpectInvalid(()=>Upload(new byte[20971521],"large.png",XrayActor())));
+        Check("XR02 giới hạn số điểm ảnh cấu hình được kiểm trước decode",()=>{
+            var cfg=XrayConfig();cfg.GetType().GetProperty("DiemAnhToiDa")!.SetValue(cfg,100L);
+            ExpectInvalid(()=>Upload(TestImage(),"fixture.png",XrayActor(),config:cfg));
+        });
+        foreach(var staff in new[]{"NV003","NV006","NV007"})
+            Check("XR03 người không có phạm vi bị chặn: "+staff,()=>{
+                var row=Upload(TestImage(),"private.png",XrayActor());var denied=XrayActor(staff);
+                ExpectInvalid(()=>Open(row,denied));ExpectInvalid(()=>Upload(TestImage(),"fixture.png",denied));
+            });
+        Check("XR03 bác sĩ không được gắn ảnh vào MaLS bệnh nhân khác",()=>{
+            ExpectInvalid(()=>Upload(TestImage(),"fixture.png",XrayActor(),visit:"XR_OTHER_LS"));
+        });
+        Check("XR03 kỹ thuật viên chỉ tải/xem ảnh dịch vụ X-quang được giao",()=>{
+            var tech=XrayActor("NV004");var row=Upload(TestImage(),"assigned.png",tech,service:"XR_ASSIGNED");Assert(row.MaDVThucHien=="XR_ASSIGNED","Mất nguồn phân công");Open(row,tech);
+            ExpectInvalid(()=>Upload(TestImage(),"unassigned.png",tech));
+            var doctorRow=Upload(TestImage(),"doctor.png",XrayActor());ExpectInvalid(()=>Open(doctorRow,XrayActor("NV004")));
+        });
+        Check("XR03 khóa tài khoản sau khi tải phải chặn mở lại",()=>{
+            var user=XrayActor();var row=Upload(TestImage(),"fixture.png",user);using var db=DbXray();
+            try{db.Execute("UPDATE dbo.TAI_KHOAN SET TrangThai=N'Bị khóa' WHERE MaTK=N'TK002'");ExpectInvalid(()=>Open(row,user));}
+            finally{db.Execute("UPDATE dbo.TAI_KHOAN SET TrangThai=N'Đang hoạt động' WHERE MaTK=N'TK002'");}
+        });
+        Check("XR04 ẩn giữ tệp và metadata, không mở ảnh đã ẩn",()=>{
+            var a=XrayActor();var row=Upload(TestImage(),"hide.png",a);XrayCall(XrayBus(),"AnAnh","TC_LS",row.MaAnh,a);
+            using var db=DbXray();Assert(db.ExecuteScalar<string>("SELECT TrangThai FROM dbo.ANH_XQUANG_LAN_KHAM WHERE MaAnh=@id",new{id=row.MaAnh})=="Đã ẩn"&&System.IO.File.Exists(System.IO.Path.Combine(xrayRoot,row.DuongDanTuongDoi)),"Xóa dữ liệu khi ẩn");ExpectInvalid(()=>Open(row,a));
+        });
+        Check("XR02 tệp mất có lỗi rõ và audit, metadata vẫn còn",()=>{
+            var a=XrayActor();var bytes=TestImage();var row=Upload(bytes,"missing.png",a);var path=System.IO.Path.Combine(xrayRoot,row.DuongDanTuongDoi);
+            try{System.IO.File.Delete(path);ExpectInvalid(()=>Open(row,a));ExpectInvalid(()=>Upload(bytes,"missing.png",a));using var db=DbXray();Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC WHERE MaDoiTuong=@id AND HanhDong=N'XR_FILE_MISSING'",new{id=row.MaAnh})>0,"Không ghi audit tệp mất");}
+            finally{System.IO.File.WriteAllBytes(path,bytes);}
+        });
+        Check("XR02 tệp sai hash bị chặn và ghi audit",()=>{
+            var a=XrayActor();var bytes=TestImage();var row=Upload(bytes,"hash.png",a);var path=System.IO.Path.Combine(xrayRoot,row.DuongDanTuongDoi);
+            try{System.IO.File.WriteAllBytes(path,TestImage());ExpectInvalid(()=>Open(row,a));using var db=DbXray();Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC WHERE MaDoiTuong=@id AND HanhDong=N'XR_FILE_INVALID'",new{id=row.MaAnh})>0,"Không ghi audit toàn vẹn");}
+            finally{System.IO.File.WriteAllBytes(path,bytes);}
+        });
+        Check("XR04 SQL lỗi sau ghi tệp phải dọn tệp mới và không lưu metadata",()=>{
+            var before=System.IO.Directory.GetFiles(xrayRoot,"*.png").Length;using var db=DbXray();
+            try{db.Execute("CREATE OR ALTER TRIGGER dbo.TR_XR_TEST_FAIL ON dbo.ANH_XQUANG_LAN_KHAM AFTER INSERT AS THROW 53990,N'Intentional isolated image failure',1;");ExpectInvalid(()=>Upload(TestImage(),"fail.png",XrayActor()));}
+            finally{db.Execute("DROP TRIGGER IF EXISTS dbo.TR_XR_TEST_FAIL");}
+            Assert(System.IO.Directory.GetFiles(xrayRoot,"*.png").Length==before,"SQL thất bại còn tệp đích");
+        });
+        Check("XR02 kho sản phẩm không nhận đường dẫn cục bộ mặc định",()=>{
+            var cfg=XrayConfig();cfg.GetType().GetProperty("ChoPhepDuongDanCucBo")!.SetValue(cfg,false);ExpectInvalid(()=>Upload(TestImage(),"fixture.png",XrayActor(),config:cfg));
+        });
+        Check("XR01 danh sách và quyền không trả ảnh ngoài phạm vi",()=>{
+            var owner=XrayActor();var list=(DanhSachAnhXquang)XrayCall(XrayBus(),"LayDanhSach","TC_LS",false,owner);
+            Assert(list.MaBN=="BN001"&&list.DuocTaiLen&&list.CacAnh.Count>0,"Không nạp được danh sách ảnh");
+            var tech=(DanhSachAnhXquang)XrayCall(XrayBus(),"LayDanhSach","TC_LS",true,XrayActor("NV004"));Assert(tech.CacAnh.All(x=>x.Anh.MaDVThucHien=="XR_ASSIGNED"),"Kỹ thuật viên thấy ảnh ngoài phần được giao");
+            ExpectInvalid(()=>XrayCall(XrayBus(),"LayDanhSach","TC_LS",true,XrayActor("NV007")));
+        });
+        Check("XR02 metadata đường dẫn đi lùi không được đọc khỏi kho",()=>{
+            var store=Activator.CreateInstance(XrayType("KhoLuuAnhXquang"),XrayConfig())!;
+            var row=new ET_ANHXQUANGLANKHAM{TenTepLuu=new string('a',32)+".png",DuongDanTuongDoi="../outside.png"};ExpectInvalid(()=>XrayCall(store,"DocTep",row));
+        });
+        Check("XR04 kiểm kho nhận orphan, không tự xóa và kiểm cả ảnh ẩn",()=>{
+            var orphan=Guid.NewGuid().ToString("N")+".png";var path=System.IO.Path.Combine(xrayRoot,orphan);System.IO.File.WriteAllBytes(path,TestImage());
+            try{var issues=(IReadOnlyList<SuCoKhoAnh>)XrayCall(XrayBus(),"KiemTraKho",XrayActor("NV001"));Assert(issues.Count==1&&issues[0].Loai=="TepKhongDangKy"&&System.IO.File.Exists(path),"Kiểm kho sai hoặc tự xóa tệp");}
+            finally{System.IO.File.Delete(path);}
+        });
+        Check("XR01 lịch sử chỉ xem: mở được, không tải/ẩn sau hoàn tất",()=>{
+            using(var db=DbXray())db.Execute("""
+                INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaBS,MaPhong,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai)
+                VALUES(N'XR_DONE_P',N'HS001',N'NV002',N'PH001',N'NV005',N'DV001',2001,DATEADD(minute,-3,SYSDATETIME()),N'FIXTURE',N'Đang khám');
+                INSERT dbo.LICH_SU_KHAM_BENH(MaLS,MaPhieu,MaBS,MaPhong,ThoiGianKham,TrieuChung,ChanDoan,KeHoachXuLy,TrangThai)
+                VALUES(N'XR_DONE_LS',N'XR_DONE_P',N'NV002',N'PH001',DATEADD(minute,-2,SYSDATETIME()),N'FIXTURE',N'FIXTURE',N'FIXTURE',N'Nháp');
+                """);
+            var a=XrayActor();var row=Upload(TestImage(),"history.png",a,visit:"XR_DONE_LS");
+            using(var db=DbXray())db.Execute("UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận',NgayXacNhan=SYSDATETIME() WHERE MaLS=N'XR_DONE_LS'; UPDATE dbo.PHIEU_KHAM_BENH SET TrangThai=N'Chờ thanh toán' WHERE MaPhieu=N'XR_DONE_P';");
+            Open(row,a);var data=(DanhSachAnhXquang)XrayCall(XrayBus(),"LayDanhSach","XR_DONE_LS",false,a);Assert(!data.DuocTaiLen&&!data.CacAnh.Single().DuocAn,"Lịch sử còn quyền sửa ảnh");
+            ExpectInvalid(()=>Upload(TestImage(),"after.png",a,visit:"XR_DONE_LS"));ExpectInvalid(()=>XrayCall(XrayBus(),"AnAnh","XR_DONE_LS",row.MaAnh,a));
+        });
+        var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};app.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml",UriKind.Relative)});
+        Check("XR UI tải, thumbnail, xem lớn và ẩn đúng ảnh",()=>{
+            var type=typeof(RangHamMat.Views.KhamLamSang).Assembly.GetType("RangHamMat.Views.AnhXquangLanKham")??throw new Exception("Missing X-ray UI");
+            var editor=(UserControl)Activator.CreateInstance(type,["TC_LS",XrayActor(),null,XrayConfig()])!;
+            var image=TestImage();using var stream=new System.IO.MemoryStream(image);
+            object?[] input=[stream,"ui-fixture.png",null];Assert((bool)XrayCall(editor,"TryTaiLen",input),"UI upload thất bại: "+input[2]);
+            var list=Control<ListBox>(editor,"ImageList");Assert(list.Items.Count>0,"Danh sách UI trống");list.SelectedIndex=0;
+            Capture(editor,"xray-editor.png");Assert(Control<System.Windows.Controls.Image>(editor,"SelectedPreview").Source is not null,"Thiếu thumbnail");
+            bool sent=false;object?[] preview=[(Action<DuLieuAnhXquang>)(p=>{sent=true;Assert(p.NoiDung.Length>0,"Xem ảnh rỗng");}),null];Assert((bool)XrayCall(editor,"TryXemLon",preview)&&sent,"Không mở được ảnh lớn");
+            object?[] hide=[null];Assert((bool)XrayCall(editor,"TryAnAnh",hide),"Không ẩn được ảnh từ UI");
+        });
+        Check("XR UI lịch sử khóa tải/ẩn, kho chưa cấu hình không crash",()=>{
+            var type=typeof(RangHamMat.Views.KhamLamSang).Assembly.GetType("RangHamMat.Views.AnhXquangLanKham")??throw new Exception("Missing X-ray UI");
+            var editor=(UserControl)Activator.CreateInstance(type,["XR_DONE_LS",XrayActor(),null,XrayConfig()])!;Capture(editor,"xray-history.png");Assert(!Control<Button>(editor,"UploadButton").IsEnabled&&!Control<Button>(editor,"HideButton").IsEnabled,"Lịch sử còn nút ghi");
+            var empty=Activator.CreateInstance(XrayType("CauHinhKhoAnh"))!;
+            var unconfigured=(UserControl)Activator.CreateInstance(type,["TC_LS",XrayActor(),null,empty])!;Capture(unconfigured,"xray-unconfigured.png");Assert(Control<TextBlock>(unconfigured,"StatusText").Text.Length>0,"Không giải thích kho chưa sẵn sàng");
+        });
+        Check("XR UI kỹ thuật viên có lối mở đúng các lượt X-quang được giao",()=>{
+            var a=XrayActor("NV004");var rows=(System.Collections.IEnumerable)XrayCall(XrayBus(),"LayLuotDuocGiao",a);
+            var visits=rows.Cast<object>().ToArray();Assert(visits.Length==1&&(string)visits[0].GetType().GetProperty("MaLS")!.GetValue(visits[0])! =="TC_LS","Lộ lượt không được giao");
+            var type=typeof(RangHamMat.Views.KhamLamSang).Assembly.GetType("RangHamMat.Views.AnhXquangDuocGiao")??throw new Exception("Missing assigned imaging UI");
+            var editor=(UserControl)Activator.CreateInstance(type,[a,null,XrayConfig()])!;var picker=Control<ComboBox>(editor,"VisitPicker");picker.SelectedValue="TC_LS";
+            var images=Control<ContentControl>(editor,"ImageHost").Content as UserControl;
+            Assert(images is not null&&Control<Button>(images,"UploadButton").IsEnabled,"Không mở được tải ảnh cho kỹ thuật viên");
+            var window=new Window{Content=editor,Width=1100,Height=850,ShowInTaskbar=false,Left=-20000,Top=-20000};window.Show();
+            try
+            {
+                Pump();var previewBorder=(Border)VisualTreeHelper.GetParent(Control<System.Windows.Controls.Image>(images!,"SelectedPreview"));
+                var previewLayout=(Grid)previewBorder.Parent;
+                Assert(previewLayout.RowDefinitions[1].ActualHeight>=previewBorder.MinHeight,"Vùng xem trước bị che bởi nút thao tác ở chiều cao cửa sổ nhỏ");
+                var page=Control<ScrollViewer>(images!,"PageScroll");page.ScrollToBottom();Pump();
+                var action=Control<Button>(images!,"ViewButton");var actionBounds=action.TransformToAncestor(page).TransformBounds(new Rect(action.RenderSize));
+                Assert(actionBounds.Top>=0&&actionBounds.Bottom<=page.ActualHeight+1,$"Cuộn trang chưa đưa nút xem ảnh vào vùng nhìn thấy: {actionBounds}, viewport={page.ActualHeight}, offset={page.VerticalOffset}, extent={page.ExtentHeight}");
+                var bitmap=new RenderTargetBitmap((int)editor.ActualWidth,(int)editor.ActualHeight,96,96,PixelFormats.Pbgra32);bitmap.Render(editor);
+                var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));using var output=System.IO.File.Create("obj/RhmFinal/xray-assigned.png");encoder.Save(output);
+            }
+            finally{window.Close();}
+        });
+        Check("XR UI mất quyền khi mở tab lịch sử không thoát sự kiện Loaded",()=>{
+            XrayActor("NV005");RangHamMat.PhienDangNhap.MaNV="NV005";RangHamMat.PhienDangNhap.IsAdmin=false;
+            RangHamMat.Controls.DuLieuGiaoDien.RefreshFromDatabase();
+            using var db=DbXray();var visit=db.QuerySingle<ET_LICHSUKHAMBENH>("SELECT * FROM dbo.LICH_SU_KHAM_BENH WHERE MaLS=N'XR_DONE_LS'");
+            var detail=new RangHamMat.Views.ChiTietKhamDieuTri(visit,true);
+            try
+            {
+                db.Execute("UPDATE dbo.TAI_KHOAN SET TrangThai=N'Bị khóa' WHERE MaTK=N'TK005'");
+                try{typeof(RangHamMat.Views.ChiTietKhamDieuTri).GetMethod("XrayHistoryHost_Loaded",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(detail,[detail,new RoutedEventArgs()]);}
+                catch(TargetInvocationException ex){throw new Exception("Loaded ảnh còn ném lỗi ra WPF",ex.InnerException);}
+                Assert(Control<ContentControl>(detail,"XrayHistoryHost").Content is TextBlock,"Không hiện lỗi quyền trong trang");
+            }
+            finally{db.Execute("UPDATE dbo.TAI_KHOAN SET TrangThai=N'Đang hoạt động' WHERE MaTK=N'TK005'");RangHamMat.PhienDangNhap.MaNV="";}
+        });
+        Check("XR bác sĩ phân công từ dịch vụ chụp do luồng thực hiện tạo, không sửa chứng từ",()=>{
+            using(var db=DbXray())db.Execute("""
+                INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaBS,MaPhong,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai)
+                VALUES(N'XR_ASSIGN_P',N'HS001',N'NV002',N'PH001',N'NV005',N'DV001',2002,DATEADD(minute,-3,SYSDATETIME()),N'FIXTURE',N'Đang khám');
+                INSERT dbo.LICH_SU_KHAM_BENH(MaLS,MaPhieu,MaBS,MaPhong,ThoiGianKham,TrieuChung,ChanDoan,KeHoachXuLy,TrangThai)
+                VALUES(N'XR_ASSIGN_LS',N'XR_ASSIGN_P',N'NV002',N'PH001',DATEADD(minute,-2,SYSDATETIME()),N'FIXTURE',N'FIXTURE',N'FIXTURE',N'Nháp');
+                """);
+            var a=XrayActor();var b=new BUS_KHAMDIEUTRI();var old=b.LayBanNhap("XR_ASSIGN_LS",a);
+            var draft=b.LuuKham(new(){MaLS="XR_ASSIGN_LS",DauVanTay=old.DauVanTay,TrieuChung="FIXTURE",ChanDoan="FIXTURE",KeHoachXuLy="FIXTURE",KhongKeThuoc=true,LyDoKhongKeThuoc="FIXTURE",TinhTrang=[new(){LoaiTinhTrang="FIXTURE"}]},a);
+            var plan=b.LuuKeHoach(new(){MaLS="XR_ASSIGN_LS",MaTTBNguon=draft.TinhTrang.Single().MaTTB,CacBuoc=[new(){MaDV="DV006",DonGiaDuKien=200000,SoLuongDuKien=1,LanThu=1,NoiDungBuoc="FIXTURE chỉ định chụp"}]},a);
+            b.XacNhanKeHoach(plan.KeHoach.MaKHDT,plan.DauVanTay,a);b.XacNhanThucHien("XR_ASSIGN_LS",b.LayTongKetKham("XR_ASSIGN_LS",a).DauVanTay,a);
+            var board=(DanhSachAnhXquang)XrayCall(XrayBus(),"LayDanhSach","XR_ASSIGN_LS",false,a);var service=board.DichVu.Single();
+            XrayCall(XrayBus(),"PhanCong","XR_ASSIGN_LS",service.MaDVThucHien,"NV004",a);
+            using(var db=DbXray())Assert(db.ExecuteScalar<string>("SELECT MaNVThucHien FROM dbo.DICH_VU_THUC_HIEN WHERE MaDVThucHien=@id",new{id=service.MaDVThucHien})=="NV002","Đã sửa người thực hiện dịch vụ chốt");
+            var photo=Upload(TestImage(),"assigned-app.png",XrayActor("NV004"),visit:"XR_ASSIGN_LS",service:service.MaDVThucHien);Open(photo,XrayActor("NV004"));
+        });
+        Check("XR phân công thay kỹ thuật viên đã khóa, thu hồi phạm vi cũ và giữ lịch sử",()=>{
+            using var db=DbXray();
+            db.Execute("""
+                INSERT dbo.NHAN_VIEN(MaNV,HoTen,MaChucVu,NgayVaoLam,TrangThai)
+                VALUES(N'NV008',N'FIXTURE kỹ thuật viên thay thế',N'CV003',CONVERT(date,SYSDATETIME()),N'Đang làm việc');
+                INSERT dbo.TAI_KHOAN(MaTK,TenDangNhap,MatKhauHash,MaVaiTro,MaNV,TrangThai)
+                SELECT N'TK008',N'fixture_NV008',MatKhauHash,N'VTRO002',N'NV008',N'Đang hoạt động' FROM dbo.TAI_KHOAN WHERE MaTK=N'TK001';
+                """);
+            var photo=db.QuerySingle<ET_ANHXQUANGLANKHAM>("SELECT * FROM dbo.ANH_XQUANG_LAN_KHAM WHERE MaLS=N'XR_ASSIGN_LS'");
+            var oldTech=XrayActor("NV004");var owner=XrayActor();
+            var session=new BUS_NHATKY().BatDauPhien(owner);
+            ((ClaimsIdentity)((ClaimsPrincipal)Thread.CurrentPrincipal!).Identity!).AddClaim(new Claim("RHM.MaPhien",session.ToString("D")));
+            try
+            {
+                db.Execute("UPDATE dbo.TAI_KHOAN SET TrangThai=N'Bị khóa' WHERE MaTK=N'TK004'");
+                var id=(string)XrayCall(XrayBus(),"PhanCong",photo.MaLS,photo.MaDVThucHien,"NV008",owner);
+                ExpectInvalid(()=>Open(photo,oldTech));
+                var next=XrayActor("NV008");Open(photo,next);
+                ExpectInvalid(()=>XrayCall(XrayBus(),"AnAnh",photo.MaLS,photo.MaAnh,next));
+                Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.PHAN_CONG_ANH_XQUANG WHERE MaDVThucHien=@source",new{source=photo.MaDVThucHien})==2,"Mất lịch sử phân công");
+                Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC WHERE MaDoiTuong=@id AND HanhDong=N'XR_ASSIGN' AND MaPhien=@session",new{id,session})==1,"Phân công thiếu phiên audit");
+            }
+            finally{db.Execute("UPDATE dbo.TAI_KHOAN SET TrangThai=N'Đang hoạt động' WHERE MaTK=N'TK004'");XrayActor();new BUS_NHATKY().KetThucPhien(session);}
+            ExpectInvalid(()=>Open(photo,XrayActor("NV004")));
+        });
+        app.Shutdown();
+        Console.WriteLine($"RESULT: {passed} passed, {failed} failed");return failed==0?0:1;
+    }
+    static System.Type XrayType(string name)=>typeof(BUS_KHAMDIEUTRI).Assembly.GetType("BUS."+name)??throw new Exception("Missing X-ray implementation: "+name);
+    static object XrayConfig()
+    {
+        var cfg=Activator.CreateInstance(XrayType("CauHinhKhoAnh"))!;cfg.GetType().GetProperty("ThuMucDungChung")!.SetValue(cfg,xrayRoot);cfg.GetType().GetProperty("ChoPhepDuongDanCucBo")!.SetValue(cfg,true);return cfg;
+    }
+    static object XrayBus(object? cfg=null)=>Activator.CreateInstance(XrayType("BUS_ANHXQUANG"),[null,cfg??XrayConfig()])!;
+    static object XrayCall(object target,string method,params object?[] args)
+    {
+        var m=target.GetType().GetMethods().SingleOrDefault(m=>m.Name==method&&m.GetParameters().Length==args.Length)??throw new Exception("Missing X-ray API: "+method);
+        try{return m.Invoke(target,args)!;}catch(TargetInvocationException ex){ExceptionDispatchInfo.Capture(ex.InnerException!).Throw();throw;}
+    }
+    static ET_ANHXQUANGLANKHAM Upload(byte[] bytes,string name,NguCanhNghiepVu a,string visit="TC_LS",string? service=null,object? config=null)
+    {using var stream=new System.IO.MemoryStream(bytes);return(ET_ANHXQUANGLANKHAM)XrayCall(XrayBus(config),"TaiLen",visit,stream,name,service,"FIXTURE không phải bệnh án thật",a);}
+    static object Open(ET_ANHXQUANGLANKHAM row,NguCanhNghiepVu a)=>XrayCall(XrayBus(),"MoAnh",row.MaLS,row.MaAnh,a);
+    static Microsoft.Data.SqlClient.SqlConnection DbXray(){var db=new Microsoft.Data.SqlClient.SqlConnection(cs);db.Open();return db;}
+    static NguCanhNghiepVu XrayActor(string nv="NV002")
+    {using var db=DbXray();using var tx=db.BeginTransaction();return Login(tx,nv,"TK"+nv[2..]);}
+    static byte[] TestImage(bool jpeg=false)
+    {
+        int seed=++imageSeed;var pixels=new byte[64*32*4];for(int i=0;i<pixels.Length;i+=4){pixels[i]=(byte)(seed+i%193);pixels[i+1]=(byte)(i%251);pixels[i+2]=(byte)seed;pixels[i+3]=255;}
+        var bitmap=BitmapSource.Create(64,32,96,96,PixelFormats.Bgra32,null,pixels,64*4);BitmapEncoder encoder=jpeg?new JpegBitmapEncoder():new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));using var stream=new System.IO.MemoryStream();encoder.Save(stream);return stream.ToArray();
+    }
+    static void SeedXrayDatabase()
+    {
+        using var db=DbXray();using var tx=db.BeginTransaction(IsolationLevel.Serializable);
+        if(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAN_VIEN WHERE MaNV=N'NV002'",transaction:tx)==0)
+        {
+            Fixture(tx);db.Execute("""
+                INSERT dbo.BENH_NHAN(MaBN,HoTenBN,NgaySinh,TrangThai) VALUES(N'XR_BN',N'FIXTURE người bệnh khác','19900101',N'Đang theo dõi');
+                INSERT dbo.HO_SO_BENH_AN(MaHS,MaBN,NgayLap,LyDoKhamBanDau,TrangThai) VALUES(N'XR_HS',N'XR_BN',SYSDATETIME(),N'FIXTURE',N'Đang theo dõi');
+                INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaBS,MaPhong,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai)
+                VALUES(N'XR_OTHER_P',N'XR_HS',N'NV003',N'PH001',N'NV005',N'DV001',1999,DATEADD(minute,-5,SYSDATETIME()),N'FIXTURE',N'Đang khám');
+                INSERT dbo.LICH_SU_KHAM_BENH(MaLS,MaPhieu,MaBS,MaPhong,ThoiGianKham,TrieuChung,ChanDoan,KeHoachXuLy,TrangThai)
+                VALUES(N'XR_OTHER_LS',N'XR_OTHER_P',N'NV003',N'PH001',DATEADD(minute,-4,SYSDATETIME()),N'FIXTURE',N'FIXTURE',N'FIXTURE',N'Nháp');
+                INSERT dbo.DICH_VU_THUC_HIEN(MaDVThucHien,MaLS,MaDV,MaNVThucHien,ThoiGianThucHien,SoLuong,DonGia,TrangThai)
+                VALUES(N'XR_ASSIGNED',N'TC_LS',N'DV006',N'NV004',SYSDATETIME(),1,200000,N'Nháp');
+                """,transaction:tx);
+        }
+        tx.Commit();
+    }
+}

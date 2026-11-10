@@ -5,8 +5,6 @@
 using RangHamMat;
 using RangHamMat.Views;
 using BUS;
-using System.Configuration;
-using System.Data;
 using System.Windows;
 
 namespace wpftest
@@ -16,22 +14,45 @@ namespace wpftest
     /// </summary>
     public partial class App : Application
     {
+        private readonly DichVuDangNhap dichVuDangNhap;
+
+        public App() : this(new DichVuDangNhap()) { }
+
+        internal App(DichVuDangNhap dichVuDangNhap) => this.dichVuDangNhap = dichVuDangNhap;
+
         /// <summary>
-        /// Hiển thị hộp thoại đăng nhập; nếu người dùng đóng/hủy thì kết thúc ứng dụng, nếu đồng ý thì mở MainWindow và kết thúc khi cửa sổ chính đóng.
+        /// Khôi phục tài khoản đã ghi nhớ hoặc hiển thị đăng nhập khi chưa có phiên hợp lệ.
         /// </summary>
         private void App_Startup(object sender, StartupEventArgs e)
         {
             // AI bổ sung: bắt lỗi ngày nhập bằng bàn phím trên các DatePicker của ứng dụng.
             RangHamMat.Controls.KiemTraNhapLieu.Register();
             PhienDangNhap.KhoiTaoPhienUngDung();
-            var login = new DangNhap();
+            bool restored = false;
+            try { restored = dichVuDangNhap.ThuKhoiPhuc(); }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show("Không thể khôi phục đăng nhập: " + ex.Message,
+                    "Phiên đăng nhập", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            if (restored) MoManHinhChinh();
+            else HienDangNhap();
+        }
 
+        private void HienDangNhap()
+        {
+            var login = new DangNhap(dichVuDangNhap);
+            MainWindow = login;
             if (login.ShowDialog() != true)
             {
                 Shutdown();
                 return;
             }
+            MoManHinhChinh();
+        }
 
+        private void MoManHinhChinh()
+        {
             // Khi mở ứng dụng, áp dụng các đơn đã tới ngày có hiệu lực trong lúc ứng dụng tắt.
             try
             {
@@ -47,7 +68,29 @@ namespace wpftest
 
             var mainWindow = new MainWindow();
             MainWindow = mainWindow;
-            ShutdownMode = ShutdownMode.OnMainWindowClose;
+            // Giữ tiến trình trong lúc đổi cửa sổ chính sang hộp thoại đăng nhập.
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            mainWindow.Closing += (_, e) =>
+            {
+                if (e.Cancel || !mainWindow.YeuCauDangXuat) return;
+                try { dichVuDangNhap.QuenPhien(); }
+                catch (System.Exception ex)
+                {
+                    e.Cancel = true;
+                    MessageBox.Show("Không thể xóa phiên đăng nhập đã lưu: " + ex.Message,
+                        "Đăng xuất", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            };
+            mainWindow.Closed += (_, _) =>
+            {
+                if (!mainWindow.YeuCauDangXuat)
+                {
+                    Shutdown();
+                    return;
+                }
+                PhienDangNhap.XoaDinhDanh();
+                Dispatcher.BeginInvoke(new System.Action(HienDangNhap));
+            };
             mainWindow.Show();
         }
         

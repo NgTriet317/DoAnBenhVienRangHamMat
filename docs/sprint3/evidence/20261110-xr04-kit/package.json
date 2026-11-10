@@ -1,0 +1,1078 @@
+{
+    "Protocol":  "RHM.XR04.Kit.v1",
+    "Id":  "20261110_120954_a7405046",
+    "CreatedUtc":  "\/Date(1794287400786)\/",
+    "P6Run":  "20261110_114040_eae3f295",
+    "AcceptedSourceFiles":  481,
+    "GitCommit":  "1cafa7d2096a3e954d381e473520cba8bab4b9dd",
+    "ReadyForDeployment":  false,
+    "XR04Status":  "PENDING_ENVIRONMENT",
+    "Runtime":  "Windows x64, .NET8; Verify requires Windows Desktop Runtime8",
+    "Files":  [
+                  {
+                      "Path":  "ChayNghiemThuXR04.ps1",
+                      "Bytes":  5189,
+                      "Sha256":  "29D65FB14CFE2A2A0C07FE0AABF13B801A42CCED0F3B55950A45A91E274D1517"
+                  },
+                  {
+                      "Path":  "NghiemThuSupport.ps1",
+                      "Bytes":  7554,
+                      "Sha256":  "A0DA168967D165508D40D042027E1FF002EE632AC692E548F1A325E281897A1B"
+                  },
+                  {
+                      "Path":  "README.md",
+                      "Bytes":  5763,
+                      "Sha256":  "9862FE75F426FEBEA6114B494188D37575C41D72BE30E46992A8915D4081BA62"
+                  },
+                  {
+                      "Path":  "source.json",
+                      "Bytes":  87378,
+                      "Sha256":  "C6ADEEC7CE11E1F7D0F9247B36EC341A1FEA3F0AF0FEB6EB30F49FF89646B0B9"
+                  },
+                  {
+                      "Path":  "Tools/Probe/BUS.dll",
+                      "Bytes":  120832,
+                      "Sha256":  "81BCC3727443C402314DD09172862EC48F8C898D78B0DF26E7B242CD4F55E9E0"
+                  },
+                  {
+                      "Path":  "Tools/Probe/BUS.pdb",
+                      "Bytes":  42564,
+                      "Sha256":  "0B61F2971F3BE448207092984791E8814386CBA0B28EED2E7671D2E9415D7438"
+                  },
+                  {
+                      "Path":  "Tools/Probe/CommunityToolkit.HighPerformance.dll",
+                      "Bytes":  123176,
+                      "Sha256":  "F8E5787B02EC9FE8A27B9DEA5F4317DD2CDCE3E32680E3E8A26673C534549DBC"
+                  },
+                  {
+                      "Path":  "Tools/Probe/cs/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  139712,
+                      "Sha256":  "39FB0C7B016AF84BCF3B4722F32448C8E799B26AA9BF8BE66C3D3D7C88A4D0E4"
+                  },
+                  {
+                      "Path":  "Tools/Probe/DAL.dll",
+                      "Bytes":  946688,
+                      "Sha256":  "37D285CB55FFEAC189B0F03CBD5772B6C469DA26EFFE2022398927243C613249"
+                  },
+                  {
+                      "Path":  "Tools/Probe/DAL.pdb",
+                      "Bytes":  93248,
+                      "Sha256":  "EDBEEF0105A1536BD9310E62AE2552EB4E01BD2668498905BCDA4D3821A07B2E"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Dapper.Contrib.dll",
+                      "Bytes":  62976,
+                      "Sha256":  "BF16D62342C44C5A35CD224B014DFFF272FED68BF29A6ACE3EA674C254848261"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Dapper.dll",
+                      "Bytes":  250880,
+                      "Sha256":  "82AFFF36836F0F5F4890CC6BA369A5305867EC826212B96AA31CE7B1920CB83D"
+                  },
+                  {
+                      "Path":  "Tools/Probe/de/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  144792,
+                      "Sha256":  "66759418C13C52DDAD8A316F46D7DA8B6C54362CD57D89640D73771BD8806A11"
+                  },
+                  {
+                      "Path":  "Tools/Probe/es/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  141760,
+                      "Sha256":  "688D4EB4377600CA2590757E6A68361A7F137679341A453608B5ED7509921266"
+                  },
+                  {
+                      "Path":  "Tools/Probe/ET.dll",
+                      "Bytes":  279040,
+                      "Sha256":  "F62DCBA3DFD7109DF9AA05585A63FF03192F1AD43350A36019C8CC3793B2802C"
+                  },
+                  {
+                      "Path":  "Tools/Probe/ET.pdb",
+                      "Bytes":  87676,
+                      "Sha256":  "4E092A5D3CCB5E5099091837403E9A8D521751530D23ED1A179131D8E59D113D"
+                  },
+                  {
+                      "Path":  "Tools/Probe/fo-dicom.core.dll",
+                      "Bytes":  1740288,
+                      "Sha256":  "BA1795C4EACE02958F91BB829D1F813CACA0C27BC93B8142B71D60ECD1D09CA9"
+                  },
+                  {
+                      "Path":  "Tools/Probe/fo-dicom.Imaging.ImageSharp.dll",
+                      "Bytes":  19968,
+                      "Sha256":  "AF7989FED6C593DAE1539CA50DE98B612F6483282650DA013E460CC516FB2F46"
+                  },
+                  {
+                      "Path":  "Tools/Probe/fr/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  147352,
+                      "Sha256":  "9E461A7830CDC6AF2CDC3B6E68001E8D00B354FC9D46DB1ECD5E484EF133AB4A"
+                  },
+                  {
+                      "Path":  "Tools/Probe/it/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  142272,
+                      "Sha256":  "ECAE58B8A5C96906E0F2DE44591162CC6BBD2D7909292E6AA0FD6ECF761F6BBF"
+                  },
+                  {
+                      "Path":  "Tools/Probe/ja/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  156560,
+                      "Sha256":  "184005B47553C31DF0D87E7435624F3FF13F73C5A201FA9EEFF8734A87B421F2"
+                  },
+                  {
+                      "Path":  "Tools/Probe/ko/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  144280,
+                      "Sha256":  "0889A8FB31D5230B1F32D3C47FA1FE846A462E4533437FB8FE38F45880A824AD"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Bcl.AsyncInterfaces.dll",
+                      "Bytes":  19104,
+                      "Sha256":  "136D5965CF4768E8420B547A8BDDEA882921F426C371833D558A858A2F0C235A"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Bcl.Cryptography.dll",
+                      "Bytes":  16664,
+                      "Sha256":  "30C625A2615DCF0A6B7B4355EAC0B91D1ED7E3A8096CEDC3D1B19B12F045B6F7"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Bcl.HashCode.dll",
+                      "Bytes":  19752,
+                      "Sha256":  "CBA1991E35612990AB7C130B77D1AD8D5C8280F3AAAD094CF81C3ADABC38DA43"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Data.SqlClient.dll",
+                      "Bytes":  93080,
+                      "Sha256":  "3A64D50773DC3415334867B20984D120D118A3735FEA21866BF359A5719284EF"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Data.SqlClient.Extensions.Abstractions.dll",
+                      "Bytes":  23488,
+                      "Sha256":  "7FA21B488A3569731B0230FEB0E8F8779D22AA4F451C1E6264AF51264AF82510"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Data.SqlClient.Internal.Logging.dll",
+                      "Bytes":  53696,
+                      "Sha256":  "3A0D800C1CCBC41A427DF0E84186488BFC1B5936BAE6B5F6A732CB54877AC18F"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Extensions.Caching.Abstractions.dll",
+                      "Bytes":  31008,
+                      "Sha256":  "31CAEBF834B6DA88696A4A21ECB38EEFFF2623A531BE925F6BD27719583EE3E2"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Extensions.Caching.Memory.dll",
+                      "Bytes":  45832,
+                      "Sha256":  "A6BC869C530A2ED7573575DD61E40F0A1079EF6074251AFE9701F927C5355CA8"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Extensions.Configuration.Abstractions.dll",
+                      "Bytes":  27936,
+                      "Sha256":  "FEFCDB267A73099CB90E5AF56B5EF2BCA59BED974339B3A6810352BDE23537A6"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Extensions.Configuration.Binder.dll",
+                      "Bytes":  42784,
+                      "Sha256":  "BEAC12F7BBA4E22CDA2ACD9DDFE944A4ED56ABEC414E084EDD147BD5DAD3C032"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+                      "Bytes":  63768,
+                      "Sha256":  "67FA4325000DB017DC0C35829B416F024F042D24EFB868BCF17A895EE6500A93"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Extensions.DependencyInjection.dll",
+                      "Bytes":  92952,
+                      "Sha256":  "158761CE778E799949F3A3060C461B1055BB35F1F5A65EFF0E42397849F09ECD"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Extensions.Logging.Abstractions.dll",
+                      "Bytes":  65320,
+                      "Sha256":  "45C22524218541717E4A0ADE36847C1CDA4921F5945B4975A1C78DDFE023D0B1"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Extensions.Logging.dll",
+                      "Bytes":  50976,
+                      "Sha256":  "B2CFBA2E05EE89A91E9BC9CF112468A5F4FA05D1A77EA81C131EA656F3D133C2"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Extensions.Options.ConfigurationExtensions.dll",
+                      "Bytes":  22688,
+                      "Sha256":  "B9EA7BB70BFECF5C649F2559300FCE232729257CFDB4221DC96F1EA778227353"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Extensions.Options.dll",
+                      "Bytes":  64776,
+                      "Sha256":  "5E01894CBC0661BACB8CA8F485A40D5EE4E02F28FEF58007668A0276431B4693"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.Extensions.Primitives.dll",
+                      "Bytes":  43680,
+                      "Sha256":  "446FF16E903E7479558816E213A3ADEE9A1C1ADAD65A56D853801B10933E29D7"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.IdentityModel.Abstractions.dll",
+                      "Bytes":  19488,
+                      "Sha256":  "C34D2CE8040D572D83762E5CF6CF2FE1E78D3DE68D3BB9CEBD793253F315F08D"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.IdentityModel.JsonWebTokens.dll",
+                      "Bytes":  172576,
+                      "Sha256":  "CAC7864ED8D14FE03EF7BBF8CC7FA0390D2E7B0AF3472B8C1B1BA4C7C99B3086"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.IdentityModel.Logging.dll",
+                      "Bytes":  38432,
+                      "Sha256":  "E5E606DBFFD6AB4106D3058A046814F71FD96AC934F866A32AA0E10C00BB3E5A"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.IdentityModel.Protocols.dll",
+                      "Bytes":  53280,
+                      "Sha256":  "8F4E850B00C9E881B7CA1753FB821B7E7CF999606D8091E4D98B411967E7F52C"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll",
+                      "Bytes":  137288,
+                      "Sha256":  "8E3FEFB922EA84B9D242E07F7679BF6A733AE6CEDAC72E16FB2FC36F58E61DD1"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.IdentityModel.Tokens.dll",
+                      "Bytes":  392264,
+                      "Sha256":  "7BC880D65D3DFA8C437822F200A1846A73BF589BEB6EC9F802D2D529CB9218BA"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Microsoft.SqlServer.Server.dll",
+                      "Bytes":  23976,
+                      "Sha256":  "A9DCA1B42BC875F966B78B2C0880E62B838F0ED6567166D7F1F07AE4B76EC4BF"
+                  },
+                  {
+                      "Path":  "Tools/Probe/pl/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  144792,
+                      "Sha256":  "CB49E0FEE60CFDF4C4B3745F633FB1E337674A5FBECCD5910AD9CF93FB08CD7E"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Probe.deps.json",
+                      "Bytes":  34459,
+                      "Sha256":  "B65F2BC1998AB4C4337370956023FED2FA877DE760CB0B5ACEC14E066104B1CC"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Probe.dll",
+                      "Bytes":  22528,
+                      "Sha256":  "A301DED500AC90EE172DBE70CB0511CD2F41980609E30CA9B8A44951616CAE72"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Probe.pdb",
+                      "Bytes":  16752,
+                      "Sha256":  "4FBC7EC2D0AB11F35D1987448FEC6C17334950BFE5394D87031AFA2E74E0C653"
+                  },
+                  {
+                      "Path":  "Tools/Probe/Probe.runtimeconfig.json",
+                      "Bytes":  340,
+                      "Sha256":  "28329CF08F6505E73806B17558B187C02F0C1C516FE47EBFB7A013D082AAA306"
+                  },
+                  {
+                      "Path":  "Tools/Probe/pt-BR/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  138648,
+                      "Sha256":  "A7D9124DE176AEE12B4A09A800ADDCD382C92DCA56A8524741CD10461DD9E651"
+                  },
+                  {
+                      "Path":  "Tools/Probe/ru/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  186776,
+                      "Sha256":  "B93DA5680CC80EF59F6B96D47777B841DE99ABFEF6408B7CDFCCCCE339E6A14A"
+                  },
+                  {
+                      "Path":  "Tools/Probe/runtimes/unix/lib/net8.0/Microsoft.Data.SqlClient.dll",
+                      "Bytes":  1668032,
+                      "Sha256":  "3FC8292CFB9A22A5ED81E515584136F2C85C677EC49F6EB59FB282C0E99F20B6"
+                  },
+                  {
+                      "Path":  "Tools/Probe/runtimes/win/lib/net8.0/Microsoft.Data.SqlClient.dll",
+                      "Bytes":  1668032,
+                      "Sha256":  "3FC8292CFB9A22A5ED81E515584136F2C85C677EC49F6EB59FB282C0E99F20B6"
+                  },
+                  {
+                      "Path":  "Tools/Probe/runtimes/win/lib/net8.0/System.Diagnostics.EventLog.dll",
+                      "Bytes":  172704,
+                      "Sha256":  "8343020E3752DC8FAE7598816570AA30B041F835412A76DAC7F65B229ED9532B"
+                  },
+                  {
+                      "Path":  "Tools/Probe/runtimes/win/lib/net8.0/System.Diagnostics.EventLog.Messages.dll",
+                      "Bytes":  801080,
+                      "Sha256":  "DBFB7C81FB62A0BD3F77DA92496640F179E96DD0C1A41A0D3C5D2A2445A3BE46"
+                  },
+                  {
+                      "Path":  "Tools/Probe/runtimes/win/lib/net8.0/System.Security.Cryptography.Pkcs.dll",
+                      "Bytes":  319784,
+                      "Sha256":  "D8E4B733FBAEC1FE0E808FD6391479F190B170DF03E309C5F07DC85445447D22"
+                  },
+                  {
+                      "Path":  "Tools/Probe/runtimes/win-arm64/native/Microsoft.Data.SqlClient.SNI.dll",
+                      "Bytes":  537496,
+                      "Sha256":  "1E2F4C85F28A788328D26E3D435518AB3E0F8CC75ABAC91ECAE2661AF60630FC"
+                  },
+                  {
+                      "Path":  "Tools/Probe/runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll",
+                      "Bytes":  555416,
+                      "Sha256":  "E61EE1F20BB345147F85820B0D03C2B154BF9CD6B4971708114BB4782FD35B26"
+                  },
+                  {
+                      "Path":  "Tools/Probe/runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll",
+                      "Bytes":  468880,
+                      "Sha256":  "072BDFC67E18CF3349581551E1853658BE9C1C2DCB5694EBCC3F539E9DAB38D5"
+                  },
+                  {
+                      "Path":  "Tools/Probe/SixLabors.ImageSharp.dll",
+                      "Bytes":  2099712,
+                      "Sha256":  "27EF3F04651914BE319D3C75A890E985F7E77F9C340AD9BC7BB0B337A9730588"
+                  },
+                  {
+                      "Path":  "Tools/Probe/System.Configuration.ConfigurationManager.dll",
+                      "Bytes":  442544,
+                      "Sha256":  "F7EA3A9618ACA48FB57FD06E9102B327AB66468CEB78C96D56F7D2EEE2945983"
+                  },
+                  {
+                      "Path":  "Tools/Probe/System.Diagnostics.EventLog.dll",
+                      "Bytes":  51992,
+                      "Sha256":  "3F8064E2499F13A8948AD2DA0C6040D12683A9A90AAAB786DBD6B653F17AC9CC"
+                  },
+                  {
+                      "Path":  "Tools/Probe/System.IdentityModel.Tokens.Jwt.dll",
+                      "Bytes":  91720,
+                      "Sha256":  "FD8AE62B01F008248BFFF06C42D1514830E05CD6C01F807761D68A12F1B6DCDA"
+                  },
+                  {
+                      "Path":  "Tools/Probe/System.Security.Cryptography.Pkcs.dll",
+                      "Bytes":  264864,
+                      "Sha256":  "E2352938ED4F664F770A5C98EF067CB145304456D014D2C311D725C95C8A21A9"
+                  },
+                  {
+                      "Path":  "Tools/Probe/System.Security.Cryptography.ProtectedData.dll",
+                      "Bytes":  36616,
+                      "Sha256":  "5E04D6CFF3B6FE9706908970CD594861F0C08B3824F7827B2331B5F4FCEE1BD1"
+                  },
+                  {
+                      "Path":  "Tools/Probe/System.Text.Json.dll",
+                      "Bytes":  580408,
+                      "Sha256":  "34D351D2370926D0867812457D4B548B90B55D8513CE4EE1E0E3D42F6113EAB8"
+                  },
+                  {
+                      "Path":  "Tools/Probe/System.Threading.RateLimiting.dll",
+                      "Bytes":  68896,
+                      "Sha256":  "95B7E590AE833A7842BB8C0453032661E4110678248B0E43D26C39B2CC00716D"
+                  },
+                  {
+                      "Path":  "Tools/Probe/tr/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  135616,
+                      "Sha256":  "811412CF1F85B6C2E436A8A78F13A25E58A1F81FE08DE2EFC859EF951161AD4D"
+                  },
+                  {
+                      "Path":  "Tools/Probe/zh-Hans/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  122304,
+                      "Sha256":  "897C52FC466752830876E54D8ABB23DAA02C45EBAD53B171C5FE63581E8B004D"
+                  },
+                  {
+                      "Path":  "Tools/Probe/zh-Hant/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  123800,
+                      "Sha256":  "1D347E61EF4CE693D50ED0FF7FCD2AF63A5C31708CE21B0F3D04D94C5CD08D1C"
+                  },
+                  {
+                      "Path":  "Tools/Storage/BUS.dll",
+                      "Bytes":  120832,
+                      "Sha256":  "81BCC3727443C402314DD09172862EC48F8C898D78B0DF26E7B242CD4F55E9E0"
+                  },
+                  {
+                      "Path":  "Tools/Storage/BUS.pdb",
+                      "Bytes":  42564,
+                      "Sha256":  "0B61F2971F3BE448207092984791E8814386CBA0B28EED2E7671D2E9415D7438"
+                  },
+                  {
+                      "Path":  "Tools/Storage/CommunityToolkit.HighPerformance.dll",
+                      "Bytes":  123176,
+                      "Sha256":  "F8E5787B02EC9FE8A27B9DEA5F4317DD2CDCE3E32680E3E8A26673C534549DBC"
+                  },
+                  {
+                      "Path":  "Tools/Storage/cs/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  139712,
+                      "Sha256":  "39FB0C7B016AF84BCF3B4722F32448C8E799B26AA9BF8BE66C3D3D7C88A4D0E4"
+                  },
+                  {
+                      "Path":  "Tools/Storage/DAL.dll",
+                      "Bytes":  946688,
+                      "Sha256":  "37D285CB55FFEAC189B0F03CBD5772B6C469DA26EFFE2022398927243C613249"
+                  },
+                  {
+                      "Path":  "Tools/Storage/DAL.pdb",
+                      "Bytes":  93248,
+                      "Sha256":  "EDBEEF0105A1536BD9310E62AE2552EB4E01BD2668498905BCDA4D3821A07B2E"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Dapper.Contrib.dll",
+                      "Bytes":  62976,
+                      "Sha256":  "BF16D62342C44C5A35CD224B014DFFF272FED68BF29A6ACE3EA674C254848261"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Dapper.dll",
+                      "Bytes":  250880,
+                      "Sha256":  "82AFFF36836F0F5F4890CC6BA369A5305867EC826212B96AA31CE7B1920CB83D"
+                  },
+                  {
+                      "Path":  "Tools/Storage/de/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  144792,
+                      "Sha256":  "66759418C13C52DDAD8A316F46D7DA8B6C54362CD57D89640D73771BD8806A11"
+                  },
+                  {
+                      "Path":  "Tools/Storage/es/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  141760,
+                      "Sha256":  "688D4EB4377600CA2590757E6A68361A7F137679341A453608B5ED7509921266"
+                  },
+                  {
+                      "Path":  "Tools/Storage/ET.dll",
+                      "Bytes":  279040,
+                      "Sha256":  "F62DCBA3DFD7109DF9AA05585A63FF03192F1AD43350A36019C8CC3793B2802C"
+                  },
+                  {
+                      "Path":  "Tools/Storage/ET.pdb",
+                      "Bytes":  87676,
+                      "Sha256":  "4E092A5D3CCB5E5099091837403E9A8D521751530D23ED1A179131D8E59D113D"
+                  },
+                  {
+                      "Path":  "Tools/Storage/fo-dicom.core.dll",
+                      "Bytes":  1740288,
+                      "Sha256":  "BA1795C4EACE02958F91BB829D1F813CACA0C27BC93B8142B71D60ECD1D09CA9"
+                  },
+                  {
+                      "Path":  "Tools/Storage/fo-dicom.Imaging.ImageSharp.dll",
+                      "Bytes":  19968,
+                      "Sha256":  "AF7989FED6C593DAE1539CA50DE98B612F6483282650DA013E460CC516FB2F46"
+                  },
+                  {
+                      "Path":  "Tools/Storage/fr/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  147352,
+                      "Sha256":  "9E461A7830CDC6AF2CDC3B6E68001E8D00B354FC9D46DB1ECD5E484EF133AB4A"
+                  },
+                  {
+                      "Path":  "Tools/Storage/it/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  142272,
+                      "Sha256":  "ECAE58B8A5C96906E0F2DE44591162CC6BBD2D7909292E6AA0FD6ECF761F6BBF"
+                  },
+                  {
+                      "Path":  "Tools/Storage/ja/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  156560,
+                      "Sha256":  "184005B47553C31DF0D87E7435624F3FF13F73C5A201FA9EEFF8734A87B421F2"
+                  },
+                  {
+                      "Path":  "Tools/Storage/ko/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  144280,
+                      "Sha256":  "0889A8FB31D5230B1F32D3C47FA1FE846A462E4533437FB8FE38F45880A824AD"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Bcl.AsyncInterfaces.dll",
+                      "Bytes":  19104,
+                      "Sha256":  "136D5965CF4768E8420B547A8BDDEA882921F426C371833D558A858A2F0C235A"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Bcl.Cryptography.dll",
+                      "Bytes":  16664,
+                      "Sha256":  "30C625A2615DCF0A6B7B4355EAC0B91D1ED7E3A8096CEDC3D1B19B12F045B6F7"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Bcl.HashCode.dll",
+                      "Bytes":  19752,
+                      "Sha256":  "CBA1991E35612990AB7C130B77D1AD8D5C8280F3AAAD094CF81C3ADABC38DA43"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Data.SqlClient.dll",
+                      "Bytes":  93080,
+                      "Sha256":  "3A64D50773DC3415334867B20984D120D118A3735FEA21866BF359A5719284EF"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Data.SqlClient.Extensions.Abstractions.dll",
+                      "Bytes":  23488,
+                      "Sha256":  "7FA21B488A3569731B0230FEB0E8F8779D22AA4F451C1E6264AF51264AF82510"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Data.SqlClient.Internal.Logging.dll",
+                      "Bytes":  53696,
+                      "Sha256":  "3A0D800C1CCBC41A427DF0E84186488BFC1B5936BAE6B5F6A732CB54877AC18F"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Extensions.Caching.Abstractions.dll",
+                      "Bytes":  31008,
+                      "Sha256":  "31CAEBF834B6DA88696A4A21ECB38EEFFF2623A531BE925F6BD27719583EE3E2"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Extensions.Caching.Memory.dll",
+                      "Bytes":  45832,
+                      "Sha256":  "A6BC869C530A2ED7573575DD61E40F0A1079EF6074251AFE9701F927C5355CA8"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Extensions.Configuration.Abstractions.dll",
+                      "Bytes":  27936,
+                      "Sha256":  "FEFCDB267A73099CB90E5AF56B5EF2BCA59BED974339B3A6810352BDE23537A6"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Extensions.Configuration.Binder.dll",
+                      "Bytes":  42784,
+                      "Sha256":  "BEAC12F7BBA4E22CDA2ACD9DDFE944A4ED56ABEC414E084EDD147BD5DAD3C032"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+                      "Bytes":  63768,
+                      "Sha256":  "67FA4325000DB017DC0C35829B416F024F042D24EFB868BCF17A895EE6500A93"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Extensions.DependencyInjection.dll",
+                      "Bytes":  92952,
+                      "Sha256":  "158761CE778E799949F3A3060C461B1055BB35F1F5A65EFF0E42397849F09ECD"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Extensions.Logging.Abstractions.dll",
+                      "Bytes":  65320,
+                      "Sha256":  "45C22524218541717E4A0ADE36847C1CDA4921F5945B4975A1C78DDFE023D0B1"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Extensions.Logging.dll",
+                      "Bytes":  50976,
+                      "Sha256":  "B2CFBA2E05EE89A91E9BC9CF112468A5F4FA05D1A77EA81C131EA656F3D133C2"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Extensions.Options.ConfigurationExtensions.dll",
+                      "Bytes":  22688,
+                      "Sha256":  "B9EA7BB70BFECF5C649F2559300FCE232729257CFDB4221DC96F1EA778227353"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Extensions.Options.dll",
+                      "Bytes":  64776,
+                      "Sha256":  "5E01894CBC0661BACB8CA8F485A40D5EE4E02F28FEF58007668A0276431B4693"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.Extensions.Primitives.dll",
+                      "Bytes":  43680,
+                      "Sha256":  "446FF16E903E7479558816E213A3ADEE9A1C1ADAD65A56D853801B10933E29D7"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.IdentityModel.Abstractions.dll",
+                      "Bytes":  19488,
+                      "Sha256":  "C34D2CE8040D572D83762E5CF6CF2FE1E78D3DE68D3BB9CEBD793253F315F08D"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.IdentityModel.JsonWebTokens.dll",
+                      "Bytes":  172576,
+                      "Sha256":  "CAC7864ED8D14FE03EF7BBF8CC7FA0390D2E7B0AF3472B8C1B1BA4C7C99B3086"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.IdentityModel.Logging.dll",
+                      "Bytes":  38432,
+                      "Sha256":  "E5E606DBFFD6AB4106D3058A046814F71FD96AC934F866A32AA0E10C00BB3E5A"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.IdentityModel.Protocols.dll",
+                      "Bytes":  53280,
+                      "Sha256":  "8F4E850B00C9E881B7CA1753FB821B7E7CF999606D8091E4D98B411967E7F52C"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll",
+                      "Bytes":  137288,
+                      "Sha256":  "8E3FEFB922EA84B9D242E07F7679BF6A733AE6CEDAC72E16FB2FC36F58E61DD1"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.IdentityModel.Tokens.dll",
+                      "Bytes":  392264,
+                      "Sha256":  "7BC880D65D3DFA8C437822F200A1846A73BF589BEB6EC9F802D2D529CB9218BA"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Microsoft.SqlServer.Server.dll",
+                      "Bytes":  23976,
+                      "Sha256":  "A9DCA1B42BC875F966B78B2C0880E62B838F0ED6567166D7F1F07AE4B76EC4BF"
+                  },
+                  {
+                      "Path":  "Tools/Storage/pl/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  144792,
+                      "Sha256":  "CB49E0FEE60CFDF4C4B3745F633FB1E337674A5FBECCD5910AD9CF93FB08CD7E"
+                  },
+                  {
+                      "Path":  "Tools/Storage/pt-BR/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  138648,
+                      "Sha256":  "A7D9124DE176AEE12B4A09A800ADDCD382C92DCA56A8524741CD10461DD9E651"
+                  },
+                  {
+                      "Path":  "Tools/Storage/ru/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  186776,
+                      "Sha256":  "B93DA5680CC80EF59F6B96D47777B841DE99ABFEF6408B7CDFCCCCE339E6A14A"
+                  },
+                  {
+                      "Path":  "Tools/Storage/runtimes/unix/lib/net8.0/Microsoft.Data.SqlClient.dll",
+                      "Bytes":  1668032,
+                      "Sha256":  "3FC8292CFB9A22A5ED81E515584136F2C85C677EC49F6EB59FB282C0E99F20B6"
+                  },
+                  {
+                      "Path":  "Tools/Storage/runtimes/win/lib/net8.0/Microsoft.Data.SqlClient.dll",
+                      "Bytes":  1668032,
+                      "Sha256":  "3FC8292CFB9A22A5ED81E515584136F2C85C677EC49F6EB59FB282C0E99F20B6"
+                  },
+                  {
+                      "Path":  "Tools/Storage/runtimes/win/lib/net8.0/System.Diagnostics.EventLog.dll",
+                      "Bytes":  172704,
+                      "Sha256":  "8343020E3752DC8FAE7598816570AA30B041F835412A76DAC7F65B229ED9532B"
+                  },
+                  {
+                      "Path":  "Tools/Storage/runtimes/win/lib/net8.0/System.Diagnostics.EventLog.Messages.dll",
+                      "Bytes":  801080,
+                      "Sha256":  "DBFB7C81FB62A0BD3F77DA92496640F179E96DD0C1A41A0D3C5D2A2445A3BE46"
+                  },
+                  {
+                      "Path":  "Tools/Storage/runtimes/win/lib/net8.0/System.Security.Cryptography.Pkcs.dll",
+                      "Bytes":  319784,
+                      "Sha256":  "D8E4B733FBAEC1FE0E808FD6391479F190B170DF03E309C5F07DC85445447D22"
+                  },
+                  {
+                      "Path":  "Tools/Storage/runtimes/win-arm64/native/Microsoft.Data.SqlClient.SNI.dll",
+                      "Bytes":  537496,
+                      "Sha256":  "1E2F4C85F28A788328D26E3D435518AB3E0F8CC75ABAC91ECAE2661AF60630FC"
+                  },
+                  {
+                      "Path":  "Tools/Storage/runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll",
+                      "Bytes":  555416,
+                      "Sha256":  "E61EE1F20BB345147F85820B0D03C2B154BF9CD6B4971708114BB4782FD35B26"
+                  },
+                  {
+                      "Path":  "Tools/Storage/runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll",
+                      "Bytes":  468880,
+                      "Sha256":  "072BDFC67E18CF3349581551E1853658BE9C1C2DCB5694EBCC3F539E9DAB38D5"
+                  },
+                  {
+                      "Path":  "Tools/Storage/SixLabors.ImageSharp.dll",
+                      "Bytes":  2099712,
+                      "Sha256":  "27EF3F04651914BE319D3C75A890E985F7E77F9C340AD9BC7BB0B337A9730588"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Storage.deps.json",
+                      "Bytes":  34465,
+                      "Sha256":  "649E8B73546A22DDA83061F5DC20D399E65F0E5EA10B02FFE2681255E56C01B1"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Storage.dll",
+                      "Bytes":  24064,
+                      "Sha256":  "2F7C39CC2476BEF64D67087CAEDED587DD4A50D29766896A3DFB2BAD31AA9E38"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Storage.pdb",
+                      "Bytes":  20232,
+                      "Sha256":  "04F3D9E3F86E8D39ED9A60406229EA98FB795D7C4C6FB4B9041AFBE4FAB3FB2D"
+                  },
+                  {
+                      "Path":  "Tools/Storage/Storage.runtimeconfig.json",
+                      "Bytes":  340,
+                      "Sha256":  "28329CF08F6505E73806B17558B187C02F0C1C516FE47EBFB7A013D082AAA306"
+                  },
+                  {
+                      "Path":  "Tools/Storage/System.Configuration.ConfigurationManager.dll",
+                      "Bytes":  442544,
+                      "Sha256":  "F7EA3A9618ACA48FB57FD06E9102B327AB66468CEB78C96D56F7D2EEE2945983"
+                  },
+                  {
+                      "Path":  "Tools/Storage/System.Diagnostics.EventLog.dll",
+                      "Bytes":  51992,
+                      "Sha256":  "3F8064E2499F13A8948AD2DA0C6040D12683A9A90AAAB786DBD6B653F17AC9CC"
+                  },
+                  {
+                      "Path":  "Tools/Storage/System.IdentityModel.Tokens.Jwt.dll",
+                      "Bytes":  91720,
+                      "Sha256":  "FD8AE62B01F008248BFFF06C42D1514830E05CD6C01F807761D68A12F1B6DCDA"
+                  },
+                  {
+                      "Path":  "Tools/Storage/System.Security.Cryptography.Pkcs.dll",
+                      "Bytes":  264864,
+                      "Sha256":  "E2352938ED4F664F770A5C98EF067CB145304456D014D2C311D725C95C8A21A9"
+                  },
+                  {
+                      "Path":  "Tools/Storage/System.Security.Cryptography.ProtectedData.dll",
+                      "Bytes":  36616,
+                      "Sha256":  "5E04D6CFF3B6FE9706908970CD594861F0C08B3824F7827B2331B5F4FCEE1BD1"
+                  },
+                  {
+                      "Path":  "Tools/Storage/System.Text.Json.dll",
+                      "Bytes":  580408,
+                      "Sha256":  "34D351D2370926D0867812457D4B548B90B55D8513CE4EE1E0E3D42F6113EAB8"
+                  },
+                  {
+                      "Path":  "Tools/Storage/System.Threading.RateLimiting.dll",
+                      "Bytes":  68896,
+                      "Sha256":  "95B7E590AE833A7842BB8C0453032661E4110678248B0E43D26C39B2CC00716D"
+                  },
+                  {
+                      "Path":  "Tools/Storage/tr/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  135616,
+                      "Sha256":  "811412CF1F85B6C2E436A8A78F13A25E58A1F81FE08DE2EFC859EF951161AD4D"
+                  },
+                  {
+                      "Path":  "Tools/Storage/zh-Hans/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  122304,
+                      "Sha256":  "897C52FC466752830876E54D8ABB23DAA02C45EBAD53B171C5FE63581E8B004D"
+                  },
+                  {
+                      "Path":  "Tools/Storage/zh-Hant/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  123800,
+                      "Sha256":  "1D347E61EF4CE693D50ED0FF7FCD2AF63A5C31708CE21B0F3D04D94C5CD08D1C"
+                  },
+                  {
+                      "Path":  "Tools/Verify/appsettings.json",
+                      "Bytes":  266,
+                      "Sha256":  "2EA5A9D64C3F4C1E9975399DC252CF92C53C0FB726F3A8C1EFFA63A2B2FE30E5"
+                  },
+                  {
+                      "Path":  "Tools/Verify/BUS.dll",
+                      "Bytes":  120832,
+                      "Sha256":  "81BCC3727443C402314DD09172862EC48F8C898D78B0DF26E7B242CD4F55E9E0"
+                  },
+                  {
+                      "Path":  "Tools/Verify/BUS.pdb",
+                      "Bytes":  42564,
+                      "Sha256":  "0B61F2971F3BE448207092984791E8814386CBA0B28EED2E7671D2E9415D7438"
+                  },
+                  {
+                      "Path":  "Tools/Verify/CommunityToolkit.HighPerformance.dll",
+                      "Bytes":  123176,
+                      "Sha256":  "F8E5787B02EC9FE8A27B9DEA5F4317DD2CDCE3E32680E3E8A26673C534549DBC"
+                  },
+                  {
+                      "Path":  "Tools/Verify/cs/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  139712,
+                      "Sha256":  "39FB0C7B016AF84BCF3B4722F32448C8E799B26AA9BF8BE66C3D3D7C88A4D0E4"
+                  },
+                  {
+                      "Path":  "Tools/Verify/DAL.dll",
+                      "Bytes":  946688,
+                      "Sha256":  "37D285CB55FFEAC189B0F03CBD5772B6C469DA26EFFE2022398927243C613249"
+                  },
+                  {
+                      "Path":  "Tools/Verify/DAL.pdb",
+                      "Bytes":  93248,
+                      "Sha256":  "EDBEEF0105A1536BD9310E62AE2552EB4E01BD2668498905BCDA4D3821A07B2E"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Dapper.Contrib.dll",
+                      "Bytes":  62976,
+                      "Sha256":  "BF16D62342C44C5A35CD224B014DFFF272FED68BF29A6ACE3EA674C254848261"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Dapper.dll",
+                      "Bytes":  250880,
+                      "Sha256":  "82AFFF36836F0F5F4890CC6BA369A5305867EC826212B96AA31CE7B1920CB83D"
+                  },
+                  {
+                      "Path":  "Tools/Verify/de/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  144792,
+                      "Sha256":  "66759418C13C52DDAD8A316F46D7DA8B6C54362CD57D89640D73771BD8806A11"
+                  },
+                  {
+                      "Path":  "Tools/Verify/es/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  141760,
+                      "Sha256":  "688D4EB4377600CA2590757E6A68361A7F137679341A453608B5ED7509921266"
+                  },
+                  {
+                      "Path":  "Tools/Verify/ET.dll",
+                      "Bytes":  279040,
+                      "Sha256":  "F62DCBA3DFD7109DF9AA05585A63FF03192F1AD43350A36019C8CC3793B2802C"
+                  },
+                  {
+                      "Path":  "Tools/Verify/ET.pdb",
+                      "Bytes":  87676,
+                      "Sha256":  "4E092A5D3CCB5E5099091837403E9A8D521751530D23ED1A179131D8E59D113D"
+                  },
+                  {
+                      "Path":  "Tools/Verify/fo-dicom.core.dll",
+                      "Bytes":  1740288,
+                      "Sha256":  "BA1795C4EACE02958F91BB829D1F813CACA0C27BC93B8142B71D60ECD1D09CA9"
+                  },
+                  {
+                      "Path":  "Tools/Verify/fo-dicom.Imaging.ImageSharp.dll",
+                      "Bytes":  19968,
+                      "Sha256":  "AF7989FED6C593DAE1539CA50DE98B612F6483282650DA013E460CC516FB2F46"
+                  },
+                  {
+                      "Path":  "Tools/Verify/fr/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  147352,
+                      "Sha256":  "9E461A7830CDC6AF2CDC3B6E68001E8D00B354FC9D46DB1ECD5E484EF133AB4A"
+                  },
+                  {
+                      "Path":  "Tools/Verify/it/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  142272,
+                      "Sha256":  "ECAE58B8A5C96906E0F2DE44591162CC6BBD2D7909292E6AA0FD6ECF761F6BBF"
+                  },
+                  {
+                      "Path":  "Tools/Verify/ja/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  156560,
+                      "Sha256":  "184005B47553C31DF0D87E7435624F3FF13F73C5A201FA9EEFF8734A87B421F2"
+                  },
+                  {
+                      "Path":  "Tools/Verify/ko/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  144280,
+                      "Sha256":  "0889A8FB31D5230B1F32D3C47FA1FE846A462E4533437FB8FE38F45880A824AD"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Bcl.AsyncInterfaces.dll",
+                      "Bytes":  19104,
+                      "Sha256":  "136D5965CF4768E8420B547A8BDDEA882921F426C371833D558A858A2F0C235A"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Bcl.Cryptography.dll",
+                      "Bytes":  16664,
+                      "Sha256":  "30C625A2615DCF0A6B7B4355EAC0B91D1ED7E3A8096CEDC3D1B19B12F045B6F7"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Bcl.HashCode.dll",
+                      "Bytes":  19752,
+                      "Sha256":  "CBA1991E35612990AB7C130B77D1AD8D5C8280F3AAAD094CF81C3ADABC38DA43"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Data.SqlClient.dll",
+                      "Bytes":  93080,
+                      "Sha256":  "3A64D50773DC3415334867B20984D120D118A3735FEA21866BF359A5719284EF"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Data.SqlClient.Extensions.Abstractions.dll",
+                      "Bytes":  23488,
+                      "Sha256":  "7FA21B488A3569731B0230FEB0E8F8779D22AA4F451C1E6264AF51264AF82510"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Data.SqlClient.Internal.Logging.dll",
+                      "Bytes":  53696,
+                      "Sha256":  "3A0D800C1CCBC41A427DF0E84186488BFC1B5936BAE6B5F6A732CB54877AC18F"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Extensions.Caching.Abstractions.dll",
+                      "Bytes":  31008,
+                      "Sha256":  "31CAEBF834B6DA88696A4A21ECB38EEFFF2623A531BE925F6BD27719583EE3E2"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Extensions.Caching.Memory.dll",
+                      "Bytes":  45832,
+                      "Sha256":  "A6BC869C530A2ED7573575DD61E40F0A1079EF6074251AFE9701F927C5355CA8"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Extensions.Configuration.Abstractions.dll",
+                      "Bytes":  27936,
+                      "Sha256":  "FEFCDB267A73099CB90E5AF56B5EF2BCA59BED974339B3A6810352BDE23537A6"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Extensions.Configuration.Binder.dll",
+                      "Bytes":  42784,
+                      "Sha256":  "BEAC12F7BBA4E22CDA2ACD9DDFE944A4ED56ABEC414E084EDD147BD5DAD3C032"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+                      "Bytes":  63768,
+                      "Sha256":  "67FA4325000DB017DC0C35829B416F024F042D24EFB868BCF17A895EE6500A93"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Extensions.DependencyInjection.dll",
+                      "Bytes":  92952,
+                      "Sha256":  "158761CE778E799949F3A3060C461B1055BB35F1F5A65EFF0E42397849F09ECD"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Extensions.Logging.Abstractions.dll",
+                      "Bytes":  65320,
+                      "Sha256":  "45C22524218541717E4A0ADE36847C1CDA4921F5945B4975A1C78DDFE023D0B1"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Extensions.Logging.dll",
+                      "Bytes":  50976,
+                      "Sha256":  "B2CFBA2E05EE89A91E9BC9CF112468A5F4FA05D1A77EA81C131EA656F3D133C2"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Extensions.Options.ConfigurationExtensions.dll",
+                      "Bytes":  22688,
+                      "Sha256":  "B9EA7BB70BFECF5C649F2559300FCE232729257CFDB4221DC96F1EA778227353"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Extensions.Options.dll",
+                      "Bytes":  64776,
+                      "Sha256":  "5E01894CBC0661BACB8CA8F485A40D5EE4E02F28FEF58007668A0276431B4693"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.Extensions.Primitives.dll",
+                      "Bytes":  43680,
+                      "Sha256":  "446FF16E903E7479558816E213A3ADEE9A1C1ADAD65A56D853801B10933E29D7"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.IdentityModel.Abstractions.dll",
+                      "Bytes":  19488,
+                      "Sha256":  "C34D2CE8040D572D83762E5CF6CF2FE1E78D3DE68D3BB9CEBD793253F315F08D"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.IdentityModel.JsonWebTokens.dll",
+                      "Bytes":  172576,
+                      "Sha256":  "CAC7864ED8D14FE03EF7BBF8CC7FA0390D2E7B0AF3472B8C1B1BA4C7C99B3086"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.IdentityModel.Logging.dll",
+                      "Bytes":  38432,
+                      "Sha256":  "E5E606DBFFD6AB4106D3058A046814F71FD96AC934F866A32AA0E10C00BB3E5A"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.IdentityModel.Protocols.dll",
+                      "Bytes":  53280,
+                      "Sha256":  "8F4E850B00C9E881B7CA1753FB821B7E7CF999606D8091E4D98B411967E7F52C"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll",
+                      "Bytes":  137288,
+                      "Sha256":  "8E3FEFB922EA84B9D242E07F7679BF6A733AE6CEDAC72E16FB2FC36F58E61DD1"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.IdentityModel.Tokens.dll",
+                      "Bytes":  392264,
+                      "Sha256":  "7BC880D65D3DFA8C437822F200A1846A73BF589BEB6EC9F802D2D529CB9218BA"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Microsoft.SqlServer.Server.dll",
+                      "Bytes":  23976,
+                      "Sha256":  "A9DCA1B42BC875F966B78B2C0880E62B838F0ED6567166D7F1F07AE4B76EC4BF"
+                  },
+                  {
+                      "Path":  "Tools/Verify/pl/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  144792,
+                      "Sha256":  "CB49E0FEE60CFDF4C4B3745F633FB1E337674A5FBECCD5910AD9CF93FB08CD7E"
+                  },
+                  {
+                      "Path":  "Tools/Verify/pt-BR/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  138648,
+                      "Sha256":  "A7D9124DE176AEE12B4A09A800ADDCD382C92DCA56A8524741CD10461DD9E651"
+                  },
+                  {
+                      "Path":  "Tools/Verify/RangHamMat.Wpf.deps.json",
+                      "Bytes":  34141,
+                      "Sha256":  "EF99D2365D8843953458FF9DCD7132E359C1CB2A3D8C9F44EEE966F7495C3E7E"
+                  },
+                  {
+                      "Path":  "Tools/Verify/RangHamMat.Wpf.dll",
+                      "Bytes":  1543680,
+                      "Sha256":  "F79552FE116C89A7F09AEA0BF021D4155C858C1CEB5D9EBFF9BA6D7F3DCFCE7B"
+                  },
+                  {
+                      "Path":  "Tools/Verify/RangHamMat.Wpf.exe",
+                      "Bytes":  138752,
+                      "Sha256":  "E2F63B829867FA4B1FF0B1C02590103A0F935433843B1F09BFD02CA56FDB2AC3"
+                  },
+                  {
+                      "Path":  "Tools/Verify/RangHamMat.Wpf.pdb",
+                      "Bytes":  608080,
+                      "Sha256":  "F52192D45D8E42922101D8A1AA77198746899025AD2ADC0A3E1AB1401FBA9237"
+                  },
+                  {
+                      "Path":  "Tools/Verify/RangHamMat.Wpf.runtimeconfig.json",
+                      "Bytes":  458,
+                      "Sha256":  "C71152BF25E40D647B2440C5B39BE157A3D356106BE9D5B678AB97BB87B4E782"
+                  },
+                  {
+                      "Path":  "Tools/Verify/ru/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  186776,
+                      "Sha256":  "B93DA5680CC80EF59F6B96D47777B841DE99ABFEF6408B7CDFCCCCE339E6A14A"
+                  },
+                  {
+                      "Path":  "Tools/Verify/runtimes/unix/lib/net8.0/Microsoft.Data.SqlClient.dll",
+                      "Bytes":  1668032,
+                      "Sha256":  "3FC8292CFB9A22A5ED81E515584136F2C85C677EC49F6EB59FB282C0E99F20B6"
+                  },
+                  {
+                      "Path":  "Tools/Verify/runtimes/win/lib/net8.0/Microsoft.Data.SqlClient.dll",
+                      "Bytes":  1668032,
+                      "Sha256":  "3FC8292CFB9A22A5ED81E515584136F2C85C677EC49F6EB59FB282C0E99F20B6"
+                  },
+                  {
+                      "Path":  "Tools/Verify/runtimes/win/lib/net8.0/System.Diagnostics.EventLog.dll",
+                      "Bytes":  172704,
+                      "Sha256":  "8343020E3752DC8FAE7598816570AA30B041F835412A76DAC7F65B229ED9532B"
+                  },
+                  {
+                      "Path":  "Tools/Verify/runtimes/win/lib/net8.0/System.Security.Cryptography.Pkcs.dll",
+                      "Bytes":  319784,
+                      "Sha256":  "D8E4B733FBAEC1FE0E808FD6391479F190B170DF03E309C5F07DC85445447D22"
+                  },
+                  {
+                      "Path":  "Tools/Verify/runtimes/win-arm64/native/Microsoft.Data.SqlClient.SNI.dll",
+                      "Bytes":  537496,
+                      "Sha256":  "1E2F4C85F28A788328D26E3D435518AB3E0F8CC75ABAC91ECAE2661AF60630FC"
+                  },
+                  {
+                      "Path":  "Tools/Verify/runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll",
+                      "Bytes":  555416,
+                      "Sha256":  "E61EE1F20BB345147F85820B0D03C2B154BF9CD6B4971708114BB4782FD35B26"
+                  },
+                  {
+                      "Path":  "Tools/Verify/runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll",
+                      "Bytes":  468880,
+                      "Sha256":  "072BDFC67E18CF3349581551E1853658BE9C1C2DCB5694EBCC3F539E9DAB38D5"
+                  },
+                  {
+                      "Path":  "Tools/Verify/SixLabors.ImageSharp.dll",
+                      "Bytes":  2099712,
+                      "Sha256":  "27EF3F04651914BE319D3C75A890E985F7E77F9C340AD9BC7BB0B337A9730588"
+                  },
+                  {
+                      "Path":  "Tools/Verify/System.Configuration.ConfigurationManager.dll",
+                      "Bytes":  442544,
+                      "Sha256":  "F7EA3A9618ACA48FB57FD06E9102B327AB66468CEB78C96D56F7D2EEE2945983"
+                  },
+                  {
+                      "Path":  "Tools/Verify/System.Diagnostics.EventLog.dll",
+                      "Bytes":  51992,
+                      "Sha256":  "3F8064E2499F13A8948AD2DA0C6040D12683A9A90AAAB786DBD6B653F17AC9CC"
+                  },
+                  {
+                      "Path":  "Tools/Verify/System.IdentityModel.Tokens.Jwt.dll",
+                      "Bytes":  91720,
+                      "Sha256":  "FD8AE62B01F008248BFFF06C42D1514830E05CD6C01F807761D68A12F1B6DCDA"
+                  },
+                  {
+                      "Path":  "Tools/Verify/System.Security.Cryptography.Pkcs.dll",
+                      "Bytes":  264864,
+                      "Sha256":  "E2352938ED4F664F770A5C98EF067CB145304456D014D2C311D725C95C8A21A9"
+                  },
+                  {
+                      "Path":  "Tools/Verify/System.Text.Json.dll",
+                      "Bytes":  580408,
+                      "Sha256":  "34D351D2370926D0867812457D4B548B90B55D8513CE4EE1E0E3D42F6113EAB8"
+                  },
+                  {
+                      "Path":  "Tools/Verify/System.Threading.RateLimiting.dll",
+                      "Bytes":  68896,
+                      "Sha256":  "95B7E590AE833A7842BB8C0453032661E4110678248B0E43D26C39B2CC00716D"
+                  },
+                  {
+                      "Path":  "Tools/Verify/tr/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  135616,
+                      "Sha256":  "811412CF1F85B6C2E436A8A78F13A25E58A1F81FE08DE2EFC859EF951161AD4D"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Verify.deps.json",
+                      "Bytes":  34510,
+                      "Sha256":  "4FE892AC6906CF4481802784211078CB0871331066123243BBC0C0AA51FF26FD"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Verify.dll",
+                      "Bytes":  140800,
+                      "Sha256":  "2CFCB70C273C5BEA14AFA03569DBD6FE146638A3305BBB66A6B9CD655DF1F9CF"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Verify.pdb",
+                      "Bytes":  56936,
+                      "Sha256":  "FCB4E6B72F4B4FAD776EBBC3445C87239D04E964FA22BB0EB177B8D08A877E80"
+                  },
+                  {
+                      "Path":  "Tools/Verify/Verify.runtimeconfig.json",
+                      "Bytes":  458,
+                      "Sha256":  "C71152BF25E40D647B2440C5B39BE157A3D356106BE9D5B678AB97BB87B4E782"
+                  },
+                  {
+                      "Path":  "Tools/Verify/zh-Hans/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  122304,
+                      "Sha256":  "897C52FC466752830876E54D8ABB23DAA02C45EBAD53B171C5FE63581E8B004D"
+                  },
+                  {
+                      "Path":  "Tools/Verify/zh-Hant/Microsoft.Data.SqlClient.resources.dll",
+                      "Bytes":  123800,
+                      "Sha256":  "1D347E61EF4CE693D50ED0FF7FCD2AF63A5C31708CE21B0F3D04D94C5CD08D1C"
+                  },
+                  {
+                      "Path":  "XR04BanGiaoSupport.ps1",
+                      "Bytes":  4017,
+                      "Sha256":  "1A705E129E2C9A9E239FD829AD05DD2A3DB45E267DC2CAF06CD307B65E4C0F50"
+                  }
+              ]
+}

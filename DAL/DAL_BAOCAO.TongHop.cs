@@ -38,6 +38,11 @@ public sealed partial class DAL_BAOCAO
         using var db = MoKetNoi();
         return XacThucQuyen(db, "00");
     }
+    public bool LaDuLieuTrinhDien()
+    {
+        KiemTraPrincipal();using var db=MoKetNoi();XacThucQuyen(db,"00");
+        return db.ExecuteScalar<int>("SELECT COALESCE(MAX(TRY_CONVERT(int,value)),0) FROM sys.extended_properties WHERE class=0 AND name=N'RHM.Demo.P5'")==1;
+    }
 
     public (LuaChonThongKe[] ChuyenKhoa,LuaChonThongKe[] DichVu) LayDanhMucLoc()
     {

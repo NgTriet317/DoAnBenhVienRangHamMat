@@ -1,0 +1,14 @@
+{
+  "Protocol": "RHM.Xray.SharedStorageProbe.v1",
+  "Machine": "DESKTOP-C9VCE8A",
+  "SqlServer": "DESKTOP-C9VCE8A",
+  "Database": "RHM_Hospital_Test_P6_20261110_114040_eae3f295_Xray",
+  "StorageRoot": "\\\\localhost\\D$\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XrayEvidence\\store-f31599bfb24e41f9a938507a6f460d95",
+  "MetadataSha256": "A3E6B9159C1ACEF1594277D032B09832D7483E0A118B88CC4DE366FDDD069F6A",
+  "Images": 15,
+  "HiddenImages": 2,
+  "OpenedImages": 13,
+  "AllHashesVerified": true,
+  "UsedApplicationPermissions": true,
+  "CompletedUtc": "2026-11-10T04:43:13.9586968Z"
+}

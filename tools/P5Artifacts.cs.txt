@@ -1,0 +1,49 @@
+using System.Globalization;
+using System.IO;
+using System.Text;
+using System.Text.Json;
+using ET;
+
+internal static class P5Artifacts
+{
+    public static string CreateNewDirectory(string path)
+    {
+        var full=Path.GetFullPath(path);
+        if(Directory.Exists(full)||File.Exists(full))throw new IOException("Thư mục kết quả đã tồn tại; không ghi đè.");
+        for(DirectoryInfo? parent=new(full);parent is not null;parent=parent.Parent)
+            if(parent.Exists&&(parent.Attributes&FileAttributes.ReparsePoint)!=0)throw new IOException("Thư mục kết quả không được đi qua liên kết.");
+        Directory.CreateDirectory(full);return full;
+    }
+    public static string ExistingDirectory(string path)
+    {
+        var full=Path.GetFullPath(path);if(!Directory.Exists(full))throw new IOException("Chưa chuẩn bị thư mục kết quả.");
+        for(DirectoryInfo? parent=new(full);parent is not null;parent=parent.Parent)
+            if((parent.Attributes&FileAttributes.ReparsePoint)!=0)throw new IOException("Thư mục kết quả không được đi qua liên kết.");
+        return full;
+    }
+    public static void Text(string path,string content,bool bom=false)
+    {using var stream=new FileStream(path,FileMode.CreateNew,FileAccess.Write,FileShare.None);using var writer=new StreamWriter(stream,new UTF8Encoding(bom));writer.Write(content);}
+    public static void Json(string path,object value)=>Text(path,JsonSerializer.Serialize(value,new JsonSerializerOptions{WriteIndented=true}));
+    public static void Csv(string path,IEnumerable<IEnumerable<object?>> rows)
+    {
+        string Cell(object? value)
+        {
+            var text=value is DateTime time?time.ToString("O",CultureInfo.InvariantCulture):Convert.ToString(value,CultureInfo.InvariantCulture)??"";
+            if(value is string&&(text.TrimStart().StartsWith('=')||text.TrimStart().StartsWith('+')||text.TrimStart().StartsWith('-')||text.TrimStart().StartsWith('@')))text="'"+text;
+            return "\""+text.Replace("\"","\"\"")+"\"";
+        }
+        Text(path,string.Join("\r\n",rows.Select(row=>string.Join(",",row.Select(Cell))))+"\r\n",true);
+    }
+    public static void Audit(string directory,KetQuaDoiSoatDuLieu result)
+    {
+        Json(Path.Combine(directory,"audit.json"),result);
+        Csv(Path.Combine(directory,"tables.csv"),new[]{new object?[]{"LuocDo","Bang","SoDong"}}.Concat(result.CacBang.Select(t=>new object?[]{t.LuocDo,t.Bang,t.SoDong})));
+        Csv(Path.Combine(directory,"anomalies.csv"),new[]{new object?[]{"MaKiemTra","MucDo","MoTa","TongSo","DaGioiHan","Bang","Khoa","LienQuan"}}.Concat(
+            result.QuyTac.Where(r=>r.TongSo>0).SelectMany(r=>r.ChiTiet.Select(d=>new object?[]{r.Ma,r.MucDo,r.MoTa,r.TongSo,r.DaGioiHan,d.Bang,d.Khoa,d.LienQuan}))));
+        string Md(string value)=>value.Replace("|","\\|").Replace("\r"," ").Replace("\n"," ");
+        var summary=new StringBuilder($"# Đối soát chỉ đọc — {Md(result.Database)}\n\nUTC: {result.BatDauUtc:O} → {result.KetThucUtc:O}.\n\n{result.CacBang.Count} bảng; {result.TongSaiXacDinh} phát hiện sai xác định; {result.TongCanDoiChieu} cần đối chiếu. Một bản ghi có thể thuộc nhiều quy tắc.\n\n| Quy tắc | Mức độ | Số phát hiện | Chi tiết đã lấy | Giới hạn |\n|---|---|---:|---:|---|\n");
+        foreach(var rule in result.QuyTac.Where(r=>r.TongSo>0))summary.AppendLine($"| {Md(rule.Ma)} | {rule.MucDo} | {rule.TongSo} | {rule.ChiTiet.Count} | {rule.DaGioiHan} |");
+        summary.AppendLine("\nCác dòng cần đối chiếu không chứng minh dữ liệu lịch sử sai. Không có UPDATE/DELETE/INSERT hay thay đổi schema trong lần đối soát. CSV chỉ chứa mã/PK, không xuất nội dung bệnh án. Số đếm là toàn bộ; chi tiết có giới hạn theo quy tắc. Thiếu schema/quyền hoặc lỗi truy vấn phải được xử lý trước khi coi báo cáo là đầy đủ.");
+        Text(Path.Combine(directory,"summary.md"),summary.ToString());
+    }
+}

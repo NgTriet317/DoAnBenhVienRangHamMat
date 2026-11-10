@@ -1,0 +1,131 @@
+{
+    "Protocol":  "RHM.XR04.KitIntegration.v1",
+    "Machine":  "DESKTOP-C9VCE8A",
+    "Status":  "PASS",
+    "Failure":  null,
+    "ReadyForDeployment":  false,
+    "Zip":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\20261110_120954_a7405046\\XR04-20261110_120954_a7405046.zip",
+    "Sha256":  "C070FE8F431F58066668A131FA2C3845B3C0DAA551C6A139A7A59CC0ED97D9E5",
+    "Extracted":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\Unpacked",
+    "RestoredDatabase":  "RHM_Hospital_Test_XR04Kit_20261110_121045_88f639",
+    "RestoredRoot":  "\\\\localhost\\D$\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\RestoredStore",
+    "Steps":  [
+                  {
+                      "Name":  "integrity",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\integrity.log",
+                      "StartedUtc":  "\/Date(1794287439053)\/",
+                      "DurationSeconds":  1.48
+                  },
+                  {
+                      "Name":  "store",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\store.log",
+                      "StartedUtc":  "\/Date(1794287440553)\/",
+                      "DurationSeconds":  1.11
+                  },
+                  {
+                      "Name":  "probe-A",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\probe-A.log",
+                      "StartedUtc":  "\/Date(1794287441660)\/",
+                      "DurationSeconds":  1.31
+                  },
+                  {
+                      "Name":  "probe-B",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\probe-B.log",
+                      "StartedUtc":  "\/Date(1794287442972)\/",
+                      "DurationSeconds":  1.25
+                  },
+                  {
+                      "Name":  "backup",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\backup.log",
+                      "StartedUtc":  "\/Date(1794287444221)\/",
+                      "DurationSeconds":  1.35
+                  },
+                  {
+                      "Name":  "restore",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\restore.log",
+                      "StartedUtc":  "\/Date(1794287445584)\/",
+                      "DurationSeconds":  2.01
+                  },
+                  {
+                      "Name":  "verify",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  2,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\verify.log",
+                      "StartedUtc":  "\/Date(1794287447594)\/",
+                      "DurationSeconds":  1.98
+                  },
+                  {
+                      "Name":  "same-host",
+                      "Status":  "PASS",
+                      "ExitCode":  1,
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\same-host.log",
+                      "ExpectedRejection":  true
+                  },
+                  {
+                      "Name":  "existing-db",
+                      "Status":  "PASS",
+                      "ExitCode":  1,
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\existing-db.log",
+                      "ExpectedRejection":  true
+                  },
+                  {
+                      "Name":  "tampered",
+                      "Status":  "PASS",
+                      "ExitCode":  1,
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\tampered.log",
+                      "ExpectedRejection":  true
+                  },
+                  {
+                      "Name":  "incomplete-parent",
+                      "Status":  "PASS",
+                      "ExitCode":  1,
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\incomplete-parent.log",
+                      "ExpectedRejection":  true
+                  },
+                  {
+                      "Name":  "final-integrity",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\final-integrity.log",
+                      "StartedUtc":  "\/Date(1794287452442)\/",
+                      "DurationSeconds":  0.69
+                  }
+              ],
+    "Pending":  "Actual second host/remote SQL restore and operational signoff"
+}

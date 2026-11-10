@@ -1,0 +1,6 @@
+FAIL: P5 audit có đầu mối BUS, không ghi dữ liệu ở mọi bảng | Thiếu BUS_DOISOATDULIEU
+FAIL: P5 giới hạn chi tiết được kiểm trước SQL | Thiếu BUS_DOISOATDULIEU
+FAIL: P5 FK ghép và NULL: đếm đủ, trả đúng PK và báo giới hạn | Thiếu BUS_DOISOATDULIEU
+FAIL: P5 quyền db_datareader đủ để chạy đối soát | Thiếu BUS_DOISOATDULIEU
+FAIL: P5 xuất thiếu mã bệnh là cần đối chiếu, không tự gán mã | ValueTuple should not be used for parameters - the language-level names are not available to use as parameter names, and it adds unnecessary boxing
+RESULT: 0 passed, 5 failed

@@ -75,6 +75,7 @@ public partial class BangTinhPhiEditor : UserControl
     private void Clear()
     {
         BangTinh = null; TotalText.Text = "Chưa có bảng tính";
+        SurchargeText.Text="";SurchargeText.Visibility=Visibility.Collapsed;
         ServicesGrid.ItemsSource = DrugsGrid.ItemsSource = LotsGrid.ItemsSource = HistoryGrid.ItemsSource = null;
         ResetPayment();
     }
@@ -92,6 +93,8 @@ public partial class BangTinhPhiEditor : UserControl
         {
             var s = bus.LapBangTinh(visitId ?? "", WarehouseFilter.SelectedValue as string, user);
             BangTinh = s;RenderVisitIdentity();
+            SurchargeText.Visibility=s.PhiPhuThu>0?Visibility.Visible:Visibility.Collapsed;
+            SurchargeText.Text=s.PhiPhuThu>0?$"Phụ thu khám dịch vụ (chọn bác sĩ): {Money(s.PhiPhuThu)} · 1 lượt · Đã gồm trong tổng phải thu.":"";
             ServicesGrid.ItemsSource = s.DichVu.Select(d => new { d.MaDVThucHien, d.NoiDung, d.SoLuong, Gia = Money(d.DonGia), Tien = Money(d.ThanhTien) }).ToArray();
             DrugsGrid.ItemsSource = s.Thuoc.Select(d => new { Nguon = $"{d.MaDT} / {d.MaCTDT}", d.NoiDung, d.DonViTinh, d.SoLuong, Gia = Money(d.DonGia), Tien = Money(d.ThanhTien) }).ToArray();
             LotsGrid.ItemsSource = s.Thuoc.SelectMany(d => d.CacLo.Select(l => new { d.MaCTDT, l.MaLo, l.SoLo, l.SoLuong, Tien = Money(l.ThanhTien) })).ToArray();

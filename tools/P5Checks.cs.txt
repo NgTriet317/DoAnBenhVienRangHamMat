@@ -1,0 +1,260 @@
+using System.Data;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
+using System.Text.Json.Nodes;
+using System.Text.Json;
+using System.Security.Cryptography;
+using Dapper;
+using Microsoft.Data.SqlClient;
+using BUS;
+using ET;
+using System.Security.Claims;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+
+internal static class Program
+{
+    static string cs="";static int passed,failed;
+    [STAThread] static int Main(string[] args)
+    {
+        if(args.Length<2||!System.Text.RegularExpressions.Regex.IsMatch(args[1],"^RHM_Hospital_Test_[A-Za-z0-9_]+$"))throw new Exception("Only isolated test databases");
+        cs=new SqlConnectionStringBuilder{DataSource=args[0],InitialCatalog=args[1],IntegratedSecurity=true,TrustServerCertificate=true}.ConnectionString;
+        Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",cs);
+        Check("P5 audit có đầu mối BUS, không ghi dữ liệu ở mọi bảng",()=>{
+            using var db=Open();var before=Fingerprints(db);var result=Audit();Assert(result["Database"]!.GetValue<string>()==args[1],"Sai DB");
+            Assert(before==Fingerprints(db),"Audit thay đổi dữ liệu");Assert(result["CacBang"]!.AsArray().Count>=64,"Thiếu thống kê bảng");
+        });
+        Check("P5 giới hạn chi tiết được kiểm trước SQL",()=>{foreach(int limit in new[]{-1,0,501})Reject(()=>Audit(limit:limit));});
+        Check("P5 FK ghép và NULL: đếm đủ, trả đúng PK và báo giới hạn",()=>Tx((db,tx)=>{
+            db.Execute("""
+                CREATE TABLE dbo.P5_CHECK_PARENT(A int NOT NULL,B int NOT NULL,CONSTRAINT PK_P5_PARENT PRIMARY KEY(A,B));
+                CREATE TABLE dbo.P5_CHECK_CHILD(Id int PRIMARY KEY,A int NULL,B int NULL);
+                INSERT dbo.P5_CHECK_CHILD VALUES(1,100,200),(2,100,NULL),(3,200,300);
+                ALTER TABLE dbo.P5_CHECK_CHILD WITH NOCHECK ADD CONSTRAINT FK_P5_TEST FOREIGN KEY(A,B) REFERENCES dbo.P5_CHECK_PARENT(A,B);
+                """,transaction:tx);
+            var result=Audit(tx,1);var rule=Rule(result,"FK:FK_P5_TEST");Assert(rule["TongSo"]!.GetValue<int>()==2,"FK ghép/NULL đếm sai");
+            Assert(rule["ChiTiet"]!.AsArray().Count==1&&rule["DaGioiHan"]!.GetValue<bool>(),"Không báo giới hạn chi tiết");
+            Assert(rule["ChiTiet"]![0]!["Khoa"]!.GetValue<string>().Contains("Id"),"Không trả PK bản ghi");
+            Assert(Rule(result,"SCHEMA_RANG_BUOC")["TongSo"]!.GetValue<int>()>0,"Không báo FK chưa trusted");
+        }));
+        Check("P5 quyền db_datareader đủ để chạy đối soát",()=>Tx((db,tx)=>{
+            db.Execute("CREATE USER P5_AUDIT_READER WITHOUT LOGIN; ALTER ROLE db_datareader ADD MEMBER P5_AUDIT_READER; EXECUTE AS USER=N'P5_AUDIT_READER';",transaction:tx);
+            try{Assert(Audit(tx)["CacBang"]!.AsArray().Count>=64,"Reader không đọc được audit");}
+            finally{db.Execute("REVERT",transaction:tx);}
+        }));
+        Check("P5 xuất thiếu mã bệnh là cần đối chiếu, không tự gán mã",()=>Tx((db,tx)=>{
+            SeedAuditVisit(db,tx);
+            var rule=Rule(Audit(tx),"BENH_THIEU_MA");Assert(rule["MucDo"]!.GetValue<string>()=="CanDoiChieu"&&rule["ChiTiet"]!.AsArray().Any(x=>x!["Khoa"]!.GetValue<string>().Contains("P5_CHECK_TTB")),"Thiếu mã không được liệt kê đúng mức độ/PK");
+            Assert(db.ExecuteScalar<string?>("SELECT MaDMTT FROM dbo.TINH_TRANG_BENH WHERE MaTTB=N'P5_CHECK_TTB'",transaction:tx) is null,"Audit tự sửa mã");
+        }));
+        Check("P5 trùng mã được liệt kê theo từng PK",()=>Tx((db,tx)=>{
+            SeedAuditVisit(db,tx,coded:true,duplicate:true);
+            var result=Audit(tx);Assert(Rule(result,"BENH_TRUNG_MA")["ChiTiet"]!.AsArray().Count(x=>x!["Khoa"]!.GetValue<string>().StartsWith("P5_CHECK_TTB"))==2,"Thiếu PK trùng mã");
+        }));
+        Check("P5 SQL từ chối thời gian khám trước tiếp nhận",()=>Tx((db,tx)=>{
+            try{SeedAuditVisit(db,tx,badTime:true);}catch(SqlException ex) when(ex.Message.Contains("không trước giờ tiếp nhận")){return;}
+            throw new Exception("SQL cho phép khám trước tiếp nhận");
+        }));
+        Check("P5 CSV chặn công thức và artifact từ chối ghi đè",()=>{
+            var type=typeof(Program).Assembly.GetType("P5Artifacts")??throw new Exception("Thiếu P5Artifacts trong bộ kiểm");
+            string dir=System.IO.Path.GetFullPath("obj/P5Evidence/artifacts-"+Guid.NewGuid().ToString("N"));
+            type.GetMethod("CreateNewDirectory")!.Invoke(null,[dir]);var path=System.IO.Path.Combine(dir,"cells.csv");
+            type.GetMethod("Csv")!.Invoke(null,[path,new object?[][]{["=2+2","\t@SUM(1,2)","safe,\"quoted\""]}]);
+            var text=System.IO.File.ReadAllText(path);Assert(text.Contains("\"'=2+2\"")&&text.Contains("\"'\t@SUM")&&text.Contains("\"safe,\"\"quoted\"\"\""),"CSV formula/quote không an toàn");
+            try{type.GetMethod("Text")!.Invoke(null,[path,"overwrite",false]);throw new Exception("Artifact đã bị ghi đè");}catch(TargetInvocationException ex) when(ex.InnerException is System.IO.IOException){}
+            Assert(System.IO.File.ReadAllText(path)==text,"Artifact đã đổi");
+        });
+        if(args.Contains("--demo"))DemoChecks();
+        Console.WriteLine($"RESULT: {passed} passed, {failed} failed");return failed==0?0:1;
+    }
+    static JsonNode Audit(IDbTransaction? tx=null,int limit=200)
+    {
+        var type=typeof(BUS_BAOCAO).Assembly.GetType("BUS.BUS_DOISOATDULIEU")??throw new Exception("Thiếu BUS_DOISOATDULIEU");
+        var instance=Activator.CreateInstance(type,[tx]);
+        try{return JsonSerializer.SerializeToNode(type.GetMethod("KiemTra")!.Invoke(instance,[limit]))!;}
+        catch(TargetInvocationException ex){ExceptionDispatchInfo.Capture(ex.InnerException!).Throw();throw;}
+    }
+    static JsonNode Rule(JsonNode result,string code)=>result["QuyTac"]!.AsArray().Single(x=>x!["Ma"]!.GetValue<string>()==code)!;
+    static SqlConnection Open(){var db=new SqlConnection(cs);db.Open();return db;}
+    static string Fingerprints(SqlConnection db)
+    {
+        var tables=db.Query<string>("SELECT name FROM sys.tables WHERE is_ms_shipped=0 ORDER BY name");var values=new List<string>();
+        foreach(var table in tables)
+        {
+            var keys=db.Query<string>("SELECT c.name FROM sys.indexes i JOIN sys.index_columns k ON k.object_id=i.object_id AND k.index_id=i.index_id JOIN sys.columns c ON c.object_id=k.object_id AND c.column_id=k.column_id WHERE i.object_id=OBJECT_ID(@name) AND i.is_primary_key=1 ORDER BY k.key_ordinal",new{name="dbo."+table});
+            string Q(string value)=>"["+value.Replace("]","]]")+"]";
+            var rows=db.ExecuteScalar<string>($"SELECT * FROM dbo.{Q(table)} ORDER BY {string.Join(",",keys.Select(Q))} FOR JSON PATH,INCLUDE_NULL_VALUES");
+            values.Add(table+Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rows??""))));
+        }
+        return string.Join("\n",values);
+    }
+    static void Tx(Action<SqlConnection,SqlTransaction> action){using var db=Open();using var tx=db.BeginTransaction(IsolationLevel.Serializable);try{action(db,tx);}finally{if(tx.Connection is not null)tx.Rollback();}}
+    static void Check(string name,Action test){try{test();passed++;Console.WriteLine("PASS: "+name);}catch(Exception ex){failed++;Console.WriteLine("FAIL: "+name+" | "+ex.GetBaseException().Message);}}
+    static void Assert(bool value,string message){if(!value)throw new Exception(message);}
+    static void Reject(Action action){try{action();}catch(ArgumentException){return;}throw new Exception("Expected invalid argument");}
+    static void DemoChecks()
+    {
+        Check("P5 nhân sự/tài khoản hiện tại khác lịch sử chỉ là cần đối chiếu",()=>Tx((db,tx)=>{
+            db.Execute("UPDATE dbo.TAI_KHOAN SET TrangThai=N'Bị khóa' WHERE MaNV=N'P5_BS'",transaction:tx);
+            var rule=Rule(Audit(tx),"NS_HIEN_TAI");Assert(rule["TongSo"]!.GetValue<int>()>0&&rule["MucDo"]!.GetValue<string>()=="CanDoiChieu","Suy sai lịch sử từ tài khoản hiện tại");
+        }));
+        Check("P5 phát hiện hoàn trước thu dù số dư cuối hợp lệ",()=>Tx((db,tx)=>{
+            db.Execute("""
+                INSERT dbo.THANH_TOAN(MaTT,MaHD,MaNV,NgayThanhToan,SoTien,LoaiGiaoDich,PhuongThuc,LyDo,TrangThai)
+                SELECT TOP(1) N'P5_CHECK_REFUND',MaHD,N'P5_CASH',DATEADD(minute,1,NgayXacNhan),5000,N'Hoàn',N'Tiền mặt',N'FIXTURE chronology',N'Đã xác nhận' FROM dbo.HOA_DON ORDER BY NgayLap;
+                """,transaction:tx);
+            var result=Audit(tx);Assert(Rule(result,"HD_THU_RONG")["TongSo"]!.GetValue<int>()==0,"Fixture phải có số dư cuối hợp lệ");
+            Assert(Rule(result,"TT_SO_DU_LICHSU")["ChiTiet"]!.AsArray().Any(x=>x!["Khoa"]!.GetValue<string>()=="P5_CHECK_REFUND"),"Không phát hiện hoàn trước thu");
+        }));
+        Check("P5 tồn lịch sử âm dù nhập/xuất cuối cân bằng",()=>Tx((db,tx)=>{
+            db.Execute("""
+                INSERT dbo.LO_HANG_HOA(MaLo,MaHH,MaNCC,MaKho,SoLo,NgayNhap,HanSuDung,TrangThai) VALUES(N'P5_CHECK_LO',N'P5_HH',N'P5_NCC',N'P5_KHO',N'FIXTURE','20260801','20271231',N'Còn sử dụng');
+                INSERT dbo.HOA_DON_NHAP(MaHDN,SoHoaDonNCC,MaNCC,MaNV,NgayHoaDon,TongTien,TrangThai) VALUES(N'P5_CHECK_HDN',N'FIXTURE',N'P5_NCC',N'P5_PHARM','20260810',5000,N'Đã xác nhận');
+                INSERT dbo.PHIEU_NHAP(MaPN,MaHDN,MaKho,MaNV,NgayNhap,TrangThai,LyDo) VALUES(N'P5_CHECK_PN',N'P5_CHECK_HDN',N'P5_KHO',N'P5_PHARM','20260810',N'Nháp',N'FIXTURE');
+                INSERT dbo.CHI_TIET_PHIEU_NHAP(MaCTPN,MaPN,MaHH,MaLo,SoLuong,DonGia) VALUES(N'P5_CHECK_CTPN',N'P5_CHECK_PN',N'P5_HH',N'P5_CHECK_LO',1,5000);
+                UPDATE dbo.PHIEU_NHAP SET TrangThai=N'Đã ghi sổ' WHERE MaPN=N'P5_CHECK_PN';
+                INSERT dbo.PHIEU_XUAT(MaPX,MaKho,MaNV,NgayXuat,LyDo,TrangThai) VALUES(N'P5_CHECK_PX',N'P5_KHO',N'P5_PHARM','20260805',N'FIXTURE',N'Nháp');
+                INSERT dbo.CHI_TIET_PHIEU_XUAT(MaCTPX,MaPX,MaHH,MaLo,SoLuong,GhiChu) VALUES(N'P5_CHECK_CTPX',N'P5_CHECK_PX',N'P5_HH',N'P5_CHECK_LO',1,N'FIXTURE');
+                UPDATE dbo.PHIEU_XUAT SET TrangThai=N'Đã ghi sổ' WHERE MaPX=N'P5_CHECK_PX';
+                """,transaction:tx);
+            var result=Audit(tx);Assert(Rule(result,"KHO_AM")["TongSo"]!.GetValue<int>()==0,"Fixture phải cân bằng tồn cuối");
+            Assert(Rule(result,"KHO_AM_LICHSU")["ChiTiet"]!.AsArray().Any(x=>x!["Khoa"]!.GetValue<string>()=="P5_CHECK_CTPX"),"Không phát hiện xuất trước nhập");
+        }));
+        Check("P5 dòng thuốc sai MaLS bị phát hiện dù FK/tổng tiền hợp lệ",()=>Tx((db,tx)=>{
+            SeedAuditVisit(db,tx,coded:true,sign:false);
+            db.Execute("""
+                INSERT dbo.DON_THUOC(MaDT,MaLS,MaBS,NgayKe,TrangThai)
+                SELECT N'P5_CHECK_DT',MaLS,MaBS,DATEADD(minute,-8,SYSDATETIME()),N'Nháp' FROM dbo.LICH_SU_KHAM_BENH WHERE MaLS=N'P5_CHECK_LS';
+                INSERT dbo.CHI_TIET_DON_THUOC(MaCTDT,MaDT,MaThuoc,LieuDung,SoLuong,SoNgayDung,HuongDan,DuongDung)
+                VALUES(N'P5_CHECK_CTDT',N'P5_CHECK_DT',N'P5_TH',N'FIXTURE',2,1,N'FIXTURE',N'Không áp dụng');
+                UPDATE dbo.DON_THUOC SET TrangThai=N'Đã xác nhận' WHERE MaDT=N'P5_CHECK_DT';
+                INSERT dbo.PHIEU_XUAT(MaPX,MaKho,MaNV,MaLS,NgayXuat,LyDo,TrangThai)
+                VALUES(N'P5_CHECK_PX',N'P5_KHO',N'P5_PHARM',N'P5_CHECK_LS',DATEADD(minute,-7,SYSDATETIME()),N'FIXTURE',N'Nháp');
+                INSERT dbo.CHI_TIET_PHIEU_XUAT(MaCTPX,MaPX,MaHH,MaLo,MaCTDT,SoLuong,GhiChu)
+                VALUES(N'P5_CHECK_CTPX',N'P5_CHECK_PX',N'P5_HH',N'P5_LO_08',N'P5_CHECK_CTDT',2,N'FIXTURE');
+                UPDATE dbo.PHIEU_XUAT SET TrangThai=N'Đã ghi sổ' WHERE MaPX=N'P5_CHECK_PX';
+                UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận',NgayXacNhan=SYSDATETIME() WHERE MaLS=N'P5_CHECK_LS';
+                """,transaction:tx);
+            var invoice=new DAL.DAL_HOADON(tx).CreateInvoice("P5_CHECK_LS","P5_CASH",0);
+            db.Execute("UPDATE dbo.HOA_DON SET MaLS=N'P5_LS_002' WHERE MaHD=@invoice",new{invoice},tx);
+            var result=Audit(tx);Assert(Rule(result,"HD_TONG")["TongSo"]!.GetValue<int>()==0,"Fixture tổng phải khớp");
+            Assert(Rule(result,"HD_NGUON_THUOC")["ChiTiet"]!.AsArray().Any(x=>x!["LienQuan"]!.GetValue<string>().Contains(invoice)),"Không phát hiện thuốc sai lượt");
+        }));
+        Check("P5 DEMO có nhãn database,18 người giả,26 lượt8/12/6 và không sửa mã dịch vụ cũ",()=>{
+            using var db=Open();Assert(db.ExecuteScalar<int>("SELECT COALESCE(TRY_CONVERT(int,value),0) FROM sys.extended_properties WHERE class=0 AND name=N'RHM.Demo.P5'")==1,"Thiếu marker DEMO");
+            Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.BENH_NHAN")==18&&db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.BENH_NHAN WHERE HoTenBN LIKE N'[[]DEMO]%'")==18,"Lẫn hồ sơ thật hoặc thiếu người giả");
+            var months=db.Query<int>("SELECT COUNT(*) FROM dbo.LICH_SU_KHAM_BENH WHERE TrangThai=N'Đã xác nhận' GROUP BY CONVERT(char(7),ThoiGianKham,126) ORDER BY CONVERT(char(7),ThoiGianKham,126)").ToArray();Assert(months.SequenceEqual(new[]{8,12,6}),"Sai số lượt/tháng");
+            Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DICH_VU WHERE MaDV=N'P5_DV_KHAM' AND NgayApDung='20260801' AND DonGia=100000")==1,"Không có giá DEMO riêng");
+            Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.HOA_DON WHERE TrangThai=N'Đã xác nhận'")==26,"Thiếu hóa đơn xác nhận");
+        });
+        Check("P5 thu/hoàn cùng timestamp không bị suy thứ tự giả",()=>Tx((db,tx)=>{
+            db.Execute("""
+                INSERT dbo.THANH_TOAN(MaTT,MaHD,MaNV,NgayThanhToan,SoTien,LoaiGiaoDich,PhuongThuc,LyDo,TrangThai)
+                SELECT TOP(1) N'P5_CHECK_SAME_TIME',MaHD,N'P5_CASH',NgayThanhToan,5000,N'Hoàn',N'Tiền mặt',N'FIXTURE same time',N'Đã xác nhận' FROM dbo.THANH_TOAN WHERE LoaiGiaoDich=N'Thu' ORDER BY NgayThanhToan;
+                """,transaction:tx);
+            Assert(Rule(Audit(tx),"TT_SO_DU_LICHSU")["TongSo"]!.GetValue<int>()==0,"Suy ra âm tiền từ thứ tự giả trong cùng timestamp");
+        }));
+        Check("P5 thay giá thuốc hiện tại không làm sai nguồn giá đã chốt",()=>Tx((db,tx)=>{
+            db.Execute("UPDATE dbo.THUOC SET DonGiaBan=99999 WHERE MaThuoc=N'P5_TH'",transaction:tx);
+            Assert(Rule(Audit(tx),"HD_NGUON_THUOC")["TongSo"]!.GetValue<int>()==0,"Đã dùng giá thuốc hiện tại để phán sai hóa đơn cũ");
+        }));
+        Check("P5 hóa đơn luồng chốt khám mới có thuốc chờ cấp là nguồn hợp lệ",()=>Tx((db,tx)=>{
+            SeedAuditVisit(db,tx,coded:true,sign:false);
+            Thread.CurrentPrincipal=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.NameIdentifier,"P5_TK_P5_BS"),new(DinhDanhNghiepVu.MaNhanVienClaim,"P5_BS")],DinhDanhNghiepVu.KieuXacThuc));
+            try
+            {
+                var actor=new BUS_QUYENNGHIEPVU(tx).LayNguCanh("P5_BS");var clinical=new BUS_KHAMDIEUTRI(tx);
+                clinical.XacNhanThucHien("P5_CHECK_LS",clinical.LayTongKetKham("P5_CHECK_LS",actor).DauVanTay,actor);
+                new BUS_DONTHUOC(tx).LuuDon(new(){MaLS="P5_CHECK_LS",CacDong=[new(){MaThuoc="P5_TH",LieuDung="FIXTURE",DuongDung="Uống",HuongDan="Không dùng điều trị",SoNgayDung=1,SoLuong=2}]},actor);
+                var visit=clinical.LayBanNhap("P5_CHECK_LS",actor);var summary=clinical.LayTongKetKham("P5_CHECK_LS",actor);
+                var done=clinical.ChotKhamVaLapHoaDon("P5_CHECK_LS",visit.DauVanTay,summary.DauVanTay,actor);
+                Assert(done.MaHD is not null&&db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.CHI_TIET_HOA_DON WHERE MaHD=@hd AND MaCTDT IS NOT NULL",new{hd=done.MaHD},tx)==1,"Không đi qua nguồn thuốc chờ cấp");
+                var result=Audit(tx);Assert(Rule(result,"HD_NGUON_THUOC")["TongSo"]!.GetValue<int>()==0&&Rule(result,"HD_TRUNG_NGUON_THUOC")["TongSo"]!.GetValue<int>()==0,"Đánh nhầm nguồn chờ cấp của luồng mới");
+                bool denied=false;
+                try{db.Execute("UPDATE dbo.HOA_DON SET TrangThai=N'Đã xác nhận',NgayXacNhan=SYSDATETIME() WHERE MaHD=@hd",new{hd=done.MaHD},tx);}
+                catch(SqlException ex) when(ex.Number==52236){denied=true;}
+                Assert(denied,"Chỉ thuốc chờ cấp trên hóa đơn Nháp mới hợp lệ; SQL phải chặn xác nhận");
+            }
+            finally{Thread.CurrentPrincipal=null;}
+        }));
+        Check("P5 DEMO FK/CHECK và đối soát không có bất thường",()=>{
+            using var db=Open();Assert(!db.Query("DBCC CHECKCONSTRAINTS WITH ALL_CONSTRAINTS,NO_INFOMSGS").Any(),"Có vi phạm ràng buộc");
+            var result=Audit();Assert(result["TongSaiXacDinh"]!.GetValue<int>()==0&&result["TongCanDoiChieu"]!.GetValue<int>()==0,"DEMO còn bất thường");
+        });
+        Check("P5 DEMO dịch vụ/thuốc/nguồn phụ thu, kho300 nhập26 xuất274 tồn",()=>{
+            using var db=Open();Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.PHIEU_KHAM_BENH WHERE LoaiKham=N'Dịch vụ' AND PhiPhuThuDichVu=30000")==13,"Sai13 phụ thu");
+            Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DON_THUOC WHERE TrangThai=N'Đã xác nhận'")==13,"Thiếu13 đơn thuốc thật");
+            Assert(db.ExecuteScalar<decimal>("SELECT SUM(c.SoLuong) FROM dbo.CHI_TIET_PHIEU_NHAP c JOIN dbo.PHIEU_NHAP p ON p.MaPN=c.MaPN WHERE p.TrangThai=N'Đã ghi sổ'")==300,"Sai nhập kho");
+            Assert(db.ExecuteScalar<decimal>("SELECT SUM(c.SoLuong) FROM dbo.CHI_TIET_PHIEU_XUAT c JOIN dbo.PHIEU_XUAT p ON p.MaPX=c.MaPX WHERE p.TrangThai=N'Đã ghi sổ'")==26,"Sai xuất kho");
+            Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.CHI_TIET_HOA_DON c JOIN dbo.HOA_DON h ON h.MaHD=c.MaHD JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=h.MaLS JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu WHERE c.MaPhieuPhuThu=p.MaPhieu AND c.ThanhTien=30000")==13,"Phụ thu không đúng nguồn");
+        });
+        Check("P5 DEMO hóa đơn3.25m, thu quý3.15m;100k thu tháng11",()=>{
+            using var db=Open();Assert(db.ExecuteScalar<decimal>("SELECT SUM(SoTienPhaiThu) FROM dbo.HOA_DON WHERE TrangThai=N'Đã xác nhận'")==3250000,"Sai tổng hóa đơn");
+            Assert(db.ExecuteScalar<decimal>("SELECT SUM(CASE WHEN LoaiGiaoDich=N'Thu' THEN SoTien ELSE -SoTien END) FROM dbo.THANH_TOAN WHERE TrangThai=N'Đã xác nhận' AND NgayThanhToan>='20260801' AND NgayThanhToan<'20261101'")==3150000,"Sai thu quý");
+            Assert(db.ExecuteScalar<decimal>("SELECT SUM(SoTien) FROM dbo.THANH_TOAN WHERE NgayThanhToan>='20261101' AND NgayThanhToan<'20261201'")==100000,"Không có thu lệch kỳ");
+        });
+        Check("P5 DEMO báo cáo bệnh lý, tiền và MoM khớp SQL độc lập",()=>WithReportSession(()=>{
+            var b=new BUS_BAOCAO();var disease=b.DocBenhLy(new(new(2026,8,1),new(2026,11,1)));
+            Assert(disease.ChatLuong.TongLuot==26&&disease.ChatLuong.SoBenhNhan==18&&disease.ChatLuong.LuotCoMa==26&&disease.ChatLuong.DongTrungMa==0,"Sai bệnh nhân DISTINCT hoặc chất lượng mã");
+            Assert(disease.CacBenh.Length==3&&disease.CacBenh.All(x=>x.SoBenhNhan==6&&!x.DaLamMo),"Không đủ3 nhóm6 người");
+            var reportPath=P5Artifacts.CreateNewDirectory("obj/P5Evidence/report-"+Guid.NewGuid().ToString("N"));
+            P5Artifacts.Csv(System.IO.Path.Combine(reportPath,"conditions.csv"),new[]{new object?[]{"[DEMO] MaDMTT","TenTinhTrang","LuotKham","BenhNhan"}}.Concat(disease.CacBenh.Select(x=>new object?[]{x.MaDMTT,x.TenTinhTrang,x.SoLuotKham,x.SoBenhNhan})));
+            var financeRows=new List<object?[]>{new object?[]{"[DEMO] Ky","LuotKham","PhaiThuTheoHoaDon","ThuRongTheoThanhToan"}};
+            int[] visits=[8,12,6];decimal[] due=[1000000,1500000,750000],cash=[900000,1500000,750000];
+            for(int i=0;i<3;i++)
+            {
+                var from=new DateTime(2026,8+i,1);var to=from.AddMonths(1).AddDays(-1);
+                var actualVisits=b.Doc("05",from,to).Sum(x=>x.Hai);var actualDue=b.Doc("10",from,to).Sum(x=>x.Bon);var actualCash=b.Doc("09",from,to).Sum(x=>x.Ba);
+                Assert(actualVisits==visits[i],"Báo cáo lượt sai");Assert(actualDue==due[i],"Báo cáo phải thu sai");Assert(actualCash==cash[i],"Báo cáo thu thực tế sai");
+                financeRows.Add([from.ToString("yyyy-MM"),actualVisits,actualDue,actualCash]);
+            }
+            Assert(SoSanhThongKe.Tinh(12,8).PhanTram==50&&SoSanhThongKe.Tinh(6,12).PhanTram==-50,"Sai MoM");
+            P5Artifacts.Csv(System.IO.Path.Combine(reportPath,"monthly-finance.csv"),financeRows);Console.WriteLine("P5_REPORT_EVIDENCE="+System.IO.Path.GetFullPath(reportPath));
+        }));
+        Check("P5 DEMO render WPF tổng quan3 tháng và tình trạng từ SQL thật",()=>WithReportSession(()=>{
+            SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
+            var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};app.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml",UriKind.Relative)});
+            var page=new RangHamMat.Views.BaoCao();var window=new Window{Content=page,Width=1366,Height=900,ShowInTaskbar=false,Left=-20000,Top=-20000};window.Show();
+            try
+            {
+                Assert(page.FindName("DemoDataBanner") is TextBlock banner&&banner.Visibility==Visibility.Visible&&banner.Text.Contains("DEMO"),"Báo cáo từ DB trình diễn thiếu nhãn DEMO");
+                ((DatePicker)page.FindName("FromDate")).SelectedDate=new(2026,8,1);((DatePicker)page.FindName("ToDate")).SelectedDate=new(2026,10,31);((ComboBox)page.FindName("ComparisonMode")).SelectedIndex=0;
+                page.ChonBaoCao("00");Pump(page.TaiBaoCaoAsync());Capture(page,"p5-overview.png");page.ChonBaoCao("20");Pump(page.TaiBaoCaoAsync());Capture(page,"p5-conditions.png");
+                Assert(((DataGrid)page.FindName("DiseaseGrid")).Items.Count==3,"UI không có3 nhóm tình trạng");
+            }
+            finally{window.Close();app.Shutdown();}
+        }));
+    }
+    static void WithReportSession(Action action)
+    {
+        var identity=new ClaimsIdentity([new(ClaimTypes.NameIdentifier,"TK001"),new(DinhDanhNghiepVu.MaNhanVienClaim,"NV001")],DinhDanhNghiepVu.KieuXacThuc);Thread.CurrentPrincipal=new ClaimsPrincipal(identity);
+        var actor=new BUS_QUYENNGHIEPVU().LayNguCanh("NV001");var audit=new BUS_NHATKY();var session=audit.BatDauPhien(actor);identity.AddClaim(new("RHM.MaPhien",session.ToString("D")));
+        try{action();}finally{audit.KetThucPhien(session);Thread.CurrentPrincipal=null;}
+    }
+    static void Pump(Task task)
+    {
+        var frame=new DispatcherFrame();var timer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(10)};var until=DateTime.UtcNow.AddSeconds(45);
+        timer.Tick+=(_,_)=>{if(task.IsCompleted||DateTime.UtcNow>until)frame.Continue=false;};timer.Start();Dispatcher.PushFrame(frame);timer.Stop();if(!task.IsCompleted)throw new TimeoutException();task.GetAwaiter().GetResult();
+    }
+    static void Capture(FrameworkElement page,string name)
+    {
+        page.UpdateLayout();var bitmap=new RenderTargetBitmap((int)page.ActualWidth,(int)page.ActualHeight,96,96,PixelFormats.Pbgra32);bitmap.Render(page);var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));System.IO.Directory.CreateDirectory("obj/P5Evidence");using var stream=System.IO.File.Create("obj/P5Evidence/"+name);encoder.Save(stream);
+    }
+    static void SeedAuditVisit(SqlConnection db,SqlTransaction tx,bool coded=false,bool duplicate=false,bool badTime=false,bool sign=true)
+    {
+        db.Execute("""
+            INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaBS,MaPhong,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai)
+            SELECT TOP(1) N'P5_CHECK_PH',MaHS,MaBS,MaPhong,MaNVTiepNhan,MaDV,90001,DATEADD(minute,-11,SYSDATETIME()),N'FIXTURE',N'Đang khám' FROM dbo.PHIEU_KHAM_BENH WHERE TrangThai<>N'Hủy';
+            INSERT dbo.LICH_SU_KHAM_BENH(MaLS,MaPhieu,MaBS,MaPhong,ThoiGianKham,TrieuChung,ChanDoan,KeHoachXuLy,TrangThai)
+            SELECT N'P5_CHECK_LS',MaPhieu,MaBS,MaPhong,DATEADD(minute,CASE WHEN @badTime=1 THEN -12 ELSE -10 END,SYSDATETIME()),N'FIXTURE',N'FIXTURE',N'FIXTURE',N'Nháp' FROM dbo.PHIEU_KHAM_BENH WHERE MaPhieu=N'P5_CHECK_PH';
+            INSERT dbo.TINH_TRANG_BENH(MaTTB,MaLS,LoaiTinhTrang,MoTaTinhTrang,MaDMTT)
+            SELECT TOP(1) N'P5_CHECK_TTB',N'P5_CHECK_LS',TenTinhTrang,N'FIXTURE',CASE WHEN @coded=1 THEN MaDMTT ELSE NULL END FROM dbo.DM_TINH_TRANG_BENH ORDER BY MaDMTT;
+            IF @duplicate=1 INSERT dbo.TINH_TRANG_BENH(MaTTB,MaLS,LoaiTinhTrang,MoTaTinhTrang,MaDMTT)
+            SELECT N'P5_CHECK_TTB2',MaLS,LoaiTinhTrang,MoTaTinhTrang,MaDMTT FROM dbo.TINH_TRANG_BENH WHERE MaTTB=N'P5_CHECK_TTB';
+            IF @sign=1 UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận',NgayXacNhan=SYSDATETIME() WHERE MaLS=N'P5_CHECK_LS';
+            """,new{coded,duplicate,badTime,sign},tx);
+    }
+}

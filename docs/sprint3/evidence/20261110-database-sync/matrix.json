@@ -1,0 +1,157 @@
+[
+    {
+        "Id":  "TN01",
+        "Status":  "PASS",
+        "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\service.log",
+        "Note":  ""
+    },
+    {
+        "Id":  "TN02",
+        "Status":  "PASS",
+        "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\service.log",
+        "Note":  ""
+    },
+    {
+        "Id":  "TN03",
+        "Status":  "PASS",
+        "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\service.log",
+        "Note":  ""
+    },
+    {
+        "Id":  "TN04",
+        "Status":  "PASS",
+        "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\service.log",
+        "Note":  ""
+    },
+    {
+        "Id":  "TN05",
+        "Status":  "PASS",
+        "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\service.log",
+        "Note":  ""
+    },
+    {
+        "Id":  "TN06",
+        "Status":  "PASS",
+        "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\concurrent.log",
+        "Note":  ""
+    },
+    {
+        "Id":  "TN07",
+        "Status":  "PASS",
+        "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\service.log",
+        "Note":  ""
+    },
+    {
+        "Id":  "HD01",
+        "Status":  "PASS",
+        "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\service.log",
+        "Note":  ""
+    },
+    {
+        "Id":  "HD02",
+        "Status":  "PASS",
+        "Evidence":  [
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\foundation-new.log",
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\service.log"
+                     ],
+        "Note":  ""
+    },
+    {
+        "Id":  "HD03",
+        "Status":  "PASS",
+        "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\service.log",
+        "Note":  ""
+    },
+    {
+        "Id":  "HD04",
+        "Status":  "PASS",
+        "Evidence":  [
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\foundation-new.log",
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\service.log"
+                     ],
+        "Note":  ""
+    },
+    {
+        "Id":  "HD05",
+        "Status":  "PASS",
+        "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\service.log",
+        "Note":  ""
+    },
+    {
+        "Id":  "XR01",
+        "Status":  "PASS",
+        "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\xray.log",
+        "Note":  ""
+    },
+    {
+        "Id":  "XR02",
+        "Status":  "PASS",
+        "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\xray.log",
+        "Note":  ""
+    },
+    {
+        "Id":  "XR03",
+        "Status":  "PASS",
+        "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\xray.log",
+        "Note":  ""
+    },
+    {
+        "Id":  "XR04",
+        "Status":  "PENDING_ENVIRONMENT",
+        "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\xray-restore.log",
+        "Note":  "SQL/file restore trên cùng máy đã kiểm nếu bước xanh; còn kho UNC/hai máy và restore trên máy khác."
+    },
+    {
+        "Id":  "DB01",
+        "Status":  "PASS",
+        "Evidence":  [
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\install-new.log",
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\preserve-legacy.log",
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\preserve-rerun-1.log",
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\preserve-rerun-2.log",
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\interrupt-sealed.log"
+                     ],
+        "Note":  ""
+    },
+    {
+        "Id":  "DB02",
+        "Status":  "PASS",
+        "Evidence":  [
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\foundation-upgrade.log",
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\sql-sync.log",
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\p5.log",
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\constraints.log"
+                     ],
+        "Note":  ""
+    },
+    {
+        "Id":  "BC01",
+        "Status":  "PASS",
+        "Evidence":  [
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\p5.log",
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\reports.log"
+                     ],
+        "Note":  ""
+    },
+    {
+        "Id":  "BC02",
+        "Status":  "PASS",
+        "Evidence":  [
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\p5.log",
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\reports.log"
+                     ],
+        "Note":  ""
+    },
+    {
+        "Id":  "RG01",
+        "Status":  "PASS",
+        "Evidence":  [
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\sql-sync.log",
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\clinical.log",
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\smoke27.log",
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\reports.log",
+                         "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_124022_78d39f69\\build-schema.log"
+                     ],
+        "Note":  ""
+    }
+]

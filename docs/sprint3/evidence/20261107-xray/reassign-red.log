@@ -1,0 +1,35 @@
+XRAY_DATABASE=RHM_Hospital_Test_Xray_20261107_175738
+XRAY_ROOT=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\XrayEvidence\store-dd8b4e2d2480451b8d924e6740221cdf
+PASS: XR01 PNG và JPEG lưu nguyên byte, metadata đúng MaLS, audit UTC
+PASS: XR01 retry cùng nội dung trên cùng MaLS không nhân metadata/tệp
+PASS: XR02 từ chối tên/định dạng: ../escape.png
+PASS: XR02 từ chối tên/định dạng: folder/escape.png
+PASS: XR02 từ chối tên/định dạng: C:\escape.png
+PASS: XR02 từ chối tên/định dạng: image.dcm
+PASS: XR02 từ chối tên/định dạng: image.gif
+PASS: XR02 nội dung JPEG giả đuôi PNG bị chặn
+PASS: XR02 ảnh hỏng không sinh metadata/tệp
+PASS: XR02 chặn dung lượng 20 MiB trước decode
+PASS: XR02 giới hạn số điểm ảnh cấu hình được kiểm trước decode
+PASS: XR03 người không có phạm vi bị chặn: NV003
+PASS: XR03 người không có phạm vi bị chặn: NV006
+PASS: XR03 người không có phạm vi bị chặn: NV007
+PASS: XR03 bác sĩ không được gắn ảnh vào MaLS bệnh nhân khác
+PASS: XR03 kỹ thuật viên chỉ tải/xem ảnh dịch vụ X-quang được giao
+PASS: XR03 khóa tài khoản sau khi tải phải chặn mở lại
+PASS: XR04 ẩn giữ tệp và metadata, không mở ảnh đã ẩn
+PASS: XR02 tệp mất có lỗi rõ và audit, metadata vẫn còn
+PASS: XR02 tệp sai hash bị chặn và ghi audit
+PASS: XR04 SQL lỗi sau ghi tệp phải dọn tệp mới và không lưu metadata
+PASS: XR02 kho sản phẩm không nhận đường dẫn cục bộ mặc định
+PASS: XR01 danh sách và quyền không trả ảnh ngoài phạm vi
+PASS: XR02 metadata đường dẫn đi lùi không được đọc khỏi kho
+PASS: XR04 kiểm kho nhận orphan, không tự xóa và kiểm cả ảnh ẩn
+PASS: XR01 lịch sử chỉ xem: mở được, không tải/ẩn sau hoàn tất
+PASS: XR UI tải, thumbnail, xem lớn và ẩn đúng ảnh
+PASS: XR UI lịch sử khóa tải/ẩn, kho chưa cấu hình không crash
+PASS: XR UI kỹ thuật viên có lối mở đúng các lượt X-quang được giao
+PASS: XR UI mất quyền khi mở tab lịch sử không thoát sự kiện Loaded
+PASS: XR bác sĩ phân công từ dịch vụ chụp do luồng thực hiện tạo, không sửa chứng từ
+FAIL: XR phân công thay kỹ thuật viên đã khóa, thu hồi phạm vi cũ và giữ lịch sử | InvalidOperationException: Phân công cần dịch vụ chụp, lượt còn mở và nhân viên kỹ thuật đang hoạt động.
+RESULT: 31 passed, 1 failed

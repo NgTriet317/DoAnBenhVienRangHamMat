@@ -1,0 +1,22 @@
+﻿[
+    {
+        "Phase":  "Foundation",
+        "Status":  "PASS",
+        "SqlcmdExit":  0,
+        "InjectedError":  53997,
+        "FinalGuard":  53416,
+        "ReadyPrinted":  false,
+        "BusinessCountsPreserved":  true,
+        "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\SqlProjectSync\\guards-6f5d3b4ec68846c9bb4b3ef196815c63\\Foundation.log"
+    },
+    {
+        "Phase":  "Xray",
+        "Status":  "PASS",
+        "SqlcmdExit":  0,
+        "InjectedError":  53998,
+        "FinalGuard":  53416,
+        "ReadyPrinted":  false,
+        "BusinessCountsPreserved":  true,
+        "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\SqlProjectSync\\guards-6f5d3b4ec68846c9bb4b3ef196815c63\\Xray.log"
+    }
+]

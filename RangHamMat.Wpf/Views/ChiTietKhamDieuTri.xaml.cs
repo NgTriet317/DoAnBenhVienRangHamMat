@@ -84,6 +84,12 @@ public partial class ChiTietKhamDieuTri : UserControl, IPatientScoped
     /// Quay lại màn hình trước bằng sự kiện BackRequested/CloseRequested hoặc workspace; không tự lưu dữ liệu đang nhập.
     /// </summary>
     private void Back_Click(object sender, RoutedEventArgs e) => BackRequested?.Invoke();
+    private void XrayHistoryHost_Loaded(object sender,RoutedEventArgs e)
+    {
+        if(XrayHistoryHost.Content is not null)return;
+        try{var images=new AnhXquangLanKham(visitId,Controls.ClinicalWorkflow.QuyenNghiepVu.LayNguCanh());images.RestrictToHistory();XrayHistoryHost.Content=images;}
+        catch(InvalidOperationException ex){XrayHistoryHost.Content=new TextBlock{Text=ex.Message,TextWrapping=TextWrapping.Wrap,Margin=new Thickness(16)};}
+    }
     /// <summary>
     /// Mở hồ sơ bệnh nhân nguồn của dữ liệu đang xem.
     /// </summary>

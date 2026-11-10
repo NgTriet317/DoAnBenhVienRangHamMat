@@ -1,0 +1,4 @@
+PASS: Foundation failure blocks final readiness, clears stale flags and preserves business counts
+PASS: Xray failure blocks final readiness, clears stale flags and preserves business counts
+PASS: complete rerun repairs the isolated interrupted database
+SQL_SYNC_GUARDS=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\SqlProjectSync\guards-6f5d3b4ec68846c9bb4b3ef196815c63

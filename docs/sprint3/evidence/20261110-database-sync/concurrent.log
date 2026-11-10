@@ -1,0 +1,3 @@
+PROJECT_SCHEMA_READY: 64 bảng và các liên kết ET/DAL/BUS/WPF đã kiểm tra; cấu hình SQL Server/kho ảnh tại appsettings.json.
+PASS: TN06 ba quầy đồng thời: cùng yêu cầu cùng phiếu, hai bệnh nhân hai số khác nhau
+RESULT: 1 passed, 0 failed

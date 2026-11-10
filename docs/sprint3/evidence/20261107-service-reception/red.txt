@@ -1,0 +1,22 @@
+FAIL: TN02 có ca mới được chọn, dịch vụ cùng chuyên khoa | InvalidOperationException: Missing service API: LayBacSiDichVu
+FAIL: TN02 lưu loại/phí do backend và audit, retry một phiếu | InvalidOperationException: Missing reception kind contract
+PASS: TN01 thường vẫn cho điều phối theo quyền và phí 0
+FAIL: TN03 từ chối thiếu ca | InvalidOperationException: Missing service API: LayBacSiDichVu
+FAIL: TN03 từ chối ca chưa xác nhận | InvalidOperationException: Missing service API: LayBacSiDichVu
+FAIL: TN03 từ chối vắng mặt | InvalidOperationException: Missing service API: LayBacSiDichVu
+FAIL: TN03 từ chối chưa có mặt | InvalidOperationException: Missing service API: LayBacSiDichVu
+FAIL: TN03 từ chối không phòng | InvalidOperationException: Missing service API: LayBacSiDichVu
+FAIL: TN03 từ chối phòng ngừng | InvalidOperationException: Missing service API: LayBacSiDichVu
+FAIL: TN03 từ chối tài khoản khóa | InvalidOperationException: Missing service API: LayBacSiDichVu
+FAIL: TN03 từ chối ca ngừng | InvalidOperationException: Missing service API: LayBacSiDichVu
+FAIL: TN03 từ chối bác sĩ nghỉ việc | InvalidOperationException: Missing service API: LayBacSiDichVu
+FAIL: TN03 từ chối nghỉ phép | InvalidOperationException: Missing service API: LayBacSiDichVu
+FAIL: TN05 ca bị hủy sau khi chọn vẫn bị kiểm lại lúc lưu | InvalidOperationException: Missing service API: LayBacSiDichVu
+FAIL: TN04 lọc ngày áp dụng và chặn gửi dịch vụ khác chuyên khoa | InvalidOperationException: Missing service API: LayDichVuTheoBacSi
+PASS: TN07 retry khác loại không nâng cấp âm thầm
+PASS: TN07 lịch hẹn không nhận loại dịch vụ
+FAIL: HD01 tổng kết và hoàn tất chốt đúng 130000 một lần | InvalidOperationException: Missing reception kind contract
+FAIL: HD03 nhánh hóa đơn cũ, giảm giá, thu từng phần và hoàn | InvalidOperationException: Missing reception kind contract
+FAIL: HD04 DAL từ chối giảm giá trừ vào phụ thu trước khi ghi | InvalidOperationException: Missing reception kind contract
+FAIL: HD05 bảng phí, thu đủ, retry và in có một phụ thu | InvalidOperationException: Missing reception kind contract
+RESULT: 3 passed, 18 failed

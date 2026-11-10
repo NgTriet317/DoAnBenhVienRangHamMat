@@ -13,6 +13,10 @@ public sealed class BUS_TIEPNHAN(IDbTransaction? transaction=null)
     /// Đối tượng truy cập dữ liệu tiếp nhận phục vụ các thao tác của lớp.
     /// </summary>
     private readonly DAL_TIEPNHAN dal=new(transaction);
+    public IReadOnlyList<BacSiTiepNhan> LayBacSiDichVu(NguCanhNghiepVu nguoiDung)
+        => XuLyLoi.ThucHien(()=>dal.LayBacSiDichVu(nguoiDung));
+    public IReadOnlyList<ET_DICHVU> LayDichVuTheoBacSi(string maBS,NguCanhNghiepVu nguoiDung)
+        => XuLyLoi.ThucHien(()=>dal.LayDichVuTheoBacSi(maBS,nguoiDung));
     /// <summary>
     /// Đọc danh sách bác sĩ theo tiêu chí và phạm vi áp dụng tại nơi gọi. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
     /// </summary>

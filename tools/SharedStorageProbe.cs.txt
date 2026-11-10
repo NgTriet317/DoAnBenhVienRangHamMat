@@ -1,0 +1,55 @@
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text.Json;
+using BUS;
+using DAL;
+using Dapper;
+using ET;
+using Microsoft.Data.SqlClient;
+
+internal static class Program
+{
+    static int Main(string[] args)
+    {
+        try
+        {
+            if(args.Length!=4||!System.Text.RegularExpressions.Regex.IsMatch(args[1],"^RHM_Hospital_Test_[A-Za-z0-9_]+$"))throw new ArgumentException("Only isolated image fixtures");
+            if(!args[2].StartsWith(@"\\",StringComparison.Ordinal))throw new ArgumentException("Shared storage requires UNC");
+            var output=Path.GetFullPath(args[3]);if(File.Exists(output))throw new IOException("Proof already exists");
+            var parent=Path.GetDirectoryName(output)??throw new IOException("Missing proof directory");
+            for(DirectoryInfo? item=new(parent);item is not null;item=item.Parent)
+                if(item.Exists&&(item.Attributes&FileAttributes.ReparsePoint)!=0)throw new IOException("Proof directory must not pass through a link");
+            Directory.CreateDirectory(parent);
+            var config=new CauHinhKhoAnh{ThuMucDungChung=args[2],ChoPhepDuongDanCucBo=false};
+            var store=new KhoLuuAnhXquang(config);var storageRoot=store.ThuMucGoc();
+            Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",new SqlConnectionStringBuilder{DataSource=args[0],InitialCatalog=args[1],IntegratedSecurity=true,TrustServerCertificate=true}.ConnectionString);
+            Thread.CurrentPrincipal=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.NameIdentifier,"TK001"),new(DinhDanhNghiepVu.MaNhanVienClaim,"NV001")],DinhDanhNghiepVu.KieuXacThuc));
+            using var tx=new DAL_ANHXQUANG().BatDauGiaoDich();using var db=tx.Connection!;
+            // Chỉ fixture do bộ kiểm Xray tạo, không dùng bản sao chứa hồ sơ phục hồi.
+            if(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.BENH_NHAN WHERE MaBN=N'BN001' AND HoTenBN LIKE N'FIXTURE%'",transaction:tx)!=1
+                ||db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAN_VIEN WHERE MaNV=N'NV002' AND HoTen LIKE N'FIXTURE%'",transaction:tx)!=1)
+                throw new InvalidOperationException("Database is not the isolated Xray fixture");
+            var actor=new BUS_QUYENNGHIEPVU(tx).LayNguCanh("NV001");var bus=new BUS_ANHXQUANG(tx,config);
+            if(bus.KiemTraKho(actor).Count!=0)throw new IOException("UNC store has missing/hash/orphan/temporary issues");
+            var rows=new DAL_ANHXQUANG(tx).LayToanBoMetadata(actor).OrderBy(x=>x.MaAnh,StringComparer.Ordinal).ToArray();
+            int active=0,hidden=rows.Count(x=>x.TrangThai=="Đã ẩn");
+            if(rows.Length==0||hidden==0)throw new InvalidOperationException("Fixture needs both active and hidden images");
+            foreach(var row in rows.Where(x=>x.TrangThai=="Đang sử dụng"))
+            {
+                var image=bus.MoAnh(row.MaLS,row.MaAnh,actor);
+                if(image.NoiDung.LongLength!=row.KichThuocBytes)throw new IOException("Application returned incorrect image bytes");
+                active++;
+            }
+            var fingerprint=Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(rows.Select(x=>new{x.MaAnh,x.MaLS,x.MaDVThucHien,x.MaNVUpload,x.TenTepLuu,x.Sha256,x.KichThuocBytes,x.TrangThai}))));
+            var proof=new{Protocol="RHM.Xray.SharedStorageProbe.v1",Machine=Environment.MachineName,
+                SqlServer=db.ExecuteScalar<string>("SELECT CONVERT(nvarchar(128),SERVERPROPERTY('ServerName'))",transaction:tx),Database=db.Database,
+                StorageRoot=storageRoot,MetadataSha256=fingerprint,Images=rows.Length,HiddenImages=hidden,OpenedImages=active,
+                AllHashesVerified=true,UsedApplicationPermissions=true,CompletedUtc=DateTime.UtcNow};
+            tx.Commit();
+            using(var file=new FileStream(output,FileMode.CreateNew,FileAccess.Write,FileShare.None))JsonSerializer.Serialize(file,proof,new JsonSerializerOptions{WriteIndented=true});
+            Console.WriteLine($"PASS: UNC image probe; {rows.Length} files checked, {active} opened through BUS, {hidden} hidden assets retained; host={Environment.MachineName}");
+            Console.WriteLine("PROBE_COMPLETE="+output);return 0;
+        }
+        catch(Exception ex){Console.WriteLine("FAIL: "+ex.Message);return 1;}
+    }
+}

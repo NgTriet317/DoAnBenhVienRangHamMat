@@ -36,10 +36,10 @@ try {
     if($databaseTargets.Count -ne 1 -or $databaseTargets[0] -ne 'QLBenhVienRangHamMat' -or
        !$sql.Contains('-- BEGIN RHM DATA SNAPSHOT:') -or !$sql.Contains('-- END RHM DATA SNAPSHOT') -or
        !$sql.Contains('IF NOT EXISTS(SELECT 1 FROM sys.tables WHERE is_ms_shipped=0)')){throw 'SQL phải có snapshot cài mới và chỉ tạo QLBenhVienRangHamMat.'}
-    if($tableCount -ne 62 -or !$sql.Contains('RHM.HospitalWorkflow.Version') -or !$sql.Contains('RHM.PrescriptionFlow.Version') -or !$sql.Contains('RHM.SqlV9.Version') -or !$sql.Contains('RHM.MaintenanceSerial.Version')){throw 'SQL chính phải có62 bảng/HospitalWorkflow3/PrescriptionFlow1/SqlV9/BaoTriSerial.'}
+    if($tableCount -ne 64 -or !$sql.Contains('RHM.HospitalWorkflow.Version') -or !$sql.Contains('RHM.PrescriptionFlow.Version') -or !$sql.Contains('RHM.SqlV9.Version') -or !$sql.Contains('RHM.MaintenanceSerial.Version') -or !$sql.Contains('RHM.Sprint3Foundation.Version') -or !$sql.Contains('RHM.XrayStorage.Version')){throw 'SQL chính phải có64 bảng/HospitalWorkflow3/PrescriptionFlow1/SqlV9/BaoTriSerial/Sprint3Foundation1/XrayStorage1.'}
     $settings=Get-Content -LiteralPath 'RangHamMat.Wpf/appsettings.json' -Raw|ConvertFrom-Json
     if([string]::IsNullOrWhiteSpace($settings.ConnectionStrings.RangHamMat)){throw 'Thiếu cấu hình kết nối.'}
-    Write-Output 'PASS: bốn project, Views XAML/code-behind, SQL62 bảng/HospitalWorkflow3/PrescriptionFlow1/SqlV9/BaoTriSerial và cấu hình.'
+    Write-Output 'PASS: bốn project, Views XAML/code-behind, SQL64 bảng/HospitalWorkflow3/PrescriptionFlow1/SqlV9/BaoTriSerial/Sprint3Foundation1/XrayStorage1 và cấu hình.'
     if(!$ChiCauTruc){
         foreach($configuration in @('Debug','Release')){
             & dotnet build 'BenhVienRangHamMat.sln' -c $configuration
@@ -48,8 +48,8 @@ try {
     }
     if($KiemTraSql){
         if(!(Get-Command sqlcmd -ErrorAction SilentlyContinue)){throw 'Cần sqlcmd để kiểm tra SQL Server.'}
-        & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -Q "IF OBJECT_ID(N'dbo.usp_RHM_KiemTraSchema',N'P') IS NULL OR OBJECT_ID(N'dbo.usp_RHM_KiemTraKeThuoc',N'P') IS NULL OR OBJECT_ID(N'dbo.usp_RHM_KiemTraDongBoV9',N'P') IS NULL OR OBJECT_ID(N'dbo.usp_RHM_KiemTraBaoTriSerial',N'P') IS NULL THROW 52272,N'Chạy toàn bộ Database/QLBenhVienRangHamMat.sql để đồng bộ.',1; EXEC dbo.usp_RHM_KiemTraSchema; EXEC dbo.usp_RHM_KiemTraBaoTriSerial;"
+        & sqlcmd -S $MayChu -d $Database -E -C -b -f65001 -Q "IF OBJECT_ID(N'dbo.usp_RHM_KiemTraSchema',N'P') IS NULL OR OBJECT_ID(N'dbo.usp_RHM_KiemTraKeThuoc',N'P') IS NULL OR OBJECT_ID(N'dbo.usp_RHM_KiemTraDongBoV9',N'P') IS NULL OR OBJECT_ID(N'dbo.usp_RHM_KiemTraBaoTriSerial',N'P') IS NULL OR OBJECT_ID(N'dbo.usp_RHM_KiemTraNenTangSprint3',N'P') IS NULL OR OBJECT_ID(N'dbo.usp_RHM_KiemTraKhoAnh',N'P') IS NULL THROW 52272,N'Chạy toàn bộ Database/QLBenhVienRangHamMat.sql để đồng bộ.',1; EXEC dbo.usp_RHM_KiemTraSchema; EXEC dbo.usp_RHM_KiemTraBaoTriSerial; EXEC dbo.usp_RHM_KiemTraNenTangSprint3; EXEC dbo.usp_RHM_KiemTraKhoAnh;"
         if($LASTEXITCODE -ne 0){throw 'Database chưa khớp QLBenhVienRangHamMat.sql hiện tại.'}
-        Write-Output 'PASS: HospitalWorkflow3/PrescriptionFlow1/SqlV9/BaoTriSerial, schema62 bảng và ràng buộc đúng; kiểm tra SQL chỉ đọc.'
+        Write-Output 'PASS: HospitalWorkflow3/PrescriptionFlow1/SqlV9/BaoTriSerial/Sprint3Foundation1/XrayStorage1, schema64 bảng và ràng buộc đúng; kiểm tra SQL chỉ đọc.'
     }
 } finally {Pop-Location}

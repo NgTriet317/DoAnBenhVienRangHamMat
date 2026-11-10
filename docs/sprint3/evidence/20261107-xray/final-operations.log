@@ -1,0 +1,12 @@
+RESULT: 15 metadata, 0 storage issues; no files deleted
+BACKUP_COMPLETE=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\XrayEvidence\operations-c9b9ec520a9c48c19f02b5f6e5bd4b11\XrayBackup_20261107_110625_fa138b613a504579b4f56fa9946cd58c
+PASS: verified SQL COPY_ONLY/CHECKSUM and 15 referenced images (including hidden); 0 unregistered/temporary files left untouched.
+RESTORE_COMPLETE=RHM_Hospital_Test_Xray_Restore_20261107_180626
+RESTORED_ROOT=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\XrayEvidence\operations-c9b9ec520a9c48c19f02b5f6e5bd4b11\restored-store
+PASS: 15 image files and SQL metadata restored; hidden assets retained.
+PASS: SQL backup CHECKSUM + ảnh/manifest được phục hồi vào DB và thư mục khác.
+PASS: restore từ chối database đích đã tồn tại.
+PASS: XR04 BUS mở được ảnh từ SQL đã restore và kho ở đường dẫn khác
+RESULT: 1 passed, 0 failed
+RESTORED_DATABASE=RHM_Hospital_Test_Xray_Restore_20261107_180626
+RESTORED_ROOT=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\XrayEvidence\operations-c9b9ec520a9c48c19f02b5f6e5bd4b11\restored-store

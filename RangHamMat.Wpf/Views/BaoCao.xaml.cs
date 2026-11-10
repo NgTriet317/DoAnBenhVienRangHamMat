@@ -164,6 +164,7 @@ public partial class BaoCao : UserControl
             try
             {
                 var catalogs=new BUS_BAOCAO().LayDanhMucLoc();
+                DemoDataBanner.Visibility=new BUS_BAOCAO().LaDuLieuTrinhDien()?Visibility.Visible:Visibility.Collapsed;
                 SpecialtyCode.ItemsSource=new[]{new LuaChonThongKe("","Tất cả chuyên khoa")}.Concat(catalogs.ChuyenKhoa);
                 ServiceCode.ItemsSource=new[]{new LuaChonThongKe("","Tất cả dịch vụ")}.Concat(catalogs.DichVu);
                 SpecialtyCode.SelectedIndex=ServiceCode.SelectedIndex=0;
@@ -617,7 +618,8 @@ public partial class BaoCao : UserControl
             var sensitiveDetails=(report.Ma is "09" or "10" or "11" or "14" or "18")&&data.ChiTiet.Length>0;
             new BUS_BAOCAO().KiemTraXuat(report.Ma,sensitiveDetails);
             new BUS_BAOCAO().GhiTruyCap(report.Ma,"EXPORT_REPORT",appliedFrom,appliedTo);
-            File.WriteAllText(dialog.FileName, BaoCaoDuLieu.TaoCsv(report, data, appliedFrom, appliedTo, appliedMode,
+            var sourceLabel=new BUS_BAOCAO().LaDuLieuTrinhDien()?"\"Nguồn dữ liệu\",\"DEMO — dữ liệu giả lập, không phải hồ sơ thật\"\r\n":"";
+            File.WriteAllText(dialog.FileName, sourceLabel+BaoCaoDuLieu.TaoCsv(report, data, appliedFrom, appliedTo, appliedMode,
                 PhienDangNhap.TenDangNhap, DateTime.Now, appliedThreshold) + soSanh?.TaoCsv(PhienDangNhap.TenDangNhap,DateTime.Now), new UTF8Encoding(true));
             ThongBao("Đã xuất CSV: " + Path.GetFileName(dialog.FileName), false, true);
         }

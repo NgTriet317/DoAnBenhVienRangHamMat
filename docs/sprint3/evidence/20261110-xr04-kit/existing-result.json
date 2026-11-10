@@ -1,0 +1,14 @@
+{
+    "Protocol":  "RHM.XR04.KitResult.v1",
+    "Mode":  "KhoiPhuc",
+    "Machine":  "DESKTOP-C9VCE8A",
+    "StartedUtc":  "\/Date(1794287451080)\/",
+    "Status":  "FAIL",
+    "ReadyForDeployment":  false,
+    "Scope":  "SingleHostOperation",
+    "Failure":  "Công cụ thất bại: Child exit=1; Log chứa FAIL; Thiếu marker: ^RESTORE_COMPLETE=; Thiếu marker: ^PASS: \\d+ image files and SQL metadata restored; hidden assets retained\\.; xem D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\Existing\\tool.log",
+    "ExitCode":  1,
+    "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\Existing\\tool.log",
+    "Passed":  null,
+    "FinishedUtc":  "\/Date(1794287451386)\/"
+}

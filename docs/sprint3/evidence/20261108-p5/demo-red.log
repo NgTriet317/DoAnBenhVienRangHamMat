@@ -1,0 +1,12 @@
+PASS: P5 audit có đầu mối BUS, không ghi dữ liệu ở mọi bảng
+PASS: P5 giới hạn chi tiết được kiểm trước SQL
+PASS: P5 FK ghép và NULL: đếm đủ, trả đúng PK và báo giới hạn
+PASS: P5 quyền db_datareader đủ để chạy đối soát
+PASS: P5 xuất thiếu mã bệnh là cần đối chiếu, không tự gán mã
+FAIL: P5 DEMO có nhãn database,18 người giả,26 lượt8/12/6 và không sửa mã dịch vụ cũ | Thiếu marker DEMO
+FAIL: P5 DEMO FK/CHECK và đối soát không có bất thường | DEMO còn bất thường
+FAIL: P5 DEMO dịch vụ/thuốc/nguồn phụ thu, kho300 nhập26 xuất274 tồn | Sai13 phụ thu
+FAIL: P5 DEMO hóa đơn3.25m, thu quý3.15m;100k thu tháng11 | Sai tổng hóa đơn
+FAIL: P5 DEMO báo cáo bệnh lý, tiền và MoM khớp SQL độc lập | Sai bệnh nhân DISTINCT hoặc chất lượng mã
+FAIL: P5 DEMO render WPF tổng quan3 tháng và tình trạng từ SQL thật | UI không có3 nhóm tình trạng
+RESULT: 5 passed, 6 failed

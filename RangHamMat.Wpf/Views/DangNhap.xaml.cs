@@ -13,10 +13,17 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class DangNhap : Window
 {
+    private readonly DichVuDangNhap dichVu;
     /// <summary>
     /// Khởi tạo hộp thoại đăng nhập từ XAML.
     /// </summary>
-    public DangNhap() => InitializeComponent();
+    public DangNhap() : this(new DichVuDangNhap()) { }
+
+    internal DangNhap(DichVuDangNhap dichVu)
+    {
+        this.dichVu = dichVu;
+        InitializeComponent();
+    }
 
     /// <summary>
     /// Chỉ mở cửa sổ chính khi thông tin đăng nhập khớp TAI_KHOAN.
@@ -36,25 +43,7 @@ public partial class DangNhap : Window
                 return;
             }
 
-            var vaiTro = new BUS_VAITRO().layVaiTroTheoMa(taiKhoan.MaVaiTro);
-            if (vaiTro == null)
-            {
-                FormError.Text = "Tài khoản chưa được cấp vai trò hợp lệ.";
-                return;
-            }
-            string tenVaiTro = vaiTro.TenVaiTro.Trim();
-            bool admin = tenVaiTro.Equals("Admin", StringComparison.OrdinalIgnoreCase)
-                      || tenVaiTro.Equals("Quản trị", StringComparison.OrdinalIgnoreCase);
-            if (!admin && !tenVaiTro.Equals("User", StringComparison.OrdinalIgnoreCase))
-            {
-                FormError.Text = "Vai trò chưa được hỗ trợ.";
-                return;
-            }
-            PhienDangNhap.MaNV = taiKhoan.MaNV;
-            PhienDangNhap.TenDangNhap = taiKhoan.TenDangNhap;
-            PhienDangNhap.IsAdmin = admin;
-            PhienDangNhap.KhoiTaoDinhDanhNghiepVu(taiKhoan.MaTK);
-            PhienNhatKy.BatDau();
+            dichVu.DangNhap(taiKhoan);
             DialogResult = true;
         }
         catch (Exception ex)

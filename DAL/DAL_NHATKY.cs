@@ -55,6 +55,8 @@ public sealed class DAL_NHATKY(IDbTransaction? transaction = null) : dbconnect(t
             var allowed=catalog is null
                 ?new[]{"MaNV","MaTK","MaVaiTro","MaPhanHe","MaBL","MaPN","MaPX","MaHH","MaKho","MaLo","MaTB","TrangThai","TrangThaiDuyet","TruongDaDoi"}.ToHashSet()
                 :catalog.Khoa.Concat(catalog.Truong.Select(f=>f.Cot)).Append("TrangThai").ToHashSet();
+            if(table=="ANH_XQUANG_LAN_KHAM")allowed=new[]{"MaAnh","MaLS","MaDVThucHien","TrangThai"}.ToHashSet();
+            if(table=="PHAN_CONG_ANH_XQUANG")allowed=new[]{"MaPC","MaLS","MaDVThucHien","MaNVKyThuat","TrangThai"}.ToHashSet();
             return JsonSerializer.Serialize(doc.RootElement.EnumerateObject().Where(p=>allowed.Contains(p.Name)).ToDictionary(p=>p.Name,p=>p.Value.Clone()));
         }
         catch(JsonException){return "[Nội dung cũ đã ẩn]";}

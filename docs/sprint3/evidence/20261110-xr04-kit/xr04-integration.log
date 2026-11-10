@@ -1,0 +1,13 @@
+STEP integrity: PASS
+STEP store: PASS
+STEP probe-A: PASS
+STEP probe-B: PASS
+STEP backup: PASS
+STEP restore: PASS
+STEP verify: PASS
+STEP same-host: PASS (rejected)
+STEP existing-db: PASS (rejected)
+STEP tampered: PASS (rejected)
+STEP incomplete-parent: PASS (rejected)
+STEP final-integrity: PASS
+XR04_INTEGRATION=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\XR04Handover\verify-3cfa54e282b349c4a78160823e49457b

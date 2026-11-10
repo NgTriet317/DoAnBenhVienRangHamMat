@@ -47,7 +47,8 @@ public sealed record ThuocTongKetKham(string MaDT,string MaCTDT,string MaThuoc,s
 /// <param name="SoDonNhap">Giá trị số đơn nhập dùng khi thực hiện thao tác; kiểu int.</param>
 /// <param name="DauVanTay">Giá trị dùng đối chiếu phiên bản dữ liệu tại bước xử lý tương ứng.</param>
 public sealed record TongKetKham(IReadOnlyList<DichVuTongKetKham> DichVu,
-    IReadOnlyList<ThuocTongKetKham> Thuoc,bool DaThucHien,int SoDonNhap,string DauVanTay)
+    IReadOnlyList<ThuocTongKetKham> Thuoc,bool DaThucHien,int SoDonNhap,string DauVanTay,
+    decimal PhiPhuThu=0,string? MaPhieuPhuThu=null)
 {
     /// <summary>
     /// Tổng tiền dịch vụ được cộng từ các dòng thành phần trong DichVu.
@@ -57,4 +58,5 @@ public sealed record TongKetKham(IReadOnlyList<DichVuTongKetKham> DichVu,
     /// Tổng tiền thuốc được cộng từ các dòng thành phần trong Thuoc.
     /// </summary>
     public decimal TienThuoc=>Thuoc.Sum(x=>x.ThanhTien);
+    public decimal TongTien=>TienDichVu+TienThuoc+PhiPhuThu;
 }

@@ -31,7 +31,8 @@ public partial class KhamLamSang
         CompletionDrugsList.ItemsSource=clinicalSummary.Thuoc;
         var noPrice=clinicalSummary.Thuoc.Any(x=>x.DonGia<=0);
         CompletionTotalText.Text=$"Dịch vụ: {clinicalSummary.TienDichVu:N0} đ · Thuốc: {clinicalSummary.TienThuoc:N0} đ"+
-            (noPrice?" · Có thuốc chưa thiết lập giá":$" · Tổng: {clinicalSummary.TienDichVu+clinicalSummary.TienThuoc:N0} đ");
+            (clinicalSummary.PhiPhuThu>0?$" · Phụ thu khám dịch vụ: {clinicalSummary.PhiPhuThu:N0} đ":"")+
+            (noPrice?" · Có thuốc chưa thiết lập giá":$" · Tổng: {clinicalSummary.TongTien:N0} đ");
         if(clinicalSummary.SoDonNhap>0)CompletionTotalText.Text+=$"\nCó {clinicalSummary.SoDonNhap} đơn chờ chốt; chốt lần khám sẽ ký đơn và lập hóa đơn.";
         ExecutionStatusText.Text=clinicalSummary.DaThucHien?"Đã xác nhận thực hiện. Có thể kê thuốc hoặc lưu lý do không kê thuốc.":"Chưa xác nhận thực hiện khám/điều trị.";
         ExecutionAcknowledged.IsChecked=clinicalSummary.DaThucHien;

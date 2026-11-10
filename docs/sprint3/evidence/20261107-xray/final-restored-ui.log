@@ -1,0 +1,3 @@
+PASS: XR04 BUS mở được ảnh từ SQL đã restore và kho ở đường dẫn khác
+PASS: XR UI cửa sổ ảnh gốc mở được sau restore và phóng thu thực tế
+RESULT: 2 passed, 0 failed

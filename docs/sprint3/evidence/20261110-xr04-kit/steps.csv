@@ -1,0 +1,13 @@
+﻿"Name","Status","ExitCode","ExpectedRejection"
+"integrity","PASS","0",
+"store","PASS","0",
+"probe-A","PASS","0",
+"probe-B","PASS","0",
+"backup","PASS","0",
+"restore","PASS","0",
+"verify","PASS","0",
+"same-host","PASS","1","True"
+"existing-db","PASS","1","True"
+"tampered","PASS","1","True"
+"incomplete-parent","PASS","1","True"
+"final-integrity","PASS","0",

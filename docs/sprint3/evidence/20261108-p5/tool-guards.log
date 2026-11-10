@@ -1,0 +1,15 @@
+PASS: production-name-rejected
+PASS: invalid-name-rejected
+PASS: existing-database-rejected-before-output
+PASS: existing-output-rejected-before-database
+PASS: linked-output-rejected-before-database
+RESULT: 64 tables; 0 definite findings; 0 require review; no database changes
+AUDIT_COMPLETE=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\P5Evidence\guards-35af43c2e5cb48d78bcced413814661f\audit
+PASS: audit-does-not-overwrite
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+DEMO_EXPORT_COMPLETE=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\P5Evidence\guards-35af43c2e5cb48d78bcced413814661f\recovered-evidence
+PASS: readonly-evidence-recovery-26-visits
+GUARD_EVIDENCE=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\P5Evidence\guards-35af43c2e5cb48d78bcced413814661f
+RESULT: 7 passed, 0 failed

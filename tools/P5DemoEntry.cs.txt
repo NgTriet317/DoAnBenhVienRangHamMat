@@ -1,0 +1,14 @@
+internal static class Program
+{
+    static int Main(string[] args)
+    {
+        try
+        {
+            if(args.Length==4&&args[0]=="--prepare"){P5DemoData.Prepare(args[1],args[2],args[3]);return 0;}
+            if(args.Length==4&&args[0]=="--export"){P5DemoData.Export(args[1],args[2],args[3]);return 0;}
+            if(args.Length!=3)throw new ArgumentException("Cần server, DB mới và thư mục kết quả.");
+            P5DemoData.Create(args[0],args[1],args[2]);return 0;
+        }
+        catch(Exception ex){Console.WriteLine("FAIL: "+ex.Message);return 1;}
+    }
+}

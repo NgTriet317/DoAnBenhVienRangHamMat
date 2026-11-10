@@ -133,6 +133,23 @@ public static class PhienDangNhap
         Thread.CurrentPrincipal=principal;
     }
 
+    /// <summary>Xóa định danh và báo các cache bỏ dữ liệu của tài khoản vừa đăng xuất.</summary>
+    internal static void XoaDinhDanh()
+    {
+        var anonymous = new ClaimsPrincipal(new ClaimsIdentity());
+        if (desktopPrincipal is null) Thread.CurrentPrincipal = anonymous;
+        else
+        {
+            desktopPrincipal.Current = anonymous;
+            Thread.CurrentPrincipal = desktopPrincipal;
+        }
+        accountCommitted = nameCommitted = null;
+        adminCommitted = IsAdmin = false;
+        MaNV = TenDangNhap = "";
+        MaPhien = Guid.Empty;
+        DinhDanhThayDoi?.Invoke();
+    }
+
     /// <summary>Chỉ gọi sau khi đăng nhập thành công; chốt định danh cho các API quy trình khám.</summary>
     public static void KhoiTaoDinhDanhNghiepVu(string maTK)
     {

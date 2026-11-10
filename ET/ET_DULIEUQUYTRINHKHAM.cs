@@ -259,6 +259,8 @@ public sealed class LoiTiepNhanException(string truong,string thongBao) : Invali
 /// </summary>
 public sealed record YeuCauTiepNhan
 {
+    /// <summary>Chỉ chọn loại khám; mức phụ thu được backend xác định khi lưu.</summary>
+    public string LoaiKham { get; init; } = "Thông thường";
     /// <summary>
     /// Mã bệnh nhân.
     /// </summary>
@@ -353,4 +355,8 @@ public sealed class BacSiTiepNhan
 /// <param name="MaBS">Mã bác sĩ xác định đối tượng cần xử lý.</param>
 /// <param name="SoThuTu">Giá trị số thứ tự dùng khi thực hiện thao tác; kiểu int.</param>
 /// <param name="TrangThai">Giá trị trạng thái dùng khi thực hiện thao tác; kiểu string.</param>
-public sealed record KetQuaTiepNhan(string MaBN,string MaHS,string MaPhieu,string MaBS,int SoThuTu,string TrangThai);
+public sealed record KetQuaTiepNhan(string MaBN,string MaHS,string MaPhieu,string MaBS,int SoThuTu,string TrangThai)
+{
+    public string LoaiKham { get; init; } = "Thông thường";
+    public decimal PhiPhuThuDichVu { get; init; }
+}

@@ -1,0 +1,299 @@
+using Dapper;
+using ET;
+using Microsoft.Data.SqlClient;
+using System.Data;
+using System.Text.RegularExpressions;
+
+// Integration checks against the real SQL script. All business fixtures roll back.
+static class Program
+{
+    static string cs = "";
+    static int passed, failed;
+
+    static int Main(string[] args)
+    {
+        if (args.Length < 2 || !Regex.IsMatch(args[1], "^RHM_Hospital_Test_[A-Za-z0-9_]+$"))
+            throw new ArgumentException("Only an isolated RHM_Hospital_Test_ database is allowed.");
+        cs = new SqlConnectionStringBuilder { DataSource=args[0], InitialCatalog=args[1],
+            IntegratedSecurity=true, TrustServerCertificate=true, ConnectTimeout=8 }.ConnectionString;
+        if(args.Length==3 && args[2] is "--seed-rerun" or "--verify-rerun")
+        {
+            Assert(args[1].EndsWith("_Rerun",StringComparison.Ordinal),"Persisted fixtures require a dedicated _Rerun database.");
+            Check(args[2],db=>{
+                if(args[2]=="--seed-rerun")
+                {
+                    using var tx=db.BeginTransaction(IsolationLevel.Serializable);
+                    Invoice(db,tx);Fee(db,tx);Image(db,tx);
+                    db.Execute("UPDATE dbo.HOA_DON SET TaoKhiHoanTat=1 WHERE MaHD=N'S3F_HD'",transaction:tx);
+                    tx.Commit(); // Only this explicitly named isolated DB keeps the test fixture for re-run.
+                }
+                else
+                {
+                    Assert(db.ExecuteScalar<decimal>("SELECT TongTien FROM dbo.HOA_DON WHERE MaHD=N'S3F_HD' AND TaoKhiHoanTat=1")==330000m,"Re-run changed sealed invoice");
+                    Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.CHI_TIET_HOA_DON WHERE MaPhieuPhuThu=N'S3F_P' AND ThanhTien=30000")==1,"Re-run duplicated/lost fee");
+                    Assert(db.ExecuteScalar<string>("SELECT LoaiKhoanThu FROM dbo.VW_CHI_TIET_HOA_DON WHERE MaCTHD=N'S3F_FEE'")=="Phụ thu khám dịch vụ","Interrupted re-run downgraded invoice view");
+                    var img=db.QuerySingle<ET_ANHXQUANGLANKHAM>("SELECT * FROM dbo.ANH_XQUANG_LAN_KHAM WHERE MaAnh=N'S3F_IMG'");
+                    Assert(img.MaLS=="S3F_LS" && img.Sha256==new string('a',64),"Re-run changed image metadata");
+                    db.Execute("EXEC dbo.usp_RHM_KiemTraSchema; EXEC dbo.usp_RHM_KiemTraNenTangSprint3");
+                    using var tx=db.BeginTransaction(IsolationLevel.Serializable);
+                    try
+                    {
+                        db.Execute("""
+                            INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaPhong,MaBS,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai,LoaiKham,PhiPhuThuDichVu)
+                            SELECT N'S3F_RERUN_P',MaHS,MaPhong,MaBS,MaNVTiepNhan,MaDV,19003,ThoiGianTiepNhan,N'FIXTURE rollback after interrupted migration',N'Đang khám',LoaiKham,PhiPhuThuDichVu
+                            FROM dbo.PHIEU_KHAM_BENH WHERE MaPhieu=N'S3F_P';
+                            INSERT dbo.LICH_SU_KHAM_BENH(MaLS,MaPhieu,MaBS,MaPhong,ThoiGianKham,TrieuChung,ChanDoan,KeHoachXuLy,TrangThai)
+                            SELECT N'S3F_RERUN_LS',N'S3F_RERUN_P',MaBS,MaPhong,ThoiGianKham,N'FIXTURE',N'FIXTURE',N'FIXTURE',N'Nháp' FROM dbo.LICH_SU_KHAM_BENH WHERE MaLS=N'S3F_LS';
+                            INSERT dbo.HOA_DON(MaHD,MaLS,MaNV,NgayLap,TongTien,GiamGia,TrangThai)
+                            SELECT N'S3F_RERUN_HD',N'S3F_RERUN_LS',MaNV,SYSDATETIME(),0,0,N'Nháp' FROM dbo.HOA_DON WHERE MaHD=N'S3F_HD';
+                            INSERT dbo.CHI_TIET_HOA_DON(MaCTHD,MaHD,MaPhieuPhuThu,NoiDung,DonGia)
+                            VALUES(N'S3F_RERUN_FEE',N'S3F_RERUN_HD',N'S3F_RERUN_P',N'FIXTURE surcharge after re-run',30000);
+                            """,transaction:tx);
+                        Assert(db.ExecuteScalar<decimal>("SELECT TongTien FROM dbo.HOA_DON WHERE MaHD=N'S3F_RERUN_HD'",transaction:tx)==30000m,"Re-run broke surcharge calculation");
+                    }
+                    finally {if(tx.Connection is not null)tx.Rollback();}
+                }
+            });
+            return failed==0?0:1;
+        }
+        if(args.Length==4 && args[2] is "--save-baseline" or "--compare-baseline")
+        {
+            if(args[2]=="--save-baseline") SaveBaseline(args[3]);
+            else CompareBaseline(args[3]);
+            Console.WriteLine($"RESULT: {passed} passed, {failed} failed");
+            return failed==0?0:1;
+        }
+        Console.WriteLine($"Sprint 3 foundation: {args[1]}; rollback-only fixtures");
+        Check("Schema, trusted constraints and active triggers", db => {
+            Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.procedures WHERE name=N'usp_RHM_KiemTraNenTangSprint3'") == 1, "Missing Sprint 3 foundation schema");
+            db.Execute("EXEC dbo.usp_RHM_KiemTraNenTangSprint3");
+        });
+        Reject("Unified schema rejects missing surcharge protection", [53408], (db,tx)=>{
+            db.Execute("DROP TRIGGER dbo.TR_PKB_KhoaLoaiKham; EXEC dbo.usp_RHM_KiemTraSchema",transaction:tx);
+        });
+        Reject("Unified schema rejects missing X-ray assignment table", [53415], (db,tx)=>{
+            db.Execute("DROP TABLE dbo.PHAN_CONG_ANH_XQUANG; EXEC dbo.usp_RHM_KiemTraSchema",transaction:tx);
+        });
+        Reject("X-ray schema rejects disabled assignment protection", [53415], (db,tx)=>{
+            db.Execute("DISABLE TRIGGER dbo.TR_PCAXQ_BaoVe ON dbo.PHAN_CONG_ANH_XQUANG; EXEC dbo.usp_RHM_KiemTraKhoAnh",transaction:tx);
+        });
+        Reject("X-ray schema rejects renamed ET assignment column", [53415], (db,tx)=>{
+            db.Execute("EXEC sys.sp_rename N'dbo.PHAN_CONG_ANH_XQUANG.MaNVPhanCong',N'MaNguoiGiao_Test',N'COLUMN'; EXEC dbo.usp_RHM_KiemTraKhoAnh",transaction:tx);
+        });
+        Reject("X-ray schema rejects renamed ET image column", [53415], (db,tx)=>{
+            db.Execute("EXEC sys.sp_rename N'dbo.ANH_XQUANG_LAN_KHAM.GhiChu',N'GhiChu_Test',N'COLUMN'; EXEC dbo.usp_RHM_KiemTraKhoAnh",transaction:tx);
+        });
+        Reject("X-ray schema rejects assignment index with wrong filter", [53415], (db,tx)=>{
+            db.Execute("DROP INDEX UX_PCAXQ_DichVu ON dbo.PHAN_CONG_ANH_XQUANG; CREATE UNIQUE INDEX UX_PCAXQ_DichVu ON dbo.PHAN_CONG_ANH_XQUANG(MaDVThucHien) WHERE TrangThai=N'Đã hủy'; EXEC dbo.usp_RHM_KiemTraKhoAnh",transaction:tx);
+        });
+        Reject("X-ray schema rejects assignment foreign key to wrong entity", [53415], (db,tx)=>{
+            db.Execute("ALTER TABLE dbo.PHAN_CONG_ANH_XQUANG DROP CONSTRAINT FK_PCAXQ_NguoiGiao; ALTER TABLE dbo.PHAN_CONG_ANH_XQUANG WITH CHECK ADD CONSTRAINT FK_PCAXQ_NguoiGiao FOREIGN KEY(MaNVPhanCong) REFERENCES dbo.BENH_NHAN(MaBN); EXEC dbo.usp_RHM_KiemTraKhoAnh",transaction:tx);
+        });
+        Reject("X-ray schema rejects assignment index on wrong key", [53415], (db,tx)=>{
+            db.Execute("DROP INDEX UX_PCAXQ_DichVu ON dbo.PHAN_CONG_ANH_XQUANG; CREATE UNIQUE INDEX UX_PCAXQ_DichVu ON dbo.PHAN_CONG_ANH_XQUANG(MaPC) WHERE TrangThai=N'Đang áp dụng'; EXEC dbo.usp_RHM_KiemTraKhoAnh",transaction:tx);
+        });
+        Reject("Unified schema rejects missing audit event deduplication", [53417], (db,tx)=>{
+            db.Execute("DROP INDEX UX_S3_Event ON dbo.NHAT_KY_THAO_TAC; EXEC dbo.usp_RHM_KiemTraSchema",transaction:tx);
+        });
+        Check("Old receipts remain ordinary with zero fee", db => {
+            Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.PHIEU_KHAM_BENH WHERE MaPhieu NOT LIKE N'S3F[_]%' AND (LoaiKham<>N'Thông thường' OR PhiPhuThuDichVu<>0)") == 0, "Unexpected retroactive fee");
+        });
+        Reject("Schema check rejects nullable receipt type drift", [53408], (db,tx)=>{
+            db.Execute("ALTER TABLE dbo.PHIEU_KHAM_BENH ALTER COLUMN LoaiKham nvarchar(20) NULL; EXEC dbo.usp_RHM_KiemTraNenTangSprint3",transaction:tx);
+        });
+        Case("Ordinary INSERT defaults and Dapper mapping", (db,tx) => {
+            Fixture(db,tx,false);
+            var p = db.QuerySingle<ET_PHIEUKHAMBENH>("SELECT * FROM dbo.PHIEU_KHAM_BENH WHERE MaPhieu=N'S3F_P'",transaction:tx);
+            Assert((string?)p.GetType().GetProperty("LoaiKham")?.GetValue(p)=="Thông thường" &&
+                (decimal?)p.GetType().GetProperty("PhiPhuThuDichVu")?.GetValue(p)==0m, "Receipt defaults/ET mismatch");
+        });
+        Reject("Ordinary fee cannot be 30000", [547], (db,tx) => Fixture(db,tx,false,30000));
+        Reject("Service fee cannot be zero", [547], (db,tx) => Fixture(db,tx,true,0));
+        Reject("Receipt type/fee cannot change after admission", [53401], (db,tx) => {
+            Fixture(db,tx,false); db.Execute("UPDATE dbo.PHIEU_KHAM_BENH SET LoaiKham=N'Dịch vụ',PhiPhuThuDichVu=30000 WHERE MaPhieu=N'S3F_P'",transaction:tx);
+        });
+        Reject("Changing receipt key cannot bypass frozen type/fee", [53401], (db,tx) => {
+            Fixture(db,tx,false);
+            db.Execute("DELETE dbo.LICH_SU_KHAM_BENH WHERE MaLS=N'S3F_LS'; UPDATE dbo.PHIEU_KHAM_BENH SET MaPhieu=N'S3F_REKEY',LoaiKham=N'Dịch vụ',PhiPhuThuDichVu=30000 WHERE MaPhieu=N'S3F_P'",transaction:tx);
+        });
+        Case("Surcharge is a separate 30000 line and invoice total is 330000", (db,tx) => {
+            Invoice(db,tx); Fee(db,tx);
+            Assert(db.ExecuteScalar<decimal>("SELECT TongTien FROM dbo.HOA_DON WHERE MaHD=N'S3F_HD'",transaction:tx)==330000m, "Incorrect invoice total");
+            var line=db.QuerySingle("SELECT * FROM dbo.VW_CHI_TIET_HOA_DON WHERE MaCTHD=N'S3F_FEE'",transaction:tx);
+            Assert((string)line.LoaiKhoanThu=="Phụ thu khám dịch vụ" && (decimal)line.SoLuong==1m && (decimal)line.ThanhTien==30000m, "Incorrect printed fee line");
+            var et=db.QuerySingle<ET_CHITIETHOADON>("SELECT * FROM dbo.CHI_TIET_HOA_DON WHERE MaCTHD=N'S3F_FEE'",transaction:tx);
+            Assert((string?)et.GetType().GetProperty("MaPhieuPhuThu")?.GetValue(et)=="S3F_P", "Fee ET mapping missing");
+        });
+        Reject("Same receipt cannot be billed twice", [2601,2627], (db,tx) => {
+            Invoice(db,tx); Fee(db,tx); Fee(db,tx,"S3F_DUP");
+        });
+        Reject("Fee cannot point at an ordinary receipt", [53402], (db,tx) => {
+            Invoice(db,tx,false); Fee(db,tx);
+        });
+        Reject("Fee cannot point at another visit", [53402], (db,tx) => {
+            Invoice(db,tx); Fee(db,tx,receipt:"S3F_OTHER_P");
+        });
+        Reject("Fee cannot mix with a service source", [547], (db,tx) => {
+            Invoice(db,tx); db.Execute("DELETE dbo.CHI_TIET_HOA_DON WHERE MaCTHD=N'S3F_BASE'; INSERT dbo.CHI_TIET_HOA_DON(MaCTHD,MaHD,MaPhieuPhuThu,MaDVThucHien,NoiDung,DonGia) VALUES(N'S3F_FEE',N'S3F_HD',N'S3F_P',N'S3F_DV',N'FIXTURE',30000)",transaction:tx);
+        });
+        Reject("Fee price must be exactly 30000", [547], (db,tx) => {
+            Invoice(db,tx); Fee(db,tx,price:29999m);
+        });
+        Reject("Fee price cannot be NULL (CHECK must be explicit)", [547], (db,tx) => {
+            Invoice(db,tx); Fee(db,tx,price:null);
+        });
+        Reject("Discount cannot consume the mandatory fee", [53403], (db,tx) => {
+            Invoice(db,tx); Fee(db,tx); db.Execute("UPDATE dbo.HOA_DON SET GiamGia=300001 WHERE MaHD=N'S3F_HD'",transaction:tx);
+        });
+        Case("Discount may cover the entire base amount", (db,tx) => {
+            Invoice(db,tx); Fee(db,tx); db.Execute("UPDATE dbo.HOA_DON SET GiamGia=300000 WHERE MaHD=N'S3F_HD'",transaction:tx);
+            Assert(db.ExecuteScalar<decimal>("SELECT SoTienPhaiThu FROM dbo.HOA_DON WHERE MaHD=N'S3F_HD'",transaction:tx)==30000m, "Mandatory fee lost");
+        });
+        Reject("Confirming invoice without fee is blocked", [53404], (db,tx) => {
+            Invoice(db,tx); db.Execute("UPDATE dbo.HOA_DON SET TrangThai=N'Đã xác nhận',NgayXacNhan=SYSDATETIME() WHERE MaHD=N'S3F_HD'",transaction:tx);
+        });
+        Reject("Sealing completion invoice without fee is blocked", [53404], (db,tx) => {
+            Invoice(db,tx); db.Execute("UPDATE dbo.HOA_DON SET TaoKhiHoanTat=1 WHERE MaHD=N'S3F_HD'",transaction:tx);
+        });
+        Case("Complete service invoice seals and confirms with one fee", (db,tx) => {
+            Invoice(db,tx); Fee(db,tx);
+            db.Execute("UPDATE dbo.HOA_DON SET TaoKhiHoanTat=1 WHERE MaHD=N'S3F_HD'; UPDATE dbo.HOA_DON SET TrangThai=N'Đã xác nhận',NgayXacNhan=SYSDATETIME() WHERE MaHD=N'S3F_HD'",transaction:tx);
+            Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.CHI_TIET_HOA_DON WHERE MaHD=N'S3F_HD' AND MaPhieuPhuThu IS NOT NULL",transaction:tx)==1, "Wrong fee count");
+        });
+        Reject("Sealed surcharge cannot be removed", [52232], (db,tx) => {
+            Invoice(db,tx); Fee(db,tx); db.Execute("UPDATE dbo.HOA_DON SET TaoKhiHoanTat=1 WHERE MaHD=N'S3F_HD'; DELETE dbo.CHI_TIET_HOA_DON WHERE MaCTHD=N'S3F_FEE'",transaction:tx);
+        });
+        Case("Valid X-ray metadata round-trips and hides without deletion", (db,tx) => {
+            Fixture(db,tx); Image(db,tx);
+            db.Execute("UPDATE dbo.ANH_XQUANG_LAN_KHAM SET TrangThai=N'Đã ẩn',NgayAn=SYSDATETIME() WHERE MaAnh=N'S3F_IMG'",transaction:tx);
+            var image=db.QuerySingle<ET_ANHXQUANGLANKHAM>("SELECT * FROM dbo.ANH_XQUANG_LAN_KHAM WHERE MaAnh=N'S3F_IMG'",transaction:tx);
+            Assert(image.MaLS=="S3F_LS" && image.KichThuocBytes==1024 && image.Sha256==new string('a',64) && image.TrangThai=="Đã ẩn" && image.NgayAn is not null,"Image metadata lost");
+        });
+        foreach(var path in new[]{"../escape.png", "C:\\private.png", "/root.png", "a\\b.png", "//host/a.png"})
+            Reject("Reject unsafe storage path: "+path,[547], (db,tx)=>{Fixture(db,tx);Image(db,tx,path:path);});
+        Reject("Image MIME must agree with extension", [547], (db,tx)=>{Fixture(db,tx);Image(db,tx,mime:"image/jpeg");});
+        Reject("Image over 20 MiB cannot be registered", [547], (db,tx)=>{Fixture(db,tx);Image(db,tx,size:20971521);});
+        Reject("Image hash must be hexadecimal SHA256", [547], (db,tx)=>{Fixture(db,tx);Image(db,tx,hash:new string('z',64));});
+        Reject("Image cannot move to another visit", [53405], (db,tx)=>{
+            Fixture(db,tx);Image(db,tx);db.Execute("UPDATE dbo.ANH_XQUANG_LAN_KHAM SET MaLS=N'S3F_OTHER_LS' WHERE MaAnh=N'S3F_IMG'",transaction:tx);
+        });
+        Reject("Image cannot link a service from another visit", [53406], (db,tx)=>{
+            Invoice(db,tx);Image(db,tx,visit:"S3F_OTHER_LS",service:"S3F_DV");
+        });
+        Reject("Image metadata cannot be hard-deleted", [53407], (db,tx)=>{
+            Fixture(db,tx);Image(db,tx);db.Execute("DELETE dbo.ANH_XQUANG_LAN_KHAM WHERE MaAnh=N'S3F_IMG'",transaction:tx);
+        });
+        Reject("Draft service cannot move away from its image visit", [53406], (db,tx)=>{
+            Fixture(db,tx);DraftService(db,tx);Image(db,tx,service:"S3F_DV");
+            db.Execute("UPDATE dbo.DICH_VU_THUC_HIEN SET MaLS=N'S3F_OTHER_LS' WHERE MaDVThucHien=N'S3F_DV'",transaction:tx);
+        });
+        Reject("Visit with images cannot switch source receipt", [53409], (db,tx)=>{
+            Fixture(db,tx);Image(db,tx);
+            db.Execute("DELETE dbo.LICH_SU_KHAM_BENH WHERE MaLS=N'S3F_OTHER_LS'; UPDATE dbo.LICH_SU_KHAM_BENH SET MaPhieu=N'S3F_OTHER_P' WHERE MaLS=N'S3F_LS'",transaction:tx);
+        });
+        Console.WriteLine($"RESULT: {passed} passed, {failed} failed");
+        return failed==0?0:1;
+    }
+
+    sealed record TableBaseline(string Table, string[] Columns, string[] Keys, long Rows, string Hash);
+    static string Q(string name)=>"["+name.Replace("]","]]")+"]";
+    static (long Rows,string Hash) Fingerprint(SqlConnection db, TableBaseline table)
+    {
+        var columns=string.Join(",",table.Columns.Select(Q));var order=string.Join(",",table.Keys.Select(Q));
+        var rows=db.ExecuteScalar<long>($"SELECT COUNT_BIG(*) FROM dbo.{Q(table.Table)}");
+        var hash=db.ExecuteScalar<byte[]>($"SELECT HASHBYTES('SHA2_256',COALESCE((SELECT {columns} FROM dbo.{Q(table.Table)} ORDER BY {order} FOR JSON PATH,INCLUDE_NULL_VALUES),N'[]'))");
+        return(rows, hash is null ? "EMPTY" : Convert.ToHexString(hash));
+    }
+    static void SaveBaseline(string path)
+    {
+        using var db=new SqlConnection(cs);db.Open();
+        var tables=db.Query<string>("SELECT name FROM sys.tables WHERE is_ms_shipped=0 ORDER BY name").ToArray();
+        var snapshots=new List<TableBaseline>();
+        foreach(var table in tables)
+        {
+            var cols=db.Query<string>("SELECT c.name FROM sys.columns c JOIN sys.tables t ON t.object_id=c.object_id WHERE t.name=@table ORDER BY c.column_id",new{table}).ToArray();
+            var keys=db.Query<string>("SELECT c.name FROM sys.tables t JOIN sys.indexes i ON i.object_id=t.object_id AND i.is_primary_key=1 JOIN sys.index_columns ic ON ic.object_id=i.object_id AND ic.index_id=i.index_id JOIN sys.columns c ON c.object_id=ic.object_id AND c.column_id=ic.column_id WHERE t.name=@table ORDER BY ic.key_ordinal",new{table}).ToArray();
+            Assert(keys.Length>0,"Baseline table must have a stable primary key");
+            var snapshot=new TableBaseline(table,cols,keys,0,"");var fingerprint=Fingerprint(db,snapshot);
+            snapshots.Add(snapshot with{Rows=fingerprint.Rows,Hash=fingerprint.Hash});
+        }
+        File.WriteAllText(path,System.Text.Json.JsonSerializer.Serialize(snapshots,new System.Text.Json.JsonSerializerOptions{WriteIndented=true}));
+        Console.WriteLine($"Saved {snapshots.Count} table fingerprints to {path}");
+    }
+    static void CompareBaseline(string path)
+    {
+        var tables=System.Text.Json.JsonSerializer.Deserialize<TableBaseline[]>(File.ReadAllText(path))!;
+        foreach(var table in tables)
+            Check("Preserved legacy rows and columns: "+table.Table,connection=>{
+                var actual=Fingerprint(connection,table);
+                Assert(actual.Rows==table.Rows && actual.Hash==table.Hash,"Legacy rows changed during migration");
+            });
+    }
+
+    static void Fixture(SqlConnection db, SqlTransaction tx, bool service=true, decimal? fee=null)
+    {
+        // Reuse only relational keys from the isolated restored snapshot. Never edit its rows.
+        db.Execute("""
+            DECLARE @hs nvarchar(50),@bs nvarchar(50),@room nvarchar(50),@staff nvarchar(50),@dv nvarchar(50);
+            SELECT TOP(1) @hs=p.MaHS,@bs=l.MaBS,@room=l.MaPhong,@staff=p.MaNVTiepNhan,@dv=p.MaDV
+            FROM dbo.PHIEU_KHAM_BENH p JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaPhieu=p.MaPhieu ORDER BY p.MaPhieu;
+            IF @hs IS NULL THROW 53990,N'Foundation checks require the restored snapshot.',1;
+            IF @useDefaults=1
+             INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaPhong,MaBS,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai)
+             VALUES(N'S3F_P',@hs,@room,@bs,@staff,@dv,19001,DATEADD(minute,-5,SYSDATETIME()),N'FIXTURE rollback only',N'Đang khám');
+            ELSE
+             INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaPhong,MaBS,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai,LoaiKham,PhiPhuThuDichVu)
+             VALUES(N'S3F_P',@hs,@room,@bs,@staff,@dv,19001,DATEADD(minute,-5,SYSDATETIME()),N'FIXTURE rollback only',N'Đang khám',@kind,@fee);
+            INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaPhong,MaBS,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai,LoaiKham,PhiPhuThuDichVu)
+            VALUES(N'S3F_OTHER_P',@hs,@room,@bs,@staff,@dv,19002,DATEADD(minute,-5,SYSDATETIME()),N'FIXTURE rollback only',N'Đang khám',N'Dịch vụ',30000);
+            INSERT dbo.LICH_SU_KHAM_BENH(MaLS,MaPhieu,MaBS,MaPhong,ThoiGianKham,TrieuChung,ChanDoan,KeHoachXuLy,TrangThai,KhongKeThuoc,LyDoKhongKeThuoc)
+            VALUES(N'S3F_LS',N'S3F_P',@bs,@room,DATEADD(minute,-4,SYSDATETIME()),N'FIXTURE',N'FIXTURE',N'FIXTURE',N'Nháp',1,N'FIXTURE'),
+                  (N'S3F_OTHER_LS',N'S3F_OTHER_P',@bs,@room,DATEADD(minute,-4,SYSDATETIME()),N'FIXTURE',N'FIXTURE',N'FIXTURE',N'Nháp',1,N'FIXTURE');
+            """,new{kind=service?"Dịch vụ":"Thông thường",fee=fee??(service?30000m:0m),useDefaults=!service&&fee is null},tx);
+    }
+
+    static void Invoice(SqlConnection db, SqlTransaction tx, bool service=true)
+    {
+        Fixture(db,tx,service);
+        DraftService(db,tx);
+        db.Execute("""
+            UPDATE dbo.DICH_VU_THUC_HIEN SET TrangThai=N'Đã xác nhận' WHERE MaDVThucHien=N'S3F_DV';
+            UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận',NgayXacNhan=SYSDATETIME() WHERE MaLS=N'S3F_LS';
+            INSERT dbo.HOA_DON(MaHD,MaLS,MaNV,NgayLap,TongTien,GiamGia,TrangThai)
+            SELECT N'S3F_HD',MaLS,MaBS,SYSDATETIME(),0,0,N'Nháp' FROM dbo.LICH_SU_KHAM_BENH WHERE MaLS=N'S3F_LS';
+            INSERT dbo.CHI_TIET_HOA_DON(MaCTHD,MaHD,MaDVThucHien,NoiDung)
+            VALUES(N'S3F_BASE',N'S3F_HD',N'S3F_DV',N'FIXTURE service');
+            """,transaction:tx);
+    }
+    static void DraftService(SqlConnection db,SqlTransaction tx)=>db.Execute("""
+        INSERT dbo.DICH_VU_THUC_HIEN(MaDVThucHien,MaLS,MaDV,MaNVThucHien,ThoiGianThucHien,SoLuong,DonGia,TrangThai)
+        SELECT N'S3F_DV',l.MaLS,p.MaDV,l.MaBS,SYSDATETIME(),1,300000,N'Nháp'
+        FROM dbo.LICH_SU_KHAM_BENH l JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu WHERE l.MaLS=N'S3F_LS';
+        """,transaction:tx);
+
+    static void Fee(SqlConnection db, SqlTransaction tx, string id="S3F_FEE", string receipt="S3F_P", decimal? price=30000m) =>
+        db.Execute("INSERT dbo.CHI_TIET_HOA_DON(MaCTHD,MaHD,MaPhieuPhuThu,NoiDung,DonGia) VALUES(@id,N'S3F_HD',@receipt,N'Phụ thu khám dịch vụ (chọn bác sĩ)',@price)",new{id,receipt,price},tx);
+
+    static void Image(SqlConnection db, SqlTransaction tx, string? path=null, string mime="image/png", long size=1024,
+        string? hash=null, string visit="S3F_LS", string? service=null) =>
+        db.Execute("""
+            INSERT dbo.ANH_XQUANG_LAN_KHAM(MaAnh,MaLS,MaDVThucHien,TenTepGoc,TenTepLuu,DuongDanTuongDoi,MimeType,KichThuocBytes,Sha256,MaNVUpload)
+            SELECT N'S3F_IMG',@visit,@service,N'fixture.png',N'0123456789abcdef0123456789abcdef.png',@path,@mime,@size,@hash,MaBS
+            FROM dbo.LICH_SU_KHAM_BENH WHERE MaLS=@visit;
+            """,new{path=path??"0123456789abcdef0123456789abcdef.png",mime,size,hash=hash??new string('a',64),visit,service},tx);
+
+    static void Check(string name, Action<SqlConnection> run)
+    {
+        try { using var db=new SqlConnection(cs);db.Open();run(db);passed++;Console.WriteLine("PASS: "+name); }
+        catch(Exception ex){failed++;Console.WriteLine($"FAIL: {name}: {ex.Message}");}
+    }
+    static void Case(string name, Action<SqlConnection,SqlTransaction> run) => Check(name, db => {
+        using var tx=db.BeginTransaction(IsolationLevel.Serializable);
+        try { run(db,tx); } finally { if(tx.Connection is not null)tx.Rollback(); }
+    });
+    static void Reject(string name, int[] codes, Action<SqlConnection,SqlTransaction> run) => Case(name,(db,tx)=>{
+        try {run(db,tx);} catch(SqlException ex) when(codes.Contains(ex.Number)){return;}
+        throw new InvalidOperationException("Expected SQL rejection: "+string.Join(",",codes));
+    });
+    static void Assert(bool ok,string message){if(!ok)throw new InvalidOperationException(message);}
+}

@@ -8,7 +8,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="fo-dicom" Version="5.2.6" />
-    <PackageReference Include="fo-dicom.Desktop" Version="4.0.8" />
     <PackageReference Include="fo-dicom.Imaging.ImageSharp" Version="5.2.6" />
   </ItemGroup>
 

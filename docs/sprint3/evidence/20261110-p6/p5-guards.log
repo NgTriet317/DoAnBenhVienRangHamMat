@@ -1,0 +1,12 @@
+PASS: production-name-rejected
+PASS: invalid-name-rejected
+PASS: existing-database-rejected-before-output
+PASS: existing-output-rejected-before-database
+PASS: linked-output-rejected-before-database
+RESULT: 64 tables; 0 definite findings; 0 require review; no database changes
+PASS: audit-does-not-overwrite
+Build succeeded.
+    0 Error(s)
+DEMO_EXPORT_COMPLETE=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\P5Evidence\guards-52fee22c7f444742a7320ca6048db557\recovered-evidence
+PASS: readonly-evidence-recovery-26-visits
+RESULT: 7 passed, 0 failed

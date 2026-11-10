@@ -327,6 +327,8 @@
         <DockPanel>
           <!-- Thao tác Thoát ứng dụng: gọi Exit_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
           <Button Content="Thoát ứng dụng" Click="Exit_Click" DockPanel.Dock="Right" />
+          <Button x:Name="LogoutButton" Content="Đăng xuất" Click="DangXuat_Click" DockPanel.Dock="Right"
+                  Margin="0,0,12,0" AutomationProperties.Name="Đăng xuất" />
           <StackPanel VerticalAlignment="Center">
             <!-- Thông tin hiển thị AppCount. -->
             <TextBlock x:Name="AppCount" Foreground="{StaticResource Muted}" />

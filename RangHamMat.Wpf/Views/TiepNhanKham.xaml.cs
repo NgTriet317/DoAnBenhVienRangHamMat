@@ -4,6 +4,7 @@ using RangHamMat.Controls;
 using RangHamMat.Controls.ClinicalWorkflow;
 using System.Windows;
 using System.Windows.Controls;
+using System.Data;
 
 namespace RangHamMat.Views;
 
@@ -22,6 +23,9 @@ public partial class TiepNhanKham : UserControl
     /// Ngữ cảnh định danh và quyền của người dùng đang thao tác.
     /// </summary>
     private NguCanhNghiepVu? user;
+    private readonly BUS_TIEPNHAN receptionBus;
+    private readonly IDbTransaction? transaction;
+    private bool updatingChoices, saving;
     /// <summary>
     /// Đã lưu kết quả. Có thể để null khi dữ liệu chưa được cung cấp.
     /// </summary>
@@ -29,11 +33,19 @@ public partial class TiepNhanKham : UserControl
     /// <summary>
     /// Khởi tạo tiếp nhận khám. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
     /// </summary>
-    public TiepNhanKham() => InitializeComponent();
+    public TiepNhanKham() : this(null,null) { }
+    public TiepNhanKham(NguCanhNghiepVu? nguoiDung,IDbTransaction? transaction)
+    {
+        InitializeComponent();user=nguoiDung;this.transaction=transaction;receptionBus=new(transaction);
+        LoaiKhamPicker.ItemsSource=new[]{new LuaChonDanhMuc("Thông thường","Khám thông thường"),new LuaChonDanhMuc("Dịch vụ","Khám dịch vụ — chọn bác sĩ")};
+        LoaiKhamPicker.SelectedValue="Thông thường";
+    }
     /// <summary>
     /// Giá trị Lịch hẹn; được xác định bởi phần getter/setter của thuộc tính. Có thể để null khi dữ liệu chưa được cung cấp.
     /// </summary>
-    private object? Appointment => DuLieuGiaoDien.Find("LICH_KHAM",AppointmentPicker.SelectedValue);
+    private object? Appointment => AppointmentPicker.SelectedValue is string id && id.Length>0?DuLieuGiaoDien.Find("LICH_KHAM",id):null;
+    private bool DirectArrival=>string.IsNullOrEmpty(Convert.ToString(AppointmentPicker.SelectedValue));
+    private bool ServiceVisit=>DirectArrival && LoaiKhamPicker.SelectedValue as string=="Dịch vụ";
 
     /// <summary>
     /// Nạp dữ liệu khởi đầu khi biểu mẫu được tải lên giao diện.
@@ -46,7 +58,7 @@ public partial class TiepNhanKham : UserControl
         if(ready)return;
         try
         {
-            user=new BUS_QUYENNGHIEPVU().LayNguCanh(PhienDangNhap.MaNV);
+            user??=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(PhienDangNhap.MaNV);
             if(!user.CoQuyen(QuyenLamViec.TiepNhan))throw new TuChoiQuyenNghiepVuException();
             var seed=BieuMauHoSo.GetRecord(this);
             patientId=BieuMauHoSo.GetPatientScope(this);
@@ -59,8 +71,6 @@ public partial class TiepNhanKham : UserControl
             MedicalIdentity.Text=history is null ? "Chưa có hồ sơ bệnh án; hệ thống sẽ lập khi tiếp nhận thành công." : $"Hồ sơ: {UiRecord.Text(history,"MaHS")}";
             SafetyInfo.Text=$"Dị ứng: {Known(UiRecord.Text(patient,"DiUng"))}\nTiền sử: {Known(UiRecord.Text(patient,"TienSuBenh"))}";
             SystemInfo.Text=$"Nhân viên: {DuLieuGiaoDien.Lookup("MaNV",user.MaNV)} ({user.MaNV}). Giờ tiếp nhận và số thứ tự được tự cấp khi lưu.";
-            ServicePicker.ItemsSource=DuLieuGiaoDien.Rows("DICH_VU").Where(v=>UiRecord.Text(v,"TrangThai")=="Đang hoạt động" && !string.IsNullOrEmpty(UiRecord.Text(v,"MaCK")))
-                .Select(v=>new LuaChonDanhMuc(UiRecord.Text(v,"MaDV"),$"{UiRecord.Text(v,"TenDV")} ({UiRecord.Text(v,"MaDV")})")).ToArray();
             var arrivals=new List<LuaChonDanhMuc> {new("","Đến trực tiếp")};
             arrivals.AddRange(DuLieuGiaoDien.Rows("LICH_KHAM").Where(v=>UiRecord.Text(v,"MaBN")==patientId && UiRecord.Date(v,"NgayGioKham")?.Date==DateTime.Today && UiRecord.Text(v,"TrangThai") is "Nháp" or "Đã xác nhận" or "Chờ khám")
                 .Select(v=>new LuaChonDanhMuc(UiRecord.Text(v,"MaLich"),$"{UiRecord.Text(v,"MaLich")} · {UiRecord.Date(v,"NgayGioKham"):dd/MM HH:mm} · {DuLieuGiaoDien.Lookup("MaBS",UiRecord.Get(v,"MaBS"))}")));
@@ -88,13 +98,47 @@ public partial class TiepNhanKham : UserControl
     /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Appointment_Changed(object sender,SelectionChangedEventArgs e)
     {
-        if(!ready)return;
-        ServicePicker.SelectedIndex=-1;
-        ServicePicker.IsEnabled=Appointment is null || string.IsNullOrEmpty(UiRecord.Text(Appointment,"MaDV"));
-        DoctorPicker.IsEnabled=Appointment is null;
+        if(!ready||updatingChoices)return;
+        updatingChoices=true;
+        try{LoaiKhamPicker.SelectedValue="Thông thường";LoaiKhamBlock.Visibility=DirectArrival?Visibility.Visible:Visibility.Collapsed;}
+        finally{updatingChoices=false;}
+        ConfigureMode();
         if(Appointment is object appointment)
         {ArrivalReason.Text=UiRecord.Text(appointment,"LyDoKham");ServicePicker.SelectedValue=UiRecord.Get(appointment,"MaDV");}
+        else ArrivalReason.Clear();
     }
+    private void LoaiKham_Changed(object sender,SelectionChangedEventArgs e)
+    {if(ready&&!updatingChoices)ConfigureMode();}
+
+    private void ConfigureMode()
+    {
+        ClinicalFormInput.ClearErrors(this);
+        updatingChoices=true;
+        try
+        {
+            ServicePicker.ItemsSource=null;ServicePicker.SelectedIndex=-1;ServicePicker.Text="";
+            DoctorPicker.ItemsSource=null;DoctorPicker.SelectedIndex=-1;DoctorPicker.Text="";
+            ClearRoom();FormError.Text="";DestinationIdentity.Text="Chưa chọn bác sĩ phụ trách";
+            Grid.SetRow(DoctorField,ServiceVisit?0:1);Grid.SetRow(ServiceField,ServiceVisit?1:0);
+            FeeHint.Text=ServiceVisit?"Phụ thu khám dịch vụ (chọn bác sĩ): 30.000 đ/lượt. Khoản này được ghi riêng trên hóa đơn.":"Khám thông thường không có phụ thu chọn bác sĩ.";
+            DoctorPicker.IsEnabled=DirectArrival;ServicePicker.IsEnabled=!ServiceVisit && (Appointment is null||string.IsNullOrEmpty(UiRecord.Text(Appointment,"MaDV")));
+            if(ServiceVisit)
+            {
+                var doctors=receptionBus.LayBacSiDichVu(user!);DoctorPicker.ItemsSource=doctors;
+                ScheduleHint.Text=doctors.Count==0?"Chưa có bác sĩ có ca, hiện diện và phòng hợp lệ. Chưa thể tiếp nhận khám dịch vụ.":"Chọn bác sĩ đang trong ca, sau đó chọn dịch vụ thuộc chuyên khoa của bác sĩ.";
+            }
+            else
+            {
+                ServicePicker.ItemsSource=new BUS_DICHVU(transaction).layToanBoDichVu().Where(v=>v.TrangThai=="Đang hoạt động"&&!string.IsNullOrEmpty(v.MaCK))
+                    .Select(v=>new LuaChonDanhMuc(v.MaDV,$"{v.TenDV} ({v.MaDV})")).ToArray();
+                ScheduleHint.Text="Chọn dịch vụ trước, sau đó chọn bác sĩ phù hợp.";
+            }
+        }
+        catch(InvalidOperationException ex){FormError.Text=ClinicalFormInput.Message(ex);}
+        finally{updatingChoices=false;}
+    }
+    private void ClearRoom()
+    {RoomPicker.ItemsSource=null;RoomPicker.SelectedIndex=-1;RoomPicker.IsEnabled=false;DispatchReason.Clear();DispatchBlock.Visibility=Visibility.Collapsed;}
     /// <summary>
     /// Tiếp nhận thay đổi dịch vụ và cập nhật trạng thái/dữ liệu phụ thuộc.
     /// </summary>
@@ -103,14 +147,19 @@ public partial class TiepNhanKham : UserControl
     /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Service_Changed(object sender,SelectionChangedEventArgs e)
     {
-        if(!ready)return;
+        if(!ready||updatingChoices)return;
+        if(ServiceVisit)
+        {
+            if(DoctorPicker.SelectedItem is BacSiTiepNhan chosen)DestinationIdentity.Text=$"Bác sĩ: {chosen.HoTen} ({chosen.MaNV}) · dịch vụ {ServicePicker.SelectedValue}";
+            return;
+        }
         DoctorPicker.ItemsSource=null;DoctorPicker.SelectedIndex=-1;RoomPicker.ItemsSource=null;RoomPicker.SelectedIndex=-1;DispatchReason.Clear();DispatchBlock.Visibility=Visibility.Collapsed;
         DestinationIdentity.Text="Chưa chọn bác sĩ phụ trách";
         ScheduleHint.Text="Chọn dịch vụ trước, sau đó chọn bác sĩ phù hợp.";
         if(ServicePicker.SelectedValue is not string service || string.IsNullOrEmpty(service))return;
         try
         {
-            var doctors=new BUS_TIEPNHAN().LayBacSi(service,user!);DoctorPicker.ItemsSource=doctors;
+            var doctors=receptionBus.LayBacSi(service,user!);DoctorPicker.ItemsSource=doctors;
             ScheduleHint.Text=doctors.Count==0?"Không có bác sĩ phù hợp đang làm việc. Chưa thể lưu tiếp nhận.":"Chọn bác sĩ; lịch làm việc và số đang chờ được đối chiếu từ hệ thống.";
             if(Appointment is object appointment)DoctorPicker.SelectedValue=UiRecord.Get(appointment,"MaBS");
         }
@@ -124,8 +173,26 @@ public partial class TiepNhanKham : UserControl
     /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Doctor_Changed(object sender,SelectionChangedEventArgs e)
     {
-        if(!ready)return;
-        RoomPicker.ItemsSource=null;RoomPicker.SelectedIndex=-1;DispatchReason.Clear();DispatchBlock.Visibility=Visibility.Collapsed;
+        if(!ready||updatingChoices)return;
+        ClearRoom();
+        if(ServiceVisit)
+        {
+            updatingChoices=true;
+            try
+            {
+                ServicePicker.ItemsSource=null;ServicePicker.SelectedIndex=-1;ServicePicker.Text="";ServicePicker.IsEnabled=false;
+                DestinationIdentity.Text="Chưa chọn bác sĩ phụ trách";
+                if(DoctorPicker.SelectedItem is not BacSiTiepNhan chosen)return;
+                var services=receptionBus.LayDichVuTheoBacSi(chosen.MaNV,user!);
+                ServicePicker.ItemsSource=services.Select(d=>new LuaChonDanhMuc(d.MaDV,$"{d.TenDV} ({d.MaDV})")).ToArray();ServicePicker.IsEnabled=services.Count>0;
+                RoomPicker.ItemsSource=new[]{new LuaChonDanhMuc(chosen.MaPhong!,$"{chosen.TenPhong} ({chosen.MaPhong})")};RoomPicker.SelectedValue=chosen.MaPhong;
+                DestinationIdentity.Text=$"Bác sĩ: {chosen.HoTen} ({chosen.MaNV})";
+                ScheduleHint.Text=services.Count==0?"Bác sĩ chưa có dịch vụ đang áp dụng trong chuyên khoa.":$"{chosen.TinhTrangLich} · {chosen.SoDangCho} bệnh nhân đang chờ. Phòng theo ca được khóa khi tiếp nhận.";
+            }
+            catch(InvalidOperationException ex){FormError.Text=ClinicalFormInput.Message(ex);}
+            finally{updatingChoices=false;}
+            return;
+        }
         if(DoctorPicker.SelectedItem is not BacSiTiepNhan doctor)return;
         DestinationIdentity.Text=$"Bác sĩ: {doctor.HoTen} ({doctor.MaNV}) · dịch vụ {ServicePicker.SelectedValue}";
         ScheduleHint.Text=$"{doctor.TinhTrangLich} · {doctor.SoDangCho} bệnh nhân đang chờ.";
@@ -146,13 +213,16 @@ public partial class TiepNhanKham : UserControl
     {
         error="";FormError.Text="";ClinicalFormInput.ClearErrors(this);
         if(SavedResult is not null)return true;
+        if(saving){error="Đang lưu tiếp nhận, vui lòng chờ.";return false;}
+        saving=true;SaveReceptionButton.IsEnabled=false;
         try
         {
             if(user is null || string.IsNullOrEmpty(patientId))throw new InvalidOperationException("Chọn hồ sơ bệnh nhân hợp lệ.");
-            var request=new YeuCauTiepNhan {MaBN=patientId,MaDV=Convert.ToString(ServicePicker.SelectedValue)??"",MaBS=(DoctorPicker.SelectedItem as BacSiTiepNhan)?.MaNV??"",MaPhong=Convert.ToString(RoomPicker.SelectedValue)??"",MaLich=Convert.ToString(AppointmentPicker.SelectedValue),LyDoKham=ArrivalReason.Text,GhiChu=ReceptionNote.Text,LyDoDieuPhoiNgoaiLich=DispatchReason.Text};
-            SavedResult=new BUS_TIEPNHAN().TiepNhan(request,user);
+            var request=new YeuCauTiepNhan {LoaiKham=ServiceVisit?"Dịch vụ":"Thông thường",MaBN=patientId,MaDV=Convert.ToString(ServicePicker.SelectedValue)??"",MaBS=(DoctorPicker.SelectedItem as BacSiTiepNhan)?.MaNV??"",MaPhong=Convert.ToString(RoomPicker.SelectedValue)??"",MaLich=Convert.ToString(AppointmentPicker.SelectedValue),LyDoKham=ArrivalReason.Text,GhiChu=ReceptionNote.Text,LyDoDieuPhoiNgoaiLich=DispatchReason.Text};
+            SavedResult=receptionBus.TiepNhan(request,user);
             SaveReceptionButton.IsEnabled=false;SaveReceptionButton.Content="Đã tiếp nhận";InputPanel.IsEnabled=false;QueueNumber.Text=SavedResult.SoThuTu.ToString();
             SavedStatus.Text=$"Đã chuyển vào hàng đợi của bác sĩ {DuLieuGiaoDien.Lookup("MaBS",SavedResult.MaBS)} · số {SavedResult.SoThuTu} · {SavedResult.MaPhieu}.";
+            if(SavedResult.PhiPhuThuDichVu>0)SavedStatus.Text+=" Khám dịch vụ · phụ thu 30.000 đ đã lưu.";
             // Tải lại có thể lỗi sau commit; vẫn giữ biên nhận, không báo sai là chưa lưu.
             try{DuLieuGiaoDien.RefreshFromDatabase();}catch(InvalidOperationException){SavedStatus.Text+=" Đã lưu; tải lại hồ sơ khi kết nối ổn định.";}
             return true;
@@ -161,8 +231,9 @@ public partial class TiepNhanKham : UserControl
         {
             error=FormError.Text=ClinicalFormInput.Message(ex);ClinicalFormInput.ShowError(this,ex);
             if(ex is LoiTiepNhanException invalid)
-                (invalid.Truong switch {"MaDV"=>ServicePicker,"MaBS"=>DoctorPicker,"MaPhong"=>RoomPicker,"LyDoKham"=>ArrivalReason,"LyDoDieuPhoiNgoaiLich"=>DispatchReason,_=>(Control)AppointmentPicker}).Focus();
+                (invalid.Truong switch {"LoaiKham"=>LoaiKhamPicker,"MaDV"=>ServicePicker,"MaBS"=>DoctorPicker,"MaPhong"=>RoomPicker,"LyDoKham"=>ArrivalReason,"LyDoDieuPhoiNgoaiLich"=>DispatchReason,_=>(Control)AppointmentPicker}).Focus();
             return false;
         }
+        finally{saving=false;if(SavedResult is null)SaveReceptionButton.IsEnabled=true;}
     }
 }

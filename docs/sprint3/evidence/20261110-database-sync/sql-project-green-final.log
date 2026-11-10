@@ -1,0 +1,46 @@
+PROJECT_SCHEMA_READY: 64 bảng và các liên kết ET/DAL/BUS/WPF đã kiểm tra; cấu hình SQL Server/kho ảnh tại appsettings.json.
+PASS: Schema, trusted constraints and active triggers
+PASS: Unified schema rejects missing surcharge protection
+PASS: Unified schema rejects missing X-ray assignment table
+PASS: X-ray schema rejects disabled assignment protection
+PASS: X-ray schema rejects renamed ET assignment column
+PASS: X-ray schema rejects renamed ET image column
+PASS: X-ray schema rejects assignment index with wrong filter
+PASS: X-ray schema rejects assignment foreign key to wrong entity
+PASS: X-ray schema rejects assignment index on wrong key
+PASS: Unified schema rejects missing audit event deduplication
+PASS: Old receipts remain ordinary with zero fee
+PASS: Schema check rejects nullable receipt type drift
+PASS: Ordinary INSERT defaults and Dapper mapping
+PASS: Ordinary fee cannot be 30000
+PASS: Service fee cannot be zero
+PASS: Receipt type/fee cannot change after admission
+PASS: Changing receipt key cannot bypass frozen type/fee
+PASS: Surcharge is a separate 30000 line and invoice total is 330000
+PASS: Same receipt cannot be billed twice
+PASS: Fee cannot point at an ordinary receipt
+PASS: Fee cannot point at another visit
+PASS: Fee cannot mix with a service source
+PASS: Fee price must be exactly 30000
+PASS: Fee price cannot be NULL (CHECK must be explicit)
+PASS: Discount cannot consume the mandatory fee
+PASS: Discount may cover the entire base amount
+PASS: Confirming invoice without fee is blocked
+PASS: Sealing completion invoice without fee is blocked
+PASS: Complete service invoice seals and confirms with one fee
+PASS: Sealed surcharge cannot be removed
+PASS: Valid X-ray metadata round-trips and hides without deletion
+PASS: Reject unsafe storage path: ../escape.png
+PASS: Reject unsafe storage path: C:\private.png
+PASS: Reject unsafe storage path: /root.png
+PASS: Reject unsafe storage path: a\b.png
+PASS: Reject unsafe storage path: //host/a.png
+PASS: Image MIME must agree with extension
+PASS: Image over 20 MiB cannot be registered
+PASS: Image hash must be hexadecimal SHA256
+PASS: Image cannot move to another visit
+PASS: Image cannot link a service from another visit
+PASS: Image metadata cannot be hard-deleted
+PASS: Draft service cannot move away from its image visit
+PASS: Visit with images cannot switch source receipt
+RESULT: 44 passed, 0 failed

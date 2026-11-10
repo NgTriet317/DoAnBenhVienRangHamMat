@@ -1,0 +1,198 @@
+using System.Data;
+using BUS;
+using DAL;
+using Dapper;
+using Microsoft.Data.SqlClient;
+
+/// <summary>Chỉ tạo lịch sử giả lập mới trong DB DEMO trống; không phải API ghi lùi ngày cho ứng dụng.</summary>
+internal static class P5DemoData
+{
+    private const string Incomplete="INCOMPLETE_DEMO.txt";
+    private static void CheckName(string database)
+    {if(!System.Text.RegularExpressions.Regex.IsMatch(database,"^RHM_Hospital_Test_P5Demo_[A-Za-z0-9_]+$"))throw new ArgumentException("Only isolated P5 DEMO databases");}
+    private static SqlConnection Open(string server,string database)
+    {var db=new SqlConnection(new SqlConnectionStringBuilder{DataSource=server,InitialCatalog=database,IntegratedSecurity=true,TrustServerCertificate=true}.ConnectionString);db.Open();return db;}
+    public static void Prepare(string server,string database,string outputPath)
+    {
+        CheckName(database);using var master=Open(server,"master");
+        if(master.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.databases WHERE name=@database",new{database})!=0)throw new InvalidOperationException("Database DEMO đã tồn tại; không ghi đè.");
+        var output=P5Artifacts.CreateNewDirectory(outputPath);P5Artifacts.Text(Path.Combine(output,Incomplete),database);
+    }
+    public static void Export(string server,string database,string outputPath)
+    {
+        CheckName(database);using var db=Open(server,database);RequireDemo(db);
+        var output=P5Artifacts.CreateNewDirectory(outputPath);P5Artifacts.Text(Path.Combine(output,Incomplete),database);
+        WriteEvidence(db,database,output);Console.WriteLine("DEMO_EXPORT_COMPLETE="+output);
+    }
+    private static void RequireDemo(SqlConnection db)
+    {
+        if(db.ExecuteScalar<int>("SELECT COALESCE(TRY_CONVERT(int,value),0) FROM sys.extended_properties WHERE class=0 AND name=N'RHM.Demo.P5'")!=1
+            ||db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.BENH_NHAN WHERE MaBN NOT LIKE N'P5[_]BN[_]%' OR HoTenBN NOT LIKE N'[[]DEMO]%'")!=0)
+            throw new InvalidOperationException("Chỉ xuất từ database DEMO đã đánh dấu, không chứa hồ sơ ngoài bộ giả lập.");
+    }
+    public static void Create(string server,string database,string outputPath)
+    {
+        CheckName(database);
+        var output=P5Artifacts.ExistingDirectory(outputPath);
+        if(!File.Exists(Path.Combine(output,Incomplete))||File.ReadAllText(Path.Combine(output,Incomplete))!=database
+            ||Directory.EnumerateFileSystemEntries(output).Count()!=1)throw new IOException("Thư mục phải được chuẩn bị riêng cho lần tạo DEMO này.");
+        if(DateTime.Today<new DateTime(2026,11,2))throw new InvalidOperationException("Lịch trình DEMO có thời điểm chưa đến.");
+        var connection=new SqlConnectionStringBuilder{DataSource=server,InitialCatalog=database,IntegratedSecurity=true,TrustServerCertificate=true}.ConnectionString;
+        Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",connection);
+        using var db=new SqlConnection(connection);db.Open();
+        using var tx=db.BeginTransaction(IsolationLevel.Serializable);
+        if(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.BENH_NHAN",transaction:tx)!=0||db.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.extended_properties WHERE class=0 AND name=N'RHM.Demo.P5'",transaction:tx)!=0)
+            throw new InvalidOperationException("Database phải trống người bệnh và chưa có marker DEMO; không thêm vào dữ liệu cũ.");
+        db.Execute("EXEC dbo.usp_RHM_KiemTraKhoAnh",transaction:tx);
+        db.Execute(BaseData,transaction:tx);
+        for(int person=0;person<18;person++)
+            db.Execute("""
+                INSERT dbo.BENH_NHAN(MaBN,HoTenBN,NgaySinh,GioiTinh,TrangThai,DiaChi)
+                VALUES(@bn,@name,'19900101',N'Khác',N'Đang theo dõi',N'[DEMO] Không có người thật');
+                INSERT dbo.HO_SO_BENH_AN(MaHS,MaBN,NgayLap,LyDoKhamBanDau,TrangThai,GhiChu)
+                VALUES(@hs,@bn,'20260801',N'[DEMO] Hồ sơ giả lập báo cáo',N'Đang theo dõi',N'Không dùng điều trị');
+                """,new{bn=$"P5_BN_{person:00}",hs=$"P5_HS_{person:00}",name=$"[DEMO] Người mô phỏng {person+1:00}"},tx);
+        string[] codes=["REF28_CARIES","REF28_GINGIVITIS","REF28_TARTAR"];
+        foreach(var code in codes)if(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DM_TINH_TRANG_BENH WHERE MaDMTT=@code",new{code},tx)!=1)throw new InvalidOperationException("Thiếu mã tình trạng nguồn: "+code);
+        int global=0;int[] counts=[8,12,6];
+        for(int m=0;m<3;m++)
+        {
+            var month=new DateTime(2026,8+m,1);string lot=$"P5_LO_{month:MM}",inbound=$"P5_PN_{month:MM}";
+            db.Execute(Inbound,new{lot,inbound,supplierInvoice=$"P5_HDN_{month:MM}",time=month.AddHours(8)},tx);
+            db.Execute("UPDATE dbo.PHIEU_NHAP SET TrangThai=N'Đã ghi sổ' WHERE MaPN=@inbound AND TrangThai=N'Nháp'",new{inbound},tx);
+            for(int i=0;i<counts[m];i++,global++)
+            {
+                var visit=month.AddDays(1+i*2).AddHours(9);bool service=i%2==0;int person=global%18;
+                string id=$"{global+1:000}",ls="P5_LS_"+id,receipt="P5_PH_"+id,shift="P5_LLV_"+id,condition="P5_TTB_"+id,actual="P5_DVTH_"+id;
+                string? rx=service?"P5_DT_"+id:null,line=service?"P5_CTDT_"+id:null,export=service?"P5_PX_"+id:null;
+                var p=new{ls,receipt,shift,condition,actual,rx,line,export,lot,bn=$"P5_BN_{person:00}",hs=$"P5_HS_{person:00}",code=codes[global%3],date=visit.Date,visit,
+                    exam=visit.AddMinutes(10),prescribed=visit.AddMinutes(20),dispensed=visit.AddMinutes(30),signed=visit.AddMinutes(40),invoiceAt=visit.AddMinutes(45),confirmedAt=visit.AddMinutes(46),
+                    service,kind=service?"Dịch vụ":"Thông thường",fee=service?30000:0,number=global+1};
+                db.Execute(Visit,p,tx);
+                if(service)db.Execute(PrescriptionAndExport,p,tx);
+                db.Execute("UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận',NgayXacNhan=@signed WHERE MaLS=@ls; UPDATE dbo.PHIEU_KHAM_BENH SET TrangThai=N'Chờ thanh toán' WHERE MaPhieu=@receipt;",p,tx);
+                // Đầu mối DAL dùng đúng các nguồn dịch vụ/thuốc đã ghi sổ và nguồn phụ thu P1.
+                var invoice=new DAL_HOADON(tx).CreateInvoice(ls,"P5_CASH",0);
+                db.Execute("""
+                    UPDATE dbo.HOA_DON SET NgayLap=@invoiceAt WHERE MaHD=@invoice AND TrangThai=N'Nháp';
+                    UPDATE dbo.HOA_DON SET TrangThai=N'Đã xác nhận',NgayXacNhan=@confirmedAt WHERE MaHD=@invoice AND TrangThai=N'Nháp';
+                    """,new{invoice,p.invoiceAt,p.confirmedAt},tx);
+                decimal due=service?150000:100000;
+                var paymentAt=i==counts[m]-1?month.AddMonths(1).AddDays(1).AddHours(10):visit.AddHours(1);
+                var payment="P5_TT_"+id;
+                db.Execute("""
+                    INSERT dbo.THANH_TOAN(MaTT,MaHD,MaNV,NgayThanhToan,SoTien,LoaiGiaoDich,PhuongThuc,TrangThai,SoTienKhachDua,TienThua,LyDo)
+                    VALUES(@payment,@invoice,N'P5_CASH',@paymentAt,@due,N'Thu',N'Tiền mặt',N'Đã xác nhận',@due,0,N'[DEMO] Giao dịch giả lập');
+                    UPDATE dbo.PHIEU_KHAM_BENH SET TrangThai=N'Hoàn thành' WHERE MaPhieu=@receipt;
+                    """,new{payment,invoice,paymentAt,due,receipt},tx);
+            }
+        }
+        if(db.Query("DBCC CHECKCONSTRAINTS WITH ALL_CONSTRAINTS,NO_INFOMSGS",transaction:tx).Any())throw new InvalidOperationException("DEMO có vi phạm ràng buộc.");
+        var reconciliation=new BUS_DOISOATDULIEU(tx).KiemTra();
+        if(reconciliation.TongSaiXacDinh!=0||reconciliation.TongCanDoiChieu!=0)throw new InvalidOperationException("DEMO chưa sạch đối soát: "+string.Join(",",reconciliation.QuyTac.Where(r=>r.TongSo>0).Select(r=>r.Ma+":"+r.TongSo)));
+        db.Execute("EXEC sys.sp_addextendedproperty @name=N'RHM.Demo.P5',@value=1;",transaction:tx);
+        tx.Commit();
+        WriteEvidence(db,database,output);
+        Console.WriteLine("DEMO_DATABASE="+database);Console.WriteLine("DEMO_COMPLETE="+output);
+        Console.WriteLine("PASS: 18 synthetic patients; 26 visits (8/12/6); 26 invoices; 13 service fees; 13 prescriptions; 300 in/26 out/274 on hand; all constraints and reconciliation valid.");
+    }
+    private static void WriteEvidence(SqlConnection db,string database,string output)
+    {
+        RequireDemo(db);using var tx=db.BeginTransaction(IsolationLevel.Serializable);
+        var reconciliation=new BUS_DOISOATDULIEU(tx).KiemTra();
+        var lineage=db.Query("""
+            SELECT b.MaBN,h.MaHS,v.MaLLV,p.MaPhieu,l.MaLS,t.MaTTB,t.MaDMTT,s.MaDVThucHien,r.MaDT,c.MaCTDT,x.MaPX,
+                bill.MaHD,pay.MaTT,p.LoaiKham,l.ThoiGianKham NgayKham,bill.NgayLap NgayHoaDon,pay.NgayThanhToan,
+                s.ThanhTien DichVu,p.PhiPhuThuDichVu PhuThu,
+                COALESCE((SELECT SUM(ct.ThanhTien) FROM dbo.CHI_TIET_HOA_DON ct WHERE ct.MaHD=bill.MaHD AND(ct.MaCTDT IS NOT NULL OR ct.MaCTPX IS NOT NULL)),0) Thuoc,bill.SoTienPhaiThu PhaiThu
+            FROM dbo.LICH_SU_KHAM_BENH l JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
+            JOIN dbo.HO_SO_BENH_AN h ON h.MaHS=p.MaHS JOIN dbo.BENH_NHAN b ON b.MaBN=h.MaBN
+            JOIN dbo.LICH_LAM_VIEC v ON v.MaNV=p.MaBS AND v.NgayLam=CONVERT(date,l.ThoiGianKham) AND v.MaPhong=p.MaPhong
+            JOIN dbo.TINH_TRANG_BENH t ON t.MaLS=l.MaLS JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaLS=l.MaLS
+            LEFT JOIN dbo.DON_THUOC r ON r.MaLS=l.MaLS LEFT JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaDT=r.MaDT
+            LEFT JOIN dbo.PHIEU_XUAT x ON x.MaLS=l.MaLS JOIN dbo.HOA_DON bill ON bill.MaLS=l.MaLS LEFT JOIN dbo.THANH_TOAN pay ON pay.MaHD=bill.MaHD
+            ORDER BY l.ThoiGianKham,l.MaLS
+            """,transaction:tx).Select(r=>(IDictionary<string,object>)r).ToArray();
+        if(lineage.Length==0)throw new InvalidOperationException("Không có nguồn DEMO để xuất.");
+        var headers=lineage[0].Keys.ToArray();
+        P5Artifacts.Csv(Path.Combine(output,"lineage.csv"),new[]{headers.Cast<object?>()}.Concat(lineage.Select(r=>headers.Select(k=>(object?)r[k]))));
+        var monthly=db.Query("""
+            SELECT CONVERT(char(7),l.ThoiGianKham,126) Thang,COUNT(DISTINCT l.MaLS) SoLuot,COUNT(DISTINCT hs.MaBN) SoNguoi,SUM(h.SoTienPhaiThu) PhaiThu
+            FROM dbo.LICH_SU_KHAM_BENH l JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS JOIN dbo.HOA_DON h ON h.MaLS=l.MaLS
+            WHERE l.TrangThai=N'Đã xác nhận' AND h.TrangThai=N'Đã xác nhận' GROUP BY CONVERT(char(7),l.ThoiGianKham,126) ORDER BY Thang
+            """,transaction:tx).ToArray();
+        var cash=db.Query("""
+            SELECT CONVERT(char(7),NgayThanhToan,126) Thang,SUM(CASE WHEN LoaiGiaoDich=N'Thu' THEN SoTien ELSE -SoTien END) ThuRong
+            FROM dbo.THANH_TOAN WHERE TrangThai=N'Đã xác nhận' GROUP BY CONVERT(char(7),NgayThanhToan,126) ORDER BY Thang
+            """,transaction:tx).ToArray();
+        P5Artifacts.Json(Path.Combine(output,"manifest.json"),new{
+            Label="DEMO — toàn bộ người bệnh/chứng từ giả lập, không dùng điều trị",Database=database,ExportedUtc=DateTime.UtcNow,
+            From=new DateTime(2026,8,1),ToExclusive=new DateTime(2026,11,1),Patients=db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.BENH_NHAN",transaction:tx),
+            Visits=db.ExecuteScalar<int>("SELECT COUNT(DISTINCT MaLS) FROM dbo.LICH_SU_KHAM_BENH WHERE TrangThai=N'Đã xác nhận'",transaction:tx),LineageRows=lineage.Length,Monthly=monthly,Cash=cash,
+            ActualInvoiceTotal=db.ExecuteScalar<decimal>("SELECT COALESCE(SUM(SoTienPhaiThu),0) FROM dbo.HOA_DON WHERE TrangThai=N'Đã xác nhận'",transaction:tx),
+            ActualQuarterCash=db.ExecuteScalar<decimal>("SELECT COALESCE(SUM(CASE WHEN LoaiGiaoDich=N'Thu' THEN SoTien ELSE -SoTien END),0) FROM dbo.THANH_TOAN WHERE TrangThai=N'Đã xác nhận' AND NgayThanhToan>='20260801' AND NgayThanhToan<'20261101'",transaction:tx),
+            ActualNovemberCash=db.ExecuteScalar<decimal>("SELECT COALESCE(SUM(CASE WHEN LoaiGiaoDich=N'Thu' THEN SoTien ELSE -SoTien END),0) FROM dbo.THANH_TOAN WHERE TrangThai=N'Đã xác nhận' AND NgayThanhToan>='20261101' AND NgayThanhToan<'20261201'",transaction:tx),
+            PriceSource="Mã P5_DV_KHAM giá mô phỏng100000, P5_TH giá10000, mua5000. Không phải giá lịch sử của danh mục thật.",
+            Timeline="Mọi ngày là lịch trình giả lập xác định khi tạo bản ghi mới; không sửa ngày chứng từ đã chốt. Thu cuối mỗi tháng sang tháng sau; không tạo năm trước.",
+            ExpectedSeed=new{InvoiceTotals=new[]{1000000,1500000,750000},CashInQuarter=new[]{900000,1500000,750000},CashInNovember=100000,
+                InboundUnits=300,DispensedUnits=26,RemainingUnits=274,StockUnit="đơn vị DEMO"},
+            UseCase="Nguồn hóa đơn theo nhánh legacy được hỗ trợ; chuyển trạng thái qua trigger thật. ExpectedSeed là mốc ban đầu, các trường Actual/Monthly/Cash là kết quả SQL lúc xuất."});
+        P5Artifacts.Audit(P5Artifacts.CreateNewDirectory(Path.Combine(output,"audit")),reconciliation);
+        tx.Commit();File.Delete(Path.Combine(output,Incomplete));
+    }
+    const string BaseData="""
+        INSERT dbo.NHAN_VIEN(MaNV,HoTen,MaChucVu,MaCK,NgayVaoLam,TrangThai) VALUES
+         (N'P5_BS',N'[DEMO] Bác sĩ mô phỏng',N'CV002',N'CK001','20260701',N'Đang làm việc'),
+         (N'P5_RECEPT',N'[DEMO] Tiếp nhận mô phỏng',N'CV004',NULL,'20260701',N'Đang làm việc'),
+         (N'P5_CASH',N'[DEMO] Thu ngân mô phỏng',N'CV007',NULL,'20260701',N'Đang làm việc'),
+         (N'P5_PHARM',N'[DEMO] Dược sĩ mô phỏng',N'CV005',NULL,'20260701',N'Đang làm việc');
+        INSERT dbo.TAI_KHOAN(MaTK,TenDangNhap,MatKhauHash,MaVaiTro,MaNV,TrangThai)
+         SELECT N'P5_TK_'+MaNV,N'demo_'+MaNV,(SELECT MatKhauHash FROM dbo.TAI_KHOAN WHERE MaTK=N'TK001'),N'VTRO002',MaNV,N'Đang hoạt động' FROM dbo.NHAN_VIEN WHERE MaNV LIKE N'P5[_]%';
+        INSERT dbo.PHONG(MaPhong,MaKhoa,TenPhong,LoaiPhong,TinhTrang,TrangThai)
+         VALUES(N'P5_PHONG',N'KHOA001',N'[DEMO] Phòng khám',N'Phòng khám chuyên khoa',N'Đang sử dụng',N'Đang hoạt động');
+        INSERT dbo.CA_LAM(MaCa,GioBatDau,GioKetThuc,TrangThai,GhiChu) VALUES(N'P5_CA','08:00','17:00',N'Đang hoạt động',N'[DEMO] Lịch giả lập');
+        INSERT dbo.DICH_VU(MaDV,TenDV,NhomDV,MaCK,DonGia,ThoiGianDuKien,MoTa,NgayApDung,TrangThai)
+         SELECT N'P5_DV_KHAM',N'[DEMO] Khám mô phỏng báo cáo',NhomDV,MaCK,100000,ThoiGianDuKien,N'Giá mô phỏng riêng, không phải giá lịch sử của DV001','20260801',N'Đang hoạt động' FROM dbo.DICH_VU WHERE MaDV=N'DV001';
+        IF @@ROWCOUNT<>1 THROW 53502,N'Thiếu dịch vụ nguồn DV001 cho danh mục DEMO.',1;
+        INSERT dbo.LOAI_HANG_HOA(MaLoaiHH,TenLoaiHH,MoTa,TrangThai) VALUES(N'P5_LHH',N'[DEMO] Hàng mô phỏng',N'Không dùng điều trị',N'Đang hoạt động');
+        INSERT dbo.NHA_CUNG_CAP(MaNCC,TenNCC,Email,NguoiLienHe,TrangThai) VALUES(N'P5_NCC',N'[DEMO] Nhà cung cấp mô phỏng',N'demo@example.invalid',N'[DEMO] Không có người thật',N'Đang hoạt động');
+        INSERT dbo.KHO(MaKho,TenKho,MaNV,LoaiKho,TrangThai) VALUES(N'P5_KHO',N'[DEMO] Kho mô phỏng',N'P5_PHARM',N'Kho thuốc',N'Đang hoạt động');
+        INSERT dbo.HANG_HOA(MaHH,TenHH,MaLoaiHH,DonViTinh,MoTa,TrangThai) VALUES(N'P5_HH',N'[DEMO] Thuốc giả lập KHÔNG DÙNG',N'P5_LHH',N'Đơn vị DEMO',N'Không dùng điều trị',N'Đang hoạt động');
+        INSERT dbo.THUOC(MaThuoc,MaHH,HamLuong,MucTonToiThieu,DonGiaBan) VALUES(N'P5_TH',N'P5_HH',N'Không áp dụng',0,10000);
+        """;
+    const string Inbound="""
+        INSERT dbo.LO_HANG_HOA(MaLo,MaHH,MaNCC,MaKho,SoLo,NgayNhap,HanSuDung,TrangThai)
+         VALUES(@lot,N'P5_HH',N'P5_NCC',N'P5_KHO',@lot,@time,'20271231',N'Còn sử dụng');
+        INSERT dbo.HOA_DON_NHAP(MaHDN,SoHoaDonNCC,MaNCC,MaNV,NgayHoaDon,TongTien,TrangThai,GhiChu)
+         VALUES(@supplierInvoice,@supplierInvoice,N'P5_NCC',N'P5_PHARM',@time,500000,N'Đã xác nhận',N'[DEMO] Nguồn nhập');
+        INSERT dbo.PHIEU_NHAP(MaPN,MaHDN,MaKho,MaNV,NgayNhap,TongTien,TrangThai,LyDo,GhiChu)
+         VALUES(@inbound,@supplierInvoice,N'P5_KHO',N'P5_PHARM',DATEADD(minute,5,@time),0,N'Nháp',N'[DEMO] Nhập100 đơn vị',N'Không dùng điều trị');
+        INSERT dbo.CHI_TIET_PHIEU_NHAP(MaCTPN,MaPN,MaHH,MaLo,SoLuong,DonGia)
+         VALUES(@inbound+N'_CT',@inbound,N'P5_HH',@lot,100,5000);
+        """;
+    const string Visit="""
+        INSERT dbo.LICH_LAM_VIEC(MaLLV,MaNV,MaCa,NgayLam,MaPhong,TrangThai,TrangThaiHienDien,GioVao,GioRa,GhiChu)
+         VALUES(@shift,N'P5_BS',N'P5_CA',@date,N'P5_PHONG',N'Đã xác nhận',N'Có mặt','08:00','17:00',N'[DEMO] Lịch sử giả lập');
+        INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaBS,MaPhong,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai,LoaiKham,PhiPhuThuDichVu,GhiChu)
+         VALUES(@receipt,@hs,N'P5_BS',N'P5_PHONG',N'P5_RECEPT',N'P5_DV_KHAM',@number,DATEADD(minute,-5,@visit),N'[DEMO] Tình huống báo cáo',N'Đang khám',@kind,@fee,N'Không có người bệnh thật');
+        INSERT dbo.LICH_SU_KHAM_BENH(MaLS,MaPhieu,MaBS,MaPhong,ThoiGianKham,TrieuChung,ChanDoan,KeHoachXuLy,TrangThai,KhongKeThuoc,LyDoKhongKeThuoc,GhiChu)
+         VALUES(@ls,@receipt,N'P5_BS',N'P5_PHONG',@visit,N'[DEMO] Mô phỏng',N'[DEMO] Mã tình trạng phục vụ kiểm báo cáo',N'[DEMO] Không dùng điều trị',N'Nháp',CASE WHEN @service=1 THEN 0 ELSE 1 END,CASE WHEN @service=0 THEN N'[DEMO] Không kê thuốc' ELSE NULL END,N'Lịch sử giả lập, không phải bệnh án thật');
+        INSERT dbo.TINH_TRANG_BENH(MaTTB,MaLS,LoaiTinhTrang,MoTaTinhTrang,MaDMTT,GhiChu)
+         SELECT @condition,@ls,TenTinhTrang,N'[DEMO] Tình trạng mô phỏng',MaDMTT,N'Không dùng chẩn đoán người thật' FROM dbo.DM_TINH_TRANG_BENH WHERE MaDMTT=@code;
+        INSERT dbo.DICH_VU_THUC_HIEN(MaDVThucHien,MaLS,MaDV,MaNVThucHien,ThoiGianThucHien,SoLuong,DonGia,KetQua,TrangThai)
+         VALUES(@actual,@ls,N'P5_DV_KHAM',N'P5_BS',@exam,1,100000,N'[DEMO] Kết quả giả lập',N'Nháp');
+        UPDATE dbo.DICH_VU_THUC_HIEN SET TrangThai=N'Đã xác nhận' WHERE MaDVThucHien=@actual;
+        """;
+    const string PrescriptionAndExport="""
+        INSERT dbo.DON_THUOC(MaDT,MaLS,MaBS,NgayKe,TrangThai,GhiChu)
+         VALUES(@rx,@ls,N'P5_BS',@prescribed,N'Nháp',N'[DEMO] Đơn giả lập, không dùng điều trị');
+        INSERT dbo.CHI_TIET_DON_THUOC(MaCTDT,MaDT,MaThuoc,LieuDung,SoLuong,SoNgayDung,HuongDan,DuongDung,TenThuocChot,HamLuongChot,DonViTinhChot)
+         VALUES(@line,@rx,N'P5_TH',N'[DEMO] Không dùng',2,1,N'Không dùng điều trị',N'Không áp dụng',N'[DEMO] Thuốc giả lập KHÔNG DÙNG',N'Không áp dụng',N'Đơn vị DEMO');
+        UPDATE dbo.DON_THUOC SET TrangThai=N'Đã xác nhận' WHERE MaDT=@rx;
+        INSERT dbo.PHIEU_XUAT(MaPX,MaKho,MaNV,MaKhoa,MaPhong,MaLS,NgayXuat,LyDo,TrangThai,GhiChu)
+         VALUES(@export,N'P5_KHO',N'P5_PHARM',NULL,NULL,@ls,@dispensed,N'[DEMO] Cấp theo đơn giả lập',N'Nháp',N'Không dùng điều trị');
+        INSERT dbo.CHI_TIET_PHIEU_XUAT(MaCTPX,MaPX,MaHH,MaLo,MaCTDT,SoLuong,GhiChu)
+         VALUES(@export+N'_CT',@export,N'P5_HH',@lot,@line,2,N'[DEMO] Xuất đúng nguồn đơn/lượt');
+        UPDATE dbo.PHIEU_XUAT SET TrangThai=N'Đã ghi sổ' WHERE MaPX=@export;
+        """;
+}

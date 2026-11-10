@@ -1,0 +1,128 @@
+using System.IO;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Threading;
+using BUS;
+using Dapper;
+using Microsoft.Data.SqlClient;
+using RangHamMat;
+using RangHamMat.Views;
+
+// Mỗi pha chạy trong một tiến trình mới, dùng tệp riêng trong obj và database thử riêng.
+static class Program
+{
+    static readonly BindingFlags flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+    static readonly Assembly assembly = typeof(PhienDangNhap).Assembly;
+    static wpftest.App app = null!;
+    static int count, failures;
+    static string path = "", root = "", phase = "";
+    static Guid previousSession;
+
+    [STAThread] static int Main(string[] args)
+    {
+        if (args.Length != 4 || !System.Text.RegularExpressions.Regex.IsMatch(args[2], "^RHM_Hospital_Test_Login_[0-9_]+$")) return 2;
+        root = args[0]; phase = args[3]; path = Path.Combine(root, "integration-session.dat");
+        var connection = $"Data Source={args[1]};Initial Catalog={args[2]};Integrated Security=True;TrustServerCertificate=True";
+        Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING", connection);
+        if (File.Exists(Path.Combine(root, "last-session.txt"))) previousSession = Guid.Parse(File.ReadAllText(Path.Combine(root, "last-session.txt")));
+        if (phase == "invalidate")
+        {
+            // Chỉ sửa mật khẩu trong fixture riêng để kiểm tra thu hồi phiên đã lưu.
+            using var db = new SqlConnection(connection); db.Open();
+            db.Execute("UPDATE dbo.TAI_KHOAN SET MatKhauHash=@hash WHERE TenDangNhap=N'admin001'", new { hash = "pbkdf2_sha256$210000$MTIzNDU2Nzg5MDEyMzQ1Ng==$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" });
+        }
+        var store = Activator.CreateInstance(assembly.GetType("RangHamMat.KhoPhienDangNhap")!, flags, null, new object[] { path }, null)!;
+        var service = Activator.CreateInstance(assembly.GetType("RangHamMat.DichVuDangNhap")!, flags, null, new[] { store }, null)!;
+        app = (wpftest.App)Activator.CreateInstance(typeof(wpftest.App), flags, null, new[] { service }, null)!;
+        app.InitializeComponent();
+        app.DispatcherUnhandledException += (_, e) => { e.Handled = true; Fail(e.Exception); };
+        var timeout = new DispatcherTimer { Interval = TimeSpan.FromSeconds(40) };
+        timeout.Tick += (_, _) => Fail(new Exception("Quá thời gian kiểm tra " + phase));
+        timeout.Start();
+        app.Dispatcher.BeginInvoke(new Action(() => Step(RunPhase)));
+        app.Run();
+        timeout.Stop();
+        if (failures == 0 && phase is "login" or "restore" or "restore-staff") Check(File.Exists(path), "Thoát ứng dụng giữ phiên trên đĩa");
+        if (failures == 0 && phase == "logout-exit") Check(!File.Exists(path), "Thoát màn hình đăng nhập sau đăng xuất không khôi phục tài khoản cũ");
+        Console.WriteLine($"RESULT {phase}: {count} passed, {failures} failed");
+        return failures == 0 ? 0 : 1;
+    }
+
+    static void RunPhase()
+    {
+        if (phase == "login")
+        {
+            Check(app.MainWindow is DangNhap, "Lần đầu mở màn hình đăng nhập");
+            Login((DangNhap)app.MainWindow, "admin001");
+            Later(() =>
+            {
+                CheckHome(true);
+                File.WriteAllText(Path.Combine(root, "last-session.txt"), PhienDangNhap.MaPhien.ToString());
+                Call(app.MainWindow, "Exit_Click", app.MainWindow, new RoutedEventArgs());
+            });
+            return;
+        }
+        if (phase == "invalidate")
+        {
+            Check(app.MainWindow is DangNhap && !PhienDangNhap.DaDangNhap && !File.Exists(path), "Đổi mật khẩu trong SQL đưa phiên cũ về đăng nhập");
+            Call(app.MainWindow, "Thoat_Click", app.MainWindow, new RoutedEventArgs());
+            return;
+        }
+        CheckHome(phase != "restore-staff" && phase != "logout-exit");
+        Check(PhienDangNhap.MaPhien != previousSession, "Mở tiến trình mới tạo phiên nhật ký mới");
+        if (phase is "restore" or "restore-staff")
+        {
+            if (phase == "restore-staff") Check(PhienDangNhap.MaTK == File.ReadAllText(Path.Combine(root, "staff-account.txt")), "Khôi phục đúng nhân viên đã đổi tài khoản");
+            Call(app.MainWindow, "Exit_Click", app.MainWindow, new RoutedEventArgs());
+            return;
+        }
+        var home = app.MainWindow;
+        var child = new Window { Owner = home, Content = new TextBlock { Text = "Session fixture" }, Width = 250, Height = 100, ShowInTaskbar = false };
+        child.Show();
+        ((Button)home.FindName("LogoutButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Later(() =>
+        {
+            Check(app.MainWindow is DangNhap && app.MainWindow.IsVisible, "Đăng xuất mở lại màn hình đăng nhập trong cùng tiến trình");
+            Check(!home.IsVisible && !child.IsVisible, "Đăng xuất đóng cửa sổ chính và cửa sổ con của phiên cũ");
+            Check(!PhienDangNhap.DaDangNhap && PhienDangNhap.MaTK == "" && !PhienDangNhap.IsAdmin && !File.Exists(path), "Đăng xuất bỏ tài khoản, quyền và tệp ghi nhớ");
+            var login = (DangNhap)app.MainWindow;
+            if (phase == "logout-exit")
+            {
+                Call(login, "Thoat_Click", login, new RoutedEventArgs());
+                return;
+            }
+            var passwordCheck = typeof(DangNhap).GetMethod("KiemTraMatKhau", flags)!;
+            var staff = new BUS_TAIKHOAN().layToanBoTaiKhoan().First(a => a.TenDangNhap != "admin001"
+                && a.TrangThai == "Đang hoạt động" && new BUS_VAITRO().layVaiTroTheoMa(a.MaVaiTro)?.TenVaiTro == "User"
+                && (bool)passwordCheck.Invoke(null, new object[] { "123456", a.MatKhauHash })!);
+            File.WriteAllText(Path.Combine(root, "staff-account.txt"), staff.MaTK);
+            Login(login, staff.TenDangNhap);
+            Later(() =>
+            {
+                CheckHome(false);
+                Check(!ReferenceEquals(home, app.MainWindow) && PhienDangNhap.MaTK == staff.MaTK, "Đăng nhập nhân viên khác mở cửa sổ mới đúng định danh");
+                Call(app.MainWindow, "Exit_Click", app.MainWindow, new RoutedEventArgs());
+            });
+        });
+    }
+
+    static void Login(DangNhap login, string username)
+    {
+        ((TextBox)login.FindName("UsernameBox")).Text = username;
+        ((PasswordBox)login.FindName("PasswordBox")).Password = "123456";
+        Call(login, "DangNhap_Click", login, new RoutedEventArgs());
+        Check(login.DialogResult == true, "Đăng nhập bằng mật khẩu: " + ((TextBlock)login.FindName("FormError")).Text);
+    }
+
+    static void CheckHome(bool admin)
+    {
+        Check(app.MainWindow is MainWindow && app.MainWindow.IsVisible && PhienDangNhap.DaDangNhap, "Mở thẳng màn hình chính bằng phiên hợp lệ");
+        Check(PhienDangNhap.IsAdmin == admin && PhienDangNhap.MaPhien != Guid.Empty, "Nạp đúng quyền SQL và bắt đầu nhật ký phiên");
+    }
+    static void Later(Action action) => app.Dispatcher.BeginInvoke(new Action(() => Step(action)));
+    static void Step(Action action) { try { action(); } catch (Exception ex) { Fail(ex); } }
+    static object? Call(object target, string name, params object[] args) => target.GetType().GetMethod(name, flags)!.Invoke(target, args);
+    static void Check(bool condition, string label) { if (!condition) throw new Exception(label); count++; Console.WriteLine("PASS: " + label); }
+    static void Fail(Exception ex) { failures++; Console.WriteLine("FAIL: " + ex.GetBaseException()); app.Shutdown(1); }
+}

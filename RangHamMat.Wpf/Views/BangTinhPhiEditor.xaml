@@ -14,6 +14,7 @@
   <Border Style="{StaticResource HospitalPanel}" Margin="0,0,0,12" Padding="12">
    <!-- Thông tin hiển thị TotalText — Chưa có bảng tính. -->
    <StackPanel><TextBlock x:Name="TotalText" Text="Chưa có bảng tính" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
+    <TextBlock x:Name="SurchargeText" TextWrapping="Wrap" Margin="0,6,0,0" Visibility="Collapsed" Foreground="#1D4ED8"/>
     <TextBlock Text="Kiểm tra khoản phải thu của lượt khám. Với hóa đơn lập khi hoàn tất khám, thanh toán dùng lại đúng hóa đơn và các khoản đã chốt." TextWrapping="Wrap" Margin="0,6,0,0" Style="{StaticResource HospitalMuted}" />
    </StackPanel>
   </Border></StackPanel>

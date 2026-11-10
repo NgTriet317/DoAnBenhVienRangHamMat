@@ -35,8 +35,11 @@ internal static class PhienNhatKy
     internal static void KetThuc()
     {
         if(PhienDangNhap.MaPhien==Guid.Empty)return;
-        new BUS_NHATKY().KetThucPhien(PhienDangNhap.MaPhien);
-        timer?.Stop();timer=null;PhienDangNhap.MaPhien=Guid.Empty;
-        PhienDangNhap.GanPhienAudit(Guid.Empty);
+        try { new BUS_NHATKY().KetThucPhien(PhienDangNhap.MaPhien); }
+        finally
+        {
+            timer?.Stop();timer=null;PhienDangNhap.MaPhien=Guid.Empty;
+            PhienDangNhap.GanPhienAudit(Guid.Empty);
+        }
     }
 }

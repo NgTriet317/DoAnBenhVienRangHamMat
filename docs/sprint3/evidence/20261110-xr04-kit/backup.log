@@ -1,0 +1,3 @@
+SQL_SERVER_BACKUP=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\XR04Handover\verify-3cfa54e282b349c4a78160823e49457b\SqlStaging\RHM_Xray_3b28cd568ccc48d4b5dc44b94a3ca83d.bak
+BACKUP_COMPLETE=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\XR04Handover\verify-3cfa54e282b349c4a78160823e49457b\Backups\XrayBackup_20261110_051045_d5871cf3bb454332a82a0b8fab0ad80f
+PASS: verified SQL COPY_ONLY/CHECKSUM and 15 referenced images (including hidden); 0 unregistered/temporary files left untouched.

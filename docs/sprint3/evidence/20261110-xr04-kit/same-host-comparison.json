@@ -1,0 +1,8 @@
+{
+    "Status":  "FAIL",
+    "Reason":  "Hai proof cùng hostname; không phải hai máy",
+    "Scope":  "SharedStorageOnly",
+    "FirstMachine":  "DESKTOP-C9VCE8A",
+    "SecondMachine":  "DESKTOP-C9VCE8A",
+    "RemoteSqlRestoreAccepted":  false
+}

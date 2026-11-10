@@ -1,0 +1,537 @@
+{
+    "Run":  "20261110_114040_eae3f295",
+    "Machine":  "DESKTOP-C9VCE8A",
+    "SqlServer":  ".",
+    "StartedUtc":  "\/Date(1794285640259)\/",
+    "FinishedUtc":  "\/Date(1794285851730)\/",
+    "LocalStatus":  "PASS",
+    "ReadyForDeployment":  false,
+    "Failure":  null,
+    "Databases":  {
+                      "New":  "RHM_Hospital_Test_P6_20261110_114040_eae3f295_New",
+                      "Upgrade":  "RHM_Hospital_Test_P6_20261110_114040_eae3f295_Upgrade",
+                      "Rerun":  "RHM_Hospital_Test_P6_20261110_114040_eae3f295_Rerun",
+                      "Clinical":  "RHM_Hospital_Test_P6_20261110_114040_eae3f295_Clinical",
+                      "Service":  "RHM_Hospital_Test_P6_20261110_114040_eae3f295_Service",
+                      "Concurrent":  "RHM_Hospital_Test_P6_20261110_114040_eae3f295_Concurrent",
+                      "Xray":  "RHM_Hospital_Test_P6_20261110_114040_eae3f295_Xray",
+                      "Demo":  "RHM_Hospital_Test_P5Demo_P6_20261110_114040_eae3f295"
+                  },
+    "Steps":  [
+                  {
+                      "Name":  "preflight",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\preflight.log",
+                      "StartedUtc":  "\/Date(1794285643796)\/",
+                      "DurationSeconds":  0.22
+                  },
+                  {
+                      "Name":  "runner-checks",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  16,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\runner-checks.log",
+                      "StartedUtc":  "\/Date(1794285644033)\/",
+                      "DurationSeconds":  1.54
+                  },
+                  {
+                      "Name":  "install-new",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\install-new.log",
+                      "StartedUtc":  "\/Date(1794285645597)\/",
+                      "DurationSeconds":  3.21
+                  },
+                  {
+                      "Name":  "foundation-new",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  35,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\foundation-new.log",
+                      "StartedUtc":  "\/Date(1794285648809)\/",
+                      "DurationSeconds":  3.84
+                  },
+                  {
+                      "Name":  "install-baseline",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\install-baseline.log",
+                      "StartedUtc":  "\/Date(1794285652665)\/",
+                      "DurationSeconds":  3.02
+                  },
+                  {
+                      "Name":  "save-legacy",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\save-legacy.log",
+                      "StartedUtc":  "\/Date(1794285655690)\/",
+                      "DurationSeconds":  3.08
+                  },
+                  {
+                      "Name":  "install-upgrade",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\install-upgrade.log",
+                      "StartedUtc":  "\/Date(1794285658780)\/",
+                      "DurationSeconds":  2.13
+                  },
+                  {
+                      "Name":  "preserve-legacy",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  62,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\preserve-legacy.log",
+                      "StartedUtc":  "\/Date(1794285660913)\/",
+                      "DurationSeconds":  3.35
+                  },
+                  {
+                      "Name":  "foundation-upgrade",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  35,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\foundation-upgrade.log",
+                      "StartedUtc":  "\/Date(1794285664267)\/",
+                      "DurationSeconds":  3.62
+                  },
+                  {
+                      "Name":  "save-upgraded",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\save-upgraded.log",
+                      "StartedUtc":  "\/Date(1794285667885)\/",
+                      "DurationSeconds":  3.54
+                  },
+                  {
+                      "Name":  "rerun-1",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\rerun-1.log",
+                      "StartedUtc":  "\/Date(1794285671446)\/",
+                      "DurationSeconds":  2.16
+                  },
+                  {
+                      "Name":  "preserve-rerun-1",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  64,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\preserve-rerun-1.log",
+                      "StartedUtc":  "\/Date(1794285673605)\/",
+                      "DurationSeconds":  3.69
+                  },
+                  {
+                      "Name":  "rerun-2",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\rerun-2.log",
+                      "StartedUtc":  "\/Date(1794285677313)\/",
+                      "DurationSeconds":  2.48
+                  },
+                  {
+                      "Name":  "preserve-rerun-2",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  64,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\preserve-rerun-2.log",
+                      "StartedUtc":  "\/Date(1794285679796)\/",
+                      "DurationSeconds":  3.73
+                  },
+                  {
+                      "Name":  "seed-sealed",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\seed-sealed.log",
+                      "StartedUtc":  "\/Date(1794285683533)\/",
+                      "DurationSeconds":  8.24
+                  },
+                  {
+                      "Name":  "rerun-sealed",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\rerun-sealed.log",
+                      "StartedUtc":  "\/Date(1794285691776)\/",
+                      "DurationSeconds":  6.18
+                  },
+                  {
+                      "Name":  "interrupt-sealed",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\interrupt-sealed.log",
+                      "StartedUtc":  "\/Date(1794285697954)\/",
+                      "DurationSeconds":  6.28
+                  },
+                  {
+                      "Name":  "repair-sealed",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\repair-sealed.log",
+                      "StartedUtc":  "\/Date(1794285704241)\/",
+                      "DurationSeconds":  6.29
+                  },
+                  {
+                      "Name":  "sql-sync",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  32,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\sql-sync.log",
+                      "StartedUtc":  "\/Date(1794285710532)\/",
+                      "DurationSeconds":  5.95
+                  },
+                  {
+                      "Name":  "service",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  31,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\service.log",
+                      "StartedUtc":  "\/Date(1794285716489)\/",
+                      "DurationSeconds":  10.05
+                  },
+                  {
+                      "Name":  "concurrent",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  1,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\concurrent.log",
+                      "StartedUtc":  "\/Date(1794285726556)\/",
+                      "DurationSeconds":  6.65
+                  },
+                  {
+                      "Name":  "clinical",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  47,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\clinical.log",
+                      "StartedUtc":  "\/Date(1794285733207)\/",
+                      "DurationSeconds":  15.74
+                  },
+                  {
+                      "Name":  "smoke27",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  2,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\smoke27.log",
+                      "StartedUtc":  "\/Date(1794285748955)\/",
+                      "DurationSeconds":  5.56
+                  },
+                  {
+                      "Name":  "xray",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  32,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\xray.log",
+                      "StartedUtc":  "\/Date(1794285754520)\/",
+                      "DurationSeconds":  12.71
+                  },
+                  {
+                      "Name":  "xray-restore",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  2,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\xray-restore.log",
+                      "StartedUtc":  "\/Date(1794285767248)\/",
+                      "DurationSeconds":  21.43
+                  },
+                  {
+                      "Name":  "smb-loopback",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\smb-loopback.log",
+                      "StartedUtc":  "\/Date(1794285788699)\/",
+                      "DurationSeconds":  5.33
+                  },
+                  {
+                      "Name":  "create-demo",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\create-demo.log",
+                      "StartedUtc":  "\/Date(1794285794035)\/",
+                      "DurationSeconds":  10.7
+                  },
+                  {
+                      "Name":  "p5",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  21,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\p5.log",
+                      "StartedUtc":  "\/Date(1794285804740)\/",
+                      "DurationSeconds":  8.78
+                  },
+                  {
+                      "Name":  "p5-guards",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  7,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\p5-guards.log",
+                      "StartedUtc":  "\/Date(1794285813520)\/",
+                      "DurationSeconds":  22.33
+                  },
+                  {
+                      "Name":  "reports",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  41,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\reports.log",
+                      "StartedUtc":  "\/Date(1794285835862)\/",
+                      "DurationSeconds":  8.98
+                  },
+                  {
+                      "Name":  "constraints",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\constraints.log",
+                      "StartedUtc":  "\/Date(1794285844858)\/",
+                      "DurationSeconds":  1.96
+                  },
+                  {
+                      "Name":  "build-schema",
+                      "Status":  "PASS",
+                      "ExitCode":  0,
+                      "Passed":  null,
+                      "Failed":  0,
+                      "Reason":  "",
+                      "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\build-schema.log",
+                      "StartedUtc":  "\/Date(1794285846820)\/",
+                      "DurationSeconds":  4.32
+                  }
+              ],
+    "Matrix":  [
+                   {
+                       "Id":  "TN01",
+                       "Status":  "PASS",
+                       "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\service.log",
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "TN02",
+                       "Status":  "PASS",
+                       "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\service.log",
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "TN03",
+                       "Status":  "PASS",
+                       "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\service.log",
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "TN04",
+                       "Status":  "PASS",
+                       "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\service.log",
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "TN05",
+                       "Status":  "PASS",
+                       "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\service.log",
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "TN06",
+                       "Status":  "PASS",
+                       "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\concurrent.log",
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "TN07",
+                       "Status":  "PASS",
+                       "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\service.log",
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "HD01",
+                       "Status":  "PASS",
+                       "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\service.log",
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "HD02",
+                       "Status":  "PASS",
+                       "Evidence":  [
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\foundation-new.log",
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\service.log"
+                                    ],
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "HD03",
+                       "Status":  "PASS",
+                       "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\service.log",
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "HD04",
+                       "Status":  "PASS",
+                       "Evidence":  [
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\foundation-new.log",
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\service.log"
+                                    ],
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "HD05",
+                       "Status":  "PASS",
+                       "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\service.log",
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "XR01",
+                       "Status":  "PASS",
+                       "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\xray.log",
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "XR02",
+                       "Status":  "PASS",
+                       "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\xray.log",
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "XR03",
+                       "Status":  "PASS",
+                       "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\xray.log",
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "XR04",
+                       "Status":  "PENDING_ENVIRONMENT",
+                       "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\xray-restore.log",
+                       "Note":  "SQL/file restore trên cùng máy đã kiểm nếu bước xanh; còn kho UNC/hai máy và restore trên máy khác."
+                   },
+                   {
+                       "Id":  "DB01",
+                       "Status":  "PASS",
+                       "Evidence":  [
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\install-new.log",
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\preserve-legacy.log",
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\preserve-rerun-1.log",
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\preserve-rerun-2.log",
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\interrupt-sealed.log"
+                                    ],
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "DB02",
+                       "Status":  "PASS",
+                       "Evidence":  [
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\foundation-upgrade.log",
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\sql-sync.log",
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\p5.log",
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\constraints.log"
+                                    ],
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "BC01",
+                       "Status":  "PASS",
+                       "Evidence":  [
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\p5.log",
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\reports.log"
+                                    ],
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "BC02",
+                       "Status":  "PASS",
+                       "Evidence":  [
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\p5.log",
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\reports.log"
+                                    ],
+                       "Note":  ""
+                   },
+                   {
+                       "Id":  "RG01",
+                       "Status":  "PASS",
+                       "Evidence":  [
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\sql-sync.log",
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\clinical.log",
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\smoke27.log",
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\reports.log",
+                                        "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-20261110_114040_eae3f295\\build-schema.log"
+                                    ],
+                       "Note":  ""
+                   }
+               ],
+    "Pending":  [
+                    "SMB/hai máy thực và phục hồi trên máy khác",
+                    "Cấu hình/quyền và nghiệm thu vận hành trước triển khai"
+                ],
+    "SourceManifest":  "source-after.json",
+    "GitCommit":  "1cafa7d2096a3e954d381e473520cba8bab4b9dd"
+}

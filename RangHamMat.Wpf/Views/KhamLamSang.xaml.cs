@@ -53,6 +53,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
     /// Quyền cho phép thao tác được giữ trong phạm vi lớp để các thao tác dùng lại.
     /// </summary>
     private Func<string,bool> allowed=_=>true;
+    private AnhXquangLanKham? xrayEditor;
     /// <summary>
     /// Mã bệnh nhân. Có thể để null khi dữ liệu chưa được cung cấp.
     /// </summary>
@@ -111,7 +112,8 @@ public partial class KhamLamSang : UserControl,IPatientScoped
         try
         {
             var data=service.LayKhongGianKham(visitId,actor);PatientId=data.BenhNhan.MaBN;
-            PatientHeader.Text=$"{data.BenhNhan.HoTenBN} · {PatientId} · {data.BenhNhan.NgaySinh:dd/MM/yyyy}";
+            PatientHeader.Text=data.BenhNhan.HoTenBN;
+            PatientDemographics.Text=$"{PatientId} · Ngày sinh: {data.BenhNhan.NgaySinh?.ToString("dd/MM/yyyy")??"Chưa cập nhật"}";
             SafetyHeader.Text=$"Dị ứng: {Known(data.BenhNhan.DiUng)} · Tiền sử: {Known(data.BenhNhan.TienSuBenh)}";
             PlanServiceColumn.ItemsSource=data.DichVu.Select(d=>new LuaChonDanhMuc(d.MaDV,d.TenDV+(d.TrangThai=="Đang hoạt động"?"":" · ngừng hoạt động"))).ToArray();
             relatedServices=data.DichVuTheoTinhTrang;serviceCatalog=data.DichVu;referenceConditions=data.DinhHuong;ConfigureConditionPicker();
@@ -136,6 +138,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
         try
         {
             snapshot=saved;var v=saved.LanKham;ClinicalIdentity.Text=$"Lần khám {v.MaLS} · phiếu {v.MaPhieu} · bác sĩ {v.MaBS} · {v.TrangThai}";
+            VisitStateText.Text=v.TrangThai;
             SymptomsEditor.Text=v.TrieuChung;DiagnosisEditor.Text=v.ChanDoan;TreatmentEditor.Text=v.KeHoachXuLy;ClinicalNote.Text=v.GhiChu??"";
             NoPrescription.IsChecked=v.KhongKeThuoc==1;NoPrescriptionReason.Text=v.LyDoKhongKeThuoc??"";conditions.Clear();
             foreach(var t in saved.TinhTrang)conditions.Add(new(){MaTTB=t.MaTTB,MaDMTT=t.MaDMTT,LoaiTinhTrang=t.LoaiTinhTrang,MoTaTinhTrang=t.MoTaTinhTrang,GhiChu=t.GhiChu});
@@ -180,11 +183,17 @@ public partial class KhamLamSang : UserControl,IPatientScoped
     private void UpdateRights()
     {
         if(snapshot is null)return;
+        if(!Editable)xrayEditor?.RestrictToHistory();
         if(!Editable)prescriptionEditor?.RestrictToHistory();
         var edit=Editable;ClinicalInputPanel.IsEnabled=PrescriptionDecision.IsEnabled=edit;UpdateConditionRights();
         SaveClinicalButton.IsEnabled=CompleteClinicalButton.IsEnabled=NewPlanButton.IsEnabled=edit;
         var planEdit=edit &&(plan is null||plan.KeHoach.TrangThai=="Nháp");PlanFields.IsEnabled=planEdit;PlanSteps.IsReadOnly=!planEdit;PlanSteps.CanUserAddRows=PlanSteps.CanUserDeleteRows=planEdit;CancelPlanButton.IsEnabled=RefreshPlanPricesButton.IsEnabled=planEdit;
         SavePlanButton.IsEnabled=planEdit;ConfirmPlanButton.IsEnabled=planEdit&&plan is not null;OpenServicesButton.IsEnabled=allowed("DichVuThucHien");OpenPrescriptionButton.IsEnabled=allowed("DonThuoc");RefreshRecommendation();UpdatePlanTotal();
+    }
+    private void XrayHost_Loaded(object sender,RoutedEventArgs e)
+    {
+        if(xrayEditor is null){xrayEditor=new(visitId,actor,transaction);XrayHost.Content=xrayEditor;}
+        if(!Editable)xrayEditor.RestrictToHistory();
     }
     /// <summary>
     /// Thực thi thao tác được truyền vào và xử lý phản hồi theo quy tắc của màn hình.

@@ -1,0 +1,286 @@
+using System.Data;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
+using System.Windows;
+using System.Windows.Controls;
+using BUS;
+using DAL;
+using Dapper;
+using ET;
+using RangHamMat.Views;
+
+static class ServiceCheckEntry
+{
+    [STAThread] static int Main(string[] args)=>Program.ServiceChecks(args);
+}
+internal static partial class Program
+{
+    internal static int ServiceChecks(string[] args)
+    {
+        if(args.Length is <2 or >3||!System.Text.RegularExpressions.Regex.IsMatch(args[1],"^RHM_Hospital_Test_[A-Za-z0-9_]+$"))throw new Exception("Isolated DB required");
+        cs=$"Data Source={args[0]};Initial Catalog={args[1]};Integrated Security=True;TrustServerCertificate=True;";
+        Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",cs);
+        if(args.Length==3)
+        {
+            Assert(args[2]=="--concurrency"&&args[1].EndsWith("_Concurrent",StringComparison.Ordinal),"Concurrency needs a dedicated _Concurrent database");
+            Check("TN06 ba quầy đồng thời: cùng yêu cầu cùng phiếu, hai bệnh nhân hai số khác nhau",ConcurrentReception);
+            Console.WriteLine($"RESULT: {passed} passed, {failed} failed");return failed==0?0:1;
+        }
+        var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml",UriKind.Relative)});
+        Check("TN02 có ca mới được chọn, dịch vụ cùng chuyên khoa",()=>Tx(tx=>{
+            ReceptionFixture(tx);var a=Login(tx,"NV001","TK001");var bs=ServiceDoctors(tx,a);
+            Assert(bs.Count==1&&bs[0].MaNV=="NV002"&&!bs[0].ThieuLich,"Bác sĩ thiếu ca được chọn hoặc mất bác sĩ hợp lệ");
+            var dv=DoctorServices(tx,"NV002",a);Assert(dv.Any(x=>x.MaDV=="DV001")&&dv.All(x=>x.MaCK=="CK001")&&!dv.Any(x=>x.MaDV=="DV006"),"Sai chuyên khoa dịch vụ");
+        }));
+        Check("TN02 lưu loại/phí do backend và audit, retry một phiếu",()=>Tx(tx=>{
+            ReceptionFixture(tx);var a=Login(tx,"NV001","TK001");var bus=new BUS_TIEPNHAN(tx);var req=ServiceRequest();
+            var one=bus.TiepNhan(req,a);var two=bus.TiepNhan(req,a);Assert(one.MaPhieu==two.MaPhieu,"Tiếp nhận trùng");
+            var p=tx.Connection!.QuerySingle<ET_PHIEUKHAMBENH>("SELECT * FROM dbo.PHIEU_KHAM_BENH WHERE MaPhieu=@id",new{id=one.MaPhieu},tx);
+            Assert(p.LoaiKham=="Dịch vụ"&&p.PhiPhuThuDichVu==30000,"Chưa lưu mức phí");
+            Assert(tx.Connection.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC WHERE MaDoiTuong=@id AND DuLieuSau LIKE N'%LoaiKham%' AND DuLieuSau LIKE N'%30000%'",new{id=one.MaPhieu},tx)>0,"Thiếu audit loại/phí");
+        }));
+        Check("TN02 tiếp nhận không cần Admin, giữ đúng nhân viên và chặn vai trò khác",()=>Tx(tx=>{
+            ReceptionFixture(tx);var a=Login(tx,"NV005","TK005");Assert(ServiceDoctors(tx,a).Any(x=>x.MaNV=="NV002"),"Tiếp nhận thiếu quyền tra bác sĩ");
+            var r=new BUS_TIEPNHAN(tx).TiepNhan(ServiceRequest(),a);
+            Assert(tx.Connection!.ExecuteScalar<string>("SELECT MaNVTiepNhan FROM dbo.PHIEU_KHAM_BENH WHERE MaPhieu=@id",new{id=r.MaPhieu},tx)=="NV005","Sai người tiếp nhận");
+            ExpectInvalid(()=>ServiceDoctors(tx,Login(tx)));
+        }));
+        Check("TN05 Admin cũng không dùng lý do điều phối ngoài lịch cho khám dịch vụ",()=>Tx(tx=>{
+            ReceptionFixture(tx);var a=Login(tx,"NV001","TK001");
+            ExpectInvalid(()=>new BUS_TIEPNHAN(tx).TiepNhan(ServiceRequest() with{LyDoDieuPhoiNgoaiLich="FIXTURE ngoại lệ"},a));
+        }));
+        Check("TN01 thường vẫn cho điều phối theo quyền và phí 0",()=>Tx(tx=>{
+            ReceptionFixture(tx);tx.Connection!.Execute("DELETE dbo.LICH_LAM_VIEC WHERE MaLLV=N'SVC_SHIFT'",transaction:tx);
+            var result=new BUS_TIEPNHAN(tx).TiepNhan(new(){MaBN="SVC_BN",MaDV="DV001",MaBS="NV002",MaPhong="PH001",LyDoKham="FIXTURE",LyDoDieuPhoiNgoaiLich="FIXTURE có quyền"},Login(tx,"NV001","TK001"));
+            Assert(tx.Connection.ExecuteScalar<decimal>("SELECT PhiPhuThuDichVu FROM dbo.PHIEU_KHAM_BENH WHERE MaPhieu=@id",new{id=result.MaPhieu},tx)==0,"Thu phụ thu cho khám thường");
+        }));
+        foreach(var (label,sql) in new[]{
+            ("thiếu ca","DELETE dbo.LICH_LAM_VIEC WHERE MaLLV=N'SVC_SHIFT'"),
+            ("ca chưa xác nhận","UPDATE dbo.LICH_LAM_VIEC SET TrangThai=N'Nháp' WHERE MaLLV=N'SVC_SHIFT'"),
+            ("vắng mặt","UPDATE dbo.LICH_LAM_VIEC SET TrangThaiHienDien=N'Vắng mặt' WHERE MaLLV=N'SVC_SHIFT'"),
+            ("chưa có mặt","UPDATE dbo.LICH_LAM_VIEC SET TrangThaiHienDien=N'Chưa cập nhật' WHERE MaLLV=N'SVC_SHIFT'"),
+            ("không phòng","UPDATE dbo.LICH_LAM_VIEC SET MaPhong=NULL WHERE MaLLV=N'SVC_SHIFT'"),
+            ("phòng ngừng","UPDATE dbo.PHONG SET TrangThai=N'Ngừng hoạt động' WHERE MaPhong=N'PH001'"),
+            ("tài khoản khóa","UPDATE dbo.TAI_KHOAN SET TrangThai=N'Bị khóa' WHERE MaTK=N'TK002'"),
+            ("ca ngừng","UPDATE dbo.CA_LAM SET TrangThai=N'Ngừng hoạt động' WHERE MaCa=N'SVC_CA'"),
+            ("bác sĩ nghỉ việc","UPDATE dbo.NHAN_VIEN SET TrangThai=N'Đã nghỉ việc' WHERE MaNV=N'NV002'"),
+            ("nghỉ phép","INSERT dbo.DON_XIN_NGHI(MaDonNghi,MaNV,TuNgay,DenNgay,LyDo,NgayGui,TrangThaiDuyet,MaNVDuyet,NgayDuyet) VALUES(N'SVC_LEAVE',N'NV002',CONVERT(date,SYSDATETIME()),CONVERT(date,SYSDATETIME()),N'FIXTURE',SYSDATETIME(),N'Đã duyệt',N'NV001',SYSDATETIME())")})
+            Check("TN03 từ chối "+label,()=>Tx(tx=>{
+                ReceptionFixture(tx);var a=Login(tx,"NV001","TK001");tx.Connection!.Execute(sql,transaction:tx);
+                Assert(!ServiceDoctors(tx,a).Any(x=>x.MaNV=="NV002"),"Vẫn hiện bác sĩ không hợp lệ");
+                ExpectInvalid(()=>new BUS_TIEPNHAN(tx).TiepNhan(ServiceRequest(),a));
+                Assert(tx.Connection.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.HO_SO_BENH_AN WHERE MaBN=N'SVC_BN'",transaction:tx)==0,"Tạo hồ sơ mồ côi");
+            }));
+        Check("TN05 ca bị hủy sau khi chọn vẫn bị kiểm lại lúc lưu",()=>Tx(tx=>{
+            ReceptionFixture(tx);var a=Login(tx,"NV001","TK001");Assert(ServiceDoctors(tx,a).Count==1,"Không có ca ban đầu");
+            tx.Connection!.Execute("UPDATE dbo.LICH_LAM_VIEC SET TrangThai=N'Hủy' WHERE MaLLV=N'SVC_SHIFT'",transaction:tx);
+            ExpectInvalid(()=>new BUS_TIEPNHAN(tx).TiepNhan(ServiceRequest(),a));
+        }));
+        Check("TN03 ca qua ngày nhận đúng ca, chặn trước giờ và đúng giờ kết thúc",()=>Tx(tx=>{
+            ReceptionFixture(tx);tx.Connection!.Execute("UPDATE dbo.CA_LAM SET GioBatDau='22:00',GioKetThuc='06:00' WHERE MaCa=N'SVC_CA'; UPDATE dbo.LICH_LAM_VIEC SET NgayLam='20261107' WHERE MaLLV=N'SVC_SHIFT'",transaction:tx);
+            var query=typeof(DAL_TIEPNHAN).GetMethod("Candidates",BindingFlags.Static|BindingFlags.NonPublic)!;
+            IReadOnlyList<BacSiTiepNhan> At(DateTime time)=>(IReadOnlyList<BacSiTiepNhan>)query.Invoke(null,[tx.Connection,tx,null,time,true])!;
+            Assert(At(new(2026,11,7,22,0,0)).Any(x=>x.MaNV=="NV002")&&At(new(2026,11,8,1,0,0)).Any(x=>x.MaNV=="NV002"),"Mất ca qua ngày");
+            Assert(!At(new(2026,11,7,21,59,59)).Any(x=>x.MaNV=="NV002")&&!At(new(2026,11,8,6,0,0)).Any(x=>x.MaNV=="NV002"),"Nhận ngoài giờ ca");
+        }));
+        Check("TN07 lịch hẹn hợp lệ vẫn là thông thường và retry cùng phiếu",()=>Tx(tx=>{
+            ReceptionFixture(tx);tx.Connection!.Execute("""
+                INSERT dbo.LICH_KHAM(MaLich,MaBN,MaBS,MaCa,MaPhong,MaDV,NgayGioKham,ThoiLuongDuKien,UuTien,LyDoKham,TrangThai,NgayTao)
+                VALUES(N'SVC_APPT',N'SVC_BN',N'NV002',N'SVC_CA',N'PH001',N'DV001',SYSDATETIME(),30,N'Bình thường',N'FIXTURE',N'Đã xác nhận',SYSDATETIME());
+                """,transaction:tx);
+            var a=Login(tx,"NV001","TK001");var bus=new BUS_TIEPNHAN(tx);var req=new YeuCauTiepNhan{MaBN="SVC_BN",MaDV="DV001",MaBS="NV002",MaPhong="PH001",MaLich="SVC_APPT",LyDoKham="FIXTURE"};
+            var r=bus.TiepNhan(req,a);Assert(bus.TiepNhan(req,a).MaPhieu==r.MaPhieu&&r.PhiPhuThuDichVu==0&&r.LoaiKham=="Thông thường","Đổi hành vi lịch hẹn");
+        }));
+        Check("TN04 lọc ngày áp dụng và chặn gửi dịch vụ khác chuyên khoa",()=>Tx(tx=>{
+            ReceptionFixture(tx);var a=Login(tx,"NV001","TK001");tx.Connection!.Execute("UPDATE dbo.DICH_VU SET NgayApDung=DATEADD(day,1,SYSDATETIME()) WHERE MaDV=N'DV001'",transaction:tx);
+            Assert(!DoctorServices(tx,"NV002",a).Any(x=>x.MaDV=="DV001"),"Dịch vụ chưa tới ngày áp dụng");
+            ExpectInvalid(()=>new BUS_TIEPNHAN(tx).TiepNhan(ServiceRequest(),a));
+            ExpectInvalid(()=>new BUS_TIEPNHAN(tx).TiepNhan(ServiceRequest() with{MaDV="DV006"},a));
+        }));
+        Check("TN07 retry khác loại không nâng cấp âm thầm",()=>Tx(tx=>{
+            ReceptionFixture(tx);var a=Login(tx,"NV001","TK001");var b=new BUS_TIEPNHAN(tx);
+            b.TiepNhan(new(){MaBN="SVC_BN",MaDV="DV001",MaBS="NV002",MaPhong="PH001",LyDoKham="FIXTURE"},a);
+            ExpectInvalid(()=>b.TiepNhan(ServiceRequest(),a));
+        }));
+        Check("TN04 dịch vụ ngừng hoạt động bị loại khỏi danh sách và từ chối lúc lưu",()=>Tx(tx=>{
+            ReceptionFixture(tx);var a=Login(tx,"NV001","TK001");
+            Assert(DoctorServices(tx,"NV002",a).Any(x=>x.MaDV=="DV001"),"Thiếu dịch vụ ban đầu");
+            tx.Connection!.Execute("UPDATE dbo.DICH_VU SET TrangThai=N'Ngừng áp dụng' WHERE MaDV=N'DV001'",transaction:tx);
+            Assert(!DoctorServices(tx,"NV002",a).Any(x=>x.MaDV=="DV001"),"Vẫn hiện dịch vụ ngừng hoạt động");
+            ExpectInvalid(()=>new BUS_TIEPNHAN(tx).TiepNhan(ServiceRequest(),a));
+            Assert(tx.Connection.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.HO_SO_BENH_AN WHERE MaBN=N'SVC_BN'",transaction:tx)==0,"Dịch vụ ngừng vẫn tạo hồ sơ");
+        }));
+        Check("TN07 lịch hẹn không nhận loại dịch vụ",()=>Tx(tx=>{
+            ReceptionFixture(tx);ExpectInvalid(()=>new BUS_TIEPNHAN(tx).TiepNhan(ServiceRequest() with{MaLich="FIXTURE_APPOINTMENT"},Login(tx,"NV001","TK001")));
+        }));
+        Check("HD01 tổng kết và hoàn tất chốt đúng 130000 một lần",()=>Tx(tx=>{
+            var (b,a,id)=ServiceClinical(tx);var summary=b.LayTongKetKham(id,a);
+            Assert(ExtraFee(summary)==30000&&summary.TienDichVu==100000,"Tổng kết chưa tính riêng phụ thu");
+            var done=b.ChotKhamVaLapHoaDon(id,b.LayBanNhap(id,a).DauVanTay,summary.DauVanTay,a);
+            Assert(done.MaHD is not null,"Thiếu hóa đơn");AssertFeeInvoice(tx,done.MaHD!,130000);
+            Assert(b.HoanTatKham(id,b.LayBanNhap(id,a).DauVanTay,a).MaHD==done.MaHD,"Retry hóa đơn trùng");
+        }));
+        Check("HD03 nhánh hóa đơn cũ, giảm giá, thu từng phần và hoàn",()=>Tx(tx=>{
+            var (b,a,id)=ServiceClinical(tx);
+            // Signed visit via SQL to exercise the supported legacy invoice API independently.
+            tx.Connection!.Execute("UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận',NgayXacNhan=SYSDATETIME() WHERE MaLS=@id",new{id},tx);
+            var invoice=new DAL_HOADON(tx);var hd=invoice.CreateInvoice(id,"NV002",100000);AssertFeeInvoice(tx,hd,130000);
+            invoice.ConfirmInvoice(hd);var payment=new BUS_THANHTOAN(tx);
+            payment.RecordPayment(hd,"NV002",10000,"Thu","Tiền mặt");payment.RecordPayment(hd,"NV002",20000,"Thu","Tiền mặt");payment.RecordPayment(hd,"NV002",5000,"Hoàn","Tiền mặt","FIXTURE hoàn hợp lệ");
+            Assert(tx.Connection.ExecuteScalar<decimal>("SELECT DaThuRong FROM dbo.VW_HOA_DON_THANH_TOAN WHERE MaHD=@hd",new{hd},tx)==25000,"Thu/hoàn không khớp");
+        }));
+        Check("HD04 DAL từ chối giảm giá trừ vào phụ thu trước khi ghi",()=>Tx(tx=>{
+            var (_,_,id)=ServiceClinical(tx);tx.Connection!.Execute("UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận',NgayXacNhan=SYSDATETIME() WHERE MaLS=@id",new{id},tx);
+            ExpectInvalid(()=>new DAL_HOADON(tx).CreateInvoice(id,"NV002",100001));
+            Assert(tx.Connection.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.HOA_DON WHERE MaLS=@id",new{id},tx)==0,"Giảm giá sai còn hóa đơn mồ côi");
+        }));
+        Check("HD05 bảng phí, thu đủ, retry và in có một phụ thu",()=>Tx(tx=>{
+            var (b,a,id)=ServiceClinical(tx);var sum=b.LayTongKetKham(id,a);var done=b.ChotKhamVaLapHoaDon(id,b.LayBanNhap(id,a).DauVanTay,sum.DauVanTay,a);
+            var admin=Login(tx,"NV001","TK001");var finance=new DAL_THANHTOANTRONGOI(tx);var fee=finance.LapBangTinh(id,null,admin);
+            Assert(fee.TongTien==130000&&ExtraFee(fee)==30000&&fee.DuocThanhToan,"Bảng phí không khớp");
+            var req=new YeuCauThanhToan{MaLS=id,MaYeuCau=Guid.NewGuid(),DauVanTayBangTinh=fee.DauVanTay!,PhuongThuc="Tiền mặt",SoTienKhachDua=150000};
+            var paid=finance.ThanhToan(req,admin);Assert(paid.MaHD==done.MaHD&&paid.SoTienThu==130000&&paid.TienThua==20000,"Thu sai phụ thu");
+            Assert(finance.ThanhToan(req,admin).MaTT==paid.MaTT,"Thu hai lần");AssertFeeInvoice(tx,paid.MaHD,130000);
+            var print=finance.LayBanInHoaDon(paid.MaHD,admin);var lines=print.CacDong.Where(x=>x.NoiDung.Contains("Phụ thu")).ToArray();
+            Assert(lines.Length==1&&lines[0].SoLuong==1&&lines[0].ThanhTien==30000,"Bản in mất phụ thu");
+            var preview=new XemTruocHoaDon(()=>finance.LayBanInHoaDon(paid.MaHD,admin));
+            try{preview.Left=-20000;preview.Top=-20000;preview.Show();CaptureWindow(preview,"service-invoice.png");Assert(preview.TryPrint(p=>Assert(p.GetPage(0).Visual is not null,"Không có trang in"),new Size(794,1123),out var error),error??"Không in được");}finally{preview.Close();}
+        }));
+        Check("HD04 SQL từ chối sửa TongTien độc lập với chi tiết",()=>Tx(tx=>{
+            var (_,_,id)=ServiceClinical(tx);
+            tx.Connection!.Execute("UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận',NgayXacNhan=SYSDATETIME() WHERE MaLS=@id",new{id},tx);
+            var hd=new DAL_HOADON(tx).CreateInvoice(id,"NV002",0);AssertFeeInvoice(tx,hd,130000);
+            var rejected=false;
+            try{tx.Connection.Execute("UPDATE dbo.HOA_DON SET TongTien=TongTien+1 WHERE MaHD=@hd",new{hd},tx);}
+            catch(Microsoft.Data.SqlClient.SqlException ex)when(ex.Number==51007){rejected=true;}
+            Assert(rejected,"SQL cho phép ghi tổng tiền không khớp chi tiết");
+        }));
+        Check("HD04 dịch vụ thực hiện giả 30000 không thay được nguồn phụ thu",()=>Tx(tx=>{
+            var (_,_,id)=ServiceClinical(tx);
+            tx.Connection!.Execute("""
+                INSERT dbo.DICH_VU_THUC_HIEN(MaDVThucHien,MaLS,MaDV,MaNVThucHien,ThoiGianThucHien,SoLuong,DonGia,KetQua,TrangThai)
+                VALUES(N'SVC_FAKE_FEE',@id,N'DV006',N'NV002',SYSDATETIME(),1,30000,N'FIXTURE phụ thu giả',N'Đã xác nhận');
+                UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận',NgayXacNhan=SYSDATETIME() WHERE MaLS=@id;
+                """,new{id},tx);
+            var invoice=new DAL_HOADON(tx);var hd=invoice.CreateInvoice(id,"NV002",0);AssertFeeInvoice(tx,hd,160000);
+            tx.Connection.Execute("DELETE dbo.CHI_TIET_HOA_DON WHERE MaHD=@hd AND MaPhieuPhuThu IS NOT NULL",new{hd},tx);
+            Assert(tx.Connection.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.CHI_TIET_HOA_DON WHERE MaHD=@hd AND MaDVThucHien=N'SVC_FAKE_FEE' AND ThanhTien=30000",new{hd},tx)==1,"Chưa tạo được nguồn giả cần kiểm");
+            var rejected=false;
+            try{invoice.ConfirmInvoice(hd);}
+            catch(Microsoft.Data.SqlClient.SqlException ex)when(ex.Number==53404){rejected=true;}
+            Assert(rejected,"Nguồn dịch vụ giả thay thế được dòng phụ thu bắt buộc");
+        }));
+        Check("HD05 thuốc hai lô và phụ thu giữ nguyên giá khi thu, in gộp đúng",()=>Tx(tx=>{
+            var(b,a,id)=ServiceClinical(tx);tx.Connection!.Execute(FinanceFixtureSql.Replace("TC_LS",id),transaction:tx);
+            var sum=b.LayTongKetKham(id,a);var done=b.ChotKhamVaLapHoaDon(id,b.LayBanNhap(id,a).DauVanTay,sum.DauVanTay,a);AssertFeeInvoice(tx,done.MaHD!,160000);
+            tx.Connection.Execute("UPDATE dbo.THUOC SET DonGiaBan=15000 WHERE MaThuoc=N'TH_TEST_RHM'",transaction:tx);
+            var admin=Login(tx,"NV001","TK001");var finance=new DAL_THANHTOANTRONGOI(tx);var fee=finance.LapBangTinh(id,"KHO_TEST_RHM",admin);
+            Assert(fee.TongTien==160000&&fee.TienThuoc==30000&&fee.Thuoc.Single().CacLo.Count==2,"Sai giá chốt/phân lô/phụ thu");
+            var paid=finance.ThanhToan(new(){MaLS=id,MaKhoCapThuoc="KHO_TEST_RHM",MaYeuCau=Guid.NewGuid(),DauVanTayBangTinh=fee.DauVanTay!,PhuongThuc="Tiền mặt",SoTienKhachDua=200000},admin);
+            Assert(paid.TienThua==40000,"Sai tiền thối");AssertFeeInvoice(tx,paid.MaHD,160000);
+            var details=new DAL_CHITIETHOADON(tx).GetInvoiceDetails(paid.MaHD);var groups=InvoicePrintLines.Group(details);
+            Assert(groups.Count==3&&groups.Sum(g=>g.ThanhTien)==160000&&groups.Single(g=>g.Description.Contains("Phụ thu")).SoLuong==1,"Gộp in mất/trùng phụ thu");
+        }));
+        Check("UI loại khám dịch vụ khóa dịch vụ tới khi chọn bác sĩ, đổi bác sĩ xóa dịch vụ/phòng",()=>Tx(tx=>{
+            ReceptionFixture(tx);var a=Login(tx,"NV001","TK001");
+            tx.Connection!.Execute("""
+                UPDATE dbo.NHAN_VIEN SET MaCK=N'CK004' WHERE MaNV=N'NV003';
+                INSERT dbo.PHONG(MaPhong,MaKhoa,TenPhong,LoaiPhong,TinhTrang,TrangThai)
+                SELECT N'SVC_PH2',MaKhoa,N'FIXTURE phòng bác sĩ 2',N'Phòng khám chuyên khoa',N'Đang sử dụng',N'Đang hoạt động' FROM dbo.CHUYEN_KHOA WHERE MaCK=N'CK004';
+                INSERT dbo.LICH_LAM_VIEC(MaLLV,MaNV,MaCa,NgayLam,MaPhong,TrangThai,TrangThaiHienDien)
+                SELECT N'SVC_SHIFT2',N'NV003',MaCa,NgayLam,N'SVC_PH2',TrangThai,TrangThaiHienDien FROM dbo.LICH_LAM_VIEC WHERE MaLLV=N'SVC_SHIFT';
+                """,transaction:tx);
+            var ctor=typeof(TiepNhanKham).GetConstructor([typeof(NguCanhNghiepVu),typeof(IDbTransaction)]);
+            Assert(ctor is not null,"Thiếu context giao dịch cho tiếp nhận");var editor=(TiepNhanKham)ctor!.Invoke([a,tx]);
+            typeof(TiepNhanKham).GetField("ready",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(editor,true);
+            Control<TextBlock>(editor,"PatientIdentity").Text="FIXTURE khám dịch vụ · SVC_BN · Dữ liệu kiểm thử rollback";
+            var arrivals=Control<ComboBox>(editor,"AppointmentPicker");arrivals.ItemsSource=new[]{new RangHamMat.Controls.LuaChonDanhMuc("","Đến trực tiếp")};arrivals.SelectedValue="";
+            var kind=Control<ComboBox>(editor,"LoaiKhamPicker");kind.SelectedValue="Dịch vụ";
+            var doctors=Control<ComboBox>(editor,"DoctorPicker");var services=Control<ComboBox>(editor,"ServicePicker");var room=Control<ComboBox>(editor,"RoomPicker");
+            Assert(doctors.IsEnabled&&!services.IsEnabled&&services.Items.Count==0,"Sai thứ tự chọn");
+            doctors.SelectedValue="NV002";Assert(services.IsEnabled&&room.SelectedValue?.ToString()=="PH001"&&!room.IsEnabled,"Không khóa phòng theo ca");
+            services.SelectedValue="DV001";Assert(doctors.SelectedValue?.ToString()=="NV002","Chọn dịch vụ làm mất bác sĩ");
+            doctors.SelectedValue="NV003";
+            Assert(services.SelectedItem is null&&room.SelectedValue?.ToString()=="SVC_PH2","Đổi bác sĩ giữ dịch vụ/phòng cũ");
+            Assert(DoctorServices(tx,"NV003",a).Any(x=>x.MaDV=="DV006"),"Thiếu dịch vụ fixture của bác sĩ 2");
+            services.SelectedValue="DV001";Assert(services.SelectedItem is null,"Đổi bác sĩ còn dịch vụ chuyên khoa cũ");
+            services.SelectedValue="DV006";Assert(services.SelectedItem is not null,"Đổi bác sĩ chưa nạp dịch vụ chuyên khoa mới");
+            Capture(editor,"service-doctor-switch.png");
+            doctors.SelectedValue="NV002";services.SelectedValue="DV001";
+            Capture(editor,"service-reception.png");
+            typeof(TiepNhanKham).GetField("patientId",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(editor,"SVC_BN");
+            Control<TextBox>(editor,"ArrivalReason").Text="FIXTURE kiểm ca bị hủy sau khi chọn";
+            tx.Connection!.Execute("UPDATE dbo.LICH_LAM_VIEC SET TrangThai=N'Hủy' WHERE MaLLV=N'SVC_SHIFT'",transaction:tx);
+            Assert(!editor.TryReceive(out var receptionError)&&!string.IsNullOrEmpty(receptionError)&&!string.IsNullOrEmpty(Control<TextBlock>(editor,"FormError").Text),"UI nhận phiếu dù ca đã hủy");
+            Assert(tx.Connection.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.PHIEU_KHAM_BENH p JOIN dbo.HO_SO_BENH_AN h ON h.MaHS=p.MaHS WHERE h.MaBN=N'SVC_BN'",transaction:tx)==0,"UI lỗi vẫn ghi tiếp nhận");
+            Capture(editor,"service-missing-shift.png");doctors.SelectedIndex=-1;
+            Assert(services.SelectedItem is null&&services.Items.Count==0&&!services.IsEnabled&&room.SelectedItem is null,"Đổi bác sĩ giữ lựa chọn cũ");
+            kind.SelectedValue="Thông thường";Assert(services.IsEnabled&&doctors.SelectedItem is null,"Đổi loại khám giữ bác sĩ cũ");
+            Assert(services.Items.Count>0&&string.IsNullOrEmpty(Control<TextBlock>(editor,"FormError").Text),"Đổi loại khám không nạp được dịch vụ thông thường trong cùng ngữ cảnh");
+            Assert(!Nodes(editor).OfType<TextBlock>().Any(t=>Equals(t.Tag,"ClinicalFieldError")),"Đổi loại khám còn giữ lỗi bác sĩ của chế độ trước");
+            Capture(editor,"ordinary-reception.png");
+        }));
+        Check("UI bảng tính phí và tổng kết hiển thị phụ thu riêng",()=>Tx(tx=>{
+            var(b,a,id)=ServiceClinical(tx);var summary=b.LayTongKetKham(id,a);
+            var clinical=new KhamLamSang(id,a,tx);Capture(clinical,"service-clinical-summary.png");
+            Assert(Control<TextBlock>(clinical,"CompletionTotalText").Text.Contains("Phụ thu"),"Tổng kết bỏ phụ thu");
+            b.ChotKhamVaLapHoaDon(id,b.LayBanNhap(id,a).DauVanTay,summary.DauVanTay,a);
+            var editor=new BangTinhPhiEditor(Login(tx,"NV001","TK001"),tx);editor.FocusContext(id);Assert(editor.TryLapBangTinh(out var error),error??"Chưa có bảng phí");
+            Assert(Control<TextBlock>(editor,"SurchargeText").Text.Contains("30.000"),"UI bảng phí chưa hiện phụ thu");Capture(editor,"service-fee-preview.png");
+        }));
+        app.Shutdown();Console.WriteLine($"RESULT: {passed} passed, {failed} failed");return failed==0?0:1;
+    }
+    static object Call(object target,string name,params object[] args)
+    {
+        var method=target.GetType().GetMethod(name)??throw new Exception("Missing service API: "+name);
+        try{return method.Invoke(target,args)!;}catch(TargetInvocationException ex){ExceptionDispatchInfo.Capture(ex.InnerException!).Throw();throw;}
+    }
+    static void ConcurrentReception()
+    {
+        using var db=new Microsoft.Data.SqlClient.SqlConnection(cs);db.Open();NguCanhNghiepVu actor;
+        using(var tx=db.BeginTransaction(IsolationLevel.Serializable))
+        {
+            Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.BENH_NHAN WHERE MaBN=N'SVC_BN'",transaction:tx)==0,"Use a fresh _Concurrent database; persisted fixture already exists");
+            ReceptionFixture(tx);
+            db.Execute("INSERT dbo.BENH_NHAN(MaBN,HoTenBN,NgaySinh,TrangThai) VALUES(N'SVC_BN2',N'FIXTURE quầy khác','19900101',N'Đang theo dõi')",transaction:tx);
+            actor=Login(tx,"NV001","TK001");tx.Commit();
+        }
+        var principal=Thread.CurrentPrincipal;using var start=new ManualResetEventSlim(false);
+        var requests=new[]{ServiceRequest(),ServiceRequest(),ServiceRequest() with{MaBN="SVC_BN2"}};
+        var tasks=requests.Select(r=>Task.Run(()=>{Thread.CurrentPrincipal=principal;start.Wait();return new BUS_TIEPNHAN().TiepNhan(r,actor);})).ToArray();
+        start.Set();var results=Task.WhenAll(tasks).GetAwaiter().GetResult();
+        Assert(results[0].MaPhieu==results[1].MaPhieu&&results[0].MaPhieu!=results[2].MaPhieu&&results[0].SoThuTu!=results[2].SoThuTu,"Concurrent admission duplicated a receipt/queue number");
+        Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.PHIEU_KHAM_BENH p JOIN dbo.HO_SO_BENH_AN h ON h.MaHS=p.MaHS WHERE h.MaBN IN(N'SVC_BN',N'SVC_BN2') AND p.LoaiKham=N'Dịch vụ' AND p.PhiPhuThuDichVu=30000")==2,"Concurrent receipts do not match both patients");
+    }
+    static IReadOnlyList<BacSiTiepNhan> ServiceDoctors(IDbTransaction tx,NguCanhNghiepVu a)=>(IReadOnlyList<BacSiTiepNhan>)Call(new BUS_TIEPNHAN(tx),"LayBacSiDichVu",a);
+    static IReadOnlyList<ET_DICHVU> DoctorServices(IDbTransaction tx,string id,NguCanhNghiepVu a)=>(IReadOnlyList<ET_DICHVU>)Call(new BUS_TIEPNHAN(tx),"LayDichVuTheoBacSi",id,a);
+    static YeuCauTiepNhan ServiceRequest()
+    {
+        var r=new YeuCauTiepNhan{MaBN="SVC_BN",MaDV="DV001",MaBS="NV002",MaPhong="PH001",LyDoKham="FIXTURE khám dịch vụ"};
+        var prop=r.GetType().GetProperty("LoaiKham")??throw new Exception("Missing reception kind contract");prop.SetValue(r,"Dịch vụ");return r;
+    }
+    static decimal ExtraFee(object value)=>(decimal)(value.GetType().GetProperty("PhiPhuThu")?.GetValue(value)??-1m);
+    static void ReceptionFixture(IDbTransaction tx)
+    {
+        Fixture(tx);tx.Connection!.Execute("""
+            INSERT dbo.BENH_NHAN(MaBN,HoTenBN,NgaySinh,TrangThai) VALUES(N'SVC_BN',N'FIXTURE khám dịch vụ, rollback','19900101',N'Đang theo dõi');
+            DECLARE @shiftStart datetime2(0)=DATEADD(hour,-2,SYSDATETIME()),@shiftEnd datetime2(0)=DATEADD(hour,2,SYSDATETIME());
+            INSERT dbo.CA_LAM(MaCa,GioBatDau,GioKetThuc,TrangThai) VALUES(N'SVC_CA',CONVERT(time(0),@shiftStart),CONVERT(time(0),@shiftEnd),N'Đang hoạt động');
+            INSERT dbo.LICH_LAM_VIEC(MaLLV,MaNV,MaCa,NgayLam,MaPhong,TrangThai,TrangThaiHienDien)
+            VALUES(N'SVC_SHIFT',N'NV002',N'SVC_CA',CONVERT(date,@shiftStart),N'PH001',N'Đã xác nhận',N'Có mặt');
+            """,transaction:tx);
+    }
+    static (BUS_KHAMDIEUTRI,NguCanhNghiepVu,string) ServiceClinical(IDbTransaction tx)
+    {
+        ReceptionFixture(tx);var reception=new BUS_TIEPNHAN(tx).TiepNhan(ServiceRequest(),Login(tx,"NV001","TK001"));
+        var a=Login(tx);var b=new BUS_KHAMDIEUTRI(tx);var id=b.BatDauKham(reception.MaPhieu,a);var old=b.LayBanNhap(id,a);
+        b.LuuKham(new(){MaLS=id,DauVanTay=old.DauVanTay,TrieuChung="FIXTURE",ChanDoan="FIXTURE",KeHoachXuLy="FIXTURE",KhongKeThuoc=true,LyDoKhongKeThuoc="FIXTURE không kê",TinhTrang=[new(){LoaiTinhTrang="FIXTURE"}]},a);
+        b.XacNhanThucHien(id,b.LayTongKetKham(id,a).DauVanTay,a);return(b,a,id);
+    }
+    static void AssertFeeInvoice(IDbTransaction tx,string hd,decimal total)
+    {
+        Assert(tx.Connection!.ExecuteScalar<decimal>("SELECT TongTien FROM dbo.HOA_DON WHERE MaHD=@hd",new{hd},tx)==total,"Sai tổng hóa đơn");
+        Assert(tx.Connection.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.CHI_TIET_HOA_DON WHERE MaHD=@hd AND MaPhieuPhuThu IS NOT NULL AND ThanhTien=30000",new{hd},tx)==1,"Sai số dòng phụ thu");
+    }
+}

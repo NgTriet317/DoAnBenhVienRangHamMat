@@ -9,6 +9,7 @@ namespace BUS;
 public sealed class BUS_BAOCAO
 {
     public QuyenBaoCao LayQuyen() => new DAL_BAOCAO().LayQuyen();
+    public bool LaDuLieuTrinhDien()=>new DAL_BAOCAO().LaDuLieuTrinhDien();
     public (LuaChonThongKe[] ChuyenKhoa,LuaChonThongKe[] DichVu) LayDanhMucLoc() => new DAL_BAOCAO().LayDanhMucLoc();
     public void GhiTruyCap(string ma,string hanhDong,DateTime tu,DateTime den) => new DAL_BAOCAO().GhiTruyCap(ma,hanhDong,tu,den);
     public void KiemTraXuat(string ma,bool gomChiTiet=false) => new DAL_BAOCAO().KiemTraXuat(ma,gomChiTiet);

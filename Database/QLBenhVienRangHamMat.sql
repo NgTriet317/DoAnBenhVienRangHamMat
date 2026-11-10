@@ -3,11 +3,17 @@
    Ứng dụng kết nối SQL Server; ứng dụng không đọc file SQL này khi chạy.
    Chạy toàn bộ bằng SSMS hoặc sqlcmd -b -f65001. Sao lưu database trước đồng bộ.
    Hỗ trợ database trống hoặc ClinicalWorkflow v2 đã kiểm chứng; giữ dữ liệu người dùng.
-   Cài mới: 60 bảng và snapshot dữ liệu phục hồi từ backup 29/10/2026 15:32;
+   Schema hiện tại: 64 bảng (gồm metadata và phân công ảnh X-quang); snapshot dữ liệu phục hồi từ backup 29/10/2026 15:32;
    Snapshot được nạp chỉ khi chưa có bảng; chạy lại giữ dữ liệu hiện tại.
    admin001 / 123456 là tài khoản khởi tạo. Đổi mật khẩu sau khi đăng nhập.
    Đồng bộ không đặt lại tài khoản/mật khẩu/giá đã có,
    không nạp đè snapshot lên database đã có bảng.
+   Đồng bộ dự án ngày 10/11/2026: HospitalWorkflow3, PrescriptionFlow1, SqlV9,
+   BaoTriSerial1, Sprint3Foundation1 và XrayStorage1; kiểm tổng bằng
+   EXEC dbo.usp_RHM_KiemTraSchema sau khi chạy toàn bộ file.
+   ConnectionStrings:RangHamMat trong appsettings.json cạnh ứng dụng phải trỏ
+   tới SQL Server đã cài database QLBenhVienRangHamMat; RHM_CONNECTION_STRING
+   nếu được đặt sẽ ưu tiên hơn file cấu hình. File SQL không tự chạy khi mở WPF.
    Riêng nhật ký thao tác: bỏ mẫu cũ trong snapshot, xóa bản ghi thiếu ThoiGianUtc;
    giữ nguyên toàn bộ nhật ký đã có UTC và lịch sử phiên đăng nhập.
    Các pha có cờ thành công riêng để lỗi ở một batch không mở pha ghi tiếp theo.
@@ -19,6 +25,13 @@ EXEC sys.sp_set_session_context @key=N'RHM.ReadyV2',@value=0;
 EXEC sys.sp_set_session_context @key=N'RHM.HospitalWorkflow.Completed',@value=0;
 EXEC sys.sp_set_session_context @key=N'RHM.PrescriptionFlow.Completed',@value=0;
 EXEC sys.sp_set_session_context @key=N'RHM.SqlV9.Completed',@value=0;
+EXEC sys.sp_set_session_context @key=N'RHM.MaintenanceSerial.Completed',@value=0;
+EXEC sys.sp_set_session_context @key=N'RHM.RolePermissions.Completed',@value=0;
+EXEC sys.sp_set_session_context @key=N'RHM.AuditSchema.Completed',@value=0;
+EXEC sys.sp_set_session_context @key=N'RHM.AuditTriggers.Completed',@value=0;
+EXEC sys.sp_set_session_context @key=N'RHM.PayrollCatalog.Completed',@value=0;
+EXEC sys.sp_set_session_context @key=N'RHM.Sprint3Foundation.Completed',@value=0;
+EXEC sys.sp_set_session_context @key=N'RHM.XrayStorage.Completed',@value=0;
 GO
 IF TRY_CONVERT(int,SERVERPROPERTY('ProductMajorVersion'))<13 OR (TRY_CONVERT(int,SERVERPROPERTY('ProductMajorVersion'))=13 AND TRY_CONVERT(int,PARSENAME(CONVERT(nvarchar(128),SERVERPROPERTY('ProductVersion')),2))<4001)
  THROW 52336,N'Cần SQL Server 2016 SP1 trở lên.',1;
@@ -1365,6 +1378,8 @@ CREATE INDEX [IX_CHINH_SACH_LUONG_MaNVDuyet] ON [dbo].[CHINH_SACH_LUONG] ([MaNVD
 CREATE INDEX [IX_BANG_LUONG_MaNV] ON [dbo].[BANG_LUONG] ([MaNV]);
 CREATE INDEX [IX_BANG_LUONG_MaCSL] ON [dbo].[BANG_LUONG] ([MaCSL]);
 CREATE INDEX [IX_NHAT_KY_THAO_TAC_MaTK] ON [dbo].[NHAT_KY_THAO_TAC] ([MaTK]);
+-- Không hạ phiên bản module có phụ thu nếu lần chạy lại dừng trước migration cuối.
+IF COL_LENGTH(N'dbo.CHI_TIET_HOA_DON',N'MaPhieuPhuThu') IS NULL
 EXEC sys.sp_executesql N'-- TỰ TÍNH THÀNH TIỀN HÓA ĐƠN, ĐỒNG BỘ TỔNG VÀ KHÓA CHỨNG TỪ.
 CREATE TRIGGER dbo.TR_CTHD_TinhTien ON dbo.CHI_TIET_HOA_DON
 AFTER INSERT, UPDATE, DELETE AS
@@ -1678,6 +1693,7 @@ INSERT dbo.DICH_VU(MaDV,TenDV,NhomDV,MaCK,DonGia,ThoiGianDuKien,MoTa,NgayApDung,
 VALUES(N'DV001',N'Khám răng hàm mặt tổng quát',N'Khám và tư vấn',N'CK001',100000,30,N'Dịch vụ cơ bản; bệnh viện quản lý giá áp dụng.',CONVERT(date,SYSDATETIME()),N'Đang hoạt động'),
 (N'DV006',N'Chụp X-quang hàm mặt',N'Chẩn đoán hình ảnh',N'CK004',200000,20,N'Dịch vụ cơ bản; thực hiện theo chỉ định bác sĩ.',CONVERT(date,SYSDATETIME()),N'Đang hoạt động');
 
+IF COL_LENGTH(N'dbo.CHI_TIET_HOA_DON',N'MaPhieuPhuThu') IS NULL
 EXEC sys.sp_executesql N'-- Các VIEW chỉ truy vấn, không tạo thêm bảng hoặc lặp tổng thanh toán.
 CREATE OR ALTER VIEW dbo.VW_CHI_TIET_HOA_DON AS
 SELECT c.MaCTHD,c.MaHD,c.MaDVThucHien,c.MaCTPX,c.NoiDung,
@@ -2783,6 +2799,7 @@ IF EXISTS(SELECT 1 FROM @core e LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID
 WHERE c.column_id IS NULL OR t.name<>e.TypeName OR c.max_length<>e.L OR c.is_nullable<>e.N OR(e.TypeName=N''decimal'' AND(c.precision<>e.P OR c.scale<>e.S)) OR(e.TypeName IN(N''datetime2'',N''time'') AND c.scale<>e.S))
 THROW 52271,N''Cấu trúc nền không khớp hợp đồng; dừng đồng bộ để bảo toàn dữ liệu.'',1;';
 
+IF COL_LENGTH(N'dbo.CHI_TIET_HOA_DON',N'MaPhieuPhuThu') IS NULL
 EXEC sys.sp_executesql N'-- TỰ TÍNH THÀNH TIỀN HÓA ĐƠN, ĐỒNG BỘ TỔNG VÀ KHÓA CHỨNG TỪ.
 CREATE OR ALTER TRIGGER dbo.TR_CTHD_TinhTien ON dbo.CHI_TIET_HOA_DON
 AFTER INSERT, UPDATE, DELETE AS
@@ -3236,6 +3253,7 @@ FROM inserted i FULL JOIN deleted d ON d.[MaThuoc]=i.[MaThuoc];
 END;';
 
 
+IF COL_LENGTH(N'dbo.CHI_TIET_HOA_DON',N'MaPhieuPhuThu') IS NULL
 EXEC sys.sp_executesql N'-- Các VIEW chỉ truy vấn, không tạo thêm bảng hoặc lặp tổng thanh toán.
 CREATE OR ALTER VIEW dbo.VW_CHI_TIET_HOA_DON AS
 SELECT c.MaCTHD,c.MaHD,c.MaDVThucHien,c.MaCTPX,c.NoiDung,
@@ -3502,16 +3520,22 @@ IF COL_LENGTH(N''dbo.TINH_TRANG_BENH'',N''ViTriRang'') IS NOT NULL OR OBJECT_ID(
  IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.RelatedServices.Version'') EXEC sys.sp_addextendedproperty @name=N''RHM.RelatedServices.Version'',@value=1;
  PRINT N''Đã đồng bộ 8 dịch vụ tham khảo và 14 liên kết; giữ nguyên dữ liệu đã có.'';';
 
-EXEC sys.sp_executesql N'IF COL_LENGTH(N''dbo.HOA_DON'',N''TaoKhiHoanTat'') IS NULL EXEC sys.sp_executesql N''ALTER TABLE dbo.HOA_DON ADD TaoKhiHoanTat bit NOT NULL CONSTRAINT DF_HD_TaoKhiHoanTat DEFAULT(0);'';
+EXEC sys.sp_executesql N'-- Giữ các module bốn nguồn đã cài, kể cả nếu pha sau gặp lỗi.
+IF COL_LENGTH(N''dbo.CHI_TIET_HOA_DON'',N''MaPhieuPhuThu'') IS NOT NULL RETURN;
+IF COL_LENGTH(N''dbo.HOA_DON'',N''TaoKhiHoanTat'') IS NULL EXEC sys.sp_executesql N''ALTER TABLE dbo.HOA_DON ADD TaoKhiHoanTat bit NOT NULL CONSTRAINT DF_HD_TaoKhiHoanTat DEFAULT(0);'';
 IF COL_LENGTH(N''dbo.CHI_TIET_HOA_DON'',N''MaCTDT'') IS NULL EXEC sys.sp_executesql N''ALTER TABLE dbo.CHI_TIET_HOA_DON ADD MaCTDT nvarchar(50) NULL;'';
 IF NOT EXISTS(SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID(N''dbo.HOA_DON'') AND name=N''TaoKhiHoanTat'' AND system_type_id=104 AND is_nullable=0) THROW 52230,N''Sai cấu trúc cột hóa đơn hoàn tất.'',1;
 IF NOT EXISTS(SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID(N''dbo.CHI_TIET_HOA_DON'') AND name=N''MaCTDT'' AND system_type_id=231 AND max_length=100 AND is_nullable=1) THROW 52230,N''Sai cấu trúc nguồn đơn thuốc hóa đơn.'',1;
 IF OBJECT_ID(N''dbo.FK_CTHD_DonDaKy'') IS NULL EXEC sys.sp_executesql N''ALTER TABLE dbo.CHI_TIET_HOA_DON WITH CHECK ADD CONSTRAINT FK_CTHD_DonDaKy FOREIGN KEY(MaCTDT) REFERENCES dbo.CHI_TIET_DON_THUOC(MaCTDT);'';
+-- Khi đã nâng cấp nguồn phụ thu, giữ CHECK bốn nguồn; CHECK ba nguồn sẽ từ chối dữ liệu mới khi chạy lại.
+IF COL_LENGTH(N''dbo.CHI_TIET_HOA_DON'',N''MaPhieuPhuThu'') IS NULL
+BEGIN
 IF OBJECT_ID(N''dbo.CK_CHI_TIET_HOA_DON_3'') IS NOT NULL ALTER TABLE dbo.CHI_TIET_HOA_DON DROP CONSTRAINT CK_CHI_TIET_HOA_DON_3;
 EXEC sys.sp_executesql N''ALTER TABLE dbo.CHI_TIET_HOA_DON WITH CHECK ADD CONSTRAINT CK_CHI_TIET_HOA_DON_3 CHECK
  ((MaDVThucHien IS NOT NULL AND MaCTPX IS NULL AND MaCTDT IS NULL AND DonGia IS NULL)
  OR(MaDVThucHien IS NULL AND MaCTPX IS NOT NULL AND MaCTDT IS NULL AND DonGia IS NOT NULL AND DonGia>=0)
  OR(MaDVThucHien IS NULL AND MaCTPX IS NULL AND MaCTDT IS NOT NULL AND DonGia IS NOT NULL AND DonGia>=0));'';
+END;
 IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.HOA_DON'') AND name=N''UX_HD_HoanTat_Luot'') EXEC sys.sp_executesql N''CREATE UNIQUE INDEX UX_HD_HoanTat_Luot ON dbo.HOA_DON(MaLS) WHERE TaoKhiHoanTat=1;'';
 IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.CHI_TIET_HOA_DON'') AND name=N''UX_CTHD_DonDaKy'') EXEC sys.sp_executesql N''CREATE UNIQUE INDEX UX_CTHD_DonDaKy ON dbo.CHI_TIET_HOA_DON(MaCTDT) WHERE MaCTDT IS NOT NULL;'';
 EXEC sys.sp_executesql N''CREATE OR ALTER TRIGGER dbo.TR_RHM_DichVu_ChiTrongKham ON dbo.DICH_VU_THUC_HIEN AFTER INSERT,UPDATE AS
@@ -4297,11 +4321,11 @@ SELECT MaHD,MaLS,SoTienPhaiThu,DaThuRong,ConPhaiTra FROM dbo.VW_HOA_DON_THANH_TO
 IF COL_LENGTH(N''dbo.TINH_TRANG_BENH'',N''MucDo'') IS NOT NULL OR COL_LENGTH(N''dbo.TINH_TRANG_BENH'',N''ViTriRang'') IS NOT NULL THROW 52272,N''Schema tình trạng không khớp ứng dụng.'',1;
 IF OBJECT_ID(N''dbo.DICH_VU_TINH_TRANG'') IS NULL OR OBJECT_ID(N''dbo.TR_RHM_DichVu_ChiTrongKham'') IS NULL OR OBJECT_ID(N''dbo.TR_HD_ChotHoanTat'') IS NULL THROW 52272,N''Thiếu liên kết hoặc bảo vệ hoàn tất.'',1;
 IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.HospitalWorkflow.Version'' AND TRY_CONVERT(int,value)=3) THROW 52272,N''Chưa đồng bộ HospitalWorkflow3.'',1;
-IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N''PHIEN_DANG_NHAP'',N''PHAN_QUYEN_VAI_TRO'')) NOT IN(53,60) THROW 52272,N''Số bảng không đúng nền 53 hoặc bản hợp nhất 60.'',1;
+IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N''PHIEN_DANG_NHAP'',N''PHAN_QUYEN_VAI_TRO'',N''ANH_XQUANG_LAN_KHAM'',N''PHAN_CONG_ANH_XQUANG'')) NOT IN(53,60) THROW 52272,N''Số bảng không đúng nền 53 hoặc bản hợp nhất 60.'',1;
 IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.triggers WHERE parent_class=1 AND is_disabled=1) THROW 52272,N''Ràng buộc hoặc trigger chưa hợp lệ.'',1;
 END;';
 
- IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N'PHIEN_DANG_NHAP',N'PHAN_QUYEN_VAI_TRO')) NOT IN(53,60) THROW 52272,N'Số bảng khác nền 53 hoặc bản hợp nhất 60 đã hỗ trợ.',1;
+ IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N'PHIEN_DANG_NHAP',N'PHAN_QUYEN_VAI_TRO',N'ANH_XQUANG_LAN_KHAM',N'PHAN_CONG_ANH_XQUANG')) NOT IN(53,60) THROW 52272,N'Số bảng khác nền 53 hoặc bản hợp nhất 60 đã hỗ trợ.',1;
  IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.triggers WHERE parent_class=1 AND is_disabled=1)
  THROW 52272,N'Có ràng buộc hoặc trigger bị tắt/chưa kiểm chứng.',1;
  IF EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N'RHM.HospitalWorkflow.Version')
@@ -5324,7 +5348,7 @@ BEGIN
   LEFT JOIN sys.types t ON t.user_type_id=c.user_type_id WHERE c.column_id IS NULL OR t.name<>e.Ty OR c.max_length<>e.L OR c.is_nullable<>e.N
   OR (e.Ty=N''decimal'' AND(c.precision<>e.P OR c.scale<>e.S)) OR(e.Ty=N''datetime2'' AND c.scale<>e.S))
   THROW 52335,N''Thiếu hoặc sai kiểu cột lịch khám/chấm công/lương V9.'',1;
- IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N''PHIEN_DANG_NHAP'',N''PHAN_QUYEN_VAI_TRO''))<>60
+ IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N''PHIEN_DANG_NHAP'',N''PHAN_QUYEN_VAI_TRO'',N''ANH_XQUANG_LAN_KHAM'',N''PHAN_CONG_ANH_XQUANG''))<>60
   THROW 52335,N''Schema hợp nhất phải có đủ 60 bảng.'',1;
  IF NOT EXISTS(SELECT 1 FROM sys.computed_columns WHERE object_id=OBJECT_ID(N''dbo.BANG_LUONG'') AND name=N''LuongTheoCa'' AND is_persisted=1 AND definition LIKE N''%PhienBanTinhLuong%'' AND definition LIKE N''%LuongTheoCaTruocDongBo%'' AND definition LIKE N''%CongThucTe%'')
  OR NOT EXISTS(SELECT 1 FROM sys.computed_columns WHERE object_id=OBJECT_ID(N''dbo.BANG_LUONG'') AND name=N''TongLuong'' AND is_persisted=1 AND definition LIKE N''%TongLuongTruocDongBo%'' AND definition LIKE N''%TienBaoHiem%'')
@@ -5373,6 +5397,7 @@ GO
 
 -- PHA 6: BẢO TRÌ ĐÚNG THIẾT BỊ/SERIAL. Chỉ thay đổi hai bảng thiết bị/bảo trì.
 SET XACT_ABORT ON;
+EXEC sys.sp_set_session_context @key=N'RHM.MaintenanceSerial.Completed',@value=0;
 BEGIN TRY
  IF COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.SqlV9.Completed')),0)<>1
   THROW 52600,N'Phải hoàn tất các pha trước khi đồng bộ bảo trì theo serial.',1;
@@ -5559,6 +5584,7 @@ BEGIN TRY
  ELSE EXEC sys.sp_addextendedproperty @name=N'RHM.MaintenanceSerial.Version',@value=1;
  EXEC dbo.usp_RHM_KiemTraBaoTriSerial;
  COMMIT TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'RHM.MaintenanceSerial.Completed',@value=1;
  PRINT N'HOÀN TẤT BẢO TRÌ SERIAL: liên kết thiết bị, vòng đời phiếu và tình trạng vật lý đã đồng bộ.';
 END TRY
 BEGIN CATCH
@@ -5575,12 +5601,13 @@ GO
 -- Chạy trên database QLBenhVienRangHamMat đang được ứng dụng kết nối.
 -- Không xóa hoặc sửa tài khoản/vai trò đang có. Chạy lại an toàn.
 SET XACT_ABORT ON;
+EXEC sys.sp_set_session_context @key=N'RHM.RolePermissions.Completed',@value=0;
 BEGIN TRY
     BEGIN TRANSACTION;
 
     IF DB_NAME() <> N'QLBenhVienRangHamMat'
         THROW 52700, N'Khong dung database QLBenhVienRangHamMat; dung cap nhat phan quyen.', 1;
-    IF NOT EXISTS (
+    IF COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.MaintenanceSerial.Completed')),0)<>1 OR NOT EXISTS (
         SELECT 1 FROM sys.extended_properties
         WHERE class = 0 AND name = N'RHM.MaintenanceSerial.Version'
           AND TRY_CONVERT(int, value) = 1
@@ -5630,6 +5657,7 @@ BEGIN TRY
     );
 
     COMMIT TRANSACTION;
+    EXEC sys.sp_set_session_context @key=N'RHM.RolePermissions.Completed',@value=1;
     PRINT N'Đã tạo/kiểm tra PHAN_QUYEN_VAI_TRO và khởi tạo quyền mặc định.';
 END TRY
 BEGIN CATCH
@@ -5656,6 +5684,9 @@ SET ANSI_WARNINGS ON;
 SET CONCAT_NULL_YIELDS_NULL ON;
 SET ARITHABORT ON;
 SET NUMERIC_ROUNDABORT OFF;
+EXEC sys.sp_set_session_context @key=N'RHM.AuditSchema.Completed',@value=0;
+IF COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.RolePermissions.Completed')),0)<>1
+ THROW 53000,N'Pha phân quyền chưa hoàn tất; không nâng cấp nhật ký.',1;
 IF CONVERT(int,SERVERPROPERTY('ProductMajorVersion')) < 13
  THROW 53000,N'Cần SQL Server 2016 SP1 trở lên.',1;
 IF OBJECT_ID(N'dbo.NHAT_KY_THAO_TAC',N'U') IS NULL
@@ -5708,6 +5739,7 @@ BEGIN TRY
  IF COL_LENGTH(N'dbo.DICH_VU_TINH_TRANG',N'TrangThai') IS NULL
   ALTER TABLE dbo.DICH_VU_TINH_TRANG ADD TrangThai nvarchar(50) NOT NULL CONSTRAINT DF_S3_DVTT DEFAULT(N'Đang hoạt động') WITH VALUES;
  COMMIT;
+ EXEC sys.sp_set_session_context @key=N'RHM.AuditSchema.Completed',@value=1;
 END TRY
 BEGIN CATCH
  IF @@TRANCOUNT>0 ROLLBACK;
@@ -5720,6 +5752,9 @@ GO
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 SET XACT_ABORT ON;
+EXEC sys.sp_set_session_context @key=N'RHM.AuditTriggers.Completed',@value=0;
+IF COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.AuditSchema.Completed')),0)<>1
+ THROW 53020,N'Pha schema nhật ký chưa hoàn tất; không cập nhật trigger audit.',1;
 BEGIN TRY
  BEGIN TRAN;
  DECLARE @s3Table sysname,@s3Join nvarchar(max),@s3Id nvarchar(max),@s3Before nvarchar(max),@s3After nvarchar(max),@s3Sql nvarchar(max),@s3Action nvarchar(max),@s3Gate nvarchar(max);
@@ -5787,6 +5822,7 @@ END;';
  END;
  CLOSE s3Tables;DEALLOCATE s3Tables;
  COMMIT;
+ EXEC sys.sp_set_session_context @key=N'RHM.AuditTriggers.Completed',@value=1;
  PRINT N'Sprint 3: danh mục, nhật ký và phiên đăng nhập đã sẵn sàng.';
 END TRY
 BEGIN CATCH
@@ -5799,6 +5835,12 @@ GO
 -- Giữ nguyên chứng từ đã chốt; chỉ cập nhật định nghĩa module đọc danh mục.
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
+SET XACT_ABORT ON;
+EXEC sys.sp_set_session_context @key=N'RHM.PayrollCatalog.Completed',@value=0;
+IF COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.AuditTriggers.Completed')),0)<>1
+ THROW 53020,N'Pha audit chưa hoàn tất; không cập nhật module công/lương.',1;
+BEGIN TRY
+BEGIN TRANSACTION;
 DECLARE @s3Module nvarchar(max),@s3OldModule nvarchar(max),@s3Create int;
 DECLARE s3Payroll CURSOR LOCAL FAST_FORWARD FOR
  SELECT m.definition FROM sys.sql_modules m JOIN sys.objects o ON o.object_id=m.object_id
@@ -5817,4 +5859,430 @@ BEGIN
  FETCH NEXT FROM s3Payroll INTO @s3Module;
 END;
 CLOSE s3Payroll;DEALLOCATE s3Payroll;
+COMMIT TRANSACTION;
+EXEC sys.sp_set_session_context @key=N'RHM.PayrollCatalog.Completed',@value=1;
+END TRY
+BEGIN CATCH
+ IF XACT_STATE()<>0 ROLLBACK TRANSACTION;
+ IF CURSOR_STATUS('local','s3Payroll')>=0 CLOSE s3Payroll;
+ IF CURSOR_STATUS('local','s3Payroll')>-3 DEALLOCATE s3Payroll;
+ THROW;
+END CATCH;
 GO
+
+-- BEGIN SPRINT 3 FOUNDATION 20261107: loại khám/phụ thu dùng bởi ET/DAL/BUS/WPF hiện tại.
+-- Đặt sau mọi định nghĩa cũ; không hồi tố loại khám/phụ thu, không sửa tiền đã chốt.
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+EXEC sys.sp_set_session_context @key=N'RHM.Sprint3Foundation.Completed',@value=0;
+IF COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.HospitalWorkflow.Completed')),0)<>1
+ OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.PrescriptionFlow.Completed')),0)<>1
+ OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.SqlV9.Completed')),0)<>1
+ OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.PayrollCatalog.Completed')),0)<>1
+ OR OBJECT_ID(N'dbo.TR_HD_ChotHoanTat',N'TR') IS NULL
+ THROW 53400,N'Cần chạy thành công các pha SQL trước nền tảng Sprint 3.',1;
+BEGIN TRY
+ BEGIN TRANSACTION;
+ DECLARE @s3FoundationLock int;
+ EXEC @s3FoundationLock=sys.sp_getapplock @Resource=N'RHM:Sprint3Foundation:Migration',
+  @LockMode=N'Exclusive',@LockOwner=N'Transaction',@LockTimeout=15000;
+ IF @s3FoundationLock<0 THROW 53400,N'Không lấy được khóa nâng cấp nền tảng Sprint 3.',1;
+
+ IF COL_LENGTH(N'dbo.PHIEU_KHAM_BENH',N'LoaiKham') IS NULL
+  EXEC(N'ALTER TABLE dbo.PHIEU_KHAM_BENH ADD LoaiKham nvarchar(20) NOT NULL CONSTRAINT DF_PKB_LoaiKham DEFAULT(N''Thông thường'') WITH VALUES;');
+ IF COL_LENGTH(N'dbo.PHIEU_KHAM_BENH',N'PhiPhuThuDichVu') IS NULL
+  EXEC(N'ALTER TABLE dbo.PHIEU_KHAM_BENH ADD PhiPhuThuDichVu decimal(18,2) NOT NULL CONSTRAINT DF_PKB_PhiPhuThuDichVu DEFAULT(0) WITH VALUES;');
+ IF COL_LENGTH(N'dbo.CHI_TIET_HOA_DON',N'MaPhieuPhuThu') IS NULL
+  EXEC(N'ALTER TABLE dbo.CHI_TIET_HOA_DON ADD MaPhieuPhuThu nvarchar(50) NULL;');
+ IF OBJECT_ID(N'dbo.CK_PKB_LoaiKham_PhuThu',N'C') IS NULL
+  EXEC(N'ALTER TABLE dbo.PHIEU_KHAM_BENH WITH CHECK ADD CONSTRAINT CK_PKB_LoaiKham_PhuThu CHECK
+   ((LoaiKham=N''Thông thường'' AND PhiPhuThuDichVu=0)
+    OR(LoaiKham=N''Dịch vụ'' AND PhiPhuThuDichVu=30000 AND MaLich IS NULL));');
+ IF OBJECT_ID(N'dbo.FK_CTHD_PhieuPhuThu',N'F') IS NULL
+  EXEC(N'ALTER TABLE dbo.CHI_TIET_HOA_DON WITH CHECK ADD CONSTRAINT FK_CTHD_PhieuPhuThu
+   FOREIGN KEY(MaPhieuPhuThu) REFERENCES dbo.PHIEU_KHAM_BENH(MaPhieu);');
+ IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.CHI_TIET_HOA_DON') AND name=N'UX_CTHD_PhieuPhuThu')
+  EXEC(N'CREATE UNIQUE INDEX UX_CTHD_PhieuPhuThu ON dbo.CHI_TIET_HOA_DON(MaPhieuPhuThu) WHERE MaPhieuPhuThu IS NOT NULL;');
+ IF OBJECT_ID(N'dbo.CK_CHI_TIET_HOA_DON_3',N'C') IS NOT NULL
+  ALTER TABLE dbo.CHI_TIET_HOA_DON DROP CONSTRAINT CK_CHI_TIET_HOA_DON_3;
+ EXEC(N'ALTER TABLE dbo.CHI_TIET_HOA_DON WITH CHECK ADD CONSTRAINT CK_CHI_TIET_HOA_DON_3 CHECK
+  ((MaDVThucHien IS NOT NULL AND MaCTPX IS NULL AND MaCTDT IS NULL AND MaPhieuPhuThu IS NULL AND DonGia IS NULL)
+   OR(MaDVThucHien IS NULL AND MaCTPX IS NOT NULL AND MaCTDT IS NULL AND MaPhieuPhuThu IS NULL AND DonGia IS NOT NULL AND DonGia>=0)
+   OR(MaDVThucHien IS NULL AND MaCTPX IS NULL AND MaCTDT IS NOT NULL AND MaPhieuPhuThu IS NULL AND DonGia IS NOT NULL AND DonGia>=0)
+   OR(MaDVThucHien IS NULL AND MaCTPX IS NULL AND MaCTDT IS NULL AND MaPhieuPhuThu IS NOT NULL AND DonGia IS NOT NULL AND DonGia=30000));');
+
+ EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_PKB_KhoaLoaiKham ON dbo.PHIEU_KHAM_BENH AFTER UPDATE AS
+ BEGIN
+  SET NOCOUNT ON;
+  IF UPDATE(MaPhieu) THROW 53401,N''Mã phiếu tiếp nhận là định danh bất biến.'',1;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaPhieu=i.MaPhieu
+   WHERE EXISTS(SELECT i.LoaiKham,i.PhiPhuThuDichVu EXCEPT SELECT d.LoaiKham,d.PhiPhuThuDichVu))
+   THROW 53401,N''Loại khám và mức phụ thu đã lưu khi tiếp nhận được giữ nguyên.'',1;
+ END;';
+
+ -- Giữ toàn bộ kiểm nguồn/khóa chứng từ/đổi đơn sang xuất kho của HospitalWorkflow3.
+ EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CTHD_TinhTien ON dbo.CHI_TIET_HOA_DON
+ AFTER INSERT,UPDATE,DELETE AS
+ BEGIN
+  SET NOCOUNT ON;
+  IF TRIGGER_NESTLEVEL(OBJECT_ID(N''dbo.TR_CTHD_TinhTien''))>1 RETURN;
+  DECLARE @lock nvarchar(50);
+  SELECT @lock=h.MaHD FROM dbo.HOA_DON h WITH(UPDLOCK,HOLDLOCK)
+   WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted);
+  IF EXISTS(SELECT 1 FROM dbo.HOA_DON h JOIN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted) z ON z.MaHD=h.MaHD WHERE h.TrangThai<>N''Nháp'')
+   THROW 51001,N''Chỉ thay đổi chi tiết hóa đơn nháp.'',1;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD
+   LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=i.MaCTPX
+   WHERE h.TaoKhiHoanTat=1 AND(i.MaCTPX IS NULL OR NOT EXISTS(
+    SELECT 1 FROM dbo.CHI_TIET_HOA_DON pending WHERE pending.MaHD=i.MaHD AND pending.MaCTDT=x.MaCTDT
+     AND pending.DonGia=i.DonGia AND pending.NoiDung=i.NoiDung)))
+   THROW 52231,N''Hóa đơn đã chốt nguồn; chỉ thay thuốc theo đơn bằng đúng phần xuất kho.'',1;
+  IF EXISTS(SELECT 1 FROM deleted d JOIN dbo.HOA_DON h ON h.MaHD=d.MaHD
+   LEFT JOIN dbo.CHI_TIET_DON_THUOC rx ON rx.MaCTDT=d.MaCTDT
+   OUTER APPLY(SELECT SUM(x.SoLuong) Qty,SUM(c.ThanhTien) Amount FROM dbo.CHI_TIET_HOA_DON c
+    JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX WHERE c.MaHD=d.MaHD AND x.MaCTDT=d.MaCTDT) a
+   WHERE h.TaoKhiHoanTat=1 AND(d.MaCTDT IS NULL OR EXISTS(SELECT 1 FROM inserted i WHERE i.MaCTHD=d.MaCTHD)
+    OR COALESCE(a.Qty,0)<>rx.SoLuong OR COALESCE(a.Amount,0)<>d.ThanhTien))
+   THROW 52232,N''Không xóa/sửa khoản đã chốt; phần xuất phải khớp toàn bộ lượng và tiền đơn thuốc.'',1;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD
+   LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=i.MaDVThucHien
+   LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=i.MaCTPX
+   LEFT JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX
+   LEFT JOIN dbo.CHI_TIET_DON_THUOC d ON d.MaCTDT=COALESCE(i.MaCTDT,x.MaCTDT)
+   LEFT JOIN dbo.DON_THUOC r ON r.MaDT=d.MaDT
+   WHERE(i.MaDVThucHien IS NOT NULL AND(s.MaLS<>h.MaLS OR s.TrangThai<>N''Đã xác nhận''))
+    OR(i.MaCTPX IS NOT NULL AND(x.MaCTDT IS NULL OR p.MaLS<>h.MaLS OR r.MaLS<>h.MaLS OR p.TrangThai<>N''Đã ghi sổ''))
+    OR(i.MaCTDT IS NOT NULL AND(r.MaLS<>h.MaLS OR r.TrangThai<>N''Đã xác nhận'' OR r.NgayKe>h.NgayLap
+     OR NULLIF(LTRIM(RTRIM(d.TenThuocChot)),N'''') IS NULL OR NULLIF(LTRIM(RTRIM(d.HamLuongChot)),N'''') IS NULL
+     OR NULLIF(LTRIM(RTRIM(d.DonViTinhChot)),N'''') IS NULL)))
+   THROW 51002,N''Nguồn thu phải cùng lượt: dịch vụ xác nhận, đơn đã ký hoặc thuốc đã xuất.'',1;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD
+   JOIN dbo.PHIEU_KHAM_BENH p WITH(HOLDLOCK) ON p.MaPhieu=i.MaPhieuPhuThu
+   WHERE p.LoaiKham<>N''Dịch vụ'' OR p.PhiPhuThuDichVu<>30000 OR NOT EXISTS(
+    SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaLS=h.MaLS AND l.MaPhieu=p.MaPhieu))
+   THROW 53402,N''Phụ thu phải lấy từ phiếu khám dịch vụ của đúng lần khám trên hóa đơn.'',1;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD
+   JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=i.MaCTPX JOIN dbo.CHI_TIET_DON_THUOC rx ON rx.MaCTDT=x.MaCTDT
+   WHERE h.TaoKhiHoanTat=1 AND(SELECT SUM(y.SoLuong) FROM dbo.CHI_TIET_HOA_DON c
+    JOIN dbo.CHI_TIET_PHIEU_XUAT y ON y.MaCTPX=c.MaCTPX WHERE c.MaHD=i.MaHD AND y.MaCTDT=x.MaCTDT)>rx.SoLuong)
+   THROW 52233,N''Phần xuất vượt lượng đã chốt.'',1;
+  UPDATE c SET ThanhTien=CASE WHEN c.MaDVThucHien IS NOT NULL THEN s.ThanhTien
+   WHEN c.MaPhieuPhuThu IS NOT NULL THEN p.PhiPhuThuDichVu
+   ELSE CAST(ROUND(COALESCE(x.SoLuong,d.SoLuong)*c.DonGia,2) AS decimal(18,2)) END
+  FROM dbo.CHI_TIET_HOA_DON c JOIN inserted i ON i.MaCTHD=c.MaCTHD
+  LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
+  LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
+  LEFT JOIN dbo.CHI_TIET_DON_THUOC d ON d.MaCTDT=c.MaCTDT
+  LEFT JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=c.MaPhieuPhuThu;
+  IF EXISTS(SELECT 1 FROM dbo.HOA_DON h WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted)
+   AND h.GiamGia>COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0))
+   THROW 51003,N''Tổng mới thấp hơn giảm giá.'',1;
+  UPDATE h SET TongTien=COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0)
+  FROM dbo.HOA_DON h WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted);
+ END;';
+
+ -- Bổ sung guard dùng chung cho xác nhận thường và chốt hoàn tất; giữ nguyên hai trigger cũ.
+ EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_HD_PhuThuDichVu ON dbo.HOA_DON AFTER INSERT,UPDATE AS
+ BEGIN
+  SET NOCOUNT ON;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=i.MaLS
+   JOIN dbo.PHIEU_KHAM_BENH p WITH(HOLDLOCK) ON p.MaPhieu=l.MaPhieu
+   WHERE p.PhiPhuThuDichVu>0 AND i.GiamGia>CASE WHEN i.TongTien>p.PhiPhuThuDichVu THEN i.TongTien-p.PhiPhuThuDichVu ELSE 0 END)
+   THROW 53403,N''Giảm giá không được trừ vào khoản phụ thu khám dịch vụ bắt buộc.'',1;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=i.MaLS
+   JOIN dbo.PHIEU_KHAM_BENH p WITH(HOLDLOCK) ON p.MaPhieu=l.MaPhieu
+   WHERE p.PhiPhuThuDichVu>0 AND(i.TaoKhiHoanTat=1 OR i.TrangThai=N''Đã xác nhận'') AND NOT EXISTS(
+    SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=i.MaHD AND c.MaPhieuPhuThu=p.MaPhieu
+     AND c.DonGia=p.PhiPhuThuDichVu AND c.ThanhTien=p.PhiPhuThuDichVu))
+   THROW 53404,N''Hóa đơn khám dịch vụ cần đúng một dòng phụ thu 30.000đ trước khi chốt hoặc xác nhận.'',1;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.CHI_TIET_HOA_DON c ON c.MaHD=i.MaHD
+   JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=c.MaPhieuPhuThu
+   WHERE NOT EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaLS=i.MaLS AND l.MaPhieu=p.MaPhieu))
+   THROW 53402,N''Không chuyển hóa đơn có phụ thu sang lần khám khác.'',1;
+ END;';
+
+ EXEC sys.sp_executesql N'CREATE OR ALTER VIEW dbo.VW_CHI_TIET_HOA_DON AS
+ SELECT c.MaCTHD,c.MaHD,c.MaDVThucHien,c.MaCTPX,c.NoiDung,
+  CASE WHEN c.MaPhieuPhuThu IS NOT NULL THEN N''Phụ thu khám dịch vụ''
+   WHEN c.MaDVThucHien IS NOT NULL THEN N''Dịch vụ'' ELSE N''Thuốc'' END LoaiKhoanThu,
+  CASE WHEN c.MaPhieuPhuThu IS NOT NULL THEN CAST(1 AS decimal(18,3)) ELSE COALESCE(s.SoLuong,x.SoLuong,d.SoLuong) END SoLuong,
+  COALESCE(s.DonGia,c.DonGia) DonGia,
+  COALESCE(d.DonViTinhChot,hh.DonViTinh) DonViTinhThuoc,c.ThanhTien,c.MaCTDT,c.MaPhieuPhuThu
+ FROM dbo.CHI_TIET_HOA_DON c
+ LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
+ LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
+ LEFT JOIN dbo.CHI_TIET_DON_THUOC d ON d.MaCTDT=COALESCE(c.MaCTDT,x.MaCTDT)
+ LEFT JOIN dbo.HANG_HOA hh ON hh.MaHH=x.MaHH;';
+
+ IF OBJECT_ID(N'dbo.ANH_XQUANG_LAN_KHAM',N'U') IS NULL
+ EXEC sys.sp_executesql N'CREATE TABLE [dbo].[ANH_XQUANG_LAN_KHAM]
+ (
+  MaAnh nvarchar(50) NOT NULL CONSTRAINT PK_ANH_XQUANG_LAN_KHAM PRIMARY KEY,
+  MaLS nvarchar(50) NOT NULL,
+  MaDVThucHien nvarchar(50) NULL,
+  TenTepGoc nvarchar(255) NOT NULL,
+  TenTepLuu nvarchar(255) NOT NULL,
+  DuongDanTuongDoi nvarchar(500) NOT NULL,
+  MimeType nvarchar(100) NOT NULL,
+  KichThuocBytes bigint NOT NULL,
+  Sha256 char(64) NOT NULL,
+  GhiChu nvarchar(500) NULL,
+  NgayTao datetime2(0) NOT NULL CONSTRAINT DF_AXQ_NgayTao DEFAULT(SYSDATETIME()),
+  MaNVUpload nvarchar(50) NOT NULL,
+  TrangThai nvarchar(20) NOT NULL CONSTRAINT DF_AXQ_TrangThai DEFAULT(N''Đang sử dụng''),
+  NgayAn datetime2(0) NULL,
+  CONSTRAINT FK_AXQ_LanKham FOREIGN KEY(MaLS) REFERENCES dbo.LICH_SU_KHAM_BENH(MaLS),
+  CONSTRAINT FK_AXQ_DichVu FOREIGN KEY(MaDVThucHien) REFERENCES dbo.DICH_VU_THUC_HIEN(MaDVThucHien),
+  CONSTRAINT FK_AXQ_NhanVien FOREIGN KEY(MaNVUpload) REFERENCES dbo.NHAN_VIEN(MaNV),
+  CONSTRAINT CK_AXQ_KichThuoc CHECK(KichThuocBytes>0 AND KichThuocBytes<=20971520),
+  CONSTRAINT CK_AXQ_Hash CHECK(LEN(Sha256)=64 AND Sha256 COLLATE Latin1_General_100_BIN2 NOT LIKE ''%[^0-9a-fA-F]%''),
+  -- Khóa lưu trữ một cấp: GUID 32 chữ số hex + đuôi; không có tên bệnh nhân hay đường dẫn máy trạm.
+  CONSTRAINT CK_AXQ_Tep CHECK(
+   ((MimeType=N''image/png'' AND RIGHT(TenTepLuu,4)=N''.png'' AND LEN(TenTepLuu)=36)
+    OR(MimeType=N''image/jpeg'' AND((RIGHT(TenTepLuu,4)=N''.jpg'' AND LEN(TenTepLuu)=36)
+     OR(RIGHT(TenTepLuu,5)=N''.jpeg'' AND LEN(TenTepLuu)=37))))
+   AND LEFT(TenTepLuu,32) COLLATE Latin1_General_100_BIN2 NOT LIKE N''%[^0-9a-fA-F]%''
+   AND DuongDanTuongDoi=TenTepLuu AND DATALENGTH(DuongDanTuongDoi)=DATALENGTH(TenTepLuu)
+   AND LEN(TenTepGoc)>0 AND TenTepGoc NOT LIKE N''%[/:\]%''),
+  CONSTRAINT CK_AXQ_TrangThai CHECK((TrangThai=N''Đang sử dụng'' AND NgayAn IS NULL)
+   OR(TrangThai=N''Đã ẩn'' AND NgayAn IS NOT NULL AND NgayAn>=NgayTao))
+ );
+ CREATE UNIQUE INDEX UX_AXQ_DuongDan ON dbo.ANH_XQUANG_LAN_KHAM(DuongDanTuongDoi);
+ CREATE INDEX IX_AXQ_LanKham_NgayTao ON dbo.ANH_XQUANG_LAN_KHAM(MaLS,NgayTao);';
+
+ EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_AXQ_BaoVe ON dbo.ANH_XQUANG_LAN_KHAM AFTER INSERT,UPDATE,DELETE AS
+ BEGIN
+  SET NOCOUNT ON;
+  IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaAnh=d.MaAnh WHERE i.MaAnh IS NULL)
+   THROW 53407,N''Không xóa cứng metadata ảnh bệnh án; dùng trạng thái Đã ẩn.'',1;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaAnh=i.MaAnh WHERE EXISTS(
+   SELECT i.MaLS,i.MaDVThucHien,i.TenTepGoc,i.TenTepLuu,i.DuongDanTuongDoi,i.MimeType,i.KichThuocBytes,i.Sha256,i.NgayTao,i.MaNVUpload
+   EXCEPT SELECT d.MaLS,d.MaDVThucHien,d.TenTepGoc,d.TenTepLuu,d.DuongDanTuongDoi,d.MimeType,d.KichThuocBytes,d.Sha256,d.NgayTao,d.MaNVUpload))
+   THROW 53405,N''Nguồn lần khám, tệp và người tải ảnh được giữ nguyên; chỉ sửa ghi chú hoặc ẩn ảnh.'',1;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=i.MaDVThucHien WHERE s.MaLS<>i.MaLS)
+   THROW 53406,N''Dịch vụ liên kết ảnh phải thuộc cùng lần khám.'',1;
+ END;';
+
+ EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_DVTH_AnhXquang ON dbo.DICH_VU_THUC_HIEN AFTER UPDATE AS
+ BEGIN
+  SET NOCOUNT ON;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.ANH_XQUANG_LAN_KHAM a ON a.MaDVThucHien=i.MaDVThucHien WHERE a.MaLS<>i.MaLS)
+   THROW 53406,N''Dịch vụ đã liên kết ảnh không được chuyển sang lần khám khác.'',1;
+ END;';
+ EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_LS_NguonAnhPhuThu ON dbo.LICH_SU_KHAM_BENH AFTER UPDATE AS
+ BEGIN
+  SET NOCOUNT ON;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaLS=i.MaLS WHERE i.MaPhieu<>d.MaPhieu
+   AND(EXISTS(SELECT 1 FROM dbo.ANH_XQUANG_LAN_KHAM a WHERE a.MaLS=i.MaLS)
+    OR EXISTS(SELECT 1 FROM dbo.HOA_DON h JOIN dbo.CHI_TIET_HOA_DON c ON c.MaHD=h.MaHD WHERE h.MaLS=i.MaLS AND c.MaPhieuPhuThu IS NOT NULL)))
+   THROW 53409,N''Lần khám có ảnh hoặc phụ thu không được đổi phiếu nguồn.'',1;
+ END;';
+
+ EXEC sys.sp_executesql N'CREATE OR ALTER PROCEDURE dbo.usp_RHM_KiemTraNenTangSprint3 AS
+ BEGIN
+  SET NOCOUNT ON;
+  IF ISNULL(COL_LENGTH(N''dbo.PHIEU_KHAM_BENH'',N''LoaiKham''),-1)<>40
+   OR ISNULL(COL_LENGTH(N''dbo.PHIEU_KHAM_BENH'',N''PhiPhuThuDichVu''),-1)<>9
+   OR ISNULL(COL_LENGTH(N''dbo.CHI_TIET_HOA_DON'',N''MaPhieuPhuThu''),-1)<>100
+   OR OBJECT_ID(N''dbo.ANH_XQUANG_LAN_KHAM'',N''U'') IS NULL
+   THROW 53408,N''Thiếu hoặc sai schema nền tảng Sprint 3.'',1;
+  IF EXISTS(SELECT 1 FROM(VALUES
+   (N''PHIEU_KHAM_BENH'',N''LoaiKham'',231,40,0,0,0),
+   (N''PHIEU_KHAM_BENH'',N''PhiPhuThuDichVu'',106,9,18,2,0),
+   (N''CHI_TIET_HOA_DON'',N''MaPhieuPhuThu'',231,100,0,0,1)) required(T,C,TypeId,L,P,S,N)
+   LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+required.T) AND c.name=required.C
+   WHERE c.column_id IS NULL OR c.system_type_id<>required.TypeId OR c.max_length<>required.L OR c.is_nullable<>required.N
+    OR(required.TypeId=106 AND(c.precision<>required.P OR c.scale<>required.S)))
+   THROW 53408,N''Sai kiểu hoặc nullability cột khám dịch vụ/phụ thu.'',1;
+  IF EXISTS(SELECT name FROM(VALUES(N''CK_PKB_LoaiKham_PhuThu''),(N''CK_CHI_TIET_HOA_DON_3''),
+   (N''CK_AXQ_Tep''),(N''CK_AXQ_Hash''),(N''CK_AXQ_KichThuoc''),(N''CK_AXQ_TrangThai'')) required(name)
+   WHERE NOT EXISTS(SELECT 1 FROM sys.check_constraints c WHERE c.name=required.name AND c.is_disabled=0 AND c.is_not_trusted=0))
+   THROW 53408,N''Thiếu CHECK tin cậy của nền tảng Sprint 3.'',1;
+  IF EXISTS(SELECT name FROM(VALUES(N''FK_CTHD_PhieuPhuThu''),(N''FK_AXQ_LanKham''),(N''FK_AXQ_DichVu''),(N''FK_AXQ_NhanVien'')) required(name)
+   WHERE NOT EXISTS(SELECT 1 FROM sys.foreign_keys f WHERE f.name=required.name AND f.is_disabled=0 AND f.is_not_trusted=0))
+   THROW 53408,N''Thiếu FK tin cậy của nền tảng Sprint 3.'',1;
+  IF EXISTS(SELECT name FROM(VALUES(N''TR_PKB_KhoaLoaiKham''),(N''TR_CTHD_TinhTien''),(N''TR_HD_PhuThuDichVu''),
+   (N''TR_HD_XacNhan''),(N''TR_HD_ChotHoanTat''),(N''TR_AXQ_BaoVe''),(N''TR_DVTH_AnhXquang''),(N''TR_LS_NguonAnhPhuThu'')) required(name)
+   WHERE NOT EXISTS(SELECT 1 FROM sys.triggers t WHERE t.name=required.name AND t.is_disabled=0))
+   THROW 53408,N''Thiếu trigger đang hoạt động của nền tảng Sprint 3.'',1;
+  IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.CHI_TIET_HOA_DON'') AND name=N''UX_CTHD_PhieuPhuThu'' AND is_unique=1 AND has_filter=1 AND is_disabled=0)
+   OR NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.ANH_XQUANG_LAN_KHAM'') AND name=N''UX_AXQ_DuongDan'' AND is_unique=1 AND is_disabled=0)
+   THROW 53408,N''Thiếu index chống trùng phụ thu hoặc đường dẫn ảnh.'',1;
+  IF EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c JOIN dbo.HOA_DON h ON h.MaHD=c.MaHD
+   JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=c.MaPhieuPhuThu
+   WHERE p.LoaiKham<>N''Dịch vụ'' OR c.DonGia<>p.PhiPhuThuDichVu OR c.ThanhTien<>p.PhiPhuThuDichVu
+    OR NOT EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaLS=h.MaLS AND l.MaPhieu=p.MaPhieu))
+   THROW 53408,N''Có dòng phụ thu không khớp nguồn.'',1;
+  IF EXISTS(SELECT 1 FROM dbo.ANH_XQUANG_LAN_KHAM a JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=a.MaDVThucHien WHERE a.MaLS<>s.MaLS)
+   THROW 53408,N''Có ảnh tham chiếu dịch vụ của lần khám khác.'',1;
+  SELECT N''Sprint3Foundation1'' AS HopDong,COUNT_BIG(*) AS SoAnh FROM dbo.ANH_XQUANG_LAN_KHAM;
+ END;';
+ EXEC dbo.usp_RHM_KiemTraNenTangSprint3;
+ IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N'RHM.Sprint3Foundation.Version')
+  EXEC sys.sp_addextendedproperty @name=N'RHM.Sprint3Foundation.Version',@value=1;
+ COMMIT TRANSACTION;
+ EXEC sys.sp_set_session_context @key=N'RHM.Sprint3Foundation.Completed',@value=1;
+ PRINT N'Sprint3Foundation1: loại khám/phụ thu, nguồn hóa đơn và metadata ảnh đã sẵn sàng.';
+END TRY
+BEGIN CATCH
+ IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+ THROW;
+END CATCH;
+GO
+-- END SPRINT 3 FOUNDATION 20261107
+
+-- BEGIN XRAY STORAGE P4: phân công ảnh tách khỏi người thực hiện dịch vụ đã chốt.
+SET XACT_ABORT ON;
+EXEC sys.sp_set_session_context @key=N'RHM.XrayStorage.Completed',@value=0;
+BEGIN TRY
+ BEGIN TRANSACTION;
+ IF OBJECT_ID(N'dbo.ANH_XQUANG_LAN_KHAM',N'U') IS NULL THROW 53410,N'Cần nền tảng ảnh P1 trước P4.',1;
+ IF COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.HospitalWorkflow.Completed')),0)<>1
+  OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.PrescriptionFlow.Completed')),0)<>1
+  OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.SqlV9.Completed')),0)<>1
+  OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.Sprint3Foundation.Completed')),0)<>1 THROW 53410,N'Các pha SQL trước P4 chưa hoàn tất.',1;
+ DECLARE @xrMigrationLock int;
+ EXEC @xrMigrationLock=sys.sp_getapplock @Resource=N'RHM:Xray:Storage',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000;
+ IF @xrMigrationLock<0 THROW 53410,N'Kho ảnh đang có thao tác; thử nâng cấp lại sau.',1;
+ IF OBJECT_ID(N'dbo.PHAN_CONG_ANH_XQUANG',N'U') IS NULL
+ EXEC(N'CREATE TABLE [dbo].[PHAN_CONG_ANH_XQUANG](
+  MaPC nvarchar(50) NOT NULL CONSTRAINT PK_PHAN_CONG_ANH_XQUANG PRIMARY KEY,
+  MaDVThucHien nvarchar(50) NOT NULL,
+  MaNVKyThuat nvarchar(50) NOT NULL,
+  MaNVPhanCong nvarchar(50) NOT NULL,
+  NgayPhanCong datetime2(0) NOT NULL CONSTRAINT DF_PCAXQ_Ngay DEFAULT(SYSDATETIME()),
+  TrangThai nvarchar(20) NOT NULL CONSTRAINT DF_PCAXQ_TrangThai DEFAULT(N''Đang áp dụng''),
+  NgayHuy datetime2(0) NULL,
+  CONSTRAINT FK_PCAXQ_DichVu FOREIGN KEY(MaDVThucHien) REFERENCES dbo.DICH_VU_THUC_HIEN(MaDVThucHien),
+  CONSTRAINT FK_PCAXQ_KyThuat FOREIGN KEY(MaNVKyThuat) REFERENCES dbo.NHAN_VIEN(MaNV),
+  CONSTRAINT FK_PCAXQ_NguoiGiao FOREIGN KEY(MaNVPhanCong) REFERENCES dbo.NHAN_VIEN(MaNV),
+  CONSTRAINT CK_PCAXQ_TrangThai CHECK((TrangThai=N''Đang áp dụng'' AND NgayHuy IS NULL)
+   OR(TrangThai=N''Đã hủy'' AND NgayHuy IS NOT NULL AND NgayHuy>=NgayPhanCong)));
+  CREATE UNIQUE INDEX UX_PCAXQ_DichVu ON dbo.PHAN_CONG_ANH_XQUANG(MaDVThucHien) WHERE TrangThai=N''Đang áp dụng'';
+  CREATE INDEX IX_PCAXQ_NhanVien ON dbo.PHAN_CONG_ANH_XQUANG(MaNVKyThuat,TrangThai);');
+ EXEC(N'CREATE OR ALTER TRIGGER dbo.TR_PCAXQ_BaoVe ON dbo.PHAN_CONG_ANH_XQUANG AFTER INSERT,UPDATE,DELETE AS
+ BEGIN
+  SET NOCOUNT ON;
+  IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaPC=d.MaPC WHERE i.MaPC IS NULL)
+   THROW 53411,N''Không xóa lịch sử phân công ảnh.'',1;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaPC=i.MaPC WHERE d.TrangThai=N''Đã hủy''
+   OR EXISTS(SELECT i.MaDVThucHien,i.MaNVKyThuat,i.MaNVPhanCong,i.NgayPhanCong EXCEPT SELECT d.MaDVThucHien,d.MaNVKyThuat,d.MaNVPhanCong,d.NgayPhanCong))
+   THROW 53412,N''Phân công ảnh đã lưu được giữ nguyên; hủy và lập phân công mới.'',1;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=i.MaDVThucHien
+   JOIN dbo.DICH_VU d ON d.MaDV=s.MaDV JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=s.MaLS
+   JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu JOIN dbo.NHAN_VIEN n ON n.MaNV=i.MaNVKyThuat
+   WHERE d.MaCK<>N''CK004'' OR l.TrangThai<>N''Nháp'' OR p.TrangThai NOT IN(N''Chờ khám'',N''Đang khám'')
+    OR(i.TrangThai=N''Đang áp dụng'' AND(n.MaChucVu<>N''CV003'' OR n.TrangThai<>N''Đang làm việc'' OR NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t WHERE t.MaNV=n.MaNV AND t.TrangThai=N''Đang hoạt động''))))
+   THROW 53413,N''Phân công cần dịch vụ chụp, lượt còn mở và nhân viên kỹ thuật đang hoạt động.'',1;
+ END;');
+ EXEC(N'CREATE OR ALTER TRIGGER dbo.TR_DVTH_PCAXQ ON dbo.DICH_VU_THUC_HIEN AFTER UPDATE AS
+ BEGIN
+  SET NOCOUNT ON;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaDVThucHien=i.MaDVThucHien
+   WHERE(i.MaLS<>d.MaLS OR i.MaDV<>d.MaDV) AND EXISTS(SELECT 1 FROM dbo.PHAN_CONG_ANH_XQUANG pc WHERE pc.MaDVThucHien=i.MaDVThucHien))
+   THROW 53414,N''Dịch vụ có lịch sử phân công ảnh giữ nguyên nguồn lượt và loại dịch vụ.'',1;
+ END;');
+ EXEC(N'CREATE OR ALTER PROCEDURE dbo.usp_RHM_KiemTraKhoAnh AS
+ BEGIN
+  SET NOCOUNT ON;
+  IF OBJECT_ID(N''dbo.PHAN_CONG_ANH_XQUANG'',N''U'') IS NULL OR OBJECT_ID(N''dbo.TR_PCAXQ_BaoVe'',N''TR'') IS NULL OR OBJECT_ID(N''dbo.TR_DVTH_PCAXQ'',N''TR'') IS NULL
+   THROW 53415,N''Chưa đồng bộ phân công ảnh P4.'',1;
+  IF EXISTS(SELECT 1 FROM(VALUES
+   (N''FK_PCAXQ_DichVu'',N''MaDVThucHien'',N''DICH_VU_THUC_HIEN'',N''MaDVThucHien''),
+   (N''FK_PCAXQ_KyThuat'',N''MaNVKyThuat'',N''NHAN_VIEN'',N''MaNV''),
+   (N''FK_PCAXQ_NguoiGiao'',N''MaNVPhanCong'',N''NHAN_VIEN'',N''MaNV'')) required(N,C,RT,RC)
+   WHERE NOT EXISTS(SELECT 1 FROM sys.foreign_keys f JOIN sys.foreign_key_columns k ON k.constraint_object_id=f.object_id
+    JOIN sys.columns c ON c.object_id=k.parent_object_id AND c.column_id=k.parent_column_id
+    JOIN sys.columns r ON r.object_id=k.referenced_object_id AND r.column_id=k.referenced_column_id
+    WHERE f.object_id=OBJECT_ID(N''dbo.''+required.N,N''F'') AND f.parent_object_id=OBJECT_ID(N''dbo.PHAN_CONG_ANH_XQUANG'')
+     AND f.referenced_object_id=OBJECT_ID(N''dbo.''+required.RT) AND c.name=required.C AND r.name=required.RC
+     AND f.is_disabled=0 AND f.is_not_trusted=0 AND k.constraint_column_id=1
+     AND(SELECT COUNT(*) FROM sys.foreign_key_columns k2 WHERE k2.constraint_object_id=f.object_id)=1))
+   THROW 53415,N''Thiếu FK phân công ảnh đã kiểm chứng.'',1;
+  IF NOT EXISTS(SELECT 1 FROM sys.check_constraints WHERE name=N''CK_PCAXQ_TrangThai'' AND is_disabled=0 AND is_not_trusted=0)
+   OR NOT EXISTS(SELECT 1 FROM sys.indexes i WHERE i.object_id=OBJECT_ID(N''dbo.PHAN_CONG_ANH_XQUANG'') AND i.name=N''UX_PCAXQ_DichVu'' AND i.is_unique=1 AND i.is_disabled=0
+    AND i.has_filter=1 AND i.filter_definition=N''([TrangThai]=N''''Đang áp dụng'''')''
+    AND EXISTS(SELECT 1 FROM sys.index_columns k JOIN sys.columns c ON c.object_id=k.object_id AND c.column_id=k.column_id
+     WHERE k.object_id=i.object_id AND k.index_id=i.index_id AND k.key_ordinal=1 AND c.name=N''MaDVThucHien'')
+    AND(SELECT COUNT(*) FROM sys.index_columns k WHERE k.object_id=i.object_id AND k.index_id=i.index_id AND k.key_ordinal>0)=1)
+   THROW 53415,N''Thiếu CHECK/index phân công ảnh.'',1;
+  IF EXISTS(SELECT 1 FROM(VALUES(N''TR_PCAXQ_BaoVe'',N''PHAN_CONG_ANH_XQUANG''),(N''TR_DVTH_PCAXQ'',N''DICH_VU_THUC_HIEN'')) required(N,T)
+   WHERE NOT EXISTS(SELECT 1 FROM sys.triggers t WHERE t.object_id=OBJECT_ID(N''dbo.''+required.N,N''TR'')
+    AND t.parent_id=OBJECT_ID(N''dbo.''+required.T) AND t.is_disabled=0))
+   THROW 53415,N''Trigger bảo vệ phân công ảnh bị thiếu, sai bảng hoặc đã tắt.'',1;
+  -- Đối chiếu đủ thuộc tính ET để DAL không nhận lỗi cột/kiểu sau khi kiểm schema thành công.
+  IF EXISTS(SELECT 1 FROM(VALUES
+   (N''ANH_XQUANG_LAN_KHAM'',N''MaAnh'',231,100,0,0),(N''ANH_XQUANG_LAN_KHAM'',N''MaLS'',231,100,0,0),
+   (N''ANH_XQUANG_LAN_KHAM'',N''MaDVThucHien'',231,100,0,1),(N''ANH_XQUANG_LAN_KHAM'',N''TenTepGoc'',231,510,0,0),
+   (N''ANH_XQUANG_LAN_KHAM'',N''TenTepLuu'',231,510,0,0),(N''ANH_XQUANG_LAN_KHAM'',N''DuongDanTuongDoi'',231,1000,0,0),
+   (N''ANH_XQUANG_LAN_KHAM'',N''MimeType'',231,200,0,0),(N''ANH_XQUANG_LAN_KHAM'',N''KichThuocBytes'',127,8,0,0),
+   (N''ANH_XQUANG_LAN_KHAM'',N''Sha256'',175,64,0,0),(N''ANH_XQUANG_LAN_KHAM'',N''GhiChu'',231,1000,0,1),
+   (N''ANH_XQUANG_LAN_KHAM'',N''NgayTao'',42,6,0,0),(N''ANH_XQUANG_LAN_KHAM'',N''MaNVUpload'',231,100,0,0),
+   (N''ANH_XQUANG_LAN_KHAM'',N''TrangThai'',231,40,0,0),(N''ANH_XQUANG_LAN_KHAM'',N''NgayAn'',42,6,0,1),
+   (N''PHAN_CONG_ANH_XQUANG'',N''MaPC'',231,100,0,0),(N''PHAN_CONG_ANH_XQUANG'',N''MaDVThucHien'',231,100,0,0),
+   (N''PHAN_CONG_ANH_XQUANG'',N''MaNVKyThuat'',231,100,0,0),(N''PHAN_CONG_ANH_XQUANG'',N''MaNVPhanCong'',231,100,0,0),
+   (N''PHAN_CONG_ANH_XQUANG'',N''NgayPhanCong'',42,6,0,0),(N''PHAN_CONG_ANH_XQUANG'',N''TrangThai'',231,40,0,0),
+   (N''PHAN_CONG_ANH_XQUANG'',N''NgayHuy'',42,6,0,1)) required(T,C,TypeId,L,S,N)
+   LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+required.T) AND c.name=required.C
+   WHERE c.column_id IS NULL OR c.system_type_id<>required.TypeId OR c.max_length<>required.L OR c.scale<>required.S OR c.is_nullable<>required.N)
+   THROW 53415,N''Cột metadata/phân công ảnh không khớp ET/DAL hiện tại.'',1;
+  EXEC dbo.usp_RHM_KiemTraNenTangSprint3;
+ END;');
+ EXEC dbo.usp_RHM_KiemTraKhoAnh;
+ IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N'RHM.XrayStorage.Version')
+  EXEC sys.sp_addextendedproperty @name=N'RHM.XrayStorage.Version',@value=1;
+ COMMIT;
+ EXEC sys.sp_set_session_context @key=N'RHM.XrayStorage.Completed',@value=1;
+ PRINT N'XrayStorage1: phân công ảnh, metadata và bảo vệ lịch sử sẵn sàng; kho tệp cấu hình riêng.';
+END TRY
+BEGIN CATCH
+ IF @@TRANCOUNT>0 ROLLBACK;
+ THROW;
+END CATCH;
+GO
+-- END XRAY STORAGE P4
+
+-- BEGIN PROJECT SCHEMA SYNC 20261110: định nghĩa kiểm tổng phải đặt cuối sau P1/P4.
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+IF COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.Sprint3Foundation.Completed')),0)<>1
+ OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.XrayStorage.Completed')),0)<>1
+ OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.HospitalWorkflow.Completed')),0)<>1
+ OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.PrescriptionFlow.Completed')),0)<>1
+ OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.SqlV9.Completed')),0)<>1
+ OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.MaintenanceSerial.Completed')),0)<>1
+ OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.RolePermissions.Completed')),0)<>1
+ OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.AuditSchema.Completed')),0)<>1
+ OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.AuditTriggers.Completed')),0)<>1
+ OR COALESCE(TRY_CONVERT(int,SESSION_CONTEXT(N'RHM.PayrollCatalog.Completed')),0)<>1
+ THROW 53416,N'Có pha SQL chưa hoàn tất; chạy lại toàn bộ file sau khi xử lý lỗi, không bỏ qua lỗi batch.',1;
+BEGIN TRY
+ BEGIN TRANSACTION;
+ EXEC sys.sp_executesql N'CREATE OR ALTER PROCEDURE dbo.usp_RHM_KiemTraSchema AS
+ BEGIN
+  SET NOCOUNT ON;
+  EXEC dbo.usp_RHM_KiemTraSchemaNen;
+  EXEC dbo.usp_RHM_KiemTraKeThuoc;
+  EXEC dbo.usp_RHM_KiemTraDongBoV9;
+  EXEC dbo.usp_RHM_KiemTraBaoTriSerial;
+  IF NOT EXISTS(SELECT 1 FROM sys.indexes i WHERE i.object_id=OBJECT_ID(N''dbo.NHAT_KY_THAO_TAC'') AND i.name=N''UX_S3_Event''
+   AND i.is_unique=1 AND i.is_disabled=0 AND i.has_filter=1 AND i.filter_definition=N''([MaSuKien] IS NOT NULL)''
+   AND EXISTS(SELECT 1 FROM sys.index_columns k JOIN sys.columns c ON c.object_id=k.object_id AND c.column_id=k.column_id
+    WHERE k.object_id=i.object_id AND k.index_id=i.index_id AND k.key_ordinal=1 AND c.name=N''MaSuKien'')
+   AND(SELECT COUNT(*) FROM sys.index_columns k WHERE k.object_id=i.object_id AND k.index_id=i.index_id AND k.key_ordinal>0)=1)
+   THROW 53417,N''Thiếu hoặc sai index chống trùng sự kiện nhật ký ứng dụng.'',1;
+  -- Kiểm kho ảnh gọi tiếp nền tảng Sprint3, bao gồm loại khám/phụ thu/hóa đơn.
+  EXEC dbo.usp_RHM_KiemTraKhoAnh;
+ END;';
+ EXEC dbo.usp_RHM_KiemTraSchema;
+ COMMIT TRANSACTION;
+ PRINT N'PROJECT_SCHEMA_READY: 64 bảng và các liên kết ET/DAL/BUS/WPF đã kiểm tra; cấu hình SQL Server/kho ảnh tại appsettings.json.';
+END TRY
+BEGIN CATCH
+ IF XACT_STATE()<>0 ROLLBACK TRANSACTION;
+ THROW;
+END CATCH;
+GO
+-- END PROJECT SCHEMA SYNC 20261110

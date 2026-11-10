@@ -71,7 +71,8 @@ public sealed record KetQuaBanGiao(string MaDT,string MaLS,string MaHD,string Ma
 /// <param name="MaLo">Mã lô xác định đối tượng cần xử lý.</param>
 /// <param name="SoLo">Giá trị số lô dùng khi thực hiện thao tác; kiểu string?.</param>
 public sealed record DongInHoaDon(string MaCTHD,string? MaDVThucHien,string? MaCTPX,string? MaCTDT,string? MaDT,
-    string NoiDung,string? DonViTinh,decimal SoLuong,decimal DonGia,decimal ThanhTien,string? MaLo,string? SoLo);
+    string NoiDung,string? DonViTinh,decimal SoLuong,decimal DonGia,decimal ThanhTien,string? MaLo,string? SoLo,
+    string? MaPhieuPhuThu=null);
 /// <summary>
 /// Gói dữ liệu bản in hóa đơn truyền giữa các bước xử lý; các thành phần được khai báo ngay trong kiểu.
 /// </summary>

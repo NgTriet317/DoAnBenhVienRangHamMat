@@ -17,6 +17,7 @@ namespace RangHamMat;
 /// </summary>
 public partial class MainWindow : Window
 {
+    internal bool YeuCauDangXuat { get; private set; }
     /// <summary>
     /// Phiên đăng nhập tài khoản được giữ trong phạm vi lớp để các thao tác dùng lại.
     /// </summary>
@@ -308,9 +309,17 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Đóng cửa sổ chính; ứng dụng sẽ kết thúc theo ShutdownMode đã đặt lúc khởi động.
+    /// Đóng cửa sổ chính; App kết thúc ứng dụng và giữ phiên đăng nhập đã lưu.
     /// </summary>
     private void Exit_Click(object sender, RoutedEventArgs e) => Close();
+
+    /// <summary>Closing vẫn kiểm tra công việc đang nhập; App chỉ xóa phiên nếu việc đóng được cho phép.</summary>
+    private void DangXuat_Click(object sender, RoutedEventArgs e)
+    {
+        YeuCauDangXuat = true;
+        try { Close(); }
+        finally { YeuCauDangXuat = false; }
+    }
 
     /// <summary>
     /// Đưa cửa sổ về trạng thái phóng to khi nó trở lại Normal; vẫn cho phép thu nhỏ và chuyển ứng dụng của Windows.

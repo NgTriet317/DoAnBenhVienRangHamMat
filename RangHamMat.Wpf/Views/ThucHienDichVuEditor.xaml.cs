@@ -18,6 +18,7 @@ public partial class ThucHienDichVuEditor:UserControl,IPatientScoped
  /// Ngữ cảnh định danh và quyền của người dùng đang thao tác.
  /// </summary>
  private readonly NguCanhNghiepVu actor;
+ private readonly IDbTransaction? transaction;
  /// <summary>
  /// Phạm vi đang chọn được giữ trong phạm vi lớp để các thao tác dùng lại.
  /// </summary>
@@ -40,7 +41,7 @@ public partial class ThucHienDichVuEditor:UserControl,IPatientScoped
  /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
  /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
  public ThucHienDichVuEditor(NguCanhNghiepVu? user=null,IDbTransaction? transaction=null)
- {service=new(transaction);actor=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(user?.MaNV??PhienDangNhap.MaNV);InitializeComponent();LoadHistory();}
+ {this.transaction=transaction;service=new(transaction);actor=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(user?.MaNV??PhienDangNhap.MaNV);InitializeComponent();AssignedImagesButton.Visibility=actor.LaAdmin||actor.CoQuyen(QuyenLamViec.CapNhatKetQuaDuocGiao)?Visibility.Visible:Visibility.Collapsed;LoadHistory();}
  /// <summary>
  /// Áp dụng bệnh nhân được chỉ định làm phạm vi dữ liệu của màn hình.
  /// </summary>
@@ -86,4 +87,6 @@ public partial class ThucHienDichVuEditor:UserControl,IPatientScoped
  /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
  /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
  private void Reload_Click(object sender,RoutedEventArgs e)=>LoadHistory();
+ private void AssignedImages_Click(object sender,RoutedEventArgs e)
+ {new Window{Title="Ảnh X-quang được giao",Width=1120,Height=820,MinWidth=700,MinHeight=520,Owner=Window.GetWindow(this),Content=new AnhXquangDuocGiao(actor,transaction)}.Show();}
 }

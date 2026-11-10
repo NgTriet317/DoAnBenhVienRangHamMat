@@ -163,7 +163,7 @@ public sealed class DAL_HOADON : dbconnect
                 throw new InvalidOperationException("Xác nhận lần khám trước khi lập hóa đơn.");
             }
 
-            if (visit.ThoiGianKham > DateTime.Now)
+            if (visit.ThoiGianKham > db.ExecuteScalar<DateTime>("SELECT CONVERT(datetime2(0),SYSDATETIME())",transaction:tx))
             {
                 throw new InvalidOperationException("Thời điểm lần khám chưa đến; chưa thể lập hóa đơn.");
             }
@@ -175,9 +175,10 @@ public sealed class DAL_HOADON : dbconnect
                 throw new InvalidOperationException("Lần khám chưa có khoản thu mới: cần dịch vụ đã xác nhận hoặc thuốc đã cấp đủ, chưa nằm trên hóa đơn khác.");
             }
 
-            if (discount < 0 || discount > charges.Sum(c => c.ThanhTien))
+            var protectedFee=charges.Where(c=>c.MaPhieuPhuThu is not null).Sum(c=>c.ThanhTien);
+            if (discount < 0 || discount > charges.Sum(c => c.ThanhTien)-protectedFee)
             {
-                throw new InvalidOperationException("Giảm giá phải từ 0 đến tổng khoản thu.");
+                throw new InvalidOperationException("Giảm giá phải từ 0 đến tổng khoản thu ngoài phụ thu khám dịch vụ bắt buộc.");
             }
 
             var invoiceId = TaoMa(db, tx, "HOA_DON", "MaHD");

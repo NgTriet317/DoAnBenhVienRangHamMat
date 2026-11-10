@@ -1,0 +1,17 @@
+PASS: summary comma và semicolon đều xác nhận đủ kiểm
+PASS: exit khác0 không được PASS dù summary xanh
+PASS: dòng FAIL không bị summary xanh che
+FAIL: summary lỗi trước đó không bị summary xanh cuối che | Bỏ qua summary lỗi trước đó
+PASS: thiếu summary hoặc số kiểm thấp không được PASS
+PASS: báo cáo không summary phải đủ PASS và marker bắt buộc
+PASS: operation không được qua nếu không có marker
+PASS: gọi child thật phải giữ nguyên exit khác0
+PASS: SQL gốc lấy đúng byte, khớp bản CRLF đã khóa nguồn
+PASS: proof cùng hostname không chứng minh hai máy
+PASS: proof khác SQL/kho/hash hoặc cờ không phải boolean bị từ chối
+PASS: logic đối chiếu proof đủ trường từ hai hostname khác chấp nhận
+PASS: proof path local hoặc thiếu ảnh ẩn không đủ điều kiện
+PASS: probe UNC từ chối database production trước khi kết nối
+PASS: runner từ chối mã không hợp lệ trước kết nối SQL
+PASS: runner không ghi đè lần nghiệm thu đã có
+RESULT: 15 passed, 1 failed

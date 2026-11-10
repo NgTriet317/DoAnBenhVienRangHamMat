@@ -1,0 +1,6 @@
+Build succeeded.
+    0 Error(s)
+PROJECT_SCHEMA_READY: 64 bảng và các liên kết ET/DAL/BUS/WPF đã kiểm tra; cấu hình SQL Server/kho ảnh tại appsettings.json.
+DEMO_DATABASE=RHM_Hospital_Test_P5Demo_P6_20261110_124022_78d39f69
+DEMO_COMPLETE=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\P5Evidence\RHM_Hospital_Test_P5Demo_P6_20261110_124022_78d39f69
+PASS: 18 synthetic patients; 26 visits (8/12/6); 26 invoices; 13 service fees; 13 prescriptions; 300 in/26 out/274 on hand; all constraints and reconciliation valid.

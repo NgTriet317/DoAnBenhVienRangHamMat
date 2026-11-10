@@ -35,7 +35,7 @@ public sealed partial class DAL_THANHTOANTRONGOI : dbconnect
                 throw new InvalidOperationException("Lượt đang được xử lý, vui lòng tải lại bảng tính.");
             var actor = DAL_QUYENNGHIEPVU.XacThuc(db, tx, nguoiDung);
             var visit = db.QuerySingleOrDefault<LuotPhi>("""
-                SELECT l.MaBS,p.MaBS BacSiPhieu,l.TrangThai,p.TrangThai TrangThaiPhieu,b.MaBN,b.HoTenBN,l.ThoiGianKham,l.NgayXacNhan
+                SELECT l.MaBS,p.MaBS BacSiPhieu,l.TrangThai,p.TrangThai TrangThaiPhieu,b.MaBN,b.HoTenBN,l.ThoiGianKham,l.NgayXacNhan,p.MaPhieu,p.PhiPhuThuDichVu
                 FROM dbo.LICH_SU_KHAM_BENH l WITH(HOLDLOCK)
                 JOIN dbo.PHIEU_KHAM_BENH p WITH(HOLDLOCK) ON p.MaPhieu=l.MaPhieu
                 JOIN dbo.HO_SO_BENH_AN h ON h.MaHS=p.MaHS JOIN dbo.BENH_NHAN b ON b.MaBN=h.MaBN
@@ -93,7 +93,9 @@ public sealed partial class DAL_THANHTOANTRONGOI : dbconnect
             if (pending is not null)
             {
                 var sources = db.Query<ET_CHITIETHOADON>("SELECT * FROM dbo.CHI_TIET_HOA_DON WITH(HOLDLOCK) WHERE MaHD=@MaHD", pending, tx).ToArray();
-                if (sources.Length != services.Length + lines.Length || sources.Any(c => c.MaCTPX is not null) ||
+                var surcharge=sources.Where(c=>c.MaPhieuPhuThu is not null).ToArray();
+                if (surcharge.Length!=(visit.PhiPhuThuDichVu>0?1:0) || surcharge.Any(c=>c.MaPhieuPhuThu!=visit.MaPhieu || c.ThanhTien!=visit.PhiPhuThuDichVu || c.DonGia!=visit.PhiPhuThuDichVu) ||
+                    sources.Length != services.Length + lines.Length + surcharge.Length || sources.Any(c => c.MaCTPX is not null) ||
                     !sources.Where(c => c.MaDVThucHien is not null).Select(c => c.MaDVThucHien).Order().SequenceEqual(services.Select(c => c.MaDVThucHien).Order()) ||
                     !sources.Where(c => c.MaCTDT is not null).Select(c => c.MaCTDT).Order().SequenceEqual(lines.Select(c => c.MaCTDT).Order()))
                     throw Error("MaHD", "Nguồn phí khác hóa đơn đã chốt khi hoàn tất; không tự thêm khoản thu.");
@@ -129,13 +131,13 @@ public sealed partial class DAL_THANHTOANTRONGOI : dbconnect
             }
             else maKhoCapThuoc = null;
             var hash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { maLS, maKhoCapThuoc,
-                visit.TrangThai, visit.TrangThaiPhieu, visit.NgayXacNhan, services, orders, lines, lots, drugs })));
+                visit.TrangThai, visit.TrangThaiPhieu, visit.NgayXacNhan,visit.MaPhieu,visit.PhiPhuThuDichVu, services, orders, lines, lots, drugs })));
             var fractional = services.Any(s => s.ThanhTien != decimal.Truncate(s.ThanhTien)) || drugs.Any(d => d.ThanhTien != decimal.Truncate(d.ThanhTien));
-            if (pending is not null && services.Sum(s => s.ThanhTien) + drugs.Sum(d => d.ThanhTien) != pending.SoTienPhaiThu)
+            if (pending is not null && services.Sum(s => s.ThanhTien) + drugs.Sum(d => d.ThanhTien) + visit.PhiPhuThuDichVu != pending.SoTienPhaiThu)
                 throw Error("MaHD", "Tổng phân bổ thuốc khác hóa đơn đã chốt; cần đối chiếu trước thu.");
             return new BangTinhPhi(maLS, visit.MaBN, visit.HoTenBN, maKhoCapThuoc, services, drugs, [], hash, !fractional,
                 fractional ? "Nguồn phí có số lẻ đồng. Cần điều chỉnh giá phù hợp trước thu; bảng tính giữ đúng tổng theo từng lô." :
-                pending is null ? "Giá và tồn sẽ được kiểm tra lại khi thanh toán." : "Hóa đơn đã lập khi hoàn tất khám. Thu đúng khoản đã chốt; tồn thuốc được kiểm tra khi thanh toán.", pending?.MaHD);
+                pending is null ? "Giá và tồn sẽ được kiểm tra lại khi thanh toán." : "Hóa đơn đã lập khi hoàn tất khám. Thu đúng khoản đã chốt; tồn thuốc được kiểm tra khi thanh toán.", pending?.MaHD,visit.PhiPhuThuDichVu,visit.PhiPhuThuDichVu>0?visit.MaPhieu:null);
         });
 
     /// <summary>
@@ -150,6 +152,8 @@ public sealed partial class DAL_THANHTOANTRONGOI : dbconnect
     /// </summary>
     private sealed class LuotPhi
     {
+        public string MaPhieu { get; set; } = "";
+        public decimal PhiPhuThuDichVu { get; set; }
         /// <summary>
         /// Mã bác sĩ.
         /// </summary>

@@ -85,6 +85,7 @@ public partial class KhamDieuTri : UserControl,IPatientScoped
         StatusFilterPanel.Visibility=QueueMode?Visibility.Visible:Visibility.Collapsed;
         DoctorFilterPanel.Visibility=QueueMode&&DuLieuGiaoDien.PhamViLamSang&&DuLieuGiaoDien.NguoiDungLamSang.LaAdmin?Visibility.Visible:Visibility.Collapsed;
         EmptyHeading.Text=QueueMode?"Chọn người bệnh trong hàng chờ":"Chọn một lượt đã khám";
+        ContextNote.Text=QueueMode?"Xem thông tin tiếp nhận và đối chiếu người bệnh trước khi bắt đầu khám.":"Xem thông tin lần khám, kết quả điều trị và các chứng từ liên quan của người bệnh.";
     }
     /// <summary>
     /// Làm mới danh sách và chi tiết theo phạm vi, bộ lọc hoặc lựa chọn hiện tại.

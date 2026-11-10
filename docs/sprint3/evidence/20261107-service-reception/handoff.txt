@@ -1,0 +1,2 @@
+PASS: bốn project, Views XAML/code-behind, SQL63 bảng/HospitalWorkflow3/PrescriptionFlow1/SqlV9/BaoTriSerial/Sprint3Foundation1 và cấu hình.
+PASS: HospitalWorkflow3/PrescriptionFlow1/SqlV9/BaoTriSerial/Sprint3Foundation1, schema63 bảng và ràng buộc đúng; kiểm tra SQL chỉ đọc.

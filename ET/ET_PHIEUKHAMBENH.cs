@@ -133,5 +133,11 @@ namespace ET
         /// Ghi chú bổ sung; ánh xạ cột GhiChu của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
         /// </summary>
         public string? GhiChu { get => ghiChu; set => ghiChu = value; }
+
+        /// <summary>Loại khám lưu tại tiếp nhận; phiếu cũ mặc định thông thường.</summary>
+        public string LoaiKham { get; set; } = "Thông thường";
+
+        /// <summary>Phí đã chốt tại tiếp nhận: thông thường 0, dịch vụ 30.000đ.</summary>
+        public decimal PhiPhuThuDichVu { get; set; }
     }
 }

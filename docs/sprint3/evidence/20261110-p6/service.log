@@ -1,0 +1,32 @@
+PASS: TN02 có ca mới được chọn, dịch vụ cùng chuyên khoa
+PASS: TN02 lưu loại/phí do backend và audit, retry một phiếu
+PASS: TN02 tiếp nhận không cần Admin, giữ đúng nhân viên và chặn vai trò khác
+PASS: TN05 Admin cũng không dùng lý do điều phối ngoài lịch cho khám dịch vụ
+PASS: TN01 thường vẫn cho điều phối theo quyền và phí 0
+PASS: TN03 từ chối thiếu ca
+PASS: TN03 từ chối ca chưa xác nhận
+PASS: TN03 từ chối vắng mặt
+PASS: TN03 từ chối chưa có mặt
+PASS: TN03 từ chối không phòng
+PASS: TN03 từ chối phòng ngừng
+PASS: TN03 từ chối tài khoản khóa
+PASS: TN03 từ chối ca ngừng
+PASS: TN03 từ chối bác sĩ nghỉ việc
+PASS: TN03 từ chối nghỉ phép
+PASS: TN05 ca bị hủy sau khi chọn vẫn bị kiểm lại lúc lưu
+PASS: TN03 ca qua ngày nhận đúng ca, chặn trước giờ và đúng giờ kết thúc
+PASS: TN07 lịch hẹn hợp lệ vẫn là thông thường và retry cùng phiếu
+PASS: TN04 lọc ngày áp dụng và chặn gửi dịch vụ khác chuyên khoa
+PASS: TN07 retry khác loại không nâng cấp âm thầm
+PASS: TN04 dịch vụ ngừng hoạt động bị loại khỏi danh sách và từ chối lúc lưu
+PASS: TN07 lịch hẹn không nhận loại dịch vụ
+PASS: HD01 tổng kết và hoàn tất chốt đúng 130000 một lần
+PASS: HD03 nhánh hóa đơn cũ, giảm giá, thu từng phần và hoàn
+PASS: HD04 DAL từ chối giảm giá trừ vào phụ thu trước khi ghi
+PASS: HD05 bảng phí, thu đủ, retry và in có một phụ thu
+PASS: HD04 SQL từ chối sửa TongTien độc lập với chi tiết
+PASS: HD04 dịch vụ thực hiện giả 30000 không thay được nguồn phụ thu
+PASS: HD05 thuốc hai lô và phụ thu giữ nguyên giá khi thu, in gộp đúng
+PASS: UI loại khám dịch vụ khóa dịch vụ tới khi chọn bác sĩ, đổi bác sĩ xóa dịch vụ/phòng
+PASS: UI bảng tính phí và tổng kết hiển thị phụ thu riêng
+RESULT: 31 passed, 0 failed

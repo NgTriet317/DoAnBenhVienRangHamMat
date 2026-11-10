@@ -1,0 +1,5 @@
+RESULT: 62 tables; 0 definite findings; 25 require review; no database changes
+FINDING SCHEMA_PHIENBAN: 3; CanDoiChieu; detail=3; limited=False
+FINDING BENH_THIEU_MA: 11; CanDoiChieu; detail=11; limited=False
+FINDING BENH_KHONG_GHI_NHAN: 11; CanDoiChieu; detail=11; limited=False
+AUDIT_COMPLETE=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\P5Evidence\audit-QLBenhVienRangHamMat-cd5c9a5a85504f019b8a8e832121bfca

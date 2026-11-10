@@ -78,6 +78,8 @@ namespace ET
         public string? MaCTPX { get => maCTPX; set => maCTPX = value; }
         /// <summary>Dòng đơn đã ký, chưa xuất kho; được thay bằng các dòng xuất khi thu.</summary>
         public string? MaCTDT { get; set; }
+        /// <summary>Nguồn phụ thu độc lập với dịch vụ/thuốc; mỗi phiếu chỉ thu một lần.</summary>
+        public string? MaPhieuPhuThu { get; set; }
         /// <summary>
         /// Nội dung chứng từ hoặc khoản thu; ánh xạ cột NoiDung của bảng trong TableAttribute.
         /// </summary>

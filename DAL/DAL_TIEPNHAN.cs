@@ -9,6 +9,23 @@ namespace DAL;
 /// </summary>
 public sealed class DAL_TIEPNHAN(IDbTransaction? transaction=null) : dbconnect(transaction)
 {
+    /// <summary>Khám dịch vụ chỉ chọn bác sĩ có ca/phòng/hiện diện hợp lệ hiện tại.</summary>
+    public IReadOnlyList<BacSiTiepNhan> LayBacSiDichVu(NguCanhNghiepVu nguoiDung)=>ThucHien((db,tx)=>
+    {
+        Authorize(db,tx,nguoiDung);
+        return Candidates(db,tx,null,Now(db,tx),true);
+    });
+
+    public IReadOnlyList<ET_DICHVU> LayDichVuTheoBacSi(string maBS,NguCanhNghiepVu nguoiDung)=>ThucHien((db,tx)=>
+    {
+        Authorize(db,tx,nguoiDung);Code(maBS,"MaBS");var now=Now(db,tx);
+        var doctor=Candidates(db,tx,null,now,true).SingleOrDefault(d=>d.MaNV==maBS)
+            ?? throw Error("MaBS","Bác sĩ không còn ca khám dịch vụ hợp lệ. Chọn lại bác sĩ.");
+        return Services(db,tx,doctor.MaCK,now);
+    });
+
+    private static IReadOnlyList<ET_DICHVU> Services(IDbConnection db,IDbTransaction? tx,string maCK,DateTime now)
+        =>db.Query<ET_DICHVU>("SELECT * FROM dbo.DICH_VU WITH(HOLDLOCK) WHERE MaCK=@maCK AND TrangThai=N'Đang hoạt động' AND NgayApDung<=CAST(@now AS date) ORDER BY TenDV,MaDV",new{maCK,now},tx).ToArray();
     /// <summary>
     /// Đọc danh sách bác sĩ theo tiêu chí và phạm vi áp dụng tại nơi gọi.
     /// </summary>
@@ -36,6 +53,10 @@ public sealed class DAL_TIEPNHAN(IDbTransaction? transaction=null) : dbconnect(t
         Lock(db,tx,"RHM:TiepNhan:Write");
         var user=Authorize(db,tx,nguoiDung);
         var r=yeuCau with {MaBN=Code(yeuCau.MaBN,"MaBN"),MaDV=Code(yeuCau.MaDV,"MaDV"),MaBS=Code(yeuCau.MaBS,"MaBS"),MaPhong=Code(yeuCau.MaPhong,"MaPhong"),MaLich=string.IsNullOrWhiteSpace(yeuCau.MaLich)?null:Code(yeuCau.MaLich,"MaLich")};
+        if(r.LoaiKham is not("Thông thường" or "Dịch vụ"))throw Error("LoaiKham","Chọn loại khám hợp lệ.");
+        var serviceVisit=r.LoaiKham=="Dịch vụ";
+        if(serviceVisit && r.MaLich is not null)throw Error("LoaiKham","Khám dịch vụ chỉ áp dụng tiếp nhận đến trực tiếp.");
+        if(serviceVisit && !string.IsNullOrWhiteSpace(r.LyDoDieuPhoiNgoaiLich))throw Error("LyDoDieuPhoiNgoaiLich","Khám dịch vụ không áp dụng điều phối ngoài lịch.");
         if(string.IsNullOrWhiteSpace(r.LyDoKham)) throw Error("LyDoKham","Nhập lý do đến khám.");
         var now=Now(db,tx);
         if(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.BENH_NHAN WITH(UPDLOCK,HOLDLOCK) WHERE MaBN=@MaBN AND TrangThai=N'Đang theo dõi'",r,tx)!=1) throw Error("MaBN","Bệnh nhân không tồn tại hoặc đã ngừng theo dõi.");
@@ -50,12 +71,14 @@ public sealed class DAL_TIEPNHAN(IDbTransaction? transaction=null) : dbconnect(t
             var old=db.QuerySingleOrDefault<ET_PHIEUKHAMBENH>("SELECT * FROM dbo.PHIEU_KHAM_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaLich=@MaLich AND TrangThai<>N'Hủy'",r,tx);
             if(old is not null)
             {
-                if(old.MaHS!=history?.MaHS || old.MaBS!=r.MaBS || old.MaPhong!=r.MaPhong || old.MaDV!=r.MaDV) throw Error("MaLich","Lịch đã có phiếu tiếp nhận khác; hãy mở phiếu đã lưu.");
+                if(old.MaHS!=history?.MaHS || old.MaBS!=r.MaBS || old.MaPhong!=r.MaPhong || old.MaDV!=r.MaDV || old.LoaiKham!=r.LoaiKham) throw Error("MaLich","Lịch đã có phiếu tiếp nhận khác; hãy mở phiếu đã lưu.");
                 return Result(r.MaBN,old);
             }
         }
-        var doctor=Candidates(db,tx,r.MaDV,now).SingleOrDefault(d=>d.MaNV==r.MaBS)
+        var doctor=Candidates(db,tx,serviceVisit?null:r.MaDV,now,serviceVisit).SingleOrDefault(d=>d.MaNV==r.MaBS)
             ?? throw Error("MaBS","Không có bác sĩ phù hợp đang làm việc trong thời điểm tiếp nhận.");
+        if(serviceVisit && !Services(db,tx,doctor.MaCK,now).Any(d=>d.MaDV==r.MaDV))
+            throw Error("MaDV","Dịch vụ phải đang áp dụng và thuộc chuyên khoa của bác sĩ đã chọn.");
         if(doctor.ThieuLich)
         {
             if(!user.CoQuyen(QuyenLamViec.DieuPhoiNgoaiLich)) throw DAL_QUYENNGHIEPVU.TuChoi();
@@ -71,7 +94,11 @@ public sealed class DAL_TIEPNHAN(IDbTransaction? transaction=null) : dbconnect(t
                   AND ThoiGianTiepNhan>=@day AND ThoiGianTiepNhan<DATEADD(day,1,@day)
                   AND TrangThai IN(N'Chờ khám',N'Đang khám',N'Chờ thanh toán',N'Chờ nhận thuốc') ORDER BY MaPhieu
                 """,new{hs=history.MaHS,r.MaDV,r.MaBS,r.MaPhong,day=now.Date},tx);
-            if(old is not null) return Result(r.MaBN,old);
+            if(old is not null)
+            {
+                if(old.LoaiKham!=r.LoaiKham)throw Error("LoaiKham","Đã có phiếu đang khám với loại khác. Mở lại phiếu hiện có để đối chiếu.");
+                return Result(r.MaBN,old);
+            }
         }
         if(history is null)
         {
@@ -81,17 +108,17 @@ public sealed class DAL_TIEPNHAN(IDbTransaction? transaction=null) : dbconnect(t
         }
         Lock(db,tx,$"RHM:TiepNhan:Queue:{now:yyyyMMdd}:{r.MaPhong}");
         var order=checked(db.ExecuteScalar<int>("SELECT COALESCE(MAX(SoThuTu),0) FROM dbo.PHIEU_KHAM_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaPhong=@MaPhong AND ThoiGianTiepNhan>=@day AND ThoiGianTiepNhan<DATEADD(day,1,@day)",new{r.MaPhong,day=now.Date},tx)+1);
-        var receipt=new ET_PHIEUKHAMBENH {MaPhieu=TaoMa(db,tx,"PHIEU_KHAM_BENH","MaPhieu"),MaHS=history.MaHS,MaLich=r.MaLich,MaBS=r.MaBS,MaPhong=r.MaPhong,MaDV=r.MaDV,MaNVTiepNhan=user.MaNV,SoThuTu=order,ThoiGianTiepNhan=now,LyDoKham=r.LyDoKham,TrangThai="Chờ khám",GhiChu=r.GhiChu};
+        var receipt=new ET_PHIEUKHAMBENH {MaPhieu=TaoMa(db,tx,"PHIEU_KHAM_BENH","MaPhieu"),MaHS=history.MaHS,MaLich=r.MaLich,MaBS=r.MaBS,MaPhong=r.MaPhong,MaDV=r.MaDV,MaNVTiepNhan=user.MaNV,SoThuTu=order,ThoiGianTiepNhan=now,LyDoKham=r.LyDoKham,TrangThai="Chờ khám",GhiChu=r.GhiChu,LoaiKham=r.LoaiKham,PhiPhuThuDichVu=serviceVisit?30000m:0m};
         KiemTra<ET_PHIEUKHAMBENH>(db,tx,"PHIEU_KHAM_BENH",receipt,null,null);
         db.Execute("""
-            INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaLich,MaPhong,MaBS,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai,GhiChu)
-            VALUES(@MaPhieu,@MaHS,@MaLich,@MaPhong,@MaBS,@MaNVTiepNhan,@MaDV,@SoThuTu,@ThoiGianTiepNhan,@LyDoKham,@TrangThai,@GhiChu)
+            INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaLich,MaPhong,MaBS,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai,GhiChu,LoaiKham,PhiPhuThuDichVu)
+            VALUES(@MaPhieu,@MaHS,@MaLich,@MaPhong,@MaBS,@MaNVTiepNhan,@MaDV,@SoThuTu,@ThoiGianTiepNhan,@LyDoKham,@TrangThai,@GhiChu,@LoaiKham,@PhiPhuThuDichVu)
             """,receipt,tx);
         if(r.MaLich is not null) db.Execute("UPDATE dbo.LICH_KHAM SET TrangThai=N'Chờ khám' WHERE MaLich=@MaLich AND TrangThai IN(N'Nháp',N'Đã xác nhận')",r,tx);
         db.Execute("""
             INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuSau)
             VALUES(@nk,@MaTK,@now,@action,N'PHIEU_KHAM_BENH',@id,N'Thành công',@detail)
-            """,new{nk=TaoMa(db,tx,"NHAT_KY_THAO_TAC","MaNK"),user.MaTK,now,action=doctor.ThieuLich?"Tiếp nhận ngoài lịch":"Tiếp nhận khám",id=receipt.MaPhieu,detail=System.Text.Json.JsonSerializer.Serialize(new{r.MaBN,history.MaHS,receipt.MaPhieu,r.MaBS,r.MaDV,r.MaPhong,receipt.SoThuTu,LyDoDieuPhoi=doctor.ThieuLich?r.LyDoDieuPhoiNgoaiLich:null})},tx);
+            """,new{nk=TaoMa(db,tx,"NHAT_KY_THAO_TAC","MaNK"),user.MaTK,now,action=doctor.ThieuLich?"Tiếp nhận ngoài lịch":"Tiếp nhận khám",id=receipt.MaPhieu,detail=System.Text.Json.JsonSerializer.Serialize(new{r.MaBN,history.MaHS,receipt.MaPhieu,r.MaBS,r.MaDV,r.MaPhong,receipt.SoThuTu,receipt.LoaiKham,receipt.PhiPhuThuDichVu,LyDoDieuPhoi=doctor.ThieuLich?r.LyDoDieuPhoiNgoaiLich:null})},tx);
         return Result(r.MaBN,receipt);
     });
 
@@ -104,11 +131,15 @@ public sealed class DAL_TIEPNHAN(IDbTransaction? transaction=null) : dbconnect(t
     /// <param name="service">Giá trị dịch vụ dùng khi thực hiện thao tác; kiểu string.</param>
     /// <param name="now">Giá trị thời điểm hiện tại dùng khi thực hiện thao tác; kiểu DateTime.</param>
     /// <returns>Tập dữ liệu kiểu IReadOnlyList&lt;BacSiTiepNhan&gt; theo điều kiện và phạm vi xử lý của hàm.</returns>
-    private static IReadOnlyList<BacSiTiepNhan> Candidates(IDbConnection db,IDbTransaction? tx,string service,DateTime now)
+    private static IReadOnlyList<BacSiTiepNhan> Candidates(IDbConnection db,IDbTransaction? tx,string? service,DateTime now,bool strict=false)
     {
-        Code(service,"MaDV");
-        var specialty=db.QuerySingleOrDefault<string>("SELECT MaCK FROM dbo.DICH_VU WITH(HOLDLOCK) WHERE MaDV=@service AND TrangThai=N'Đang hoạt động'",new{service},tx);
-        if(string.IsNullOrWhiteSpace(specialty)) throw Error("MaDV","Dịch vụ cần đang hoạt động và có chuyên khoa để phân bác sĩ.");
+        string? specialty=null;
+        if(!strict)
+        {
+            Code(service,"MaDV");
+            specialty=db.QuerySingleOrDefault<string>("SELECT MaCK FROM dbo.DICH_VU WITH(HOLDLOCK) WHERE MaDV=@service AND TrangThai=N'Đang hoạt động'",new{service},tx);
+            if(string.IsNullOrWhiteSpace(specialty)) throw Error("MaDV","Dịch vụ cần đang hoạt động và có chuyên khoa để phân bác sĩ.");
+        }
         return db.Query<BacSiTiepNhan>("""
             WITH shifts AS(
               SELECT l.*,DATEADD(second,DATEDIFF(second,CAST('00:00:00' AS time),c.GioBatDau),CAST(l.NgayLam AS datetime2(0))) Begins,
@@ -120,14 +151,15 @@ public sealed class DAL_TIEPNHAN(IDbTransaction? transaction=null) : dbconnect(t
               (SELECT COUNT(*) FROM dbo.PHIEU_KHAM_BENH q WHERE q.MaBS=n.MaNV AND q.TrangThai IN(N'Chờ khám',N'Đang khám') AND q.ThoiGianTiepNhan>=CAST(@now AS date) AND q.ThoiGianTiepNhan<DATEADD(day,1,CAST(@now AS date))) SoDangCho
             FROM dbo.NHAN_VIEN n WITH(HOLDLOCK) JOIN dbo.CHUYEN_KHOA ck WITH(HOLDLOCK) ON ck.MaCK=n.MaCK
             OUTER APPLY(SELECT TOP(1) * FROM shifts s WHERE s.MaNV=n.MaNV AND @now>=s.Begins AND @now<s.Ends
-              AND s.TrangThai=N'Đã xác nhận' AND s.TrangThaiHienDien NOT IN(N'Vắng mặt',N'Nghỉ phép') AND s.CaStatus=N'Đang hoạt động' ORDER BY s.MaLLV) s
+              AND s.TrangThai=N'Đã xác nhận' AND ((@strict=0 AND s.TrangThaiHienDien NOT IN(N'Vắng mặt',N'Nghỉ phép')) OR(@strict=1 AND s.TrangThaiHienDien=N'Có mặt')) AND s.CaStatus=N'Đang hoạt động'
+              AND(@strict=0 OR EXISTS(SELECT 1 FROM dbo.PHONG room WITH(HOLDLOCK) WHERE room.MaPhong=s.MaPhong AND room.MaKhoa=ck.MaKhoa AND room.TrangThai=N'Đang hoạt động' AND room.LoaiPhong LIKE N'Phòng khám%')) ORDER BY s.MaLLV) s
             LEFT JOIN dbo.PHONG p WITH(HOLDLOCK) ON p.MaPhong=s.MaPhong AND p.TrangThai=N'Đang hoạt động' AND p.MaKhoa=ck.MaKhoa AND p.LoaiPhong LIKE N'Phòng khám%'
-            WHERE n.MaCK=@specialty AND n.MaChucVu=N'CV002' AND n.TrangThai=N'Đang làm việc'
+            WHERE (@specialty IS NULL OR n.MaCK=@specialty) AND n.MaChucVu=N'CV002' AND n.TrangThai=N'Đang làm việc'
               AND EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t WITH(HOLDLOCK) WHERE t.MaNV=n.MaNV AND t.TrangThai=N'Đang hoạt động')
               AND NOT EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI d WITH(HOLDLOCK) WHERE d.MaNV=n.MaNV AND d.TrangThaiDuyet=N'Đã duyệt' AND CAST(@now AS date) BETWEEN d.TuNgay AND d.DenNgay)
-              AND ((s.MaLLV IS NOT NULL AND p.MaPhong IS NOT NULL) OR NOT EXISTS(SELECT 1 FROM shifts d WHERE d.MaNV=n.MaNV AND(d.NgayLam=CAST(@now AS date) OR @now>=d.Begins AND @now<d.Ends)))
+              AND ((s.MaLLV IS NOT NULL AND p.MaPhong IS NOT NULL) OR (@strict=0 AND NOT EXISTS(SELECT 1 FROM shifts d WHERE d.MaNV=n.MaNV AND(d.NgayLam=CAST(@now AS date) OR @now>=d.Begins AND @now<d.Ends))))
             ORDER BY n.HoTen,n.MaNV
-            """,new{specialty,now},tx).ToArray();
+            """,new{specialty,now,strict},tx).ToArray();
     }
     /// <summary>
     /// Kiểm tra quyền của người dùng trước khi tiếp tục nghiệp vụ.
@@ -168,7 +200,7 @@ public sealed class DAL_TIEPNHAN(IDbTransaction? transaction=null) : dbconnect(t
     /// <param name="patient">Giá trị bệnh nhân dùng khi thực hiện thao tác; kiểu string.</param>
     /// <param name="receipt">Giá trị phiếu tiếp nhận dùng khi thực hiện thao tác; kiểu ET_PHIEUKHAMBENH.</param>
     /// <returns>Kết quả kiểu KetQuaTiepNhan dùng cho bước xử lý tiếp theo.</returns>
-    private static KetQuaTiepNhan Result(string patient,ET_PHIEUKHAMBENH receipt)=>new(patient,receipt.MaHS,receipt.MaPhieu,receipt.MaBS!,receipt.SoThuTu,receipt.TrangThai);
+    private static KetQuaTiepNhan Result(string patient,ET_PHIEUKHAMBENH receipt)=>new(patient,receipt.MaHS,receipt.MaPhieu,receipt.MaBS!,receipt.SoThuTu,receipt.TrangThai){LoaiKham=receipt.LoaiKham,PhiPhuThuDichVu=receipt.PhiPhuThuDichVu};
     /// <summary>
     /// Lấy khóa cho nguồn dữ liệu nghiệp vụ trong giao dịch hiện tại. Dùng application lock sở hữu bởi giao dịch; từ chối khi không lấy được khóa trong thời gian chờ.
     /// </summary>

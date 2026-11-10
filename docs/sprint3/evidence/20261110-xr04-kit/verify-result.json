@@ -1,0 +1,14 @@
+{
+    "Protocol":  "RHM.XR04.KitResult.v1",
+    "Mode":  "XacMinhPhucHoi",
+    "Machine":  "DESKTOP-C9VCE8A",
+    "StartedUtc":  "\/Date(1794287448246)\/",
+    "Status":  "PASS",
+    "ReadyForDeployment":  false,
+    "Scope":  "SingleHostOperation",
+    "Failure":  null,
+    "ExitCode":  0,
+    "Log":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\XR04Handover\\verify-3cfa54e282b349c4a78160823e49457b\\Verify\\tool.log",
+    "Passed":  2,
+    "FinishedUtc":  "\/Date(1794287449538)\/"
+}

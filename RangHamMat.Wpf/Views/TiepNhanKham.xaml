@@ -14,15 +14,24 @@
         <TextBlock Text="Nguồn tiếp nhận" Style="{StaticResource FieldLabel}" Margin="0,12,0,5"/>
         <!-- Trường lựa chọn AppointmentPicker. Chuyển sự kiện đến Appointment_Changed trong code-behind. -->
         <ComboBox x:Name="AppointmentPicker" MinHeight="36" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Appointment_Changed" AutomationProperties.Name="Nguồn trực tiếp hoặc lịch hẹn"/>
+        <StackPanel x:Name="LoaiKhamBlock" Visibility="Collapsed" Margin="0,12,0,0">
+          <TextBlock Text="Loại khám" Style="{StaticResource FieldLabel}"/>
+          <ComboBox x:Name="LoaiKhamPicker" MinHeight="36" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="LoaiKham_Changed" AutomationProperties.Name="Loại khám đến trực tiếp"/>
+        </StackPanel>
       </StackPanel></Border>
       <Border Style="{StaticResource HospitalPanel}" Margin="0,0,0,12"><StackPanel>
-        <TextBlock Text="2. Dịch vụ và bác sĩ phụ trách" FontWeight="SemiBold" FontSize="16"/>
+        <TextBlock Text="2. Bác sĩ, dịch vụ và phòng" FontWeight="SemiBold" FontSize="16"/>
+        <TextBlock x:Name="FeeHint" TextWrapping="Wrap" Margin="0,8,0,0" Foreground="#1D4ED8"/>
+        <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <StackPanel x:Name="ServiceField" Grid.Row="0">
         <TextBlock Text="Dịch vụ khám ban đầu" Style="{StaticResource FieldLabel}" Margin="0,12,0,5"/>
         <!-- Trường lựa chọn ServicePicker. Chuyển sự kiện đến Service_Changed trong code-behind. -->
         <ComboBox x:Name="ServicePicker" MinHeight="36" DisplayMemberPath="Label" SelectedValuePath="Value" IsEditable="True" IsTextSearchEnabled="True" SelectionChanged="Service_Changed" AutomationProperties.Name="Dịch vụ khám"/>
+        </StackPanel><StackPanel x:Name="DoctorField" Grid.Row="1">
         <TextBlock Text="Bác sĩ phù hợp chuyên khoa" Style="{StaticResource FieldLabel}" Margin="0,12,0,5"/>
         <!-- Trường lựa chọn DoctorPicker. Chuyển sự kiện đến Doctor_Changed trong code-behind. -->
         <ComboBox x:Name="DoctorPicker" MinHeight="36" DisplayMemberPath="Label" SelectedValuePath="MaNV" IsEditable="True" IsTextSearchEnabled="True" SelectionChanged="Doctor_Changed" AutomationProperties.Name="Bác sĩ tiếp nhận"/>
+        </StackPanel></Grid>
         <!-- Thông tin hiển thị ScheduleHint. -->
         <TextBlock x:Name="ScheduleHint" Foreground="#9A3412" Margin="0,6,0,0" TextWrapping="Wrap"/>
         <TextBlock Text="Phòng khám" Style="{StaticResource FieldLabel}" Margin="0,12,0,5"/>

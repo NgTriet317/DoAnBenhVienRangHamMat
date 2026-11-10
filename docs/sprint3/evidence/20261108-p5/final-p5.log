@@ -1,0 +1,23 @@
+PASS: P5 audit có đầu mối BUS, không ghi dữ liệu ở mọi bảng
+PASS: P5 giới hạn chi tiết được kiểm trước SQL
+PASS: P5 FK ghép và NULL: đếm đủ, trả đúng PK và báo giới hạn
+PASS: P5 quyền db_datareader đủ để chạy đối soát
+PASS: P5 xuất thiếu mã bệnh là cần đối chiếu, không tự gán mã
+PASS: P5 trùng mã được liệt kê theo từng PK
+PASS: P5 SQL từ chối thời gian khám trước tiếp nhận
+PASS: P5 CSV chặn công thức và artifact từ chối ghi đè
+PASS: P5 nhân sự/tài khoản hiện tại khác lịch sử chỉ là cần đối chiếu
+PASS: P5 phát hiện hoàn trước thu dù số dư cuối hợp lệ
+PASS: P5 tồn lịch sử âm dù nhập/xuất cuối cân bằng
+PASS: P5 dòng thuốc sai MaLS bị phát hiện dù FK/tổng tiền hợp lệ
+PASS: P5 DEMO có nhãn database,18 người giả,26 lượt8/12/6 và không sửa mã dịch vụ cũ
+PASS: P5 thu/hoàn cùng timestamp không bị suy thứ tự giả
+PASS: P5 thay giá thuốc hiện tại không làm sai nguồn giá đã chốt
+PASS: P5 hóa đơn luồng chốt khám mới có thuốc chờ cấp là nguồn hợp lệ
+PASS: P5 DEMO FK/CHECK và đối soát không có bất thường
+PASS: P5 DEMO dịch vụ/thuốc/nguồn phụ thu, kho300 nhập26 xuất274 tồn
+PASS: P5 DEMO hóa đơn3.25m, thu quý3.15m;100k thu tháng11
+P5_REPORT_EVIDENCE=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\P5Evidence\report-5d85221a4b054f0a80df405709b549a7
+PASS: P5 DEMO báo cáo bệnh lý, tiền và MoM khớp SQL độc lập
+PASS: P5 DEMO render WPF tổng quan3 tháng và tình trạng từ SQL thật
+RESULT: 21 passed, 0 failed

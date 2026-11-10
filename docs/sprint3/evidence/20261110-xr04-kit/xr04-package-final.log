@@ -1,0 +1,7 @@
+PASS: published Probe for runtime invocation
+PASS: published Storage for runtime invocation
+PASS: published Verify for runtime invocation
+XR04_DIRECTORY=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\XR04Handover\20261110_120954_a7405046\Package
+XR04_PACKAGE=D:\Hoc Tap\ChuyenDe\Nhom4_QuanLyBenhVienRHM\obj\XR04Handover\20261110_120954_a7405046\XR04-20261110_120954_a7405046.zip
+XR04_SHA256=C070FE8F431F58066668A131FA2C3845B3C0DAA551C6A139A7A59CC0ED97D9E5
+XR04_READY_FOR_DEPLOYMENT=False

@@ -100,6 +100,8 @@ public sealed partial class DAL_KHAMDIEUTRI
         var drafts=db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.DON_THUOC WITH(HOLDLOCK) WHERE MaLS=@MaLS AND TrangThai=N'Nháp'",visit,tx);
         var orders=db.Query<ET_DONTHUOC>("SELECT * FROM dbo.DON_THUOC WITH(HOLDLOCK) WHERE MaLS=@MaLS ORDER BY MaDT",visit,tx).ToArray();
         var orderLines=db.Query<ET_CHITIETDONTHUOC>("SELECT c.* FROM dbo.CHI_TIET_DON_THUOC c WITH(HOLDLOCK) JOIN dbo.DON_THUOC d WITH(HOLDLOCK) ON d.MaDT=c.MaDT WHERE d.MaLS=@MaLS ORDER BY c.MaCTDT",visit,tx).ToArray();
-        return new(services,drugs,DaThucHienXong(db,tx,visit.MaLS),drafts,Fingerprint(new{Clinical=ClinicalSnapshot(db,tx,visit).DauVanTay,Plans=plans,Steps=steps,Services=services,Orders=orders,OrderLines=orderLines,Drugs=drugs}));
+        var receipt=db.QuerySingle<ET_PHIEUKHAMBENH>("SELECT p.* FROM dbo.PHIEU_KHAM_BENH p WITH(HOLDLOCK) JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaPhieu=p.MaPhieu WHERE l.MaLS=@MaLS",visit,tx);
+        return new(services,drugs,DaThucHienXong(db,tx,visit.MaLS),drafts,Fingerprint(new{Clinical=ClinicalSnapshot(db,tx,visit).DauVanTay,Plans=plans,Steps=steps,Services=services,Orders=orders,OrderLines=orderLines,Drugs=drugs,receipt.MaPhieu,receipt.LoaiKham,receipt.PhiPhuThuDichVu}),
+            receipt.PhiPhuThuDichVu,receipt.PhiPhuThuDichVu>0?receipt.MaPhieu:null);
     }
 }

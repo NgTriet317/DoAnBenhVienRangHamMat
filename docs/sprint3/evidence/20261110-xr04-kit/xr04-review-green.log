@@ -1,0 +1,18 @@
+PASS: gói đúng hash và Results riêng vẫn kiểm được
+PASS: gói thiếu tệp bị từ chối
+PASS: gói sửa tệp bị từ chối
+PASS: gói thêm payload bị từ chối
+PASS: payload tệp ẩn ngoài manifest cũng bị từ chối
+PASS: payload trong thư mục ẩn ngoài manifest bị từ chối
+PASS: manifest không được thoát thư mục gói
+PASS: gói INCOMPLETE và trạng thái phát hành sai bị từ chối
+PASS: guard DB nghiệp vụ trước khi kết nối
+PASS: guard kho local hoặc device path
+PASS: restore phải có tên DB thử mới
+PASS: Compare và KiemTraGoi không cần kết nối
+PASS: nguồn P6 đổi hoặc thiếu bị từ chối
+PASS: nguồn mới ngoài bốn script bàn giao phải kiểm lại P6
+PASS: wrapper process từ chối DB thật trước runtime/SQL
+PASS: builder process từ chối mã gói trước tạo thư mục
+PASS: marker INCOMPLETE ở thư mục cha cũng khóa gói
+RESULT: 17 passed, 0 failed

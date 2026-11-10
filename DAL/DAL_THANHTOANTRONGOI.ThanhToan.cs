@@ -177,6 +177,9 @@ public sealed partial class DAL_THANHTOANTRONGOI
     /// <param name="fee">Giá trị phí dùng khi thực hiện thao tác; kiểu BangTinhPhi.</param>
     private static void VerifyChargeSources(IDbConnection db, IDbTransaction? tx, string invoiceId, BangTinhPhi fee)
     {
+        var surcharge=db.Query<ET_CHITIETHOADON>("SELECT * FROM dbo.CHI_TIET_HOA_DON WHERE MaHD=@invoiceId AND MaPhieuPhuThu IS NOT NULL",new{invoiceId},tx).ToArray();
+        if(surcharge.Length!=(fee.PhiPhuThu>0?1:0) || surcharge.Any(c=>c.MaPhieuPhuThu!=fee.MaPhieuPhuThu || c.ThanhTien!=fee.PhiPhuThu || c.DonGia!=fee.PhiPhuThu))
+            throw Error("ThanhToan","Nguồn phụ thu không khớp phiếu tiếp nhận đã chốt.");
         var services = db.Query<string>("SELECT MaDVThucHien FROM dbo.CHI_TIET_HOA_DON WHERE MaHD=@invoiceId AND MaDVThucHien IS NOT NULL ORDER BY MaDVThucHien", new { invoiceId }, tx).ToArray();
         if (!services.SequenceEqual(fee.DichVu.Select(d => d.MaDVThucHien))) throw Error("ThanhToan", "Nguồn dịch vụ không khớp.");
         var actual = db.Query<PhanThuDaChot>("""
