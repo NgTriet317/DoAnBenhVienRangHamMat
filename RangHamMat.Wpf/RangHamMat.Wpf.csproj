@@ -11,6 +11,7 @@
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <!-- Metadata kiểm tra nhập liệu được nhúng vào assembly; giao diện đối chiếu tên/kiểu/giới hạn cột. -->
     <EmbeddedResource Include="Controls\QuyTacNhapLieu.xml" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
     <!-- Giao diện gọi nghiệp vụ qua BUS và dùng ET cho dữ liệu; DAL được dẫn vào qua BUS. -->
     <ProjectReference Include="..\BUS\BUS.csproj" />
     <ProjectReference Include="..\ET\ET.csproj" />
