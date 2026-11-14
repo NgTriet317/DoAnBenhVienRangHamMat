@@ -1,0 +1,9 @@
+{
+  "MaxTopicSections": 2,
+  "MaxAutoRetrySeconds": 5,
+  "Retry429Once": true,
+  "ShowSessionTokenStats": true,
+  "OllamaFallbackEnabled": false,
+  "OllamaEndpoint": "http://localhost:11434/api/chat",
+  "OllamaModel": "qwen2.5:7b"
+}

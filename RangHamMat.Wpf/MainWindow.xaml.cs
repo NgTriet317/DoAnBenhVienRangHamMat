@@ -1,12 +1,13 @@
 ﻿// PHẦN AI ĐÃ THỰC HIỆN: AI hỗ trợ giao diện trang chủ, lọc phân hệ theo vai trò/từ khóa và luồng mở phân hệ; đã chú thích các sự kiện và dữ liệu dùng để điều hướng.
 // AI hỗ trợ: bổ sung chú thích tiếng Việt cho file này ngày 13/10/2026.
 // Nhãn này ghi nhận phần hỗ trợ/chú thích;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Automation;
-using System.Windows.Input;
-using RangHamMat.Views;
 using RangHamMat.Controls;
+using RangHamMat.Controls.ClinicalWorkflow;
+using RangHamMat.Views;
+using System.Windows;
+using System.Windows.Automation;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace RangHamMat;
 
@@ -15,6 +16,12 @@ namespace RangHamMat;
 /// </summary>
 public partial class MainWindow : Window
 {
+    internal Func<string, MessageBoxResult>? LeaveDecision
+    {
+        get;
+        set;
+    }
+
     private static readonly HashSet<string> AllPages = new(StringComparer.Ordinal)
     {
         "TongQuan", "BenhNhan", "KhamDieuTri", "DichVuThucHien", "DonThuoc", "NhanSu", "ChungChiNhanVien", "CaLamViec",
@@ -159,12 +166,90 @@ public partial class MainWindow : Window
     /// <summary>
     /// Kiểm tra quyền mở phân hệ rồi truyền đồng thời mã bệnh nhân, lần khám và đơn thuốc sang màn hình đích.
     /// </summary>
-    internal void OpenHoSoApp(string module, string? patientId, string? visitId = null, string? prescriptionId = null)
+
+    internal void OpenHoSoApp(
+        string module,
+        string? patientId,
+        string? visitId = null,
+        string? prescriptionId = null,
+        string? medicalId = null,
+        string? receiptId = null,
+        string? invoiceId = null)
     {
-        if (!CanOpen(module)) { MessageBox.Show("Vai trò hiện tại không được mở chức năng này.", "Quyền truy cập"); return; }
-        OpenApp(module);
-        if (AppHost.Content is AppWorkspace workspace) workspace.FocusHoSo(patientId, visitId, prescriptionId);
+        if (!CanOpen(module))
+        {
+            MessageBox.Show(
+                "Vai trò hiện tại không được mở chức năng này.",
+                "Quyền truy cập");
+            return;
+        }
+
+        var context = new ET.NguCanhHoSo
+        {
+            MaBN = patientId,
+            MaLS = visitId,
+            MaDT = prescriptionId,
+            MaHS = medicalId,
+            MaPhieu = receiptId,
+            MaHD = invoiceId
+        };
+
+        try
+        {
+            if (QuyenNghiepVu.LaPhanHe(module))
+                context = new BUS.BUS_KHAMDIEUTRI()
+                    .XacMinhNguCanh(
+                        context,
+                        QuyenNghiepVu.LayNguCanh());
+        }
+        catch (InvalidOperationException ex)
+        {
+            MessageBox.Show(ex.Message, "Quyền truy cập");
+            return;
+        }
+
+        if (OpenAppCore(module, context)
+            && AppHost.Content is AppWorkspace workspace)
+        {
+            workspace.FocusHoSo(context);
+        }
     }
+
+
+    private bool OpenAppCore(string tag, ET.NguCanhHoSo? context)
+    {
+        if (!CanOpen(tag))
+        {
+            MessageBox.Show(
+                "Tài khoản hiện tại không có quyền mở phân hệ này.",
+                "Quyền truy cập",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return false;
+        }
+
+        try
+        {
+            DuLieuGiaoDien.ChonPhamViLamSang(
+                QuyenNghiepVu.LaPhanHe(tag),
+                context);
+        }
+        catch (InvalidOperationException ex)
+        {
+            MessageBox.Show(
+                ex.Message,
+                "Dữ liệu theo quyền",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            return false;
+        }
+
+        OpenApp(tag);
+
+        return AppHost.Content is AppWorkspace;
+    }
+
+
 
     /// <summary>
     /// Chọn biểu mẫu theo tên phân hệ và giao cho workspace hiển thị, kèm tên bảng và ngữ cảnh cha nếu tạo dữ liệu con.

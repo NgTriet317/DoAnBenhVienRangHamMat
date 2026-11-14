@@ -23,7 +23,21 @@ namespace wpftest
         {
             // AI bổ sung: bắt lỗi ngày nhập bằng bàn phím trên các DatePicker của ứng dụng.
             RangHamMat.Controls.KiemTraNhapLieu.Register();
+
             PhienDangNhap.KhoiTaoPhienUngDung();
+
+            // TEST: Luôn mở View chọn SQL Server và Database.
+            var busKetNoi = new BUS_CAUHINHCSDL();
+
+            var formKetNoi = new CauHinhMayChu(busKetNoi, false);
+
+            if (formKetNoi.ShowDialog() != true)
+            {
+                Shutdown();
+                return;
+            }
+
+            // Sau khi kết nối thành công mới mở đăng nhập.
             var login = new DangNhap();
 
             if (login.ShowDialog() != true)

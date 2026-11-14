@@ -10,6 +10,7 @@
   <ItemGroup>
     <!-- Cung cấp Table/Key/ExplicitKey/Computed để ánh xạ thuộc tính thực thể với bảng SQL. -->
     <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
   </ItemGroup>
 
 </Project>

@@ -137,6 +137,25 @@ public partial class PhieuHuongDan : UserControl
     private void txtTimKiem_TextChanged(object sender, TextChangedEventArgs e) => locDuLieu();
     private void cboTrangThai_SelectionChanged(object sender, SelectionChangedEventArgs e) => locDuLieu();
     private void chkHomNay_Changed(object sender, RoutedEventArgs e) => locDuLieu();
+    // Nút mở các bản khai AI mà bệnh nhân đã gửi từ máy tiếp nhận.
+    private void MoTiepNhanAI_Click(object sender, RoutedEventArgs e)
+    {
+        var cuaSo = new TiepNhanAI();
+        var cuaSoCha = Window.GetWindow(this);
+        if (cuaSoCha != null) cuaSo.Owner = cuaSoCha;
+        cuaSo.ShowDialog();
+
+        if (!string.IsNullOrWhiteSpace(cuaSo.MaPhieuDuocDuyet))
+        {
+            maPhieuCanChon = cuaSo.MaPhieuDuocDuyet;
+            hienThiDuLieu();
+        }
+        else if (cuaSo.MoBenhNhan && cuaSoCha is RangHamMat.MainWindow mainWindow)
+        {
+            mainWindow.OpenApp("BenhNhan");
+        }
+    }
+
     private void LamMoi_Click(object sender, RoutedEventArgs e) => hienThiDuLieu();
 
     private void gridPhieu_SelectionChanged(object sender, SelectionChangedEventArgs e)

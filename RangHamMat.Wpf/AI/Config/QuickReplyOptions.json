@@ -1,0 +1,134 @@
+{
+  "MaxOptions": 4,
+  "WelcomeOptions": [
+    {
+      "Label": "Tôi muốn khám răng",
+      "Value": "Tôi muốn làm thủ tục khám răng"
+    },
+    {
+      "Label": "Hỏi lịch bác sĩ",
+      "Value": "Tôi muốn hỏi lịch làm việc của bác sĩ"
+    },
+    {
+      "Label": "Tìm hiểu loại khám",
+      "Value": "Khám thông thường và khám dịch vụ khác nhau như thế nào?"
+    }
+  ],
+  "HideWhenQuestionContains": [
+    "họ tên",
+    "họ và tên",
+    "tên đầy đủ",
+    "bạn tên",
+    "ngày sinh",
+    "sinh ngày",
+    "năm sinh",
+    "số điện thoại",
+    "số liên hệ",
+    "địa chỉ",
+    "cccd",
+    "khó thở",
+    "ngất",
+    "chảy máu không cầm"
+  ],
+  "FallbackRules": [
+    {
+      "QuestionContains": [
+        "từng khám",
+        "đã khám",
+        "khám trước đây",
+        "lần đầu",
+        "đến bệnh viện trước đây"
+      ],
+      "Options": [
+        {
+          "Label": "Đã từng khám",
+          "Value": "Tôi đã từng khám ở đây"
+        },
+        {
+          "Label": "Chưa từng khám",
+          "Value": "Tôi chưa từng khám ở đây"
+        },
+        {
+          "Label": "Không nhớ",
+          "Value": "Tôi không nhớ mình đã khám chưa"
+        }
+      ]
+    },
+    {
+      "QuestionContains": [
+        "loại khám",
+        "khám thông thường hay",
+        "khám dịch vụ hay",
+        "muốn khám theo hình thức"
+      ],
+      "Options": [
+        {
+          "Label": "Khám thông thường",
+          "Value": "Tôi chọn khám thông thường"
+        },
+        {
+          "Label": "Khám dịch vụ",
+          "Value": "Tôi chọn khám dịch vụ"
+        },
+        {
+          "Label": "Chưa rõ khác biệt",
+          "Value": "Bạn giải thích giúp tôi hai loại khám"
+        }
+      ]
+    },
+    {
+      "QuestionContains": [
+        "lý do khám",
+        "vấn đề gì",
+        "triệu chứng",
+        "muốn khám vấn đề"
+      ],
+      "Options": [
+        {
+          "Label": "Đau răng",
+          "Value": "Tôi bị đau răng"
+        },
+        {
+          "Label": "Răng ê buốt",
+          "Value": "Răng tôi bị ê buốt"
+        },
+        {
+          "Label": "Khám định kỳ",
+          "Value": "Tôi muốn khám răng định kỳ"
+        },
+        {
+          "Label": "Vấn đề khác",
+          "Value": "Tôi muốn mô tả vấn đề khác"
+        }
+      ]
+    },
+    {
+      "QuestionContains": [
+        "muốn bắt đầu",
+        "bạn cần hỗ trợ gì",
+        "có thể hỗ trợ"
+      ],
+      "Options": [
+        {
+          "Label": "Tiếp nhận khám",
+          "Value": "Tôi muốn khai báo để tiếp nhận khám"
+        },
+        {
+          "Label": "Hỏi lịch bác sĩ",
+          "Value": "Tôi muốn hỏi lịch bác sĩ"
+        },
+        {
+          "Label": "Tìm hiểu dịch vụ",
+          "Value": "Tôi muốn biết bệnh viện có những dịch vụ nào"
+        }
+      ]
+    }
+  ],
+  "UrgentBlockKeywords": [
+    "khó thở",
+    "ngất",
+    "chảy máu không cầm",
+    "sưng nhanh",
+    "không thở được"
+  ]
+}

@@ -92,8 +92,15 @@
                 <TextBlock Margin="0,5,0,0" Foreground="{StaticResource ChuPhu}"
                            Text="Lấy thông tin từ phiếu tiếp nhận · Kiểm tra số thứ tự, khoa, phòng và bác sĩ trước khi in"/>
             </StackPanel>
-            <Button Grid.Column="1" Content="Làm mới danh sách" Style="{StaticResource NutPhu}"
-                    Click="LamMoi_Click" VerticalAlignment="Center" Margin="8,0,0,0"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal"
+                        VerticalAlignment="Center" HorizontalAlignment="Right">
+                <Button x:Name="btnNhanBanKhaiAI" Content="Nhận bản khai AI"
+                        Style="{StaticResource NutChinh}"
+                        Click="MoTiepNhanAI_Click" Margin="0,0,10,0"
+                        AutomationProperties.Name="Mở bản khai từ trợ lý AI"/>
+                <Button Content="Làm mới danh sách" Style="{StaticResource NutPhu}"
+                        Click="LamMoi_Click" VerticalAlignment="Center" Margin="0"/>
+            </StackPanel>
         </Grid>
 
         <Grid Grid.Row="1" Margin="18,0,18,18">

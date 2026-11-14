@@ -1,0 +1,129 @@
+{
+  "StartValues": [
+    "Tôi muốn làm thủ tục khám răng",
+    "Tôi muốn khai báo để tiếp nhận khám"
+  ],
+  "StartStep": "previousVisit",
+  "DateFormats": [
+    "d/M/yyyy",
+    "dd/MM/yyyy",
+    "yyyy-MM-dd"
+  ],
+  "PhonePattern": "^0[0-9]{9}$",
+  "InvalidNameMessage": "Bạn vui lòng nhập đầy đủ họ và tên, ví dụ: Nguyễn Văn An.",
+  "InvalidDateMessage": "Ngày sinh chưa đúng. Vui lòng nhập đầy đủ ngày/tháng/năm, ví dụ 01/01/2000.",
+  "InvalidPhoneMessage": "Vui lòng nhập số điện thoại Việt Nam gồm 10 chữ số, ví dụ 0912345678.",
+  "CompletionMessage": "Bản khai đang chờ bạn kiểm tra. AI chỉ gửi nháp đến nhân viên; chưa tạo phiếu khám hay số thứ tự. Bấm Gửi bản khai cho nhân viên, hoặc Sửa thông tin.",
+  "ReviewStep": "review",
+  "ConfirmationStep": "confirm",
+  "Steps": [
+    {
+      "Id": "previousVisit",
+      "Kind": "choice",
+      "Question": "Bạn đã từng khám ở bệnh viện chưa? Bạn có thể bấm chọn một phương án.",
+      "Options": [
+        {
+          "Label": "Đã từng khám",
+          "Value": "Tôi đã từng khám ở đây"
+        },
+        {
+          "Label": "Chưa từng khám",
+          "Value": "Tôi chưa từng khám ở đây"
+        },
+        {
+          "Label": "Không nhớ",
+          "Value": "Tôi không nhớ mình đã khám chưa"
+        }
+      ],
+      "Next": "fullName"
+    },
+    {
+      "Id": "fullName",
+      "Kind": "name",
+      "Question": "Bạn cho biết họ và tên đầy đủ của mình nhé?",
+      "Next": "dateOfBirth"
+    },
+    {
+      "Id": "dateOfBirth",
+      "Kind": "date",
+      "Question": "Bạn sinh ngày bao nhiêu? Có thể nhập theo dạng 01/01/2000.",
+      "Next": "phone"
+    },
+    {
+      "Id": "phone",
+      "Kind": "phone",
+      "Question": "Bạn vui lòng nhập số điện thoại để nhân viên có thể đối chiếu hồ sơ khi cần.",
+      "Next": "reason"
+    },
+    {
+      "Id": "reason",
+      "Kind": "choice",
+      "Question": "Bạn muốn khám vì lý do gì? Hãy chọn một mục hoặc mô tả bằng tin nhắn.",
+      "Options": [
+        {
+          "Label": "Đau răng",
+          "Value": "Tôi bị đau răng"
+        },
+        {
+          "Label": "Ê buốt",
+          "Value": "Răng tôi bị ê buốt"
+        },
+        {
+          "Label": "Khám định kỳ",
+          "Value": "Tôi muốn khám răng định kỳ"
+        },
+        {
+          "Label": "Khác",
+          "Value": "Tôi muốn mô tả vấn đề khác",
+          "AskAI": true
+        }
+      ],
+      "Next": "examType"
+    },
+    {
+      "Id": "examType",
+      "Kind": "choice",
+      "Question": "Bạn dự định khám thông thường hay khám dịch vụ? Nếu chưa rõ, hãy chọn mục cần giải thích.",
+      "Options": [
+        {
+          "Label": "Khám thông thường",
+          "Value": "normal"
+        },
+        {
+          "Label": "Khám dịch vụ",
+          "Value": "service"
+        },
+        {
+          "Label": "Giải thích thêm",
+          "Value": "Bạn giải thích giúp tôi hai loại khám",
+          "AskAI": true
+        }
+      ],
+      "Next": "review"
+    },
+    {
+      "Id": "review",
+      "Kind": "complete",
+      "Question": "Kiểm tra lại bản khai trước khi gửi nhân viên tiếp nhận.",
+      "Next": "confirm"
+    },
+    {
+      "Id": "confirm",
+      "Kind": "confirm",
+      "Question": "Bấm Gửi bản khai cho nhân viên nếu thông tin đã đúng. Chưa tạo phiếu khám.",
+      "Next": ""
+    }
+  ],
+  "SkipNameIfContains": [
+    "tôi muốn",
+    "cho tôi hỏi",
+    "không biết",
+    "không nhớ",
+    "bác sĩ",
+    "lịch khám",
+    "bao nhiêu",
+    "giúp tôi",
+    "đau răng",
+    "hỏi lịch"
+  ]
+}

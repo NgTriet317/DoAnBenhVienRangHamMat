@@ -1,19 +1,96 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Ứng dụng desktop Windows dùng WPF .NET 8; XAML được biên dịch cùng code-behind. -->
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework>
-    <UseWPF>true</UseWPF><EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>RangHamMat</RootNamespace><AssemblyName>RangHamMat.Wpf</AssemblyName>
-  </PropertyGroup>
-  <ItemGroup>
-    <!-- Chép cấu hình kết nối cạnh exe ở cả bản build và publish để máy triển khai có thể cấu hình SQL Server. -->
-    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <!-- Metadata kiểm tra nhập liệu được nhúng vào assembly; giao diện đối chiếu tên/kiểu/giới hạn cột. -->
-    <EmbeddedResource Include="Controls\QuyTacNhapLieu.xml" />
-    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
-    <!-- Giao diện gọi nghiệp vụ qua BUS và dùng ET cho dữ liệu; DAL được dẫn vào qua BUS. -->
-    <ProjectReference Include="..\BUS\BUS.csproj" />
-    <ProjectReference Include="..\ET\ET.csproj" />
-  </ItemGroup>
+	<!-- Ứng dụng desktop Windows dùng WPF .NET 8; XAML được biên dịch cùng code-behind. -->
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<UseWPF>true</UseWPF>
+		<EnableWindowsTargeting>true</EnableWindowsTargeting>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<RootNamespace>RangHamMat</RootNamespace>
+		<AssemblyName>RangHamMat.Wpf</AssemblyName>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<SelfContained>true</SelfContained>
+		<PublishSingleFile>true</PublishSingleFile>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+		<PublishTrimmed>false</PublishTrimmed>
+	</PropertyGroup>
+	<ItemGroup>
+		<Content Include="KioskServer\**\*"
+			  CopyToOutputDirectory="PreserveNewest" />
+		<!-- Chép cấu hình kết nối cạnh exe ở cả bản build và publish để máy triển khai có thể cấu hình SQL Server. -->
+		<None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+		<!-- Metadata kiểm tra nhập liệu được nhúng vào assembly; giao diện đối chiếu tên/kiểu/giới hạn cột. -->
+		<EmbeddedResource Include="Controls\QuyTacNhapLieu.xml" />
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
+		<!-- Giao diện gọi nghiệp vụ qua BUS và dùng ET cho dữ liệu; DAL được dẫn vào qua BUS. -->
+		<ProjectReference Include="..\BUS\BUS.csproj" />
+		<ProjectReference Include="..\ET\ET.csproj" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<None Update="AI\Prompts\TroLyTiepNhan.md"
+			  CopyToOutputDirectory="PreserveNewest"
+			  CopyToPublishDirectory="PreserveNewest" />
+
+		<None Update="AI\Config\AiSettings.json"
+			  CopyToOutputDirectory="PreserveNewest"
+			  CopyToPublishDirectory="PreserveNewest" />
+
+		<None Update="AI\Config\AiSecrets.local.json"
+			  CopyToOutputDirectory="PreserveNewest"
+			  CopyToPublishDirectory="Never"
+			  Condition="'$(Configuration)' == 'Debug'" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Hướng dẫn nghiệp vụ AI -->
+		<None Update="AI\Prompts\TroLyTiepNhan.md"
+			  CopyToOutputDirectory="PreserveNewest" />
+
+		<!-- Hướng dẫn tạo nút trả lời nhanh -->
+		<None Update="AI\Prompts\QuickReplyInstructions.md"
+			  CopyToOutputDirectory="PreserveNewest" />
+
+		<!-- Cấu hình AI -->
+		<None Update="AI\Config\AiSettings.json"
+			  CopyToOutputDirectory="PreserveNewest" />
+
+		<!-- Các lựa chọn trả lời nhanh -->
+		<None Update="AI\Config\QuickReplyOptions.json"
+			  CopyToOutputDirectory="PreserveNewest" />
+
+		<!-- Định dạng phản hồi của AI -->
+		<None Update="AI\Config\QuickReplyResponseFormat.json"
+			  CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<None Update="AI\Config\TokenOptimization.json"
+			  CopyToOutputDirectory="PreserveNewest" />
+
+		<None Update="AI\Config\LocalIntakeFlow.json"
+			  CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<None Update="AI\Prompts\SessionMemory.md"
+			  CopyToOutputDirectory="PreserveNewest" />
+
+		<None Update="AI\Config\SessionMemory.json"
+			  CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="AI\Config\PhieuCreation.json"
+		      CopyToOutputDirectory="PreserveNewest"
+		      CopyToPublishDirectory="PreserveNewest" />
+		<None Update="AI\Prompts\BanKhaiChoNhanVien.md"
+		      CopyToOutputDirectory="PreserveNewest"
+		      CopyToPublishDirectory="PreserveNewest" />
+	</ItemGroup>
+
 </Project>

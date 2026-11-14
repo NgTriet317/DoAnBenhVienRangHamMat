@@ -1,0 +1,27 @@
+{
+  "type": "json_schema",
+  "json_schema": {
+    "name": "hospital_patient_chat_quick_replies",
+    "strict": true,
+    "schema": {
+      "type": "object",
+      "properties": {
+        "reply": {"type": "string"},
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {"type": "string"},
+              "value": {"type": "string"}
+            },
+            "required": ["label", "value"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["reply", "options"],
+      "additionalProperties": false
+    }
+  }
+}

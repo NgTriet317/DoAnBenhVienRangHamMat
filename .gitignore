@@ -3,4 +3,5 @@ obj/
 .vs/
 *.user
 *.suo
+**/AI/Config/AiSecrets.local.json
 /PhatHanh/

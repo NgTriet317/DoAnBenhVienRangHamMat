@@ -187,6 +187,12 @@ public sealed partial class DAL_THANHTOANTRONGOI
             .OrderBy(l => l.MaCTDT, StringComparer.Ordinal).ThenBy(l => l.MaLo, StringComparer.Ordinal).ToArray();
         if (!actual.OrderBy(l=>l.MaCTDT,StringComparer.Ordinal).ThenBy(l=>l.MaLo,StringComparer.Ordinal).SequenceEqual(expected))
             throw Error("ThanhToan", "Nguồn thuốc hoặc từng phần lô không khớp bảng tính.");
+        var surchargeAmount = db.ExecuteScalar<decimal>("""
+            SELECT COALESCE(SUM(ThanhTien),0)
+            FROM dbo.CHI_TIET_HOA_DON WITH(HOLDLOCK) WHERE MaHD=@invoiceId AND MaPhienAI IS NOT NULL
+            """, new { invoiceId }, tx);
+        if (surchargeAmount != fee.PhuThuTiepNhanAI)
+            throw Error("ThanhToan", "Phụ thu tiếp nhận AI không khớp hóa đơn đã chốt.");
     }
     /// <summary>
     /// Liên kết các dòng thuốc đã chốt với từng phần xuất lô; chỉ thay nguồn sau khi số lượng và tiền khớp. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.

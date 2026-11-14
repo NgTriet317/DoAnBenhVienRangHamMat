@@ -55,6 +55,7 @@
     <DataGridTextColumn Header="Đơn giá" Binding="{Binding Gia}" Width="110" />
     <DataGridTextColumn Header="Thành tiền" Binding="{Binding Tien}" Width="120" />
    </DataGrid.Columns></DataGrid>
+   <TextBlock x:Name="AiSurchargeText" Visibility="Collapsed" Margin="0,4,0,8" FontWeight="SemiBold" />
    <TextBlock Text="Thuốc trong các đơn đang áp dụng" Style="{StaticResource HospitalSection}" Margin="0,18,0,8" />
    <!-- Danh sách DrugsGrid. -->
    <DataGrid x:Name="DrugsGrid" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False" MaxHeight="260" MinHeight="65"><DataGrid.Columns>

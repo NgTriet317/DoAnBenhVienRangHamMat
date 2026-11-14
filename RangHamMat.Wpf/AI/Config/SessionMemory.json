@@ -1,0 +1,52 @@
+{
+  "PromptFile": "AI/Prompts/SessionMemory.md",
+  "FieldLabels": {
+    "previousVisit": "đã từng khám hay chưa",
+    "fullName": "họ và tên",
+    "dateOfBirth": "ngày sinh",
+    "phone": "số điện thoại",
+    "reason": "lý do khám",
+    "examType": "loại khám"
+  },
+  "RecallRules": [
+    {
+      "FieldId": "fullName",
+      "Phrases": [
+        "tên tôi là gì",
+        "tôi tên gì",
+        "bạn nhớ tên tôi",
+        "tôi đã khai tên gì"
+      ],
+      "ResponseTemplate": "Bạn đã khai họ tên: {{value}}."
+    },
+    {
+      "FieldId": "dateOfBirth",
+      "Phrases": [
+        "ngày sinh của tôi là gì",
+        "tôi sinh ngày nào",
+        "bạn nhớ ngày sinh tôi",
+        "ngày sinh tôi đã khai"
+      ],
+      "ResponseTemplate": "Ngày sinh bạn đã khai là {{value}}."
+    },
+    {
+      "FieldId": "phone",
+      "Phrases": [
+        "số điện thoại tôi là gì",
+        "số điện thoại của tôi là gì",
+        "bạn nhớ số điện thoại tôi",
+        "số điện thoại tôi đã khai"
+      ],
+      "ResponseTemplate": "Số điện thoại bạn đã khai là {{value}}."
+    },
+    {
+      "FieldId": "__summary__",
+      "Phrases": [
+        "tôi đã khai những gì",
+        "tôi đã cung cấp những gì",
+        "bạn nhớ được gì"
+      ],
+      "ResponseTemplate": "Trong phiên này, tôi đã ghi nhận các mục: {{known_fields}}. Thông tin mới chỉ được lưu tạm trong ứng dụng, chưa tạo phiếu khám."
+    }
+  ]
+}

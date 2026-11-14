@@ -1,0 +1,14 @@
+{
+  "Enabled": false,
+  "ApiBaseUrl": "https://YOUR-APPROVED-BACKEND.example",
+  "SubmitPath": "/api/ai/intake/receipts",
+  "ReceiptLookupPath": "/api/ai/intake/receipts/by-key/",
+  "AvailableDoctorsPath": "/api/ai/intake/available-doctors",
+  "ServicesPath": "/api/ai/intake/services",
+  "ClientCertificateThumbprint": "",
+  "TimeoutSeconds": 15,
+  "ConfirmLabel": "Xác nhận tạo phiếu",
+  "EditLabel": "Sửa thông tin",
+  "StaffLabel": "Gặp nhân viên",
+  "PromptFile": "AI/Prompts/TaoPhieuKham.md"
+}
