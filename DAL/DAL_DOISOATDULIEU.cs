@@ -7,6 +7,12 @@ namespace DAL;
 /// <summary>Đối soát vận hành chỉ SELECT. Một giao dịch Serializable giữ số đếm và chi tiết nhất quán.</summary>
 public sealed partial class DAL_DOISOATDULIEU(IDbTransaction? transaction=null):dbconnect(transaction)
 {
+    /// <summary>
+    /// Kiểm kê bảng và chạy các quy tắc khóa ngoại, lâm sàng, tài chính, kho trên schema thực tế.
+    /// </summary>
+    /// <remarks>Chỉ đọc dữ liệu trong giao dịch của ThucHien; các quy tắc tùy chọn chỉ chạy khi schema có cột tương ứng.</remarks>
+    /// <param name="gioiHanMoiQuyTac">Số dòng chi tiết tối đa cho mỗi quy tắc, từ 1 đến 500; tổng vi phạm vẫn được đếm đầy đủ.</param>
+    /// <returns>Số dòng từng bảng và các vi phạm phân theo lỗi xác định hoặc trường hợp cần đối chiếu.</returns>
     public KetQuaDoiSoatDuLieu KiemTra(int gioiHanMoiQuyTac=200)
     {
         if(gioiHanMoiQuyTac is <1 or >500)throw new ArgumentOutOfRangeException(nameof(gioiHanMoiQuyTac));
@@ -62,7 +68,14 @@ public sealed partial class DAL_DOISOATDULIEU(IDbTransaction? transaction=null):
         });
     }
     private delegate void AddCheck(string ma,string mucDo,string moTa,string sql,object? parameters=null);
+    /// <summary>
+    /// Đặt tên schema, bảng hoặc cột đọc từ metadata trong ngoặc vuông và escape dấu đóng ngoặc khi dựng SQL.
+    /// </summary>
     private static string Q(string name)=>"["+name.Replace("]","]]")+"]";
+    /// <summary>
+    /// Đếm toàn bộ vi phạm và lấy chi tiết theo giới hạn trong cùng giao dịch đối soát.
+    /// </summary>
+    /// <remarks>Sắp xếp chi tiết theo bảng, khóa và liên quan để kết quả lấy mẫu ổn định; không sửa dữ liệu vi phạm.</remarks>
     private static void AddRule(IDbConnection db,IDbTransaction? tx,List<QuyTacDoiSoat> rules,int limit,string ma,string severity,string description,string sql,object? parameters)
     {
         var args=new DynamicParameters(parameters);args.Add("take",limit);
@@ -70,6 +83,9 @@ public sealed partial class DAL_DOISOATDULIEU(IDbTransaction? transaction=null):
         var details=count==0?[]:db.Query<ChiTietDoiSoat>($"SELECT TOP(@take) Bang,Khoa,LienQuan FROM ({sql}) q ORDER BY Bang,Khoa,LienQuan",args,tx,commandTimeout:60).ToArray();
         rules.Add(new(ma,severity,description,count,details));
     }
+    /// <summary>
+    /// Ánh xạ một cặp cột khóa ngoại từ metadata SQL để ghép điều kiện đối chiếu cả khóa đơn và khóa ghép.
+    /// </summary>
     private sealed class FkColumn
     {
         public int Id{get;set;}public string Ten{get;set;}="";public string LuocDo{get;set;}="";public string Bang{get;set;}="";public string Cot{get;set;}="";

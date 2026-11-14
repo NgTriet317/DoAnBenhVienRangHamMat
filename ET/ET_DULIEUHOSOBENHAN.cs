@@ -117,6 +117,11 @@ public sealed class DongLanKhamDanhSach:ET_LICHSUKHAMBENH
 /// </summary>
 public sealed class DongLichSuDon:ET_DONTHUOC
 {
+    /// <summary>Trạng thái bàn giao lưu riêng với trạng thái đơn bác sĩ đã ký.</summary>
+    public string? TrangThaiBanGiao {get;set;}
+    /// <summary>Trạng thái dùng để tra cứu, không sửa trạng thái bản ký.</summary>
+    public string TrangThaiHienThi => TrangThai == "Đã xác nhận" && TrangThaiBanGiao == "Đã giao"
+        ? "Đã giao thuốc" : TrangThai;
     /// <summary>
     /// Mã bệnh nhân.
     /// </summary>

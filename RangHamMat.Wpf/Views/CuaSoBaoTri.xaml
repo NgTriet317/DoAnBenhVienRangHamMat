@@ -1,4 +1,4 @@
-﻿<!-- Giao diện CuaSoBaoTri: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
+<!-- Giao diện CuaSoBaoTri: bố cục khai báo trong XAML; code-behind điều phối dữ liệu, quyền và sự kiện. -->
 <UserControl x:Class="RangHamMat.Views.CuaSoBaoTri"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Language="vi-VN">
  <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/BaoTriStyles.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
@@ -24,11 +24,11 @@
       <!-- Trường lựa chọn cboNhanVien. Kiểm tra đầu vào theo metadata BAO_TRI_THIET_BI.MaNV. -->
       <StackPanel Margin="0,0,12,16"><TextBlock Text="Nhân viên phụ trách *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="cboNhanVien" Tag="DB:BAO_TRI_THIET_BI.MaNV" DisplayMemberPath="Label" SelectedValuePath="Value" AutomationProperties.Name="Nhân viên phụ trách"/></ContentControl></StackPanel>
       <!-- Trường lựa chọn dpBatDau. Kiểm tra đầu vào theo metadata BAO_TRI_THIET_BI.NgayBatDau. -->
-      <StackPanel Margin="0,0,12,16"><TextBlock Text="Ngày bắt đầu dự kiến *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><DatePicker x:Name="dpBatDau" Tag="DB:BAO_TRI_THIET_BI.NgayBatDau" AutomationProperties.Name="Ngày bắt đầu dự kiến"/></ContentControl></StackPanel>
+      <StackPanel Margin="0,0,12,16"><TextBlock Text="Ngày bắt đầu dự kiến *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><DatePicker x:Name="dpBatDau" LostKeyboardFocus="Schedule_LostKeyboardFocus" Tag="DB:BAO_TRI_THIET_BI.NgayBatDau" AutomationProperties.Name="Ngày bắt đầu dự kiến"/></ContentControl></StackPanel>
       <!-- Ô nhập txtChiPhi — 0. Kiểm tra đầu vào theo metadata BAO_TRI_THIET_BI.ChiPhi. -->
       <StackPanel Margin="0,0,12,16"><TextBlock Text="Chi phí (đồng) *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="txtChiPhi" Text="0" Tag="DB:BAO_TRI_THIET_BI.ChiPhi" AutomationProperties.Name="Chi phí"/></ContentControl></StackPanel>
       <!-- Trường lựa chọn dpTiepTheo. Kiểm tra đầu vào theo metadata BAO_TRI_THIET_BI.NgayBaoTriTiepTheo. -->
-      <StackPanel Margin="0,0,12,16"><TextBlock Text="Ngày bảo trì tiếp theo" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><DatePicker x:Name="dpTiepTheo" Tag="DB:BAO_TRI_THIET_BI.NgayBaoTriTiepTheo" AutomationProperties.Name="Ngày bảo trì tiếp theo"/></ContentControl></StackPanel>
+      <StackPanel Margin="0,0,12,16"><TextBlock Text="Ngày bảo trì tiếp theo" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><DatePicker x:Name="dpTiepTheo" LostKeyboardFocus="Schedule_LostKeyboardFocus" Tag="DB:BAO_TRI_THIET_BI.NgayBaoTriTiepTheo" AutomationProperties.Name="Ngày bảo trì tiếp theo"/></ContentControl></StackPanel>
      </UniformGrid>
      <!-- Ô nhập txtNoiDung. Kiểm tra đầu vào theo metadata BAO_TRI_THIET_BI.NoiDung. -->
      <TextBlock Text="Nội dung bảo trì *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,16"><TextBox x:Name="txtNoiDung" Tag="DB:BAO_TRI_THIET_BI.NoiDung" AutomationProperties.Name="Nội dung bảo trì" AcceptsReturn="True" TextWrapping="Wrap" Height="90" VerticalScrollBarVisibility="Auto"/></ContentControl>

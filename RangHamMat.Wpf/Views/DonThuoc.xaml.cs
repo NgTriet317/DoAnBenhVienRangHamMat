@@ -106,7 +106,9 @@ public partial class DonThuoc : UserControl, IPatientScoped
             if (requestedId is not null)
             {
                 var prescription = prescriptions.LayChiTietCoQuyen(requestedId, actor);
-                if (prescription.DonThuoc.TrangThai == "Ngừng áp dụng") StatusFilter.SelectedIndex = 1;
+                if (prescription.DonThuoc.TrangThai == "Ngừng áp dụng") StatusFilter.SelectedIndex = 2;
+                else if (new BUS_BANGIAOTHUOC(transaction).LayTheoDon(requestedId, actor)?.TrangThai == "Đã giao")
+                    StatusFilter.SelectedIndex = 1;
             }
         }
         catch (InvalidOperationException ex)
@@ -165,6 +167,17 @@ public partial class DonThuoc : UserControl, IPatientScoped
                 selectedId = card.Code;
                 requestedId = null;
                 var detail = new PrescriptionHistoryDetail(card.Record, actor, transaction);
+                detail.HandoverCompleted += () =>
+                {
+                    // Theo đơn vừa giao sang bộ lọc đã giao sau khi commit thành công.
+                    updating = true;
+                    StatusFilter.SelectedIndex = 1;
+                    SearchBox.Text = card.Code;
+                    selectedId = requestedId = card.Code;
+                    updating = false;
+                    historyPage = 1;
+                    Refresh();
+                };
                 detail.SourceLockChanged += locked =>
                 {
                     PrescriptionList.IsEnabled = FiltersPanel.IsEnabled = PrescriptionPages.IsEnabled = !locked;
@@ -241,7 +254,7 @@ internal sealed class IssuedPrescriptionCard(DongLichSuDon source)
     /// <summary>
     /// Giá trị Trạng thái; được xác định bởi phần getter/setter của thuộc tính.
     /// </summary>
-    public string Status => Record.TrangThai;
+    public string Status => Record.TrangThaiHienThi;
     /// <summary>
     /// Giá trị Mã bệnh nhân; được xác định bởi phần getter/setter của thuộc tính.
     /// </summary>

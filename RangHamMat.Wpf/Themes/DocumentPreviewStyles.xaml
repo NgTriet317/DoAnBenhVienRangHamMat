@@ -1,12 +1,16 @@
+<!-- Tài nguyên dùng chung cho cửa sổ xem trước chứng từ: thanh thao tác, nền giấy và trạng thái in. -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
  <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/HospitalStyles.xaml"/></ResourceDictionary.MergedDictionaries>
+ <!-- Thanh công cụ trên vùng cuộn, giữ nút in luôn có thể thao tác khi xem tài liệu dài. -->
  <Style x:Key="DocumentToolbar" TargetType="Border">
   <Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#D6DFE8"/><Setter Property="BorderThickness" Value="0,0,0,1"/><Setter Property="Padding" Value="22,16"/>
  </Style>
+ <!-- Khung giấy gần khổ A4 theo đơn vị WPF; nội dung dài do bộ phân trang của chứng từ xử lý. -->
  <Style x:Key="DocumentPaper" TargetType="Border">
   <Setter Property="Width" Value="794"/><Setter Property="MinHeight" Value="1123"/><Setter Property="Background" Value="White"/><Setter Property="Padding" Value="34"/>
   <Setter Property="BorderBrush" Value="#D6DFE8"/><Setter Property="BorderThickness" Value="1"/>
  </Style>
+ <!-- Thông báo trạng thái hoặc lỗi gửi in được cập nhật từ code-behind. -->
  <Style x:Key="DocumentFooter" TargetType="TextBlock">
   <Setter Property="Foreground" Value="#526477"/><Setter Property="FontSize" Value="12"/><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="Margin" Value="22,12"/>
  </Style>

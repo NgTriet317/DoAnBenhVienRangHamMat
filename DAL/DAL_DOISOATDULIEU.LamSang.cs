@@ -1,7 +1,13 @@
 namespace DAL;
 
+/// <summary>
+/// Phần quy tắc đối soát liên kết, trạng thái và chất lượng mã của quy trình khám; chỉ đăng ký truy vấn đọc.
+/// </summary>
 public sealed partial class DAL_DOISOATDULIEU
 {
+    /// <summary>
+    /// Đăng ký các kiểm tra lâm sàng theo schema hiện có, giữ riêng lỗi quan hệ và dữ liệu cần đối chiếu lịch sử.
+    /// </summary>
     private static void ClinicalRules(AddCheck add,Func<string,bool> has)
     {
         add("BN_NGAY_SINH","CanDoiChieu","Ngày sinh tương lai hoặc tuổi trên120; không tự sửa hoặc suy đoán ngày sinh.","""

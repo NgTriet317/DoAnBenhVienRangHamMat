@@ -12,11 +12,19 @@ public sealed class KhoLuuAnhXquang(CauHinhKhoAnh config)
     private static readonly Regex StorageKey=new(@"\A[0-9a-fA-F]{32}\.(png|jpg|jpeg)\z",RegexOptions.CultureInvariant,TimeSpan.FromSeconds(1));
     private long MaxBytes=>config.DungLuongToiDaMB*1024L*1024L;
 
+    /// <summary>
+    /// Chặn cấu hình vượt 20 MiB hoặc 40 triệu điểm ảnh trước khi đọc, ghi kho.
+    /// </summary>
     private void ValidateLimits()
     {
         if(config.DungLuongToiDaMB is <1 or >20 || config.DiemAnhToiDa is <1 or >40000000)
             throw Error("CauHinh","Giới hạn kho ảnh chưa hợp lệ: tối đa 20 MiB và 40 triệu điểm ảnh.");
     }
+    /// <summary>
+    /// Kiểm tra thư mục kho tuyệt đối, khả năng truy cập và các thư mục cha để loại đường dẫn liên kết.
+    /// </summary>
+    /// <remarks>Mặc định yêu cầu đường dẫn mạng UNC; chỉ chấp nhận đường dẫn cục bộ khi cấu hình cho phép.</remarks>
+    /// <returns>Đường dẫn đầy đủ của thư mục kho đã kiểm tra.</returns>
     public string ThuMucGoc()
     {
         ValidateLimits();var value=config.ThuMucDungChung;
@@ -34,6 +42,9 @@ public sealed class KhoLuuAnhXquang(CauHinhKhoAnh config)
         catch(Exception ex) when(ex is IOException or UnauthorizedAccessException or ArgumentException)
         {throw Error("KhoKhongSanSang","Không truy cập được kho ảnh. Kiểm tra kết nối và quyền thư mục.",ex);}
     }
+    /// <summary>
+    /// Chỉ ghép khóa tệp GUID kèm đuôi ảnh vào kho đã kiểm tra và từ chối tệp liên kết.
+    /// </summary>
     private string Resolve(string key)
     {
         if(string.IsNullOrEmpty(key)||!StorageKey.IsMatch(key))throw Error("DuongDanKhongHopLe","Khóa tệp ảnh không hợp lệ.");
@@ -42,13 +53,20 @@ public sealed class KhoLuuAnhXquang(CauHinhKhoAnh config)
             throw Error("DuongDanKhongHopLe","Không mở tệp liên kết ngoài kho ảnh.");
         return path;
     }
+    /// <summary>
+    /// Đọc ảnh trong giới hạn cấu hình; JPG/PNG giữ nguyên byte, DICOM được chuyển khung đầu thành PNG.
+    /// </summary>
+    /// <param name="content">Luồng đầu vào được đọc đến hết từ vị trí hiện tại; nơi gọi quản lý vòng đời luồng.</param>
+    /// <param name="originalName">Tên tệp gốc để kiểm tra tên và phần mở rộng.</param>
+    /// <returns>Nội dung ảnh, định dạng, kích thước và SHA-256 dùng lưu metadata, kiểm tra toàn vẹn.</returns>
     public AnhDaKiemTra KiemTraTep(Stream content,string originalName)
     {
         ValidateLimits();
         if(string.IsNullOrWhiteSpace(originalName)||originalName.Length>255||originalName.IndexOfAny(['\\','/',':','\0'])>=0)
             throw Error("TenTepKhongHopLe","Tên ảnh không hợp lệ; chọn lại tệp ảnh gốc.");
         var extension=Path.GetExtension(originalName).ToLowerInvariant();
-        if(extension is not(".png" or ".jpg" or ".jpeg"))throw Error("DinhDangKhongHoTro","Chỉ nhận ảnh JPG, JPEG hoặc PNG. DICOM cần bộ xem chuyên dụng.");
+        if(extension is not(".png" or ".jpg" or ".jpeg" or ".dcm" or ".dicom"))
+            throw Error("DinhDangKhongHoTro","Chỉ nhận ảnh JPG, JPEG, PNG hoặc DICOM (.dcm, .dicom).");
         byte[] bytes;
         using(var output=new MemoryStream())
         {
@@ -61,6 +79,12 @@ public sealed class KhoLuuAnhXquang(CauHinhKhoAnh config)
             bytes=output.ToArray();
         }
         if(bytes.Length==0)throw Error("AnhHong","Tệp ảnh rỗng hoặc không đọc được.");
+        if(extension is ".dcm" or ".dicom")
+        {
+            bytes=ChuyenDoiAnhDicom.SangPng(bytes,config.DiemAnhToiDa);
+            if(bytes.LongLength>MaxBytes)throw Error("QuaDungLuong","Ảnh PNG chuyển từ DICOM vượt giới hạn dung lượng đã cấu hình.");
+            extension=".png";
+        }
         try
         {
             var format=Image.DetectFormat(bytes);var mime=format.DefaultMimeType;
@@ -76,6 +100,10 @@ public sealed class KhoLuuAnhXquang(CauHinhKhoAnh config)
         catch(Exception ex) when(ex is UnknownImageFormatException or InvalidImageContentException or NotSupportedException or ArgumentException)
         {throw Error("AnhHong","Tệp ảnh hỏng hoặc không đúng định dạng hỗ trợ.",ex);}
     }
+    /// <summary>
+    /// Ghi ảnh đã kiểm tra vào tệp tạm, đẩy dữ liệu xuống đĩa rồi chuyển sang khóa lưu mới.
+    /// </summary>
+    /// <returns>Khóa tệp tương đối dùng liên kết với metadata SQL; tệp tạm được dọn trong finally.</returns>
     public string LuuTep(AnhDaKiemTra image)
     {
         var root=ThuMucGoc();var key=Guid.NewGuid().ToString("N")+image.PhanMoRong;var target=Resolve(key);
@@ -92,9 +120,16 @@ public sealed class KhoLuuAnhXquang(CauHinhKhoAnh config)
         {throw Error("GhiTepThatBai","Chưa lưu được ảnh vào kho. Kiểm tra kết nối hoặc quyền thư mục.",ex);}
         finally{if(File.Exists(temp))File.Delete(temp);}
     }
+    /// <summary>
+    /// Dọn tệp mới chưa liên kết sau lỗi tải lên; chỉ gọi khi chưa thử commit metadata.
+    /// </summary>
     internal void XoaTepChuaLienKet(string key)
     {var path=Resolve(key);if(File.Exists(path))File.Delete(path);}
 
+    /// <summary>
+    /// Đối chiếu đường dẫn, dung lượng, định dạng và SHA-256 của tệp với metadata trước khi trả nội dung.
+    /// </summary>
+    /// <returns>Các byte ảnh đã kiểm tra; tệp thiếu hoặc không khớp metadata gây lỗi nghiệp vụ.</returns>
     public byte[] DocTep(ET_ANHXQUANGLANKHAM image)
     {
         if(image.DuongDanTuongDoi!=image.TenTepLuu)throw Error("DuongDanKhongHopLe","Metadata ảnh có đường dẫn không hợp lệ.");
@@ -103,7 +138,8 @@ public sealed class KhoLuuAnhXquang(CauHinhKhoAnh config)
         {
             using var file=new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.Read);
             if(file.Length!=image.KichThuocBytes||file.Length>MaxBytes)throw Error("SaiToanVen","Dung lượng tệp ảnh không khớp hồ sơ lưu trữ.");
-            var data=KiemTraTep(file,image.TenTepGoc);
+            // Tên gốc có thể là .dcm; tệp trong kho đã là PNG và phải được kiểm theo định dạng lưu.
+            var data=KiemTraTep(file,image.TenTepLuu);
             if(!string.Equals(data.Sha256,image.Sha256,StringComparison.OrdinalIgnoreCase)||data.MimeType!=image.MimeType)
                 throw Error("SaiToanVen","Tệp ảnh không khớp dấu kiểm tra toàn vẹn. Liên hệ quản trị viên để khôi phục.");
             return data.NoiDung;
@@ -113,6 +149,10 @@ public sealed class KhoLuuAnhXquang(CauHinhKhoAnh config)
         catch(Exception ex) when(ex is IOException or UnauthorizedAccessException)
         {throw Error("DocTepThatBai","Không đọc được ảnh từ kho dùng chung. Kiểm tra kết nối hoặc quyền truy cập.",ex);}
     }
+    /// <summary>
+    /// Đối chiếu tệp đã đăng ký, tệp ngoài metadata và thư mục .pending để lập danh sách sự cố.
+    /// </summary>
+    /// <remarks>Chỉ báo cáo hiện trạng; quyền SQL và khóa kho phải được đầu mối BUS bảo đảm trước khi gọi.</remarks>
     public IReadOnlyList<SuCoKhoAnh> KiemTra(IEnumerable<ET_ANHXQUANGLANKHAM> images)
     {
         var root=ThuMucGoc();var known=new HashSet<string>(StringComparer.OrdinalIgnoreCase);var issues=new List<SuCoKhoAnh>();

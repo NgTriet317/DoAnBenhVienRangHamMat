@@ -1,4 +1,7 @@
 using ET;
+// Kiểm hợp đồng ET Sprint 3 trong bộ nhớ: nhãn nhật ký tiếng Việt, danh mục được phép,
+// chuẩn hóa trường/giá và giới hạn bộ lọc. Dừng bằng ngoại lệ nếu có điều kiện không đạt;
+// không tạo ngữ cảnh đăng nhập hay kết nối SQL.
 if(HanhDongNhatKy.Nhan("LOGIN_SUCCESS")!="Đăng nhập thành công"||HanhDongNhatKy.Nhan("UPDATE")!="Cập nhật thông tin")throw new Exception("Vietnamese audit action labels");
 if(HanhDongNhatKy.Nhan("Lưu nháp khám")!="Lưu nháp khám")throw new Exception("Legacy Vietnamese labels preserved");
 if(HanhDongNhatKy.LuaChon.Single(x=>x.Ma=="LOGIN_FAILED").Ten!="Đăng nhập thất bại")throw new Exception("Filter keeps code and Vietnamese label");

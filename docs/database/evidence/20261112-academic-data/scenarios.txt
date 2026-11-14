@@ -1,0 +1,29 @@
+﻿TrangThai|SoPhieu
+---------|-------
+Chờ khám|6
+Chờ nhận thuốc|6
+Chờ thanh toán|6
+Đang khám|6
+Hoàn tất|6
+MaBN|HoTenBN|MaPhieu|MaLS|MaDT|MaHD|MaBS|TrangThai
+----|-------|-------|----|----|----|----|---------
+DL26_BN_07|Bùi Ngọc Hà|DL26_PKB_07|NULL|NULL|NULL|NV002|Chờ khám
+DL26_BN_13|Phạm Nhật Minh|DL26_PKB_13|LSKB013|NULL|NULL|NV002|Đang khám
+DL26_BN_17|Hoàng Thiên Ân|DL26_PKB_17|LSKB017|NULL|NULL|DL26_NV_CK004|Đang khám
+DL26_BN_19|Nguyễn Ngọc Mai|DL26_PKB_19|LSKB019|DT012|HD012|NV002|Chờ thanh toán
+DL26_BN_25|Bùi Phương Thảo|DL26_PKB_25|LSKB025|DT015|HD018|NV002|Chờ nhận thuốc
+DL26_BN_31|Phạm Ngọc Hân|DL26_PKB_31|LSKB031|DT021|HD024|NV002|Hoàn tất
+TrangThai|SoLuong
+---------|-------
+Chờ giao|6
+Đã giao|12
+MaTB|TinhTrang|TrangThai|MaPhong|NgayThanhLy
+----|---------|---------|-------|-----------
+DL26_TB_01|Đang hoạt động|Đang sử dụng|DL26_PH_CK002|NULL
+DL26_TB_02|Đang hoạt động|Đang sử dụng|PH001|NULL
+DL26_TB_03|Đang hoạt động|Đang sử dụng|DL26_PH_CK002|NULL
+DL26_TB_04|Đang hoạt động|Đang sử dụng|DL26_PH_CK002|NULL
+DL26_TB_05|Ngưng sử dụng|Ngưng sử dụng|NULL|2026-11-12 13:04:59
+DL26_TB_06|Đang bảo trì|Chờ bàn giao|NULL|NULL
+DL26_TB_07|Hư hại|Chờ bàn giao|NULL|NULL
+DL26_TB_08|Đang hoạt động|Chờ bàn giao|NULL|NULL

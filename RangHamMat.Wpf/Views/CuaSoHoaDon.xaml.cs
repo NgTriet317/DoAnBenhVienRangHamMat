@@ -109,17 +109,20 @@ public partial class CuaSoHoaDon : UserControl, IBieuMauLuu, IPatientScoped
     /// <summary>AI tạo: kiểm tra giảm giá theo decimal(18,2), không âm và không vượt tổng ngay tại giao diện.</summary>
     private bool TryDiscount(out decimal discount,out string error)
     {
-        error="";
-        if(!ParseMoney(DiscountBox.Text,out discount)){error="Giảm giá phải là số không âm; không dùng phân cách hàng nghìn.";return false;}
-        try {KiemTraNhapLieu.ValidateValues("HOA_DON",new Dictionary<string,object?> {["GiamGia"]=discount});}
+        discount=0; error="";
+        try { discount=ReadDiscount(DiscountBox.Text,total); return true; }
         catch(LoiNhapLieu ex){error=ex.Message;return false;}
-        if(discount>total){error="Giảm giá không được vượt tổng tiền hóa đơn.";return false;}
-        return true;
     }
     /// <summary>
     /// Phân tích chuỗi tiền với dấu phẩy/chấm thập phân theo InvariantCulture; không nhận dấu phân cách hàng nghìn.
     /// </summary>
-    private static bool ParseMoney(string value, out decimal amount) => decimal.TryParse(value.Trim().Replace(',', '.'), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out amount);
+    private static decimal ReadDiscount(string text, decimal chargeTotal)
+    {
+        KiemTraNhapLieu.ValidateValues("HOA_DON",new Dictionary<string,object?> {["GiamGia"]=text});
+        var amount=decimal.Parse(text.Trim().Replace(',','.'),NumberStyles.AllowDecimalPoint,CultureInfo.InvariantCulture);
+        if(amount>chargeTotal)throw new LoiNhapLieu("GiamGia","Giảm giá không được vượt tổng tiền hóa đơn. Nhập mức giảm từ 0 đến "+TreatmentMoney.Format(chargeTotal)+".");
+        return amount;
+    }
     /// <summary>
     /// Kiểm tra lần khám/nhân viên/giảm giá rồi gọi BUS_HOADON.CreateInvoice; ghi nhớ mã để tránh tạo lặp và phân biệt lỗi lưu với lỗi tải lại sau khi đã lưu thành công.
     /// </summary>
@@ -132,17 +135,19 @@ public partial class CuaSoHoaDon : UserControl, IBieuMauLuu, IPatientScoped
         try
         {
             var visit = HoTroGiaoDien.Selected(VisitBox); var employee = HoTroGiaoDien.Selected(EmployeeBox);
-            if (string.IsNullOrEmpty(visit) || string.IsNullOrEmpty(employee)) throw new InvalidOperationException("Chọn lần khám đã xác nhận và nhân viên lập hóa đơn.");
+            if (string.IsNullOrEmpty(HoTroGiaoDien.Selected(PatientBox))) throw new LoiNhapLieu("MaBN","Chọn bệnh nhân cần lập hóa đơn.");
+            if (string.IsNullOrEmpty(visit)) throw new LoiNhapLieu("MaLS","Chọn lần khám đã xác nhận của bệnh nhân.");
+            if (string.IsNullOrEmpty(employee)) throw new LoiNhapLieu("MaNV","Chọn nhân viên lập hóa đơn còn làm việc.");
             if (!TryDiscount(out var discount,out var discountError))
             {
-                KiemTraNhapLieu.SetError(DiscountBox,discountError); DiscountBox.Focus();
-                throw new InvalidOperationException(discountError);
+                throw new LoiNhapLieu("GiamGia",discountError);
             }
             SavedInvoiceId = finance.CreateInvoice(visit, employee, discount); SaveButton.IsEnabled = false;
             try { DuLieuGiaoDien.RefreshFromDatabase(); }
             catch (Exception ex) { Feedback.Text = $"Hóa đơn #{SavedInvoiceId} đã được lưu. Tải lại danh sách để xem: {ex.Message}"; }
             return true;
         }
+        catch (LoiNhapLieu ex) { error=ex.Message; KiemTraNhapLieu.MarkError(this,ex); return false; }
         catch (Exception ex) { error = ex.Message; KiemTraNhapLieu.ShowError(this,error); return false; }
     }
     /// <summary>

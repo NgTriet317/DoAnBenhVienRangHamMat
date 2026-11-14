@@ -10,24 +10,24 @@
     <TextBlock Text="Thông tin đối tác" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,16"/>
     <TextBlock Text="Tên nhà cung cấp *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,18">
      <!-- Ô nhập txtTenNCC. Kiểm tra đầu vào theo metadata NHA_CUNG_CAP.TenNCC. -->
-     <TextBox x:Name="txtTenNCC" Tag="DB:NHA_CUNG_CAP.TenNCC" AutomationProperties.Name="Tên nhà cung cấp" MaxLength="255"/>
+     <TextBox x:Name="txtTenNCC" Tag="DB:NHA_CUNG_CAP.TenNCC" AutomationProperties.Name="Tên nhà cung cấp"/>
     </ContentControl>
     <Grid>
      <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="20"/><ColumnDefinition/></Grid.ColumnDefinitions>
      <StackPanel>
       <TextBlock Text="Người liên hệ *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,18">
        <!-- Ô nhập txtNguoiLienHe. Kiểm tra đầu vào theo metadata NHA_CUNG_CAP.NguoiLienHe. -->
-       <TextBox x:Name="txtNguoiLienHe" Tag="DB:NHA_CUNG_CAP.NguoiLienHe" AutomationProperties.Name="Người liên hệ" MaxLength="255"/>
+       <TextBox x:Name="txtNguoiLienHe" Tag="DB:NHA_CUNG_CAP.NguoiLienHe" AutomationProperties.Name="Người liên hệ"/>
       </ContentControl>
       <TextBlock Text="Số điện thoại" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,6">
        <!-- Ô nhập txtSDT. Kiểm tra đầu vào theo metadata NHA_CUNG_CAP.SDT. -->
-       <TextBox x:Name="txtSDT" Tag="DB:NHA_CUNG_CAP.SDT" AutomationProperties.Name="Số điện thoại" MaxLength="50"/>
+       <TextBox x:Name="txtSDT" Tag="DB:NHA_CUNG_CAP.SDT" AutomationProperties.Name="Số điện thoại"/>
       </ContentControl><TextBlock Text="8–15 chữ số, có thể có mã quốc gia +84." Style="{StaticResource HospitalMuted}" Margin="0,0,0,18"/>
      </StackPanel>
      <StackPanel Grid.Column="2">
       <TextBlock Text="Email *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,18">
        <!-- Ô nhập txtEmail. Kiểm tra đầu vào theo metadata NHA_CUNG_CAP.Email. -->
-       <TextBox x:Name="txtEmail" Tag="DB:NHA_CUNG_CAP.Email" AutomationProperties.Name="Email" MaxLength="255"/>
+       <TextBox x:Name="txtEmail" Tag="DB:NHA_CUNG_CAP.Email" AutomationProperties.Name="Email"/>
       </ContentControl>
       <TextBlock Text="Trạng thái *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}">
        <!-- Trường lựa chọn cboTrangThai. Kiểm tra đầu vào theo metadata NHA_CUNG_CAP.TrangThai. -->
@@ -37,7 +37,7 @@
     </Grid>
     <TextBlock Text="Địa chỉ" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}" Margin="0,0,0,18">
      <!-- Ô nhập txtDiaChi. Kiểm tra đầu vào theo metadata NHA_CUNG_CAP.DiaChi. -->
-     <TextBox x:Name="txtDiaChi" Tag="DB:NHA_CUNG_CAP.DiaChi" AutomationProperties.Name="Địa chỉ" MaxLength="255" Height="76" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+     <TextBox x:Name="txtDiaChi" Tag="DB:NHA_CUNG_CAP.DiaChi" AutomationProperties.Name="Địa chỉ" Height="76" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
     </ContentControl>
     <!-- Ô nhập txtMaNCC — Tự sinh khi lưu. Kiểm tra đầu vào theo metadata NHA_CUNG_CAP.MaNCC. -->
     <TextBlock Text="Mã nhà cung cấp" Style="{StaticResource FieldLabel}"/><TextBox x:Name="txtMaNCC" Tag="DB:NHA_CUNG_CAP.MaNCC" AutomationProperties.Name="Mã nhà cung cấp" Text="Tự sinh khi lưu" IsReadOnly="True" Margin="0,0,0,14"/>

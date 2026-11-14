@@ -1,7 +1,13 @@
 namespace DAL;
 
+/// <summary>
+/// Phần quy tắc đối soát hóa đơn, thanh toán và luồng nhập/xuất kho bằng truy vấn chỉ đọc.
+/// </summary>
 public sealed partial class DAL_DOISOATDULIEU
 {
+    /// <summary>
+    /// Đăng ký kiểm tra tổng hóa đơn, thu ròng theo thời điểm và quan hệ nguồn phí; không so giá lịch sử với giá danh mục hiện tại.
+    /// </summary>
     private static void FinanceRules(AddCheck add,Func<string,bool> has)
     {
         add("HD_TONG","SaiXacDinh","Tổng hóa đơn không bằng tổng chi tiết; không chỉnh tổng độc lập.","""
@@ -64,6 +70,10 @@ public sealed partial class DAL_DOISOATDULIEU
                  OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD AND c.MaPhieuPhuThu IS NOT NULL AND(c.MaPhieuPhuThu<>p.MaPhieu OR p.LoaiKham<>N'Dịch vụ' OR c.ThanhTien<>30000)))
                 """);
     }
+    /// <summary>
+    /// Đăng ký kiểm tra tổng nhập, tồn hiện tại và tồn lịch sử cùng nguồn đơn thuốc, lô và thời điểm xuất.
+    /// </summary>
+    /// <remarks>Gộp biến động cùng thời điểm trước khi tính tồn lịch sử; kết quả báo vi phạm để đối chiếu, không tự bù tồn.</remarks>
     private static void InventoryRules(AddCheck add)
     {
         add("NHAP_TONG","SaiXacDinh","Tổng phiếu nhập không bằng chi tiết.","""

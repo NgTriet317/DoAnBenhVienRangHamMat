@@ -1,3 +1,18 @@
+<#
+.SYNOPSIS
+Dựng bộ kiểm công thức, phân quyền và hiển thị báo cáo WPF trong obj/ReportChecks.
+.DESCRIPTION
+Mặc định kiểm bằng dữ liệu trong bộ nhớ. Sql thêm đối chiếu SQL trong giao dịch rollback;
+Render bổ sung ảnh giao diện khi chạy nhánh SQL. Dừng nếu restore hoặc bộ kiểm thất bại.
+.PARAMETER Sql
+Kết nối database để kiểm số liệu và quyền truy cập các chuyên đề.
+.PARAMETER Render
+Bổ sung kiểm giao diện và xuất bằng chứng khi dùng cùng Sql.
+.PARAMETER MayChu
+SQL Server dùng cho nhánh kiểm SQL.
+.PARAMETER Database
+Database dùng đối chiếu khi bật Sql.
+#>
 param([switch]$Sql, [switch]$Render, [string]$MayChu='.', [string]$Database='QLBenhVienRangHamMat')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent

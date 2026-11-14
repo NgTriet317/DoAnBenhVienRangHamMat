@@ -23,7 +23,7 @@
  <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel><WrapPanel Margin="0,8,0,10">
     <StackPanel Width="280" Margin="0,0,14,0"><TextBlock Text="Kho cấp thuốc (bắt buộc khi có thuốc)" Style="{StaticResource FieldLabel}" />
      <!-- Trường lựa chọn WarehouseFilter. Chuyển sự kiện đến Warehouse_Changed trong code-behind. -->
-     <ComboBox x:Name="WarehouseFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Warehouse_Changed" AutomationProperties.Name="Kho lập bảng tính" />
+     <ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="WarehouseFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Warehouse_Changed" AutomationProperties.Name="Kho lập bảng tính" /></ContentControl>
     </StackPanel>
     <!-- Nút thao tác PreviewButton — Xem bảng tính. Chuyển sự kiện đến Preview_Click trong code-behind. -->
     <Button x:Name="PreviewButton" Content="Xem bảng tính" Margin="0,20,0,0" Click="Preview_Click" Style="{StaticResource HospitalPrimary}" />
@@ -32,14 +32,14 @@
     <!-- Thành phần PaymentInputs. -->
     <WrapPanel x:Name="PaymentInputs">
      <!-- Trường lựa chọn MethodBox. -->
-     <StackPanel Width="160" Margin="0,0,12,0"><TextBlock Text="Phương thức" Style="{StaticResource FieldLabel}" /><ComboBox x:Name="MethodBox" SelectedValuePath="Content" SelectedIndex="0"><ComboBoxItem Content="Tiền mặt" /><ComboBoxItem Content="Chuyển khoản" /></ComboBox></StackPanel>
+     <StackPanel Width="160" Margin="0,0,12,0"><TextBlock Text="Phương thức" Style="{StaticResource FieldLabel}" /><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="MethodBox" Tag="DB:THANH_TOAN.PhuongThuc" LostKeyboardFocus="PaymentField_LostKeyboardFocus" SelectedValuePath="Content" SelectedIndex="0"><ComboBoxItem Content="Tiền mặt" /><ComboBoxItem Content="Chuyển khoản" /></ComboBox></ContentControl></StackPanel>
      <!-- Ô nhập GivenText — 0. -->
-     <StackPanel Width="170" Margin="0,0,12,0"><TextBlock Text="Tiền khách đưa (đ)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="GivenText" Text="0" MaxLength="16" /></StackPanel>
+     <StackPanel Width="170" Margin="0,0,12,0"><TextBlock Text="Tiền khách đưa (đ)" Style="{StaticResource FieldLabel}" /><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="GivenText" Tag="DB:THANH_TOAN.SoTienKhachDua" LostKeyboardFocus="PaymentField_LostKeyboardFocus" Text="0" /></ContentControl></StackPanel>
      <!-- Ô nhập ReferenceText. -->
-     <StackPanel Width="200"><TextBlock Text="Mã tham chiếu chuyển khoản" Style="{StaticResource FieldLabel}" /><TextBox x:Name="ReferenceText" MaxLength="100" /></StackPanel>
+     <StackPanel Width="200"><TextBlock Text="Mã tham chiếu chuyển khoản" Style="{StaticResource FieldLabel}" /><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="ReferenceText" Tag="DB:THANH_TOAN.MaThamChieu" LostKeyboardFocus="PaymentField_LostKeyboardFocus" /></ContentControl></StackPanel>
     </WrapPanel>
     <!-- Thành phần TransferChecked — Đã đối chiếu chuyển khoản thủ công. -->
-    <CheckBox x:Name="TransferChecked" Content="Đã đối chiếu chuyển khoản thủ công" Margin="0,10,0,6" />
+    <ContentControl Style="{StaticResource TruongNhapLieu}"><CheckBox x:Name="TransferChecked" LostKeyboardFocus="PaymentField_LostKeyboardFocus" Content="Đã đối chiếu chuyển khoản thủ công" Margin="0,10,0,6" /></ContentControl>
     <!-- Thông tin hiển thị ChangeText. -->
     <TextBlock x:Name="ChangeText" Margin="0,0,0,8" />
     <!-- Nút thao tác PayButton — Xác nhận thu đủ. -->

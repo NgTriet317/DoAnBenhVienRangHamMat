@@ -62,6 +62,8 @@ public partial class PrescriptionHistoryDetail : UserControl, IClinicalPendingWo
     /// Thông báo nguồn khóa thay đổi cho các thành phần đã đăng ký theo dõi.
     /// </summary>
     public event Action<bool>? SourceLockChanged;
+    /// <summary>Thông báo sau khi bàn giao đã commit để cập nhật danh sách và bộ lọc.</summary>
+    public event Action? HandoverCompleted;
 
     /// <summary>
     /// Khởi tạo đơn thuốc lịch sử chi tiết. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
@@ -121,6 +123,11 @@ public partial class PrescriptionHistoryDetail : UserControl, IClinicalPendingWo
             }
             catch (InvalidOperationException ex) { ChiTiet = null; HandoverText.Text = ClinicalFormInput.Message(ex); }
         }
+        var savedHandover = handover.LayTheoDon(OrderId, actor);
+        source.TrangThai = detail.DonThuoc.TrangThai;
+        source.TrangThaiBanGiao = savedHandover?.TrangThai;
+        if (DataContext is DonThuocTrinhBay presentation)
+            DataContext = presentation with { TrangThai = source.TrangThaiHienThi };
         ReceiverChecked.IsChecked = GuidanceChecked.IsChecked = false;
         UpdateRights();
     }
@@ -153,7 +160,8 @@ public partial class PrescriptionHistoryDetail : UserControl, IClinicalPendingWo
     private void RenderHandover()
     {
         if (ChiTiet is not { } detail) return;
-        HandoverText.Text = $"Hóa đơn #{detail.Luot.MaHD} · Xuất #{detail.Luot.MaPX} · {detail.Luot.TrangThai}";
+        var status = detail.Luot.TrangThai == "Đã giao" ? "Đã giao thuốc" : "Đã thanh toán · Chờ giao thuốc";
+        HandoverText.Text = $"Hóa đơn #{detail.Luot.MaHD} · Xuất #{detail.Luot.MaPX} · {status}";
         if (detail.Luot.TrangThai == "Đã giao")
             HandoverText.Text += $"\nNgười giao: {detail.Luot.TenNguoiGiao ?? detail.Luot.MaNVGiao} · {detail.Luot.ThoiGianGiao:dd/MM/yyyy HH:mm}";
     }
@@ -167,7 +175,8 @@ public partial class PrescriptionHistoryDetail : UserControl, IClinicalPendingWo
         var eligible = ChiTiet?.Luot.TrangThai == "Chờ giao";
         ReceiverChecked.IsEnabled = GuidanceChecked.IsEnabled = eligible && !MustKeepSource;
         GiveButton.IsEnabled = eligible && !DangXuLy && (pendingId is not null || ReceiverChecked.IsChecked == true && GuidanceChecked.IsChecked == true);
-        GiveButton.Content = pendingId is null ? "Xác nhận đã giao" : "Thử lại đúng đơn";
+        GiveButton.Content = ChiTiet?.Luot.TrangThai == "Đã giao" ? "Đã giao thuốc"
+            : pendingId is null ? "Xác nhận đã giao thuốc" : "Thử lại đúng đơn";
         PrintRxButton.IsEnabled = canPrint && !MustKeepSource;
         ReloadButton.IsEnabled = !MustKeepSource;
         SourceLockChanged?.Invoke(MustKeepSource);
@@ -198,6 +207,9 @@ public partial class PrescriptionHistoryDetail : UserControl, IClinicalPendingWo
             var previous = ChiTiet;
             ChiTiet = previous with { Luot = previous.Luot with { TrangThai = "Đã giao", MaNVGiao = result.MaNVGiao, ThoiGianGiao = result.ThoiGianGiao } };
             RenderHandover();
+            source.TrangThaiBanGiao = "Đã giao";
+            if (DataContext is DonThuocTrinhBay presentation)
+                DataContext = presentation with { TrangThai = source.TrangThaiHienThi };
             StatusText.Text = $"Đã giao đơn #{id} · {result.ThoiGianGiao:dd/MM/yyyy HH:mm}. " + (result.DaGiaoHet ? "Lượt đã hoàn tất." : "Lượt còn đơn chờ giao.");
             return true;
         }
@@ -207,7 +219,12 @@ public partial class PrescriptionHistoryDetail : UserControl, IClinicalPendingWo
         { pendingId = null; ChiTiet = null; StatusText.Text = ex.Message; return false; }
         catch (Exception)
         { StatusText.Text = "Chưa xác nhận được kết quả giao. Thử lại đúng đơn này để đối chiếu; không xuất thuốc lần nữa."; return false; }
-        finally { DangXuLy = false; UpdateRights(); }
+        finally
+        {
+            DangXuLy = false;
+            UpdateRights();
+            if (KetQua is not null && pendingId is null) HandoverCompleted?.Invoke();
+        }
     }
 
     /// <summary>

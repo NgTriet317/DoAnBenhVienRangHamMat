@@ -1,0 +1,127 @@
+using System.Globalization;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Markup;
+using System.Windows.Media;
+using System.Xml.Linq;
+using ET;
+using RangHamMat.Controls;
+
+internal static class ClinicalInputValidationChecks
+{
+    private static readonly Type Input = typeof(KiemTraNhapLieu).Assembly.GetType("RangHamMat.Controls.ClinicalWorkflow.ClinicalFormInput")!;
+    private static int failed;
+
+    [STAThread]
+    public static int Main()
+    {
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("vi-VN");
+        var app=Application.Current ?? new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml",UriKind.Relative)});
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("/RangHamMat.Wpf;component/Themes/ClinicalEditorStyles.xaml",UriKind.Relative)});
+        KiemTraNhapLieu.Register();
+        Check("Ngày kết thúc sai chỉ đúng ô kết thúc", () =>
+        {
+            var picker = new DatePicker { Name="PlanEnd", Tag="DB:KE_HOACH_DIEU_TRI.NgayDuKienKetThuc", Language=XmlLanguage.GetLanguage("vi-VN") };
+            picker.DateValidationError += (_, e) => e.ThrowException=false;
+            picker.Text="31/02/2026";
+            var error=Reject(() => Call("ReadDate",picker));
+            var field=error is LoiKhamException clinical?clinical.Truong:(error as LoiNhapLieu)?.Field;
+            Require(field=="NgayDuKienKetThuc", "Ngày kết thúc bị gán sang trường "+field);
+        });
+        Check("Không dùng lại SelectedDate khi chữ ngày sai", () =>
+        {
+            var picker = new DatePicker { Name="PlanEnd", Tag="DB:KE_HOACH_DIEU_TRI.NgayDuKienKetThuc", Language=XmlLanguage.GetLanguage("vi-VN"), SelectedDate=new DateTime(2026,11,14) };
+            picker.Template = new ControlTemplate(typeof(DatePicker)) { VisualTree=new FrameworkElementFactory(typeof(System.Windows.Controls.Primitives.DatePickerTextBox),"PART_TextBox") };
+            picker.Measure(new Size(240,40));picker.Arrange(new Rect(0,0,240,40));picker.UpdateLayout();picker.ApplyTemplate();
+            var text=picker.Template?.FindName("PART_TextBox",picker) as TextBox;
+            Require(text is not null,"Thiếu phần nhập ngày WPF.");
+            text!.Text="31/02/2026";
+            Reject(() => Call("ReadDate",picker));
+        });
+        Check("Lỗi số ngày hiện tại ô bọc", () => CheckMapping(new LoiKhamException("SoNgayDung","Số ngày dùng phải lớn hơn 0."),"DaysEditor","SoNgayDung"));
+        Check("Lỗi liều dùng hiện tại ô liều", () => CheckMapping(new LoiKhamException("LieuDung","Nhập liều dùng."),"DoseEditor","LieuDung"));
+        Check("Lỗi đường dùng từ validator hiện tại ô đường dùng", () => CheckMapping(new LoiNhapLieu("DuongDung","Đường dùng tối đa 100 ký tự."),"RouteEditor","DuongDung"));
+        Check("Lỗi ngày kết thúc hiện tại ô ngày cuối", () => CheckMapping(new LoiKhamException("NgayDuKienKetThuc","Ngày kết thúc phải sau ngày bắt đầu."),"PlanEnd","NgayDuKienKetThuc"));
+        Check("Số lượng chấp nhận cả hai dấu thập phân", () =>
+        {
+            Require((decimal)Call("ReadQuantity","1.5")! == 1.5m,"Dấu chấm bị hiểu là hàng nghìn.");
+            Require((decimal)Call("ReadQuantity","1,5")! == 1.5m,"Không đọc được dấu phẩy thập phân.");
+            Require((decimal)Call("ReadQuantity","0.001")! == .001m,"Sai lượng hợp lệ có ba chữ số lẻ.");
+        });
+        foreach(var value in new[]{"1.000.000","1,000.5","1 000","0","-1","0.0001","1000000000000000"})
+            Check("Chặn số lượng sai: "+value, () => Reject(() => Call("ReadQuantity",value)));
+        Check("Kiểm tra cả dòng thuốc chưa chọn", () =>
+        {
+            var lines=new[]{Line(),Line()};lines[1].SoNgayDung=0;
+            var error=Reject(() => Call("ValidatePrescriptionLines",(object)lines));
+            Require(error.Message.Contains("2"),"Lỗi không chỉ ra dòng thuốc thứ hai.");
+            Require(error is LoiKhamException {Truong:"SoNgayDung"},"Lỗi số ngày chưa được gắn đúng ô.");
+        });
+        Check("Chặn liều dài quá schema ở dòng chưa chọn", () =>
+        {
+            var lines=new[]{Line(),Line()};lines[1].LieuDung=new string('x',256);
+            Reject(() => Call("ValidatePrescriptionLines",(object)lines));
+        });
+        Check("Chặn thiếu đường dùng trước lưu theo nghiệp vụ", () =>
+        {
+            var line=Line();line.DuongDung="";
+            Reject(() => Call("ValidatePrescriptionLines",(object)new[]{line}));
+        });
+        Check("Đơn hợp lệ không áp giới hạn liều y khoa", () => Call("ValidatePrescriptionLines",(object)new[]{Line()}));
+        Check("Ô dịch vụ kế hoạch thực tế hiện lỗi dưới ô và cập nhật lựa chọn",()=>
+        {
+            XNamespace x="http://schemas.microsoft.com/winfx/2006/xaml";
+            var document=XDocument.Load(System.IO.Path.Combine(Environment.CurrentDirectory,"RangHamMat.Wpf/Views/KhamLamSang.xaml"));
+            var markup=new XElement(document.Descendants().Single(node=>(string?)node.Attribute(x+"Name")=="PlanServiceColumn"));
+            // Dùng template thật của ứng dụng; bỏ riêng callback chọn vì callback đó đọc SQL.
+            foreach(var handler in markup.Descendants().Attributes("SelectionChanged").ToArray())handler.Remove();
+            var column=(DataGridTemplateColumn)XamlReader.Parse(markup.ToString());
+            var row=new BuocKeHoachNhap();
+            var grid=new DataGrid{Name="PlanSteps",IsReadOnly=false,AutoGenerateColumns=false,CanUserAddRows=false,ItemsSource=new[]{row}};
+            grid.Columns.Add(column);grid.Resources["PlanServiceChoices"]=new[]{new LuaChonDanhMuc("DV001","Khám răng hàm mặt")};
+            var root=new UserControl{Content=grid};NameScope.SetNameScope(root,new NameScope());root.RegisterName("PlanSteps",grid);
+            var window=new Window{Content=root,Width=650,Height=400,ShowInTaskbar=false,Left=-10000};window.Show();window.UpdateLayout();
+            try
+            {
+                var error=new LoiKhamException("MaDV","Chọn dịch vụ đang hoạt động từ danh sách.");error.Data["ClinicalRow"]=row;
+                Call("ShowError",root,error);
+                var editor=VisualNodes(grid).OfType<ComboBox>().Single(c=>Equals(c.Tag,"DB:CHI_TIET_KE_HOACH.MaDV"));
+                Require(KiemTraNhapLieu.GetHasError(editor),"Lỗi chỉ nằm dưới bảng, chưa nằm dưới ô dịch vụ.");
+                Require(editor.Parent is ContentControl{Tag:"InlineField"},"Ô chọn dịch vụ thiếu vùng lỗi tại ô.");
+                editor.SelectedValue="DV001";
+                Require(row.MaDV=="DV001","Chọn dịch vụ không cập nhật dòng kế hoạch.");
+                Require(KiemTraNhapLieu.RecheckField(editor),"Lựa chọn hợp lệ vẫn bị chặn.");
+            }
+            finally{window.Close();}
+        });
+        Console.WriteLine($"Clinical input validation: {failed} lỗi.");
+        return failed==0?0:1;
+    }
+
+    private static DongThuocKeDon Line()=>new(){MaThuoc="TH001",LieuDung="Theo chỉ định bác sĩ",DuongDung="Uống",HuongDan="Dùng theo hướng dẫn",SoNgayDung=1,SoLuong=1.125m};
+    private static IEnumerable<DependencyObject> VisualNodes(DependencyObject root){yield return root;for(var index=0;index<VisualTreeHelper.GetChildrenCount(root);index++)foreach(var child in VisualNodes(VisualTreeHelper.GetChild(root,index)))yield return child;}
+    private static object? Call(string method,params object[] args)
+    {
+        var candidate=Input.GetMethods(BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic).FirstOrDefault(x=>x.Name==method&&x.GetParameters().Length==args.Length);
+        Require(candidate is not null,"Chưa có kiểm tra "+method+".");
+        try{return candidate!.Invoke(null,args);}catch(TargetInvocationException e) when(e.InnerException is not null){throw e.InnerException;}
+    }
+    private static void CheckMapping(Exception error,string name,string field)
+    {
+        var root=new UserControl();NameScope.SetNameScope(root,new NameScope());
+        var editor=new TextBox{Name=name,Tag="DB:CHI_TIET_DON_THUOC."+field};
+        root.RegisterName(name,editor);var wrapper=new ContentControl{Tag="InlineField",Content=editor};root.Content=wrapper;
+        Call("ShowError",root,error);
+        Require(KiemTraNhapLieu.GetHasError(editor),"Không có lỗi ngay tại "+name+".");
+        Require(KiemTraNhapLieu.GetError(editor).Contains(error.Message),"Mất nội dung lỗi.");
+    }
+    private static Exception Reject(Action action)
+    {
+        try{action();}catch(InvalidOperationException e){return e;}
+        throw new Exception("Dữ liệu sai đã được chấp nhận.");
+    }
+    private static void Require(bool condition,string message){if(!condition)throw new Exception(message);}
+    private static void Check(string name,Action test){try{test();Console.WriteLine("PASS "+name);}catch(Exception e){failed++;Console.WriteLine("FAIL "+name+": "+e.Message);}}
+}

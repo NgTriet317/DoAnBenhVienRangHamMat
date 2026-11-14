@@ -1,8 +1,12 @@
 using BUS;
 using Microsoft.Data.SqlClient;
 
+/// <summary>Công cụ đối soát chỉ đọc qua BUS, xuất số liệu tổng hợp và chi tiết phát hiện bằng P5Artifacts.</summary>
 internal static class Program
 {
+    /// <summary>Kiểm đối số, chạy các quy tắc đối soát và ghi bộ bằng chứng vào thư mục mới.</summary>
+    /// <param name="args">Máy chủ SQL, database, thư mục kết quả mới và giới hạn chi tiết mỗi quy tắc từ 1 đến 500.</param>
+    /// <returns>0 khi xuất đối soát hoàn tất dù có phát hiện; 1 khi tham số, truy vấn hoặc ghi bằng chứng bị lỗi.</returns>
     static int Main(string[] args)
     {
         try

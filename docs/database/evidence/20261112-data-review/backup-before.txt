@@ -1,0 +1,7 @@
+Processed 2464 pages for database 'QLBenhVienRangHamMat', file 'QLBenhVienRangHamMat' on file 1.
+Processed 2 pages for database 'QLBenhVienRangHamMat', file 'QLBenhVienRangHamMat_log' on file 1.
+BACKUP DATABASE successfully processed 2466 pages in 0.061 seconds (315.765 MB/sec).
+The backup set on file 1 is valid.
+BackupDaKiemTra
+---------------
+C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Backup\QLBenhVienRangHamMat_before_data_review_20261112_0B32985B8E4A4E1E812284EF4A90B257.bak

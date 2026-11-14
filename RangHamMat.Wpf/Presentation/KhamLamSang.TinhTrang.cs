@@ -56,6 +56,8 @@ public partial class KhamLamSang
         if(!conditionInputDirty&&!forceNew)return;
         var name=ConditionNameEditor.Text.Trim();
         if(name.Length==0)throw new LoiKhamException("TinhTrang","Nhập tình trạng bệnh trước khi thêm hoặc lưu.");
+        RangHamMat.Controls.KiemTraNhapLieu.ValidateValues("TINH_TRANG_BENH",new Dictionary<string,object?>
+        { ["LoaiTinhTrang"]=ConditionNameEditor.Text,["MoTaTinhTrang"]=string.IsNullOrWhiteSpace(ConditionDetailEditor.Text)?name:ConditionDetailEditor.Text,["GhiChu"]=ConditionNoteEditor.Text });
         var row=forceNew?new TinhTrangKhamNhap():selectedCondition??new TinhTrangKhamNhap();
         row.MaDMTT=QuyTacMaTinhTrang.TuLuaChon(name,ConditionReferencePicker.SelectedItem as ET_DMTINHTRANGBENH,forceNew?null:selectedCondition);
         row.LoaiTinhTrang=name;row.MoTaTinhTrang=string.IsNullOrWhiteSpace(ConditionDetailEditor.Text)?name:ConditionDetailEditor.Text.Trim();

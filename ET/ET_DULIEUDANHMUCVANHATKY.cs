@@ -2,13 +2,24 @@ using System.Globalization;
 
 namespace ET;
 
+/// <summary>
+/// Định nghĩa cột nhập của danh mục, gồm kiểu, độ dài, bắt buộc, danh mục cha và lựa chọn cho phép.
+/// </summary>
 public sealed record TruongDanhMuc(string Cot, string Nhan, string Kieu = "text", bool BatBuoc = true,
     int DoDai = 255, string? BangCha = null, string[]? LuaChon = null);
 
+/// <summary>
+/// Hợp đồng danh mục được phép quản lý, gồm bảng, khóa, các trường nhập và tên trạng thái đang/ngừng dùng.
+/// </summary>
 public sealed record DinhNghiaDanhMuc(string Bang, string Ten, string Nhom, string[] Khoa,
     TruongDanhMuc[] Truong, string DangDung = "Đang hoạt động", string NgungDung = "Không sử dụng")
 {
     public override string ToString() => Ten;
+    /// <summary>
+    /// Chỉ nhận các trường đã định nghĩa, cắt khoảng trắng và kiểm tra kiểu, độ dài, bắt buộc cùng lựa chọn.
+    /// </summary>
+    /// <param name="values">Giá trị nhập theo tên cột; trường ngoài định nghĩa bị từ chối.</param>
+    /// <returns>Các giá trị đã chuyển kiểu; trường tùy chọn để trống nhận null.</returns>
     public Dictionary<string, object?> ChuanHoa(IDictionary<string, object?> values)
     {
         var fields = Truong.ToDictionary(f => f.Cot, StringComparer.Ordinal);
@@ -28,8 +39,12 @@ public sealed record DinhNghiaDanhMuc(string Bang, string Ten, string Nhom, stri
             switch (field.Kieu)
             {
                 case "decimal":
-                    if (!decimal.TryParse(text, out var money) || money < 0 || decimal.Round(money, 2) != money || money > 9999999999999999.99m)
-                        throw new ArgumentException($"{field.Nhan}: nhập số không âm, tối đa hai chữ số thập phân.");
+                    var normalized = text.Replace(',', '.');
+                    var separator = normalized.IndexOf('.');
+                    if (!decimal.TryParse(normalized, NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var money)
+                        || separator >= 0 && normalized.Length - separator - 1 > 2
+                        || money < 0 || decimal.Round(money, 2) != money || money > 9999999999999999.99m)
+                        throw new ArgumentException($"{field.Nhan}: nhập số không âm, tối đa hai chữ số phần lẻ. Dùng dấu phẩy hoặc chấm cho phần lẻ; bỏ dấu phân cách hàng nghìn, ví dụ 1250,50.");
                     value = money; break;
                 case "int":
                     if (!int.TryParse(text, out var number) || number <= 0) throw new ArgumentException($"{field.Nhan}: nhập số nguyên dương.");
@@ -74,10 +89,17 @@ public static class DanhMucHeThong
         new DinhNghiaDanhMuc("NGAY_NGHI_LE","Ngày nghỉ lễ","Cấu hình vận hành",["MaNgayNghi"],
             [new("NgayNghi","Ngày nghỉ","date"),new("TenNgayNghi","Tên ngày nghỉ"),new("LoaiNgayNghi","Loại ngày nghỉ",DoDai:50,LuaChon:["Lễ, Tết","Nghỉ bù","Nghỉ theo quy định nội bộ"]),new("CoHuongLuong","Có hưởng lương","bool"),new("GhiChu","Ghi chú",BatBuoc:false,DoDai:500)])
     });
+    /// <summary>
+    /// Tra định nghĩa danh mục theo đúng tên bảng trong whitelist, từ chối bảng không được quản lý.
+    /// </summary>
     public static DinhNghiaDanhMuc Lay(string bang) => TatCa.SingleOrDefault(d => d.Bang == bang)
         ?? throw new ArgumentException("Bảng không thuộc danh mục hệ thống.");
 }
 
+/// <summary>
+/// Bộ lọc nhật ký hoặc phiên theo thời gian UTC, tài khoản và điều kiện phân trang.
+/// </summary>
+/// <remarks>DenUtc được DAL dùng như mốc cuối không bao gồm; kích thước trang chỉ nhận 25, 50 hoặc 100.</remarks>
 public sealed class BoLocNhatKy
 {
     public DateTime? TuUtc { get; set; }
@@ -89,6 +111,9 @@ public sealed class BoLocNhatKy
     public string MaDoiTuong { get; set; } = "";
     public int Trang { get; set; } = 1;
     public int KichThuocTrang { get; set; } = 50;
+    /// <summary>
+    /// Chặn khoảng thời gian đảo ngược, trang ngoài giới hạn và chuỗi lọc null hoặc quá dài trước khi truy vấn.
+    /// </summary>
     public void KiemTra()
     {
         if (Trang < 1 || Trang > 1000000 || KichThuocTrang is not (25 or 50 or 100)) throw new ArgumentException("Phân trang không hợp lệ.");
@@ -97,4 +122,7 @@ public sealed class BoLocNhatKy
     }
 }
 
+/// <summary>
+/// Một trang dòng dữ liệu nhật ký hoặc phiên cùng tổng số dòng khớp bộ lọc để tính phân trang.
+/// </summary>
 public sealed record TrangNhatKy(IReadOnlyList<IDictionary<string,object>> Dong, int Tong);

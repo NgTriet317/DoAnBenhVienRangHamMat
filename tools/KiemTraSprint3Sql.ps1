@@ -1,3 +1,16 @@
+<#
+.SYNOPSIS
+Dựng và chạy bộ kiểm tích hợp SQL, nhật ký, danh mục và giao diện Sprint 3.
+.DESCRIPTION
+Chỉ nhận database RHM_Sprint3_Test_. Bộ kiểm có ghi fixture và xuất bằng chứng;
+project tạm trong obj phối hợp Sprint3Integration.cs.txt với Sprint3Acceptance.cs.txt.
+.PARAMETER Database
+Database kiểm thử Sprint 3 dùng cho các ca tích hợp.
+.PARAMETER MayChu
+SQL Server chứa database thử.
+.PARAMETER CaiDat
+Cài bản SQL đã bỏ snapshot và chạy lại để đối chiếu số hàng trước các ca kiểm.
+#>
 param([string]$Database='RHM_Sprint3_Test_Unified',[string]$MayChu='.',[switch]$CaiDat)
 $ErrorActionPreference='Stop'
 if($Database -notmatch '^RHM_Sprint3_Test_[A-Za-z0-9_]+$'){throw 'Chỉ chạy trên database kiểm thử Sprint 3.'}

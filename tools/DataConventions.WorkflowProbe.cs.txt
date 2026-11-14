@@ -1,0 +1,41 @@
+using System.Data;
+using System.Security.Claims;
+using BUS;
+using DAL;
+using Dapper;
+using ET;
+using Microsoft.Data.SqlClient;
+// This test commits a new admission only on the task's disposable install fixture.
+// Kiểm quy trình sau chuẩn hóa: tiếp nhận BN018, bắt đầu khám và đối chiếu PKB037/LS037.
+// Chỉ nhận fixture DataConventionsInstall_ có hậu tố tám ký tự hex; có thể thêm ca ngoài giờ
+// cho fixture trước khi commit phiếu/lần khám mới. Có lỗi thì rollback toàn bộ giao dịch.
+if(args.Length!=2||!System.Text.RegularExpressions.Regex.IsMatch(args[1],"^RHM_Hospital_Test_DataConventionsInstall_[a-f0-9]{8}$"))throw new Exception("Owned install fixture required");
+var cs=new SqlConnectionStringBuilder{DataSource=args[0],InitialCatalog=args[1],IntegratedSecurity=true,TrustServerCertificate=true}.ConnectionString;
+Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",cs);
+using var db=new SqlConnection(cs);db.Open();using var tx=db.BeginTransaction(IsolationLevel.Serializable);
+NguCanhNghiepVu Login(string nv,string tk){Thread.CurrentPrincipal=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.NameIdentifier,tk),new(DinhDanhNghiepVu.MaNhanVienClaim,nv)],DinhDanhNghiepVu.KieuXacThuc));db.Execute("EXEC sys.sp_set_session_context @key=N'RHM.MaTK',@value=@tk",new{tk},tx);return new BUS_QUYENNGHIEPVU(tx).LayNguCanh(nv);}
+try
+{
+ var actor=Login("NV001","TK001");var intake=new BUS_TIEPNHAN(tx);
+ var doctor=intake.LayBacSi("DV001",actor).SingleOrDefault(d=>d.MaNV=="NV002");
+ if(doctor is null)
+ {
+   // The check may run after the packaged 08–17 roster. Add a current shift only to this fixture.
+   var now=db.ExecuteScalar<DateTime>("SELECT CONVERT(datetime2(0),SYSDATETIME())",transaction:tx);
+   if(now.Hour<17||now.Hour>=23)throw new Exception("Run the fixture probe during clinic hours or 17–23");
+   var shift=dbconnect.TaoMa(db,tx,"CA_LAM","MaCa");var schedule=dbconnect.TaoMa(db,tx,"LICH_LAM_VIEC","MaLLV");
+   db.Execute("""
+     INSERT dbo.CA_LAM(MaCa,GioBatDau,GioKetThuc,TrangThai,GhiChu) VALUES(@shift,@start,@end,N'Đang hoạt động',N'Ca trực tăng cường');
+     INSERT dbo.CA_THEO_NGAY(NgayLam,MaCa) VALUES(@day,@shift);
+     INSERT dbo.LICH_LAM_VIEC(MaLLV,MaNV,MaCa,NgayLam,MaPhong,TrangThai,TrangThaiHienDien,GioVao,GhiChu)
+      VALUES(@schedule,N'NV002',@shift,@day,N'PH001',N'Đã xác nhận',N'Có mặt',@arrival,N'Phân công khám ngoài giờ');
+     """,new{shift,schedule,start=now.AddSeconds(-1).TimeOfDay,end=now.AddHours(1).TimeOfDay,day=now.Date,arrival=now.AddSeconds(-1)},tx);
+   doctor=intake.LayBacSi("DV001",actor).Single(d=>d.MaNV=="NV002");
+ }
+ var receipt=intake.TiepNhan(new(){MaBN="BN018",MaDV="DV001",MaBS="NV002",MaPhong=doctor.MaPhong??"PH001",LyDoKham="Khám kiểm tra răng miệng",LyDoDieuPhoiNgoaiLich=doctor.ThieuLich?"Bố trí bác sĩ khám kiểm tra theo điều phối trong ngày.":null},actor);
+ if(receipt.MaPhieu!="PKB037")throw new Exception("Unexpected admission code: "+receipt.MaPhieu);
+ var visit=new BUS_KHAMDIEUTRI(tx).BatDauKham(receipt.MaPhieu,Login("NV002","TK002"));
+ if(visit!="LS037")throw new Exception("Unexpected new visit code: "+visit);
+ tx.Commit();Console.WriteLine("PASS: new intake PKB037 and draft visit LS037 work after cleanup; only fixture changed");
+}
+catch{if(tx.Connection is not null)tx.Rollback();throw;}

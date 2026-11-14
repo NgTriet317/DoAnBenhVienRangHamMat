@@ -1,3 +1,10 @@
+<#
+.SYNOPSIS
+Kiểm logic đọc kết quả, lấy baseline và đối chiếu bằng chứng của bộ nghiệm thu P6.
+.DESCRIPTION
+Dùng log/JSON và tiến trình con có kiểm soát trong obj/P6Evidence để kiểm mã thoát,
+marker, hash baseline và các guard CLI. Proof giả lập chỉ kiểm logic đối chiếu hai máy.
+#>
 param()
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent

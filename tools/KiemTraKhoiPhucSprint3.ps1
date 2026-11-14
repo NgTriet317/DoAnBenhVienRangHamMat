@@ -1,3 +1,14 @@
+<#
+.SYNOPSIS
+Sao lưu và phục hồi database fixture Sprint 3 sang một database thử mới.
+.DESCRIPTION
+Dùng COPY_ONLY/CHECKSUM, VERIFYONLY, RESTORE và CHECKDB trong SQL Server.
+Kiểm số hàng nguồn có trong đích; giữ file .bak và database phục hồi để xem lại kết quả.
+.PARAMETER Database
+Database nguồn có tiền tố RHM_Sprint3_Test_ và đúng một file dữ liệu, một file log.
+.PARAMETER MayChu
+SQL Server có các thư mục backup/data/log mặc định để lưu tệp của lần phục hồi.
+#>
 param([string]$Database='RHM_Sprint3_Test_Unified',[string]$MayChu='.')
 $ErrorActionPreference='Stop'
 if($Database -notmatch '^RHM_Sprint3_Test_[A-Za-z0-9_]+$'){throw 'Chỉ backup/restore DB fixture Sprint 3.'}

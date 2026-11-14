@@ -12,11 +12,17 @@ using DAL;
 using Dapper;
 using ET;
 
+/// <summary>Điểm chạy STA để bộ kiểm ảnh dùng được cửa sổ và bộ giải mã WPF.</summary>
 static class XrayCheckEntry { [STAThread] static int Main(string[] args)=>Program.XrayChecks(args); }
+/// <summary>Kiểm lưu ảnh gốc, metadata, quyền thao tác, retry và khả năng mở ảnh sau phục hồi.</summary>
+/// <remarks>Dùng chung tiện ích HospitalWorkflowChecks; chế độ thường tạo dữ liệu/kho thử để giữ bằng chứng.</remarks>
 internal static partial class Program
 {
     static string xrayRoot="";
     static int imageSeed;
+    /// <summary>Chạy bộ kiểm X-quang hoặc kiểm mở ảnh từ database và kho đã phục hồi.</summary>
+    /// <param name="args">Máy chủ SQL, database thử; chế độ phục hồi thêm --restore và đường dẫn kho đã phục hồi.</param>
+    /// <returns>0 khi các ca đã chọn đạt; 1 khi có ca thất bại.</returns>
     internal static int XrayChecks(string[] args)
     {
         if(args.Length is not(2 or 4)||!System.Text.RegularExpressions.Regex.IsMatch(args[1],"^RHM_Hospital_Test_[A-Za-z0-9_]+$"))throw new Exception("Isolated DB required");
@@ -60,6 +66,15 @@ internal static partial class Program
         });
         Check("XR01 retry cùng nội dung trên cùng MaLS không nhân metadata/tệp",()=>{
             var bytes=TestImage();var user=XrayActor();var one=Upload(bytes,"fixture.png",user);var two=Upload(bytes,"fixture.png",user);Assert(one.MaAnh==two.MaAnh,"Upload lặp tạo ảnh trùng");
+        });
+        Check("XR DICOM tải qua BUS, metadata PNG giữ tên gốc, mở lại và retry",()=>{
+            var bytes=TestDicom();var user=XrayActor();var row=Upload(bytes,"fixture.dcm",user);
+            var opened=(DuLieuAnhXquang)Open(row,user);
+            Assert(row.TenTepGoc=="fixture.dcm"&&row.MimeType=="image/png"&&row.TenTepLuu.EndsWith(".png"),"Sai metadata DICOM/PNG");
+            Assert(row.KichThuocBytes==opened.NoiDung.Length&&row.Sha256==Convert.ToHexString(SHA256.HashData(opened.NoiDung)),"Metadata chưa theo PNG");
+            Assert(!opened.NoiDung.SequenceEqual(bytes),"Chưa chuyển DICOM thành ảnh thường");
+            Assert(Upload(bytes,"retry.dicom",user).MaAnh==row.MaAnh,"Retry DICOM nhân bản ảnh");
+            ExpectInvalid(()=>Upload(bytes,"denied.dcm",XrayActor("NV005")));
         });
         foreach(var name in new[]{"../escape.png","folder/escape.png","C:\\escape.png","image.dcm","image.gif"})
             Check("XR02 từ chối tên/định dạng: "+name,()=>ExpectInvalid(()=>Upload(TestImage(),name,XrayActor())));
@@ -142,6 +157,23 @@ internal static partial class Program
             ExpectInvalid(()=>Upload(TestImage(),"after.png",a,visit:"XR_DONE_LS"));ExpectInvalid(()=>XrayCall(XrayBus(),"AnAnh","XR_DONE_LS",row.MaAnh,a));
         });
         var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};app.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml",UriKind.Relative)});
+        Check("XR UI bác sĩ tải DICOM, xem trước, xem lớn và phóng thu",()=>{
+            var editor=new RangHamMat.Views.AnhXquangLanKham("TC_LS",XrayActor(),null,(CauHinhKhoAnh)XrayConfig());
+            using var stream=new System.IO.MemoryStream(TestDicom());
+            Assert(editor.TryTaiLen(stream,"ui-xray.dcm",out var error),"Không tải được DICOM: "+error);
+            Assert(Control<System.Windows.Controls.Image>(editor,"SelectedPreview").Source is BitmapSource,"Không hiển thị ảnh trước");
+            Assert(Control<TextBlock>(editor,"StatusText").Text.Contains("PNG"),"Thiếu thông báo chuyển đổi");
+            Assert(editor.TryXemLon(photo=>{
+                var viewer=new RangHamMat.Views.XemAnhXquang(photo);
+                try{
+                    viewer.Show();Pump();Control<Slider>(viewer,"Zoom").Value=2;Pump();
+                    var image=Control<System.Windows.Controls.Image>(viewer,"FullImage");
+                    Assert(image.Source is BitmapSource bitmap&&bitmap.PixelWidth==64&&bitmap.PixelHeight==32,"Bộ xem nhận ảnh sai");
+                    Assert(image.LayoutTransform is ScaleTransform scale&&scale.ScaleX==2,"Không phóng được ảnh DICOM");
+                }finally{viewer.Close();}
+            },out error),"Không mở được ảnh lớn: "+error);
+            Capture(editor,"xray-dicom.png");
+        });
         Check("XR UI tải, thumbnail, xem lớn và ẩn đúng ảnh",()=>{
             var type=typeof(RangHamMat.Views.KhamLamSang).Assembly.GetType("RangHamMat.Views.AnhXquangLanKham")??throw new Exception("Missing X-ray UI");
             var editor=(UserControl)Activator.CreateInstance(type,["TC_LS",XrayActor(),null,XrayConfig()])!;
@@ -258,6 +290,22 @@ internal static partial class Program
     {
         int seed=++imageSeed;var pixels=new byte[64*32*4];for(int i=0;i<pixels.Length;i+=4){pixels[i]=(byte)(seed+i%193);pixels[i+1]=(byte)(i%251);pixels[i+2]=(byte)seed;pixels[i+3]=255;}
         var bitmap=BitmapSource.Create(64,32,96,96,PixelFormats.Bgra32,null,pixels,64*4);BitmapEncoder encoder=jpeg?new JpegBitmapEncoder():new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));using var stream=new System.IO.MemoryStream();encoder.Save(stream);return stream.ToArray();
+    }
+    /// <summary>Tạo ảnh DICOM giả lập để kiểm xuyên BUS/SQL/giao diện, không dùng bệnh án thật.</summary>
+    static byte[] TestDicom()
+    {
+        var dataset=new FellowOakDicom.DicomDataset{
+            {FellowOakDicom.DicomTag.SOPClassUID,FellowOakDicom.DicomUID.DigitalXRayImageStorageForPresentation},
+            {FellowOakDicom.DicomTag.SOPInstanceUID,FellowOakDicom.DicomUID.Generate()},
+            {FellowOakDicom.DicomTag.Rows,(ushort)32},{FellowOakDicom.DicomTag.Columns,(ushort)64},
+            {FellowOakDicom.DicomTag.PhotometricInterpretation,"MONOCHROME2"},
+            {FellowOakDicom.DicomTag.SamplesPerPixel,(ushort)1},{FellowOakDicom.DicomTag.BitsAllocated,(ushort)8},
+            {FellowOakDicom.DicomTag.BitsStored,(ushort)8},{FellowOakDicom.DicomTag.HighBit,(ushort)7},
+            {FellowOakDicom.DicomTag.PixelRepresentation,(ushort)0}
+        };
+        var pixels=FellowOakDicom.Imaging.DicomPixelData.Create(dataset,true);
+        pixels.AddFrame(new FellowOakDicom.IO.Buffer.MemoryByteBuffer(Enumerable.Range(0,64*32).Select(i=>(byte)(i%256)).ToArray()));
+        using var output=new System.IO.MemoryStream();new FellowOakDicom.DicomFile(dataset).Save(output);return output.ToArray();
     }
     static void SeedXrayDatabase()
     {

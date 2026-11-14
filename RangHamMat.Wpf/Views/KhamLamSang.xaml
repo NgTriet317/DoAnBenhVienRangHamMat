@@ -6,6 +6,7 @@
     <ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/ClinicalEditorStyles.xaml"/>
    </ResourceDictionary.MergedDictionaries>
    <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+   <clinical:ClinicalDecimalConverter x:Key="ClinicalDecimal"/>
   </ResourceDictionary>
  </UserControl.Resources>
  <Grid Margin="0">
@@ -71,24 +72,24 @@
         <clinical:ClinicalFieldsPanel>
          <StackPanel>
           <TextBlock Text="Triệu chứng" Style="{StaticResource FieldLabel}"/>
-          <TextBox x:Name="SymptomsEditor" Style="{StaticResource ClinicalNotesInput}"
-                   TextChanged="Clinical_Changed" AutomationProperties.Name="Triệu chứng"/>
+          <ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="SymptomsEditor" Tag="DB:LICH_SU_KHAM_BENH.TrieuChung" Style="{StaticResource ClinicalNotesInput}"
+                   TextChanged="Clinical_Changed" AutomationProperties.Name="Triệu chứng"/></ContentControl>
          </StackPanel>
          <StackPanel>
           <TextBlock Text="Chẩn đoán" Style="{StaticResource FieldLabel}"/>
-          <TextBox x:Name="DiagnosisEditor" Style="{StaticResource ClinicalNotesInput}"
-                   TextChanged="Clinical_Changed" AutomationProperties.Name="Chẩn đoán"/>
+          <ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="DiagnosisEditor" Tag="DB:LICH_SU_KHAM_BENH.ChanDoan" Style="{StaticResource ClinicalNotesInput}"
+                   TextChanged="Clinical_Changed" AutomationProperties.Name="Chẩn đoán"/></ContentControl>
          </StackPanel>
         </clinical:ClinicalFieldsPanel>
         <StackPanel Margin="0,16,0,0">
          <TextBlock Text="Xử trí / hướng điều trị" Style="{StaticResource FieldLabel}"/>
-         <TextBox x:Name="TreatmentEditor" Style="{StaticResource ClinicalNotesInput}"
-                  MinHeight="86" TextChanged="Clinical_Changed" AutomationProperties.Name="Xử trí và hướng điều trị"/>
+         <ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="TreatmentEditor" Tag="DB:LICH_SU_KHAM_BENH.KeHoachXuLy" Style="{StaticResource ClinicalNotesInput}"
+                  MinHeight="86" TextChanged="Clinical_Changed" AutomationProperties.Name="Xử trí và hướng điều trị"/></ContentControl>
         </StackPanel>
         <Expander Header="Ghi chú thêm" Margin="0,14,0,0">
-         <TextBox x:Name="ClinicalNote" Style="{StaticResource ClinicalNotesInput}"
+         <ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="ClinicalNote" Tag="DB:LICH_SU_KHAM_BENH.GhiChu" Style="{StaticResource ClinicalNotesInput}"
                   MinHeight="64" Margin="0,8,0,0" TextChanged="Clinical_Changed"
-                  AutomationProperties.Name="Ghi chú lần khám"/>
+                  AutomationProperties.Name="Ghi chú lần khám"/></ContentControl>
         </Expander>
        </StackPanel>
       </Border>
@@ -102,12 +103,12 @@
       <!-- Trường lựa chọn ConditionReferencePicker. Chuyển sự kiện đến Reference_Selected trong code-behind. -->
       <TextBlock Text="Chọn nhanh" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="ConditionReferencePicker" DisplayMemberPath="TenTinhTrang" TextSearch.TextPath="TenTinhTrang" IsTextSearchEnabled="True" MaxDropDownHeight="360" SelectionChanged="Reference_Selected"><ComboBox.GroupStyle><GroupStyle><GroupStyle.HeaderTemplate><DataTemplate><TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="#1D4ED8" Background="#EFF6FF" Padding="8" Margin="0,6,0,2"/></DataTemplate></GroupStyle.HeaderTemplate></GroupStyle></ComboBox.GroupStyle></ComboBox>
       <!-- Ô nhập ConditionNameEditor. Chuyển sự kiện đến ConditionInput_Changed trong code-behind. -->
-      <TextBlock Text="Tên tình trạng *" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/><TextBox x:Name="ConditionNameEditor" MaxLength="255" TextChanged="ConditionInput_Changed"/>
+      <TextBlock Text="Tên tình trạng *" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="ConditionNameEditor" Tag="DB:TINH_TRANG_BENH.LoaiTinhTrang" TextChanged="ConditionInput_Changed"/></ContentControl>
       <Expander Header="Mô tả và ghi chú" Margin="0,10,0,0"><StackPanel>
        <!-- Ô nhập ConditionDetailEditor. Chuyển sự kiện đến ConditionInput_Changed trong code-behind. -->
-       <TextBlock Text="Mô tả" Style="{StaticResource FieldLabel}"/><TextBox x:Name="ConditionDetailEditor" MinHeight="50" MaxHeight="90" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" TextChanged="ConditionInput_Changed"/>
+       <TextBlock Text="Mô tả" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="ConditionDetailEditor" AutomationProperties.Name="Mô tả tình trạng (tùy chọn)" MinHeight="50" MaxHeight="90" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" TextChanged="ConditionInput_Changed"/></ContentControl>
        <!-- Ô nhập ConditionNoteEditor. Chuyển sự kiện đến ConditionInput_Changed trong code-behind. -->
-       <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}" Margin="0,8,0,0"/><TextBox x:Name="ConditionNoteEditor" MinHeight="40" MaxHeight="70" AcceptsReturn="True" TextWrapping="Wrap" TextChanged="ConditionInput_Changed"/>
+       <TextBlock Text="Ghi chú" Style="{StaticResource FieldLabel}" Margin="0,8,0,0"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="ConditionNoteEditor" Tag="DB:TINH_TRANG_BENH.GhiChu" MinHeight="40" MaxHeight="70" AcceptsReturn="True" TextWrapping="Wrap" TextChanged="ConditionInput_Changed"/></ContentControl>
       </StackPanel></Expander>
       <!-- Nút thao tác AddConditionButton — + Thêm. Chuyển sự kiện đến AddCondition_Click trong code-behind. -->
       <WrapPanel Margin="0,12,0,0"><Button x:Name="AddConditionButton" Content="+ Thêm tình trạng" Click="AddCondition_Click" Style="{StaticResource ClinicalPrimary}"/><Button x:Name="UpdateConditionButton" Content="Cập nhật" Click="UpdateCondition_Click"/><Button x:Name="DeleteConditionButton" Content="Xóa" Click="DeleteCondition_Click"/><Button x:Name="ClearConditionButton" Content="Nhập mới" Click="ClearCondition_Click"/></WrapPanel>
@@ -136,18 +137,23 @@
      <!-- Vùng bố cục PlanFields. -->
      <StackPanel x:Name="PlanFields"><Expander Header="Lịch dự kiến và ghi chú"><StackPanel>
       <!-- Trường lựa chọn PlanStart. Chuyển sự kiện đến Plan_FieldChanged trong code-behind. -->
-      <WrapPanel Margin="0,10"><StackPanel Margin="0,0,12,0"><TextBlock Text="Ngày bắt đầu"/><DatePicker x:Name="PlanStart" SelectedDateChanged="Plan_FieldChanged"/></StackPanel><StackPanel><TextBlock Text="Ngày kết thúc"/><DatePicker x:Name="PlanEnd" SelectedDateChanged="Plan_FieldChanged"/></StackPanel></WrapPanel>
+      <WrapPanel Margin="0,10"><StackPanel Margin="0,0,12,0"><TextBlock Text="Ngày bắt đầu"/><ContentControl Style="{StaticResource TruongNhapLieu}"><DatePicker x:Name="PlanStart" Tag="DB:KE_HOACH_DIEU_TRI.NgayBatDau" SelectedDateChanged="Plan_FieldChanged"/></ContentControl></StackPanel><StackPanel><TextBlock Text="Ngày kết thúc"/><ContentControl Style="{StaticResource TruongNhapLieu}"><DatePicker x:Name="PlanEnd" Tag="DB:KE_HOACH_DIEU_TRI.NgayDuKienKetThuc" SelectedDateChanged="Plan_FieldChanged"/></ContentControl></StackPanel></WrapPanel>
       <!-- Ô nhập PlanNote. Chuyển sự kiện đến Plan_TextChanged trong code-behind. -->
-      <TextBox x:Name="PlanNote" TextChanged="Plan_TextChanged" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="45"/>
+      <ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="PlanNote" Tag="DB:KE_HOACH_DIEU_TRI.GhiChu" TextChanged="Plan_TextChanged" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="45"/></ContentControl>
      </StackPanel></Expander></StackPanel>
      <!-- Danh sách PlanSteps. -->
-     <DataGrid x:Name="PlanSteps" FrozenColumnCount="0" EnableColumnVirtualization="False" AutoGenerateColumns="False" MinHeight="140" MaxHeight="360" CanUserAddRows="True" CellEditEnding="Plan_Edit" SizeChanged="PlanSteps_SizeChanged" RowDetailsVisibilityMode="VisibleWhenSelected" Margin="0,12,0,0" RowHeight="44" GridLinesVisibility="Horizontal" HeadersVisibility="Column" AlternatingRowBackground="#F8FAFC"><DataGrid.Columns>
+     <ContentControl Style="{StaticResource TruongNhapLieu}"><DataGrid x:Name="PlanSteps" FrozenColumnCount="0" EnableColumnVirtualization="False" AutoGenerateColumns="False" MinHeight="140" MaxHeight="360" CanUserAddRows="True" CellEditEnding="Plan_Edit" SizeChanged="PlanSteps_SizeChanged" RowDetailsVisibilityMode="VisibleWhenSelected" Margin="0,12,0,0" MinRowHeight="44" GridLinesVisibility="Horizontal" HeadersVisibility="Column" AlternatingRowBackground="#F8FAFC"><DataGrid.Columns>
       <!-- Thành phần PlanServiceColumn — Dịch vụ. -->
-      <DataGridComboBoxColumn x:Name="PlanServiceColumn" Header="Dịch vụ" SelectedValueBinding="{Binding MaDV,UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Value" DisplayMemberPath="Label" Width="2*" MinWidth="140"><DataGridComboBoxColumn.ElementStyle><Style TargetType="ComboBox"><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBox"><TextBlock Text="{Binding SelectedItem.Label,RelativeSource={RelativeSource TemplatedParent}}" TextWrapping="Wrap" ToolTip="{Binding SelectedItem.Label,RelativeSource={RelativeSource TemplatedParent}}" VerticalAlignment="Center"/></ControlTemplate></Setter.Value></Setter></Style></DataGridComboBoxColumn.ElementStyle><DataGridComboBoxColumn.EditingElementStyle><Style TargetType="ComboBox"><EventSetter Event="SelectionChanged" Handler="PlanService_Selected"/></Style></DataGridComboBoxColumn.EditingElementStyle></DataGridComboBoxColumn>
-      <DataGridTextColumn ElementStyle="{StaticResource ClinicalTableText}" Header="SL" Binding="{Binding SoLuongDuKien,ValidatesOnExceptions=True,UpdateSourceTrigger=PropertyChanged}" Width="52"/><DataGridTextColumn ElementStyle="{StaticResource ClinicalTableText}" Header="Buổi" Binding="{Binding LanThu,ValidatesOnExceptions=True}" Width="52"/>
-      <DataGridTextColumn ElementStyle="{StaticResource ClinicalTableText}" Header="Đơn giá (đ)" Binding="{Binding DonGiaDuKien,StringFormat=N0}" IsReadOnly="True" Width="105"/><DataGridTextColumn ElementStyle="{StaticResource ClinicalTableText}" Header="Nội dung thực hiện" Binding="{Binding NoiDungBuoc}" Width="2*" MinWidth="160"/>
+      <DataGridTemplateColumn x:Name="PlanServiceColumn" Header="Dịch vụ" SortMemberPath="MaDV" Width="2*" MinWidth="140">
+       <DataGridTemplateColumn.CellTemplate><DataTemplate><ComboBox ItemsSource="{DynamicResource PlanServiceChoices}" SelectedValue="{Binding MaDV,Mode=OneWay}" SelectedValuePath="Value" DisplayMemberPath="Label" IsHitTestVisible="False" Focusable="False"><ComboBox.Template><ControlTemplate TargetType="ComboBox"><TextBlock Text="{Binding SelectedItem.Label,RelativeSource={RelativeSource TemplatedParent}}" TextWrapping="Wrap" VerticalAlignment="Center"/></ControlTemplate></ComboBox.Template></ComboBox></DataTemplate></DataGridTemplateColumn.CellTemplate>
+       <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox Tag="DB:CHI_TIET_KE_HOACH.MaDV" ItemsSource="{DynamicResource PlanServiceChoices}" SelectedValue="{Binding MaDV,UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Value" DisplayMemberPath="Label" SelectionChanged="PlanService_Selected" AutomationProperties.Name="Dịch vụ trong kế hoạch"/></ContentControl></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
+      </DataGridTemplateColumn>
+      <DataGridTemplateColumn Header="SL" SortMemberPath="SoLuongDuKien" Width="52"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding SoLuongDuKien,StringFormat=0.###}" Style="{StaticResource ClinicalTableText}"/></DataTemplate></DataGridTemplateColumn.CellTemplate><DataGridTemplateColumn.CellEditingTemplate><DataTemplate><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox Tag="DB:CHI_TIET_KE_HOACH.SoLuongDuKien" Text="{Binding SoLuongDuKien,Converter={StaticResource ClinicalDecimal},ValidatesOnExceptions=True,UpdateSourceTrigger=PropertyChanged}"/></ContentControl></DataTemplate></DataGridTemplateColumn.CellEditingTemplate></DataGridTemplateColumn>
+      <DataGridTemplateColumn Header="Buổi" SortMemberPath="LanThu" Width="52"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding LanThu}" Style="{StaticResource ClinicalTableText}"/></DataTemplate></DataGridTemplateColumn.CellTemplate><DataGridTemplateColumn.CellEditingTemplate><DataTemplate><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox Tag="DB:CHI_TIET_KE_HOACH.LanThu" Text="{Binding LanThu,ValidatesOnExceptions=True,UpdateSourceTrigger=PropertyChanged}"/></ContentControl></DataTemplate></DataGridTemplateColumn.CellEditingTemplate></DataGridTemplateColumn>
+      <DataGridTextColumn ElementStyle="{StaticResource ClinicalTableText}" Header="Đơn giá (đ)" Binding="{Binding DonGiaDuKien,StringFormat=N0}" IsReadOnly="True" Width="105"/>
+      <DataGridTemplateColumn Header="Nội dung thực hiện" SortMemberPath="NoiDungBuoc" Width="2*" MinWidth="160"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding NoiDungBuoc}" Style="{StaticResource ClinicalTableText}"/></DataTemplate></DataGridTemplateColumn.CellTemplate><DataGridTemplateColumn.CellEditingTemplate><DataTemplate><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox Tag="DB:CHI_TIET_KE_HOACH.NoiDungBuoc" Text="{Binding NoiDungBuoc,UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap"/></ContentControl></DataTemplate></DataGridTemplateColumn.CellEditingTemplate></DataGridTemplateColumn>
      <!-- Ô nhập TextBox. Chuyển sự kiện đến PlanRowNote_Changed trong code-behind. -->
-     </DataGrid.Columns><DataGrid.RowDetailsTemplate><DataTemplate><Border Width="{Binding ActualWidth,RelativeSource={RelativeSource AncestorType=DataGrid}}" Padding="12,6,12,12"><StackPanel><TextBlock Text="Nội dung thực hiện" FontSize="12" Foreground="#64748B"/><TextBox Text="{Binding NoiDungBuoc,UpdateSourceTrigger=PropertyChanged}" IsReadOnly="{Binding IsReadOnly,RelativeSource={RelativeSource AncestorType=DataGrid}}" TextChanged="PlanRowNote_Changed" MinHeight="45" TextWrapping="Wrap" AcceptsReturn="True"/></StackPanel></Border></DataTemplate></DataGrid.RowDetailsTemplate></DataGrid>
+     </DataGrid.Columns><DataGrid.RowDetailsTemplate><DataTemplate><Border Width="{Binding ActualWidth,RelativeSource={RelativeSource AncestorType=DataGrid}}" Padding="12,6,12,12"><StackPanel><TextBlock Text="Nội dung thực hiện" FontSize="12" Foreground="#64748B"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox Tag="DB:CHI_TIET_KE_HOACH.NoiDungBuoc" Text="{Binding NoiDungBuoc,UpdateSourceTrigger=PropertyChanged}" IsReadOnly="{Binding IsReadOnly,RelativeSource={RelativeSource AncestorType=DataGrid}}" TextChanged="PlanRowNote_Changed" MinHeight="45" TextWrapping="Wrap" AcceptsReturn="True"/></ContentControl></StackPanel></Border></DataTemplate></DataGrid.RowDetailsTemplate></DataGrid></ContentControl>
      <!-- Thông tin hiển thị PlanTotal. -->
      <Border Background="#EFF6FF" CornerRadius="8" Padding="12" Margin="0,12"><TextBlock x:Name="PlanTotal" TextWrapping="Wrap" FontWeight="SemiBold" Foreground="#1D4ED8"/></Border>
      <TextBlock Text="Giá lấy từ danh mục dịch vụ. Kế hoạch dự kiến chưa phát sinh khoản thu." FontSize="12" Foreground="#64748B" TextWrapping="Wrap" Margin="0,0,0,12"/>
@@ -161,14 +167,14 @@
     <DataGrid x:Name="ExecutionPlanGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" MinHeight="100" MaxHeight="300"><DataGrid.Columns><DataGridTextColumn ElementStyle="{StaticResource ClinicalTableText}" Header="Dịch vụ theo kế hoạch" Binding="{Binding DichVu}" Width="*" MinWidth="180"/><DataGridTextColumn ElementStyle="{StaticResource ClinicalTableText}" Header="Buổi" Binding="{Binding LanThu}" Width="60"/><DataGridTextColumn ElementStyle="{StaticResource ClinicalTableText}" Header="SL" Binding="{Binding SoLuongDuKien}" Width="60"/><DataGridTextColumn ElementStyle="{StaticResource ClinicalTableText}" Header="Đơn giá" Binding="{Binding DonGiaDuKien,StringFormat=N0}" Width="110"/><DataGridTextColumn ElementStyle="{StaticResource ClinicalTableText}" Header="Trạng thái" Binding="{Binding TrangThai}" Width="160"/></DataGrid.Columns></DataGrid>
     <TextBlock Text="Nếu không có kế hoạch thủ thuật, bước này xác nhận dịch vụ khám trên phiếu tiếp nhận." TextWrapping="Wrap" Foreground="#64748B" Margin="0,12"/>
     <!-- Thành phần ExecutionAcknowledged — Tôi xác nhận đã thực hiện xong các dịch vụ trên. -->
-    <CheckBox x:Name="ExecutionAcknowledged" Margin="0,8"><TextBlock Text="Tôi xác nhận đã thực hiện xong các dịch vụ trên" TextWrapping="Wrap"/></CheckBox><Button x:Name="ExecutePlanButton" Content="Xác nhận thực hiện → Kê thuốc" Click="ExecutePlan_Click" HorizontalAlignment="Left" Style="{StaticResource ClinicalPrimary}" Margin="0,8"/>
+    <ContentControl Style="{StaticResource TruongNhapLieu}"><CheckBox x:Name="ExecutionAcknowledged" Checked="ExecutionAcknowledged_Changed" Margin="0,8"><TextBlock Text="Tôi xác nhận đã thực hiện xong các dịch vụ trên" TextWrapping="Wrap"/></CheckBox></ContentControl><Button x:Name="ExecutePlanButton" Content="Xác nhận thực hiện → Kê thuốc" Click="ExecutePlan_Click" HorizontalAlignment="Left" Style="{StaticResource ClinicalPrimary}" Margin="0,8"/>
     <!-- Thông tin hiển thị ExecutionStatusText. -->
     <TextBlock x:Name="ExecutionStatusText" TextWrapping="Wrap" Foreground="#15803D" Margin="0,10"/>
    </StackPanel></Border></ScrollViewer></TabItem>
    <!-- Thành phần PrescriptionTab — 5. Kê thuốc. -->
    <TabItem x:Name="PrescriptionTab" Header="Kê thuốc" Tag="5" ToolTip="Lập danh sách thuốc hoặc ghi nhận lý do không kê thuốc."><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
     <!-- Vùng bố cục PrescriptionDecision. -->
-    <Border Style="{StaticResource Card}" Margin="0,0,0,8"><StackPanel x:Name="PrescriptionDecision"><CheckBox x:Name="NoPrescription" Checked="Clinical_Changed" Unchecked="Clinical_Changed"><TextBlock Text="Không kê thuốc trong lần khám này" TextWrapping="Wrap"/></CheckBox><StackPanel Margin="0,8,0,0" Visibility="{Binding IsChecked,ElementName=NoPrescription,Converter={StaticResource BoolToVisibility}}"><TextBlock Text="Lý do không kê thuốc" Style="{StaticResource FieldLabel}"/><TextBox x:Name="NoPrescriptionReason" MaxLength="500" MinHeight="45" TextWrapping="Wrap" TextChanged="Clinical_Changed"/></StackPanel><TextBlock x:Name="PrescriptionStageText" TextWrapping="Wrap" Foreground="#64748B" Margin="0,8,0,0"/></StackPanel></Border>
+    <Border Style="{StaticResource Card}" Margin="0,0,0,8"><StackPanel x:Name="PrescriptionDecision"><CheckBox x:Name="NoPrescription" Checked="Clinical_Changed" Unchecked="Clinical_Changed"><TextBlock Text="Không kê thuốc trong lần khám này" TextWrapping="Wrap"/></CheckBox><StackPanel Margin="0,8,0,0" Visibility="{Binding IsChecked,ElementName=NoPrescription,Converter={StaticResource BoolToVisibility}}"><TextBlock Text="Lý do không kê thuốc" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="NoPrescriptionReason" Tag="DB:LICH_SU_KHAM_BENH.LyDoKhongKeThuoc" MinHeight="45" TextWrapping="Wrap" TextChanged="Clinical_Changed"/></ContentControl></StackPanel><TextBlock x:Name="PrescriptionStageText" TextWrapping="Wrap" Foreground="#64748B" Margin="0,8,0,0"/></StackPanel></Border>
     <Grid Grid.Row="1"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
      <!-- Nút thao tác PrescribeButton — Kê thuốc. Chuyển sự kiện đến Prescribe_Click trong code-behind. -->
      <Border Style="{StaticResource Card}" Margin="0,0,0,8"><StackPanel><WrapPanel><Button x:Name="PrescribeButton" Content="Kê thuốc" Click="Prescribe_Click" Style="{StaticResource ClinicalPrimary}"/><Button x:Name="ReviewPrescriptionButton" Content="Sang tổng kết →" Click="ReviewPrescription_Click"/></WrapPanel><TextBlock x:Name="PrescriptionPreviewHint" TextWrapping="Wrap" Foreground="#64748B" Margin="0,8,0,0"/></StackPanel></Border>
@@ -193,6 +199,7 @@
     <TextBlock Text="Hoàn tất khóa lần khám và lập hóa đơn đúng các khoản trên. Thu tiền và giao thuốc thực hiện tại quầy." TextWrapping="Wrap" Foreground="#64748B" FontSize="12" Margin="0,14,0,0"/>
    </StackPanel></Border></ScrollViewer></TabItem>
 
+   <!-- XrayHost_Loaded tạo điều khiển ảnh khi mở vùng này và giới hạn chỉ xem nếu lần khám không được sửa. -->
    <TabItem Header="Ảnh X-quang" Tag="X" ToolTip="Xem và quản lý ảnh X-quang của lần khám."><ContentControl x:Name="XrayHost" Loaded="XrayHost_Loaded"/></TabItem>
   </TabControl>
   <!-- Keep save/complete actions outside the scrolling step content. -->

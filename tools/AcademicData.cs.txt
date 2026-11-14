@@ -1,0 +1,394 @@
+using System.Data;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using BUS;
+using DAL;
+using Dapper;
+using ET;
+using Microsoft.Data.SqlClient;
+
+/// <summary>Chuẩn hóa và bổ sung dữ liệu đồ án, đồng thời kiểm các liên kết nghiệp vụ và xuất bằng chứng.</summary>
+/// <remarks>Dùng giao dịch Serializable chung cho SQL, BUS và DAL; phần trình bày nằm trong DataConventions.cs.txt.</remarks>
+internal static partial class AcademicData
+{
+    internal const string Marker="RHM.AcademicData.Version";
+    static SqlConnection db=null!;
+    static SqlTransaction tx=null!;
+    static string root="",output="";
+    static void Require(bool condition,string message){if(!condition)throw new InvalidOperationException(message);}
+    static T Scalar<T>(string sql,object? args=null)=>db.ExecuteScalar<T>(sql,args,tx,commandTimeout:120)!;
+    static int Execute(string sql,object? args=null)=>db.Execute(sql,args,tx,commandTimeout:120);
+    static void Json(string name,object data)=>File.WriteAllText(Path.Combine(output,name),JsonSerializer.Serialize(data,new JsonSerializerOptions{WriteIndented=true}),new UTF8Encoding(false));
+    static NguCanhNghiepVu Login(string employee="NV001",string account="TK001")
+    {
+        Thread.CurrentPrincipal=new ClaimsPrincipal(new ClaimsIdentity([
+            new(ClaimTypes.NameIdentifier,account),new(DinhDanhNghiepVu.MaNhanVienClaim,employee)],DinhDanhNghiepVu.KieuXacThuc));
+        Execute("EXEC sys.sp_set_session_context @key=N'RHM.MaTK',@value=@account",new{account});
+        return new BUS_QUYENNGHIEPVU(tx).LayNguCanh(employee);
+    }
+    static SortedDictionary<string,long> Counts()=>new(db.Query("""
+        SELECT t.name Bang,SUM(p.rows) SoDong FROM sys.tables t JOIN sys.partitions p ON p.object_id=t.object_id AND p.index_id IN(0,1)
+        WHERE t.is_ms_shipped=0 GROUP BY t.name ORDER BY t.name
+        """,transaction:tx).ToDictionary(r=>(string)r.Bang,r=>(long)r.SoDong),StringComparer.Ordinal);
+    /// <summary>Đối soát dữ liệu, mốc thời gian, lịch làm việc và khả năng đọc/thu tiền/bàn giao qua API.</summary>
+    /// <remarks>Ghi findings/audit/counts trước khi phát lỗi; các thao tác thử ghi của CheckApis được rollback về savepoint.</remarks>
+    static void Check()
+    {
+        var findings=new SortedDictionary<string,long>();
+        void Test(string name,string sql){var count=Scalar<long>(sql);if(count!=0)findings[name]=count;}
+        Test("LegacyInvoices","SELECT COUNT_BIG(*) FROM dbo.HOA_DON WHERE MaHD IN(N'HD001',N'HD002',N'HD003',N'HD004',N'HD005',N'HD006',N'HD007',N'HD008',N'HD009',N'HD010') AND PhienBanQuyTrinh<>2");
+        Test("MissingSignedSnapshot","SELECT COUNT_BIG(*) FROM dbo.CHI_TIET_DON_THUOC c JOIN dbo.DON_THUOC d ON d.MaDT=c.MaDT WHERE d.TrangThai=N'Đã xác nhận' AND(NULLIF(c.TenThuocChot,N'') IS NULL OR NULLIF(c.HamLuongChot,N'') IS NULL OR NULLIF(c.DonViTinhChot,N'') IS NULL)");
+        Test("WrongRoute","SELECT COUNT_BIG(*) FROM dbo.CHI_TIET_DON_THUOC c JOIN dbo.DON_THUOC d ON d.MaDT=c.MaDT WHERE d.TrangThai=N'Đã xác nhận' AND c.DuongDung LIKE N'%mg%'");
+        Test("OldReceiptStatus","SELECT COUNT_BIG(*) FROM dbo.PHIEU_KHAM_BENH WHERE TrangThai=N'Đã khám'");
+        Test("MissingActivePrescription","SELECT COUNT_BIG(*) FROM dbo.LICH_SU_KHAM_BENH l WHERE l.TrangThai=N'Đã xác nhận' AND l.KhongKeThuoc=0 AND NOT EXISTS(SELECT 1 FROM dbo.DON_THUOC d WHERE d.MaLS=l.MaLS AND d.TrangThai=N'Đã xác nhận')");
+        Test("PaidRxMissingHandover","SELECT COUNT_BIG(*) FROM dbo.DON_THUOC d JOIN dbo.HOA_DON h ON h.MaLS=d.MaLS WHERE d.TrangThai=N'Đã xác nhận' AND h.PhienBanQuyTrinh=2 AND h.TrangThai=N'Đã xác nhận' AND NOT EXISTS(SELECT 1 FROM dbo.BAN_GIAO_THUOC b WHERE b.MaDT=d.MaDT AND b.MaHD=h.MaHD)");
+        Test("WrongSupplyWarehouse","""
+            SELECT COUNT_BIG(*) FROM dbo.CHI_TIET_PHIEU_NHAP c JOIN dbo.PHIEU_NHAP p ON p.MaPN=c.MaPN JOIN dbo.HANG_HOA h ON h.MaHH=c.MaHH
+            WHERE (p.MaPN LIKE N'DL26[_]%' OR(p.MaPN LIKE N'PN%' AND TRY_CONVERT(int,SUBSTRING(p.MaPN,3,50)) BETWEEN 11 AND 120)) AND h.MaLoaiHH IN(N'LHH004',N'LHH005',N'LHH006',N'LHH007')
+              AND p.MaKho<>CASE h.MaLoaiHH WHEN N'LHH004' THEN N'KHO004' WHEN N'LHH005' THEN N'KHO005' WHEN N'LHH006' THEN N'KHO006' ELSE N'KHO007' END
+            """);
+        Test("AssetSupplierTrace","""
+            SELECT COUNT_BIG(*) FROM dbo.THIET_BI t WHERE NOT EXISTS(
+             SELECT 1 FROM dbo.CHI_TIET_PHIEU_NHAP c JOIN dbo.PHIEU_NHAP p ON p.MaPN=c.MaPN JOIN dbo.HOA_DON_NHAP h ON h.MaHDN=p.MaHDN
+             WHERE c.MaHH=t.MaHH AND h.MaNCC=t.MaNCC AND p.TrangThai=N'Đã ghi sổ')
+            """);
+        string[] historicalTimes=["NgayLap","NgayTao","NgayGui","NgayDuyet","NgayDoiSoat","NgayThucHien","NgayXacNhan","NgayCapNhat","ThoiGianKham","ThoiGianTiepNhan","NgayKe","NgayNhap","NgayXuat","NgayHoaDon","NgayThanhToan","ThoiGianGiao","NgayMua","NgayChot","NgayThanhLy","ThoiGianUtc","ThoiGian","NgayCap","DangNhapUtc","DangXuatUtc","HoatDongCuoiUtc"];
+        foreach(var column in db.Query<(string Table,string Column)>("SELECT t.name,c.name FROM sys.tables t JOIN sys.columns c ON c.object_id=t.object_id JOIN sys.types ty ON ty.user_type_id=c.user_type_id WHERE t.is_ms_shipped=0 AND ty.name IN(N'date',N'datetime',N'datetime2',N'datetimeoffset') AND c.name IN @historicalTimes",new{historicalTimes},tx).ToArray())
+            Test("FutureTime:"+column.Table+"."+column.Column,$"SELECT COUNT_BIG(*) FROM dbo.[{column.Table.Replace("]","]]")}] WHERE [{column.Column.Replace("]","]]")}]>DATEADD(second,2,{(column.Column.EndsWith("Utc",StringComparison.OrdinalIgnoreCase)?"SYSUTCDATETIME()":"SYSDATETIME()")})");
+        Test("OverlappingSchedules","""
+            SELECT COUNT_BIG(*) FROM dbo.LICH_LAM_VIEC a JOIN dbo.CA_LAM ca ON ca.MaCa=a.MaCa
+            JOIN dbo.LICH_LAM_VIEC b ON a.MaLLV<b.MaLLV AND (a.MaNV=b.MaNV OR(a.MaPhong IS NOT NULL AND a.MaPhong=b.MaPhong))
+            JOIN dbo.CA_LAM cb ON cb.MaCa=b.MaCa
+            CROSS APPLY(SELECT DATEADD(second,DATEDIFF(second,CONVERT(time,'00:00'),ca.GioBatDau),CONVERT(datetime2,a.NgayLam)) AS [S],
+              DATEADD(day,CASE WHEN ca.GioKetThuc<=ca.GioBatDau THEN 1 ELSE 0 END,DATEADD(second,DATEDIFF(second,CONVERT(time,'00:00'),ca.GioKetThuc),CONVERT(datetime2,a.NgayLam))) AS [E]) aa
+            CROSS APPLY(SELECT DATEADD(second,DATEDIFF(second,CONVERT(time,'00:00'),cb.GioBatDau),CONVERT(datetime2,b.NgayLam)) AS [S],
+              DATEADD(day,CASE WHEN cb.GioKetThuc<=cb.GioBatDau THEN 1 ELSE 0 END,DATEADD(second,DATEDIFF(second,CONVERT(time,'00:00'),cb.GioKetThuc),CONVERT(datetime2,b.NgayLam))) AS [E]) bb
+            WHERE a.TrangThai<>N'Hủy' AND b.TrangThai<>N'Hủy' AND aa.S<bb.E AND bb.S<aa.E
+            """);
+        var audit=new BUS_DOISOATDULIEU(tx).KiemTra(500);
+        Json("audit.json",audit);Json("findings.json",findings);Json("counts.json",Counts());
+        foreach(var finding in findings)Console.WriteLine($"FINDING {finding.Key}: {finding.Value}");
+        Require(audit.TongSaiXacDinh==0&&audit.TongCanDoiChieu==0,$"Doi soat: {audit.TongSaiXacDinh} definite, {audit.TongCanDoiChieu} require review");
+        Require(findings.Count==0,"Du lieu cu chua duoc chuan hoa");
+        bool presented=Scalar<int>("SELECT COUNT(*) FROM sys.extended_properties WHERE class=0 AND name=N'RHM.DataPresentation.Version'")>0;
+        Require(Scalar<int>(presented?"SELECT COUNT(*) FROM dbo.BENH_NHAN":"SELECT COUNT(*) FROM dbo.BENH_NHAN WHERE MaBN LIKE N'DL26[_]BN[_]%'")>=30,"Chua co it nhat 30 benh nhan lien thong");
+        if(presented)CheckPresentation();
+        CheckApis(!presented);
+        Console.WriteLine("PASS: academic data, 64 tables, business consistency and linked scenarios");
+    }
+    /// <summary>Kiểm bản in, dữ liệu bàn giao, bảng tính phí và tính lặp an toàn của thanh toán/giao thuốc.</summary>
+    /// <param name="verifySeedClocks">Có kiểm thêm mốc giờ tiếp nhận của các kịch bản nguồn trước khi đổi quy ước trình bày hay không.</param>
+    /// <remarks>Thử thanh toán và giao thuốc trong savepoint rồi rollback; dùng ngữ cảnh từng vai trò trong giao dịch hiện tại.</remarks>
+    static void CheckApis(bool verifySeedClocks=true)
+    {
+        var admin=Login();int printed=0,handovers=0,payable=0;
+        var today=Scalar<DateTime>("SELECT CONVERT(date,SYSDATETIME())");var sunday=today.AddDays((7-(int)today.DayOfWeek)%7);
+        foreach(var doctor in verifySeedClocks?Doctors:[])foreach(var clock in new[]{today.AddHours(9),sunday.AddHours(12)})
+        {var morning=ScenarioMorning(doctor.Id,doctor.Room,clock);Require(morning.DayOfWeek!=DayOfWeek.Sunday&&morning.AddHours(12)<=clock,"Receipt clock/roster is invalid before opening or on Sunday");}
+        foreach(var order in db.Query<string>("SELECT MaDT FROM dbo.DON_THUOC WHERE TrangThai=N'Đã xác nhận' ORDER BY MaDT",transaction:tx).ToArray())
+        {var print=new BUS_DONTHUOC(tx).LayBanInDon(order,admin);Require(print.Nguon.Don.MaDT==order,"Wrong printed prescription");printed++;}
+        foreach(var order in db.Query<string>("SELECT MaDT FROM dbo.BAN_GIAO_THUOC ORDER BY MaDT",transaction:tx).ToArray())
+        {new DAL_BANGIAOTHUOC(tx).LayChiTiet(order,admin);handovers++;}
+        var cashier=Login("NV008","TK008");
+        var pending=db.Query<string>("SELECT MaLS FROM dbo.HOA_DON WHERE TrangThai=N'Nháp' AND TaoKhiHoanTat=1 ORDER BY MaHD",transaction:tx).ToArray();
+        foreach(var visit in pending)
+        {var fee=new DAL_THANHTOANTRONGOI(tx).LapBangTinh(visit,"KHO001",cashier);Require(fee.DuocThanhToan,visit+": "+fee.ThongBao);payable++;}
+        var prescription=Scalar<string?>("SELECT TOP(1) MaDT FROM dbo.BAN_GIAO_THUOC WHERE TrangThai=N'Chờ giao' ORDER BY MaDT");
+        if(prescription is not null)
+        {
+            var pharmacy=Login("NV006","TK006");var before=Scalar<int>("SELECT COUNT(*) FROM dbo.PHIEU_XUAT");Execute("SAVE TRANSACTION AcademicGiveProbe");
+            var first=new DAL_BANGIAOTHUOC(tx).XacNhanGiao(prescription,pharmacy);var again=new DAL_BANGIAOTHUOC(tx).XacNhanGiao(prescription,pharmacy);
+            Require(again.DaTonTai&&first.ThoiGianGiao==again.ThoiGianGiao,"Handover retry changed result");
+            Require(Scalar<int>("SELECT COUNT(*) FROM dbo.PHIEU_XUAT")==before,"Handover exported stock again");Execute("ROLLBACK TRANSACTION AcademicGiveProbe");
+        }
+        if(pending.Length>0)
+        {
+            cashier=Login("NV008","TK008");var payment=new DAL_THANHTOANTRONGOI(tx);var fee=payment.LapBangTinh(pending[0],"KHO001",cashier);
+            Execute("SAVE TRANSACTION AcademicPayProbe");
+            var request=new YeuCauThanhToan{MaLS=pending[0],MaKhoCapThuoc=fee.MaKhoCapThuoc,MaYeuCau=Guid.NewGuid(),DauVanTayBangTinh=fee.DauVanTay!,PhuongThuc="Tiền mặt",SoTienKhachDua=decimal.Ceiling(fee.TongTien/50000)*50000};
+            var first=payment.ThanhToan(request,cashier);var again=payment.ThanhToan(request,cashier);Require(first.MaHD==again.MaHD&&first.MaTT==again.MaTT,"Payment retry duplicated invoice/payment");
+            Execute("ROLLBACK TRANSACTION AcademicPayProbe");
+        }
+        Login();Json("api-checks.json",new{PrintedPrescriptions=printed,ValidHandovers=handovers,PayableInvoices=payable,PaymentAndHandoverRetryRolledBack=true});
+        Console.WriteLine($"PASS API: {printed} prescriptions printable, {handovers} handovers valid, {payable} invoices payable; retry probes rolled back");
+    }
+    static void RunSql(string name)=>Execute(File.ReadAllText(Path.Combine(root,"tools",name)));
+    /// <summary>Bổ sung danh mục, sửa bộ mẫu cũ và tạo tài khoản, kho, thiết bị, lịch cùng chuỗi lần khám.</summary>
+    /// <remarks>Chỉ chạy khi chưa có marker; lưu dữ liệu trước/sau và bật lại trigger sau bước sửa mẫu cũ. Main quyết định commit.</remarks>
+    static void Apply()
+    {
+        if(Scalar<int>("SELECT COUNT(*) FROM sys.extended_properties WHERE class=0 AND name=@Marker",new{Marker})!=0)
+        {Console.WriteLine("Already normalized; keep current records and statuses.");return;}
+        Require(Scalar<int>("SELECT COUNT(*) FROM dbo.BENH_NHAN WHERE MaBN LIKE N'DL26[_]%' ")==0,"Reserved sample IDs already exist without version marker");
+        Require(Scalar<int>("SELECT COUNT(*) FROM sys.triggers WHERE parent_class=1 AND is_disabled=1")==0,"Disabled triggers before migration");
+        Json("counts-before.json",Counts());
+        var oldTables=new[]{"TINH_TRANG_BENH","LICH_SU_KHAM_BENH","DON_THUOC","CHI_TIET_DON_THUOC","HOA_DON","CHI_TIET_HOA_DON","THANH_TOAN","PHIEU_XUAT","CHI_TIET_PHIEU_XUAT","BAN_GIAO_THUOC","PHIEU_KHAM_BENH","KE_HOACH_DIEU_TRI","LICH_KHAM","CHAM_CONG","NHAT_KY_DUYET_CHAM_CONG","NHAT_KY_THAO_TAC","PHIEN_DANG_NHAP"};
+        var before=oldTables.ToDictionary(name=>name,name=>db.Query("SELECT * FROM dbo.["+name+"]",transaction:tx).Select(r=>(IDictionary<string,object>)r).ToArray());
+        Json("legacy-before.json",before);
+        RunSql("AcademicData.Catalog.sql");Console.WriteLine("Catalog created");
+        // One controlled data migration, entirely transactional; no product guard is changed.
+        string[] repairTables=["TINH_TRANG_BENH","LICH_SU_KHAM_BENH","PHIEU_KHAM_BENH","KE_HOACH_DIEU_TRI","DON_THUOC","CHI_TIET_DON_THUOC","HOA_DON","CHI_TIET_HOA_DON","THANH_TOAN","BAN_GIAO_THUOC","CHAM_CONG","NHAT_KY_DUYET_CHAM_CONG","NHAT_KY_THAO_TAC","PHIEN_DANG_NHAP"];
+        var triggers=db.Query<(string Name,string TableName)>("SELECT t.name,OBJECT_NAME(t.parent_id) FROM sys.triggers t WHERE t.parent_class=1 AND t.is_disabled=0 AND OBJECT_NAME(t.parent_id) IN @tables",new{tables=repairTables},tx).ToArray();
+        foreach(var trigger in triggers)Execute($"DISABLE TRIGGER [dbo].[{trigger.Name}] ON [dbo].[{trigger.TableName}]");
+        Execute("EXEC sys.sp_set_session_context @key=N'RHM.AcademicRepair',@value=1");
+        RunSql("AcademicData.Legacy.sql");
+        Execute("EXEC sys.sp_set_session_context @key=N'RHM.AcademicRepair',@value=NULL");
+        foreach(var trigger in triggers)Execute($"ENABLE TRIGGER [dbo].[{trigger.Name}] ON [dbo].[{trigger.TableName}]");
+        Require(Scalar<int>("SELECT COUNT(*) FROM sys.triggers WHERE parent_class=1 AND is_disabled=1")==0,"Migration left disabled triggers");
+        Console.WriteLine("Legacy normalized; all product triggers restored");
+        CreateAccounts();CreateStock();Console.WriteLine("Stock sources posted");CreateAssets();Console.WriteLine("Assets prepared");CreateSchedules();Console.WriteLine("Schedules prepared");CreateVisits();Console.WriteLine("36 clinical scenarios prepared");
+        var after=oldTables.ToDictionary(name=>name,name=>db.Query("SELECT * FROM dbo.["+name+"]",transaction:tx).Select(r=>(IDictionary<string,object>)r).ToArray());
+        Json("lineage-after.json",after);
+        Execute("EXEC sys.sp_addextendedproperty @name=@Marker,@value=1",new{Marker});
+        var auditId=dbconnect.TaoMa(db,tx,"NHAT_KY_THAO_TAC","MaNK");
+        Execute("""
+            INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,DuLieuSau,KetQua)
+            VALUES(@auditId,N'TK001',SYSDATETIME(),N'Chuẩn hóa dữ liệu đồ án',N'DU_LIEU_DO_AN',N'DL26',@data,N'Thành công')
+            """,new{auditId,data=JsonSerializer.Serialize(new{Version=1,Description="User-authorized synthetic academic data; original records in verified backup and evidence",Counts=Counts()})});
+        Login();
+    }
+    static readonly (string Id,string Account,string Name,string CK,string Room,string Exam)[] Doctors=[
+        ("NV002","TK002","Trần Quốc Bảo","CK001","PH001","DV001"),
+        ("NV003","TK003","Lê Thu Hà","CK001","DL26_PH_CK001B","RHM_DV_EXAM"),
+        ("DL26_NV_CK002","DL26_TK_CK002","Nguyễn Anh Duy","CK002","DL26_PH_CK002","DL26_DV_KHAM_CK002"),
+        ("DL26_NV_CK003","DL26_TK_CK003","Phạm Minh Anh","CK003","DL26_PH_CK003","DL26_DV_KHAM_CK003"),
+        ("DL26_NV_CK004","DL26_TK_CK004","Võ Thanh Tùng","CK004","DL26_PH_CK004","DL26_DV_KHAM_CK004"),
+        ("DL26_NV_CK007","DL26_TK_CK007","Trần Bảo Châu","CK007","DL26_PH_CK007","DL26_DV_KHAM_CK007")];
+    static void CreateAccounts()
+    {
+        foreach(var doctor in Doctors.Where(d=>d.Id.StartsWith("DL26_")))
+        {
+            var salt=RandomNumberGenerator.GetBytes(16);
+            var hash="pbkdf2_sha256$210000$"+Convert.ToBase64String(salt)+"$"+Convert.ToBase64String(Rfc2898DeriveBytes.Pbkdf2("DoAnRHM@2026",salt,210000,HashAlgorithmName.SHA256,32));
+            var username=doctor.CK switch{"CK002"=>"doan_baoton","CK003"=>"doan_phauthuat","CK004"=>"doan_hinhanh",_=>"doan_phuchoi"};
+            Execute("INSERT dbo.TAI_KHOAN(MaTK,TenDangNhap,MatKhauHash,MaVaiTro,MaNV,TrangThai) VALUES(@account,@username,@hash,N'VTRO002',@employee,N'Đang hoạt động')",new{account=doctor.Account,employee=doctor.Id,username,hash});
+        }
+    }
+    static void Inbound(string tag,string item,string warehouse,decimal quantity,decimal price,DateTime when,DateTime? expiry,string supplier="DL26_NCC_DUOC")
+    {
+        string lot="DL26_LO_"+tag,invoice="DL26_HDN_"+tag,receipt="DL26_PN_"+tag,line="DL26_CTPN_"+tag;
+        Execute("""
+            INSERT dbo.LO_HANG_HOA(MaLo,MaHH,MaNCC,MaKho,SoLo,NgayNhap,HanSuDung,TrangThai)
+             VALUES(@lot,@item,@supplier,@warehouse,@lot,@when,@expiry,N'Còn sử dụng');
+            INSERT dbo.HOA_DON_NHAP(MaHDN,SoHoaDonNCC,MaNCC,MaNV,NgayHoaDon,TongTien,TrangThai,GhiChu)
+             VALUES(@invoice,@invoice,@supplier,N'NV007',@when,@total,N'Đã xác nhận',N'[ĐỒ ÁN] Hóa đơn nhập giả lập; đơn vị cơ sở thống nhất.');
+            INSERT dbo.PHIEU_NHAP(MaPN,MaHDN,MaKho,MaNV,NgayNhap,TongTien,TrangThai,LyDo,GhiChu)
+             VALUES(@receipt,@invoice,@warehouse,N'NV007',@when,0,N'Nháp',N'Nhập dữ liệu thực hành kho',N'[ĐỒ ÁN] Giá/lô/hạn dùng/số lượng mô phỏng.');
+            INSERT dbo.CHI_TIET_PHIEU_NHAP(MaCTPN,MaPN,MaHH,MaLo,SoLuong,DonGia)
+             VALUES(@line,@receipt,@item,@lot,@quantity,@price);
+            UPDATE dbo.PHIEU_NHAP SET TrangThai=N'Đã ghi sổ' WHERE MaPN=@receipt;
+            """,new{lot,item,supplier,warehouse,when,expiry,invoice,total=decimal.Round(quantity*price,2),receipt,line,quantity,price});
+    }
+    static void CreateStock()
+    {
+        var when=Scalar<DateTime>("SELECT DATEADD(day,-20,CONVERT(datetime2(0),CONVERT(date,SYSDATETIME())))").AddHours(7);
+        var drugs=db.Query<(string Id,string Item,string Unit,decimal Price)>("SELECT t.MaThuoc,t.MaHH,h.DonViTinh,t.DonGiaBan FROM dbo.THUOC t JOIN dbo.HANG_HOA h ON h.MaHH=t.MaHH ORDER BY t.MaThuoc",transaction:tx).ToArray();
+        foreach(var drug in drugs)
+        {
+            decimal quantity=drug.Unit is "Viên" or "Gói"?500:60;
+            Inbound("TH_"+drug.Id,drug.Item,"KHO001",quantity,Math.Max(100,decimal.Round(drug.Price*0.6m,0)),when,when.Date.AddYears(2));
+        }
+        var materials=db.Query<(string Id,string Item,string Unit,string Kind)>("SELECT v.MaVT,v.MaHH,h.DonViTinh,h.MaLoaiHH FROM dbo.VAT_TU v JOIN dbo.HANG_HOA h ON h.MaHH=v.MaHH ORDER BY v.MaVT",transaction:tx).ToArray();
+        int number=0;
+        foreach(var material in materials)
+        {
+            number++;var warehouse=material.Kind switch{"LHH004"=>"KHO004","LHH005"=>"KHO005","LHH006"=>"KHO006","LHH007"=>"KHO007",_=>"DL26_KHO_NHAKHOA"};
+            decimal unitPrice=material.Id switch{"DL26_VT_01"=>300,"DL26_VT_02"=>800,"DL26_VT_03"=>12000,"DL26_VT_04"=>1500,"DL26_VT_05"=>500,"DL26_VT_06"=>3500,"DL26_VT_07"=>28000,"DL26_VT_08"=>25000,"DL26_VT_09"=>1200,"DL26_VT_10"=>1800,"DL26_VT_11" or "DL26_VT_12"=>35000,"DL26_VT_13"=>3500000,"DL26_VT_14"=>350000,_=>1500};
+            Inbound("VT_"+material.Id,material.Item,warehouse,material.Unit is "Bộ" or "Tuýp"?30:500,unitPrice,when,when.Date.AddYears(2),"DL26_NCC_NHAKHOA");
+        }
+    }
+    static void CreateAssets()
+    {
+        var old=db.Query<(string Id,string Item,string? Room,DateTime? Bought,string? Supplier)>("SELECT MaTB,MaHH,MaPhong,NgayMua,MaNCC FROM dbo.THIET_BI ORDER BY MaTB",transaction:tx).ToArray();
+        foreach(var asset in old)
+        {
+            var time=(asset.Bought??new DateTime(2024,3,1)).Date.AddHours(7);
+            decimal price=asset.Item switch{"HH021"=>25000000,"HH022"=>1500000,"HH023"=>2500000,"HH024"=>15000000,"HH025"=>180000000,"HH026"=>220000000,"HH027"=>35000000,"HH028"=>12000000,"HH029"=>4500000,_=>6500000};
+            Inbound("TB_"+asset.Id,asset.Item,"KHO008",1,price,time,null,asset.Supplier??"DL26_NCC_NHAKHOA");
+            if(asset.Room is not null)AllocateAsset("TB_"+asset.Id,asset.Item,asset.Room,time.AddHours(1));
+        }
+        var now=Scalar<DateTime>("SELECT CONVERT(datetime2(0),SYSDATETIME())");
+        for(int n=1;n<=8;n++)
+        {
+            var id=$"DL26_TB_{n:00}";var item=$"DL26_HH_TB_{n:00}";var time=(n==5?now.Date.AddYears(-4):now.Date).AddMonths(-2).AddHours(7);
+            Inbound("TB_"+id,item,"KHO008",1,n==1?85000000:n==5?35000000:12000000,time,null,"DL26_NCC_NHAKHOA");
+            var room=n<=5?(n==2?"PH001":"DL26_PH_CK002"):null;
+            Execute("""
+                INSERT dbo.THIET_BI(MaTB,MaHH,SoSerial,NgayMua,MaNCC,MaPhong,TinhTrang,HanBaoHanh,TrangThai,GhiChu)
+                VALUES(@id,@item,@serial,@time,N'DL26_NCC_NHAKHOA',@room,N'Đang hoạt động',@warranty,@status,N'[ĐỒ ÁN] Tài sản và serial giả lập; có nguồn nhập riêng.');
+                """,new{id,item,serial=$"RHM-DEMO-2026-{n:05}",time,room,warranty=time.Date.AddYears(2),status=room is null?"Chờ bàn giao":"Đang sử dụng"});
+            if(room is not null)AllocateAsset("TB_"+id,item,room,time.AddHours(1));
+        }
+        // Two damaged assets expose maintenance/disposal entry points; one confirmed repair uses the real DAL.
+        Execute("UPDATE dbo.THIET_BI SET TinhTrang=N'Hư hại' WHERE MaTB IN(N'DL26_TB_06',N'DL26_TB_07')");
+        var repair=new ET_BAOTRITHIETBI{MaTB="DL26_TB_06",MaNV="NV007",NgayBatDau=now.Date,NoiDung="[ĐỒ ÁN] Kiểm tra camera trong miệng mất tín hiệu",ChiPhi=350000,TrangThai="Chưa xác nhận",GhiChu="Phiếu bảo trì mô phỏng để thực hành tiến độ"};
+        var maintenance=new DAL_BAOTRITHIETBI(tx);maintenance.themBaoTriThietBi(repair);
+        maintenance.chuyenTrangThaiBaoTri(repair.MaBT,"Đang thực hiện",maintenance.layBaoTriThietBiTheoMa(repair.MaBT)!);
+        Execute("UPDATE dbo.THIET_BI SET TinhTrang=N'Hư hại' WHERE MaTB=N'DL26_TB_05'");
+        var equipment=new DAL_THIETBI(tx);
+        equipment.thanhLyThietBi("DL26_TB_05","NV007","[ĐỒ ÁN] Máy nội nha cũ đã hết bảo hành, hỏng bo mạch; giá thu hồi mô phỏng.",2000000,equipment.layThietBiTheoMa("DL26_TB_05")!);
+    }
+    static void AllocateAsset(string tag,string item,string room,DateTime time)
+    {
+        var export="DL26_PX_"+tag;var lot="DL26_LO_"+tag;
+        Execute("""
+            INSERT dbo.PHIEU_XUAT(MaPX,MaKho,MaNV,MaPhong,NgayXuat,LyDo,TrangThai,GhiChu)
+             VALUES(@export,N'KHO008',N'NV007',@room,@time,N'Bàn giao thiết bị mô phỏng cho phòng',N'Nháp',N'[ĐỒ ÁN] Một tài sản theo serial tương ứng một đơn vị mặt hàng.');
+            INSERT dbo.CHI_TIET_PHIEU_XUAT(MaCTPX,MaPX,MaHH,MaLo,SoLuong,GhiChu)
+             VALUES(@line,@export,@item,@lot,1,N'[ĐỒ ÁN] Xuất phân bổ tài sản theo phòng.');
+            UPDATE dbo.PHIEU_XUAT SET TrangThai=N'Đã ghi sổ' WHERE MaPX=@export;
+            """,new{export,room,time,line="DL26_CTPX_"+tag,item,lot});
+    }
+    static void CreateSchedules()
+    {
+        var today=Scalar<DateTime>("SELECT CONVERT(date,SYSDATETIME())");
+        var employees=db.Query<string>("SELECT MaNV FROM dbo.NHAN_VIEN WHERE TrangThai=N'Đang làm việc' ORDER BY MaNV",transaction:tx).ToArray();
+        foreach(var date in Enumerable.Range(-14,45).Select(offset=>today.AddDays(offset)).Where(d=>d.DayOfWeek!=DayOfWeek.Sunday))
+        foreach(var shift in new[]{("DL26_CA_SANG",8,12),("DL26_CA_CHIEU",13,17)})
+        {
+            Execute("IF NOT EXISTS(SELECT 1 FROM dbo.CA_THEO_NGAY WHERE NgayLam=@date AND MaCa=@id) INSERT dbo.CA_THEO_NGAY(NgayLam,MaCa) VALUES(@date,@id)",new{date,id=shift.Item1});
+            foreach(var employee in employees)
+            {
+                var room=Doctors.FirstOrDefault(d=>d.Id==employee).Room;
+                if(Scalar<int>("""
+                    SELECT COUNT(*) FROM dbo.LICH_LAM_VIEC v JOIN dbo.CA_LAM c ON c.MaCa=v.MaCa
+                    CROSS APPLY(SELECT DATEADD(second,DATEDIFF(second,CONVERT(time,'00:00'),c.GioBatDau),CONVERT(datetime2,v.NgayLam)) AS StartAt,
+                     DATEADD(day,CASE WHEN c.GioKetThuc<=c.GioBatDau THEN 1 ELSE 0 END,DATEADD(second,DATEDIFF(second,CONVERT(time,'00:00'),c.GioKetThuc),CONVERT(datetime2,v.NgayLam))) AS EndAt) bounds
+                    WHERE (v.MaNV=@employee OR(@room IS NOT NULL AND v.MaPhong=@room)) AND v.TrangThai<>N'Hủy'
+                     AND bounds.StartAt<@newEnd AND @newStart<bounds.EndAt
+                    """,new{employee,room,newStart=date.AddHours(shift.Item2),newEnd=date.AddHours(shift.Item3)})>0)continue;
+                if(Scalar<int>("SELECT COUNT(*) FROM dbo.DON_XIN_NGHI WHERE MaNV=@employee AND TrangThaiDuyet=N'Đã duyệt' AND @date BETWEEN TuNgay AND DenNgay",new{employee,date})>0)continue;
+                var now=Scalar<DateTime>("SELECT SYSDATETIME()");var start=date.AddHours(shift.Item2);var end=date.AddHours(shift.Item3);bool started=start<=now,ended=end<=now;
+                Execute("""
+                    INSERT dbo.LICH_LAM_VIEC(MaLLV,MaNV,MaCa,NgayLam,MaPhong,TrangThai,TrangThaiHienDien,GioVao,GioRa,GhiChu)
+                    VALUES(@id,@employee,@shift,@date,@room,N'Đã xác nhận',@presence,@arrival,@departure,N'[ĐỒ ÁN] Lịch và hiện diện giả lập, mỗi ca 4 giờ/0,5 công.');
+                    """,new{id=$"DL26_LLV_{employee}_{date:MMdd}_{shift.Item2}",employee,shift=shift.Item1,date,room,presence=started?"Có mặt":"Chưa ghi nhận",arrival=started?(DateTime?)start:null,departure=ended?(DateTime?)end:null});
+            }
+        }
+        var next=today.AddDays(1);while(next.DayOfWeek==DayOfWeek.Sunday)next=next.AddDays(1);
+        for(int n=6;n<=10;n++)
+        {
+            Execute("UPDATE dbo.LICH_KHAM SET NgayGioKham=@time,MaCa=N'DL26_CA_CHIEU',MaPhong=N'PH001',GhiChu=N'[ĐỒ ÁN] Lịch nháp cũ chuyển sang thời điểm sắp tới để thực hành xác nhận.' WHERE MaLich=@id AND TrangThai=N'Nháp'",new{time=next.AddHours(14),id=$"LK{n:000}"});
+            next=next.AddDays(1);while(next.DayOfWeek==DayOfWeek.Sunday)next=next.AddDays(1);
+        }
+    }
+    static void CreateVisits()
+    {
+        string[] names=["Nguyễn Hoàng Nam","Trần Minh Thư","Lê Đức Huy","Phạm Khánh An","Võ Bảo Ngọc","Đặng Quốc Anh","Bùi Ngọc Hà","Hoàng Minh Khang","Đỗ Anh Thư","Nguyễn Gia Bảo","Trần Thanh Tâm","Lê Hồng Phúc","Phạm Nhật Minh","Võ Thùy Linh","Đặng Tuấn Kiệt","Bùi Hải Yến","Hoàng Thiên Ân","Đỗ Quang Huy","Nguyễn Ngọc Mai","Trần Đức Anh","Lê Minh Châu","Phạm Thành Đạt","Võ Kim Ngân","Đặng Trung Hiếu","Bùi Phương Thảo","Hoàng Anh Dũng","Đỗ Bảo Trâm","Nguyễn Thanh Sơn","Trần Hà My","Lê Quốc Khánh","Phạm Ngọc Hân","Võ Đức Phát","Đặng Minh Nguyệt","Bùi Công Thành","Hoàng Thảo Nhi","Đỗ Thanh Tùng"];
+        var today=Scalar<DateTime>("SELECT CONVERT(date,SYSDATETIME())");
+        for(int n=1;n<=36;n++)
+        {
+            int stage=(n-1)/6,index=(n-1)%6;var doctor=Doctors[index];if(stage==4&&doctor.CK=="CK004")doctor=Doctors[5];
+            string patient=$"DL26_BN_{n:00}",record=$"DL26_HS_{n:00}",receipt=$"DL26_PKB_{n:00}";
+            Execute("""
+                INSERT dbo.BENH_NHAN(MaBN,HoTenBN,GioiTinh,NgaySinh,SDT,DiaChi,TienSuBenh,DiUng,TrangThai)
+                 VALUES(@patient,@name,@gender,@birth,@phone,N'[ĐỒ ÁN] Hồ sơ người bệnh giả lập tại TP Hồ Chí Minh',N'Chưa ghi nhận trong tình huống mô phỏng',N'Chưa ghi nhận trong tình huống mô phỏng',N'Đang theo dõi');
+                INSERT dbo.HO_SO_BENH_AN(MaHS,MaBN,NgayLap,LyDoKhamBanDau,TrangThai,GhiChu)
+                 VALUES(@record,@patient,@opened,N'Thực hành khám răng hàm mặt theo tình huống',N'Đang theo dõi',N'[ĐỒ ÁN] Không phải hồ sơ người bệnh thật');
+                """,new{patient,record,name=names[n-1],gender=n%2==0?"Nữ":"Nam",birth=new DateTime(1980+n%22,1+n%12,1+n%25),phone=$"090099{n:0000}",opened=today.AddMonths(-1)});
+            if(stage==0)
+            {
+                var next=today.AddDays(1);while(next.DayOfWeek==DayOfWeek.Sunday)next=next.AddDays(1);
+                Execute("""
+                    INSERT dbo.LICH_KHAM(MaLich,MaBN,MaBS,MaCa,MaPhong,MaDV,NgayGioKham,ThoiLuongDuKien,UuTien,LyDoKham,TrangThai,GhiChu,NgayTao)
+                    VALUES(@id,@patient,@employee,N'DL26_CA_SANG',@room,@service,@time,30,N'Bình thường',N'Hẹn khám chuyên khoa răng hàm mặt',N'Đã xác nhận',N'[ĐỒ ÁN] Lịch hẹn giả lập có bác sĩ/phòng/ca tương ứng',SYSDATETIME());
+                    """,new{id=$"DL26_LK_{n:00}",patient,employee=doctor.Id,room=doctor.Room,service=doctor.Exam,time=next.AddHours(10)});
+                continue;
+            }
+            var referenceMorning=ScenarioMorning(doctor.Id,doctor.Room,Scalar<DateTime>("SELECT SYSDATETIME()"));
+            var received=referenceMorning.AddHours(8).AddMinutes(15+stage*20+index);
+            bool premium=n%2==0;
+            Execute("""
+                INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaBS,MaPhong,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai,LoaiKham,PhiPhuThuDichVu,GhiChu)
+                VALUES(@receipt,@record,@employee,@room,N'NV005',@service,@number,@received,N'Khám răng hàm mặt theo tình huống mô phỏng',N'Chờ khám',@kind,@fee,N'[ĐỒ ÁN] Hồ sơ giả lập liên thông, sử dụng BUS/DAL để thực hiện các bước tiếp theo.');
+                """,new{receipt,record,employee=doctor.Id,room=doctor.Room,service=doctor.Exam,number=n,received,kind=premium?"Dịch vụ":"Thông thường",fee=premium?30000:0});
+            if(stage==1)continue;
+            var actor=Login(doctor.Id,doctor.Account);var clinical=new BUS_KHAMDIEUTRI(tx);var visit=clinical.BatDauKham(receipt,actor);
+            string condition=doctor.CK switch{"CK002"=>"REF28_CARIES","CK003"=>"RHM_TT_FACIAL_WOUND","CK004"=>"DL26_TT_SOFT_TRAUMA","CK007"=>"RHM_TT_TMD",_=>index==0?"REF28_TARTAR":"REF28_GINGIVITIS"};
+            string conditionName=Scalar<string>("SELECT TenTinhTrang FROM dbo.DM_TINH_TRANG_BENH WHERE MaDMTT=@condition",new{condition});
+            bool noRx=stage!=4&&(doctor.CK=="CK004"||n%3==0);
+            var draft=clinical.LayBanNhap(visit,actor);
+            draft=clinical.LuuKham(new(){MaLS=visit,DauVanTay=draft.DauVanTay,TrieuChung="Tình huống mô phỏng: "+conditionName,ChanDoan=conditionName,
+                KeHoachXuLy="Đánh giá chuyên khoa, thực hiện dịch vụ đã duyệt và hẹn tái khám theo tình huống đồ án.",KhongKeThuoc=noRx,LyDoKhongKeThuoc=noRx?"Tình huống đồ án: chỉ khám/điều trị tại chỗ, không kê thuốc ngoại trú.":null,
+                GhiChu="[ĐỒ ÁN] Dữ liệu thực hành; không phải chỉ định điều trị cho người thật.",TinhTrang=[new(){MaDMTT=condition,LoaiTinhTrang=conditionName,MoTaTinhTrang="Tình trạng mô phỏng dùng để kiểm liên kết tình trạng, kế hoạch và báo cáo."}]},actor);
+            var conditionRow=draft.TinhTrang.Single().MaTTB;
+            string? treatment=doctor.CK switch{"CK002"=>"REF_DV_COMPOSITE","CK003"=>"RHM_DV_SUTURE_REMOVE","CK004"=>"RHM_DV_PANORAMA","CK007"=>"RHM_DV_REHAB",_=>"REF_DV_SCALING1"};
+            var price=Scalar<decimal>("SELECT DonGia FROM dbo.DICH_VU WHERE MaDV=@treatment",new{treatment});
+            var plan=clinical.LuuKeHoach(new(){MaLS=visit,MaTTBNguon=conditionRow,GhiChu="[ĐỒ ÁN] Kế hoạch thực hành theo tình huống",CacBuoc=[new(){MaDV=treatment,SoLuongDuKien=1,DonGiaDuKien=price,NoiDungBuoc="Thực hiện dịch vụ đã lựa chọn và ghi nhận kết quả trong hồ sơ mẫu."}]},actor);
+            if(stage==2&&doctor.CK!="CK004")continue;
+            clinical.XacNhanKeHoach(plan.KeHoach.MaKHDT,plan.DauVanTay,actor);
+            var summary=clinical.LayTongKetKham(visit,actor);clinical.XacNhanThucHien(visit,summary.DauVanTay,actor);
+            if(stage==2)
+            {
+                var imageService=Scalar<string>("SELECT TOP(1) MaDVThucHien FROM dbo.DICH_VU_THUC_HIEN WHERE MaLS=@visit AND MaDV=N'RHM_DV_PANORAMA' AND TrangThai=N'Đã xác nhận'",new{visit});
+                new BUS_ANHXQUANG(tx).PhanCong(visit,imageService,"NV004",actor);
+                continue;
+            }
+            if(!noRx)
+                new BUS_DONTHUOC(tx).LuuDon(new(){MaLS=visit,GhiChu="[ĐỒ ÁN] Đơn thuốc mô phỏng, không dùng điều trị",CacDong=[new(){MaThuoc="TH001",LieuDung="Chỉ định mô phỏng: 1 viên/lần, ngày 2 lần khi đau.",DuongDung="Uống",HuongDan="[ĐỒ ÁN] Mô phỏng đơn ở người lớn; không áp dụng cho người bệnh thật.",SoNgayDung=3,SoLuong=6}]},actor);
+            draft=clinical.LayBanNhap(visit,actor);summary=clinical.LayTongKetKham(visit,actor);
+            clinical.ChotKhamVaLapHoaDon(visit,draft.DauVanTay,summary.DauVanTay,actor);
+            if(stage==3)continue;
+            var cashier=Login("NV008","TK008");var payment=new DAL_THANHTOANTRONGOI(tx);var fee=payment.LapBangTinh(visit,"KHO001",cashier);
+            Require(fee.DuocThanhToan,"New sample cannot be paid: "+fee.ThongBao);
+            var paid=payment.ThanhToan(new(){MaLS=visit,MaKhoCapThuoc=noRx?null:"KHO001",MaYeuCau=Guid.NewGuid(),DauVanTayBangTinh=fee.DauVanTay!,PhuongThuc="Tiền mặt",SoTienKhachDua=decimal.Ceiling(fee.TongTien/50000)*50000},cashier);
+            if(stage==5&&!noRx)
+            {
+                var pharmacy=Login("NV006","TK006");foreach(var rx in paid.CacDon)new DAL_BANGIAOTHUOC(tx).XacNhanGiao(rx.MaDT,pharmacy);
+            }
+        }
+        Login();
+    }
+    static DateTime ScenarioMorning(string employee,string room,DateTime cutoff)
+    {
+        var date=Scalar<DateTime?>("""
+            SELECT MAX(v.NgayLam) FROM dbo.LICH_LAM_VIEC v
+            WHERE v.MaNV=@employee AND v.MaPhong=@room AND v.MaCa=N'DL26_CA_SANG' AND v.TrangThai=N'Đã xác nhận'
+              AND DATEADD(hour,12,CONVERT(datetime2,v.NgayLam))<=@cutoff
+            """,new{employee,room,cutoff});
+        Require(date.HasValue,"No elapsed working morning for synthetic receipt: "+employee);
+        return date!.Value;
+    }
+    /// <summary>Chọn chế độ kiểm/cập nhật, chuẩn bị bằng chứng và kết thúc giao dịch theo kết quả đối soát.</summary>
+    /// <param name="args">Chế độ --check/--apply/--present/--present-check, máy chủ, database, gốc dự án và thư mục bằng chứng mới.</param>
+    /// <returns>0 khi hoàn tất kiểm chứng hoặc cập nhật; 1 khi có lỗi.</returns>
+    /// <remarks>Chế độ kiểm rollback; --apply/--present commit khi đạt. Lần cập nhật đầu trên database chính có backup được xác minh.</remarks>
+    static int Main(string[] args)
+    {
+        try
+        {
+            Require(args.Length==5&&args[0] is "--check" or "--apply" or "--present" or "--present-check","mode server database root output");
+            Require(System.Text.RegularExpressions.Regex.IsMatch(args[2],"^(QLBenhVienRangHamMat|RHM_Hospital_Test_[A-Za-z0-9_]+)$"),"Unsupported database");
+            root=Path.GetFullPath(args[3]);output=Path.GetFullPath(args[4]);Require(!Directory.Exists(output),"Evidence output already exists");Directory.CreateDirectory(output);
+            var connection=new SqlConnectionStringBuilder{DataSource=args[1],InitialCatalog=args[2],IntegratedSecurity=true,TrustServerCertificate=true,ConnectTimeout=10}.ConnectionString;
+            Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",connection);
+            using var connectionOwner=db=new SqlConnection(connection);db.Open();
+            if(args[0] is "--apply" or "--present"&&args[2]=="QLBenhVienRangHamMat"&&db.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.extended_properties WHERE class=0 AND name=@Marker",new{Marker=args[0]=="--present"?PresentationMarker:Marker})==0)
+            {
+                var backup=db.QuerySingle<string>("""
+                    DECLARE @path nvarchar(4000)=CONVERT(nvarchar(300),SERVERPROPERTY('InstanceDefaultBackupPath'))+N'\QLBenhVienRangHamMat_before_academic_data_'+REPLACE(CONVERT(nvarchar(36),NEWID()),N'-',N'')+N'.bak';
+                    BACKUP DATABASE [QLBenhVienRangHamMat] TO DISK=@path WITH COPY_ONLY,CHECKSUM;
+                    RESTORE VERIFYONLY FROM DISK=@path WITH CHECKSUM;
+                    SELECT @path;
+                    """,commandTimeout:120);
+                Json("backup-before-apply.json",new{Path=backup,Verified=true,CopyOnly=true});Console.WriteLine("Verified backup created before applying to main database");
+            }
+            using var transactionOwner=tx=db.BeginTransaction(IsolationLevel.Serializable);
+            try
+            {
+                Require(Scalar<int>("DECLARE @r int;EXEC @r=sys.sp_getapplock @Resource=N'RHM:AcademicData:Write',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000;SELECT @r")>=0,"Academic data is being prepared by another session");
+                Require(Counts().Count==64,"Expected current 64-table schema");Login();
+                if(args[0]=="--apply")Apply();
+                if(args[0]=="--present")ApplyPresentation();
+                if(args[0]=="--present-check")CheckPresentation();
+                Check();
+                if(args[0] is "--apply" or "--present")tx.Commit();else tx.Rollback();
+                Console.WriteLine("EVIDENCE="+output);return 0;
+            }
+            catch{if(tx.Connection is not null)tx.Rollback();throw;}
+        }
+        catch(Exception ex){Console.WriteLine("FAIL: "+ex);return 1;}
+    }
+}

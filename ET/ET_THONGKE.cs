@@ -1,5 +1,8 @@
 namespace ET;
 
+/// <summary>
+/// Các cách chọn kỳ đối chiếu: không so sánh, tháng trước, cùng kỳ năm trước hoặc năm chỉ định.
+/// </summary>
 public enum CachSoSanh { Khong, ThangTruoc, CungKyNamTruoc, NamDuocChon }
 
 /// <summary>Kỳ nửa mở, dùng thống nhất cho tất cả truy vấn thống kê.</summary>
@@ -8,6 +11,9 @@ public sealed record KySoSanh(DateTime TuNgay, DateTime DenExclusive)
     public string Nhan => $"{TuNgay:dd/MM/yyyy} – {DenExclusive.AddDays(-1):dd/MM/yyyy}";
 }
 
+/// <summary>
+/// Lựa chọn khoảng tháng và bộ lọc thống kê; lũy kế cho phép lấy tháng hiện tại đến ngày chốt.
+/// </summary>
 public sealed record BoLocThongKe
 {
     public DateTime TuThang { get; init; }
@@ -19,8 +25,14 @@ public sealed record BoLocThongKe
     public string? MaDV { get; init; }
 }
 
+/// <summary>
+/// Ghép kỳ hiện tại với kỳ gốc tùy chọn, cờ lũy kế và ghi chú về giới hạn ngày đối chiếu.
+/// </summary>
 public sealed record CapKyThongKe(KySoSanh HienTai, KySoSanh? KyGoc, bool LaLuyKe, string GhiChu);
 
+/// <summary>
+/// Giá trị hai kỳ và mức biến động; null thể hiện thiếu dữ liệu, phần trăm không tính khi kỳ gốc bằng 0.
+/// </summary>
 public sealed record KetQuaSoSanh(decimal? HienTai, decimal? KyGoc, decimal? ChenhLech, decimal? PhanTram)
 {
     public string DienGiai => HienTai is null || KyGoc is null ? "Không đủ dữ liệu"
@@ -43,6 +55,10 @@ public sealed class DongThongKeBenh
     public string HienThiBienDong => BienDong?.DienGiai ?? "Không đủ dữ liệu";
 }
 
+/// <summary>
+/// Các chỉ số độ phủ mã tình trạng của lượt xác nhận và cảnh báo giới hạn khi diễn giải xếp hạng.
+/// </summary>
+/// <remarks>Lượt chưa gắn mã là dữ liệu chưa phân loại; một bệnh nhân có thể được tính trong nhiều tình trạng.</remarks>
 public sealed class ChatLuongMaBenh
 {
     public int TongLuot { get; set; }
@@ -61,15 +77,28 @@ public sealed class ChatLuongMaBenh
         : "Xếp hạng theo mã đã được ghi nhận; một bệnh nhân có thể được tính ở nhiều tình trạng. Đây không phải tỷ lệ mắc trong cộng đồng.";
 }
 
+/// <summary>
+/// Kết quả thống kê bệnh lý gồm chất lượng gắn mã và các nhóm bệnh đã áp dụng quy tắc làm mờ.
+/// </summary>
 public sealed record KetQuaBenhLy(ChatLuongMaBenh ChatLuong, DongThongKeBenh[] CacBenh);
+/// <summary>
+/// Mã và nhãn chuyên khoa hoặc dịch vụ dùng cho lựa chọn bộ lọc thống kê.
+/// </summary>
 public sealed record LuaChonThongKe(string Ma,string Ten);
 
+/// <summary>
+/// Các cờ quyền xem tổng hợp, xem chi tiết và xuất báo cáo, có thể kết hợp theo vai trò.
+/// </summary>
 [Flags]
 public enum QuyenBaoCao { Khong = 0, XemTongHop = 1, XemTaiChinhChiTiet = 2, XemLuong = 4, Xuat = 8, XemDuLieuLamSang = 16, XemKhoChiTiet = 32 }
 
 /// <summary>Chính sách chuyên đề; DAL luôn xác thực lại chức vụ và vai trò trong SQL.</summary>
 public static class ChinhSachBaoCao
 {
+    /// <summary>
+    /// Suy ra các cờ quyền báo cáo từ ngữ cảnh vai trò đã xác thực, gồm quyền chi tiết theo chức vụ.
+    /// </summary>
+    /// <remarks>DAL phải xác thực lại tài khoản, nhân viên và phiên trước khi dùng kết quả để cho phép đọc dữ liệu.</remarks>
     public static QuyenBaoCao TuVaiTro(NguCanhNghiepVu actor)
     {
         if (string.IsNullOrWhiteSpace(actor.MaTK) || string.IsNullOrWhiteSpace(actor.MaNV)) return QuyenBaoCao.Khong;
@@ -81,11 +110,17 @@ public static class ChinhSachBaoCao
         if (actor.MaChucVu is "CV005" or "CV006" or "CV010") rights |= QuyenBaoCao.XemKhoChiTiet;
         return rights;
     }
+    /// <summary>
+    /// Kiểm tra quyền mở chuyên đề; báo cáo lương và đơn nghỉ yêu cầu quyền lương riêng.
+    /// </summary>
     public static bool ChoPhep(string ma, QuyenBaoCao rights) => ma switch
     {
         "11" or "18" => rights.HasFlag(QuyenBaoCao.XemLuong),
         _ => rights.HasFlag(QuyenBaoCao.XemTongHop)
     };
+    /// <summary>
+    /// Yêu cầu quyền mở chuyên đề và quyền chi tiết tương ứng; chỉ cho phép các chuyên đề có nhánh chi tiết.
+    /// </summary>
     public static bool ChoPhepChiTiet(string ma,QuyenBaoCao rights) => ChoPhep(ma,rights) && (ma switch
     {
         "09" or "10" => rights.HasFlag(QuyenBaoCao.XemTaiChinhChiTiet),

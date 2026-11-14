@@ -164,7 +164,7 @@ public partial class KhamLamSang
  private void ApplyCatalog(DuLieuKhongGianKham data)
  {
   serviceCatalog=data.DichVu;relatedServices=data.DichVuTheoTinhTrang;referenceConditions=data.DinhHuong;
-  PlanServiceColumn.ItemsSource=serviceCatalog.Select(x=>new RangHamMat.Controls.LuaChonDanhMuc(x.MaDV,x.TenDV+(x.TrangThai=="Đang hoạt động"?"":" · ngừng hoạt động"))).ToArray();
+  PlanSteps.Resources["PlanServiceChoices"]=serviceCatalog.Select(x=>new RangHamMat.Controls.LuaChonDanhMuc(x.MaDV,x.TenDV+(x.TrangThai=="Đang hoạt động"?"":" · ngừng hoạt động"))).ToArray();
  }
  /// <summary>
  /// Xử lý thao tác làm mới kế hoạch các mức giá khi người dùng bấm nút tương ứng trên màn hình.

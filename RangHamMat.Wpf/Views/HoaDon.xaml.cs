@@ -41,7 +41,19 @@ public partial class HoaDon : UserControl, IPatientScoped
     /// <summary>
     /// Khởi tạo hóa đơn, thu/hoàn tiền và cấp thuốc từ XAML. Theo dõi cache khi Loaded và làm mới nội dung khi dữ liệu thay đổi; gỡ theo dõi khi Unloaded.
     /// </summary>
-    public HoaDon() { InitializeComponent(); HoTroGiaoDien.Observe(this, Refresh); }
+    public HoaDon()
+    {
+        InitializeComponent();
+        KiemTraNhapLieu.SetFieldValidator(AmountBox,()=>
+        {
+            if(InvoiceList.SelectedItem is not DataRowView row)return;
+            try{ReadTransaction(AmountBox.Text,HoTroGiaoDien.Choice(PaymentType),HoTroGiaoDien.Choice(MethodBox),ReasonBox.Text,Convert.ToDecimal(row["ConPhaiThu"]),Convert.ToDecimal(row["DaThu"]));}
+            catch(LoiNhapLieu ex)when(ex.Field!="SoTien"){ }
+        });
+        KiemTraNhapLieu.SetFieldValidator(ReasonBox,()=>{if(HoTroGiaoDien.Choice(PaymentType)=="Hoàn"&&string.IsNullOrWhiteSpace(ReasonBox.Text))throw new LoiNhapLieu("LyDo","Nhập lý do hoàn tiền để đối chiếu giao dịch.");});
+        PaymentType.SelectionChanged+=(_,_)=>{foreach(var field in new FrameworkElement[]{AmountBox,ReasonBox})if(KiemTraNhapLieu.GetHasError(field))KiemTraNhapLieu.RecheckField(field);};
+        HoTroGiaoDien.Observe(this, Refresh);
+    }
     /// <summary>
     /// Áp dụng mã bệnh nhân nguồn và làm mới dữ liệu trong phạm vi hồ sơ này.
     /// </summary>
@@ -181,7 +193,7 @@ public partial class HoaDon : UserControl, IPatientScoped
     /// <summary>
     /// Lấy mã nhân viên đang chọn; nếu chưa chọn thì phát lỗi yêu cầu chọn nhân viên trước thao tác thu/hoàn/cấp thuốc.
     /// </summary>
-    private string EmployeeId() => HasEmployee() ? HoTroGiaoDien.Selected(EmployeeFilter) : throw new InvalidOperationException("Chọn nhân viên thực hiện.");
+    private string EmployeeId() => HasEmployee() ? HoTroGiaoDien.Selected(EmployeeFilter) : throw new LoiNhapLieu("MaNV","Chọn nhân viên thực hiện còn làm việc.");
     /// <summary>
     /// Chạy thao tác BUS, báo lỗi nếu không thực hiện được; sau thành công mới tải lại SQL và hiển thị kết quả, lỗi làm mới được thông báo riêng để tránh thao tác lặp.
     /// </summary>
@@ -260,17 +272,42 @@ public partial class HoaDon : UserControl, IPatientScoped
     /// <summary>
     /// Phân tích số tiền đã nhập, đọc loại Thu/Hoàn, phương thức và lý do rồi gọi BUS.RecordPayment; sau lưu thành công xóa ô nhập và làm mới số dư/lịch sử.
     /// </summary>
-    private void Payment_Click(object sender, RoutedEventArgs e) => Execute(() =>
+    private void Payment_Click(object sender, RoutedEventArgs e)
     {
-        if (!decimal.TryParse(AmountBox.Text.Trim().Replace(',', '.'), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var amount)) throw new LoiNhapLieu("SoTien","Số tiền phải là số hợp lệ, ví dụ 150000 hoặc 150000,50; không dùng phân cách hàng nghìn.");
+        if(!KiemTraNhapLieu.PrepareSave(PaymentForm,out _))return;
+        Execute(() =>
+        {
+        var employee=EmployeeId();
+        if(InvoiceList.SelectedItem is not DataRowView row)throw new LoiNhapLieu("SoTien","Chọn hóa đơn đã xác nhận trước khi ghi nhận thu hoặc hoàn tiền.");
         var kind=HoTroGiaoDien.Choice(PaymentType);
-        KiemTraNhapLieu.ValidateValues("THANH_TOAN",new Dictionary<string,object?> {["SoTien"]=amount,["LoaiGiaoDich"]=kind,["PhuongThuc"]=HoTroGiaoDien.Choice(MethodBox),["LyDo"]=ReasonBox.Text});
-        if(amount<=0)throw new LoiNhapLieu("SoTien","Số tiền thu/hoàn phải lớn hơn 0.");
-        if(kind=="Hoàn"&&string.IsNullOrWhiteSpace(ReasonBox.Text))throw new LoiNhapLieu("LyDo","Vui lòng nhập lý do hoàn tiền.");
-        // Giao diện chỉ phân tích đầu vào; BUS kiểm tra hóa đơn, số dư, giới hạn thu/hoàn và lý do hoàn trong giao dịch SQL.
-        finance.RecordPayment(invoiceId ?? "", EmployeeId(), amount, kind, HoTroGiaoDien.Choice(MethodBox), ReasonBox.Text); AmountBox.Clear(); ReasonBox.Clear();
+        var amount=ReadTransaction(AmountBox.Text,kind,HoTroGiaoDien.Choice(MethodBox),ReasonBox.Text,Convert.ToDecimal(row["ConPhaiThu"]),Convert.ToDecimal(row["DaThu"]));
+        // Số dư tại giao diện giúp sửa ngay; BUS vẫn đối chiếu lại trong giao dịch SQL.
+        finance.RecordPayment(invoiceId ?? "", employee, amount, kind, HoTroGiaoDien.Choice(MethodBox), ReasonBox.Text); AmountBox.Clear(); ReasonBox.Clear();
         KiemTraNhapLieu.SetError(AmountBox,""); KiemTraNhapLieu.SetError(ReasonBox,"");
-    }, "Đã ghi nhận giao dịch và cập nhật số còn phải trả.");
+        }, "Đã ghi nhận giao dịch và cập nhật số còn phải trả.");
+    }
+
+    /// <summary>Đọc nguyên văn tiền theo schema trước khi chuyển kiểu, sau đó đối chiếu số dư đang hiển thị.</summary>
+    private static decimal ReadTransaction(string text,string kind,string method,string reason,decimal outstanding,decimal paid)
+    {
+        KiemTraNhapLieu.ValidateValues("THANH_TOAN",new Dictionary<string,object?> {["SoTien"]=text,["LoaiGiaoDich"]=kind,["PhuongThuc"]=method,["LyDo"]=reason});
+        if(kind is not ("Thu" or "Hoàn"))throw new LoiNhapLieu("LoaiGiaoDich","Chọn giao dịch Thu hoặc Hoàn.");
+        if(method is not ("Tiền mặt" or "Chuyển khoản" or "Thẻ"))throw new LoiNhapLieu("PhuongThuc","Chọn Tiền mặt, Chuyển khoản hoặc Thẻ.");
+        var amount=decimal.Parse(text.Trim().Replace(',','.'),NumberStyles.AllowDecimalPoint,CultureInfo.InvariantCulture);
+        if(amount<=0)throw new LoiNhapLieu("SoTien","Số tiền thu/hoàn phải lớn hơn 0. Nhập số tiền cần giao dịch.");
+        if(kind=="Thu"&&amount>outstanding)throw new LoiNhapLieu("SoTien","Số tiền thu vượt số còn phải trả. Nhập tối đa "+TreatmentMoney.Format(Math.Max(0,outstanding))+".");
+        if(kind=="Hoàn"&&amount>paid)throw new LoiNhapLieu("SoTien","Số tiền hoàn vượt số đã thu ròng. Nhập tối đa "+TreatmentMoney.Format(Math.Max(0,paid))+".");
+        if(kind=="Hoàn"&&string.IsNullOrWhiteSpace(reason))throw new LoiNhapLieu("LyDo","Vui lòng nhập lý do hoàn tiền để đối chiếu giao dịch.");
+        return amount;
+    }
+
+    /// <summary>Giữ kiểm tra số dư và lý do hoàn ở đúng ô khi rời trường.</summary>
+    private void PaymentField_LostKeyboardFocus(object sender,System.Windows.Input.KeyboardFocusChangedEventArgs e)
+    {
+        if(sender is not FrameworkElement field || field.IsKeyboardFocusWithin || !PaymentForm.IsEnabled || InvoiceList.SelectedItem is not DataRowView row)return;
+        try {ReadTransaction(AmountBox.Text,HoTroGiaoDien.Choice(PaymentType),HoTroGiaoDien.Choice(MethodBox),ReasonBox.Text,Convert.ToDecimal(row["ConPhaiThu"]),Convert.ToDecimal(row["DaThu"]));KiemTraNhapLieu.SetError(field,"");}
+        catch(LoiNhapLieu ex) {if(field.Tag is string tag&&tag.EndsWith("."+ex.Field,StringComparison.Ordinal))KiemTraNhapLieu.SetError(field,ex.Message);}
+    }
     /// <summary>
     /// Gọi BUS cấp đủ đơn thuốc từ kho đã chọn và ghi sổ phiếu xuất; BUS kiểm tra lô/tồn trong giao dịch, màn hình làm mới sau thành công.
     /// </summary>

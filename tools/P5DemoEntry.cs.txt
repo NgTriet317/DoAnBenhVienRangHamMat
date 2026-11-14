@@ -1,5 +1,9 @@
+/// <summary>Điểm chạy công cụ DEMO P5, chuyển chế độ chuẩn bị, xuất bằng chứng hoặc tạo dữ liệu sang P5DemoData.</summary>
 internal static class Program
 {
+    /// <summary>Định tuyến theo đối số và đổi lỗi thao tác thành dòng FAIL cùng mã thoát.</summary>
+    /// <param name="args">Máy chủ, database, thư mục kết quả; có thể thêm --prepare hoặc --export ở đầu.</param>
+    /// <returns>0 khi chế độ đã chọn hoàn tất; 1 khi đầu vào hoặc thao tác bị lỗi.</returns>
     static int Main(string[] args)
     {
         try

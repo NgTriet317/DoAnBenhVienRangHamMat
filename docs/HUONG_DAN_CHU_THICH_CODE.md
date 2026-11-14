@@ -41,3 +41,9 @@ File `Database/QLBenhVienRangHamMat.sql` được bảo toàn theo SHA-256:
 ```
 
 Các thay đổi SQL, bảo trì và công cụ xuất dữ liệu đã có trước đợt cập nhật được giữ để đưa vào commit bàn giao. File `Database/QLBenhVienRangHamMat_new.sql` từng được kéo từ nhánh `tan`; sau khi xác nhận các cập nhật nghiệp vụ đã có đầy đủ trong file chính, đã xóa file phụ theo yêu cầu của chủ dự án. Thư mục Database chỉ giữ một file SQL `QLBenhVienRangHamMat.sql`; chi tiết đối chiếu tại [HOP_NHAT_V9.md](database/HOP_NHAT_V9.md).
+
+## Bổ sung ngày 14/11/2026
+
+Đã rà soát lại mã tự viết hiện tại và bổ sung 2.012 dòng chú thích trong 120 tệp: 28 BUS/DAL/ET, 49 WPF và 43 công cụ/script. Giữ phong cách XML `summary`/`param`/`returns`/`remarks`, comment XAML và trợ giúp PowerShell đã dùng; không còn tệp thiếu hoàn toàn chú thích trong các phạm vi đã kiểm. Baseline được chụp từ working tree của đợt này để giữ các thay đổi có sẵn.
+
+Các chỉnh sửa chỉ chú thích được so token Roslyn, cấu trúc XAML và token PowerShell; không thay logic ứng dụng. Riêng công cụ kiểm liên thông SQL và preflight của bộ kiểm bảo trì có sửa điều kiện kiểm tra, đã kiểm riêng. Xem [kết quả liên kết dữ liệu–nghiệp vụ và danh mục bằng chứng](database/RA_SOAT_LIEN_KET_NGHIEP_VU_20261114.md).

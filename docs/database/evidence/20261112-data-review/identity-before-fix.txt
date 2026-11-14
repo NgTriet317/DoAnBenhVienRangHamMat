@@ -1,0 +1,5 @@
+﻿Changed database context to 'master'.
+Changed database context to 'master'.
+Changed database context to 'RHM_Hospital_Test_DataReview_20261112_296d940c'.
+Msg 544, Level 16, State 1, Server DESKTOP-C9VCE8A, Line 1
+Cannot insert explicit value for identity column in table 'NHAT_KY_DUYET_CHAM_CONG' when IDENTITY_INSERT is set to OFF.

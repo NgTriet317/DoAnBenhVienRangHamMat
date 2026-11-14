@@ -43,7 +43,7 @@
                   <TextBlock Text="Họ tên bệnh nhân *" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Họ tên bệnh nhân (BENH_NHAN.HoTenBN): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                   <ContentControl Style="{StaticResource TruongNhapLieu}">
-                   <TextBox Tag="DB:BENH_NHAN.HoTenBN" MaxLength="255" AutomationProperties.Name="Họ tên bệnh nhân bắt buộc"/>
+                   <TextBox Tag="DB:BENH_NHAN.HoTenBN" AutomationProperties.Name="Họ tên bệnh nhân bắt buộc"/>
                   </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,18,16">
@@ -69,14 +69,14 @@
                   <TextBlock Text="Số điện thoại" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Số điện thoại dạng chuỗi để giữ số 0 đầu (BENH_NHAN.SDT): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                   <ContentControl Style="{StaticResource TruongNhapLieu}">
-                   <TextBox Tag="DB:BENH_NHAN.SDT" MaxLength="50" AutomationProperties.Name="Số điện thoại" ToolTip="Giữ nguyên số 0 đầu và mã vùng, ví dụ 0901234567 hoặc +84..."/>
+                   <TextBox Tag="DB:BENH_NHAN.SDT" AutomationProperties.Name="Số điện thoại" ToolTip="Giữ nguyên số 0 đầu và mã vùng, ví dụ 0901234567 hoặc +84..."/>
                   </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,18,16">
                   <TextBlock Text="Mã bảo hiểm y tế" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Mã bảo hiểm y tế của bệnh nhân (BENH_NHAN.MaBHYT): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                   <ContentControl Style="{StaticResource TruongNhapLieu}">
-                   <TextBox Tag="DB:BENH_NHAN.MaBHYT" MaxLength="50" AutomationProperties.Name="Mã bảo hiểm y tế"/>
+                   <TextBox Tag="DB:BENH_NHAN.MaBHYT" AutomationProperties.Name="Mã bảo hiểm y tế"/>
                   </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,18,16">
@@ -94,7 +94,7 @@
                   <TextBlock Text="Địa chỉ" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Địa chỉ liên hệ (BENH_NHAN.DiaChi): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                   <ContentControl Style="{StaticResource TruongNhapLieu}">
-                   <TextBox Tag="DB:BENH_NHAN.DiaChi" MaxLength="255" MinHeight="72" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Địa chỉ"/>
+                   <TextBox Tag="DB:BENH_NHAN.DiaChi" MinHeight="72" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Địa chỉ"/>
                   </ContentControl>
                 </StackPanel>
               </StackPanel>
@@ -110,7 +110,7 @@
                   <TextBlock Text="Nhóm máu" Style="{StaticResource FieldLabel}"/>
                   <!-- Trường Nhóm máu bệnh nhân (BENH_NHAN.NhomMau): cơ chế form đọc/điền control qua Tag DB khi Configure/Read, dữ liệu chỉ được ghi khi lưu form. -->
                   <ContentControl Style="{StaticResource TruongNhapLieu}" MinWidth="210" MaxWidth="300" HorizontalAlignment="Left">
-                   <TextBox Tag="DB:BENH_NHAN.NhomMau" MaxLength="50" AutomationProperties.Name="Nhóm máu" ToolTip="Ví dụ A+, O−; để trống nếu chưa xác định"/>
+                   <TextBox Tag="DB:BENH_NHAN.NhomMau" AutomationProperties.Name="Nhóm máu" ToolTip="Ví dụ A+, O−; để trống nếu chưa xác định"/>
                   </ContentControl>
                 </StackPanel>
                 <StackPanel Margin="0,0,18,16">

@@ -18,6 +18,9 @@ public partial class ThucHienDichVuEditor:UserControl,IPatientScoped
  /// Ngữ cảnh định danh và quyền của người dùng đang thao tác.
  /// </summary>
  private readonly NguCanhNghiepVu actor;
+ /// <summary>
+ /// Giao dịch của màn hình được truyền tiếp khi mở ảnh X-quang được phân công.
+ /// </summary>
  private readonly IDbTransaction? transaction;
  /// <summary>
  /// Phạm vi đang chọn được giữ trong phạm vi lớp để các thao tác dùng lại.
@@ -87,6 +90,9 @@ public partial class ThucHienDichVuEditor:UserControl,IPatientScoped
  /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
  /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
  private void Reload_Click(object sender,RoutedEventArgs e)=>LoadHistory();
+ /// <summary>
+ /// Mở cửa sổ các lượt chụp được giao theo cùng ngữ cảnh người dùng và giao dịch.
+ /// </summary>
  private void AssignedImages_Click(object sender,RoutedEventArgs e)
  {new Window{Title="Ảnh X-quang được giao",Width=1120,Height=820,MinWidth=700,MinHeight=520,Owner=Window.GetWindow(this),Content=new AnhXquangDuocGiao(actor,transaction)}.Show();}
 }

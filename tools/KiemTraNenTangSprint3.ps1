@@ -4,6 +4,9 @@ Kiểm SQL/ET nền tảng khám dịch vụ và metadata X-quang trên database
 .DESCRIPTION
 TaoDatabaseKiemThu chạy bản sao file SQL chính, có snapshot cài mới. Các fixture
 trong chương trình kiểm đều rollback; không nhận tên database ứng dụng.
+.NOTES
+Riêng CheDo GhiDuLieuChayLai commit fixture vào database có đuôi _Rerun để kiểm lượt sau.
+LuuDoiChieu và DoiChieu lưu/so hash dữ liệu qua tệp baseline trong obj/Sprint3FoundationChecks.
 #>
 param(
     [string]$Database = 'RHM_Hospital_Test_S3Foundation',

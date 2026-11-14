@@ -4,8 +4,14 @@ using ET;
 
 namespace DAL;
 
+/// <summary>
+/// Phần phân công kỹ thuật viên chụp ảnh cho từng dịch vụ của lần khám còn mở.
+/// </summary>
 public sealed partial class DAL_ANHXQUANG
 {
+    /// <summary>
+    /// Lấy nhân viên kỹ thuật đang làm việc và có tài khoản hoạt động sau khi kiểm tra quyền phân công của lượt.
+    /// </summary>
     public IReadOnlyList<NhanVienChupAnh> LayKyThuatVien(string maLS,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
         var(c,a)=Context(db,tx,maLS,user,true);
@@ -16,6 +22,10 @@ public sealed partial class DAL_ANHXQUANG
              SELECT 1 FROM dbo.TAI_KHOAN t WITH(HOLDLOCK) WHERE t.MaNV=n.MaNV AND t.TrangThai=N'Đang hoạt động') ORDER BY n.HoTen,n.MaNV
             """,transaction:tx).ToArray();
     });
+    /// <summary>
+    /// Thay phân công đang áp dụng và ghi nhật ký trong cùng giao dịch sau khi kiểm tra lượt, dịch vụ và kỹ thuật viên.
+    /// </summary>
+    /// <returns>Mã phân công hiện hành; dùng lại mã cũ nếu kỹ thuật viên được giao không đổi.</returns>
     public string PhanCong(string maLS,string source,string maNVKyThuat,NguCanhNghiepVu user)=>ThucHien((db,tx)=>
     {
         var(c,a)=Context(db,tx,maLS,user,true);

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using ET;
+using RangHamMat.Controls;
 
 namespace RangHamMat.Views;
 
@@ -58,8 +59,18 @@ public partial class BangTinhPhiEditor
     /// <remarks>Các bước được phối hợp qua <c>UpdateChange</c>, <c>TryThanhToanAsync</c>, <c>OpenInvoicePrint</c>.</remarks>
     private void InitializePayment()
     {
+        KiemTraNhapLieu.SetFieldValidator(GivenText,()=>
+        {
+            if(BangTinh is null)return;
+            try{ReadTender(GivenText.Text,MethodBox.SelectedValue as string??"",ReferenceText.Text,TransferChecked.IsChecked==true,BangTinh.TongTien);}
+            catch(LoiNhapLieu ex)when(ex.Field!="SoTienKhachDua"){ }
+        });
+        KiemTraNhapLieu.SetFieldValidator(ReferenceText,()=>{if(MethodBox.SelectedValue as string=="Chuyển khoản"&&string.IsNullOrWhiteSpace(ReferenceText.Text))throw new LoiNhapLieu("MaThamChieu","Nhập mã tham chiếu của giao dịch chuyển khoản đã đối chiếu.");});
+        KiemTraNhapLieu.SetFieldValidator(TransferChecked,()=>{if(MethodBox.SelectedValue as string=="Chuyển khoản"&&TransferChecked.IsChecked!=true)throw new LoiNhapLieu("TransferChecked","Đối chiếu giao dịch chuyển khoản rồi chọn xác nhận đã đối chiếu.");});
         GivenText.TextChanged += (_, _) => UpdateChange();
-        MethodBox.SelectionChanged += (_, _) => UpdateChange();
+        MethodBox.SelectionChanged += (_, _) => {UpdateChange();RefreshPaymentErrors();};
+        TransferChecked.Checked+=(_,_)=>RefreshPaymentErrors();
+        TransferChecked.Unchecked+=(_,_)=>RefreshPaymentErrors();
         PayButton.Click += async (_, _) => {if(await TryThanhToanAsync())OpenInvoicePrint();};
         PrintAgainButton.Click += (_,_)=>OpenInvoicePrint();
     }
@@ -72,7 +83,13 @@ public partial class BangTinhPhiEditor
         pendingPayment = null; KetQua = null; MaYeuCauHienTai = Guid.NewGuid();
         GivenText.Text = "0"; ReferenceText.Text = ""; TransferChecked.IsChecked = false;
         MethodBox.SelectedIndex=0;
+        foreach(var field in new FrameworkElement[]{GivenText,ReferenceText,MethodBox,TransferChecked,WarehouseFilter})KiemTraNhapLieu.SetError(field,"");
         UpdatePaymentControls();
+    }
+    private void RefreshPaymentErrors()
+    {
+        foreach(var field in new FrameworkElement[]{GivenText,ReferenceText,TransferChecked})
+            if(KiemTraNhapLieu.GetHasError(field))KiemTraNhapLieu.RecheckField(field);
     }
     /// <summary>
     /// Bật hoặc tắt thao tác thu tiền theo trạng thái bảng tính và tiến trình đang xử lý.
@@ -116,12 +133,11 @@ public partial class BangTinhPhiEditor
         { StatusText.Text="Cần bảng tính hợp lệ và quyền thu tiền."; return false; }
         if(pendingPayment is null)
         {
+            if(!KiemTraNhapLieu.PrepareSave(PaymentPanel,out var inputError)) {StatusText.Text=inputError;return false;}
             var method=MethodBox.SelectedValue as string ?? "";var reference=ReferenceText.Text.Trim();
-            if(!decimal.TryParse(GivenText.Text.Trim(),NumberStyles.None,CultureInfo.InvariantCulture,out var given) || given>9999999999999999m ||
-                (method=="Tiền mặt" ? given<BangTinh.TongTien : given!=BangTinh.TongTien) || (BangTinh.TongTien==0 && given!=0))
-            {StatusText.Text="Nhập số nguyên đồng: tiền mặt phải đủ, chuyển khoản phải đúng số phải thu.";return false;}
-            if(method=="Chuyển khoản" && (reference.Length==0 || TransferChecked.IsChecked!=true))
-            {StatusText.Text="Nhập tham chiếu và xác nhận đã đối chiếu chuyển khoản thủ công.";return false;}
+            decimal given;
+            try {given=ReadTender(GivenText.Text,method,reference,TransferChecked.IsChecked==true,BangTinh.TongTien);}
+            catch(LoiNhapLieu ex) {KiemTraNhapLieu.MarkError(this,ex);return false;}
             pendingPayment=new(){MaLS=BangTinh.MaLS,MaKhoCapThuoc=BangTinh.MaKhoCapThuoc,MaYeuCau=MaYeuCauHienTai,DauVanTayBangTinh=BangTinh.DauVanTay,PhuongThuc=method,SoTienKhachDua=given,MaThamChieu=reference,DaDoiChieuChuyenKhoan=TransferChecked.IsChecked==true};
         }
         var request=pendingPayment; DangXuLy=true; UpdatePaymentControls(); StatusText.Text="Đang xử lý yêu cầu thanh toán…";
@@ -141,10 +157,33 @@ public partial class BangTinhPhiEditor
         catch(TuChoiQuyenNghiepVuException ex)
         { pendingPayment=null; Clear(); StatusText.Text=ex.Message; return false; }
         catch(LoiKhamException ex) when(ex.Truong!="ThanhToan")
-        { pendingPayment=null;StatusText.Text=ex.Message;return false; }
+        { pendingPayment=null;KiemTraNhapLieu.MarkError(this,new LoiNhapLieu(ex.Truong=="DaDoiChieuChuyenKhoan"?"TransferChecked":ex.Truong,ex.Message));StatusText.Text=ex.Message;return false; }
         catch(Exception)
         { StatusText.Text="Chưa xác nhận được kết quả. Giữ nguyên lượt, kho và tiền; bấm Thử lại yêu cầu để đối chiếu, không lập lần thu khác.";return false; }
         finally { DangXuLy=false;UpdatePaymentControls(); }
+    }
+
+    /// <summary>Tiền khách đưa nguyên đồng theo luồng thu trọn gói; đối chiếu phương thức, tham chiếu và xác nhận trước khi gửi BUS.</summary>
+    private static decimal ReadTender(string text,string method,string reference,bool checkedTransfer,decimal total)
+    {
+        if(!decimal.TryParse(text.Trim(),NumberStyles.None,CultureInfo.InvariantCulture,out var amount))
+            throw new LoiNhapLieu("SoTienKhachDua","Tiền khách đưa phải là số nguyên đồng không âm. Nhập số liền, ví dụ 150000; không dùng dấu phân cách.");
+        KiemTraNhapLieu.ValidateValues("THANH_TOAN",new Dictionary<string,object?> {["SoTienKhachDua"]=text,["PhuongThuc"]=method,["MaThamChieu"]=reference});
+        if(method is not ("Tiền mặt" or "Chuyển khoản"))throw new LoiNhapLieu("PhuongThuc","Chọn Tiền mặt hoặc Chuyển khoản.");
+        if(total==0&&amount!=0)throw new LoiNhapLieu("SoTienKhachDua","Lượt không phát sinh phải thu. Nhập tiền khách đưa bằng 0.");
+        if(method=="Tiền mặt"&&amount<total)throw new LoiNhapLieu("SoTienKhachDua","Tiền khách đưa còn thiếu. Nhập ít nhất "+Money(total)+".");
+        if(method=="Chuyển khoản"&&amount!=total)throw new LoiNhapLieu("SoTienKhachDua","Chuyển khoản phải đúng số phải thu. Nhập "+Money(total)+".");
+        if(method=="Chuyển khoản"&&string.IsNullOrWhiteSpace(reference))throw new LoiNhapLieu("MaThamChieu","Nhập mã tham chiếu của giao dịch chuyển khoản đã đối chiếu.");
+        if(method=="Chuyển khoản"&&!checkedTransfer)throw new LoiNhapLieu("TransferChecked","Đối chiếu giao dịch chuyển khoản rồi chọn xác nhận đã đối chiếu.");
+        return amount;
+    }
+
+    /// <summary>Hiện điều kiện thu ngay dưới trường đang rời; không xóa lỗi ở trường khác.</summary>
+    private void PaymentField_LostKeyboardFocus(object sender,System.Windows.Input.KeyboardFocusChangedEventArgs e)
+    {
+        if(sender is not FrameworkElement field||field.IsKeyboardFocusWithin||BangTinh is null||!PaymentInputs.IsEnabled)return;
+        try {ReadTender(GivenText.Text,MethodBox.SelectedValue as string??"",ReferenceText.Text,TransferChecked.IsChecked==true,BangTinh.TongTien);KiemTraNhapLieu.SetError(field,"");}
+        catch(LoiNhapLieu ex) {if(field.Name==ex.Field||field.Tag is string tag&&tag.EndsWith("."+ex.Field,StringComparison.Ordinal))KiemTraNhapLieu.SetError(field,ex.Message);}
     }
     /// <summary>
     /// Mở cửa sổ in hóa đơn với nguồn chứng từ được chỉ định.

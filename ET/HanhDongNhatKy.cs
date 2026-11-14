@@ -1,5 +1,8 @@
 namespace ET;
 
+/// <summary>
+/// Cặp mã hành động lưu trong SQL và nhãn tiếng Việt cho bộ lọc, hiển thị nhật ký.
+/// </summary>
 public sealed record LuaChonHanhDongNhatKy(string Ma,string Ten);
 
 /// <summary>Mã dùng để lọc/lưu SQL; nhãn tiếng Việt chỉ dùng khi trình bày.</summary>
@@ -16,5 +19,8 @@ public static class HanhDongNhatKy
         new("ROLE_CHANGE","Thay đổi vai trò"),new("PERMISSION_CHANGE","Thay đổi quyền"),
         new("ACCOUNT_LOCK","Khóa tài khoản"),new("ACCOUNT_RESTORE","Khôi phục tài khoản")
     });
+    /// <summary>
+    /// Đổi mã hành động sang nhãn; giữ mã chưa biết để vẫn đọc được sự kiện cũ hoặc sự kiện chuyên biệt.
+    /// </summary>
     public static string Nhan(string? ma)=>LuaChon.FirstOrDefault(x=>x.Ma==ma)?.Ten??ma??"";
 }

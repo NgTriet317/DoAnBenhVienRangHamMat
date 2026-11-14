@@ -53,6 +53,9 @@ public partial class KhamLamSang : UserControl,IPatientScoped
     /// Quyền cho phép thao tác được giữ trong phạm vi lớp để các thao tác dùng lại.
     /// </summary>
     private Func<string,bool> allowed=_=>true;
+    /// <summary>
+    /// Điều khiển ảnh của lần khám đang mở, được tạo khi vùng X-quang nạp lần đầu.
+    /// </summary>
     private AnhXquangLanKham? xrayEditor;
     /// <summary>
     /// Mã bệnh nhân. Có thể để null khi dữ liệu chưa được cung cấp.
@@ -76,6 +79,8 @@ public partial class KhamLamSang : UserControl,IPatientScoped
     {
         this.transaction=transaction;visitId=maLS;service=new(transaction);actor=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(user?.MaNV??PhienDangNhap.MaNV);
         InitializeComponent();ConditionList.ItemsSource=conditions;PlanSteps.ItemsSource=steps;
+        KiemTraNhapLieu.SetFieldValidator(NoPrescriptionReason,()=>{if(NoPrescription.IsChecked==true&&string.IsNullOrWhiteSpace(NoPrescriptionReason.Text))throw new LoiNhapLieu("LyDoKhongKeThuoc","Nhập lý do không kê thuốc cho lần khám này.");});
+        KiemTraNhapLieu.SetFieldValidator(ConditionDetailEditor,()=>{if(!string.IsNullOrWhiteSpace(ConditionDetailEditor.Text))KiemTraNhapLieu.ValidateValues("TINH_TRANG_BENH",new Dictionary<string,object?>{["MoTaTinhTrang"]=ConditionDetailEditor.Text});});
         Loaded+=(_,_)=>{PlanSteps.FrozenColumnCount=0;PlanSteps.EnableColumnVirtualization=false;};
         PlanSteps.BeginningEdit+=(_,_)=>{if(!loading)planDirty=true;};
         PlanStart.AddHandler(TextBox.TextChangedEvent,new TextChangedEventHandler(PlanDate_TextChanged));
@@ -115,7 +120,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
             PatientHeader.Text=data.BenhNhan.HoTenBN;
             PatientDemographics.Text=$"{PatientId} · Ngày sinh: {data.BenhNhan.NgaySinh?.ToString("dd/MM/yyyy")??"Chưa cập nhật"}";
             SafetyHeader.Text=$"Dị ứng: {Known(data.BenhNhan.DiUng)} · Tiền sử: {Known(data.BenhNhan.TienSuBenh)}";
-            PlanServiceColumn.ItemsSource=data.DichVu.Select(d=>new LuaChonDanhMuc(d.MaDV,d.TenDV+(d.TrangThai=="Đang hoạt động"?"":" · ngừng hoạt động"))).ToArray();
+            PlanSteps.Resources["PlanServiceChoices"]=data.DichVu.Select(d=>new LuaChonDanhMuc(d.MaDV,d.TenDV+(d.TrangThai=="Đang hoạt động"?"":" · ngừng hoạt động"))).ToArray();
             relatedServices=data.DichVuTheoTinhTrang;serviceCatalog=data.DichVu;referenceConditions=data.DinhHuong;ConfigureConditionPicker();
             FillClinical(data.BanNhap);SetPlans(data.KeHoach);ClearPlan();FillCompletionOverview(data);
         }
@@ -190,6 +195,9 @@ public partial class KhamLamSang : UserControl,IPatientScoped
         var planEdit=edit &&(plan is null||plan.KeHoach.TrangThai=="Nháp");PlanFields.IsEnabled=planEdit;PlanSteps.IsReadOnly=!planEdit;PlanSteps.CanUserAddRows=PlanSteps.CanUserDeleteRows=planEdit;CancelPlanButton.IsEnabled=RefreshPlanPricesButton.IsEnabled=planEdit;
         SavePlanButton.IsEnabled=planEdit;ConfirmPlanButton.IsEnabled=planEdit&&plan is not null;OpenServicesButton.IsEnabled=allowed("DichVuThucHien");OpenPrescriptionButton.IsEnabled=allowed("DonThuoc");RefreshRecommendation();UpdatePlanTotal();
     }
+    /// <summary>
+    /// Khởi tạo vùng ảnh cho lần khám hiện tại khi được tải; áp dụng chế độ lịch sử nếu màn hình chỉ đọc.
+    /// </summary>
     private void XrayHost_Loaded(object sender,RoutedEventArgs e)
     {
         if(xrayEditor is null){xrayEditor=new(visitId,actor,transaction);XrayHost.Content=xrayEditor;}
@@ -222,6 +230,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
     public bool TrySave(out string error)=>Run(()=>
     {
         RequireEditable();
+        ValidateClinicalInputs();
         CommitConditionInput();
         var request=new YeuCauLuuKham {MaLS=visitId,DauVanTay=snapshot.DauVanTay,TrieuChung=SymptomsEditor.Text,ChanDoan=DiagnosisEditor.Text,KeHoachXuLy=TreatmentEditor.Text,GhiChu=ClinicalNote.Text,KhongKeThuoc=NoPrescription.IsChecked==true,LyDoKhongKeThuoc=NoPrescriptionReason.Text,TinhTrang=conditions.ToArray()};
         FillClinical(service.LuuKham(request,actor));RefreshClinicalSummary();ClinicalStatus.Text="Đã lưu nháp; chưa chuyển chờ thanh toán.";SyncCache();
@@ -235,6 +244,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
     public bool TryComplete(out string error)=>Run(()=>
     {
         RequireEditable();
+        ValidateClinicalInputs();
         CommitConditionInput();ClinicalFormInput.Commit(PlanSteps,"CacBuoc");
         if(CoThayDoiChuaLuu)throw new LoiKhamException("BanNhap","Có thay đổi chưa lưu. Lưu nháp hoặc tải lại để đối chiếu trước khi ký.");
         var reviewed=clinicalSummary??throw new LoiKhamException("TongKet","Tải Tổng kết trước khi chốt.");
@@ -249,7 +259,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
     public bool TrySavePlan(out string error)=>Run(()=>
     {
         RequireEditable();
-        ClinicalFormInput.Commit(PlanSteps,"CacBuoc");var request=new YeuCauLuuKeHoach {MaLS=visitId,MaKHDT=plan?.KeHoach.MaKHDT,DauVanTay=plan?.DauVanTay,MaTTBNguon=plan?.KeHoach.MaTTBNguon??planSourceCondition,NgayBatDau=ClinicalFormInput.ReadDate(PlanStart),NgayDuKienKetThuc=ClinicalFormInput.ReadDate(PlanEnd),GhiChu=PlanNote.Text,CacBuoc=steps.ToArray()};
+        ValidatePlanInputs();var request=new YeuCauLuuKeHoach {MaLS=visitId,MaKHDT=plan?.KeHoach.MaKHDT,DauVanTay=plan?.DauVanTay,MaTTBNguon=plan?.KeHoach.MaTTBNguon??planSourceCondition,NgayBatDau=ClinicalFormInput.ReadDate(PlanStart),NgayDuKienKetThuc=ClinicalFormInput.ReadDate(PlanEnd),GhiChu=PlanNote.Text,CacBuoc=steps.ToArray()};
         FillPlan(service.LuuKeHoach(request,actor));FillCompletionOverview(service.LayKhongGianKham(visitId,actor));ClinicalStatus.Text="Đã lưu kế hoạch nháp. Duyệt kế hoạch trước khi hoàn tất.";SyncCache();
     },out error);
     /// <summary>
@@ -261,9 +271,53 @@ public partial class KhamLamSang : UserControl,IPatientScoped
     public bool TryConfirmPlan(out string error)=>Run(()=>
     {
         RequireEditable();
-        ClinicalFormInput.Commit(PlanSteps,"CacBuoc");if(plan is null||planDirty)throw new LoiKhamException("KeHoach","Lưu nháp kế hoạch trước khi duyệt.");
+        ValidatePlanInputs();if(plan is null||planDirty)throw new LoiKhamException("KeHoach","Lưu nháp kế hoạch trước khi duyệt.");
         FillPlan(service.XacNhanKeHoach(plan.KeHoach.MaKHDT,plan.DauVanTay,actor));FillCompletionOverview(service.LayKhongGianKham(visitId,actor));ClinicalStatus.Text="Đã duyệt kế hoạch. Khi điều trị xong, Hoàn tất để chốt dịch vụ và lập hóa đơn.";SyncCache();
     },out error);
+
+    /// <summary>Kiểm tra đúng nhóm dữ liệu khám và lựa chọn không kê thuốc, kể cả ở tab chưa mở.</summary>
+    private void ValidateClinicalInputs()
+    {
+        ClinicalFormInput.Prepare(ClinicalInputPanel);
+        if(NoPrescription.IsChecked==true)
+        {
+            KiemTraNhapLieu.ValidateValues("LICH_SU_KHAM_BENH",new Dictionary<string,object?>{["LyDoKhongKeThuoc"]=NoPrescriptionReason.Text});
+            if(string.IsNullOrWhiteSpace(NoPrescriptionReason.Text))throw new LoiKhamException("LyDoKhongKeThuoc","Nhập lý do không kê thuốc cho lần khám này.");
+        }
+        if(conditions.Count>100)throw new LoiKhamException("TinhTrang","Mỗi lần lưu tối đa 100 tình trạng. Bỏ các dòng trùng hoặc không cần lưu.");
+        foreach(var condition in conditions)
+            KiemTraNhapLieu.ValidateValues("TINH_TRANG_BENH",new Dictionary<string,object?>{["LoaiTinhTrang"]=condition.LoaiTinhTrang,["MoTaTinhTrang"]=condition.MoTaTinhTrang,["GhiChu"]=condition.GhiChu});
+    }
+
+    /// <summary>Đối chiếu lịch, số và từng dịch vụ trong kế hoạch trước khi chuyển sang BUS.</summary>
+    private void ValidatePlanInputs()
+    {
+        ClinicalFormInput.Prepare(PlanFields);ClinicalFormInput.Prepare(PlanSteps);
+        ClinicalFormInput.Commit(PlanSteps,"CacBuoc");
+        KiemTraNhapLieu.ValidateValues("KE_HOACH_DIEU_TRI",new Dictionary<string,object?>
+        { ["NgayBatDau"]=ClinicalFormInput.ReadDate(PlanStart),["NgayDuKienKetThuc"]=ClinicalFormInput.ReadDate(PlanEnd),["GhiChu"]=PlanNote.Text });
+        if(steps.Count==0)throw new LoiKhamException("CacBuoc","Thêm ít nhất một dịch vụ vào kế hoạch trước khi lưu.");
+        for(var index=0;index<steps.Count;index++)
+        {
+            var row=steps[index];
+            try
+            {
+                KiemTraNhapLieu.ValidateValues("CHI_TIET_KE_HOACH",new Dictionary<string,object?>
+                { ["MaDV"]=row.MaDV,["LanThu"]=row.LanThu,["SoLuongDuKien"]=row.SoLuongDuKien,["NoiDungBuoc"]=row.NoiDungBuoc,["GhiChu"]=row.GhiChu });
+                if(!serviceCatalog.Any(x=>x.MaDV==row.MaDV&&x.TrangThai=="Đang hoạt động"))throw new LoiNhapLieu("MaDV","Chọn dịch vụ đang hoạt động từ danh mục.");
+            }
+            catch(LoiNhapLieu error)
+            {
+                var failure=new LoiKhamException(error.Field,$"Dòng kế hoạch {index+1}: {error.Message}");failure.Data["ClinicalRow"]=row;throw failure;
+            }
+        }
+    }
+
+    /// <summary>Xóa lỗi xác nhận khi người dùng đã đánh dấu thực hiện dịch vụ.</summary>
+    private void ExecutionAcknowledged_Changed(object sender,RoutedEventArgs e)
+    {
+        if(ExecutionAcknowledged.IsChecked==true)KiemTraNhapLieu.SetError(ExecutionAcknowledged,"");
+    }
     /// <summary>
     /// Tiếp nhận thay đổi kế hoạch và cập nhật trạng thái/dữ liệu phụ thuộc.
     /// </summary>
@@ -296,7 +350,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
     /// <remarks>Các bước được phối hợp qua <c>UpdateClinicalFooter</c>.</remarks>
     /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
     /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
-    private void Clinical_Changed(object sender,RoutedEventArgs e){if(!loading){dirty=true;if(PrescriptionHost is not null)PrescriptionHost.IsEnabled=clinicalSummary?.DaThucHien==true&&NoPrescription.IsChecked!=true;UpdateClinicalFooter();}}
+    private void Clinical_Changed(object sender,RoutedEventArgs e){if(!loading){dirty=true;if(NoPrescriptionReason is not null&&KiemTraNhapLieu.GetHasError(NoPrescriptionReason))KiemTraNhapLieu.RecheckField(NoPrescriptionReason);if(PrescriptionHost is not null)PrescriptionHost.IsEnabled=clinicalSummary?.DaThucHien==true&&NoPrescription.IsChecked!=true;UpdateClinicalFooter();}}
     /// <summary>
     /// Tiếp nhận thay đổi dòng bước kế hoạch và cập nhật dữ liệu/tổng dự kiến liên quan.
     /// </summary>

@@ -1,0 +1,53 @@
+﻿RHM_Hospital_Test_Links_20261114_7b2433bd 2026-11-14 2026-11-14 12:33:05.9544473
+HistoricalBlocker PAYROLL_V8_PARTIAL_MONTH 10
+PAYROLL_V8_PARTIAL_MONTH HistoricalBlocker BL001 NV001 2026-10-01 to 2026-10-10; Nháp; V8 overlap blocks October V9 creation by THROW 52333. Preserve historical amounts.
+PAYROLL_V8_PARTIAL_MONTH HistoricalBlocker BL002 NV002 2026-10-01 to 2026-10-10; Nháp; V8 overlap blocks October V9 creation by THROW 52333. Preserve historical amounts.
+PAYROLL_V8_PARTIAL_MONTH HistoricalBlocker BL003 NV003 2026-10-01 to 2026-10-10; Đã chốt; V8 overlap blocks October V9 creation by THROW 52333. Preserve historical amounts.
+PAYROLL_V8_PARTIAL_MONTH HistoricalBlocker BL004 NV004 2026-10-01 to 2026-10-10; Nháp; V8 overlap blocks October V9 creation by THROW 52333. Preserve historical amounts.
+PAYROLL_V8_PARTIAL_MONTH HistoricalBlocker BL005 NV005 2026-10-01 to 2026-10-10; Nháp; V8 overlap blocks October V9 creation by THROW 52333. Preserve historical amounts.
+PAYROLL_V8_PARTIAL_MONTH HistoricalBlocker BL006 NV006 2026-10-01 to 2026-10-10; Nháp; V8 overlap blocks October V9 creation by THROW 52333. Preserve historical amounts.
+PAYROLL_V8_PARTIAL_MONTH HistoricalBlocker BL007 NV007 2026-10-01 to 2026-10-10; Nháp; V8 overlap blocks October V9 creation by THROW 52333. Preserve historical amounts.
+PAYROLL_V8_PARTIAL_MONTH HistoricalBlocker BL008 NV008 2026-10-01 to 2026-10-10; Nháp; V8 overlap blocks October V9 creation by THROW 52333. Preserve historical amounts.
+PAYROLL_V8_PARTIAL_MONTH HistoricalBlocker BL009 NV009 2026-10-01 to 2026-10-10; Nháp; V8 overlap blocks October V9 creation by THROW 52333. Preserve historical amounts.
+PAYROLL_V8_PARTIAL_MONTH HistoricalBlocker BL010 NV010 2026-10-01 to 2026-10-10; Nháp; V8 overlap blocks October V9 creation by THROW 52333. Preserve historical amounts.
+MismatchCount 0
+PendingRecordedHours 354
+IncompleteClockOut LLV036 NV011 2026-11-12
+IncompleteClockOut LLV1049 NV010 2026-11-12
+IncompleteClockOut LLV114 NV012 2026-11-12
+IncompleteClockOut LLV192 NV013 2026-11-12
+IncompleteClockOut LLV270 NV014 2026-11-12
+IncompleteClockOut LLV348 NV001 2026-11-12
+IncompleteClockOut LLV425 NV002 2026-11-12
+IncompleteClockOut LLV503 NV003 2026-11-12
+IncompleteClockOut LLV581 NV004 2026-11-12
+IncompleteClockOut LLV659 NV005 2026-11-12
+IncompleteClockOut LLV737 NV006 2026-11-12
+IncompleteClockOut LLV815 NV007 2026-11-12
+IncompleteClockOut LLV893 NV008 2026-11-12
+IncompleteClockOut LLV971 NV009 2026-11-12
+UnconstrainedSnapshotReference MaBSCu 0
+UnconstrainedSnapshotReference MaBSMoi 0
+UnconstrainedSnapshotReference MaCa 0
+UnconstrainedSnapshotReference MaLLVThayThe 0
+UnconstrainedSnapshotReference MaPhongCu 0
+UnconstrainedSnapshotReference MaPhongMoi 0
+AssetSourceMatchingDateAndSupplier TB001 HH021 2024-03-10 NCC009 PN019 CTPN019 HDN019
+AssetSourceMatchingDateAndSupplier TB002 HH022 2024-03-11 NCC009 PN020 CTPN020 HDN020
+AssetSourceMatchingDateAndSupplier TB003 HH023 2024-03-12 NCC009 PN021 CTPN021 HDN021
+AssetSourceMatchingDateAndSupplier TB004 HH024 2024-04-13 NCC009 PN022 CTPN022 HDN022
+AssetSourceMatchingDateAndSupplier TB005 HH025 2024-04-14 NCC009 PN023 CTPN023 HDN023
+AssetSourceMatchingDateAndSupplier TB006 HH026 2024-04-15 NCC009 PN024 CTPN024 HDN024
+AssetSourceMatchingDateAndSupplier TB007 HH027 2024-05-16 NCC010 PN025 CTPN025 HDN025
+AssetSourceMatchingDateAndSupplier TB008 HH028 2024-05-17 NCC010 PN026 CTPN026 HDN026
+AssetSourceMatchingDateAndSupplier TB009 HH029 2024-05-18 NCC010 PN027 CTPN027 HDN027
+AssetSourceMatchingDateAndSupplier TB010 HH030 2024-06-19 NCC010 PN028 CTPN028 HDN028
+AssetSourceMatchingDateAndSupplier TB011 HH031 2026-09-12 NCC012 PN011 CTPN011 HDN011
+AssetSourceMatchingDateAndSupplier TB012 HH032 2026-09-12 NCC012 PN012 CTPN012 HDN012
+AssetSourceMatchingDateAndSupplier TB013 HH033 2026-09-12 NCC012 PN013 CTPN013 HDN013
+AssetSourceMatchingDateAndSupplier TB014 HH034 2026-09-12 NCC012 PN014 CTPN014 HDN014
+AssetSourceMatchingDateAndSupplier TB015 HH035 2022-09-12 NCC012 PN015 CTPN015 HDN015
+AssetSourceMatchingDateAndSupplier TB016 HH036 2026-09-12 NCC012 PN016 CTPN016 HDN016
+AssetSourceMatchingDateAndSupplier TB017 HH037 2026-09-12 NCC012 PN017 CTPN017 HDN017
+AssetSourceMatchingDateAndSupplier TB018 HH038 2026-09-12 NCC012 PN018 CTPN018 HDN018
+InstalledV8PayrollGuard 1

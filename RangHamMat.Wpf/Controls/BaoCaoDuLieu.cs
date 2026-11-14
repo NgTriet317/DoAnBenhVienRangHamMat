@@ -153,6 +153,12 @@ public static class BaoCaoDuLieu
         .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark))
         .Replace('đ', 'd').Replace('Đ', 'D').ToLowerInvariant();
 
+    /// <summary>
+    /// Xếp hạng tình trạng bệnh theo bệnh nhân hoặc lượt khám, rồi dùng chỉ tiêu còn lại và tên để phân định thứ tự.
+    /// </summary>
+    /// <param name="rows">Các nhóm bệnh đã được tổng hợp, có thể chứa giá trị null do làm mờ nhóm nhỏ.</param>
+    /// <param name="theoBenhNhan">True ưu tiên số bệnh nhân duy nhất; false ưu tiên số lượt khám.</param>
+    /// <returns>Các nhóm đã sắp xếp; giá trị null được xếp sau các số đếm không âm.</returns>
     public static DongThongKeBenh[] XepHangBenh(IEnumerable<DongThongKeBenh> rows,bool theoBenhNhan=true) => rows
         .OrderByDescending(x=>theoBenhNhan?x.SoBenhNhan??-1:x.SoLuotKham??-1)
         .ThenByDescending(x=>theoBenhNhan?x.SoLuotKham??-1:x.SoBenhNhan??-1).ThenBy(x=>x.TenTinhTrang).ToArray();

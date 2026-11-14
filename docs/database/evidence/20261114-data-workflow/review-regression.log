@@ -1,0 +1,28 @@
+﻿ServerName DatabaseName StartedUtc DiagnosticSha256
+---------- ------------ ---------- ----------------
+DESKTOP-C9VCE8A RHM_Hospital_Test_Links_20261114_7b2433bd 2026-11-14 05:50:19.2268480 48855474FDE00ACEF19FF00D18AE6774EB6EAE7B019DF441D91A0AED95D7BE09
+Result TestName InformationalReadinessRows
+------ -------- --------------------------
+PASS Baseline: no integrity/history findings 5
+Result TestNo TestName QuyTac MucDo Bang Ma LyDo
+------ ------ -------- ------ ----- ---- -- ----
+PASS 1 Swapped equal-value service invoice sources HOA_DON_SAI_LUOT_DICH_VU SaiXacDinh CHI_TIET_HOA_DON CTHD001 Dich vu DVTH001 khac luot/trang thai/thanh tien voi hoa don HD004.
+PASS 1 Swapped equal-value service invoice sources HOA_DON_SAI_LUOT_DICH_VU SaiXacDinh CHI_TIET_HOA_DON CTHD004 Dich vu DVTH004 khac luot/trang thai/thanh tien voi hoa don HD001.
+Result TestNo TestName QuyTac MucDo Bang Ma LyDo
+------ ------ -------- ------ ----- ---- -- ----
+PASS 2 Confirmed positive v2 invoice missing all payment rows HOA_DON_V2_SAI_GIAO_DICH_THU SaiXacDinh HOA_DON HD009 Hoa don v2 da xac nhan can dung mot lan Thu du (kem tien khach dua/tien thua); hoa don 0 khong co khoan thu.
+Result TestNo TestName QuyTac MucDo Bang Ma LyDo
+------ ------ -------- ------ ----- ---- -- ----
+PASS 3 Signed prescription missing every detail row DON_DA_KY_KHONG_CO_CHI_TIET SaiXacDinh DON_THUOC DT012 Don da ky phai co it nhat mot dong thuoc de in va tinh phi.
+Result TestNo TestName QuyTac MucDo Bang Ma LyDo
+------ ------ -------- ------ ----- ---- -- ----
+PASS 4 Posted inbound detail with NULL lot NHAP_SAI_NGUON_LO SaiXacDinh CHI_TIET_PHIEU_NHAP CTPN001 Lo [thieu lo] khong khop mat hang/kho/nha cung cap cua phieu PN001.
+Result TestNo TestName QuyTac MucDo Bang Ma LyDo
+------ ------ -------- ------ ----- ---- -- ----
+PASS 5 Posted outbound detail with NULL lot XUAT_SAI_NGUON_LO SaiXacDinh CHI_TIET_PHIEU_XUAT CTPX001 Lo [thieu lo] khong khop mat hang/kho cua phieu PX001.
+Result TestNo TestName QuyTac MucDo Bang Ma LyDo
+------ ------ -------- ------ ----- ---- -- ----
+PASS 6 Unpaid current invoice with receipt incorrectly completed PHIEU_SAI_TRANG_THAI_THANH_TOAN SaiXacDinh PHIEU_KHAM_BENH PKB019 Trang thai Hoàn tất khong khop hoa don HD012 va cac don can ban giao.
+Result PassedTests TotalTests Scope
+------ ----------- ---------- -----
+PASS 6 6 Six SELECT-only projections detected; source tables unchanged.

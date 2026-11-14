@@ -1,0 +1,73 @@
+﻿Changed database context to 'master'.
+Changed database context to 'RHM_Hospital_Test_AcademicInstall_20261112_e2d955bc'.
+ClinicalWorkflow v2 đã có; hợp đồng được kiểm tra.
+SchemaVersion       TableCount 
+------------------- -----------
+ClinicalWorkflow v2          64
+MaHD                                               MaLS                                               SoTienPhaiThu        DaThuRong                                ConPhaiTra                              
+-------------------------------------------------- -------------------------------------------------- -------------------- ---------------------------------------- ----------------------------------------
+HD012                                              LSKB019                                                       332000.00                                      .00                                332000.00
+HD013                                              LSKB020                                                       362000.00                                      .00                                362000.00
+HD014                                              LSKB021                                                       660000.00                                      .00                                660000.00
+HD015                                              LSKB022                                                       322000.00                                      .00                                322000.00
+HD016                                              LSKB023                                                       200000.00                                      .00                                200000.00
+HD017                                              LSKB024                                                       230000.00                                      .00                                230000.00
+Đã bỏ MucDo; SimpleConditions v1. Dữ liệu các cột còn lại được giữ nguyên.
+Đã bỏ vị trí răng; nạp 6 tình trạng và định hướng có nguồn. Không tạo người thật, bảng giá hoặc chứng từ.
+Đã đồng bộ 8 dịch vụ tham khảo và 14 liên kết; giữ nguyên dữ liệu đã có.
+Hoàn tất khởi tạo/đồng bộ HospitalWorkflow v3; dữ liệu người dùng và lịch sử tài chính được giữ nguyên.
+Đã đồng bộ PrescriptionFlow1, nhóm thuốc và danh mục thuốc có nguồn.
+SchemaVersion       TableCount 
+------------------- -----------
+ClinicalWorkflow v2          64
+MaHD                                               MaLS                                               SoTienPhaiThu        DaThuRong                                ConPhaiTra                              
+-------------------------------------------------- -------------------------------------------------- -------------------- ---------------------------------------- ----------------------------------------
+HD012                                              LSKB019                                                       332000.00                                      .00                                332000.00
+HD013                                              LSKB020                                                       362000.00                                      .00                                362000.00
+HD014                                              LSKB021                                                       660000.00                                      .00                                660000.00
+HD015                                              LSKB022                                                       322000.00                                      .00                                322000.00
+HD016                                              LSKB023                                                       200000.00                                      .00                                200000.00
+HD017                                              LSKB024                                                       230000.00                                      .00                                230000.00
+PrescriptionFlow  DrugGroups  Medicines  
+----------------- ----------- -----------
+PrescriptionFlow1          20          68
+SchemaVersion TableCount  PreservedLegacyPayroll
+------------- ----------- ----------------------
+SqlV9Merged            64                     10
+HOÀN TẤT: 60 bảng, lịch khám, chấm công, lương V9 và quy trình khám/thu tiền đã đồng bộ.
+HOÀN TẤT BẢO TRÌ SERIAL: liên kết thiết bị, vòng đời phiếu và tình trạng vật lý đã đồng bộ.
+Đã tạo/kiểm tra PHAN_QUYEN_VAI_TRO và khởi tạo quyền mặc định.
+MaVaiTro                                           TenVaiTro                                                                                                                                                                                                                                                       SoPhanHeDuocMo
+-------------------------------------------------- --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------------
+VTRO001                                            Admin                                                                                                                                                                                                                                                                       25
+VTRO002                                            User                                                                                                                                                                                                                                                                         3
+Sprint 3: danh mục, nhật ký và phiên đăng nhập đã sẵn sàng.
+HopDong            SoAnh               
+------------------ --------------------
+Sprint3Foundation1                    0
+Sprint3Foundation1: loại khám/phụ thu, nguồn hóa đơn và metadata ảnh đã sẵn sàng.
+HopDong            SoAnh               
+------------------ --------------------
+Sprint3Foundation1                    0
+XrayStorage1: phân công ảnh, metadata và bảo vệ lịch sử sẵn sàng; kho tệp cấu hình riêng.
+SchemaVersion       TableCount 
+------------------- -----------
+ClinicalWorkflow v2          64
+MaHD                                               MaLS                                               SoTienPhaiThu        DaThuRong                                ConPhaiTra                              
+-------------------------------------------------- -------------------------------------------------- -------------------- ---------------------------------------- ----------------------------------------
+HD012                                              LSKB019                                                       332000.00                                      .00                                332000.00
+HD013                                              LSKB020                                                       362000.00                                      .00                                362000.00
+HD014                                              LSKB021                                                       660000.00                                      .00                                660000.00
+HD015                                              LSKB022                                                       322000.00                                      .00                                322000.00
+HD016                                              LSKB023                                                       200000.00                                      .00                                200000.00
+HD017                                              LSKB024                                                       230000.00                                      .00                                230000.00
+PrescriptionFlow  DrugGroups  Medicines  
+----------------- ----------- -----------
+PrescriptionFlow1          20          68
+SchemaVersion TableCount  PreservedLegacyPayroll
+------------- ----------- ----------------------
+SqlV9Merged            64                     10
+HopDong            SoAnh               
+------------------ --------------------
+Sprint3Foundation1                    0
+PROJECT_SCHEMA_READY: 64 bảng và các liên kết ET/DAL/BUS/WPF đã kiểm tra; cấu hình SQL Server/kho ảnh tại appsettings.json.

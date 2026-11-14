@@ -1,6 +1,9 @@
 using Dapper.Contrib.Extensions;
 namespace ET;
 
+/// <summary>
+/// Ánh xạ phân công kỹ thuật viên cho dịch vụ chụp ảnh; giữ người phân công và thời điểm hủy để tra lịch sử.
+/// </summary>
 [Table("PHAN_CONG_ANH_XQUANG")]
 public sealed class ET_PHANCONGANHXQUANG
 {

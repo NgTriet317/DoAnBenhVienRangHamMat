@@ -18,9 +18,16 @@ public sealed partial class DAL_BAOCAO : dbconnect
     public ET_DONGBAOCAO[] Doc(string ma, DateTime tuNgay, DateTime denNgay, int canhBao)
         => DocNoiBo(ma,tuNgay,denNgay,canhBao,false);
 
+    /// <summary>
+    /// Đọc nhánh chi tiết chứng từ; quyền chuyên đề và quyền xem chi tiết được kiểm tra lại trong DocNoiBo.
+    /// </summary>
     public ET_DONGBAOCAO[] DocChiTiet(string ma, DateTime tuNgay, DateTime denNgay, int canhBao)
         => DocNoiBo(ma,tuNgay,denNgay,canhBao,true);
 
+    /// <summary>
+    /// Kiểm tra đầu vào và phiên rồi chọn truy vấn cố định theo chuyên đề, tách kết quả tổng hợp với chi tiết.
+    /// </summary>
+    /// <remarks>Khoảng ngày được đổi sang mốc cuối không bao gồm. Nhánh chi tiết giới hạn 200 dòng và kiểm tra quyền tài chính hoặc kho trước khi trả dữ liệu.</remarks>
     private ET_DONGBAOCAO[] DocNoiBo(string ma, DateTime tuNgay, DateTime denNgay, int canhBao, bool chiTiet)
     {
         KiemTraDinhDang(ma, tuNgay, denNgay, canhBao);

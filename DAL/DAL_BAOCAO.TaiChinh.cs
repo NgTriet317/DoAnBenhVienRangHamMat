@@ -3,8 +3,15 @@ using ET;
 
 namespace DAL;
 
+/// <summary>
+/// Phần đọc chi tiết thu, hoàn và hóa đơn theo quyền xem chứng từ tài chính.
+/// </summary>
 public sealed partial class DAL_BAOCAO
 {
+    /// <summary>
+    /// Kiểm tra quyền tài chính riêng rồi lấy tối đa 200 chứng từ trong khoảng ngày.
+    /// </summary>
+    /// <remarks>Chuyên đề 09 dùng giao dịch thu/hoàn đã xác nhận; chuyên đề hóa đơn thể hiện phải thu, không đồng nghĩa tiền đã thu.</remarks>
     private ET_DONGBAOCAO[] DocChiTietTaiChinh(string ma,DateTime tu,DateTime den)
     {
         using var db=MoKetNoi();

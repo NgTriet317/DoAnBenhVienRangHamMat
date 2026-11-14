@@ -15,7 +15,7 @@
    <!-- Trường lựa chọn VisitFilter. Chuyển sự kiện đến Visit_Changed trong code-behind. -->
    <StackPanel Width="245" Margin="0,0,14,10"><TextBlock Text="Lần khám" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="VisitFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Visit_Changed" AutomationProperties.Name="Lần khám"/></StackPanel>
    <!-- Trường lựa chọn EmployeeFilter. Chuyển sự kiện đến Employee_Changed trong code-behind. -->
-   <StackPanel Width="240" Margin="0,0,14,10"><TextBlock Text="Nhân viên thực hiện *" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="EmployeeFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Employee_Changed" AutomationProperties.Name="Nhân viên thực hiện"/></StackPanel>
+   <StackPanel Width="240" Margin="0,0,14,10"><TextBlock Text="Nhân viên thực hiện *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="EmployeeFilter" Tag="DB:THANH_TOAN.MaNV" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Employee_Changed" AutomationProperties.Name="Nhân viên thực hiện"/></ContentControl></StackPanel>
    <!-- Thao tác Tải lại: gọi Reload_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
    <Button Content="Tải lại" Click="Reload_Click" Margin="0,20,8,10"/><!-- Thao tác Lập hóa đơn: gọi Create_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
    <Button x:Name="CreateButton" Content="Lập hóa đơn" Click="Create_Click" Style="{StaticResource HospitalPrimary}" Margin="0,20,0,10"/>
@@ -69,13 +69,13 @@
        <TextBlock x:Name="TotalsText" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,16,0,12"/>
        <TextBlock Text="Thu / hoàn tiền" Style="{StaticResource HospitalSection}"/>
        <!-- Thành phần PaymentForm. -->
-       <WrapPanel x:Name="PaymentForm"><StackPanel Width="100" Margin="0,0,12,12"><TextBlock Text="Giao dịch" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="PaymentType" SelectedIndex="0"><ComboBoxItem Content="Thu"/><ComboBoxItem Content="Hoàn"/></ComboBox></StackPanel><StackPanel Width="150" Margin="0,0,12,12"><TextBlock Text="Số tiền (₫) *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}">
+       <WrapPanel x:Name="PaymentForm"><StackPanel Width="100" Margin="0,0,12,12"><TextBlock Text="Giao dịch" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="PaymentType" Tag="DB:THANH_TOAN.LoaiGiaoDich" LostKeyboardFocus="PaymentField_LostKeyboardFocus" SelectedIndex="0"><ComboBoxItem Content="Thu"/><ComboBoxItem Content="Hoàn"/></ComboBox></ContentControl></StackPanel><StackPanel Width="150" Margin="0,0,12,12"><TextBlock Text="Số tiền (₫) *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}">
         <!-- Ô nhập AmountBox. Kiểm tra đầu vào theo metadata THANH_TOAN.SoTien. -->
-        <TextBox x:Name="AmountBox" Tag="DB:THANH_TOAN.SoTien" Style="{StaticResource PaymentTextInput}" AutomationProperties.Name="Số tiền thanh toán"/>
+        <TextBox x:Name="AmountBox" LostKeyboardFocus="PaymentField_LostKeyboardFocus" Tag="DB:THANH_TOAN.SoTien" Style="{StaticResource PaymentTextInput}" AutomationProperties.Name="Số tiền thanh toán"/>
        <!-- Trường lựa chọn MethodBox. -->
-       </ContentControl></StackPanel><StackPanel Width="180" Margin="0,0,12,12"><TextBlock Text="Phương thức *" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="MethodBox" SelectedIndex="0"><ComboBoxItem Content="Tiền mặt"/><ComboBoxItem Content="Chuyển khoản"/><ComboBoxItem Content="Thẻ"/></ComboBox></StackPanel><StackPanel Width="250" Margin="0,0,12,12"><TextBlock Text="Lý do (bắt buộc khi hoàn)" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}">
+       </ContentControl></StackPanel><StackPanel Width="180" Margin="0,0,12,12"><TextBlock Text="Phương thức *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="MethodBox" Tag="DB:THANH_TOAN.PhuongThuc" LostKeyboardFocus="PaymentField_LostKeyboardFocus" SelectedIndex="0"><ComboBoxItem Content="Tiền mặt"/><ComboBoxItem Content="Chuyển khoản"/><ComboBoxItem Content="Thẻ"/></ComboBox></ContentControl></StackPanel><StackPanel Width="250" Margin="0,0,12,12"><TextBlock Text="Lý do (bắt buộc khi hoàn)" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}">
         <!-- Ô nhập ReasonBox. Kiểm tra đầu vào theo metadata THANH_TOAN.LyDo. -->
-        <TextBox x:Name="ReasonBox" Tag="DB:THANH_TOAN.LyDo" Style="{StaticResource PaymentTextInput}" AutomationProperties.Name="Lý do giao dịch"/>
+        <TextBox x:Name="ReasonBox" LostKeyboardFocus="PaymentField_LostKeyboardFocus" Tag="DB:THANH_TOAN.LyDo" Style="{StaticResource PaymentTextInput}" AutomationProperties.Name="Lý do giao dịch"/>
        </ContentControl></StackPanel><!-- Thao tác Ghi nhận giao dịch: gọi Payment_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
        <Button Content="Ghi nhận giao dịch" Click="Payment_Click" Style="{StaticResource HospitalPrimary}" Margin="0,20,0,12"/></WrapPanel>
        <TextBlock Text="Lịch sử giao dịch" Style="{StaticResource HospitalSection}"/>
@@ -97,7 +97,7 @@
     <TabItem Header="Cấp thuốc" x:Name="DispenseTab"><ScrollViewer VerticalScrollBarVisibility="Auto"><Border Style="{StaticResource HospitalPanel}" Margin="0,14,0,0"><StackPanel>
      <TextBlock Text="Cấp đủ đơn thuốc" Style="{StaticResource HospitalSection}" Margin="0,0,0,8"/><TextBlock Text="Chọn lần khám và đơn đã xác nhận. Thuốc được cấp đủ từ các lô còn sử dụng, chưa hết hạn trong kho đã chọn; ưu tiên lô nhập trước." Style="{StaticResource HospitalMuted}"/>
      <!-- Trường lựa chọn PrescriptionFilter. Chuyển sự kiện đến Stock_Changed trong code-behind. -->
-     <WrapPanel Margin="0,18,0,0"><StackPanel Width="280" Margin="0,0,14,12"><TextBlock Text="Đơn thuốc *" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="PrescriptionFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Stock_Changed"/></StackPanel><StackPanel Width="240" Margin="0,0,14,12"><TextBlock Text="Kho cấp thuốc *" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="WarehouseFilter" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Stock_Changed"/></StackPanel><!-- Thao tác Cấp thuốc và ghi sổ: gọi Dispense_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
+     <WrapPanel Margin="0,18,0,0"><StackPanel Width="280" Margin="0,0,14,12"><TextBlock Text="Đơn thuốc *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="PrescriptionFilter" Tag="DB:PHIEU_XUAT.MaDT" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Stock_Changed"/></ContentControl></StackPanel><StackPanel Width="240" Margin="0,0,14,12"><TextBlock Text="Kho cấp thuốc *" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="WarehouseFilter" Tag="DB:PHIEU_XUAT.MaKho" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Stock_Changed"/></ContentControl></StackPanel><!-- Thao tác Cấp thuốc và ghi sổ: gọi Dispense_Click trong code-behind; điều kiện và luồng xử lý được chú thích tại hàm đó. -->
      <Button x:Name="DispenseButton" Content="Cấp thuốc và ghi sổ" Click="Dispense_Click" Style="{StaticResource HospitalPrimary}" Margin="0,20,0,12"/></WrapPanel>
      <!-- Thông tin hiển thị DispenseInfo. -->
      <TextBlock x:Name="DispenseInfo" Style="{StaticResource HospitalMuted}" Margin="0,0,0,12"/>
@@ -127,5 +127,3 @@
   </Grid>
  </Grid>
 </UserControl>
-
-    

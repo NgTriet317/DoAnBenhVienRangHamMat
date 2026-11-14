@@ -40,7 +40,13 @@ public sealed partial class ChartView : UserControl, INotifyPropertyChanged
     public static readonly DependencyProperty UnitProperty = DependencyProperty.Register(nameof(Unit), typeof(string), typeof(ChartView), new PropertyMetadata("VNĐ", OnPresentationChanged));
     /// <summary>Đơn vị tooltip do chuyên đề cung cấp; chuỗi rỗng cho dữ liệu đếm có tên chỉ tiêu rõ ràng.</summary>
     public string Unit { get => (string)GetValue(UnitProperty); set => SetValue(UnitProperty, value); }
+    /// <summary>
+    /// Dependency property cho đơn vị chuỗi số liệu phụ; thay đổi giá trị yêu cầu tính lại phần trình bày.
+    /// </summary>
     public static readonly DependencyProperty SecondaryUnitProperty = DependencyProperty.Register(nameof(SecondaryUnit), typeof(string), typeof(ChartView), new PropertyMetadata(null, OnPresentationChanged));
+    /// <summary>
+    /// Đơn vị cho tooltip chuỗi phụ; null để dùng chung đơn vị của chuỗi chính.
+    /// </summary>
     public string? SecondaryUnit { get => (string?)GetValue(SecondaryUnitProperty); set => SetValue(SecondaryUnitProperty, value); }
     /// <summary>
     /// Được theo dõi được giữ trong phạm vi lớp để các thao tác dùng lại.
@@ -60,7 +66,13 @@ public sealed partial class ChartView : UserControl, INotifyPropertyChanged
     public ChartPlotPoint[] PlotPoints { get; private set; } = Array.Empty<ChartPlotPoint>();
     /// <summary>Tập tọa độ hình học của đường; Polyline được khai báo trong XAML.</summary>
     public PointCollection LinePoints { get; private set; } = new();
+    /// <summary>
+    /// Các tọa độ của chuỗi phụ để XAML vẽ đường so sánh trên cùng thang đo.
+    /// </summary>
     public PointCollection SecondaryLinePoints { get; private set; } = new();
+    /// <summary>
+    /// Tọa độ dọc của giá trị 0 để cột âm và dương cùng xuất phát từ đúng đường cơ sở.
+    /// </summary>
     public double ZeroTop { get; private set; }
     /// <summary>Chiều rộng vùng vẽ hiện có dùng để kéo đường lưới đến mép phải.</summary>
     public double PlotWidth { get; private set; }

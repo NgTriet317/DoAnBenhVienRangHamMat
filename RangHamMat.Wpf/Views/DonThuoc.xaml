@@ -25,7 +25,7 @@
      <TextBlock Text="Trạng thái đơn đã kê" FontSize="12" Margin="0,12,0,4"/>
      <!-- Trường lựa chọn StatusFilter. Chuyển sự kiện đến Filter_Changed trong code-behind. -->
      <ComboBox x:Name="StatusFilter" SelectionChanged="Filter_Changed" SelectedIndex="0" AutomationProperties.Name="Trạng thái đơn thuốc">
-      <ComboBoxItem Content="Đã xác nhận"/><ComboBoxItem Content="Ngừng áp dụng"/>
+      <ComboBoxItem Content="Đã xác nhận"/><ComboBoxItem Content="Đã giao thuốc"/><ComboBoxItem Content="Ngừng áp dụng"/>
      </ComboBox>
      <!-- Nút thao tác Xóa bộ lọc — Xóa bộ lọc. Chuyển sự kiện đến ClearFilters_Click trong code-behind. -->
      <Button Content="Xóa bộ lọc" Style="{StaticResource HospitalSecondary}" Click="ClearFilters_Click" Margin="0,12,0,0"/>

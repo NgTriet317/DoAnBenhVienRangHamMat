@@ -75,11 +75,11 @@
         <!-- Ô nhập txtTimKiem. Chuyển sự kiện đến BoLoc_ThayDoi trong code-behind. -->
         <StackPanel Width="230" Margin="0,0,12,8"><TextBlock Text="Tìm serial, mã phiếu, tên hoặc nhân viên" Style="{StaticResource FieldLabel}"/><TextBox x:Name="txtTimKiem" AutomationProperties.Name="Tìm lịch sử bảo trì theo serial" TextChanged="BoLoc_ThayDoi"/></StackPanel>
         <!-- Trường lựa chọn dpTuNgay. Chuyển sự kiện đến BoLoc_ThayDoi trong code-behind. -->
-        <StackPanel Width="130" Margin="0,0,12,8"><TextBlock Text="Bắt đầu từ ngày" Style="{StaticResource FieldLabel}"/><DatePicker x:Name="dpTuNgay" AutomationProperties.Name="Bắt đầu từ ngày" SelectedDateChanged="BoLoc_ThayDoi"/></StackPanel>
+        <StackPanel Width="130" Margin="0,0,12,8"><TextBlock Text="Bắt đầu từ ngày" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><DatePicker x:Name="dpTuNgay" AutomationProperties.Name="Bắt đầu từ ngày" SelectedDateChanged="BoLoc_ThayDoi" LostKeyboardFocus="BoLoc_ThayDoi"/></ContentControl></StackPanel>
         <!-- Trường lựa chọn dpDenNgay. Chuyển sự kiện đến BoLoc_ThayDoi trong code-behind. -->
-        <StackPanel Width="130" Margin="0,0,12,8"><TextBlock Text="Đến ngày" Style="{StaticResource FieldLabel}"/><DatePicker x:Name="dpDenNgay" AutomationProperties.Name="Đến ngày" SelectedDateChanged="BoLoc_ThayDoi"/></StackPanel>
+        <StackPanel Width="130" Margin="0,0,12,8"><TextBlock Text="Đến ngày" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><DatePicker x:Name="dpDenNgay" AutomationProperties.Name="Đến ngày" SelectedDateChanged="BoLoc_ThayDoi" LostKeyboardFocus="BoLoc_ThayDoi"/></ContentControl></StackPanel>
         <!-- Trường lựa chọn cboTrangThai. Chuyển sự kiện đến BoLoc_ThayDoi trong code-behind. -->
-        <StackPanel Width="175" Margin="0,0,12,8"><TextBlock Text="Trạng thái" Style="{StaticResource FieldLabel}"/><ComboBox x:Name="cboTrangThai" AutomationProperties.Name="Lọc trạng thái bảo trì" SelectionChanged="BoLoc_ThayDoi"/></StackPanel>
+        <StackPanel Width="175" Margin="0,0,12,8"><TextBlock Text="Trạng thái" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="cboTrangThai" AutomationProperties.Name="Lọc trạng thái bảo trì" SelectionChanged="BoLoc_ThayDoi"/></ContentControl></StackPanel>
         <!-- Nút thao tác Bỏ bộ lọc — Bỏ bộ lọc. Chuyển sự kiện đến BoLoc_Click trong code-behind. -->
         <Button Content="Bỏ bộ lọc" Click="BoLoc_Click" VerticalAlignment="Bottom" Margin="0,0,0,8"/>
        </WrapPanel>
@@ -161,8 +161,8 @@
      <Border Style="{StaticResource HospitalPanel}" Padding="16,12" Margin="0,0,0,12">
       <WrapPanel>
        <StackPanel Width="300" Margin="0,0,12,8"><TextBlock Text="Tìm serial, thiết bị, nhân viên hoặc lý do" Style="{StaticResource FieldLabel}"/><TextBox x:Name="txtTimThanhLy" TextChanged="LocThanhLy_ThayDoi" AutomationProperties.Name="Tìm thiết bị đã thanh lý"/></StackPanel>
-       <StackPanel Width="135" Margin="0,0,12,8"><TextBlock Text="Thanh lý từ ngày" Style="{StaticResource FieldLabel}"/><DatePicker x:Name="dpThanhLyTu" SelectedDateChanged="LocThanhLy_ThayDoi"/></StackPanel>
-       <StackPanel Width="135" Margin="0,0,12,8"><TextBlock Text="Đến ngày" Style="{StaticResource FieldLabel}"/><DatePicker x:Name="dpThanhLyDen" SelectedDateChanged="LocThanhLy_ThayDoi"/></StackPanel>
+       <StackPanel Width="135" Margin="0,0,12,8"><TextBlock Text="Thanh lý từ ngày" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><DatePicker x:Name="dpThanhLyTu" SelectedDateChanged="LocThanhLy_ThayDoi" LostKeyboardFocus="LocThanhLy_ThayDoi" AutomationProperties.Name="Thanh lý từ ngày"/></ContentControl></StackPanel>
+       <StackPanel Width="135" Margin="0,0,12,8"><TextBlock Text="Đến ngày" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><DatePicker x:Name="dpThanhLyDen" SelectedDateChanged="LocThanhLy_ThayDoi" LostKeyboardFocus="LocThanhLy_ThayDoi" AutomationProperties.Name="Thanh lý đến ngày"/></ContentControl></StackPanel>
        <Button Content="Bỏ bộ lọc" Click="BoLocThanhLy_Click" VerticalAlignment="Bottom" Margin="0,0,0,8"/>
       </WrapPanel>
      </Border>
@@ -179,6 +179,7 @@
          <DataGridTextColumn Header="Giá trị thu hồi (đ)" Binding="{Binding GiaTri, StringFormat={}{0:N2}}" Width="155" ElementStyle="{StaticResource HospitalNumber}"/>
         </DataGrid.Columns>
        </DataGrid>
+       <!-- Danh sách thanh lý dùng dữ liệu đã lưu tại thời điểm thanh lý; khi không có kết quả phù hợp sẽ hiện thông báo. -->
        <TextBlock x:Name="KhongCoThanhLy" Text="Chưa có thiết bị đã thanh lý phù hợp bộ lọc." Style="{StaticResource HospitalMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
       </Grid></Border>
       <Border Grid.Row="1" x:Name="ChiTietThanhLy" Style="{StaticResource HospitalPanel}" Margin="0,12,0,0" Padding="16" Visibility="Collapsed">

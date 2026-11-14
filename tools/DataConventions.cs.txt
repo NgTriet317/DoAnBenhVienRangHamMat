@@ -1,0 +1,212 @@
+using System.Data;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
+using BUS;
+using DAL;
+using Dapper;
+using ET;
+
+/// <summary>Phần chuẩn hóa mã và nội dung trình bày của dữ liệu đồ án, dùng giao dịch do AcademicData.Main cấp.</summary>
+/// <remarks>Hoàn tất các lần khám nháp, đổi mã cùng tham chiếu và kiểm lại ràng buộc trước khi caller commit.</remarks>
+internal static partial class AcademicData
+{
+    const string PresentationMarker="RHM.DataPresentation.Version";
+    sealed record TextColumn(string TableName,string ColumnName);
+    sealed record CodeChange(string TableName,string ColumnName,string OldValue,string NewValue);
+    static string Q(string name)=>"["+name.Replace("]","]]")+"]";
+    static TextColumn[] TextColumns()=>db.Query<TextColumn>("""
+        SELECT t.name TableName,c.name ColumnName FROM sys.tables t
+        JOIN sys.columns c ON c.object_id=t.object_id JOIN sys.types y ON y.user_type_id=c.user_type_id
+        WHERE t.is_ms_shipped=0 AND c.is_computed=0 AND y.name IN(N'nvarchar',N'varchar',N'nchar',N'char',N'ntext',N'text')
+        ORDER BY t.name,c.column_id
+        """,transaction:tx).ToArray();
+    /// <summary>Kiểm nhãn/mã cũ, hàng đợi của bộ mẫu, trigger và mức tin cậy của các ràng buộc SQL.</summary>
+    /// <remarks>Xuất presentation-findings.json rồi phát lỗi nếu còn phát hiện; giới hạn kiểm hàng đợi theo dải mã bộ mẫu.</remarks>
+    static void CheckPresentation()
+    {
+        var findings=new SortedDictionary<string,long>();
+        void Test(string name,string sql){long n=Scalar<long>(sql);if(n!=0)findings[name]=n;}
+        foreach(var c in TextColumns())
+            Test("VisibleLabelsOrCodes:"+c.TableName+"."+c.ColumnName,$"SELECT COUNT_BIG(*) FROM dbo.{Q(c.TableName)} WHERE CONVERT(nvarchar(max),{Q(c.ColumnName)}) LIKE N'%[[]ĐỒ ÁN%' OR CONVERT(nvarchar(max),{Q(c.ColumnName)}) LIKE N'%DL26%' OR CONVERT(nvarchar(max),{Q(c.ColumnName)}) LIKE N'%mô phỏng%' OR CONVERT(nvarchar(max),{Q(c.ColumnName)}) LIKE N'%giả lập%'");
+        // These ranges identify the packaged cohort. Later user-created visits and schedules remain valid.
+        Test("UnassignedSeedRooms","SELECT COUNT_BIG(*) FROM dbo.LICH_LAM_VIEC WHERE TrangThai<>N'Hủy' AND MaPhong IS NULL AND (MaLLV LIKE N'DL26[_]%' OR (MaLLV LIKE N'LLV%' AND TRY_CONVERT(int,SUBSTRING(MaLLV,4,50))<=1102))");
+        Test("SeedClinicalQueue","SELECT COUNT_BIG(*) FROM dbo.PHIEU_KHAM_BENH WHERE TrangThai IN(N'Chờ khám',N'Đang khám') AND (MaPhieu LIKE N'DL26[_]%' OR (MaPhieu LIKE N'PKB%' AND TRY_CONVERT(int,SUBSTRING(MaPhieu,4,50))<=36))");
+        Test("DraftSeedVisits","SELECT COUNT_BIG(*) FROM dbo.LICH_SU_KHAM_BENH WHERE TrangThai=N'Nháp' AND(MaLS LIKE N'LSKB0%' OR(MaLS LIKE N'LS%' AND TRY_CONVERT(int,SUBSTRING(MaLS,3,50))<=36))");
+        Test("DisabledTriggers","SELECT COUNT_BIG(*) FROM sys.triggers WHERE is_ms_shipped=0 AND is_disabled=1");
+        Test("UncheckedConstraints","SELECT COUNT_BIG(*) FROM(SELECT is_disabled,is_not_trusted FROM sys.foreign_keys UNION ALL SELECT is_disabled,is_not_trusted FROM sys.check_constraints)c WHERE is_disabled=1 OR is_not_trusted=1");
+        Json("presentation-findings.json",findings);
+        Require(findings.Count==0,"Presentation/convention findings: "+string.Join(", ",findings.Select(p=>p.Key+"="+p.Value)));
+    }
+    /// <summary>Hoàn tất các lần khám nháp hiện có qua BUS và xóa phiếu chờ DL26_ chưa có lịch sử khám.</summary>
+    /// <remarks>Lưu, xác nhận kế hoạch/thực hiện và chốt khám theo ngữ cảnh bác sĩ; ghi danh sách thay đổi vào clinical-history.json.</remarks>
+    static void FinishExistingVisits()
+    {
+        var drafts=db.Query<(string MaLS,string MaBS)>("SELECT MaLS,MaBS FROM dbo.LICH_SU_KHAM_BENH WHERE TrangThai=N'Nháp' ORDER BY MaLS",transaction:tx).ToArray();
+        var completed=new List<string>();
+        foreach(var row in drafts)
+        {
+            var account=Scalar<string>("SELECT MaTK FROM dbo.TAI_KHOAN WHERE MaNV=@MaBS",new{row.MaBS});
+            var actor=Login(row.MaBS,account);var clinical=new BUS_KHAMDIEUTRI(tx);var draft=clinical.LayBanNhap(row.MaLS,actor);
+            bool noRx=Scalar<int>("SELECT COUNT(*) FROM dbo.DON_THUOC WHERE MaLS=@MaLS AND TrangThai=N'Đã xác nhận'",new{row.MaLS})==0;
+            var conditions=draft.TinhTrang.Select(c=>new TinhTrangKhamNhap{MaTTB=c.MaTTB,MaDMTT=c.MaDMTT,LoaiTinhTrang=c.LoaiTinhTrang,MoTaTinhTrang=c.MoTaTinhTrang,GhiChu=c.GhiChu}).ToList();
+            if(conditions.Count==0)
+            {
+                Execute("IF NOT EXISTS(SELECT 1 FROM dbo.DM_TINH_TRANG_BENH WHERE MaDMTT=N'DMTT006') INSERT dbo.DM_TINH_TRANG_BENH(MaDMTT,TenTinhTrang,MoTa,TrangThai) VALUES(N'DMTT006',N'Đau răng chưa rõ nguyên nhân',N'Triệu chứng cần thăm khám và theo dõi.',N'Đang áp dụng')");
+                conditions.Add(new(){MaDMTT="DMTT006",LoaiTinhTrang="Đau răng chưa rõ nguyên nhân",MoTaTinhTrang="Ghi nhận đau răng, chưa xác định tổn thương đặc hiệu qua khám ban đầu."});
+            }
+            draft=clinical.LuuKham(new(){MaLS=row.MaLS,DauVanTay=draft.DauVanTay,
+                TrieuChung=string.IsNullOrWhiteSpace(draft.LanKham.TrieuChung)?"Đau răng":draft.LanKham.TrieuChung,
+                ChanDoan=string.IsNullOrWhiteSpace(draft.LanKham.ChanDoan)?conditions[0].LoaiTinhTrang:draft.LanKham.ChanDoan,
+                KeHoachXuLy="Hoàn tất khám, hướng dẫn vệ sinh răng miệng và tái khám theo diễn tiến.",
+                KhongKeThuoc=noRx,LyDoKhongKeThuoc=noRx?"Không có chỉ định thuốc ngoại trú sau khám và xử trí tại chỗ.":null,
+                GhiChu="Đã hoàn tất đánh giá và ghi nhận kết quả khám.",TinhTrang=conditions},actor);
+            foreach(var id in db.Query<string>("SELECT MaKHDT FROM dbo.KE_HOACH_DIEU_TRI WHERE MaLS=@MaLS AND TrangThai=N'Nháp'",new{row.MaLS},tx).ToArray())
+            {var plan=clinical.LayKeHoach(id,actor);clinical.XacNhanKeHoach(id,plan.DauVanTay,actor);}
+            var summary=clinical.LayTongKetKham(row.MaLS,actor);clinical.XacNhanThucHien(row.MaLS,summary.DauVanTay,actor);
+            draft=clinical.LayBanNhap(row.MaLS,actor);summary=clinical.LayTongKetKham(row.MaLS,actor);
+            clinical.ChotKhamVaLapHoaDon(row.MaLS,draft.DauVanTay,summary.DauVanTay,actor);completed.Add(row.MaLS);
+        }
+        Login();
+        // Only seed receipts without clinical history are removed. Never cascade clinical records.
+        var deleted=db.Query<string>("DELETE p OUTPUT deleted.MaPhieu FROM dbo.PHIEU_KHAM_BENH p WHERE p.MaPhieu LIKE N'DL26[_]%' AND p.TrangThai=N'Chờ khám' AND NOT EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaPhieu=p.MaPhieu)",transaction:tx).ToArray();
+        Json("clinical-history.json",new{Completed=completed,RemovedEmptyWaitingReceipts=deleted});
+    }
+    /// <summary>Lập ánh xạ mã bộ mẫu và tên đăng nhập sang quy ước hiện hành, kiểm để tránh trùng mã đích.</summary>
+    /// <returns>Danh sách bảng, cột, mã cũ và mã mới; chưa tự cập nhật dữ liệu SQL.</returns>
+    static List<CodeChange> BuildCodeMap()
+    {
+        var changes=new List<CodeChange>();
+        var keys=db.Query<TextColumn>("""
+            SELECT t.name TableName,c.name ColumnName FROM sys.tables t JOIN sys.indexes i ON i.object_id=t.object_id AND i.is_primary_key=1
+            JOIN sys.index_columns ic ON ic.object_id=i.object_id AND ic.index_id=i.index_id JOIN sys.columns c ON c.object_id=t.object_id AND c.column_id=ic.column_id
+            JOIN sys.types y ON y.user_type_id=c.user_type_id
+            WHERE y.name IN(N'nvarchar',N'varchar',N'nchar',N'char') AND(SELECT COUNT(*) FROM sys.index_columns x WHERE x.object_id=i.object_id AND x.index_id=i.index_id)=1 ORDER BY t.name
+            """,transaction:tx).ToArray();
+        foreach(var key in keys)
+        {
+            var values=db.Query<string>($"SELECT {Q(key.ColumnName)} FROM dbo.{Q(key.TableName)} ORDER BY {Q(key.ColumnName)}",transaction:tx).ToArray();
+            string prefix=Regex.Replace(dbconnect.DinhDangMa(key.TableName,1),"[0-9]+$","");
+            // DMTT and receipt codes are explicit business identifiers in the existing catalog.
+            if(key.TableName=="DM_TINH_TRANG_BENH")prefix="DMTT";
+            long next=values.Where(v=>Regex.IsMatch(v,"^"+prefix+"[0-9]+$")).Select(v=>long.Parse(v[prefix.Length..])).DefaultIfEmpty(0).Max();
+            var reserved=values.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach(var old in values.Where(v=>v.StartsWith("DL26_",StringComparison.Ordinal)||key.TableName=="LICH_SU_KHAM_BENH"&&Regex.IsMatch(v,"^LSKB0(1[3-9]|2[0-9]|3[0-6])$")))
+            {
+                string id;
+                if(key.TableName=="LICH_SU_KHAM_BENH")id="LS"+old[4..];
+                else{do{id=prefix+(++next).ToString("D3");}while(reserved.Contains(id));}
+                Require(reserved.Add(id),"Code collision: "+id);changes.Add(new(key.TableName,key.ColumnName,old,id));
+            }
+        }
+        changes.Add(new("TAI_KHOAN","TenDangNhap","doan_baoton","user011"));
+        changes.Add(new("TAI_KHOAN","TenDangNhap","doan_phauthuat","user012"));
+        changes.Add(new("TAI_KHOAN","TenDangNhap","doan_hinhanh","user013"));
+        changes.Add(new("TAI_KHOAN","TenDangNhap","doan_phuchoi","user014"));
+        Require(changes.Select(c=>c.OldValue).Distinct().Count()==changes.Count,"Duplicate old code");return changes;
+    }
+    static bool Marked(string value)=>Regex.IsMatch(value,@"ĐỒ ÁN|đồ án|mô phỏng|giả lập|thực hành|không phải.*thật|không dùng điều trị|tình huống mẫu|hồ sơ mẫu",RegexOptions.IgnoreCase);
+    static string CleanText(string table,string column,string value)
+    {
+        if(!Marked(value))return value.Replace("RHM-DEMO-","RHM-");
+        if(table=="BENH_NHAN")return column=="DiaChi"?"Thành phố Hồ Chí Minh":column is "TienSuBenh" or "DiUng"?"Chưa ghi nhận":Strip(value);
+        if(table=="NHAN_VIEN")return column=="DiaChi"?"Thành phố Hồ Chí Minh":column=="BangCap"?"Bác sĩ":Strip(value);
+        if(table=="HO_SO_BENH_AN")return column=="LyDoKhamBanDau"?"Khám răng hàm mặt":"Hồ sơ khám ngoại trú.";
+        if(table=="PHIEU_KHAM_BENH")return column=="LyDoKham"?"Khám răng hàm mặt":"Tiếp nhận khám ngoại trú.";
+        if(table=="LICH_KHAM")return "Lịch hẹn khám theo ca và phòng đã phân công.";
+        if(table=="LICH_LAM_VIEC")return "Lịch làm việc theo ca; ghi nhận hiện diện theo giờ vào và giờ ra.";
+        if(table=="CA_LAM")return value.Contains("chiều")?"Ca chiều 4 giờ, tương ứng 0,5 công.":"Ca sáng 4 giờ, tương ứng 0,5 công.";
+        if(table=="DICH_VU")return "Dịch vụ chuyên khoa; đơn giá và thời lượng áp dụng theo cấu hình danh mục.";
+        if(table=="DM_TINH_TRANG_BENH")return "Tình trạng lâm sàng để phân loại kết quả khám và liên kết dịch vụ phù hợp.";
+        if(table=="LOAI_HANG_HOA")return "Vật tư tiêu hao sử dụng trong chuyên môn nha khoa.";
+        if(table=="LICH_SU_KHAM_BENH")return column switch{"TrieuChung"=>Strip(value),"KeHoachXuLy"=>"Thực hiện dịch vụ đã duyệt, hướng dẫn chăm sóc và tái khám theo diễn tiến.","LyDoKhongKeThuoc"=>"Chỉ khám và điều trị tại chỗ, không có chỉ định thuốc ngoại trú.",_=>"Đã ghi nhận kết quả khám và hướng dẫn chăm sóc."};
+        if(table=="TINH_TRANG_BENH")return "Ghi nhận tình trạng qua khám lâm sàng, làm cơ sở lập kế hoạch điều trị.";
+        if(table=="CHI_TIET_DON_THUOC")return column=="LieuDung"?Strip(value):"Dùng thuốc theo hướng dẫn đã ghi trong đơn.";
+        if(table=="DON_THUOC")return "Đơn thuốc ngoại trú theo kết quả khám.";
+        if(table=="KE_HOACH_DIEU_TRI")return "Kế hoạch điều trị theo tình trạng đã ghi nhận.";
+        if(table=="CHI_TIET_KE_HOACH")return "Thực hiện dịch vụ đã lựa chọn và ghi nhận kết quả điều trị.";
+        if(table=="DICH_VU_THUC_HIEN")return "Đã thực hiện dịch vụ theo kế hoạch được duyệt.";
+        if(table=="HANG_HOA"&&column=="MoTa")return "Hàng hóa được quản lý theo loại, đơn vị tính, lô nhập và hạn sử dụng nếu có.";
+        if(table=="NHAT_KY_THAO_TAC")return column=="LoaiDoiTuong"?"HE_THONG":column=="HanhDong"?"Chuẩn hóa dữ liệu":"Cập nhật và chuẩn hóa dữ liệu hệ thống.";
+        if(table=="PHIEU_NHAP")return "Nhập hàng theo hóa đơn nhà cung cấp; quản lý số lượng theo lô.";
+        if(table=="CHI_TIET_PHIEU_NHAP")return "Đã đối chiếu mặt hàng, số lượng và đơn giá nhập.";
+        if(table=="PHIEU_XUAT")return column=="LyDo"?"Bàn giao hàng hóa cho phòng sử dụng":"Xuất kho theo mục đích và phòng nhận đã ghi trên phiếu.";
+        if(table=="CHI_TIET_PHIEU_XUAT")return "Xuất hàng theo lô và số lượng ghi trên phiếu.";
+        if(table=="LO_HANG_HOA")return "Theo dõi nguồn nhập, số lượng tồn và hạn sử dụng của lô hàng.";
+        if(table=="HOA_DON_NHAP")return "Hóa đơn nhập hàng đã đối chiếu với nhà cung cấp.";
+        if(table=="HOA_DON")return "Chứng từ viện phí liên kết với lần khám và chi tiết dịch vụ, thuốc.";
+        if(table=="CHI_TIET_HOA_DON")return "Chi phí theo dịch vụ hoặc thuốc đã được xác nhận.";
+        if(table=="THANH_TOAN")return "Thanh toán viện phí theo hóa đơn.";
+        if(table=="THIET_BI")return column=="LyDoThanhLy"?Strip(value):"Thiết bị được quản lý theo serial, nguồn nhập và phòng sử dụng.";
+        if(table=="BAO_TRI_THIET_BI")return column=="NoiDung"?Strip(value):"Theo dõi tiến độ kiểm tra và bảo trì thiết bị.";
+        return Strip(value);
+    }
+    static string Strip(string value)
+    {
+        string s=Regex.Replace(value,@"\[ĐỒ ÁN[^\]]*\]|\(mô phỏng\)|\(giả lập\)","",RegexOptions.IgnoreCase);
+        s=Regex.Replace(s,@"Dữ liệu (giả lập|mô phỏng); giá/lô/serial/chứng từ không phải giao dịch thực tế\.?","",RegexOptions.IgnoreCase);
+        s=Regex.Replace(s,@"^(Tình huống|Chỉ định)\s*(mô phỏng)?\s*:\s*","",RegexOptions.IgnoreCase);
+        s=Regex.Replace(s,@"\s*trong tình huống mẫu", "",RegexOptions.IgnoreCase).Replace("hồ sơ mẫu","hồ sơ điều trị");
+        s=Regex.Replace(s,@"\b(theo tình huống đồ án|tình huống đồ án|đồ án|mô phỏng|giả lập|thực hành)\b","",RegexOptions.IgnoreCase);
+        s=Regex.Replace(s,@"\s+"," ").Trim(' ',':',';','-');
+        return s.Length==0?"Đã cập nhật thông tin.":s;
+    }
+    /// <summary>Áp dụng một lần việc hoàn tất khám, đổi mã, chuẩn hóa văn bản và phân phòng cho dữ liệu đồ án.</summary>
+    /// <remarks>Tạm ngắt ràng buộc/trigger trong giao dịch rồi bật và kiểm lại; xử lý JSON theo cấu trúc, bỏ qua cột hash/dấu vân tay.</remarks>
+    static void ApplyPresentation()
+    {
+        if(Scalar<int>("SELECT COUNT(*) FROM sys.extended_properties WHERE class=0 AND name=@PresentationMarker",new{PresentationMarker})>0){Console.WriteLine("Presentation migration already applied; checking only");return;}
+        Json("counts-before-presentation.json",Counts());FinishExistingVisits();
+        var changes=BuildCodeMap();Json("code-map.json",changes);
+        var columns=TextColumns();var tables=columns.Select(c=>c.TableName).Distinct().ToArray();
+        var triggers=db.Query<string>("SELECT QUOTENAME(OBJECT_SCHEMA_NAME(object_id))+'.'+QUOTENAME(name) FROM sys.triggers WHERE parent_class=1 AND is_ms_shipped=0 AND is_disabled=0",transaction:tx).ToArray();
+        foreach(var table in tables)Execute($"ALTER TABLE dbo.{Q(table)} NOCHECK CONSTRAINT ALL");
+        foreach(var trigger in triggers)Execute($"DISABLE TRIGGER {trigger} ON {Scalar<string>("SELECT QUOTENAME(OBJECT_SCHEMA_NAME(parent_id))+'.'+QUOTENAME(OBJECT_NAME(parent_id)) FROM sys.triggers WHERE object_id=OBJECT_ID(@trigger)",new{trigger})}");
+        Execute("CREATE TABLE #CodeMap(OldValue nvarchar(256) NOT NULL PRIMARY KEY,NewValue nvarchar(256) NOT NULL)");
+        foreach(var change in changes)Execute("INSERT #CodeMap VALUES(@OldValue,@NewValue)",change);
+        foreach(var column in columns)
+            Execute($"UPDATE t SET {Q(column.ColumnName)}=m.NewValue FROM dbo.{Q(column.TableName)} t JOIN #CodeMap m ON CONVERT(nvarchar(max),t.{Q(column.ColumnName)}) COLLATE DATABASE_DEFAULT=m.OldValue");
+        var map=changes.ToDictionary(c=>c.OldValue,c=>c.NewValue,StringComparer.Ordinal);
+        map["DL26"]="HE_THONG";map["DU_LIEU_DO_AN"]="HE_THONG";
+        var token=new Regex("(?<![A-Za-z0-9_])(?:"+string.Join("|",map.Keys.OrderByDescending(k=>k.Length).Select(Regex.Escape))+")(?![A-Za-z0-9_])");
+        string Transform(string table,string column,string value)
+        {
+            // JSON is parsed so embedded codes and display labels stay valid even in audit payloads.
+            if(value.TrimStart().StartsWith('{')||value.TrimStart().StartsWith('['))
+            {
+                try{var node=JsonNode.Parse(value);void Walk(JsonNode? n){if(n is JsonObject obj){foreach(var p in obj.ToArray()){if(p.Value is JsonValue v&&v.TryGetValue<string>(out var s))obj[p.Key]=CleanText(table,p.Key,token.Replace(s,m=>map[m.Value]));else Walk(p.Value);}}else if(n is JsonArray a){for(int i=0;i<a.Count;i++){if(a[i] is JsonValue v&&v.TryGetValue<string>(out var s))a[i]=CleanText(table,column,token.Replace(s,m=>map[m.Value]));else Walk(a[i]);}}}Walk(node);return node!.ToJsonString(new JsonSerializerOptions{Encoder=System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping});}catch(JsonException){}
+            }
+            return CleanText(table,column,token.Replace(value,m=>map[m.Value]));
+        }
+        var cleanup=new List<object>();
+        foreach(var column in columns)
+        {
+            // Hashes/passwords and opaque request identifiers remain untouched.
+            if(column.ColumnName.Contains("Hash",StringComparison.OrdinalIgnoreCase)||column.ColumnName.Contains("DauVanTay",StringComparison.OrdinalIgnoreCase))continue;
+            foreach(var old in db.Query<string>($"SELECT DISTINCT CONVERT(nvarchar(max),{Q(column.ColumnName)}) FROM dbo.{Q(column.TableName)} WHERE {Q(column.ColumnName)} IS NOT NULL",transaction:tx).ToArray())
+            {
+                var clean=Transform(column.TableName,column.ColumnName,old);
+                if(old==clean)continue;
+                int rows=Execute($"UPDATE dbo.{Q(column.TableName)} SET {Q(column.ColumnName)}=@clean WHERE CONVERT(nvarchar(max),{Q(column.ColumnName)})=@old",new{clean,old});
+                cleanup.Add(new{column.TableName,column.ColumnName,Rows=rows});
+            }
+        }
+        Execute("""
+            INSERT dbo.PHONG(MaPhong,TenPhong,MaKhoa,LoaiPhong,TinhTrang,TrangThai) VALUES
+            (N'PH016',N'Quầy tiếp nhận',N'KHOA001',N'Quầy tiếp nhận',N'Sẵn sàng',N'Đang hoạt động'),
+            (N'PH017',N'Phòng điều phối kho',N'KHOA008',N'Phòng nghiệp vụ kho',N'Sẵn sàng',N'Đang hoạt động'),
+            (N'PH018',N'Quầy thanh toán viện phí',N'KHOA010',N'Quầy thanh toán',N'Sẵn sàng',N'Đang hoạt động'),
+            (N'PH019',N'Phòng nhân sự',N'KHOA010',N'Phòng hành chính',N'Sẵn sàng',N'Đang hoạt động');
+            UPDATE dbo.LICH_LAM_VIEC SET MaPhong=CASE MaNV
+              WHEN N'NV001' THEN N'PH010' WHEN N'NV004' THEN N'PH007' WHEN N'NV005' THEN N'PH016'
+              WHEN N'NV006' THEN N'PH008' WHEN N'NV007' THEN N'PH017' WHEN N'NV008' THEN N'PH018'
+              WHEN N'NV009' THEN N'PH004' WHEN N'NV010' THEN N'PH019' END
+            WHERE MaPhong IS NULL AND MaNV IN(N'NV001',N'NV004',N'NV005',N'NV006',N'NV007',N'NV008',N'NV009',N'NV010');
+            """);
+        foreach(var table in tables)Execute($"ALTER TABLE dbo.{Q(table)} WITH CHECK CHECK CONSTRAINT ALL");
+        foreach(var trigger in triggers)Execute($"ENABLE TRIGGER {trigger} ON {Scalar<string>("SELECT QUOTENAME(OBJECT_SCHEMA_NAME(parent_id))+'.'+QUOTENAME(OBJECT_NAME(parent_id)) FROM sys.triggers WHERE object_id=OBJECT_ID(@trigger)",new{trigger})}");
+        Require(!db.Query("DBCC CHECKCONSTRAINTS WITH ALL_CONSTRAINTS",transaction:tx).Any(),"CHECK/FK failure");
+        Execute("EXEC sys.sp_addextendedproperty @name=@PresentationMarker,@value=N'1'",new{PresentationMarker});
+        Json("text-cleanup.json",cleanup);CheckPresentation();
+    }
+}

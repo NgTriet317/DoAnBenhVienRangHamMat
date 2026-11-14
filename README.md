@@ -12,17 +12,17 @@ Bản SQL đồng bộ ngày10/11/2026 có checker tổng cho đủ schema64/kh�
 sqlcmd -S . -E -C -b -f65001 -i Database/QLBenhVienRangHamMat.sql
 ```
 
-File chỉ tạo một database **QLBenhVienRangHamMat**, schema hiện tại **64 bảng**. Khi chưa có bảng, script nạp đầy đủ schema và bản dữ liệu đã phục hồi từ backup ngày29/10/2026 lúc15:32, sau đó kiểm tra đồng bộ. Khi chạy lại trên database đã có bảng, script giữ dữ liệu hiện tại, không nạp đè snapshot và không tự dọn DEMO28. Sao lưu trước khi đồng bộ database ClinicalWorkflow v2/v3 được hỗ trợ.
+File chỉ tạo một database **QLBenhVienRangHamMat**, schema hiện tại **64 bảng**. Khi chưa có bảng, script nạp đầy đủ schema và bộ dữ liệu đồ án đã chuẩn hóa ngày12/11/2026 (gồm hồ sơ phục hồi và dữ liệu giả lập liên thông), sau đó kiểm tra đồng bộ. Khi chạy lại trên database đã có bảng, script giữ dữ liệu hiện tại, không nạp đè snapshot và không tự dọn dữ liệu. Sao lưu trước khi đồng bộ database ClinicalWorkflow v2/v3 được hỗ trợ.
 
 Đã hợp nhất các phần còn thiếu từ SQL_V9_CAI_MOI_TEST_F5.sql: lịch khám có mức nghiêm trọng/bác sĩ dự bị; chấm công, nhật ký duyệt; lương, phụ cấp, khấu trừ, bảo hiểm, hoa hồng và khóa kỳ đã chốt. Chỉ chạy file SQL chính; không cần chạy thêm các file nâng cấp trong SQL/. File V9 gốc chỉ dùng đối chiếu, có dữ liệu mẫu và không dùng để chạy tiếp trên database đang sử dụng. Xem [đối chiếu và cách bảo toàn lương cũ](docs/database/HOP_NHAT_V9.md).
 
 Phiếu lương từ công thức cũ giữ nguyên số tiền, ghi chú và trạng thái bằng bản tiền trước đồng bộ. Phiếu đã chốt không được sửa; không tự điền người chốt khi dữ liệu cũ chưa có. Bấm Tính lương mới chuyển các phiếu Nháp sang công thức V9 và vẫn giữ bản tiền gốc để đối chiếu. Nhập lịch nghỉ đã được bệnh viện duyệt vào NGAY_NGHI_LE trước khi tính kỳ liên quan; bản cài không tự áp lịch nghỉ hoặc tạo chứng từ lương mẫu.
 
-Cài mới có dữ liệu phục hồi: **11 bệnh nhân,10 nhân viên,10 thiết bị,10 lịch sử bảo trì,11 hóa đơn,10 phiếu lương,10 tài khoản** cùng dữ liệu liên quan; bản phục hồi gốc1.410 dòng; bản đóng gói hiện tại1.418 dòng do giữ thêm8 nhật ký truy cập khi kiểm giao diện, trên các bảng nghiệp vụ cũ. Các lần bảo trì cũ đã kết thúc được đồng bộ thành Đã hoàn thành; tiền lương cũ được bảo toàn. Đăng nhập Admin đã kiểm chứng với **admin001 / 123456**; đồng bộ không đặt lại mật khẩu tài khoản hiện tại. Xem [phục hồi dữ liệu và cập nhật bản SQL](docs/database/PHUC_HOI_VA_DU_LIEU_SQL.md).
+Cài mới có **47 bệnh nhân,58 dịch vụ,68 thuốc,24 vật tư,18 thiết bị,14 nhân viên/tài khoản,36 hóa đơn** cùng nguồn kho, lịch làm việc, hồ sơ và bàn giao liên thông. Snapshot ngày **12/11/2026** có **64 bảng,3.285 dòng**, giữ **36 lượt khám lịch sử**, không nạp sẵn hàng chờ khám. Toàn bộ **1.102 lịch làm việc** đã có phòng phù hợp. Có 13 hóa đơn chờ thu và sáu đơn chờ giao để thao tác tiếp. Dữ liệu hiển thị đã bỏ nhãn đồ án, dùng mã cùng tiền tố dữ liệu cũ; nguồn gốc dữ liệu giả lập của đồ án được ghi trong tài liệu. Mật khẩu cũ và tiền lương lịch sử được giữ; Admin **admin001 / 123456**. Xem [tài khoản, mã và kiểm chứng hiện tại](docs/database/DU_LIEU_THONG_NHAT_20261112.md).
 
-Danh mục khởi tạo có47 tình trạng,42 dịch vụ,112 liên kết; gồm chấn thương, khớp thái dương hàm, niêm mạc, tuyến nước bọt, nhiễm trùng, nang/u, khe hở, thần kinh, hậu phẫu và bệnh răng. Nguồn/giá/ngày đối chiếu tại [DANH_MUC_RHM.md](docs/clinical-workflow/DANH_MUC_RHM.md). Giá công khai của cơ sở nguồn là mức tham khảo ban đầu; bệnh viện quản lý giá áp dụng trong DICH_VU.
+Bộ dữ liệu hiện có53 tình trạng,58 dịch vụ,121 liên kết; gồm chấn thương, khớp thái dương hàm, niêm mạc, tuyến nước bọt, nhiễm trùng, nang/u, khe hở, thần kinh, hậu phẫu và bệnh răng. Danh mục nguồn và giá tham khảo ban đầu tại [DANH_MUC_RHM.md](docs/clinical-workflow/DANH_MUC_RHM.md); nguồn gốc giá cấu hình bổ sung được ghi trong tài liệu dữ liệu hiện tại.
 
-Danh mục thuốc có52 sản phẩm có nguồn và20 nhóm độc lập mẫu đơn:40 giá tham khảo công khai,12 thuốc chưa thiết lập giá. Database đang dùng có62 thuốc sau khi bổ sung và đã phân nhóm cả10 thuốc cũ. Thuốc giá0 hiển thị **Chưa thiết lập giá**, không coi là miễn phí; cần cập nhật giá trước lập hóa đơn. Không tự tạo liều dùng, mẫu đơn hay tồn kho. Xem [DANH_MUC_THUOC_RHM.md](docs/clinical-workflow/DANH_MUC_THUOC_RHM.md).
+Danh mục gốc có52 sản phẩm có nguồn và20 nhóm độc lập mẫu đơn:40 giá tham khảo công khai,12 giá chưa thiết lập. Bộ dữ liệu hiện có68 thuốc sau thêm sáu sản phẩm; 12 giá thiếu đã được đặt giá cấu hình cho đồ án. Đã nhập lô và tồn bằng chứng từ để dùng thử cấp thuốc. Không tự tạo mẫu liều hay người phê duyệt hướng dẫn. Cơ chế ứng dụng vẫn coi thuốc giá0 là **Chưa thiết lập giá** và chặn thanh toán. Xem [nguồn danh mục gốc](docs/clinical-workflow/DANH_MUC_THUOC_RHM.md) và [bộ dữ liệu hiện tại](docs/database/DU_LIEU_THONG_NHAT_20261112.md).
 
 ## Cấu hình và chạy
 
@@ -44,7 +44,9 @@ Kế hoạch `KeHoachTrienKhai.docx` ngày07/11/2026 đã triển khai **P0–P5
 
 ## Ảnh X-quang theo lần khám
 
-Bác sĩ mở tab **Ảnh X-quang** trong lần khám để tải JPG/JPEG/PNG, xem trước/phóng thu hoặc ẩn ảnh. Ảnh được giữ nguyên byte gốc, tối đa20 MiB/40 triệu điểm ảnh; ẩn giữ lại tệp và metadata. Lượt đã chốt chỉ xem. Bác sĩ có thể giao dịch vụ chụp đã ghi nhận ở bước **4. Thực hiện** cho kỹ thuật viên; kỹ thuật viên mở **Dịch vụ thực hiện → Ảnh X-quang được giao** và chỉ thấy phần được giao. Phân công được lưu riêng, giữ nguyên người thực hiện và giá của chứng từ dịch vụ.
+Bác sĩ mở tab **Ảnh X-quang** trong lần khám để tải JPG/JPEG/PNG hoặc **DICOM (.dcm, .dicom)**, xem trước/phóng thu hoặc ẩn ảnh. JPG/PNG giữ nguyên byte gốc; DICOM tự chuyển khung đầu tiên sang PNG, áp mức xám/window level của ảnh nguồn và giữ tên DICOM gốc trong metadata. Kho lưu PNG để xem, không lưu bản DICOM nguồn. Cả tệp tải và ảnh PNG sau chuyển đổi đều tối đa20 MiB/40 triệu điểm ảnh; ẩn giữ lại tệp trong kho và metadata. Lượt đã chốt chỉ xem. Bác sĩ có thể giao dịch vụ chụp đã ghi nhận ở bước **4. Thực hiện** cho kỹ thuật viên; kỹ thuật viên mở **Dịch vụ thực hiện → Ảnh X-quang được giao** và chỉ thấy phần được giao. Phân công được lưu riêng, giữ nguyên người thực hiện và giá của chứng từ dịch vụ.
+
+Chuyển đổi dùng fo-dicom/ImageSharp và fo-dicom.Codecs (JPEG, JPEG-LS, JPEG 2000, RLE). Máy Windows đọc DICOM nén cần Visual C++ Redistributable v14 và các thư viện native đi kèm bản build/publish theo [hướng dẫn của bộ codec](https://github.com/Efferent-Health/fo-dicom.Codecs#dependencies). Không cần cập nhật schema SQL. Chạy `powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraDicomXquang.ps1` để kiểm chuyển đổi, lưu/mở lại và bộ xem WPF bằng ảnh tổng hợp, không kết nối SQL.
 
 Cấu hình kho chung trong `XQuang` của `appsettings.json` cạnh ứng dụng:
 
@@ -96,6 +98,8 @@ Phiên lưu tại `%LOCALAPPDATA%\RangHamMat\phien-dang-nhap.dat`, được Wind
 ## Kiểm tra và đóng gói
 
 Hướng dẫn đọc từng tầng, quy ước chú thích tiếng Việt và phạm vi bổ sung ngày30/10/2026 tại [HƯỚNG DẪN CHÚ THÍCH CODE](docs/HUONG_DAN_CHU_THICH_CODE.md). Chú thích bổ sung không thay đổi token thực thi C#, cấu trúc XAML hoặc nội dung file SQL chính.
+
+[Rà soát ngày14/11/2026](docs/database/RA_SOAT_LIEN_KET_NGHIEP_VU_20261114.md) đối chiếu toàn bộ64 bảng/3.285 dòng với luồng nghiệp vụ, giữ riêng các bước chờ thu/giao/chấm công và lương lịch sử; đồng thời bổ sung chú thích cho120 tệp còn thiếu. Có manifest SHA256 và kết quả kiểm chứng kèm theo.
 
 ```powershell
 .\KiemTra.bat -KiemTraSql -MayChu . -Database QLBenhVienRangHamMat

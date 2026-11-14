@@ -201,6 +201,10 @@
     <Cot Ten="MaTB" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
     <Cot Ten="MaHH" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
     <Cot Ten="SoSerial" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="NgayThanhLy" Kieu="datetime2" QuyCach="0" ChoTrong="true" Khoa="false" />
+    <Cot Ten="MaNVThanhLy" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
+    <Cot Ten="LyDoThanhLy" Kieu="nvarchar" QuyCach="1000" ChoTrong="true" Khoa="false" />
+    <Cot Ten="GiaTriThanhLy" Kieu="decimal" QuyCach="18,2" ChoTrong="true" Khoa="false" />
     <Cot Ten="NgayMua" Kieu="date" QuyCach="" ChoTrong="true" Khoa="false" />
     <Cot Ten="MaNCC" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
     <Cot Ten="MaPhong" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
@@ -510,5 +514,19 @@
     <Cot Ten="MaNVGiao" Kieu="nvarchar" QuyCach="50" ChoTrong="true" Khoa="false" />
     <Cot Ten="ThoiGianGiao" Kieu="datetime2" QuyCach="0" ChoTrong="true" Khoa="false" />
     <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="MAX" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="NGAY_NGHI_LE">
+    <Cot Ten="MaNgayNghi" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="NgayNghi" Kieu="date" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="TenNgayNghi" Kieu="nvarchar" QuyCach="255" ChoTrong="false" Khoa="false" />
+    <Cot Ten="LoaiNgayNghi" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="false" />
+    <Cot Ten="CoHuongLuong" Kieu="bit" QuyCach="" ChoTrong="false" Khoa="false" />
+    <Cot Ten="GhiChu" Kieu="nvarchar" QuyCach="500" ChoTrong="true" Khoa="false" />
+  </Bang>
+  <Bang Ten="DICH_VU_TINH_TRANG">
+    <Cot Ten="MaDMTT" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="MaDV" Kieu="nvarchar" QuyCach="50" ChoTrong="false" Khoa="true" />
+    <Cot Ten="NoiDungDeXuat" Kieu="nvarchar" QuyCach="500" ChoTrong="false" Khoa="false" />
+    <Cot Ten="ThuTu" Kieu="int" QuyCach="" ChoTrong="false" Khoa="false" />
   </Bang>
 </QuyTacNhapLieu>

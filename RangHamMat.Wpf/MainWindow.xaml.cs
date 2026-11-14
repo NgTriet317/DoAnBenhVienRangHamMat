@@ -17,6 +17,9 @@ namespace RangHamMat;
 /// </summary>
 public partial class MainWindow : Window
 {
+    /// <summary>
+    /// Đánh dấu đóng cửa sổ để đăng xuất; App dùng cờ này để xóa ghi nhớ và mở lại hộp thoại đăng nhập.
+    /// </summary>
     internal bool YeuCauDangXuat { get; private set; }
     /// <summary>
     /// Phiên đăng nhập tài khoản được giữ trong phạm vi lớp để các thao tác dùng lại.
@@ -79,6 +82,10 @@ public partial class MainWindow : Window
         Closed+=(_,_)=>{PhienDangNhap.TruocKhiDoiDinhDanh-=BeforeIdentityChange;PhienDangNhap.DinhDanhThayDoi-=IdentityChanged;};
     }
 
+    /// <summary>
+    /// Hiển thị lỗi cập nhật phiên trong vùng thông báo của cửa sổ chính.
+    /// </summary>
+    /// <param name="message">Nội dung lỗi do PhienNhatKy phát ra.</param>
     private void ShowSessionError(string message)
     {
         detachedWorkError.Text=message;detachedWorkError.Visibility=Visibility.Visible;

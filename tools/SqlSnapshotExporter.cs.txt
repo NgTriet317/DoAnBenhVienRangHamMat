@@ -156,7 +156,7 @@ static class Program
    EXEC dbo.usp_RHM_KiemTraSchema;
    """,transaction:tx,commandTimeout:120);
   var tables=Read("SELECT t.object_id,t.name,s.name SchemaName FROM sys.tables t JOIN sys.schemas s ON s.schema_id=t.schema_id WHERE t.is_ms_shipped=0 ORDER BY s.name,t.name");
-  if(tables.Count is not (60 or 62))throw new Exception("Source must contain the supported 60-table legacy or 62-table Sprint 3 schema.");
+  if(tables.Count is not (60 or 62 or 64))throw new Exception("Source must contain the supported 60-table legacy, 62-table Sprint 3 or current 64-table schema.");
   if(Read("SELECT 1 FROM sys.foreign_keys WHERE is_disabled=1 OR is_not_trusted=1 UNION ALL SELECT 1 FROM sys.check_constraints WHERE is_disabled=1 OR is_not_trusted=1").Count>0)throw new Exception("Source constraints are not active/trusted.");
   var manifests=new SortedDictionary<string,TableManifest>(StringComparer.Ordinal);
   var materialized=new Dictionary<int,(List<dynamic> Columns,List<List<object?>> Rows,string Table)>();
@@ -199,13 +199,15 @@ static class Program
    Exec("CREATE TABLE "+m.Table+" (\n"+string.Join(",\n",lines)+"\n);");
   }
   foreach(var t in tables){int id=t.object_id;var m=materialized[id];var insertable=m.Columns.Select((c,i)=>(c,i)).Where(x=>!(bool)x.c.is_computed && (string)x.c.TypeName!="timestamp" && (string)x.c.TypeName!="rowversion").ToArray();
-   bool identity=m.Columns.Any(c=>(bool)c.is_identity);if(identity&&m.Rows.Count>0)Exec("SET IDENTITY_INSERT "+m.Table+" ON;");
+   bool identity=m.Columns.Any(c=>(bool)c.is_identity);
    foreach(var batch in m.Rows.Chunk(100)){
     var command="INSERT "+m.Table+" ("+string.Join(",",insertable.Select(x=>Q((string)x.c.name)))+") VALUES\n"+
      string.Join(",\n",batch.Select(r=>"("+string.Join(",",insertable.Select(x=>Literal(r[x.i])))+")"))+";";
+    // IDENTITY_INSERT must share the dynamic batch with its INSERT; a separate
+    // sp_executesql call restores the setting before the next batch executes.
+    if(identity)command="SET IDENTITY_INSERT "+m.Table+" ON;\n"+command+"\nSET IDENTITY_INSERT "+m.Table+" OFF;";
     Exec(command);
    }
-   if(identity&&m.Rows.Count>0)Exec("SET IDENTITY_INSERT "+m.Table+" OFF;");
   }
   foreach(var t in tables){int id=t.object_id;var m=materialized[id];
    foreach(var check in Read("SELECT name,definition,is_not_for_replication FROM sys.check_constraints WHERE parent_object_id=@id",new{id}))

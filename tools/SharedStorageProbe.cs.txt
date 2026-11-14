@@ -7,8 +7,13 @@ using Dapper;
 using ET;
 using Microsoft.Data.SqlClient;
 
+/// <summary>Mở ảnh fixture qua BUS trên kho UNC và ghi proof máy chạy, metadata cùng số ảnh đã xác minh.</summary>
+/// <remarks>Giữ ảnh ẩn trong kiểm toàn vẹn; commit nhật ký xem ảnh trên database thử trước khi xuất proof mới.</remarks>
 internal static class Program
 {
+    /// <summary>Kiểm fixture, quyền BUS và hash kho ảnh rồi xuất proof để đối chiếu với máy khác.</summary>
+    /// <param name="args">Máy chủ SQL, database RHM_Hospital_Test_, kho UNC và đường dẫn proof chưa tồn tại.</param>
+    /// <returns>0 khi proof đã ghi đầy đủ; 1 khi fixture, kho ảnh hoặc thao tác xuất có lỗi.</returns>
     static int Main(string[] args)
     {
         try

@@ -1,3 +1,20 @@
+<#
+.SYNOPSIS
+Dựng và chạy bộ kiểm lưu trữ, phân quyền và giao diện ảnh X-quang trên database thử.
+.DESCRIPTION
+TaoDatabaseKiemThu cài bản SQL đã bỏ snapshot vào database RHM_Hospital_Test_.
+KiemTraPhucHoi dùng database và kho đã phục hồi; chế độ thường tạo fixture và ảnh thử trong obj.
+.PARAMETER Database
+Tên database cách ly có tiền tố RHM_Hospital_Test_.
+.PARAMETER MayChu
+SQL Server dùng xác thực Windows để chạy bộ kiểm.
+.PARAMETER TaoDatabaseKiemThu
+Cài schema trước khi chạy; không dùng cùng KiemTraPhucHoi.
+.PARAMETER KiemTraPhucHoi
+Kiểm BUS và cửa sổ xem ảnh trên dữ liệu đã phục hồi, thay cho tạo fixture mới.
+.PARAMETER ThuMucKho
+Đường dẫn kho ảnh đã phục hồi, bắt buộc khi KiemTraPhucHoi.
+#>
 param([string]$Database=('RHM_Hospital_Test_Xray_'+(Get-Date -Format 'yyyyMMdd_HHmmss')),[string]$MayChu='.',[switch]$TaoDatabaseKiemThu,[switch]$KiemTraPhucHoi,[string]$ThuMucKho)
 $ErrorActionPreference='Stop'
 if($Database -notmatch '^RHM_Hospital_Test_[A-Za-z0-9_]+$'){throw 'Chỉ kiểm trên database RHM_Hospital_Test_.'}

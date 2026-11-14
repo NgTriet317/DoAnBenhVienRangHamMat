@@ -1,3 +1,18 @@
+<#
+.SYNOPSIS
+Dựng bộ kiểm tiếp nhận khám dịch vụ, phụ thu và tiếp nhận đồng thời.
+.DESCRIPTION
+Chỉ nhận database RHM_Hospital_Test_. Có thể cài schema đã bỏ snapshot trước khi chạy.
+Chế độ thường dùng fixture rollback; DongThoi ghi fixture riêng để kiểm nhiều quầy cùng lúc.
+.PARAMETER Database
+Database thử; phải có đuôi _Concurrent khi bật DongThoi.
+.PARAMETER MayChu
+SQL Server chứa database thử.
+.PARAMETER TaoDatabaseKiemThu
+Cài bản sao SQL chính đã đổi tên database và bỏ snapshot dữ liệu.
+.PARAMETER DongThoi
+Chạy ca tiếp nhận đồng thời trên database riêng có đuôi _Concurrent.
+#>
 param([string]$Database='RHM_Hospital_Test_ServiceReception',[string]$MayChu='.',[switch]$TaoDatabaseKiemThu,[switch]$DongThoi)
 $ErrorActionPreference='Stop'
 if($Database -notmatch '^RHM_Hospital_Test_[A-Za-z0-9_]+$'){throw 'Chỉ kiểm trên database cách ly RHM_Hospital_Test_.'}

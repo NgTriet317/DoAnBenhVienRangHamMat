@@ -1,0 +1,169 @@
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Markup;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media;
+using System.Reflection;
+using RangHamMat.Controls;
+
+internal static class InputValidationChecks
+{
+    private static int passed, failed;
+    [STAThread]
+    private static int Main()
+    {
+        var app = new Application { ShutdownMode=ShutdownMode.OnExplicitShutdown };
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml", UriKind.Relative) });
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/RangHamMat.Wpf;component/Themes/ClinicalWorkflowStyles.xaml", UriKind.Relative) });
+        KiemTraNhapLieu.Register();
+        Check("Tên bệnh nhân chỉ có số bị chặn", () => Reject("BENH_NHAN", "HoTenBN", "123456"));
+        Check("Tên chỉ chứa ký tự vô hình bị chặn", () => Reject("BENH_NHAN", "HoTenBN", "\u200B"));
+        Check("Tên quốc tế và tiếng Việt được giữ", () => {
+            Accept("BENH_NHAN", "HoTenBN", "Nguyễn Thị Ánh");
+            Accept("BENH_NHAN", "HoTenBN", "O'Connor");
+            Accept("BENH_NHAN", "HoTenBN", "Jean-Luc");
+        });
+        Check("Nhóm máu sai định dạng bị chặn", () => Reject("BENH_NHAN", "NhomMau", "XYZ"));
+        Check("Nhóm máu và trường tùy chọn trống hợp lệ", () => {
+            foreach(var value in new[]{"", "A", "AB+", "O−"}) Accept("BENH_NHAN", "NhomMau", value);
+            Accept("BENH_NHAN", "SDT", ""); Accept("BENH_NHAN", "MaBHYT", "");
+        });
+        Check("Mã BHYT sai ký tự bị chặn, không tự áp mẫu mã mới",()=>{
+            Reject("BENH_NHAN","MaBHYT","AB@123");
+            Accept("BENH_NHAN","MaBHYT","DN4012345678901");Accept("BENH_NHAN","MaBHYT","0123456789");
+        });
+        Check("Thông tin nhà cung cấp cần có nội dung tên",()=>{
+            Reject("NHA_CUNG_CAP","TenNCC","!!!");Reject("NHA_CUNG_CAP","NguoiLienHe","123");
+            Accept("NHA_CUNG_CAP","TenNCC","Công ty 3M (Việt Nam)");
+        });
+        Check("Email có chấm liên tiếp bị chặn", () => Reject("NHA_CUNG_CAP", "Email", "a..b@example.com"));
+        Check("Liên hệ hợp lệ được chấp nhận", () => {
+            Accept("NHA_CUNG_CAP", "Email", "nha.cung-cap+1@example.com");
+            Accept("BENH_NHAN", "SDT", "+84 901 234 567");
+        });
+        Check("Tiền nhập quá số chữ số lẻ không bị âm thầm làm tròn", () => Reject("THANH_TOAN", "SoTien", "1.000"));
+        Check("Tiền dấu cộng và ký hiệu khoa học bị chặn", () => {
+            Reject("THANH_TOAN", "SoTien", "+10"); Reject("THANH_TOAN", "SoTien", "1e3");
+        });
+        Check("Giới hạn và số dương theo schema", () => {
+            Reject("CHI_TIET_DON_THUOC", "SoLuong", "0");
+            Reject("CHI_TIET_DON_THUOC", "SoNgayDung", "1.5");
+            Reject("THANH_TOAN", "SoTien", "10000000000000000");
+            Accept("THANH_TOAN", "SoTien", "150000,50");
+            Accept("CHI_TIET_DON_THUOC", "SoLuong", "0.125");
+        });
+        Check("Lưu đánh dấu mọi ô sai và hiện gợi ý dưới từng ô", () => {
+            var a = Field("BENH_NHAN.HoTenBN", ""); var b = Field("BENH_NHAN.SDT", "abc");
+            var panel = new StackPanel();panel.Children.Add(Wrap(a));panel.Children.Add(Wrap(b));
+            var root = new UserControl { Content=panel }; var window = Show(root);
+            try {
+                Assert(!KiemTraNhapLieu.PrepareSave(root, out _), "Dữ liệu sai vẫn được lưu");
+                Assert(KiemTraNhapLieu.GetHasError(a) && KiemTraNhapLieu.GetHasError(b), "Chưa đánh dấu đủ các ô sai");
+                root.UpdateLayout();
+                foreach(var wrapper in panel.Children.OfType<ContentControl>()) {
+                    wrapper.ApplyTemplate();
+                    var error=wrapper.Template.FindName("InlineErrorText", wrapper) as TextBlock;
+                    var hint=wrapper.Template.FindName("InlineHintText", wrapper) as TextBlock;
+                    Assert(error?.Visibility==Visibility.Visible && !string.IsNullOrWhiteSpace(error.Text),"Thiếu lỗi dưới trường");
+                    Assert(hint?.Visibility==Visibility.Visible && !string.IsNullOrWhiteSpace(hint.Text),"Thiếu gợi ý dưới trường");
+                }
+                a.Text="Nguyễn An";
+                Assert(!KiemTraNhapLieu.PrepareSave(root,out _),"Sửa tên đã bỏ qua điện thoại sai");
+                Assert(!KiemTraNhapLieu.GetHasError(a)&&KiemTraNhapLieu.GetHasError(b),"Lỗi các ô không độc lập");
+                b.Text="0901234567";
+                Assert(KiemTraNhapLieu.PrepareSave(root,out _),"Dữ liệu đã sửa vẫn bị chặn");
+            } finally { window.Close(); }
+        });
+        Check("Danh sách lựa chọn sai không thể gửi đi", () => {
+            var combo=new ComboBox {Tag="DB:BENH_NHAN.GioiTinh",IsEditable=true,Text="Giá trị sai"};
+            combo.Items.Add(new ComboBoxItem{Content="Nam"});
+            var root=new UserControl{Content=Wrap(combo)};var window=Show(root);
+            try{combo.Text="Giá trị sai";Assert(!KiemTraNhapLieu.PrepareSave(root,out _),$"Chấp nhận giá trị ngoài danh sách: {combo.Text}, selected={combo.SelectedIndex}, visible={combo.IsVisible}, enabled={combo.IsEnabled}");Assert(KiemTraNhapLieu.GetHasError(combo),"Không hiện lỗi lựa chọn");}
+            finally{window.Close();}
+        });
+        Check("Rời ô nhập sai đánh dấu và sửa lại xóa lỗi", () => {
+            var field=Field("BENH_NHAN.SDT","abc");var root=new UserControl{Content=Wrap(field)};var window=Show(root);
+            try {
+                field.RaiseEvent(new KeyboardFocusChangedEventArgs(Keyboard.PrimaryDevice,0,field,null){RoutedEvent=Keyboard.LostKeyboardFocusEvent});
+                Assert(KiemTraNhapLieu.GetHasError(field),"Không kiểm khi rời ô");
+                field.Text="0901234567";
+                field.RaiseEvent(new KeyboardFocusChangedEventArgs(Keyboard.PrimaryDevice,0,field,null){RoutedEvent=Keyboard.LostKeyboardFocusEvent});
+                Assert(!KiemTraNhapLieu.GetHasError(field),"Sửa đúng vẫn giữ lỗi");
+            } finally {window.Close();}
+        });
+        Check("Lưu kiểm tra cả ô thuộc tab chưa mở", () => {
+            var name=Field("BENH_NHAN.HoTenBN","Nguyễn An");var blood=Field("BENH_NHAN.NhomMau","XYZ");
+            var first=new TabItem{Header="Cơ bản",Content=Wrap(name)};var last=new TabItem{Header="Sức khỏe",Content=Wrap(blood)};
+            var tabs=new TabControl();tabs.Items.Add(first);tabs.Items.Add(last);tabs.SelectedIndex=0;
+            var root=new UserControl{Content=tabs};BieuMauHoSo.Configure(root,"BENH_NHAN");var window=Show(root);
+            try{Assert(!KiemTraNhapLieu.PrepareSave(root,out _),"Bỏ qua dữ liệu sai ở tab ẩn");Assert(last.IsSelected&&KiemTraNhapLieu.GetHasError(blood),"Không mở đúng tab có lỗi");}
+            finally{window.Close();}
+        });
+        Check("Lưu panel cụ thể dù tab chưa mở vẫn kiểm tra đầu vào", () => {
+            var field=Field("LICH_SU_KHAM_BENH.TrieuChung","");var panel=new StackPanel();panel.Children.Add(Wrap(field));
+            var tabs=new TabControl();tabs.Items.Add(new TabItem{Header="Khác",Content=new TextBlock()});tabs.Items.Add(new TabItem{Header="Khám",Content=panel});tabs.SelectedIndex=0;
+            var window=Show(new UserControl{Content=tabs});
+            try{Assert(!KiemTraNhapLieu.PrepareSave(panel,out _),"Panel ẩn bỏ qua trường bắt buộc");Assert(KiemTraNhapLieu.GetHasError(field),"Không đánh dấu ô trong panel");}
+            finally{window.Close();}
+        });
+        Check("Sửa số tiền vẫn sai không được xóa lỗi nghiệp vụ",()=>{
+            var field=Field("THANH_TOAN.SoTien","200");
+            var method=typeof(KiemTraNhapLieu).GetMethod("SetFieldValidator");
+            Assert(method is not null,"Chưa hỗ trợ kiểm tra nghiệp vụ khi sửa ô");
+            Action validate=()=>{if(decimal.Parse(field.Text,System.Globalization.CultureInfo.InvariantCulture)>100)throw new LoiNhapLieu("SoTien","Số tiền thu vượt số còn phải trả. Nhập tối đa 100.");};
+            method!.Invoke(null,new object[]{field,validate});
+            var root=new UserControl{Content=Wrap(field)};var window=Show(root);
+            try{
+                Assert(!KiemTraNhapLieu.PrepareSave(root,out _),"Không chặn vượt mức thu");
+                field.Text="201";Assert(KiemTraNhapLieu.GetHasError(field),"Sửa số vẫn vượt mức nhưng mất lỗi");
+                field.Text="100";Assert(!KiemTraNhapLieu.GetHasError(field),"Sửa đúng chưa xóa lỗi nghiệp vụ");
+            }finally{window.Close();}
+        });
+        Check("Đổi Hoàn sang Thu cập nhật lỗi lý do theo ngữ cảnh",()=>{
+            var form=new RangHamMat.Views.HoaDon();
+            var kind=(ComboBox)form.FindName("PaymentType");var reason=(TextBox)form.FindName("ReasonBox");
+            kind.SelectedIndex=1;
+            Assert(!KiemTraNhapLieu.RecheckField(reason),"Hoàn thiếu lý do chưa bị chặn");
+            reason.Text=" ";Assert(KiemTraNhapLieu.GetHasError(reason),"Lý do chỉ có khoảng trắng làm mất lỗi");
+            kind.SelectedIndex=0;Assert(!KiemTraNhapLieu.GetHasError(reason),"Đổi sang thu vẫn giữ lỗi lý do hoàn");
+        });
+        Check("Chọn ngày không được xóa lỗi khoảng ngày của biểu mẫu",()=>{
+            var first=new DatePicker{SelectedDate=new DateTime(2026,11,10)};var last=new DatePicker{SelectedDate=new DateTime(2026,11,12)};
+            var validator=typeof(RangHamMat.Views.BaoCao).GetMethod("KiemTraKhoangNgay",BindingFlags.NonPublic|BindingFlags.Static)!;
+            last.SelectedDateChanged+=(_,_)=>validator.Invoke(null,new object[]{first,last,default(DateTime),default(DateTime)});
+            var panel=new StackPanel();panel.Children.Add(Wrap(first));panel.Children.Add(Wrap(last));var window=Show(new UserControl{Content=panel});
+            try{last.SelectedDate=new DateTime(2026,11,1);Assert(KiemTraNhapLieu.GetHasError(last),"Lỗi ngày kết thúc bị xóa sau sự kiện chọn ngày");}
+            finally{window.Close();}
+        });
+        Check("Lịch chỉ chấp nhận lại ngày cũ khi người dùng xác nhận chọn ngày",()=>{
+            var picker=new DatePicker{SelectedDate=new DateTime(2026,11,14),Language=XmlLanguage.GetLanguage("vi-VN")};
+            var window=Show(new UserControl{Content=Wrap(picker)});
+            try{
+                picker.Text="31/02/2026";
+                RejectDate(picker);
+                picker.IsDropDownOpen=true;window.UpdateLayout();picker.IsDropDownOpen=false;RejectDate(picker);
+                picker.IsDropDownOpen=true;window.UpdateLayout();
+                var popup=(Popup)picker.Template.FindName("PART_Popup",picker);
+                var day=VisualNodes(popup.Child).OfType<CalendarDayButton>().First(x=>x.DataContext is DateTime date&&date.Date==new DateTime(2026,11,14));
+                day.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=Mouse.PreviewMouseUpEvent});
+                var chosen=(DependencyProperty)typeof(KiemTraNhapLieu).GetField("CalendarChoiceProperty",BindingFlags.NonPublic|BindingFlags.Static)!.GetValue(null)!;
+                Assert(picker.GetValue(chosen) is true,"Thao tác chọn ngày chưa được nhận: enabled="+day.IsEnabled+", blackout="+day.IsBlackedOut);
+                picker.IsDropDownOpen=false;
+                window.Dispatcher.Invoke(()=>{},System.Windows.Threading.DispatcherPriority.ContextIdle);
+                Assert(KiemTraNhapLieu.ReadDate(picker)==new DateTime(2026,11,14),"Không nhận lại được ngày hợp lệ đã chọn");
+            }finally{window.Close();}
+        });
+        Console.WriteLine($"Input validation: {passed} PASS, {failed} FAIL");
+        return failed==0?0:1;
+    }
+    private static Window Show(UserControl form){var window=new Window{Content=form,Width=500,Height=450,ShowInTaskbar=false,WindowStyle=WindowStyle.None,Left=-10000};window.Show();window.UpdateLayout();return window;}
+    private static TextBox Field(string path,string value)=>new(){Tag="DB:"+path,Text=value};
+    private static ContentControl Wrap(UIElement control)=>new(){Content=control,Style=(Style)Application.Current.FindResource("TruongNhapLieu")};
+    private static void Accept(string table,string field,object? value)=>KiemTraNhapLieu.ValidateValues(table,new Dictionary<string,object?>{{field,value}});
+    private static void RejectDate(DatePicker picker){try{KiemTraNhapLieu.ReadDate(picker);}catch(LoiNhapLieu){return;}throw new Exception("Đã dùng lại ngày cũ khi chưa xác nhận sửa ngày sai");}
+    private static IEnumerable<DependencyObject> VisualNodes(DependencyObject root){yield return root;for(var n=0;n<VisualTreeHelper.GetChildrenCount(root);n++)foreach(var child in VisualNodes(VisualTreeHelper.GetChild(root,n)))yield return child;}
+    private static void Reject(string table,string field,object? value){try{Accept(table,field,value);}catch(LoiNhapLieu ex){Assert(ex.Field==field,"Lỗi gắn sai trường");return;}throw new Exception("Chưa chặn đầu vào sai");}
+    private static void Assert(bool value,string message){if(!value)throw new Exception(message);}
+    private static void Check(string name,Action test){try{test();passed++;Console.WriteLine("PASS "+name);}catch(Exception ex){failed++;Console.WriteLine("FAIL "+name+": "+ex.Message);}}
+}

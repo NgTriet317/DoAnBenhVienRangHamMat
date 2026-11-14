@@ -9,21 +9,72 @@ namespace RangHamMat.Views;
 /// <summary>Mẫu phiếu chuyên khoa: căn cột thuốc, tách hướng dẫn và giữ nội dung snapshot của đơn.</summary>
 public static class DonThuocDocument
 {
+    /// <summary>
+    /// Màu xanh đậm dùng cho tiêu đề và phần nhận diện của phiếu đơn thuốc.
+    /// </summary>
     private static readonly Brush Navy = Brush("#173C54");
+    /// <summary>
+    /// Màu nhấn dùng cho nhãn mục và đường phân cách trên phiếu.
+    /// </summary>
     private static readonly Brush Teal = Brush("#167D8D");
+    /// <summary>
+    /// Màu chữ chính cho nội dung chỉ định và thông tin bệnh nhân.
+    /// </summary>
     private static readonly Brush Ink = Brush("#203B50");
+    /// <summary>
+    /// Màu chữ phụ cho nhãn, định danh và thông tin đối chiếu.
+    /// </summary>
     private static readonly Brush Muted = Brush("#63798C");
+    /// <summary>
+    /// Màu viền dùng để phân tách các vùng thông tin của đơn thuốc.
+    /// </summary>
     private static readonly Brush Line = Brush("#DCE7EE");
+    /// <summary>
+    /// Màu nền nhạt cho vùng chẩn đoán, thông tin bệnh nhân và hướng dẫn.
+    /// </summary>
     private static readonly Brush Pale = Brush("#F2F7FA");
 
+    /// <summary>
+    /// Tạo phiếu in đầy đủ từ nội dung đơn đã ký, gồm thông tin bệnh nhân và vùng chữ ký.
+    /// </summary>
+    /// <param name="source">Bản in đơn đã được tầng nghiệp vụ kiểm tra nguồn và quyền.</param>
+    /// <returns>FlowDocument dùng để phân trang và gửi máy in.</returns>
     public static FlowDocument Tao(BanInDonThuoc source) => Build(DonThuocTrinhBay.TuBanIn(source), true);
+    /// <summary>
+    /// Tạo phiếu in từ thẻ đơn thuốc theo nguồn trình bày tương thích của giao diện.
+    /// </summary>
+    /// <param name="source">Thẻ đơn đã được nơi gọi kiểm tra điều kiện in.</param>
+    /// <returns>FlowDocument chứa nội dung thẻ và phần nhận diện phiếu in.</returns>
     public static FlowDocument Tao(RxCard source) => Build(DonThuocTrinhBay.TuTheCu(source), true);
+    /// <summary>
+    /// Tạo nội dung chi tiết của bản ký để nhúng vào màn hình, lược phần đầu phiếu và chữ ký.
+    /// </summary>
+    /// <param name="source">Nội dung đơn đã ký dùng làm nguồn hiển thị.</param>
+    /// <returns>Tài liệu chi tiết với lề dành cho vùng xem trên màn hình.</returns>
     public static FlowDocument TaoChiTiet(BanInDonThuoc source) => Build(DonThuocTrinhBay.TuBanIn(source), false);
+    /// <summary>
+    /// Tạo tài liệu tra cứu từ dòng lịch sử và chi tiết đơn thuộc cùng ngữ cảnh.
+    /// </summary>
+    /// <param name="source">Thông tin bệnh nhân, bác sĩ và chẩn đoán của dòng lịch sử.</param>
+    /// <param name="detail">Chi tiết đơn đã được nơi gọi kiểm tra quyền và liên kết nguồn.</param>
+    /// <returns>Tài liệu hiển thị nội dung đơn trong lịch sử.</returns>
     public static FlowDocument TaoLichSu(DongLichSuDon source, DonThuocChiTiet detail) => Build(DonThuocTrinhBay.TuLichSu(source, detail), false);
 
+    /// <summary>
+    /// Bọc tài liệu bằng bộ phân trang có đầu trang tiếp nối và số trang trong lề.
+    /// </summary>
+    /// <param name="document">Tài liệu đơn thuốc cần chia trang.</param>
+    /// <param name="size">Kích thước trang in theo đơn vị WPF.</param>
+    /// <returns>Bộ phân trang đã áp dụng kích thước vùng in.</returns>
     public static DocumentPaginator PhanTrang(FlowDocument document, Size size) =>
         new DonThuocPaginator(document, size);
 
+    /// <summary>
+    /// Dựng tài liệu từ dữ liệu trình bày chung, giữ nguyên nội dung chỉ định và chọn phần đầu/chữ ký theo chế độ.
+    /// </summary>
+    /// <param name="source">Dữ liệu trình bày đã ánh xạ từ đơn nguồn.</param>
+    /// <param name="print">True để thêm đầu phiếu, bệnh nhân và chữ ký; false cho vùng chi tiết nhúng.</param>
+    /// <returns>Tài liệu đã có các khối chẩn đoán, thuốc, hướng dẫn và ghi chú.</returns>
     private static FlowDocument Build(DonThuocTrinhBay source, bool print)
     {
         var document = new FlowDocument
@@ -106,6 +157,11 @@ public static class DonThuocDocument
         return document;
     }
 
+    /// <summary>
+    /// Tạo đầu phiếu với tên bệnh viện, mã đơn và thời điểm kê.
+    /// </summary>
+    /// <param name="source">Nguồn định danh đơn thuốc để in trên đầu phiếu.</param>
+    /// <returns>Bảng đầu phiếu có cột nhận diện bệnh viện và cột mã đơn.</returns>
     private static Table Letterhead(DonThuocTrinhBay source)
     {
         var table = Table(new Thickness(0, 0, 0, 19), 58, -1, 174);
@@ -128,6 +184,11 @@ public static class DonThuocDocument
         return table;
     }
 
+    /// <summary>
+    /// Tạo vùng bệnh nhân và bác sĩ từ dữ liệu của đơn, chỉ thêm điện thoại khi đã ghi nhận.
+    /// </summary>
+    /// <param name="source">Thông tin định danh đã ánh xạ cho phiếu.</param>
+    /// <returns>Bảng hai cột để đối chiếu bệnh nhân, lần khám và bác sĩ.</returns>
     private static Table PatientInformation(DonThuocTrinhBay source)
     {
         var table = Table(new Thickness(0, 0, 0, 16), -1.35, -1);
@@ -150,6 +211,10 @@ public static class DonThuocDocument
         return table;
     }
 
+    /// <summary>
+    /// Tạo hàng tiêu đề cho các cột số thứ tự, thuốc/hàm lượng, số lượng và thời gian dùng.
+    /// </summary>
+    /// <returns>Bảng tiêu đề có độ rộng cột được bộ phân trang căn lại theo vùng in.</returns>
     private static Table MedicineColumns()
     {
         var table = Table(new Thickness(0), 36, -1, 86, 76);
@@ -164,6 +229,11 @@ public static class DonThuocDocument
         return table;
     }
 
+    /// <summary>
+    /// Nhúng dòng thuốc XAML vào Paragraph để giữ đầu thuốc cùng phần chỉ định kế tiếp khi ngắt trang.
+    /// </summary>
+    /// <param name="medicine">Dòng thuốc đã chốt cần hiển thị.</param>
+    /// <returns>Đoạn văn chứa điều khiển dòng thuốc với KeepWithNext.</returns>
     private static Paragraph MedicineHeading(DongDonThuocTrinhBay medicine)
     {
         // Paragraph có KeepWithNext; Table không có. Khối XAML vẫn căn cột và được giữ cùng đầu chỉ định.
@@ -175,6 +245,11 @@ public static class DonThuocDocument
         };
     }
 
+    /// <summary>
+    /// Tạo vùng đối chiếu đơn/lần khám và chỗ ký tên của bác sĩ kê đơn.
+    /// </summary>
+    /// <param name="source">Định danh đơn và tên bác sĩ dùng cho phần cuối phiếu.</param>
+    /// <returns>Bảng cuối phiếu gồm thông tin tái khám và vùng chữ ký.</returns>
     private static Table Signature(DonThuocTrinhBay source)
     {
         var table = Table(new Thickness(0, 20, 0, 0), -1, 240);
@@ -192,6 +267,12 @@ public static class DonThuocDocument
         return table;
     }
 
+    /// <summary>
+    /// Tạo khung bảng và lưu quy tắc độ rộng cột để CanCot tính lại theo bề ngang trang.
+    /// </summary>
+    /// <param name="margin">Lề bên ngoài bảng.</param>
+    /// <param name="columns">Giá trị dương là độ rộng cố định; giá trị âm là trọng số chia phần còn lại.</param>
+    /// <returns>Bảng có cột và nhóm dòng rỗng, kèm metadata RxColumnWidths.</returns>
     private static Table Table(Thickness margin, params double[] columns)
     {
         var table = new Table { CellSpacing = 0, Margin = margin };
@@ -200,6 +281,11 @@ public static class DonThuocDocument
         table.RowGroups.Add(new TableRowGroup());
         return table;
     }
+    /// <summary>
+    /// Phân bổ lại cột bảng và chiều rộng dòng thuốc theo vùng nội dung thực tế khi đổi khổ in.
+    /// </summary>
+    /// <param name="document">Tài liệu chứa bảng và các dòng thuốc cần căn.</param>
+    /// <param name="pageWidth">Chiều rộng trang trước khi trừ lề, viền và khoảng đệm.</param>
     internal static void CanCot(FlowDocument document, double pageWidth)
     {
         // FlowDocument.Table không phân bổ chiều rộng sao giống Grid. Tính phần còn lại theo vùng in thực.
@@ -219,12 +305,32 @@ public static class DonThuocDocument
                     line.Width = Math.Max(1, pageWidth - document.PagePadding.Left - document.PagePadding.Right
                         - paragraph.Margin.Left - paragraph.Margin.Right - paragraph.Padding.Left - paragraph.Padding.Right);
     }
+    /// <summary>
+    /// Bọc một đoạn văn trong ô bảng với khoảng đệm chỉ định.
+    /// </summary>
+    /// <param name="content">Đoạn văn đầu tiên của ô.</param>
+    /// <param name="padding">Khoảng đệm bên trong ô.</param>
+    /// <returns>Ô bảng sẵn sàng thêm vào hàng.</returns>
     private static TableCell Cell(Paragraph content, Thickness padding) => new(content) { Padding = padding };
+    /// <summary>
+    /// Tạo đoạn chữ với cỡ, màu, giãn dòng và lề thống nhất cho tài liệu đơn thuốc.
+    /// </summary>
+    /// <param name="value">Nội dung chữ; null được hiển thị thành chuỗi rỗng.</param>
+    /// <param name="size">Cỡ chữ theo đơn vị WPF.</param>
+    /// <param name="color">Màu chữ của đoạn.</param>
+    /// <param name="bold">True để dùng độ đậm SemiBold.</param>
+    /// <param name="margin">Lề tùy chọn; null để dùng lề bằng 0.</param>
+    /// <returns>Đoạn văn cho phép phân trang, với giãn dòng bằng 1,5 lần cỡ chữ.</returns>
     private static Paragraph Text(string? value, double size, Brush color, bool bold = false, Thickness? margin = null) => new(new Run(value ?? ""))
     {
         FontSize = size, Foreground = color, FontWeight = bold ? FontWeights.SemiBold : FontWeights.Normal,
         LineHeight = size * 1.5, Margin = margin ?? new Thickness(0), KeepTogether = false
     };
+    /// <summary>
+    /// Chuyển mã màu thành cọ tô và đóng băng cọ để dùng chung trong tài liệu.
+    /// </summary>
+    /// <param name="color">Mã màu đọc theo định dạng bất biến.</param>
+    /// <returns>Cọ màu đã Freeze.</returns>
     private static Brush Brush(string color)
     {
         var brush = (SolidColorBrush)new BrushConverter().ConvertFromInvariantString(color)!;

@@ -23,8 +23,17 @@ public partial class TiepNhanKham : UserControl
     /// Ngữ cảnh định danh và quyền của người dùng đang thao tác.
     /// </summary>
     private NguCanhNghiepVu? user;
+    /// <summary>
+    /// Nghiệp vụ tiếp nhận dùng để tra bác sĩ phù hợp và ghi nhận lượt khám.
+    /// </summary>
     private readonly BUS_TIEPNHAN receptionBus;
+    /// <summary>
+    /// Giao dịch được truyền cho tiếp nhận và các danh mục dịch vụ/phòng liên quan.
+    /// </summary>
     private readonly IDbTransaction? transaction;
+    /// <summary>
+    /// Chặn sự kiện chọn phát sinh khi đang cấu hình danh sách và ngăn thao tác lưu chồng nhau.
+    /// </summary>
     private bool updatingChoices, saving;
     /// <summary>
     /// Đã lưu kết quả. Có thể để null khi dữ liệu chưa được cung cấp.
@@ -34,6 +43,11 @@ public partial class TiepNhanKham : UserControl
     /// Khởi tạo tiếp nhận khám. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
     /// </summary>
     public TiepNhanKham() : this(null,null) { }
+    /// <summary>
+    /// Khởi tạo biểu mẫu tiếp nhận với ngữ cảnh và giao dịch được cấp, mặc định chọn khám thông thường.
+    /// </summary>
+    /// <param name="nguoiDung">Ngữ cảnh người tiếp nhận; có thể được bổ sung khi biểu mẫu nạp.</param>
+    /// <param name="transaction">Giao dịch dùng chung tùy chọn; nơi cấp chịu trách nhiệm kết thúc giao dịch.</param>
     public TiepNhanKham(NguCanhNghiepVu? nguoiDung,IDbTransaction? transaction)
     {
         InitializeComponent();user=nguoiDung;this.transaction=transaction;receptionBus=new(transaction);
@@ -44,7 +58,13 @@ public partial class TiepNhanKham : UserControl
     /// Giá trị Lịch hẹn; được xác định bởi phần getter/setter của thuộc tính. Có thể để null khi dữ liệu chưa được cung cấp.
     /// </summary>
     private object? Appointment => AppointmentPicker.SelectedValue is string id && id.Length>0?DuLieuGiaoDien.Find("LICH_KHAM",id):null;
+    /// <summary>
+    /// Cho biết tiếp nhận trực tiếp khi chưa chọn lịch hẹn nguồn.
+    /// </summary>
     private bool DirectArrival=>string.IsNullOrEmpty(Convert.ToString(AppointmentPicker.SelectedValue));
+    /// <summary>
+    /// Chỉ bật luồng chọn bác sĩ trước cho tiếp nhận trực tiếp theo loại khám dịch vụ.
+    /// </summary>
     private bool ServiceVisit=>DirectArrival && LoaiKhamPicker.SelectedValue as string=="Dịch vụ";
 
     /// <summary>
@@ -107,9 +127,15 @@ public partial class TiepNhanKham : UserControl
         {ArrivalReason.Text=UiRecord.Text(appointment,"LyDoKham");ServicePicker.SelectedValue=UiRecord.Get(appointment,"MaDV");}
         else ArrivalReason.Clear();
     }
+    /// <summary>
+    /// Cấu hình lại thứ tự chọn bác sĩ/dịch vụ khi loại khám thay đổi và biểu mẫu đã sẵn sàng.
+    /// </summary>
     private void LoaiKham_Changed(object sender,SelectionChangedEventArgs e)
     {if(ready&&!updatingChoices)ConfigureMode();}
 
+    /// <summary>
+    /// Xóa lựa chọn phụ thuộc rồi nạp bác sĩ hoặc dịch vụ theo loại khám; chặn sự kiện phát sinh trong lúc cập nhật.
+    /// </summary>
     private void ConfigureMode()
     {
         ClinicalFormInput.ClearErrors(this);
@@ -137,6 +163,9 @@ public partial class TiepNhanKham : UserControl
         catch(InvalidOperationException ex){FormError.Text=ClinicalFormInput.Message(ex);}
         finally{updatingChoices=false;}
     }
+    /// <summary>
+    /// Xóa phòng và lý do điều phối cũ, đồng thời ẩn vùng điều phối đến khi có lựa chọn nguồn phù hợp.
+    /// </summary>
     private void ClearRoom()
     {RoomPicker.ItemsSource=null;RoomPicker.SelectedIndex=-1;RoomPicker.IsEnabled=false;DispatchReason.Clear();DispatchBlock.Visibility=Visibility.Collapsed;}
     /// <summary>

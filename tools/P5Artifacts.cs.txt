@@ -4,8 +4,12 @@ using System.Text;
 using System.Text.Json;
 using ET;
 
+/// <summary>Ghi bằng chứng P5 dạng UTF-8, JSON, CSV và Markdown; kiểm đường dẫn và tránh ghi đè tệp kết quả.</summary>
 internal static class P5Artifacts
 {
+    /// <summary>Tạo thư mục kết quả mới sau khi từ chối đường dẫn đã tồn tại hoặc đi qua liên kết.</summary>
+    /// <param name="path">Đường dẫn thư mục kết quả cần tạo.</param>
+    /// <returns>Đường dẫn tuyệt đối của thư mục vừa tạo.</returns>
     public static string CreateNewDirectory(string path)
     {
         var full=Path.GetFullPath(path);
@@ -14,6 +18,9 @@ internal static class P5Artifacts
             if(parent.Exists&&(parent.Attributes&FileAttributes.ReparsePoint)!=0)throw new IOException("Thư mục kết quả không được đi qua liên kết.");
         Directory.CreateDirectory(full);return full;
     }
+    /// <summary>Kiểm thư mục đã chuẩn bị sẵn và bảo đảm đường dẫn không đi qua reparse point.</summary>
+    /// <param name="path">Thư mục kết quả hiện có cần xác minh.</param>
+    /// <returns>Đường dẫn tuyệt đối của thư mục đã xác minh.</returns>
     public static string ExistingDirectory(string path)
     {
         var full=Path.GetFullPath(path);if(!Directory.Exists(full))throw new IOException("Chưa chuẩn bị thư mục kết quả.");
@@ -21,9 +28,19 @@ internal static class P5Artifacts
             if((parent.Attributes&FileAttributes.ReparsePoint)!=0)throw new IOException("Thư mục kết quả không được đi qua liên kết.");
         return full;
     }
+    /// <summary>Ghi tệp văn bản UTF-8 mới bằng CreateNew để không thay tệp kết quả đã có.</summary>
+    /// <param name="path">Đường dẫn tệp chưa tồn tại.</param>
+    /// <param name="content">Nội dung bằng chứng cần ghi.</param>
+    /// <param name="bom">Có ghi BOM UTF-8 hay không; mặc định không BOM.</param>
     public static void Text(string path,string content,bool bom=false)
     {using var stream=new FileStream(path,FileMode.CreateNew,FileAccess.Write,FileShare.None);using var writer=new StreamWriter(stream,new UTF8Encoding(bom));writer.Write(content);}
+    /// <summary>Tuần tự hóa đối tượng thành JSON có thụt dòng và ghi tệp mới qua Text.</summary>
+    /// <param name="path">Đường dẫn tệp JSON chưa tồn tại.</param>
+    /// <param name="value">Đối tượng dữ liệu cần xuất.</param>
     public static void Json(string path,object value)=>Text(path,JsonSerializer.Serialize(value,new JsonSerializerOptions{WriteIndented=true}));
+    /// <summary>Ghi CSV UTF-8 có BOM, escape dấu nháy và vô hiệu chuỗi có thể bị bảng tính hiểu là công thức.</summary>
+    /// <param name="path">Đường dẫn tệp CSV chưa tồn tại.</param>
+    /// <param name="rows">Các hàng dữ liệu, gồm hàng tiêu đề nếu nơi gọi cần; ngày/số dùng định dạng bất biến.</param>
     public static void Csv(string path,IEnumerable<IEnumerable<object?>> rows)
     {
         string Cell(object? value)
@@ -34,6 +51,9 @@ internal static class P5Artifacts
         }
         Text(path,string.Join("\r\n",rows.Select(row=>string.Join(",",row.Select(Cell))))+"\r\n",true);
     }
+    /// <summary>Xuất audit.json, thống kê bảng, chi tiết phát hiện và bản tóm tắt đối soát.</summary>
+    /// <param name="directory">Thư mục kết quả đã được nơi gọi chuẩn bị.</param>
+    /// <param name="result">Kết quả đối soát đầy đủ số đếm và danh sách chi tiết có giới hạn.</param>
     public static void Audit(string directory,KetQuaDoiSoatDuLieu result)
     {
         Json(Path.Combine(directory,"audit.json"),result);

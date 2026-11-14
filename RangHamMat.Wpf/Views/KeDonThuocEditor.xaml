@@ -60,7 +60,7 @@
      <!-- Nút thao tác NewButton — Đơn mới / bổ sung. Chuyển sự kiện đến New_Click trong code-behind. -->
      <WrapPanel><Button x:Name="NewButton" Content="Đơn mới / bổ sung" Click="New_Click"/><Button x:Name="ReplaceButton" Content="Soạn đơn thay thế" Click="Replace_Click" Margin="8,0,0,0"/></WrapPanel></StackPanel></Expander>
      <!-- Danh sách RxLines. Chuyển sự kiện đến Line_Selected trong code-behind. -->
-     <DataGrid x:Name="RxLines" MinHeight="95" MaxHeight="160" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" SelectionMode="Single" SelectionChanged="Line_Selected" CellEditEnding="Line_Edit" Margin="0,10">
+     <ContentControl Style="{StaticResource TruongNhapLieu}"><DataGrid x:Name="RxLines" MinHeight="95" MaxHeight="160" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" SelectionMode="Single" SelectionChanged="Line_Selected" CellEditEnding="Line_Edit" Margin="0,10">
       <!-- Tài nguyên RxWrappedCell (Style) áp dụng cho TextBlock. -->
       <DataGrid.Resources><Style x:Key="RxWrappedCell" TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style></DataGrid.Resources>
       <DataGrid.Columns>
@@ -68,7 +68,7 @@
        <DataGridTextColumn Header="Số lượng" Binding="{Binding SoLuong,StringFormat=0.###}" IsReadOnly="True" Width="85"/>
        <DataGridTextColumn Header="Số ngày" Binding="{Binding SoNgayDung}" IsReadOnly="True" Width="75"/>
       </DataGrid.Columns>
-     </DataGrid>
+     </DataGrid></ContentControl>
      <!-- Nút thao tác RemoveLineButton — Bỏ thuốc đang chọn. Chuyển sự kiện đến RemoveLine_Click trong code-behind. -->
      <Button x:Name="RemoveLineButton" Content="Bỏ thuốc đang chọn" Click="RemoveLine_Click" HorizontalAlignment="Left"/>
      <!-- Thông tin hiển thị SelectedDrugHeader — Chọn một thuốc trong đơn để nhập cách dùng.. -->
@@ -77,23 +77,23 @@
      <StackPanel x:Name="DetailForm" IsEnabled="False">
       <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition/></Grid.ColumnDefinitions>
        <!-- Ô nhập QuantityEditor. Chuyển sự kiện đến Detail_Changed trong code-behind. -->
-       <StackPanel><TextBlock Text="Số lượng cấp phát" Style="{StaticResource FieldLabel}"/><TextBox x:Name="QuantityEditor" TextChanged="Detail_Changed" LostFocus="Detail_LostFocus"/></StackPanel>
+       <StackPanel><TextBlock Text="Số lượng cấp phát" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="QuantityEditor" Tag="DB:CHI_TIET_DON_THUOC.SoLuong" TextChanged="Detail_Changed" LostFocus="Detail_LostFocus"/></ContentControl></StackPanel>
        <!-- Ô nhập DaysEditor. Chuyển sự kiện đến Detail_Changed trong code-behind. -->
-       <StackPanel Grid.Column="2"><TextBlock Text="Số ngày dùng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="DaysEditor" TextChanged="Detail_Changed" LostFocus="Detail_LostFocus"/></StackPanel>
+       <StackPanel Grid.Column="2"><TextBlock Text="Số ngày dùng" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="DaysEditor" Tag="DB:CHI_TIET_DON_THUOC.SoNgayDung" TextChanged="Detail_Changed" LostFocus="Detail_LostFocus"/></ContentControl></StackPanel>
       </Grid>
       <!-- Ô nhập DoseEditor. Chuyển sự kiện đến Detail_Changed trong code-behind. -->
-      <TextBlock Text="Liều dùng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="DoseEditor" TextChanged="Detail_Changed" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="44"/>
+      <TextBlock Text="Liều dùng" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="DoseEditor" Tag="DB:CHI_TIET_DON_THUOC.LieuDung" TextChanged="Detail_Changed" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="44"/></ContentControl>
       <!-- Ô nhập RouteEditor. Chuyển sự kiện đến Detail_Changed trong code-behind. -->
-      <TextBlock Text="Đường dùng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="RouteEditor" TextChanged="Detail_Changed"/>
+      <TextBlock Text="Đường dùng" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="RouteEditor" Tag="DB:CHI_TIET_DON_THUOC.DuongDung" TextChanged="Detail_Changed"/></ContentControl>
       <!-- Ô nhập InstructionEditor. Chuyển sự kiện đến Detail_Changed trong code-behind. -->
-      <TextBlock Text="Hướng dẫn sử dụng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="InstructionEditor" TextChanged="Detail_Changed" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="58"/>
+      <TextBlock Text="Hướng dẫn sử dụng" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="InstructionEditor" Tag="DB:CHI_TIET_DON_THUOC.HuongDan" TextChanged="Detail_Changed" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="58"/></ContentControl>
      </StackPanel>
      <TextBlock Text="Bác sĩ nhập liều và hướng dẫn theo người bệnh. Kê đơn không giữ hoặc trừ tồn kho." TextWrapping="Wrap" Foreground="#64748B" FontSize="12" Margin="0,10,0,0"/>
      <Expander Header="Ghi chú / lý do thay hoặc bổ sung đơn" Margin="0,10,0,0"><StackPanel>
       <!-- Ô nhập ReplacementReason. Chuyển sự kiện đến Input_Changed trong code-behind. -->
-      <TextBlock Text="Lý do thay đơn (nếu có)"/><TextBox x:Name="ReplacementReason" TextChanged="Input_Changed" TextWrapping="Wrap"/>
+      <TextBlock Text="Lý do thay đơn (nếu có)"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="ReplacementReason" Tag="DB:DON_THUOC.LyDoThayThe" TextChanged="Input_Changed" TextWrapping="Wrap"/></ContentControl>
       <!-- Ô nhập NoteEditor. Chuyển sự kiện đến Input_Changed trong code-behind. -->
-      <TextBlock Text="Ghi chú / lý do đơn bổ sung" Margin="0,8,0,0"/><TextBox x:Name="NoteEditor" TextChanged="Input_Changed" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="45"/>
+      <TextBlock Text="Ghi chú / lý do đơn bổ sung" Margin="0,8,0,0"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="NoteEditor" Tag="DB:DON_THUOC.GhiChu" TextChanged="Input_Changed" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="45"/></ContentControl>
      </StackPanel></Expander>
     </StackPanel></ScrollViewer>
    </Border>

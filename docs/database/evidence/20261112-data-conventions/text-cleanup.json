@@ -1,0 +1,602 @@
+[
+  {
+    "TableName": "BAN_GIAO_THUOC",
+    "ColumnName": "GhiChu",
+    "Rows": 8
+  },
+  {
+    "TableName": "BAO_TRI_THIET_BI",
+    "ColumnName": "NoiDung",
+    "Rows": 1
+  },
+  {
+    "TableName": "BAO_TRI_THIET_BI",
+    "ColumnName": "GhiChu",
+    "Rows": 1
+  },
+  {
+    "TableName": "BENH_NHAN",
+    "ColumnName": "DiaChi",
+    "Rows": 36
+  },
+  {
+    "TableName": "BENH_NHAN",
+    "ColumnName": "TienSuBenh",
+    "Rows": 36
+  },
+  {
+    "TableName": "BENH_NHAN",
+    "ColumnName": "DiUng",
+    "Rows": 36
+  },
+  {
+    "TableName": "CA_LAM",
+    "ColumnName": "GhiChu",
+    "Rows": 1
+  },
+  {
+    "TableName": "CA_LAM",
+    "ColumnName": "GhiChu",
+    "Rows": 1
+  },
+  {
+    "TableName": "CHI_TIET_DON_THUOC",
+    "ColumnName": "LieuDung",
+    "Rows": 12
+  },
+  {
+    "TableName": "CHI_TIET_DON_THUOC",
+    "ColumnName": "LieuDung",
+    "Rows": 5
+  },
+  {
+    "TableName": "CHI_TIET_DON_THUOC",
+    "ColumnName": "LieuDung",
+    "Rows": 9
+  },
+  {
+    "TableName": "CHI_TIET_DON_THUOC",
+    "ColumnName": "HuongDan",
+    "Rows": 14
+  },
+  {
+    "TableName": "CHI_TIET_DON_THUOC",
+    "ColumnName": "HuongDan",
+    "Rows": 12
+  },
+  {
+    "TableName": "CHI_TIET_KE_HOACH",
+    "ColumnName": "NoiDungBuoc",
+    "Rows": 24
+  },
+  {
+    "TableName": "CHI_TIET_PHIEU_XUAT",
+    "ColumnName": "GhiChu",
+    "Rows": 15
+  },
+  {
+    "TableName": "DICH_VU",
+    "ColumnName": "MoTa",
+    "Rows": 8
+  },
+  {
+    "TableName": "DICH_VU_THUC_HIEN",
+    "ColumnName": "KetQua",
+    "Rows": 24
+  },
+  {
+    "TableName": "DICH_VU_TINH_TRANG",
+    "ColumnName": "NoiDungDeXuat",
+    "Rows": 5
+  },
+  {
+    "TableName": "DICH_VU_TINH_TRANG",
+    "ColumnName": "NoiDungDeXuat",
+    "Rows": 1
+  },
+  {
+    "TableName": "DM_TINH_TRANG_BENH",
+    "ColumnName": "MoTa",
+    "Rows": 5
+  },
+  {
+    "TableName": "DON_THUOC",
+    "ColumnName": "GhiChu",
+    "Rows": 12
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 8
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 14
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 2
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "HO_SO_BENH_AN",
+    "ColumnName": "LyDoKhamBanDau",
+    "Rows": 36
+  },
+  {
+    "TableName": "HO_SO_BENH_AN",
+    "ColumnName": "GhiChu",
+    "Rows": 36
+  },
+  {
+    "TableName": "HOA_DON_NHAP",
+    "ColumnName": "GhiChu",
+    "Rows": 110
+  },
+  {
+    "TableName": "KE_HOACH_DIEU_TRI",
+    "ColumnName": "GhiChu",
+    "Rows": 24
+  },
+  {
+    "TableName": "LICH_KHAM",
+    "ColumnName": "GhiChu",
+    "Rows": 6
+  },
+  {
+    "TableName": "LICH_KHAM",
+    "ColumnName": "GhiChu",
+    "Rows": 5
+  },
+  {
+    "TableName": "LICH_LAM_VIEC",
+    "ColumnName": "GhiChu",
+    "Rows": 1091
+  },
+  {
+    "TableName": "LICH_SU_KHAM_BENH",
+    "ColumnName": "TrieuChung",
+    "Rows": 1
+  },
+  {
+    "TableName": "LICH_SU_KHAM_BENH",
+    "ColumnName": "TrieuChung",
+    "Rows": 4
+  },
+  {
+    "TableName": "LICH_SU_KHAM_BENH",
+    "ColumnName": "TrieuChung",
+    "Rows": 3
+  },
+  {
+    "TableName": "LICH_SU_KHAM_BENH",
+    "ColumnName": "TrieuChung",
+    "Rows": 5
+  },
+  {
+    "TableName": "LICH_SU_KHAM_BENH",
+    "ColumnName": "TrieuChung",
+    "Rows": 4
+  },
+  {
+    "TableName": "LICH_SU_KHAM_BENH",
+    "ColumnName": "TrieuChung",
+    "Rows": 4
+  },
+  {
+    "TableName": "LICH_SU_KHAM_BENH",
+    "ColumnName": "TrieuChung",
+    "Rows": 4
+  },
+  {
+    "TableName": "LICH_SU_KHAM_BENH",
+    "ColumnName": "KeHoachXuLy",
+    "Rows": 18
+  },
+  {
+    "TableName": "LICH_SU_KHAM_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 18
+  },
+  {
+    "TableName": "LICH_SU_KHAM_BENH",
+    "ColumnName": "LyDoKhongKeThuoc",
+    "Rows": 6
+  },
+  {
+    "TableName": "LICH_SU_KHAM_BENH",
+    "ColumnName": "LyDoKhongKeThuoc",
+    "Rows": 2
+  },
+  {
+    "TableName": "LOAI_HANG_HOA",
+    "ColumnName": "MoTa",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHA_CUNG_CAP",
+    "ColumnName": "TenNCC",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHA_CUNG_CAP",
+    "ColumnName": "TenNCC",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHA_CUNG_CAP",
+    "ColumnName": "DiaChi",
+    "Rows": 2
+  },
+  {
+    "TableName": "NHA_CUNG_CAP",
+    "ColumnName": "NguoiLienHe",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHA_CUNG_CAP",
+    "ColumnName": "NguoiLienHe",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAN_VIEN",
+    "ColumnName": "DiaChi",
+    "Rows": 4
+  },
+  {
+    "TableName": "NHAN_VIEN",
+    "ColumnName": "BangCap",
+    "Rows": 4
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "HanhDong",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "LoaiDoiTuong",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "MaDoiTuong",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "NHAT_KY_THAO_TAC",
+    "ColumnName": "DuLieuSau",
+    "Rows": 1
+  },
+  {
+    "TableName": "PHIEU_KHAM_BENH",
+    "ColumnName": "LyDoKham",
+    "Rows": 24
+  },
+  {
+    "TableName": "PHIEU_KHAM_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 1
+  },
+  {
+    "TableName": "PHIEU_KHAM_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 24
+  },
+  {
+    "TableName": "PHIEU_KHAM_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 5
+  },
+  {
+    "TableName": "PHIEU_KHAM_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 5
+  },
+  {
+    "TableName": "PHIEU_NHAP",
+    "ColumnName": "LyDo",
+    "Rows": 110
+  },
+  {
+    "TableName": "PHIEU_NHAP",
+    "ColumnName": "GhiChu",
+    "Rows": 110
+  },
+  {
+    "TableName": "PHIEU_XUAT",
+    "ColumnName": "LyDo",
+    "Rows": 15
+  },
+  {
+    "TableName": "PHIEU_XUAT",
+    "ColumnName": "GhiChu",
+    "Rows": 15
+  },
+  {
+    "TableName": "THANH_TOAN",
+    "ColumnName": "LyDo",
+    "Rows": 10
+  },
+  {
+    "TableName": "THIET_BI",
+    "ColumnName": "SoSerial",
+    "Rows": 1
+  },
+  {
+    "TableName": "THIET_BI",
+    "ColumnName": "SoSerial",
+    "Rows": 1
+  },
+  {
+    "TableName": "THIET_BI",
+    "ColumnName": "SoSerial",
+    "Rows": 1
+  },
+  {
+    "TableName": "THIET_BI",
+    "ColumnName": "SoSerial",
+    "Rows": 1
+  },
+  {
+    "TableName": "THIET_BI",
+    "ColumnName": "SoSerial",
+    "Rows": 1
+  },
+  {
+    "TableName": "THIET_BI",
+    "ColumnName": "SoSerial",
+    "Rows": 1
+  },
+  {
+    "TableName": "THIET_BI",
+    "ColumnName": "SoSerial",
+    "Rows": 1
+  },
+  {
+    "TableName": "THIET_BI",
+    "ColumnName": "SoSerial",
+    "Rows": 1
+  },
+  {
+    "TableName": "THIET_BI",
+    "ColumnName": "GhiChu",
+    "Rows": 8
+  },
+  {
+    "TableName": "THIET_BI",
+    "ColumnName": "LyDoThanhLy",
+    "Rows": 1
+  },
+  {
+    "TableName": "TINH_TRANG_BENH",
+    "ColumnName": "MoTaTinhTrang",
+    "Rows": 24
+  },
+  {
+    "TableName": "TINH_TRANG_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 1
+  },
+  {
+    "TableName": "TINH_TRANG_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 1
+  },
+  {
+    "TableName": "TINH_TRANG_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 1
+  },
+  {
+    "TableName": "TINH_TRANG_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 1
+  },
+  {
+    "TableName": "TINH_TRANG_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 1
+  },
+  {
+    "TableName": "TINH_TRANG_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 1
+  },
+  {
+    "TableName": "TINH_TRANG_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 1
+  },
+  {
+    "TableName": "TINH_TRANG_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 1
+  },
+  {
+    "TableName": "TINH_TRANG_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 1
+  },
+  {
+    "TableName": "TINH_TRANG_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 1
+  },
+  {
+    "TableName": "TINH_TRANG_BENH",
+    "ColumnName": "GhiChu",
+    "Rows": 1
+  }
+]

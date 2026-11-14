@@ -1,0 +1,1731 @@
+{
+  "Database": "QLBenhVienRangHamMat",
+  "BatDauUtc": "2026-11-12T04:59:44.3755341Z",
+  "KetThucUtc": "2026-11-12T04:59:45.4875372Z",
+  "CacBang": [
+    {
+      "LuocDo": "dbo",
+      "Bang": "ANH_XQUANG_LAN_KHAM",
+      "SoDong": 0
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "BAN_GIAO_THUOC",
+      "SoDong": 1
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "BANG_LUONG",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "BAO_TRI_THIET_BI",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "BENH_NHAN",
+      "SoDong": 11
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CA_LAM",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CA_THEO_NGAY",
+      "SoDong": 6
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CAU_HINH_THUOC_KE_DON",
+      "SoDong": 0
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CHAM_CONG",
+      "SoDong": 1
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CHI_TIET_DON_THUOC",
+      "SoDong": 14
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CHI_TIET_HOA_DON",
+      "SoDong": 17
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CHI_TIET_HOA_HONG_LUONG",
+      "SoDong": 0
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CHI_TIET_KE_HOACH",
+      "SoDong": 12
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CHI_TIET_LUONG",
+      "SoDong": 0
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CHI_TIET_MAU_KE_HOACH",
+      "SoDong": 0
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CHI_TIET_PHIEU_NHAP",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CHI_TIET_PHIEU_XUAT",
+      "SoDong": 14
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CHINH_SACH_LUONG",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CHUC_VU",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CHUNG_CHI_NHAN_VIEN",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "CHUYEN_KHOA",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "DICH_VU",
+      "SoDong": 50
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "DICH_VU_THUC_HIEN",
+      "SoDong": 13
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "DICH_VU_TINH_TRANG",
+      "SoDong": 112
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "DM_TINH_TRANG_BENH",
+      "SoDong": 47
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "DON_THUOC",
+      "SoDong": 11
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "DON_XIN_NGHI",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "HANG_HOA",
+      "SoDong": 82
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "HO_SO_BENH_AN",
+      "SoDong": 11
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "HOA_DON",
+      "SoDong": 11
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "HOA_DON_NHAP",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "KE_HOACH_DIEU_TRI",
+      "SoDong": 11
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "KHO",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "KHOA",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "LAM_THEM_GIO",
+      "SoDong": 0
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "LICH_KHAM",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "LICH_LAM_VIEC",
+      "SoDong": 11
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "LICH_SU_KHAM_BENH",
+      "SoDong": 12
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "LO_HANG_HOA",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "LOAI_HANG_HOA",
+      "SoDong": 11
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "MAU_KE_HOACH_DIEU_TRI",
+      "SoDong": 0
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "NGAY_NGHI_LE",
+      "SoDong": 0
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "NHA_CUNG_CAP",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "NHAN_VIEN",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "NHAT_KY_DUYET_CHAM_CONG",
+      "SoDong": 1
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "NHAT_KY_THAO_TAC",
+      "SoDong": 37
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "NHOM_THUOC_KE_DON",
+      "SoDong": 20
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "PHAN_CONG_ANH_XQUANG",
+      "SoDong": 0
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "PHAN_CONG_THAY_THE",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "PHAN_QUYEN_VAI_TRO",
+      "SoDong": 50
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "PHIEN_DANG_NHAP",
+      "SoDong": 16
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "PHIEU_KHAM_BENH",
+      "SoDong": 12
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "PHIEU_NHAP",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "PHIEU_XUAT",
+      "SoDong": 11
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "PHONG",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "PHU_TA_DICH_VU",
+      "SoDong": 0
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "TAI_KHOAN",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "THANH_TOAN",
+      "SoDong": 11
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "THIET_BI",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "THUOC",
+      "SoDong": 62
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "TINH_TRANG_BENH",
+      "SoDong": 11
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "VAI_TRO",
+      "SoDong": 2
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "VAT_TU",
+      "SoDong": 10
+    },
+    {
+      "LuocDo": "dbo",
+      "Bang": "XAC_NHAN_DOI_LICH_KHAM",
+      "SoDong": 0
+    }
+  ],
+  "QuyTac": [
+    {
+      "Ma": "SCHEMA_PHIENBAN",
+      "MucDo": "CanDoiChieu",
+      "MoTa": "Schema P1/P4 ch\u01B0a \u0111\u01B0\u1EE3c c\u00E0i; ch\u1EC9 ki\u1EC3m c\u00E1c c\u1ED9t/b\u1EA3ng hi\u1EC7n c\u00F3, kh\u00F4ng t\u1EF1 n\u00E2ng c\u1EA5p.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "SCHEMA_RANG_BUOC",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "R\u00E0ng bu\u1ED9c b\u1ECB t\u1EAFt/ch\u01B0a trusted ho\u1EB7c trigger b\u1ECB t\u1EAFt; c\u1EA7n \u0111\u1ED1i chi\u1EBFu tr\u01B0\u1EDBc s\u1EEDa d\u1EEF li\u1EC7u.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHIEU_KHAM_BENH_MaLich",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHIEU_KHAM_BENH_MaNVTiepNhan",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHIEU_KHAM_BENH_MaPhong",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHIEU_NHAP_MaHDN",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHIEU_NHAP_MaKho",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHIEU_NHAP_MaNV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHIEU_XUAT_MaKho",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHIEU_XUAT_MaKhoa",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CTHD_PhieuPhuThu",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHIEU_XUAT_MaLS",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHIEU_XUAT_MaNV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHIEU_XUAT_MaPhong",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHONG_MaKhoa",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PTDV_DVTH",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PTDV_NV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_RX_Thuoc_Nhom",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_TAI_KHOAN_MaKhoa",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_AXQ_LanKham",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_TAI_KHOAN_MaNV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_AXQ_DichVu",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_TAI_KHOAN_MaPhong",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_AXQ_NhanVien",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_TAI_KHOAN_MaVaiTro",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_THANH_TOAN_MaHD",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_THANH_TOAN_MaNV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_THIET_BI_MaHH",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_THIET_BI_MaNCC",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_THIET_BI_MaPhong",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_THUOC_MaHH",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_TINH_TRANG_BENH_MaLS",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_VAT_TU_MaHH",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_XNDLK_Don",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_XNDLK_NhanVien",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PCAXQ_DichVu",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PCAXQ_KyThuat",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PCAXQ_NguoiGiao",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_BANG_LUONG_MaCSL",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_BANG_LUONG_MaNV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_BAO_TRI_THIET_BI_MaNV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_BAO_TRI_THIET_BI_MaTB",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_BL_NguoiChot",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CA_THEO_NGAY_CA_LAM",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CC_MaLLV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CC_NguoiDoiSoat",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHI_TIET_DON_THUOC_MaDT",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHI_TIET_DON_THUOC_MaThuoc",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHI_TIET_HOA_DON_MaCTPX",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHI_TIET_HOA_DON_MaDVThucHien",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHI_TIET_HOA_DON_MaHD",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHI_TIET_KE_HOACH_MaDV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHI_TIET_KE_HOACH_MaKHDT",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHI_TIET_PHIEU_NHAP_MaHH",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHI_TIET_PHIEU_NHAP_MaLo",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHI_TIET_PHIEU_NHAP_MaPN",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHI_TIET_PHIEU_XUAT_MaCTDT",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHI_TIET_PHIEU_XUAT_MaHH",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHI_TIET_PHIEU_XUAT_MaLo",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHI_TIET_PHIEU_XUAT_MaPX",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHINH_SACH_LUONG_MaChucVu",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHINH_SACH_LUONG_MaNVDuyet",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHUNG_CHI_NHAN_VIEN_MaNV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CHUYEN_KHOA_MaKhoa",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CTHD_DonDaKy",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CTHH_BL",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CTHH_CTHD",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CTL_BangLuong",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CTL_NguoiDuyet",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CW_BanGiao_DT",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CW_BanGiao_HD",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CW_BanGiao_NV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CW_BanGiao_PX",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CW_CauHinh_Duyet",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CW_CauHinh_Nhom",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CW_CauHinh_Thuoc",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CW_CTMau_DV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CW_CTMau_MauKH",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CW_DT_ThayThe",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CW_KH_Mau",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CW_KH_TTB",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CW_MauKH_BS",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CW_MauKH_DMTT",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_CW_TTB_DMTT",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_DICH_VU_MaCK",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_DICH_VU_THUC_HIEN_MaCTKH",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_DICH_VU_THUC_HIEN_MaDV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_DICH_VU_THUC_HIEN_MaLS",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_DICH_VU_THUC_HIEN_MaNVThucHien",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_TB_NhanVienThanhLy",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_DON_THUOC_MaBS",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_DON_THUOC_MaLS",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_DON_XIN_NGHI_MaNV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_DON_XIN_NGHI_MaNVDuyet",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_DVTT_DichVu",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_DVTT_TinhTrang",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_HANG_HOA_MaLoaiHH",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_HO_SO_BENH_AN_MaBN",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_HOA_DON_MaLS",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_S3_Phien_TK",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_HOA_DON_MaNV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_HOA_DON_NHAP_MaNCC",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_HOA_DON_NHAP_MaNV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_KE_HOACH_DIEU_TRI_MaBS",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_KE_HOACH_DIEU_TRI_MaLS",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_S3_NhatKy_Phien",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_KHO_MaNV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LICH_KHAM_BacSiDuBi",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LICH_KHAM_MaBN",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LICH_KHAM_MaBS",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LICH_KHAM_MaCa",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LICH_KHAM_MaDV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LICH_KHAM_MaPhong",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LICH_LAM_VIEC_MaCa",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LICH_LAM_VIEC_MaNV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LICH_LAM_VIEC_MaPhong",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LICH_SU_KHAM_BENH_MaBS",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LICH_SU_KHAM_BENH_MaPhieu",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LICH_SU_KHAM_BENH_MaPhong",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LO_HANG_HOA_MaHH",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LO_HANG_HOA_MaKho",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LO_HANG_HOA_MaNCC",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LTG_NguoiDuyet",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_LTG_NV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_NHAN_VIEN_MaChucVu",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_NHAN_VIEN_MaCK",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_NHAT_KY_THAO_TAC_MaTK",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_NKCC_Lich",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_NKCC_NguoiDuyet",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_NKCC_NhanVien",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHAN_CONG_THAY_THE_MaDonNghi",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHAN_CONG_THAY_THE_MaLLVThayThe",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHIEU_KHAM_BENH_MaBS",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHIEU_KHAM_BENH_MaDV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "FK:FK_PHIEU_KHAM_BENH_MaHS",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Tham chi\u1EBFu m\u1ED3 c\u00F4i theo FK th\u1EF1c trong sys.foreign_keys.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "BN_NGAY_SINH",
+      "MucDo": "CanDoiChieu",
+      "MoTa": "Ng\u00E0y sinh t\u01B0\u01A1ng lai ho\u1EB7c tu\u1ED5i tr\u00EAn120; kh\u00F4ng t\u1EF1 s\u1EEDa ho\u1EB7c suy \u0111o\u00E1n ng\u00E0y sinh.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "BN_NGHI_TRUNG",
+      "MucDo": "CanDoiChieu",
+      "MoTa": "Tr\u00F9ng t\u00EAn/ng\u00E0y sinh/s\u1ED1 \u0111i\u1EC7n tho\u1EA1i kh\u00F4ng r\u1ED7ng ch\u1EC9 l\u00E0 nghi v\u1EA5n; kh\u00F4ng g\u1ED9p hay \u1EA9n h\u1ED3 s\u01A1.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "HS_THOIGIAN",
+      "MucDo": "CanDoiChieu",
+      "MoTa": "Ng\u00E0y l\u1EADp h\u1ED3 s\u01A1 tr\u01B0\u1EDBc ng\u00E0y sinh ho\u1EB7c t\u01B0\u01A1ng lai; c\u1EA7n ki\u1EC3m ngu\u1ED3n h\u1ED3 s\u01A1.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "LS_THOIGIAN",
+      "MucDo": "CanDoiChieu",
+      "MoTa": "Th\u1EE9 t\u1EF1 ti\u1EBFp nh\u1EADn/kh\u00E1m/x\u00E1c nh\u1EADn ch\u01B0a h\u1EE3p l\u00FD ho\u1EB7c l\u01B0\u1EE3t x\u00E1c nh\u1EADn thi\u1EBFu th\u1EDDi \u0111i\u1EC3m; kh\u00F4ng t\u1EF1 ho\u00E0n t\u1EA5t l\u01B0\u1EE3t.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "LS_BACSI",
+      "MucDo": "CanDoiChieu",
+      "MoTa": "B\u00E1c s\u0129 phi\u1EBFu/l\u01B0\u1EE3t kh\u00E1c nhau ho\u1EB7c ch\u1EE9c v\u1EE5/chuy\u00EAn khoa hi\u1EC7n t\u1EA1i thi\u1EBFu; danh m\u1EE5c hi\u1EC7n t\u1EA1i kh\u00F4ng ch\u1EE9ng minh l\u1ECBch s\u1EED sai.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "NS_HIEN_TAI",
+      "MucDo": "CanDoiChieu",
+      "MoTa": "Nh\u00E2n vi\u00EAn/t\u00E0i kho\u1EA3n b\u00E1c s\u0129 hi\u1EC7n kh\u00F4ng ho\u1EA1t \u0111\u1ED9ng; kh\u00F4ng suy ra l\u01B0\u1EE3t kh\u00E1m trong qu\u00E1 kh\u1EE9 sai.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "BENH_THIEU_MA",
+      "MucDo": "CanDoiChieu",
+      "MoTa": "D\u00F2ng t\u00ECnh tr\u1EA1ng c\u1EE7a l\u01B0\u1EE3t x\u00E1c nh\u1EADn thi\u1EBFu m\u00E3; b\u00E1o ch\u1EA5t l\u01B0\u1EE3ng, kh\u00F4ng \u0111o\u00E1n m\u00E3 t\u1EEB ch\u1EA9n \u0111o\u00E1n.",
+      "TongSo": 11,
+      "ChiTiet": [
+        {
+          "Bang": "TINH_TRANG_BENH",
+          "Khoa": "TTB001",
+          "LienQuan": "LS001"
+        },
+        {
+          "Bang": "TINH_TRANG_BENH",
+          "Khoa": "TTB002",
+          "LienQuan": "LS002"
+        },
+        {
+          "Bang": "TINH_TRANG_BENH",
+          "Khoa": "TTB003",
+          "LienQuan": "LS003"
+        },
+        {
+          "Bang": "TINH_TRANG_BENH",
+          "Khoa": "TTB004",
+          "LienQuan": "LS004"
+        },
+        {
+          "Bang": "TINH_TRANG_BENH",
+          "Khoa": "TTB005",
+          "LienQuan": "LS005"
+        },
+        {
+          "Bang": "TINH_TRANG_BENH",
+          "Khoa": "TTB006",
+          "LienQuan": "LS006"
+        },
+        {
+          "Bang": "TINH_TRANG_BENH",
+          "Khoa": "TTB007",
+          "LienQuan": "LS007"
+        },
+        {
+          "Bang": "TINH_TRANG_BENH",
+          "Khoa": "TTB008",
+          "LienQuan": "LS008"
+        },
+        {
+          "Bang": "TINH_TRANG_BENH",
+          "Khoa": "TTB009",
+          "LienQuan": "LS009"
+        },
+        {
+          "Bang": "TINH_TRANG_BENH",
+          "Khoa": "TTB010",
+          "LienQuan": "LS010"
+        },
+        {
+          "Bang": "TINH_TRANG_BENH",
+          "Khoa": "TTB011",
+          "LienQuan": "LSKB011"
+        }
+      ],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "BENH_KHONG_GHI_NHAN",
+      "MucDo": "CanDoiChieu",
+      "MoTa": "L\u01B0\u1EE3t x\u00E1c nh\u1EADn kh\u00F4ng c\u00F3 d\u00F2ng t\u00ECnh tr\u1EA1ng c\u00F3 m\u00E3; kh\u00F4ng coi l\u00E0 kh\u00F4ng c\u00F3 b\u1EC7nh.",
+      "TongSo": 11,
+      "ChiTiet": [
+        {
+          "Bang": "LICH_SU_KHAM_BENH",
+          "Khoa": "LS001",
+          "LienQuan": "PKB001"
+        },
+        {
+          "Bang": "LICH_SU_KHAM_BENH",
+          "Khoa": "LS002",
+          "LienQuan": "PKB002"
+        },
+        {
+          "Bang": "LICH_SU_KHAM_BENH",
+          "Khoa": "LS003",
+          "LienQuan": "PKB003"
+        },
+        {
+          "Bang": "LICH_SU_KHAM_BENH",
+          "Khoa": "LS004",
+          "LienQuan": "PKB004"
+        },
+        {
+          "Bang": "LICH_SU_KHAM_BENH",
+          "Khoa": "LS005",
+          "LienQuan": "PKB005"
+        },
+        {
+          "Bang": "LICH_SU_KHAM_BENH",
+          "Khoa": "LS006",
+          "LienQuan": "PKB006"
+        },
+        {
+          "Bang": "LICH_SU_KHAM_BENH",
+          "Khoa": "LS007",
+          "LienQuan": "PKB007"
+        },
+        {
+          "Bang": "LICH_SU_KHAM_BENH",
+          "Khoa": "LS008",
+          "LienQuan": "PKB008"
+        },
+        {
+          "Bang": "LICH_SU_KHAM_BENH",
+          "Khoa": "LS009",
+          "LienQuan": "PKB009"
+        },
+        {
+          "Bang": "LICH_SU_KHAM_BENH",
+          "Khoa": "LS010",
+          "LienQuan": "PKB010"
+        },
+        {
+          "Bang": "LICH_SU_KHAM_BENH",
+          "Khoa": "LSKB011",
+          "LienQuan": "PKB011"
+        }
+      ],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "BENH_TRUNG_MA",
+      "MucDo": "CanDoiChieu",
+      "MoTa": "C\u00F9ng m\u00E3 t\u00ECnh tr\u1EA1ng l\u1EB7p tr\u00EAn l\u01B0\u1EE3t; b\u00E1o t\u1EEBng PK, th\u1ED1ng k\u00EA v\u1EABn ph\u1EA3i DISTINCT MaLS/MaDMTT.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "DV_HIEULUC",
+      "MucDo": "CanDoiChieu",
+      "MoTa": "D\u1ECBch v\u1EE5 th\u1EF1c hi\u1EC7n tr\u01B0\u1EDBc ng\u00E0y \u00E1p d\u1EE5ng danh m\u1EE5c hi\u1EC7n t\u1EA1i; c\u1EA7n gi\u00E1/ngu\u1ED3n l\u1ECBch s\u1EED, kh\u00F4ng h\u1ED3i t\u1ED1 gi\u00E1.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "TN_DICHVU_LICH",
+      "MucDo": "CanDoiChieu",
+      "MoTa": "Phi\u1EBFu d\u1ECBch v\u1EE5 ch\u01B0a \u0111\u1ED1i chi\u1EBFu \u0111\u01B0\u1EE3c ca/ph\u00F2ng/hi\u1EC7n di\u1EC7n \u1EDF th\u1EDDi \u0111i\u1EC3m ti\u1EBFp nh\u1EADn; l\u1ECBch hi\u1EC7n t\u1EA1i c\u00F3 th\u1EC3 \u0111\u00E3 thay \u0111\u1ED5i.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "HD_TONG",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "T\u1ED5ng h\u00F3a \u0111\u01A1n kh\u00F4ng b\u1EB1ng t\u1ED5ng chi ti\u1EBFt; kh\u00F4ng ch\u1EC9nh t\u1ED5ng \u0111\u1ED9c l\u1EADp.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "HD_THU_RONG",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Thu r\u00F2ng \u0111\u00E3 x\u00E1c nh\u1EADn \u00E2m ho\u1EB7c v\u01B0\u1EE3t ph\u1EA3i thu; kh\u00F4ng s\u1EEDa kho\u1EA3n thanh to\u00E1n c\u0169.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "HD_THOIGIAN",
+      "MucDo": "CanDoiChieu",
+      "MoTa": "H\u00F3a \u0111\u01A1n x\u00E1c nh\u1EADn thi\u1EBFu th\u1EDDi \u0111i\u1EC3m ho\u1EB7c kh\u00F4ng theo sau l\u1EA7n kh\u00E1m; c\u1EA7n \u0111\u1ED1i chi\u1EBFu ch\u1EE9ng t\u1EEB.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "TT_NGUON",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Giao d\u1ECBch thu/ho\u00E0n x\u00E1c nh\u1EADn tr\u1ECF h\u00F3a \u0111\u01A1n ch\u01B0a x\u00E1c nh\u1EADn.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "TT_THOIGIAN",
+      "MucDo": "CanDoiChieu",
+      "MoTa": "Th\u1EDDi \u0111i\u1EC3m thu/ho\u00E0n tr\u01B0\u1EDBc x\u00E1c nh\u1EADn h\u00F3a \u0111\u01A1n ho\u1EB7c t\u01B0\u01A1ng lai.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "TT_SO_DU_LICHSU",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Thu r\u00F2ng t\u1EEBng th\u1EDDi \u0111i\u1EC3m \u00E2m/v\u01B0\u1EE3t ph\u1EA3i thu; g\u1ED9p c\u00F9ng timestamp v\u00EC kh\u00F4ng bi\u1EBFt th\u1EE9 t\u1EF1 n\u1ED9i b\u1ED9.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "HD_NGUON_DV",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "D\u00F2ng d\u1ECBch v\u1EE5 kh\u00F4ng \u0111\u00FAng l\u01B0\u1EE3t/tr\u1EA1ng th\u00E1i/th\u00E0nh ti\u1EC1n c\u1EE7a ngu\u1ED3n \u0111\u00E3 ch\u1ED1t.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "HD_NGUON_THUOC",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "D\u00F2ng thu\u1ED1c l\u1EC7ch l\u01B0\u1EE3t/\u0111\u01A1n/xu\u1EA5t/tr\u1EA1ng th\u00E1i/l\u01B0\u1EE3ng/th\u1EDDi gian ho\u1EB7c kh\u00F4ng b\u1EB1ng l\u01B0\u1EE3ng ngu\u1ED3n nh\u00E2n gi\u00E1 ch\u1ED1t; kh\u00F4ng so gi\u00E1 danh m\u1EE5c hi\u1EC7n t\u1EA1i.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "HD_TRUNG_NGUON_THUOC",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "C\u00F9ng chi ti\u1EBFt \u0111\u01A1n b\u1ECB t\u00EDnh c\u1EA3 ngu\u1ED3n ch\u1EDD c\u1EA5p MaCTDT v\u00E0 ngu\u1ED3n \u0111\u00E3 xu\u1EA5t MaCTPX tr\u00EAn h\u00F3a \u0111\u01A1n ch\u01B0a h\u1EE7y.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "HD_PHUTHU",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "H\u00F3a \u0111\u01A1n x\u00E1c nh\u1EADn d\u1ECBch v\u1EE5 ph\u1EA3i c\u00F3 \u0111\u00FAng m\u1ED9t ph\u1EE5 thu30000 \u0111\u00FAng phi\u1EBFu; phi\u1EBFu th\u01B0\u1EDDng kh\u00F4ng c\u00F3 ph\u1EE5 thu.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "NHAP_TONG",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "T\u1ED5ng phi\u1EBFu nh\u1EADp kh\u00F4ng b\u1EB1ng chi ti\u1EBFt.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "KHO_AM",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "T\u1ED3n hi\u1EC7n t\u1EA1i theo h\u00E0ng/kho/l\u00F4 \u00E2m; kh\u00F4ng t\u1EF1 b\u00F9 nh\u1EADp kho.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "KHO_AM_LICHSU",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "PK d\u00F2ng xu\u1EA5t \u1EDF m\u1ED1c t\u1ED3n l\u1ECBch s\u1EED \u00E2m, d\u00F9 t\u1ED3n cu\u1ED1i \u0111\u1EE7; g\u1ED9p bi\u1EBFn \u0111\u1ED9ng c\u00F9ng timestamp.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "KHO_NGUON_THUOC",
+      "MucDo": "SaiXacDinh",
+      "MoTa": "Xu\u1EA5t l\u00E2m s\u00E0ng ghi s\u1ED5 sai \u0111\u01A1n/l\u01B0\u1EE3t/m\u1EB7t h\u00E0ng ho\u1EB7c \u0111\u01A1n ch\u01B0a x\u00E1c nh\u1EADn.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    },
+    {
+      "Ma": "KHO_LO_THOIGIAN",
+      "MucDo": "CanDoiChieu",
+      "MoTa": "Xu\u1EA5t tr\u01B0\u1EDBc ng\u00E0y nh\u1EADp l\u00F4, tr\u01B0\u1EDBc ng\u00E0y k\u00EA ho\u1EB7c sau h\u1EA1n d\u00F9ng theo d\u1EEF li\u1EC7u l\u00F4 hi\u1EC7n c\u00F3.",
+      "TongSo": 0,
+      "ChiTiet": [],
+      "DaGioiHan": false
+    }
+  ],
+  "TongSaiXacDinh": 0,
+  "TongCanDoiChieu": 22
+}

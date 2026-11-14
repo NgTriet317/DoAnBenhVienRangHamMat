@@ -1,0 +1,55 @@
+﻿{
+    "Date":  "2026-11-14",
+    "SqlSource":  "Database/QLBenhVienRangHamMat.sql",
+    "SqlSourceSha256":  "AF9E5F50688B9F4359644170F22A8EB22D0BDD0DF29AD2D6F95B38ED5CFD5D0A",
+    "SqlSourceUnchanged":  true,
+    "TestDatabase":  "RHM_Hospital_Test_Links_20261114_7b2433bd",
+    "Tables":  64,
+    "Rows":  3285,
+    "AllTableHashesMatchOriginalPackagedManifest":  true,
+    "AllTableHashesMatchAfterRerun":  true,
+    "ConfirmedDataMismatches":  0,
+    "ClinicalApi":  {
+                        "PrintablePrescriptions":  21,
+                        "ValidHandovers":  18,
+                        "WriteProbesRolledBack":  true,
+                        "PayableInvoices":  13
+                    },
+    "HrChecks":  {
+                     "Passed":  32,
+                     "Failed":  0
+                 },
+    "MaintenanceChecks":  {
+                              "Passed":  78,
+                              "Failed":  0
+                          },
+    "DiagnosticRegression":  {
+                                 "SelectOnly":  true,
+                                 "Failed":  0,
+                                 "Passed":  6
+                             },
+    "Comments":  {
+                     "AddedLines":  2012,
+                     "Files":  120,
+                     "ToolFiles":  43,
+                     "LayersFiles":  28,
+                     "ApplicationExecutableTokensUnchanged":  true,
+                     "WpfFiles":  49
+                 },
+    "Build":  {
+                  "WarningsPerConfiguration":  124,
+                  "Configurations":  [
+                                         "Debug",
+                                         "Release"
+                                     ],
+                  "ErrorsPerConfiguration":  0
+              },
+    "OperationalNotes":  [
+                             "5 specialties need current confirmed/present roster",
+                             "354 completed shifts awaiting attendance approval",
+                             "14 shifts missing clock-out",
+                             "10 preserved V8 payroll periods block overlapping October V9 calculation"
+                         ],
+    "LiveDatabaseChanged":  false,
+    "SnapshotDataChanged":  false
+}

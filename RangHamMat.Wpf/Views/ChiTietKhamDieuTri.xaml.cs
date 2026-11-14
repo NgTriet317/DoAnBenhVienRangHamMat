@@ -84,6 +84,9 @@ public partial class ChiTietKhamDieuTri : UserControl, IPatientScoped
     /// Quay lại màn hình trước bằng sự kiện BackRequested/CloseRequested hoặc workspace; không tự lưu dữ liệu đang nhập.
     /// </summary>
     private void Back_Click(object sender, RoutedEventArgs e) => BackRequested?.Invoke();
+    /// <summary>
+    /// Lấy ngữ cảnh hiện tại và mở ảnh của lần khám ở chế độ lịch sử chỉ xem; hiện thông báo nếu không được phép.
+    /// </summary>
     private void XrayHistoryHost_Loaded(object sender,RoutedEventArgs e)
     {
         if(XrayHistoryHost.Content is not null)return;

@@ -5,11 +5,16 @@ using System.Data;
 using System.Text.RegularExpressions;
 
 // Integration checks against the real SQL script. All business fixtures roll back.
+/// <summary>Kiểm schema/ET, nguồn phụ thu, hóa đơn và metadata X-quang cùng khả năng chạy lại migration.</summary>
+/// <remarks>Ca thường rollback; riêng --seed-rerun commit fixture vào database _Rerun để lượt sau kiểm dữ liệu được giữ.</remarks>
 static class Program
 {
     static string cs = "";
     static int passed, failed;
 
+    /// <summary>Chạy ca nền tảng, ghi/kiểm fixture chạy lại hoặc lưu/đối chiếu dấu vân tay dữ liệu.</summary>
+    /// <param name="args">Máy chủ, database RHM_Hospital_Test_ và tùy chọn chế độ kèm đường dẫn baseline nếu cần.</param>
+    /// <returns>0 khi chế độ đã chọn đạt; 1 khi có ca thất bại.</returns>
     static int Main(string[] args)
     {
         if (args.Length < 2 || !Regex.IsMatch(args[1], "^RHM_Hospital_Test_[A-Za-z0-9_]+$"))
@@ -204,6 +209,8 @@ static class Program
         var hash=db.ExecuteScalar<byte[]>($"SELECT HASHBYTES('SHA2_256',COALESCE((SELECT {columns} FROM dbo.{Q(table.Table)} ORDER BY {order} FOR JSON PATH,INCLUDE_NULL_VALUES),N'[]'))");
         return(rows, hash is null ? "EMPTY" : Convert.ToHexString(hash));
     }
+    /// <summary>Lưu danh sách cột/khóa chính, số hàng và SHA-256 của từng bảng để đối chiếu sau migration.</summary>
+    /// <param name="path">Tệp JSON nhận baseline của database thử hiện tại.</param>
     static void SaveBaseline(string path)
     {
         using var db=new SqlConnection(cs);db.Open();
@@ -220,6 +227,8 @@ static class Program
         File.WriteAllText(path,System.Text.Json.JsonSerializer.Serialize(snapshots,new System.Text.Json.JsonSerializerOptions{WriteIndented=true}));
         Console.WriteLine($"Saved {snapshots.Count} table fingerprints to {path}");
     }
+    /// <summary>Đối chiếu số hàng và hash theo các cột/khóa của baseline để phát hiện dữ liệu cũ bị đổi.</summary>
+    /// <param name="path">Tệp JSON do SaveBaseline tạo trước migration.</param>
     static void CompareBaseline(string path)
     {
         var tables=System.Text.Json.JsonSerializer.Deserialize<TableBaseline[]>(File.ReadAllText(path))!;

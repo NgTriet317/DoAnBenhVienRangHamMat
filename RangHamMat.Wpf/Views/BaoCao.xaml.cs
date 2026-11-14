@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Input;
 using Microsoft.Win32;
 using RangHamMat.Controls;
 using ET;
@@ -178,6 +179,8 @@ public partial class BaoCao : UserControl
         Unloaded += (_,_) => PhienDangNhap.DinhDanhThayDoi -= PhienBaoCaoThayDoi;
         // DatePicker có thể giữ SelectedDate cũ khi gõ sai: mọi lần sửa text đều khóa xuất ngay.
         AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(NgayDangSua), true);
+        foreach(var field in TruongBoLoc())
+            field.LostKeyboardFocus+=(_,_)=>{if(ready&&!field.IsKeyboardFocusWithin)KiemTraBoLoc(out _,out _);};
         Unloaded += (_, _) => XoaKetQua();
         HoTroGiaoDien.Observe(this, () =>
         {
@@ -186,6 +189,7 @@ public partial class BaoCao : UserControl
         });
         ready = true;
         HienDanhMuc(); ChonBaoCao("00");
+        CapNhatTruongBoLoc();
         if (loiQuyen is not null) ThongBao("Không xác thực được quyền báo cáo. Đăng nhập lại hoặc kiểm tra kết nối dữ liệu.",true);
     }
 
@@ -248,6 +252,7 @@ public partial class BaoCao : UserControl
         }
         else ThongBao("Chưa tải báo cáo. Chọn khoảng thời gian rồi nhấn Tải báo cáo.");
         ReportScroll.ScrollToTop();
+        CapNhatTruongBoLoc();
     }
 
     /// <summary>
@@ -333,11 +338,10 @@ public partial class BaoCao : UserControl
     private void BoLoc_Changed(object sender, RoutedEventArgs e)
     {
         if (!ready || selected is null) return;
-        ComparisonMode.IsEnabled = MonthToDate.IsEnabled = PeriodMode.SelectedIndex == 2;
-        BaselineYear.IsEnabled = PeriodMode.SelectedIndex == 2 && ComparisonMode.SelectedIndex == 3;
+        CapNhatTruongBoLoc();
         XoaKetQua();
         ThongBao(selected.DaKetNoi ? "Bộ lọc đã thay đổi. Nhấn Tải báo cáo để cập nhật kết quả." : "Chuyên đề chưa tích hợp nguồn dữ liệu; chưa có số liệu để tải hoặc xuất.");
-        KiemTraNgay(out _, out _);
+        if(TruongBoLoc().Any(KiemTraNhapLieu.GetHasError))KiemTraBoLoc(out _,out _);
     }
     /// <summary>
     /// Nhận diện nội dung ngày còn đang chỉnh để tránh dùng dữ liệu chưa hợp lệ.
@@ -362,6 +366,7 @@ public partial class BaoCao : UserControl
         e.ThrowException = false;
         if (!ready) return;
         XoaKetQua(); LoiBoLoc("Ngày không hợp lệ. Vui lòng nhập theo định dạng dd/MM/yyyy.");
+        if(sender is DatePicker picker)KiemTraNhapLieu.SetError(picker,"Ngày không hợp lệ. Nhập ngày theo dd/MM/yyyy hoặc chọn lại trên lịch, ví dụ 25/10/2026.");
         ThongBao("Ngày vừa nhập không hợp lệ. Hãy sửa ngày hoặc chọn lại trên lịch.", true);
     }
     /// <summary>
@@ -401,21 +406,116 @@ public partial class BaoCao : UserControl
     /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     private bool KiemTraNgay(out DateTime from, out DateTime to)
     {
-        from = default; to = default;
         var start = selected?.TheoThoiDiem == true ? AsOfDate : FromDate;
         var end = selected?.TheoThoiDiem == true ? AsOfDate : ToDate;
+        var valid=KiemTraKhoangNgay(start,end,out from,out to);
+        LoiBoLoc(valid?"":"Kiểm tra và sửa các ô ngày được đánh dấu bên dưới.");
+        return valid;
+    }
+    /// <summary>Đọc chữ trong cả hai ô ngày và đặt lỗi dưới chính ô sai; không dùng lại SelectedDate khi gõ sai.</summary>
+    private static bool KiemTraKhoangNgay(DatePicker start,DatePicker end,out DateTime from,out DateTime to)
+    {
+        from=default;to=default;
         bool ReadDate(DatePicker picker, out DateTime date)
         {
             date = default;
-            try { if (KiemTraNhapLieu.ReadDate(picker) is DateTime value) { date = value.Date; return true; } }
-            catch (InvalidOperationException) { }
-            return false;
+            try
+            {
+                if (KiemTraNhapLieu.ReadDate(picker) is not DateTime value)
+                    throw new LoiNhapLieu(picker.Name,"Vui lòng nhập ngày theo dd/MM/yyyy hoặc chọn ngày trên lịch, ví dụ 25/10/2026.");
+                date=value.Date;KiemTraNhapLieu.SetError(picker,"");return true;
+            }
+            catch (InvalidOperationException ex){KiemTraNhapLieu.SetError(picker,ex.Message+" Nhập dd/MM/yyyy hoặc chọn lại trên lịch.");return false;}
         }
-        if (!ReadDate(start, out from) || !ReadDate(end, out to)) { LoiBoLoc("Nhập đầy đủ ngày hợp lệ theo định dạng dd/MM/yyyy."); return false; }
-        if (from.Date > to.Date) { LoiBoLoc("Từ ngày phải trước hoặc bằng Đến ngày."); return false; }
-        if ((to.Date - from.Date).TotalDays > 3660) { LoiBoLoc("Vui lòng chọn khoảng báo cáo tối đa 10 năm."); return false; }
-        if (to.Date == DateTime.MaxValue.Date) { LoiBoLoc("Ngày kết thúc nằm ngoài phạm vi hỗ trợ."); return false; }
-        LoiBoLoc(""); return true;
+        var firstValid=ReadDate(start,out from);
+        var lastValid=ReferenceEquals(start,end)?firstValid:ReadDate(end,out to);
+        if(ReferenceEquals(start,end))to=from;
+        if(!firstValid||!lastValid)return false;
+        string error=from>to?"Đến ngày phải bằng hoặc sau Từ ngày. Chọn lại ngày kết thúc.":
+            (to-from).TotalDays>3660?"Khoảng báo cáo tối đa 10 năm. Rút ngắn khoảng Từ ngày – Đến ngày.":
+            to==DateTime.MaxValue.Date?"Ngày kết thúc ngoài phạm vi hỗ trợ. Chọn ngày trước 31/12/9999.":"";
+        KiemTraNhapLieu.SetError(end,error);return error.Length==0;
+    }
+
+    /// <summary>Các ô có lỗi tại trường, gồm cả ô đang tạm ẩn do chuyển loại báo cáo.</summary>
+    private FrameworkElement[] TruongBoLoc()=>[FromDate,ToDate,AsOfDate,PeriodMode,ComparisonMode,BaselineYear,ChartMetric,SpecialtyCode,ServiceCode,ExpiryThreshold];
+
+    /// <summary>Chỉ giữ kiểm tra các bộ lọc có hiệu lực; năm đối chiếu không tham gia kỳ ngày/tuần hoặc chế độ khác.</summary>
+    private void CapNhatTruongBoLoc()
+    {
+        var snapshot=selected?.TheoThoiDiem==true;
+        ComparisonMode.IsEnabled=MonthToDate.IsEnabled=!snapshot&&PeriodMode.SelectedIndex==2;
+        BaselineYear.IsEnabled=ComparisonMode.IsEnabled&&ComparisonMode.SelectedIndex==3;
+        foreach(var field in TruongBoLoc())
+        {
+            var active=snapshot?field==AsOfDate||field==ExpiryThreshold:
+                field!=AsOfDate&&field!=ExpiryThreshold&&(field!=BaselineYear||BaselineYear.IsEnabled)&&
+                (field!=ComparisonMode||ComparisonMode.IsEnabled)&&
+                (selected?.Ma=="20"||field!=SpecialtyCode&&field!=ServiceCode);
+            if(!active)KiemTraNhapLieu.SetError(field,"");
+        }
+    }
+
+    /// <summary>Không biến lựa chọn bị bỏ trống thành một chế độ mặc định khác ý định của người dùng.</summary>
+    private static bool KiemTraLuaChon(ComboBox field,string label)
+    {
+        var valid=field.SelectedIndex>=0&&field.Items.Contains(field.SelectedItem);
+        KiemTraNhapLieu.SetError(field,valid?"":label+": vui lòng chọn một mục trong danh sách.");
+        return valid;
+    }
+
+    /// <summary>Đọc năm khi bộ lọc yêu cầu; giữ quyền bỏ qua ô năm không tham gia báo cáo hiện tại.</summary>
+    private static int DocNamDoiChieu(TextBox field,bool active)
+    {
+        if(!active){KiemTraNhapLieu.SetError(field,"");return DateTime.Today.Year-1;}
+        if(!int.TryParse(field.Text.Trim(),NumberStyles.None,CultureInfo.InvariantCulture,out var year)||year is <1900 or >9997)
+        {
+            var message="Năm đối chiếu: nhập số nguyên từ 1900 đến 9997, ví dụ 2025.";
+            KiemTraNhapLieu.SetError(field,message);throw new LoiNhapLieu(field.Name,message);
+        }
+        KiemTraNhapLieu.SetError(field,"");return year;
+    }
+
+    /// <summary>Kiểm tra toàn bộ bộ lọc đang có hiệu lực trước khi tải/xuất và khi người dùng rời ô nhập.</summary>
+    private bool KiemTraBoLoc(out DateTime from,out DateTime to)
+    {
+        CapNhatTruongBoLoc();
+        var valid=KiemTraNgay(out from,out to);
+        if(selected?.TheoThoiDiem==true)return KiemTraLuaChon(ExpiryThreshold,"Ngưỡng cảnh báo hạn dùng")&&valid;
+        valid=KiemTraLuaChon(PeriodMode,"Nhóm số liệu theo")&&valid;
+        valid=KiemTraLuaChon(ChartMetric,"Chỉ tiêu trên biểu đồ")&&valid;
+        if(selected?.Ma=="20")
+        {
+            valid=KiemTraLuaChon(SpecialtyCode,"Chuyên khoa của bác sĩ")&&valid;
+            valid=KiemTraLuaChon(ServiceCode,"Dịch vụ tiếp nhận")&&valid;
+        }
+        if(selected?.Ma is "00" or "20"&&PeriodMode.SelectedIndex!=2)
+        {
+            KiemTraNhapLieu.SetError(PeriodMode,"Chuyên đề này sử dụng kỳ Tháng. Chọn Tháng để đếm đúng bệnh nhân duy nhất.");valid=false;
+        }
+        if(PeriodMode.SelectedIndex==2)
+        {
+            valid=KiemTraLuaChon(ComparisonMode,"Chế độ so sánh")&&valid;
+            try{DocNamDoiChieu(BaselineYear,BaselineYear.IsEnabled);}catch(LoiNhapLieu){valid=false;}
+            if(valid)
+            {
+                try{SoSanhThongKe.TaoCacKy(DocBoLoc(),DateTime.Today);}
+                catch(ArgumentException ex){BaoLoiSoSanh(ex);valid=false;}
+                catch(LoiNhapLieu){valid=false;}
+            }
+        }
+        LoiBoLoc(valid?"":"Sửa các ô được đánh dấu theo hướng dẫn bên dưới rồi tải lại báo cáo.");
+        return valid;
+    }
+
+    /// <summary>Đặt lỗi điều kiện liên kỳ ngay tại năm/chế độ/ngày liên quan và kèm cách chọn lại.</summary>
+    private void BaoLoiSoSanh(ArgumentException error)
+    {
+        FrameworkElement field=error.Message.StartsWith("Năm đối chiếu",StringComparison.Ordinal)?BaselineYear:
+            error.Message.StartsWith("Chế độ so sánh",StringComparison.Ordinal)?ComparisonMode:
+            error.Message.StartsWith("Kỳ gốc",StringComparison.Ordinal)?ComparisonMode.SelectedIndex==3?BaselineYear:ComparisonMode:
+            FromDate.SelectedDate?.Year<1901?FromDate:ToDate;
+        KiemTraNhapLieu.SetError(field,error.Message+" Chọn lại "+(field==BaselineYear?"năm đối chiếu đã diễn ra.":field==ComparisonMode?"chế độ so sánh hoặc khoảng tháng đã kết thúc.":"khoảng từ 1 đến 24 tháng; bật MTD nếu lấy tháng hiện tại."));
     }
 
     /// <summary>
@@ -436,7 +536,11 @@ public partial class BaoCao : UserControl
         XoaKetQua();
         if (!CoQuyenChuyenDe) { ThongBao("Tài khoản hiện tại không có quyền đọc báo cáo.", true); return; }
         if (selected is null || !selected.DaKetNoi) { ThongBao("Chuyên đề chưa tích hợp nguồn dữ liệu."); return; }
-        if (!KiemTraNgay(out var from, out var to)) { ThongBao("Kiểm tra lại bộ lọc ngày trước khi tải báo cáo.", true); return; }
+        if (!KiemTraBoLoc(out var from, out var to))
+        {
+            var first=TruongBoLoc().FirstOrDefault(KiemTraNhapLieu.GetHasError);first?.Focus();(first?.Parent as FrameworkElement)?.BringIntoView();
+            ThongBao("Sửa các ô bộ lọc được đánh dấu trước khi tải báo cáo.", true); return;
+        }
         var report = selected; var mode = report.TheoThoiDiem ? "Ngày" : (PeriodMode.SelectedItem as ComboBoxItem)?.Content as string ?? "Ngày";
         BoLocThongKe? filter = null;
         if (!report.TheoThoiDiem && mode == "Tháng")
@@ -447,7 +551,7 @@ public partial class BaoCao : UserControl
                 var periods = SoSanhThongKe.TaoCacKy(filter,DateTime.Today);
                 from = periods[0].HienTai.TuNgay; to = periods[^1].HienTai.DenExclusive.AddDays(-1);
             }
-            catch(ArgumentException ex) { LoiBoLoc(ex.Message); ThongBao(ex.Message,true); return; }
+            catch(ArgumentException ex) { BaoLoiSoSanh(ex);ThongBao("Sửa bộ lọc được đánh dấu rồi tải lại báo cáo.",true);return; }
         }
         if ((report.Ma is "00" or "20") && mode != "Tháng") { ThongBao("Tổng quan và bệnh lý sử dụng kỳ Tháng để đếm đúng bệnh nhân duy nhất.",true); return; }
         var threshold = (ExpiryThreshold.SelectedIndex + 1) * 30;
@@ -609,6 +713,7 @@ public partial class BaoCao : UserControl
     private void Xuat_Click(object sender, RoutedEventArgs e)
     {
         if (!CoQuyenChuyenDe || result is null || selected is null || loading) return;
+        if(!KiemTraBoLoc(out _,out _)){XoaKetQua();ThongBao("Sửa các ô bộ lọc được đánh dấu và tải lại báo cáo trước khi xuất.",true);return;}
         var data = result; var report = selected; var generation = version;
         var dialog = new SaveFileDialog { Title = "Xuất " + report.Ten, Filter = "Báo cáo CSV (*.csv)|*.csv", DefaultExt = ".csv", AddExtension = true,
             FileName = $"BaoCao_{report.Ma}_{appliedFrom:yyyyMMdd}_{appliedTo:yyyyMMdd}.csv" };

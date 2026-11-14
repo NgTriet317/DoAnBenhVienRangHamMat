@@ -1,0 +1,192 @@
+﻿QuyTac|MucDo|SoMuc
+------|-----|-----
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|39
+LICH_LAM_VIEC_HOM_NAY|CanBoSung|1
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|52
+VAT_TU_CHUA_CO_NGUON_NHAP|CanBoSung|10
+DICH_VU_CHUA_VAO_HOA_DON|CanDoiChieu|5
+DON_THUOC_KHONG_CO_BAN_GIAO|CanDoiChieu|8
+DON_THUOC_THIEU_BAN_CHOT|CanDoiChieu|10
+DONG_THUOC_XUAT_CHUA_VAO_HOA_DON|CanDoiChieu|5
+DUONG_DUNG_LA_HAM_LUONG|CanDoiChieu|4
+HOA_DON_QUY_TRINH_CU|CanDoiChieu|10
+LUOT_KHONG_CO_DON_HIEU_LUC|CanDoiChieu|2
+PHIEU_TRANG_THAI_CU|CanDoiChieu|10
+THIET_BI_THIEU_NGUON_MUA|CanDoiChieu|10
+XUAT_THUOC_CHUA_DOI_CHIEU_THU_DU|CanDoiChieu|5
+QuyTac|MucDo|Bang|Ma|LyDo
+------|-----|----|--|----
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|DV006|Dich vu thuoc CK004 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|DV007|Dich vu thuoc CK004 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|DV008|Dich vu thuoc CK007 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|DV009|Dich vu thuoc CK007 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|REF_DV_COMPOSITE|Dich vu thuoc CK002 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|REF_DV_ENDO123|Dich vu thuoc CK002 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|REF_DV_ENDO45|Dich vu thuoc CK002 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|REF_DV_ENDO67D|Dich vu thuoc CK002 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|REF_DV_ENDO67T|Dich vu thuoc CK002 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|REF_DV_GIC|Dich vu thuoc CK002 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_CELLULITIS|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_CERVICAL_COMP|Dich vu thuoc CK002 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_ENDO_REDO|Dich vu thuoc CK002 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_FIX_FIRST|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_FLOOR_CYST|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_FOREIGN_BODY|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_GINGIVAL_MASS|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_IMPACTED|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_JAW_CYST_M|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_JAW_CYST_S|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_JAW_PLATE|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_LIP_TUMOR|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_MULTITRAUMA|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_PANORAMA|Dich vu thuoc CK004 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_PERIAPICAL|Dich vu thuoc CK004 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_PERIO_CURET|Dich vu thuoc CK002 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_PRIMARY_GIC|Dich vu thuoc CK002 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_REHAB|Dich vu thuoc CK007 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_REIMPLANT|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_SALIVARY_TUMOR|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_SOFT_DEFECT|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_SUTURE_REMOVE|Dich vu thuoc CK007 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_TMJ_REDUCE|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_TMJ_XR|Dich vu thuoc CK004 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_TONGUE_TIE|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_VASCULAR|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_WHARTON|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_WISDOM_L|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+DICH_VU_THIEU_BAC_SI_CHUYEN_KHOA|CanBoSung|DICH_VU|RHM_DV_ZYGOMA|Dich vu thuoc CK003 nhung chua co bac si dang lam viec, co tai khoan hoat dong cung chuyen khoa.
+LICH_LAM_VIEC_HOM_NAY|CanBoSung|CHUYEN_KHOA|CK001|Chuyen khoa co bac si nhung chua co lich da xac nhan/co mat hom nay; phieu dich vu co the khong chon duoc bac si.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM001|Mat hang HHRHM001 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM002|Mat hang HHRHM002 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM003|Mat hang HHRHM003 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM004|Mat hang HHRHM004 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM005|Mat hang HHRHM005 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM006|Mat hang HHRHM006 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM007|Mat hang HHRHM007 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM008|Mat hang HHRHM008 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM009|Mat hang HHRHM009 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM010|Mat hang HHRHM010 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM011|Mat hang HHRHM011 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM012|Mat hang HHRHM012 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM013|Mat hang HHRHM013 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM014|Mat hang HHRHM014 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM015|Mat hang HHRHM015 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM016|Mat hang HHRHM016 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM017|Mat hang HHRHM017 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM018|Mat hang HHRHM018 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM019|Mat hang HHRHM019 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM020|Mat hang HHRHM020 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM021|Mat hang HHRHM021 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM022|Mat hang HHRHM022 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM023|Mat hang HHRHM023 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM024|Mat hang HHRHM024 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM025|Mat hang HHRHM025 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM026|Mat hang HHRHM026 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM027|Mat hang HHRHM027 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM028|Mat hang HHRHM028 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM029|Mat hang HHRHM029 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM030|Mat hang HHRHM030 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM031|Mat hang HHRHM031 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM032|Mat hang HHRHM032 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM033|Mat hang HHRHM033 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM034|Mat hang HHRHM034 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM035|Mat hang HHRHM035 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM036|Mat hang HHRHM036 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM037|Mat hang HHRHM037 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM038|Mat hang HHRHM038 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM039|Mat hang HHRHM039 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM040|Mat hang HHRHM040 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM041|Mat hang HHRHM041 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM042|Mat hang HHRHM042 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM043|Mat hang HHRHM043 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM044|Mat hang HHRHM044 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM045|Mat hang HHRHM045 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM046|Mat hang HHRHM046 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM047|Mat hang HHRHM047 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM048|Mat hang HHRHM048 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM049|Mat hang HHRHM049 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM050|Mat hang HHRHM050 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM051|Mat hang HHRHM051 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+THUOC_CHUA_CO_LO_NHAP|CanBoSung|THUOC|THRHM052|Mat hang HHRHM052 dang hoat dong nhung chua co lo/nguon nhap ghi so de chon cap thuoc.
+VAT_TU_CHUA_CO_NGUON_NHAP|CanBoSung|VAT_TU|VT001|Mat hang HH011 chua co nguon nhap ghi so; danh muc co nhung chua co ton de xuat.
+VAT_TU_CHUA_CO_NGUON_NHAP|CanBoSung|VAT_TU|VT002|Mat hang HH012 chua co nguon nhap ghi so; danh muc co nhung chua co ton de xuat.
+VAT_TU_CHUA_CO_NGUON_NHAP|CanBoSung|VAT_TU|VT003|Mat hang HH013 chua co nguon nhap ghi so; danh muc co nhung chua co ton de xuat.
+VAT_TU_CHUA_CO_NGUON_NHAP|CanBoSung|VAT_TU|VT004|Mat hang HH014 chua co nguon nhap ghi so; danh muc co nhung chua co ton de xuat.
+VAT_TU_CHUA_CO_NGUON_NHAP|CanBoSung|VAT_TU|VT005|Mat hang HH015 chua co nguon nhap ghi so; danh muc co nhung chua co ton de xuat.
+VAT_TU_CHUA_CO_NGUON_NHAP|CanBoSung|VAT_TU|VT006|Mat hang HH016 chua co nguon nhap ghi so; danh muc co nhung chua co ton de xuat.
+VAT_TU_CHUA_CO_NGUON_NHAP|CanBoSung|VAT_TU|VT007|Mat hang HH017 chua co nguon nhap ghi so; danh muc co nhung chua co ton de xuat.
+VAT_TU_CHUA_CO_NGUON_NHAP|CanBoSung|VAT_TU|VT008|Mat hang HH018 chua co nguon nhap ghi so; danh muc co nhung chua co ton de xuat.
+VAT_TU_CHUA_CO_NGUON_NHAP|CanBoSung|VAT_TU|VT009|Mat hang HH019 chua co nguon nhap ghi so; danh muc co nhung chua co ton de xuat.
+VAT_TU_CHUA_CO_NGUON_NHAP|CanBoSung|VAT_TU|VT010|Mat hang HH020 chua co nguon nhap ghi so; danh muc co nhung chua co ton de xuat.
+DICH_VU_CHUA_VAO_HOA_DON|CanDoiChieu|DICH_VU_THUC_HIEN|DVTH006|Luot LS006 da co hoa don nhung dich vu xac nhan DV006 chua co dong hoa don tuong ung.
+DICH_VU_CHUA_VAO_HOA_DON|CanDoiChieu|DICH_VU_THUC_HIEN|DVTH007|Luot LS007 da co hoa don nhung dich vu xac nhan DV007 chua co dong hoa don tuong ung.
+DICH_VU_CHUA_VAO_HOA_DON|CanDoiChieu|DICH_VU_THUC_HIEN|DVTH008|Luot LS008 da co hoa don nhung dich vu xac nhan DV008 chua co dong hoa don tuong ung.
+DICH_VU_CHUA_VAO_HOA_DON|CanDoiChieu|DICH_VU_THUC_HIEN|DVTH009|Luot LS009 da co hoa don nhung dich vu xac nhan DV009 chua co dong hoa don tuong ung.
+DICH_VU_CHUA_VAO_HOA_DON|CanDoiChieu|DICH_VU_THUC_HIEN|DVTH010|Luot LS010 da co hoa don nhung dich vu xac nhan DV010 chua co dong hoa don tuong ung.
+DON_THUOC_KHONG_CO_BAN_GIAO|CanDoiChieu|DON_THUOC|DT001|Don da ky nhung chua co BAN_GIAO_THUOC; khong du dieu kien ban giao theo API hien tai.
+DON_THUOC_KHONG_CO_BAN_GIAO|CanDoiChieu|DON_THUOC|DT002|Don da ky nhung chua co BAN_GIAO_THUOC; khong du dieu kien ban giao theo API hien tai.
+DON_THUOC_KHONG_CO_BAN_GIAO|CanDoiChieu|DON_THUOC|DT003|Don da ky nhung chua co BAN_GIAO_THUOC; khong du dieu kien ban giao theo API hien tai.
+DON_THUOC_KHONG_CO_BAN_GIAO|CanDoiChieu|DON_THUOC|DT004|Don da ky nhung chua co BAN_GIAO_THUOC; khong du dieu kien ban giao theo API hien tai.
+DON_THUOC_KHONG_CO_BAN_GIAO|CanDoiChieu|DON_THUOC|DT005|Don da ky nhung chua co BAN_GIAO_THUOC; khong du dieu kien ban giao theo API hien tai.
+DON_THUOC_KHONG_CO_BAN_GIAO|CanDoiChieu|DON_THUOC|DT006|Don da ky nhung chua co BAN_GIAO_THUOC; khong du dieu kien ban giao theo API hien tai.
+DON_THUOC_KHONG_CO_BAN_GIAO|CanDoiChieu|DON_THUOC|DT007|Don da ky nhung chua co BAN_GIAO_THUOC; khong du dieu kien ban giao theo API hien tai.
+DON_THUOC_KHONG_CO_BAN_GIAO|CanDoiChieu|DON_THUOC|DT008|Don da ky nhung chua co BAN_GIAO_THUOC; khong du dieu kien ban giao theo API hien tai.
+DON_THUOC_THIEU_BAN_CHOT|CanDoiChieu|CHI_TIET_DON_THUOC|CTDT001|Don DT001 da ky nhung thieu ten/ham luong/don vi chot; API LayBanInDon se tu choi.
+DON_THUOC_THIEU_BAN_CHOT|CanDoiChieu|CHI_TIET_DON_THUOC|CTDT002|Don DT001 da ky nhung thieu ten/ham luong/don vi chot; API LayBanInDon se tu choi.
+DON_THUOC_THIEU_BAN_CHOT|CanDoiChieu|CHI_TIET_DON_THUOC|CTDT003|Don DT001 da ky nhung thieu ten/ham luong/don vi chot; API LayBanInDon se tu choi.
+DON_THUOC_THIEU_BAN_CHOT|CanDoiChieu|CHI_TIET_DON_THUOC|CTDT004|Don DT002 da ky nhung thieu ten/ham luong/don vi chot; API LayBanInDon se tu choi.
+DON_THUOC_THIEU_BAN_CHOT|CanDoiChieu|CHI_TIET_DON_THUOC|CTDT005|Don DT003 da ky nhung thieu ten/ham luong/don vi chot; API LayBanInDon se tu choi.
+DON_THUOC_THIEU_BAN_CHOT|CanDoiChieu|CHI_TIET_DON_THUOC|CTDT006|Don DT004 da ky nhung thieu ten/ham luong/don vi chot; API LayBanInDon se tu choi.
+DON_THUOC_THIEU_BAN_CHOT|CanDoiChieu|CHI_TIET_DON_THUOC|CTDT007|Don DT005 da ky nhung thieu ten/ham luong/don vi chot; API LayBanInDon se tu choi.
+DON_THUOC_THIEU_BAN_CHOT|CanDoiChieu|CHI_TIET_DON_THUOC|CTDT008|Don DT006 da ky nhung thieu ten/ham luong/don vi chot; API LayBanInDon se tu choi.
+DON_THUOC_THIEU_BAN_CHOT|CanDoiChieu|CHI_TIET_DON_THUOC|CTDT009|Don DT007 da ky nhung thieu ten/ham luong/don vi chot; API LayBanInDon se tu choi.
+DON_THUOC_THIEU_BAN_CHOT|CanDoiChieu|CHI_TIET_DON_THUOC|CTDT010|Don DT008 da ky nhung thieu ten/ham luong/don vi chot; API LayBanInDon se tu choi.
+DONG_THUOC_XUAT_CHUA_VAO_HOA_DON|CanDoiChieu|CHI_TIET_PHIEU_XUAT|CTPX006|Phieu PX004, luot LS004: chua co dong hoa don thuoc; can doi chieu chung tu goc.
+DONG_THUOC_XUAT_CHUA_VAO_HOA_DON|CanDoiChieu|CHI_TIET_PHIEU_XUAT|CTPX007|Phieu PX005, luot LS005: chua co dong hoa don thuoc; can doi chieu chung tu goc.
+DONG_THUOC_XUAT_CHUA_VAO_HOA_DON|CanDoiChieu|CHI_TIET_PHIEU_XUAT|CTPX008|Phieu PX006, luot LS006: chua co dong hoa don thuoc; can doi chieu chung tu goc.
+DONG_THUOC_XUAT_CHUA_VAO_HOA_DON|CanDoiChieu|CHI_TIET_PHIEU_XUAT|CTPX009|Phieu PX007, luot LS007: chua co dong hoa don thuoc; can doi chieu chung tu goc.
+DONG_THUOC_XUAT_CHUA_VAO_HOA_DON|CanDoiChieu|CHI_TIET_PHIEU_XUAT|CTPX010|Phieu PX008, luot LS008: chua co dong hoa don thuoc; can doi chieu chung tu goc.
+DUONG_DUNG_LA_HAM_LUONG|CanDoiChieu|CHI_TIET_DON_THUOC|CTDT011|Don DT011: DuongDung=500mg; can doi chieu chi dinh goc.
+DUONG_DUNG_LA_HAM_LUONG|CanDoiChieu|CHI_TIET_DON_THUOC|CTDT012|Don DT011: DuongDung=500mg; can doi chieu chi dinh goc.
+DUONG_DUNG_LA_HAM_LUONG|CanDoiChieu|CHI_TIET_DON_THUOC|CTDT013|Don DT011: DuongDung=500mg; can doi chieu chi dinh goc.
+DUONG_DUNG_LA_HAM_LUONG|CanDoiChieu|CHI_TIET_DON_THUOC|CTDT014|Don DT011: DuongDung=500mg; can doi chieu chi dinh goc.
+HOA_DON_QUY_TRINH_CU|CanDoiChieu|HOA_DON|HD001|Luot LS001, phien ban 1, trang thai Đã xác nhận; khong tu doi sang v2 vi v2 yeu cau mot lan Thu du.
+HOA_DON_QUY_TRINH_CU|CanDoiChieu|HOA_DON|HD002|Luot LS002, phien ban 1, trang thai Đã xác nhận; khong tu doi sang v2 vi v2 yeu cau mot lan Thu du.
+HOA_DON_QUY_TRINH_CU|CanDoiChieu|HOA_DON|HD003|Luot LS003, phien ban 1, trang thai Đã xác nhận; khong tu doi sang v2 vi v2 yeu cau mot lan Thu du.
+HOA_DON_QUY_TRINH_CU|CanDoiChieu|HOA_DON|HD004|Luot LS004, phien ban 1, trang thai Nháp; khong tu doi sang v2 vi v2 yeu cau mot lan Thu du.
+HOA_DON_QUY_TRINH_CU|CanDoiChieu|HOA_DON|HD005|Luot LS005, phien ban 1, trang thai Nháp; khong tu doi sang v2 vi v2 yeu cau mot lan Thu du.
+HOA_DON_QUY_TRINH_CU|CanDoiChieu|HOA_DON|HD006|Luot LS006, phien ban 1, trang thai Nháp; khong tu doi sang v2 vi v2 yeu cau mot lan Thu du.
+HOA_DON_QUY_TRINH_CU|CanDoiChieu|HOA_DON|HD007|Luot LS007, phien ban 1, trang thai Nháp; khong tu doi sang v2 vi v2 yeu cau mot lan Thu du.
+HOA_DON_QUY_TRINH_CU|CanDoiChieu|HOA_DON|HD008|Luot LS008, phien ban 1, trang thai Nháp; khong tu doi sang v2 vi v2 yeu cau mot lan Thu du.
+HOA_DON_QUY_TRINH_CU|CanDoiChieu|HOA_DON|HD009|Luot LS009, phien ban 1, trang thai Nháp; khong tu doi sang v2 vi v2 yeu cau mot lan Thu du.
+HOA_DON_QUY_TRINH_CU|CanDoiChieu|HOA_DON|HD010|Luot LS010, phien ban 1, trang thai Nháp; khong tu doi sang v2 vi v2 yeu cau mot lan Thu du.
+LUOT_KHONG_CO_DON_HIEU_LUC|CanDoiChieu|LICH_SU_KHAM_BENH|LS009|Luot da ky, KhongKeThuoc=0 nhung khong co don hieu luc; can doi chieu ly do khong ke thuoc.
+LUOT_KHONG_CO_DON_HIEU_LUC|CanDoiChieu|LICH_SU_KHAM_BENH|LS010|Luot da ky, KhongKeThuoc=0 nhung khong co don hieu luc; can doi chieu ly do khong ke thuoc.
+PHIEU_TRANG_THAI_CU|CanDoiChieu|PHIEU_KHAM_BENH|PKB001|Luot LS001 da ky nhung phieu van o trang thai Da kham; can doi chieu thu/giao truoc chuan hoa.
+PHIEU_TRANG_THAI_CU|CanDoiChieu|PHIEU_KHAM_BENH|PKB002|Luot LS002 da ky nhung phieu van o trang thai Da kham; can doi chieu thu/giao truoc chuan hoa.
+PHIEU_TRANG_THAI_CU|CanDoiChieu|PHIEU_KHAM_BENH|PKB003|Luot LS003 da ky nhung phieu van o trang thai Da kham; can doi chieu thu/giao truoc chuan hoa.
+PHIEU_TRANG_THAI_CU|CanDoiChieu|PHIEU_KHAM_BENH|PKB004|Luot LS004 da ky nhung phieu van o trang thai Da kham; can doi chieu thu/giao truoc chuan hoa.
+PHIEU_TRANG_THAI_CU|CanDoiChieu|PHIEU_KHAM_BENH|PKB005|Luot LS005 da ky nhung phieu van o trang thai Da kham; can doi chieu thu/giao truoc chuan hoa.
+PHIEU_TRANG_THAI_CU|CanDoiChieu|PHIEU_KHAM_BENH|PKB006|Luot LS006 da ky nhung phieu van o trang thai Da kham; can doi chieu thu/giao truoc chuan hoa.
+PHIEU_TRANG_THAI_CU|CanDoiChieu|PHIEU_KHAM_BENH|PKB007|Luot LS007 da ky nhung phieu van o trang thai Da kham; can doi chieu thu/giao truoc chuan hoa.
+PHIEU_TRANG_THAI_CU|CanDoiChieu|PHIEU_KHAM_BENH|PKB008|Luot LS008 da ky nhung phieu van o trang thai Da kham; can doi chieu thu/giao truoc chuan hoa.
+PHIEU_TRANG_THAI_CU|CanDoiChieu|PHIEU_KHAM_BENH|PKB009|Luot LS009 da ky nhung phieu van o trang thai Da kham; can doi chieu thu/giao truoc chuan hoa.
+PHIEU_TRANG_THAI_CU|CanDoiChieu|PHIEU_KHAM_BENH|PKB010|Luot LS010 da ky nhung phieu van o trang thai Da kham; can doi chieu thu/giao truoc chuan hoa.
+THIET_BI_THIEU_NGUON_MUA|CanDoiChieu|THIET_BI|TB001|Serial MON-240315-1082 co ngay mua nhung mat hang chua co chi tiet nhap; co the la tai san truoc khi dung phan mem.
+THIET_BI_THIEU_NGUON_MUA|CanDoiChieu|THIET_BI|TB002|Serial BPM-240318-2564 co ngay mua nhung mat hang chua co chi tiet nhap; co the la tai san truoc khi dung phan mem.
+THIET_BI_THIEU_NGUON_MUA|CanDoiChieu|THIET_BI|TB003|Serial OXI-240402-1735 co ngay mua nhung mat hang chua co chi tiet nhap; co the la tai san truoc khi dung phan mem.
+THIET_BI_THIEU_NGUON_MUA|CanDoiChieu|THIET_BI|TB004|Serial ECG-240410-0681 co ngay mua nhung mat hang chua co chi tiet nhap; co the la tai san truoc khi dung phan mem.
+THIET_BI_THIEU_NGUON_MUA|CanDoiChieu|THIET_BI|TB005|Serial XR-240422-0319 co ngay mua nhung mat hang chua co chi tiet nhap; co the la tai san truoc khi dung phan mem.
+THIET_BI_THIEU_NGUON_MUA|CanDoiChieu|THIET_BI|TB006|Serial US-240506-0842 co ngay mua nhung mat hang chua co chi tiet nhap; co the la tai san truoc khi dung phan mem.
+THIET_BI_THIEU_NGUON_MUA|CanDoiChieu|THIET_BI|TB007|Serial AC-240513-1468 co ngay mua nhung mat hang chua co chi tiet nhap; co the la tai san truoc khi dung phan mem.
+THIET_BI_THIEU_NGUON_MUA|CanDoiChieu|THIET_BI|TB008|Serial SU-240527-2156 co ngay mua nhung mat hang chua co chi tiet nhap; co the la tai san truoc khi dung phan mem.
+THIET_BI_THIEU_NGUON_MUA|CanDoiChieu|THIET_BI|TB009|Serial EXL-240603-3512 co ngay mua nhung mat hang chua co chi tiet nhap; co the la tai san truoc khi dung phan mem.
+THIET_BI_THIEU_NGUON_MUA|CanDoiChieu|THIET_BI|TB010|Serial AIR-240617-4295 co ngay mua nhung mat hang chua co chi tiet nhap; co the la tai san truoc khi dung phan mem.
+XUAT_THUOC_CHUA_DOI_CHIEU_THU_DU|CanDoiChieu|PHIEU_XUAT|PX004|Luot LS004 da xuat ghi so nhung chua co hoa don xac nhan du so thu.
+XUAT_THUOC_CHUA_DOI_CHIEU_THU_DU|CanDoiChieu|PHIEU_XUAT|PX005|Luot LS005 da xuat ghi so nhung chua co hoa don xac nhan du so thu.
+XUAT_THUOC_CHUA_DOI_CHIEU_THU_DU|CanDoiChieu|PHIEU_XUAT|PX006|Luot LS006 da xuat ghi so nhung chua co hoa don xac nhan du so thu.
+XUAT_THUOC_CHUA_DOI_CHIEU_THU_DU|CanDoiChieu|PHIEU_XUAT|PX007|Luot LS007 da xuat ghi so nhung chua co hoa don xac nhan du so thu.
+XUAT_THUOC_CHUA_DOI_CHIEU_THU_DU|CanDoiChieu|PHIEU_XUAT|PX008|Luot LS008 da xuat ghi so nhung chua co hoa don xac nhan du so thu.
+PhamVi
+------
+Chi doc du lieu; khong thuc hien chuan hoa, thu tien, xuat kho hay ban giao.

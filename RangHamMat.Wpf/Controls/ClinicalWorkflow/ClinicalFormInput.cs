@@ -39,35 +39,50 @@ internal static class ClinicalFormInput
     /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu Exception.</param>
     public static void ShowError(FrameworkElement root,Exception error)
     {
-        var key=error switch{LoiKhamException e=>e.Truong,LoiTiepNhanException e=>e.Truong,_=>""};
+        var key=error switch{LoiNhapLieu e=>e.Field,LoiKhamException e=>e.Truong,LoiTiepNhanException e=>e.Truong,_=>""};
+        if(error.Data["ClinicalRow"] is object errorRow)
+        {
+            var rowGrid=root.FindName(errorRow is DongThuocKeDon?"RxLines":"PlanSteps") as DataGrid;
+            if(rowGrid is not null){rowGrid.SelectedItem=errorRow;rowGrid.ScrollIntoView(errorRow);rowGrid.UpdateLayout();}
+        }
         var names=key switch
         {
-            "SoLuong"=>new[]{"QuantityEditor","RxLines"},"DonGia"=>["PriceEditor"],"ThoiGianThucHien"=>["TimeEditor"],
+            "SoLuong"=>new[]{"QuantityEditor","RxLines"},"SoNgayDung"=>["DaysEditor","RxLines"],"DonGia"=>["PriceEditor"],"ThoiGianThucHien"=>["TimeEditor"],
             "TrieuChung"=>["SymptomsEditor"],"ChanDoan"=>["DiagnosisEditor"],"KeHoachXuLy"=>["TreatmentEditor"],
-            "MaNVThucHien"=>["PerformerChoice"],"MaDV"=>["ServiceChoice","ServicePicker"],"MaThuoc"=>["RxLines","DrugChoice","DrugGrid"],
+            "MaNVThucHien"=>["PerformerChoice"],"MaDV"=>["ServiceChoice","ServicePicker","PlanSteps"],"MaThuoc"=>["RxLines","DrugChoice","DrugGrid"],
             "MaBS"=>["DoctorPicker"],"MaPhong"=>["RoomPicker"],"LyDoKham"=>["ArrivalReason"],"LyDoDieuPhoiNgoaiLich"=>["DispatchReason"],
             "NgayBatDau"=>["PlanStart"],"NgayDuKienKetThuc"=>["PlanEnd"],"TenMau"=>["TemplateName"],"PhienBan"=>["VersionEditor"],
             "TenNhom"=>["GroupName"],"TinhTrang"=>["ConditionNameEditor","ConditionList"],
-            "CacDong" or "LieuDung" or "DuongDung" or "HuongDan"=>["RxLines","DoseEditor","InstructionEditor"],
+            "LieuDung"=>["DoseEditor","RxLines"],"DuongDung"=>["RouteEditor","RxLines"],"HuongDan"=>["InstructionEditor","RxLines"],
+            "LyDoKhongKeThuoc"=>["NoPrescriptionReason"],"LyDoThayThe"=>["ReplacementReason"],
+            "LoaiTinhTrang"=>["ConditionNameEditor"],"MoTaTinhTrang"=>["ConditionDetailEditor"],
+            "CacDong"=>["RxLines"],"CacBuoc" or "SoLuongDuKien" or "LanThu" or "NoiDungBuoc"=>["PlanSteps"],
+            "ThucHien"=>["ExecutionAcknowledged"],
             _=>Array.Empty<string>()
         };
-        var target=names.Select(n=>root.FindName(n)).OfType<FrameworkElement>().FirstOrDefault(e=>e.IsEnabled);
+        var target=names.Select(n=>root.FindName(n)).OfType<FrameworkElement>().FirstOrDefault(e=>e.IsEnabled)
+            ??ClinicalPendingWork.Nodes(root).OfType<FrameworkElement>().FirstOrDefault(e=>e.IsEnabled&&e.Tag is string tag&&tag.StartsWith("DB:")&&tag.EndsWith("."+key));
         if(target is null)return;
+        // Các tab chưa mở vẫn phải dẫn người dùng tới đúng trường đang lỗi.
+        for(DependencyObject? node=target;node is not null;node=LogicalTreeHelper.GetParent(node))
+        {
+            if(node is TabItem tab)tab.IsSelected=true;
+            if(node is Expander expander)expander.IsExpanded=true;
+        }
         if(target is DataGrid grid)
         {
             var row=grid.SelectedItem??grid.Items.Cast<object>().FirstOrDefault(x=>x!=System.Windows.Data.CollectionView.NewItemPlaceholder);
             if(row is not null)
             {
-                grid.SelectedItem=row;var column=grid.Columns.OfType<DataGridBoundColumn>().FirstOrDefault(c=>c.Binding is System.Windows.Data.Binding b&&b.Path?.Path==key)??grid.Columns.FirstOrDefault();
+                grid.SelectedItem=row;var column=grid.Columns.FirstOrDefault(c=>c.SortMemberPath==key)??grid.Columns.OfType<DataGridBoundColumn>().FirstOrDefault(c=>c.Binding is System.Windows.Data.Binding b&&b.Path?.Path==key)??grid.Columns.FirstOrDefault();
                 if(column is not null){grid.CurrentCell=new DataGridCellInfo(row,column);grid.ScrollIntoView(row,column);}grid.UpdateLayout();
+                if(column is {IsReadOnly:false,Visibility:Visibility.Visible}&&!grid.IsReadOnly){grid.BeginEdit();grid.UpdateLayout();}
+                target=ClinicalPendingWork.Nodes(grid).OfType<FrameworkElement>().FirstOrDefault(field=>
+                    field.IsVisible&&field.IsEnabled&&ReferenceEquals(field.DataContext,row)&&field.Tag is string tag&&tag.EndsWith("."+key)&&field is TextBox or ComboBox)??target;
             }
         }
+        KiemTraNhapLieu.SetError(target,Message(error));
         target.BringIntoView();target.Focus();
-        if(target.Parent is StackPanel parent)
-        {
-            var message=new TextBlock{Tag="ClinicalFieldError",Text=Message(error),TextWrapping=TextWrapping.Wrap,Foreground=Brushes.Firebrick,FontSize=13,Margin=new Thickness(0,4,0,0)};
-            parent.Children.Insert(parent.Children.IndexOf(target)+1,message);
-        }
     }
     /// <summary>
     /// Kiểm tra và ghi nhận dữ liệu hiện tại theo thao tác của thành phần.
@@ -100,8 +115,64 @@ internal static class ClinicalFormInput
     /// <returns>Đối tượng kiểu DateTime được tìm hoặc tính toán; có thể null theo nhánh xử lý trong hàm.</returns>
     public static DateTime? ReadDate(DatePicker picker)
     {
-        if(string.IsNullOrWhiteSpace(picker.Text))return null;
-        if(DateTime.TryParse(picker.Text,picker.Language.GetSpecificCulture(),DateTimeStyles.None,out var date)&&picker.SelectedDate?.Date==date.Date)return date.Date;
-        throw new LoiKhamException("NgayBatDau","Ngày chưa hợp lệ. Chọn ngày trên lịch hoặc nhập dd/MM/yyyy.");
+        try{return KiemTraNhapLieu.ReadDate(picker);}
+        catch(LoiNhapLieu error)
+        {
+            var field=picker.Name=="PlanEnd"?"NgayDuKienKetThuc":picker.Tag is string tag&&tag.StartsWith("DB:")?tag[(tag.LastIndexOf('.')+1)..]:"NgayBatDau";
+            throw new LoiKhamException(field,error.Message);
+        }
+    }
+
+    /// <summary>Đọc lượng cấp phát theo decimal(18,3), không nhận dấu phân cách hàng nghìn.</summary>
+    public static decimal ReadQuantity(string text)
+    {
+        KiemTraNhapLieu.ValidateValues("CHI_TIET_DON_THUOC",new Dictionary<string,object?> { ["SoLuong"]=text });
+        return decimal.Parse(text.Trim().Replace(',','.'),NumberStyles.AllowLeadingSign|NumberStyles.AllowDecimalPoint,CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>Kiểm tra từng dòng, kể cả dòng chưa được chọn; giữ lại dòng và trường để mở đúng ô sửa.</summary>
+    public static void ValidatePrescriptionLines(IEnumerable<DongThuocKeDon> source)
+    {
+        var rows=source.ToArray();
+        if(rows.Length==0)throw new LoiKhamException("CacDong","Thêm ít nhất một thuốc vào đơn, rồi nhập cách dùng cho từng thuốc.");
+        for(var index=0;index<rows.Length;index++)
+        {
+            var row=rows[index];
+            try
+            {
+                KiemTraNhapLieu.ValidateValues("CHI_TIET_DON_THUOC",new Dictionary<string,object?>
+                { ["MaThuoc"]=row.MaThuoc,["SoLuong"]=row.SoLuong,["SoNgayDung"]=row.SoNgayDung,["LieuDung"]=row.LieuDung,["DuongDung"]=row.DuongDung,["HuongDan"]=row.HuongDan });
+                if(string.IsNullOrWhiteSpace(row.DuongDung))throw new LoiNhapLieu("DuongDung","Nhập đường dùng thuốc theo chỉ định của bác sĩ.");
+            }
+            catch(LoiNhapLieu error)
+            {
+                var failure=new LoiKhamException(error.Field,$"Dòng thuốc {index+1} ({row.TenHienThi}): {error.Message}");
+                failure.Data["ClinicalRow"]=row;throw failure;
+            }
+        }
+    }
+
+    /// <summary>Kiểm tra nhóm ô nhập bằng cơ chế chung trước khi đọc dữ liệu.</summary>
+    public static void Prepare(DependencyObject root)
+    {
+        if(!KiemTraNhapLieu.PrepareSave(root,out var error))throw new LoiKhamException("",error);
+    }
+}
+
+/// <summary>Giữ dấu chấm/phẩy là dấu thập phân khi sửa lượng trong bảng kế hoạch.</summary>
+public sealed class ClinicalDecimalConverter : System.Windows.Data.IValueConverter
+{
+    /// <summary>Hiển thị lượng hiện có theo ngôn ngữ biểu mẫu.</summary>
+    public object Convert(object value,Type targetType,object parameter,CultureInfo culture)=>value is decimal number?number.ToString("0.###",culture):value;
+    /// <summary>Chặn cách nhập có phân cách hàng nghìn và quá precision/scale trước khi cập nhật model.</summary>
+    public object ConvertBack(object value,Type targetType,object parameter,CultureInfo culture)
+    {
+        var text=System.Convert.ToString(value,culture)??"";
+        try
+        {
+            KiemTraNhapLieu.ValidateValues("CHI_TIET_KE_HOACH",new Dictionary<string,object?>{["SoLuongDuKien"]=text});
+            return decimal.Parse(text.Trim().Replace(',','.'),NumberStyles.AllowDecimalPoint|NumberStyles.AllowLeadingSign,CultureInfo.InvariantCulture);
+        }
+        catch(LoiNhapLieu error){throw new FormatException(error.Message);}
     }
 }

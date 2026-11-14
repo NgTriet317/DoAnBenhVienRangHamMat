@@ -1,3 +1,4 @@
+<!-- Biểu mẫu thanh lý thiết bị; Commit kiểm tra dữ liệu và đối chiếu bản thiết bị đã xem trước khi lưu. -->
 <UserControl x:Class="RangHamMat.Views.CuaSoThanhLy"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Language="vi-VN">
  <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/BaoTriStyles.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
@@ -6,17 +7,20 @@
   <StackPanel Margin="0,0,0,16"><TextBlock Text="Thanh lý thiết bị" Style="{StaticResource HospitalHeading}"/><TextBlock Text="Lưu hồ sơ thanh lý và ngưng sử dụng thiết bị vĩnh viễn." Style="{StaticResource HospitalMuted}"/></StackPanel>
   <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
    <StackPanel Margin="0,0,12,0">
+    <!-- Thông tin thiết bị và phòng trước thanh lý để người dùng xác nhận đúng nguồn. -->
     <Border Background="#EAF2FF" CornerRadius="8" Padding="16" Margin="0,0,0,18"><StackPanel><TextBlock x:Name="txtThietBi" TextWrapping="Wrap" FontSize="17" FontWeight="SemiBold"/><TextBlock x:Name="txtPhong" Style="{StaticResource HospitalMuted}" Margin="0,8,0,0"/></StackPanel></Border>
+    <!-- Nhân viên và lý do là đầu vào bắt buộc; giá trị thu hồi được kiểm tra theo định dạng vi-VN. -->
     <TextBlock Text="Nhân viên phụ trách *" Style="{StaticResource FieldLabel}"/>
-    <ComboBox x:Name="cboNhanVien" DisplayMemberPath="Label" SelectedValuePath="Value" Margin="0,0,0,16" AutomationProperties.Name="Nhân viên phụ trách thanh lý"/>
+    <ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="cboNhanVien" Tag="DB:THIET_BI.MaNVThanhLy" LostKeyboardFocus="Liquidation_LostKeyboardFocus" DisplayMemberPath="Label" SelectedValuePath="Value" Margin="0,0,0,16" AutomationProperties.Name="Nhân viên phụ trách thanh lý"/></ContentControl>
     <TextBlock Text="Lý do thanh lý *" Style="{StaticResource FieldLabel}"/>
-    <TextBox x:Name="txtLyDo" MaxLength="1000" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="100" VerticalScrollBarVisibility="Auto" Margin="0,0,0,16" AutomationProperties.Name="Lý do thanh lý"/>
+    <ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="txtLyDo" Tag="DB:THIET_BI.LyDoThanhLy" LostKeyboardFocus="Liquidation_LostKeyboardFocus" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="100" VerticalScrollBarVisibility="Auto" Margin="0,0,0,16" AutomationProperties.Name="Lý do thanh lý"/></ContentControl>
     <TextBlock Text="Giá trị thu hồi (đồng) *" Style="{StaticResource FieldLabel}"/>
-    <TextBox x:Name="txtGiaTri" Text="0" Margin="0,0,0,16" AutomationProperties.Name="Giá trị thu hồi thanh lý"/>
+    <ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="txtGiaTri" Tag="DB:THIET_BI.GiaTriThanhLy" LostKeyboardFocus="Liquidation_LostKeyboardFocus" Text="0" Margin="0,0,0,16" AutomationProperties.Name="Giá trị thu hồi thanh lý"/></ContentControl>
     <TextBlock Text="Ví dụ: 125000 hoặc 125000,50. Nhập số liền, không có dấu phân cách hàng nghìn." Style="{StaticResource HospitalMuted}" Margin="0,0,0,12"/>
     <TextBlock Text="Ngày thanh lý được ghi tự động. Thiết bị sẽ được thu hồi khỏi phòng; hồ sơ đã thanh lý chỉ được xem lại." Style="{StaticResource HospitalMuted}"/>
    </StackPanel>
   </ScrollViewer>
+  <!-- Tag HoSoSave chuyển yêu cầu tới cơ chế lưu biểu mẫu dùng chung; FormError nhận lỗi nhập liệu. -->
   <StackPanel Grid.Row="2" Margin="0,16,0,0"><TextBlock x:Name="FormError" Foreground="#B42318" TextWrapping="Wrap" Margin="0,0,0,10" AutomationProperties.LiveSetting="Polite"/><WrapPanel HorizontalAlignment="Right"><Button Content="Đóng" Tag="DongCuaSo"/><Button Content="Xác nhận thanh lý" Tag="HoSoSave" Style="{StaticResource HospitalPrimary}"/></WrapPanel></StackPanel>
  </Grid>
 </UserControl>

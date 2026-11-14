@@ -17,6 +17,8 @@ using Microsoft.Data.SqlClient;
 using RangHamMat;
 using RangHamMat.Views;
 
+/// <summary>Các ca nghiệm thu giao diện và nhiều tiến trình bổ sung cho Sprint3Integration.cs.txt.</summary>
+/// <remarks>Kiểm chi tiết nhật ký, form danh mục, heartbeat và xung đột cập nhật bằng fixture trên database thử.</remarks>
 internal static partial class Program
 {
     static void AuditDetailAcceptance(NhatKy ui,int width)
@@ -139,6 +141,9 @@ internal static partial class Program
         if(node is Button b)yield return b;
         for(int i=0;i<VisualTreeHelper.GetChildrenCount(node);i++)foreach(var child in FindButtons(VisualTreeHelper.GetChild(node,i)))yield return child;
     }
+    /// <summary>Chạy tiến trình con giữ heartbeat hoặc tranh chấp cập nhật theo các tệp tín hiệu chung.</summary>
+    /// <param name="args">Máy chủ, database thử, chế độ worker và các tệp trao đổi session/tín hiệu/kết quả.</param>
+    /// <returns>0 khi hoàn tất; 1 khi có lỗi; 2 khi tên database sai; 3 khi quá hạn chờ tín hiệu.</returns>
     static int Worker(string[] args)
     {
         if(!System.Text.RegularExpressions.Regex.IsMatch(args[1],@"^RHM_Sprint3_Test_[A-Za-z0-9_]+$"))return 2;
@@ -172,6 +177,8 @@ internal static partial class Program
         foreach(var arg in args)start.ArgumentList.Add(arg);
         return Process.Start(start)!;
     }
+    /// <summary>Kiểm hai phiên độc lập, kết thúc bất thường khi dừng một tiến trình và một cập nhật thắng/một xung đột.</summary>
+    /// <remarks>Ghi fixture/nhật ký và tệp phối hợp trong obj/Sprint3Processes; dừng các worker còn chạy trong finally.</remarks>
     static void ProcessAcceptance()
     {
         string dir=Path.GetFullPath("obj/Sprint3Processes/"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(dir);

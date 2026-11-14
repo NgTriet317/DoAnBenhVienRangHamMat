@@ -30,6 +30,10 @@ public sealed class DAL_NHATKY(IDbTransaction? transaction = null) : dbconnect(t
             return true;
         });
     }
+    /// <summary>
+    /// Yêu cầu giao dịch nghiệp vụ dùng chung, xác thực phiên rồi ghi tên trường đổi trong phạm vi bảng và hành động cho phép.
+    /// </summary>
+    /// <remarks>Không ghi giá trị trường; loại tên mật khẩu và tên trường không hợp lệ trước khi tạo payload.</remarks>
     public void GhiThayDoi(string table,string id,string action,IEnumerable<string> fields,NguCanhNghiepVu actor,Guid session)
     {
         if(transaction is null)throw new InvalidOperationException("Audit phải dùng chung giao dịch nghiệp vụ.");
@@ -44,6 +48,10 @@ public sealed class DAL_NHATKY(IDbTransaction? transaction = null) : dbconnect(t
             return true;
         });
     }
+    /// <summary>
+    /// Lọc payload nhật ký theo các trường được phép của từng loại đối tượng trước khi trả về màn hình.
+    /// </summary>
+    /// <returns>JSON chỉ chứa trường được phép; nội dung cũ không hợp lệ được thay bằng thông báo đã ẩn.</returns>
     private static object? SafeDetail(string table,object? raw)
     {
         if(raw is null or DBNull)return null;
@@ -62,6 +70,9 @@ public sealed class DAL_NHATKY(IDbTransaction? transaction = null) : dbconnect(t
         catch(JsonException){return "[Nội dung cũ đã ẩn]";}
     }
 
+    /// <summary>
+    /// Đếm sự kiện trong ngày theo UTC+7 sau kiểm quyền quản trị; áp dụng cùng phạm vi thao tác như danh sách nhật ký.
+    /// </summary>
     public (int DangNhap,int DangNhapThatBai,int ThayDoi) ThongKe(NguCanhNghiepVu actor)=>ThucHien((db,tx)=>
     {
         Admin(db,tx,actor);
@@ -72,6 +83,9 @@ public sealed class DAL_NHATKY(IDbTransaction? transaction = null) : dbconnect(t
              (SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC WHERE ThoiGianUtc>=@start AND HanhDong NOT IN(N'LOGIN_SUCCESS',N'LOGIN_FAILED',N'LOGOUT') AND {OperationScope})
             """,transaction:tx);
     });
+    /// <summary>
+    /// Xác thực lại người dùng trong SQL và yêu cầu quyền quản trị cho các chức năng danh mục, nhật ký.
+    /// </summary>
     internal static NguCanhNghiepVu Admin(IDbConnection db, IDbTransaction? tx, NguCanhNghiepVu actor)
     {
         var user = DAL_QUYENNGHIEPVU.XacThuc(db, tx, actor);
@@ -79,6 +93,9 @@ public sealed class DAL_NHATKY(IDbTransaction? transaction = null) : dbconnect(t
         return user;
     }
 
+    /// <summary>
+    /// Giữ khóa phiên và yêu cầu đúng tài khoản, trạng thái Đang mở cùng heartbeat trong 5 phút gần nhất.
+    /// </summary>
     internal static void KiemTraPhien(IDbConnection db, IDbTransaction? tx, string account, Guid session)
     {
         if (session == Guid.Empty || db.ExecuteScalar<int>("""
@@ -89,6 +106,10 @@ public sealed class DAL_NHATKY(IDbTransaction? transaction = null) : dbconnect(t
             throw new UnauthorizedAccessException("Phiên đã hết hạn; vui lòng đăng nhập lại.");
     }
 
+    /// <summary>
+    /// Chèn sự kiện audit bằng thời gian SQL, mã phiên và mã sự kiện mới trên kết nối, giao dịch nơi gọi.
+    /// </summary>
+    /// <remarks>Đây là hàm ghi nội bộ; nơi gọi chịu trách nhiệm kiểm quyền, phiên và giới hạn payload trước/sau.</remarks>
     internal static void Ghi(IDbConnection db, IDbTransaction? tx, string account, Guid session,
         string action, string module, string table, string id, string? before = null, string? after = null)
     {
@@ -99,6 +120,9 @@ public sealed class DAL_NHATKY(IDbTransaction? transaction = null) : dbconnect(t
             """, new { nk = TaoMa(db, tx, "NHAT_KY_THAO_TAC", "MaNK"), account, session, eventId = Guid.NewGuid(), module, action, table, id, before, after }, tx);
     }
 
+    /// <summary>
+    /// Xác thực người dùng, đánh dấu bất thường các phiên quá 5 phút rồi tạo phiên mới cùng sự kiện đăng nhập.
+    /// </summary>
     public Guid BatDauPhien(NguCanhNghiepVu actor) => ThucHien((db, tx) =>
     {
         var user = DAL_QUYENNGHIEPVU.XacThuc(db, tx, actor);
@@ -117,6 +141,9 @@ public sealed class DAL_NHATKY(IDbTransaction? transaction = null) : dbconnect(t
         return id;
     });
 
+    /// <summary>
+    /// Kiểm tra người dùng và phiên còn hiệu lực trước khi cập nhật mốc hoạt động bằng thời gian UTC của SQL.
+    /// </summary>
     public void Heartbeat(Guid session, NguCanhNghiepVu actor) => ThucHien((db,tx) =>
     {
         var user=DAL_QUYENNGHIEPVU.XacThuc(db,tx,actor);
@@ -124,6 +151,10 @@ public sealed class DAL_NHATKY(IDbTransaction? transaction = null) : dbconnect(t
         return db.Execute("UPDATE dbo.PHIEN_DANG_NHAP SET HoatDongCuoiUtc=SYSUTCDATETIME() WHERE MaPhien=@session",new{session},tx);
     });
 
+    /// <summary>
+    /// Đóng đúng phiên đang mở của tài khoản trong principal và ghi LOGOUT khi cập nhật được một bản.
+    /// </summary>
+    /// <remarks>Cho phép đóng phiên kể cả tài khoản vừa bị khóa; việc này không cấp quyền ghi nghiệp vụ.</remarks>
     public void KetThucPhien(Guid session) => ThucHien((db,tx) =>
     {
         var account=(Thread.CurrentPrincipal as ClaimsPrincipal)?.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -138,6 +169,13 @@ public sealed class DAL_NHATKY(IDbTransaction? transaction = null) : dbconnect(t
         return count;
     });
 
+    /// <summary>
+    /// Kiểm quyền quản trị, đếm và đọc một trang thao tác hoặc phiên với bộ lọc được áp dụng trực tiếp tại SQL.
+    /// </summary>
+    /// <param name="filter">Bộ lọc đã kiểm tra; DenUtc là mốc cuối không bao gồm.</param>
+    /// <param name="actor">Người dùng cần xác thực lại quyền quản trị.</param>
+    /// <param name="sessions">true chọn bảng phiên; false chọn nhật ký và lọc payload trước khi trả về.</param>
+    /// <returns>Các dòng của trang yêu cầu cùng tổng số dòng khớp bộ lọc.</returns>
     public TrangNhatKy LayTrang(BoLocNhatKy filter,NguCanhNghiepVu actor,bool sessions=false)
     {
         filter.KiemTra();

@@ -5,8 +5,14 @@ using ET;
 
 namespace DAL;
 
+/// <summary>
+/// Phần xác thực phiên, phân quyền chuyên đề, ghi truy cập và tổng hợp báo cáo từ nguồn SQL cố định.
+/// </summary>
 public sealed partial class DAL_BAOCAO
 {
+    /// <summary>
+    /// Yêu cầu đúng một định danh nghiệp vụ đã xác thực và đủ claim tài khoản, nhân viên trên luồng hiện tại.
+    /// </summary>
     internal static void KiemTraPrincipal()
     {
         var identity = (Thread.CurrentPrincipal as ClaimsPrincipal)?.Identities
@@ -15,6 +21,10 @@ public sealed partial class DAL_BAOCAO
             throw new UnauthorizedAccessException("Chưa đăng nhập hoặc phiên đã hết hạn.");
     }
 
+    /// <summary>
+    /// Xác thực lại người dùng và phiên SQL trước khi cấp quyền chuyên đề theo vai trò hiện tại.
+    /// </summary>
+    /// <returns>Các cờ quyền báo cáo của người dùng; từ chối nếu phiên hết hạn hoặc thiếu quyền chuyên đề.</returns>
     private static QuyenBaoCao XacThucQuyen(IDbConnection db, string ma, IDbTransaction? tx = null)
     {
         KiemTraPrincipal();
@@ -32,18 +42,27 @@ public sealed partial class DAL_BAOCAO
         return rights;
     }
 
+    /// <summary>
+    /// Đọc bộ quyền báo cáo hiện hành sau khi xác thực principal và phiên trong SQL.
+    /// </summary>
     public QuyenBaoCao LayQuyen()
     {
         KiemTraPrincipal();
         using var db = MoKetNoi();
         return XacThucQuyen(db, "00");
     }
+    /// <summary>
+    /// Đọc extended property RHM.Demo.P5 của database để nhận diện dữ liệu trình diễn có quyền truy cập.
+    /// </summary>
     public bool LaDuLieuTrinhDien()
     {
         KiemTraPrincipal();using var db=MoKetNoi();XacThucQuyen(db,"00");
         return db.ExecuteScalar<int>("SELECT COALESCE(MAX(TRY_CONVERT(int,value)),0) FROM sys.extended_properties WHERE class=0 AND name=N'RHM.Demo.P5'")==1;
     }
 
+    /// <summary>
+    /// Lấy chuyên khoa và dịch vụ cho bộ lọc sau khi xác thực quyền chuyên đề bệnh lý.
+    /// </summary>
     public (LuaChonThongKe[] ChuyenKhoa,LuaChonThongKe[] DichVu) LayDanhMucLoc()
     {
         KiemTraPrincipal();using var db=MoKetNoi();XacThucQuyen(db,"20");
@@ -51,6 +70,10 @@ public sealed partial class DAL_BAOCAO
             db.Query<LuaChonThongKe>("SELECT MaDV AS Ma,TenDV AS Ten FROM dbo.DICH_VU ORDER BY TenDV").ToArray());
     }
 
+    /// <summary>
+    /// Chỉ ghi sự kiện VIEW_REPORT hoặc EXPORT_REPORT với khoảng ngày và phiên đã xác thực.
+    /// </summary>
+    /// <remarks>Xuất báo cáo phải có thêm cờ quyền xuất; sự kiện được ghi trong giao dịch của ThucHien.</remarks>
     public void GhiTruyCap(string ma,string hanhDong,DateTime tu,DateTime den)
     {
         if(hanhDong is not ("VIEW_REPORT" or "EXPORT_REPORT"))throw new ArgumentException("Sự kiện báo cáo không hợp lệ.");
@@ -67,6 +90,11 @@ public sealed partial class DAL_BAOCAO
         });
     }
 
+    /// <summary>
+    /// Xác thực lại phiên, quyền xuất và quyền chi tiết chuyên đề trước khi xuất dữ liệu đã xem.
+    /// </summary>
+    /// <param name="ma">Mã chuyên đề của dữ liệu cần xuất.</param>
+    /// <param name="gomChiTiet">true để yêu cầu thêm quyền xem chi tiết tài chính, lương hoặc kho tương ứng.</param>
     public void KiemTraXuat(string ma,bool gomChiTiet=false)
     {
         KiemTraPrincipal();
@@ -76,6 +104,10 @@ public sealed partial class DAL_BAOCAO
             throw new UnauthorizedAccessException("Không còn quyền xuất phạm vi dữ liệu đã tải. Tải lại báo cáo để cập nhật quyền.");
     }
 
+    /// <summary>
+    /// Giới hạn mã chuyên đề, khoảng ngày tối đa 10 năm và ngưỡng cảnh báo 30/60/90 ngày.
+    /// </summary>
+    /// <remarks>Báo cáo hạn dùng chuyên đề 14 chỉ nhận một ngày chốt.</remarks>
     internal static void KiemTraDinhDang(string ma, DateTime tu, DateTime den, int canhBao)
     {
         if (ma != "00" && (!int.TryParse(ma, out var code) || code is < 2 or > 20 || ma != code.ToString("00")))
@@ -86,6 +118,9 @@ public sealed partial class DAL_BAOCAO
         if (ma == "14" && tu.Date != den.Date) throw new ArgumentException("Hạn dùng phải dùng một ngày chốt.");
     }
 
+    /// <summary>
+    /// Xác thực quyền rồi gom các chỉ số theo ngày và nhóm từ nguồn truy vấn cố định của chuyên đề.
+    /// </summary>
     private ET_DONGBAOCAO[] DocTongHop(string ma, DateTime tu, DateTime den)
     {
         using var db = MoKetNoi();
@@ -101,6 +136,10 @@ public sealed partial class DAL_BAOCAO
             """, new { TuNgay=tu.Date, DenExclusive=den.Date.AddDays(1) }).ToArray();
     }
 
+    /// <summary>
+    /// Ánh xạ mã chuyên đề sang bảng và biểu thức SQL đã định nghĩa trong mã.
+    /// </summary>
+    /// <remarks>Chỉ dùng tên bảng, cột và biểu thức nội bộ; giá trị lọc thời gian được truyền qua tham số SQL.</remarks>
     private static string NguonTongHop(string ma)
     {
         static string Co(string condition) => $"CASE WHEN {condition} THEN 1 ELSE 0 END";

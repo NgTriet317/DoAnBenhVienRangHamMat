@@ -1,0 +1,21 @@
+using DAL;
+using Dapper;
+using Microsoft.Data.SqlClient;
+// Kiểm tiền tố/định dạng mã theo bảng; không có đối số thì chỉ kiểm hàm định dạng trong bộ nhớ.
+// Khi có máy chủ và database, đối chiếu mã cấp tiếp theo trên bộ dữ liệu trước/sau chuẩn hóa,
+// rồi rollback giao dịch kiểm tra để giữ nguyên dữ liệu nguồn.
+var cases=new Dictionary<string,string>{["THUOC"]="TH",["PHONG"]="PH",["KHO"]="KHO",["CA_LAM"]="CA",["HO_SO_BENH_AN"]="HS",["LICH_SU_KHAM_BENH"]="LS",["LO_HANG_HOA"]="LO",["BAO_TRI_THIET_BI"]="BT",["KHOA"]="KHOA",["VAI_TRO"]="VTRO",["DON_XIN_NGHI"]="DN",["CHUNG_CHI_NHAN_VIEN"]="CC",["BENH_NHAN"]="BN",["HANG_HOA"]="HH"};
+cases["DM_TINH_TRANG_BENH"]="DMTT";
+int failures=0;
+foreach(var (table,prefix) in cases){var actual=dbconnect.DinhDangMa(table,11);if(actual!=prefix+"011"){Console.WriteLine($"FAIL {table}: {actual}, expected {prefix}011");failures++;}}
+if(args.Length==2){
+ var cs=new SqlConnectionStringBuilder{DataSource=args[0],InitialCatalog=args[1],IntegratedSecurity=true,TrustServerCertificate=true}.ConnectionString;
+ using var db=new SqlConnection(cs);db.Open();using var tx=db.BeginTransaction(System.Data.IsolationLevel.Serializable);
+ // The app must ignore symbolic reference catalog codes and keep counting legacy numeric aliases.
+ bool normalized=db.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.extended_properties WHERE class=0 AND name=N'RHM.DataPresentation.Version'",transaction:tx)>0;
+ foreach(var (table,key,expected) in new[]{("DICH_VU","MaDV",normalized?"DV019":"DV011"),("THUOC","MaThuoc",normalized?"TH017":"TH011"),("HO_SO_BENH_AN","MaHS",normalized?"HS047":"HS012"),("LICH_SU_KHAM_BENH","MaLS","LS037"),("DM_TINH_TRANG_BENH","MaDMTT",normalized?"DMTT012":"DMTT001")}){
+   var actual=dbconnect.TaoMa(db,tx,table,key);if(actual!=expected){Console.WriteLine($"FAIL allocation {table}: {actual}, expected {expected}");failures++;}
+ }
+ tx.Rollback();
+}
+Console.WriteLine(failures==0?"PASS code conventions":"FAILED: "+failures);return failures==0?0:1;

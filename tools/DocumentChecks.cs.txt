@@ -15,11 +15,16 @@ using ET;
 using RangHamMat.Controls;
 using RangHamMat.Views;
 
+/// <summary>Kiểm bản in, phân trang A4 và bố cục chứng từ bằng dữ liệu fixture trong bộ nhớ, không kết nối SQL.</summary>
+/// <remarks>Xuất XPS/ảnh vào obj/DocumentChecks/evidence để đối chiếu nội dung hiển thị với tài liệu in.</remarks>
 internal static class Program
 {
     static string evidence = "";
     static readonly Dictionary<string, string[]> pagesByDocument = new();
     static readonly Size A4 = new(794, 1123);
+    /// <summary>Khởi tạo môi trường WPF tiếng Việt, chạy từng ca chứng từ và tổng hợp lỗi.</summary>
+    /// <param name="args">Phần tử đầu là gốc dự án để đọc bố cục và đặt thư mục bằng chứng.</param>
+    /// <returns>0 nếu các ca chứng từ đạt; 1 nếu có ca thất bại.</returns>
     [STAThread]
     static int Main(string[] args)
     {

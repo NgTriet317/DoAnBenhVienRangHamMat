@@ -1,25 +1,31 @@
+<!-- Quản lý các danh mục hệ thống theo metadata; nội dung trường nhập được tạo trong code-behind. -->
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RangHamMat.Views.DichVu" Loaded="Page_Loaded" Background="#F5F7FB">
  <Grid Margin="8">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <StackPanel Margin="0,0,0,14"><TextBlock Text="Quản lý danh mục hệ thống" Style="{StaticResource Title}"/><TextBlock Text="Dữ liệu nền dùng chung · Chọn danh mục, tìm kiếm và chỉnh sửa thông tin." TextWrapping="Wrap"/></StackPanel>
   <Grid Grid.Row="1">
    <Grid.ColumnDefinitions><ColumnDefinition Width="180" MinWidth="130"/><ColumnDefinition Width="*" MinWidth="220"/><ColumnDefinition Width="5"/><ColumnDefinition Width="320" MinWidth="240"/></Grid.ColumnDefinitions>
+   <!-- Chọn định nghĩa danh mục; Catalog_Changed tải dữ liệu và dựng lại biểu mẫu tương ứng. -->
    <ListBox x:Name="CatalogList" SelectionChanged="Catalog_Changed" Margin="0,0,12,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
     <ListBox.ItemTemplate><DataTemplate><StackPanel Margin="4,8"><TextBlock Text="{Binding Nhom}" FontSize="11" Foreground="Gray"/><TextBlock Text="{Binding Ten}" TextWrapping="Wrap" FontWeight="SemiBold"/></StackPanel></DataTemplate></ListBox.ItemTemplate>
    </ListBox>
    <Grid Grid.Column="1" Margin="0,0,10,0">
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-    <WrapPanel Margin="0,0,0,10"><TextBox x:Name="SearchBox" Width="150" Margin="0,0,6,6" ToolTip="Tìm mã hoặc tên"/><ComboBox x:Name="StatusFilter" Width="150" SelectedIndex="0" Margin="0,0,6,6"><ComboBoxItem Content="Đang sử dụng"/><ComboBoxItem Content="Không sử dụng"/><ComboBoxItem Content="Tất cả"/></ComboBox><Button Content="Tìm / Tải lại" Click="Reload_Click" Padding="10,5" Margin="0,0,0,6"/></WrapPanel>
+    <WrapPanel Margin="0,0,0,10"><ContentControl Style="{StaticResource TruongNhapLieu}" Width="150" Margin="0,0,6,6"><TextBox x:Name="SearchBox" ToolTip="Tìm mã hoặc tên"/></ContentControl><ContentControl Style="{StaticResource TruongNhapLieu}" Width="150" Margin="0,0,6,6"><ComboBox x:Name="StatusFilter" SelectedIndex="0" AutomationProperties.Name="Trạng thái danh mục"><ComboBoxItem Content="Đang sử dụng"/><ComboBoxItem Content="Không sử dụng"/><ComboBoxItem Content="Tất cả"/></ComboBox></ContentControl><Button Content="Tìm / Tải lại" Click="Reload_Click" Padding="10,5" Margin="0,0,0,6"/></WrapPanel>
+    <!-- Bảng chỉ đọc để chọn nguồn chỉnh sửa; cột sinh động được đổi nhãn và ẩn dấu vân tay. -->
     <DataGrid x:Name="CatalogGrid" Grid.Row="1" IsReadOnly="True" AutoGenerateColumns="True" AutoGeneratingColumn="Grid_AutoGeneratingColumn" SelectionChanged="Row_Changed" SelectionMode="Single" EnableRowVirtualization="True" EnableColumnVirtualization="True"/>
     <TextBlock x:Name="ResultCount" Grid.Row="2" Margin="0,8"/>
    </Grid>
    <GridSplitter Grid.Column="2" Width="5" HorizontalAlignment="Stretch"/>
    <Grid Grid.Column="3" Margin="12,0,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <TextBlock x:Name="FormTitle" Text="Thêm mới" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12"/>
+    <!-- EditorPanel nhận các ô nhập theo kiểu, khóa và danh mục cha được khai báo trong metadata. -->
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"><StackPanel x:Name="EditorPanel" Margin="0,0,10,0"/></ScrollViewer>
+    <!-- Các thao tác thêm, lưu, hủy và đổi trạng thái dùng chung bản gốc để đối chiếu khi ghi. -->
     <WrapPanel Grid.Row="2" Margin="0,12,0,0"><Button Content="Thêm mới" Click="New_Click" Margin="0,0,6,6" Padding="10,6"/><Button Content="Lưu" Click="Save_Click" Margin="0,0,6,6" Padding="10,6"/><Button Content="Hủy thay đổi" Click="Cancel_Click" Margin="0,0,6,6" Padding="10,6"/><Button x:Name="StateButton" Content="Ngừng sử dụng" Click="State_Click" Margin="0,0,6,6" Padding="10,6" IsEnabled="False"/></WrapPanel>
    </Grid>
   </Grid>
+  <!-- Hiển thị kết quả lưu hoặc ngoại lệ được xử lý qua hàm Run. -->
   <TextBlock x:Name="Message" Grid.Row="2" TextWrapping="Wrap" Margin="0,12,0,0" Foreground="Firebrick"/>
  </Grid>
 </UserControl>

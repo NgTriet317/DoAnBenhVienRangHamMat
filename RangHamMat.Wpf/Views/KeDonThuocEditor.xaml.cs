@@ -83,7 +83,10 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
     public KeDonThuocEditor(NguCanhNghiepVu? user=null,IDbTransaction? transaction=null)
     {
         this.transaction=transaction;service=new(transaction);actor=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(user?.MaNV??PhienDangNhap.MaNV);if(!actor.CoQuyen(QuyenLamViec.Kham))throw new TuChoiQuyenNghiepVuException();
-        InitializeComponent();RxLines.ItemsSource=lines;lines.CollectionChanged+=(_,_)=>{if(!loading)dirty=true;};RxLines.BeginningEdit+=(_,_)=>{if(!loading)dirty=true;};LoadGroups();LoadVisits();Search();loading=false;UpdateRights();
+        InitializeComponent();
+        KiemTraNhapLieu.SetFieldValidator(RouteEditor,()=>{if(string.IsNullOrWhiteSpace(RouteEditor.Text))throw new LoiNhapLieu("DuongDung","Nhập đường dùng thuốc theo chỉ định của bác sĩ.");});
+        KiemTraNhapLieu.SetFieldValidator(ReplacementReason,()=>{if(replacement is not null&&string.IsNullOrWhiteSpace(ReplacementReason.Text))throw new LoiNhapLieu("LyDoThayThe","Nhập lý do thay đơn để đối chiếu với đơn thuốc cũ.");});
+        RxLines.ItemsSource=lines;lines.CollectionChanged+=(_,_)=>{if(!loading)dirty=true;};RxLines.BeginningEdit+=(_,_)=>{if(!loading)dirty=true;};LoadGroups();LoadVisits();Search();loading=false;UpdateRights();
     }
     /// <summary>
     /// Giá trị Được sửa; được xác định bởi phần getter/setter của thuộc tính.
@@ -217,14 +220,14 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
     /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu string.</param>
     /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     public bool TrySave(out string error)=>Run(()=>
-    {if(board is null||!Editable)throw new TuChoiQuyenNghiepVuException();CommitLineDetails();ClinicalFormInput.Commit(RxLines,"CacDong");var r=new YeuCauLuuDon{MaDT=saved?.Don.MaDT,MaLS=board.Luot.MaLS,MaDTThayThe=replacement,LyDoThayThe=ReplacementReason.Text,GhiChu=NoteEditor.Text,DauVanTay=saved?.DauVanTay,CacDong=lines.ToArray()};AfterWrite(service.LuuDon(r,actor),"Đã lưu nháp; chưa ký và không trừ kho.");},out error);
+    {if(board is null||!Editable)throw new TuChoiQuyenNghiepVuException();CommitLineDetails();ClinicalFormInput.Commit(RxLines,"CacDong");ClinicalFormInput.ValidatePrescriptionLines(lines);ValidateOrderHeader();var r=new YeuCauLuuDon{MaDT=saved?.Don.MaDT,MaLS=board.Luot.MaLS,MaDTThayThe=replacement,LyDoThayThe=ReplacementReason.Text,GhiChu=NoteEditor.Text,DauVanTay=saved?.DauVanTay,CacDong=lines.ToArray()};AfterWrite(service.LuuDon(r,actor),"Đã lưu nháp; chưa ký và không trừ kho.");},out error);
     /// <summary>
     /// Kiểm tra và thử ký xác nhận đơn thuốc đang mở.
     /// </summary>
     /// <remarks>Các bước được phối hợp qua <c>Run</c>, <c>CommitLineDetails</c>, <c>ClinicalFormInput.Commit</c>, <c>AfterWrite</c>.</remarks>
     /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu string.</param>
     /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
-    public bool TrySign(out string error)=>Run(()=>{CommitLineDetails();ClinicalFormInput.Commit(RxLines,"CacDong");if(saved is null||!Editable)throw new TuChoiQuyenNghiepVuException();if(dirty)throw new LoiKhamException("BanNhap","Lưu mọi thay đổi trước khi ký.");AfterWrite(service.XacNhanDon(saved.Don.MaDT,saved.DauVanTay,actor),"Đã ký đơn. Chuyển Tổng kết để kiểm tra dịch vụ và thuốc trước khi lập hóa đơn.");},out error);
+    public bool TrySign(out string error)=>Run(()=>{CommitLineDetails();ClinicalFormInput.Commit(RxLines,"CacDong");ClinicalFormInput.ValidatePrescriptionLines(lines);ValidateOrderHeader();if(saved is null||!Editable)throw new TuChoiQuyenNghiepVuException();if(dirty)throw new LoiKhamException("BanNhap","Lưu mọi thay đổi trước khi ký.");AfterWrite(service.XacNhanDon(saved.Don.MaDT,saved.DauVanTay,actor),"Đã ký đơn. Chuyển Tổng kết để kiểm tra dịch vụ và thuốc trước khi lập hóa đơn.");},out error);
     /// <summary>
     /// Kiểm tra và thử hủy bản đơn thuốc đang mở.
     /// </summary>
@@ -330,6 +333,7 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
         loadingDetails=true;
         try
         {
+            foreach(var field in new FrameworkElement[]{QuantityEditor,DaysEditor,DoseEditor,RouteEditor,InstructionEditor})KiemTraNhapLieu.SetError(field,"");
             editingLine=row;
             SelectedDrugHeader.Text=row?.TenHienThi??"Chọn một thuốc trong đơn để nhập cách dùng.";
             QuantityEditor.Text=row?.SoLuong.ToString("0.############################",CultureInfo.GetCultureInfo("vi-VN"))??"";
@@ -350,7 +354,10 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
         if(loading||loadingDetails||editingLine is null||!Editable)return;
         dirty=true;
         var culture=CultureInfo.GetCultureInfo("vi-VN");
-        if(sender==QuantityEditor&&decimal.TryParse(QuantityEditor.Text,NumberStyles.Number,culture,out var quantity))editingLine.SoLuong=quantity;
+        if(sender==QuantityEditor)
+        {
+            try{editingLine.SoLuong=ClinicalFormInput.ReadQuantity(QuantityEditor.Text);}catch(LoiNhapLieu){ /* Giữ nguyên chữ sai để người dùng sửa; không dùng số cũ khi lưu. */ }
+        }
         else if(sender==DaysEditor&&int.TryParse(DaysEditor.Text,NumberStyles.Integer,culture,out var days))editingLine.SoNgayDung=days;
         else if(sender==DoseEditor)editingLine.LieuDung=DoseEditor.Text;
         else if(sender==RouteEditor)editingLine.DuongDung=RouteEditor.Text;
@@ -363,13 +370,23 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
     private void CommitLineDetails()
     {
         if(editingLine is null||!lines.Contains(editingLine)||!Editable)return;
+        ClinicalFormInput.Prepare(DetailForm);
         var culture=CultureInfo.GetCultureInfo("vi-VN");
-        if(!decimal.TryParse(QuantityEditor.Text,NumberStyles.Number,culture,out var quantity)||quantity<=0)
-            throw new LoiKhamException("SoLuong","Nhập số lượng cấp phát lớn hơn 0, dùng dấu phẩy cho phần thập phân.");
+        var quantity=ClinicalFormInput.ReadQuantity(QuantityEditor.Text);
         if(!int.TryParse(DaysEditor.Text,NumberStyles.Integer,culture,out var days)||days<=0)
             throw new LoiKhamException("SoNgayDung","Nhập số ngày dùng là số nguyên lớn hơn 0.");
+        if(string.IsNullOrWhiteSpace(RouteEditor.Text))throw new LoiKhamException("DuongDung","Nhập đường dùng thuốc theo chỉ định của bác sĩ.");
         editingLine.SoLuong=quantity;editingLine.SoNgayDung=days;
         editingLine.LieuDung=DoseEditor.Text;editingLine.DuongDung=RouteEditor.Text;editingLine.HuongDan=InstructionEditor.Text;
+    }
+
+    /// <summary>Giữ điều kiện thay thế/bổ sung đơn tại đúng ô người dùng cần sửa.</summary>
+    private void ValidateOrderHeader()
+    {
+        KiemTraNhapLieu.ValidateValues("DON_THUOC",new Dictionary<string,object?>{["LyDoThayThe"]=ReplacementReason.Text,["GhiChu"]=NoteEditor.Text});
+        if(replacement is not null&&string.IsNullOrWhiteSpace(ReplacementReason.Text))throw new LoiKhamException("LyDoThayThe","Nhập lý do thay đơn để đối chiếu với đơn thuốc cũ.");
+        if(replacement is null&&saved is null&&board?.CacDon.Any(x=>x.TrangThai=="Đã xác nhận")==true&&string.IsNullOrWhiteSpace(NoteEditor.Text))
+            throw new LoiNhapLieu("GhiChu","Nhập lý do bổ sung đơn thuốc trong ô ghi chú.");
     }
     /// <summary>
     /// Tiếp nhận nội dung chi tiết khi ô nhập mất tiêu điểm.

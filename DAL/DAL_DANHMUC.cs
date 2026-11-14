@@ -8,13 +8,22 @@ using ET;
 
 namespace DAL;
 
+/// <summary>
+/// Đọc và cập nhật danh mục theo whitelist, kiểm quyền quản trị, phiên và xung đột trong giao dịch.
+/// </summary>
 public sealed class DAL_DANHMUC(IDbTransaction? transaction=null):dbconnect(transaction)
 {
     private static string Cols(DinhNghiaDanhMuc d)=>string.Join(",",d.Khoa.Concat(d.Truong.Select(f=>f.Cot)).Append("TrangThai").Distinct().Select(c=>$"[{c}]"));
     private static string Where(DinhNghiaDanhMuc d)=>string.Join(" AND ",d.Khoa.Select(c=>$"[{c}]=@{c}"));
     private static Dictionary<string,object?> Copy(object row)=>((IDictionary<string,object>)row).ToDictionary(p=>p.Key,p=>(object?)p.Value);
+    /// <summary>
+    /// Băm dữ liệu theo thứ tự tên cột ổn định, bỏ trường DauVanTay để đối chiếu bản đã đọc với SQL.
+    /// </summary>
     private static string Fingerprint(IDictionary<string,object?> row)=>Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(row.Where(p=>p.Key!="DauVanTay").OrderBy(p=>p.Key).ToDictionary(p=>p.Key,p=>p.Value)))));
 
+    /// <summary>
+    /// Kiểm quyền quản trị rồi tìm theo khóa hoặc tên trên bảng được phép, gắn dấu vân tay cho mỗi bản ghi.
+    /// </summary>
     public IReadOnlyList<Dictionary<string,object?>> Lay(string bang,string search,string status,NguCanhNghiepVu actor)=>ThucHien((db,tx)=>
     {
         DAL_NHATKY.Admin(db,tx,actor);
@@ -25,6 +34,17 @@ public sealed class DAL_DANHMUC(IDbTransaction? transaction=null):dbconnect(tran
             .Select(r=>{var row=Copy((object)r);row["DauVanTay"]=Fingerprint(row);return row;}).ToArray();
     });
 
+    /// <summary>
+    /// Chuẩn hóa và lưu danh mục dưới quyền quản trị, giữ khóa bản hiện tại và đối chiếu dấu vân tay trước khi sửa.
+    /// </summary>
+    /// <remarks>Đổi trạng thái chỉ dùng nội dung đang lưu trong SQL. Kiểm tra danh mục cha/con và chứng từ còn mở; tái sử dụng nhật ký trigger khi bảng đã có audit để tránh ghi trùng.</remarks>
+    /// <param name="bang">Tên bảng thuộc whitelist DanhMucHeThong.</param>
+    /// <param name="values">Dữ liệu nhập theo các trường được định nghĩa cho danh mục.</param>
+    /// <param name="original">Bản gốc kèm DauVanTay khi cập nhật; null khi tạo mới.</param>
+    /// <param name="actor">Ngữ cảnh cần xác thực lại với quyền quản trị.</param>
+    /// <param name="session">Phiên còn hiệu lực của tài khoản thực hiện.</param>
+    /// <param name="active">true để dùng lại, false để ngừng dùng, null để lưu nội dung.</param>
+    /// <returns>Bản SQL sau khi lưu, có DauVanTay mới cho lần cập nhật kế tiếp.</returns>
     public Dictionary<string,object?> Luu(string bang,IDictionary<string,object?> values,IDictionary<string,object?>? original,
         NguCanhNghiepVu actor,Guid session,bool? active=null)=>ThucHien((db,tx)=>
     {

@@ -8,10 +8,16 @@ using ET;
 using Microsoft.Data.SqlClient;
 
 // Operations use the operator's Windows/SQL permissions. No application identity is forged.
+/// <summary>Công cụ vận hành kiểm kho, sao lưu SQL kèm ảnh tham chiếu và phục hồi thử sang database mới.</summary>
+/// <remarks>Dùng quyền Windows/SQL của người chạy và khóa kho; manifest ghi hash SQL cùng metadata của cả ảnh đang dùng/đã ẩn.</remarks>
 static class Program
 {
     static readonly JsonSerializerOptions Json=new(){WriteIndented=true};
     static Dictionary<string,string> input=new();
+    /// <summary>Đọc các cặp tùy chọn, kiểm kho hoặc sao lưu SQL/ảnh; chuyển chế độ KhoiPhuc sang Restore.</summary>
+    /// <param name="args">Các cặp --tên và giá trị: mode, server, db, root cùng các đường dẫn tùy chế độ.</param>
+    /// <returns>0 khi thao tác đạt; 1 khi kho có lỗi hoặc thao tác không hoàn tất.</returns>
+    /// <remarks>Sao lưu dùng COPY_ONLY/CHECKSUM và VERIFYONLY; chỉ bỏ INCOMPLETE sau khi ảnh sao chép khớp metadata.</remarks>
     static int Main(string[] args)
     {
         try
@@ -49,6 +55,8 @@ static class Program
         }
         catch(Exception ex){Console.WriteLine("FAIL: "+ex.Message);return 1;}
     }
+    /// <summary>Xác minh manifest/ảnh/SQL rồi phục hồi vào database thử mới và kho đích riêng.</summary>
+    /// <remarks>Từ chối database đã tồn tại; sau restore đối chiếu metadata, hash ảnh và ràng buộc trước khi bỏ marker chưa hoàn tất.</remarks>
     static void Restore()
     {
         var database=Required("new-db");
@@ -93,6 +101,8 @@ static class Program
         var db=new SqlConnection(new SqlConnectionStringBuilder{DataSource=Required("server"),InitialCatalog=database,IntegratedSecurity=true,TrustServerCertificate=true,ConnectTimeout=8}.ConnectionString);
         db.Open();return db;
     }
+    /// <summary>Lấy khóa độc quyền theo phiên để tránh kiểm/sao lưu kho khi thao tác ảnh khác đang giữ khóa.</summary>
+    /// <param name="db">Kết nối SQL đang mở; đóng kết nối sẽ giải phóng khóa theo phiên.</param>
     static void Lock(SqlConnection db)
     {
         var code=db.ExecuteScalar<int>("DECLARE @r int; EXEC @r=sys.sp_getapplock @Resource=N'RHM:Xray:Storage',@LockMode='Exclusive',@LockOwner='Session',@LockTimeout=30000; SELECT @r");
@@ -101,6 +111,9 @@ static class Program
     static ET_ANHXQUANGLANKHAM[] ReadImages(SqlConnection db)=>db.Query<ET_ANHXQUANGLANKHAM>("SELECT * FROM dbo.ANH_XQUANG_LAN_KHAM ORDER BY MaAnh").ToArray();
     static KhoLuuAnhXquang Store(string root,bool? local=null)=>new(new CauHinhKhoAnh{ThuMucDungChung=root,ChoPhepDuongDanCucBo=local??input.GetValueOrDefault("local")=="true"});
     static string HashFile(string path){using var stream=File.OpenRead(path);return Convert.ToHexString(SHA256.HashData(stream));}
+    /// <summary>Tạo hoặc dùng thư mục rỗng sau khi từ chối đích có nội dung và đường dẫn qua liên kết.</summary>
+    /// <param name="path">Đường dẫn đích cần chuẩn bị cho bản sao hoặc phục hồi.</param>
+    /// <returns>Đường dẫn tuyệt đối của thư mục đích.</returns>
     static string CreateNewDirectory(string path)
     {
         var full=Path.GetFullPath(path);
@@ -109,6 +122,10 @@ static class Program
             if(parent.Exists&&(parent.Attributes&FileAttributes.ReparsePoint)!=0)throw new IOException("Destination must not pass through a linked directory.");
         Directory.CreateDirectory(full);return full;
     }
+    /// <summary>Chọn thư mục trao đổi file .bak giữa công cụ và dịch vụ SQL Server.</summary>
+    /// <param name="db">Kết nối dùng xác định máy SQL và thư mục backup mặc định.</param>
+    /// <returns>Đường dẫn --sql-directory đã chỉ định hoặc thư mục backup của SQL Server cùng máy.</returns>
+    /// <remarks>SQL từ xa cần chỉ rõ thư mục chia sẻ mà cả công cụ lẫn dịch vụ SQL có thể truy cập.</remarks>
     static string SqlDirectory(SqlConnection db)
     {
         if(input.TryGetValue("sql-directory",out var directory))return Path.GetFullPath(directory);

@@ -217,9 +217,17 @@ namespace DAL
                 throw new InvalidOperationException("Bảng đang được cấp mã ở cửa sổ khác. Vui lòng thử lại.");
             }
 
-            // TRY_CONVERT bỏ qua hậu tố không chuyển được thành số; COALESCE lấy 0 nếu bảng chưa có số hợp lệ.
-            // Khóa cùng giao dịch với INSERT; hỗ trợ mã cũ BN001 và mã mới BN01.
-            var highest = db.ExecuteScalar<long>($"SELECT COALESCE(MAX(TRY_CONVERT(bigint,SUBSTRING([{key}],PATINDEX('%[0-9]%',[{key}]+'0'),50))),0) FROM dbo.[{table}] WITH(UPDLOCK,HOLDLOCK)", transaction: tx);
+            // Chỉ đếm mã thuộc dãy nghiệp vụ; REF_DV_ENDO123/THRHM052 không phải số thứ tự DV/TH.
+            // Giữ các dãy từng được ứng dụng cấp để không tái sử dụng hậu tố khi đổi về tiền tố cũ.
+            var prefix = TienToMa(table);
+            var aliases = new[] { prefix, string.Concat(table.Split('_').Select(word => word[0])) }.Distinct().ToArray();
+            var highest = db.ExecuteScalar<long>($"""
+                SELECT COALESCE(MAX(TRY_CONVERT(bigint,s.Suffix)),0)
+                FROM dbo.[{table}] WITH(UPDLOCK,HOLDLOCK)
+                CROSS APPLY(SELECT SUBSTRING([{key}],PATINDEX('%[0-9]%',[{key}]+'0'),50),
+                    LEFT([{key}],PATINDEX('%[0-9]%',[{key}]+'0')-1)) s(Suffix,Prefix)
+                WHERE s.Prefix IN @aliases AND s.Suffix<>'' AND s.Suffix NOT LIKE '%[^0-9]%'
+                """, new { aliases }, tx);
             if (highest == long.MaxValue)
             {
                 throw new InvalidOperationException("Đã hết phạm vi số của mã dữ liệu.");
@@ -229,11 +237,11 @@ namespace DAL
         }
 
         /// <summary>
-        /// Ghép chữ đầu các từ của tên bảng với số thứ tự có ít nhất ba chữ số, ví dụ mã bệnh nhân mới là BN001; không đổi các mã cũ trong database.
+        /// Dùng tiền tố của dữ liệu cũ và số thứ tự có ít nhất ba chữ số, ví dụ BN001, PH001, TH001.
         /// </summary>
         /// <param name = "table">Tên bảng nội bộ gồm các phần phân tách bởi dấu gạch dưới.</param>
         /// <param name = "number">Số thứ tự dương đã cấp; D3 bổ sung số 0 khi cần, không cắt số dài hơn ba chữ số.</param>
-        /// <returns>Chuỗi tiền tố chữ đầu cộng số thứ tự, dùng định dạng số không phụ thuộc ngôn ngữ máy.</returns>
+        /// <returns>Chuỗi tiền tố nghiệp vụ cộng số thứ tự, dùng định dạng số không phụ thuộc ngôn ngữ máy.</returns>
         public static string DinhDangMa(string table, long number)
         {
             if (!LaTenSql(table) || number <= 0)
@@ -241,14 +249,18 @@ namespace DAL
                 throw new InvalidOperationException("Bảng hoặc số thứ tự mã không hợp lệ.");
             }
 
-            var tienTo = new StringBuilder();
-            foreach (string tu in table.Split('_'))
-            {
-                tienTo.Append(tu[0]);
-            }
-
-            return tienTo.ToString() + number.ToString("D3", CultureInfo.InvariantCulture);
+            return TienToMa(table) + number.ToString("D3", CultureInfo.InvariantCulture);
         }
+
+        private static string TienToMa(string table) => table.ToUpperInvariant() switch
+        {
+            "THUOC" => "TH", "PHONG" => "PH", "KHO" => "KHO", "KHOA" => "KHOA",
+            "CA_LAM" => "CA", "HO_SO_BENH_AN" => "HS", "LICH_SU_KHAM_BENH" => "LS",
+            "LO_HANG_HOA" => "LO", "BAO_TRI_THIET_BI" => "BT", "VAI_TRO" => "VTRO",
+            "DON_XIN_NGHI" => "DN", "CHUNG_CHI_NHAN_VIEN" => "CC",
+            "DM_TINH_TRANG_BENH" => "DMTT",
+            _ => string.Concat(table.ToUpperInvariant().Split('_').Select(word => word[0]))
+        };
 
         /// <summary>
         /// Đọc metadata cột từ sys.columns/sys.types gồm kiểu, nullable, computed, độ dài, số lẻ; cache theo bảng trong đối tượng kết nối để dùng kiểm tra dữ liệu.

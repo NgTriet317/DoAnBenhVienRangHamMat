@@ -1,17 +1,21 @@
+<!-- Xem trước đơn thuốc theo từng trang; thao tác in đọc lại nguồn trước khi gửi tới máy in. -->
 <Window x:Class="RangHamMat.Views.XemTruocDonThuoc" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  xmlns:controls="clr-namespace:RangHamMat.Controls"
  Title="Bản in đơn thuốc" Width="980" Height="860" MinWidth="700" MinHeight="500" WindowStartupLocation="CenterOwner" Background="#E7EDF3" FontFamily="Segoe UI" Language="vi-VN">
  <Window.Resources><ResourceDictionary Source="/RangHamMat.Wpf;component/Themes/DocumentPreviewStyles.xaml"/></Window.Resources>
  <Grid Background="#E7EDF3"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <!-- Thanh thao tác ngoài vùng cuộn, giữ nút in và định danh nguồn luôn hiển thị. -->
   <Border Background="White" BorderBrush="#D7E2E9" BorderThickness="0,0,0,1" Padding="24,18"><DockPanel>
    <Button DockPanel.Dock="Right" Content="In / Xuất PDF…" Click="Print_Click" Style="{StaticResource HospitalPrimary}" Margin="18,0,0,0" Padding="20,10"/>
    <StackPanel><TextBlock Text="Bản in đơn thuốc" FontSize="21" FontWeight="SemiBold" Foreground="#173C54"/><TextBlock x:Name="SourceCaption" Foreground="#63798C" FontSize="12" Margin="0,5,0,0"/></StackPanel>
   </DockPanel></Border>
   <ScrollViewer x:Name="PreviewScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="26,20">
+   <!-- Mỗi mục là TrangDonThuoc, dùng chung bộ phân trang và chỉ số trang bắt đầu từ 0. -->
    <ItemsControl x:Name="PrescriptionPages">
     <ItemsControl.ItemTemplate><DataTemplate>
      <StackPanel Margin="0,0,0,24">
       <DockPanel Margin="2,0,2,9"><TextBlock Text="A4 · 210 × 297 mm" DockPanel.Dock="Right" HorizontalAlignment="Right" Foreground="#75889B" FontSize="10"/><TextBlock Text="{Binding TieuDe}" Foreground="#526C82" FontSize="10" FontWeight="SemiBold"/></DockPanel>
+      <!-- Thu nhỏ trang A4 để vừa màn hình, giữ tỷ lệ và khổ tài liệu dùng khi phân trang. -->
       <Viewbox Stretch="Uniform" StretchDirection="DownOnly" VerticalAlignment="Top">
        <Border Width="794" Height="1123" Background="White" BorderBrush="#CEDCE7" BorderThickness="1">
         <controls:PrescriptionPageView Page="{Binding}" Width="792" Height="1121" Stretch="Uniform"/>
@@ -21,6 +25,7 @@
     </DataTemplate></ItemsControl.ItemTemplate>
    </ItemsControl>
   </ScrollViewer>
+  <!-- Thông báo gửi in hoặc lỗi được cập nhật qua PrintStatus. -->
   <Border Grid.Row="2" Background="White" BorderBrush="#D7E2E9" BorderThickness="0,1,0,0" Padding="24,12"><TextBlock x:Name="PrintStatus" FontSize="11" Foreground="#63798C" TextWrapping="Wrap" Text="Bản xem trước hiển thị từng trang in. Chọn máy in hoặc Microsoft Print to PDF để xuất tệp." AutomationProperties.LiveSetting="Polite"/></Border>
  </Grid>
 </Window>

@@ -83,10 +83,12 @@ public sealed partial class DAL_KHAMDIEUTRI
     /// <param name="actor">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
     /// <returns>Kết quả kiểu TrangHoSo&lt;DongLichSuDon&gt; dùng cho bước xử lý tiếp theo.</returns>
     public TrangHoSo<DongLichSuDon> LayTrangLichSuDon(BoLocDanhSachHoSo filter,NguCanhNghiepVu actor)=>ReadPage<DongLichSuDon>(filter,actor,"""
-        SELECT d.*,b.MaBN,b.HoTenBN,b.SDT,b.NgaySinh,l.ThoiGianKham,l.ChanDoan,n.HoTen TenBS
+        SELECT d.*,b.MaBN,b.HoTenBN,b.SDT,b.NgaySinh,l.ThoiGianKham,l.ChanDoan,n.HoTen TenBS,g.TrangThai TrangThaiBanGiao
         FROM dbo.DON_THUOC d JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=d.MaLS JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS JOIN patients b ON b.MaBN=hs.MaBN JOIN dbo.NHAN_VIEN n ON n.MaNV=d.MaBS
+        LEFT JOIN dbo.BAN_GIAO_THUOC g ON g.MaDT=d.MaDT
         WHERE (@LaAdmin=1 OR (@doctor=1 AND d.MaBS=@MaNV AND l.MaBS=@MaNV AND p.MaBS=@MaNV) OR (l.TrangThai=N'Đã xác nhận' AND d.TrangThai IN(N'Đã xác nhận',N'Ngừng áp dụng')))
-          AND (@patient IS NULL OR b.MaBN=@patient) AND (@visit IS NULL OR d.MaLS=@visit) AND (@status IS NULL OR d.TrangThai=@status)
+          AND (@patient IS NULL OR b.MaBN=@patient) AND (@visit IS NULL OR d.MaLS=@visit)
+          AND (@status IS NULL OR CASE WHEN d.TrangThai=N'Đã xác nhận' AND g.TrangThai=N'Đã giao' THEN N'Đã giao thuốc' ELSE d.TrangThai END=@status)
           AND (@term=N'' OR d.MaDT LIKE @search ESCAPE N'~' OR b.MaBN LIKE @search ESCAPE N'~' OR b.HoTenBN LIKE @search ESCAPE N'~' OR b.SDT LIKE @search ESCAPE N'~' OR n.HoTen LIKE @search ESCAPE N'~')
         ""","*","NgayKe DESC,MaDT",(db,tx,rows)=>
         {

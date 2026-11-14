@@ -7,12 +7,17 @@ using System.Windows.Controls;
 using ET;
 using RangHamMat;
 
+/// <summary>Kiểm kho phiên mã hóa, xử lý tệp hỏng và xóa định danh/quyền đăng nhập trong tiến trình WPF.</summary>
+/// <remarks>Dùng tài khoản fixture và tệp riêng, không cần kết nối SQL.</remarks>
 static class Program
 {
     static int count;
     static readonly Assembly assembly = typeof(PhienDangNhap).Assembly;
     static readonly BindingFlags methods = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 
+    /// <summary>Thử lưu/đọc/xóa phiên và các trường hợp tài khoản thay đổi trước khi kiểm xóa toàn bộ claim.</summary>
+    /// <param name="args">Phần tử đầu là thư mục chứa các tệp phiên kiểm thử riêng.</param>
+    /// <returns>0 khi mọi ca đạt; 1 khi có lỗi trong bộ kiểm.</returns>
     [STAThread] static int Main(string[] args)
     {
         var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };

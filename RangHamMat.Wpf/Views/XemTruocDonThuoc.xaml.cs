@@ -9,10 +9,23 @@ namespace RangHamMat.Views;
 /// <summary>Xem và in cùng một tài liệu; đọc lại đúng nguồn trước mỗi lần gửi máy in.</summary>
 public partial class XemTruocDonThuoc : Window
 {
+    /// <summary>
+    /// Hàm đọc lại bản ký trước khi in; null khi đang dùng đường hiển thị tương thích từ thẻ đơn.
+    /// </summary>
     private readonly Func<BanInDonThuoc>? read;
+    /// <summary>
+    /// Mã đơn cố định từ lúc mở cửa sổ, dùng để chặn nguồn in bị đổi sang đơn khác.
+    /// </summary>
     private readonly string fixedId;
+    /// <summary>
+    /// Tài liệu hiện được dùng cho bản xem trước; việc in dựng tài liệu riêng.
+    /// </summary>
     public FlowDocument? DonDaDoc { get; private set; }
 
+    /// <summary>
+    /// Đọc bản ký qua hàm được cấp, chốt mã nguồn và tạo các trang xem trước.
+    /// </summary>
+    /// <param name="read">Hàm đọc bản in đã kiểm tra quyền; được gọi lại trước mỗi lần gửi máy in.</param>
     public XemTruocDonThuoc(Func<BanInDonThuoc> read)
     {
         InitializeComponent();
@@ -23,6 +36,10 @@ public partial class XemTruocDonThuoc : Window
         ShowDocument(DonThuocDocument.Tao(source));
     }
 
+    /// <summary>
+    /// Mở xem trước từ thẻ đơn đã xác nhận, ưu tiên bản ký có snapshot đầy đủ trong phạm vi lâm sàng.
+    /// </summary>
+    /// <param name="card">Thẻ đơn cần xem và in; trạng thái được kiểm tra trước khi tạo tài liệu.</param>
     public XemTruocDonThuoc(RxCard card)
     {
         ValidateSigned(card);
@@ -47,6 +64,10 @@ public partial class XemTruocDonThuoc : Window
         ShowDocument(DonThuocDocument.Tao(card));
     }
 
+    /// <summary>
+    /// Phân trang A4 cho vùng xem trước và cập nhật tiêu đề cùng nhãn nguồn đơn.
+    /// </summary>
+    /// <param name="document">Tài liệu mới cần hiển thị trong cửa sổ.</param>
     private void ShowDocument(FlowDocument document)
     {
         DonDaDoc = document;
@@ -56,6 +77,14 @@ public partial class XemTruocDonThuoc : Window
         Title = "Đơn thuốc " + fixedId;
     }
 
+    /// <summary>
+    /// Đọc lại đúng đơn nguồn, dựng tài liệu riêng theo vùng in và gửi qua hàm in được cấp.
+    /// </summary>
+    /// <remarks>Mã nguồn phải khớp fixedId; phân trang trên tài liệu riêng giúp bản xem trước giữ nguyên bố cục.</remarks>
+    /// <param name="send">Hàm nhận bộ phân trang để gửi máy in hoặc xuất tài liệu.</param>
+    /// <param name="pageSize">Kích thước vùng in thực tế do máy in cung cấp.</param>
+    /// <param name="error">Nhận thông báo khi không thể đọc nguồn hoặc gửi in; null nếu hoàn tất.</param>
+    /// <returns>True khi hàm gửi in đã chạy xong; false nếu quá trình chuẩn bị hoặc gửi in phát sinh lỗi.</returns>
     public bool TryPrint(Action<DocumentPaginator> send, Size pageSize, out string? error)
     {
         error = null;
@@ -92,6 +121,10 @@ public partial class XemTruocDonThuoc : Window
         }
     }
 
+    /// <summary>
+    /// Yêu cầu đơn đã xác nhận và kiểm tra lại trạng thái qua nghiệp vụ khi đang trong phạm vi lâm sàng.
+    /// </summary>
+    /// <param name="card">Thẻ đơn cần xác minh trước khi tạo tài liệu in.</param>
     private static void ValidateSigned(RxCard card)
     {
         if (!card.CanPrint) throw new LoiKhamException("MaDT", "Chỉ in đơn đã xác nhận.");
@@ -100,6 +133,9 @@ public partial class XemTruocDonThuoc : Window
             throw new LoiKhamException("MaDT", "Đơn đã đổi hiệu lực; tải lại trước khi in.");
     }
 
+    /// <summary>
+    /// Mở hộp thoại chọn máy in và truyền vùng in thực tế cho TryPrint; hiển thị thông báo nếu không mở được máy in.
+    /// </summary>
     private void Print_Click(object sender, RoutedEventArgs e)
     {
         try

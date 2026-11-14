@@ -1,0 +1,16 @@
+QuyTac MucDo SoMuc
+------ ----- -----
+LICH_LAM_VIEC_HOM_NAY CanBoSung 5
+QuyTac MucDo Bang Ma LyDo
+------ ----- ---- -- ----
+LICH_LAM_VIEC_HOM_NAY CanBoSung CHUYEN_KHOA CK001 Chuyen khoa co bac si nhung chua co lich da xac nhan/co mat hom nay; phieu dich vu co the khong chon duoc bac si.
+LICH_LAM_VIEC_HOM_NAY CanBoSung CHUYEN_KHOA CK002 Chuyen khoa co bac si nhung chua co lich da xac nhan/co mat hom nay; phieu dich vu co the khong chon duoc bac si.
+LICH_LAM_VIEC_HOM_NAY CanBoSung CHUYEN_KHOA CK003 Chuyen khoa co bac si nhung chua co lich da xac nhan/co mat hom nay; phieu dich vu co the khong chon duoc bac si.
+LICH_LAM_VIEC_HOM_NAY CanBoSung CHUYEN_KHOA CK004 Chuyen khoa co bac si nhung chua co lich da xac nhan/co mat hom nay; phieu dich vu co the khong chon duoc bac si.
+LICH_LAM_VIEC_HOM_NAY CanBoSung CHUYEN_KHOA CK007 Chuyen khoa co bac si nhung chua co lich da xac nhan/co mat hom nay; phieu dich vu co the khong chon duoc bac si.
+PhamVi
+------
+Chi doc du lieu; khong thuc hien chuan hoa, thu tien, xuat kho hay ban giao.
+KetQua
+------
+PASS: khong co sai lech lien ket xac dinh hoac can doi chieu

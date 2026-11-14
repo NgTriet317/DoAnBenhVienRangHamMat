@@ -16,6 +16,9 @@ public sealed class DAL_TIEPNHAN(IDbTransaction? transaction=null) : dbconnect(t
         return Candidates(db,tx,null,Now(db,tx),true);
     });
 
+    /// <summary>
+    /// Xác thực quyền tiếp nhận, kiểm tra bác sĩ còn ca dịch vụ hợp lệ rồi đọc dịch vụ đang áp dụng của chuyên khoa.
+    /// </summary>
     public IReadOnlyList<ET_DICHVU> LayDichVuTheoBacSi(string maBS,NguCanhNghiepVu nguoiDung)=>ThucHien((db,tx)=>
     {
         Authorize(db,tx,nguoiDung);Code(maBS,"MaBS");var now=Now(db,tx);
@@ -24,6 +27,9 @@ public sealed class DAL_TIEPNHAN(IDbTransaction? transaction=null) : dbconnect(t
         return Services(db,tx,doctor.MaCK,now);
     });
 
+    /// <summary>
+    /// Lọc dịch vụ theo chuyên khoa, trạng thái hoạt động và ngày áp dụng tại thời điểm SQL được truyền vào.
+    /// </summary>
     private static IReadOnlyList<ET_DICHVU> Services(IDbConnection db,IDbTransaction? tx,string maCK,DateTime now)
         =>db.Query<ET_DICHVU>("SELECT * FROM dbo.DICH_VU WITH(HOLDLOCK) WHERE MaCK=@maCK AND TrangThai=N'Đang hoạt động' AND NgayApDung<=CAST(@now AS date) ORDER BY TenDV,MaDV",new{maCK,now},tx).ToArray();
     /// <summary>

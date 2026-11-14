@@ -11,6 +11,10 @@ public sealed record CauHinhKhoAnh
     public int DungLuongToiDaMB { get; init; } = 20;
     public long DiemAnhToiDa { get; init; } = 40000000;
 
+    /// <summary>
+    /// Đọc cấu hình XQuang trong appsettings.json cạnh ứng dụng; biến RHM_XRAY_ROOT được ưu tiên cho thư mục kho.
+    /// </summary>
+    /// <returns>Cấu hình kho; việc kiểm tra đường dẫn và giới hạn được thực hiện khi truy cập kho.</returns>
     public static CauHinhKhoAnh Doc()
     {
         CauHinhKhoAnh config=new();

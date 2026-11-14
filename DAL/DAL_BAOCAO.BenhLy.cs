@@ -3,6 +3,9 @@ using ET;
 
 namespace DAL;
 
+/// <summary>
+/// Phần thống kê bệnh lý theo mã đã ghi nhận trên lượt xác nhận, kèm chỉ số chất lượng dữ liệu.
+/// </summary>
 public sealed partial class DAL_BAOCAO
 {
     // Một hàng/lượt, độc lập số tình trạng và dịch vụ để tránh nhân bản mẫu số.
@@ -39,6 +42,14 @@ public sealed partial class DAL_BAOCAO
             GROUP BY b.MaDMTT,dm.TenTinhTrang ORDER BY COUNT(*) DESC,b.MaDMTT;
             """;
 
+    /// <summary>
+    /// Đọc chất lượng gắn mã và phân bố bệnh lý trong cùng giao dịch sau khi xác thực quyền báo cáo.
+    /// </summary>
+    /// <remarks>Khử trùng mã theo lượt trước khi đếm; nhóm dưới 5 bệnh nhân được làm mờ. Giữ mã danh mục ngừng áp dụng trong số liệu lịch sử.</remarks>
+    /// <param name="ky">Kỳ gồm ngày bắt đầu và mốc cuối không bao gồm; hai mốc phải là ngày tròn.</param>
+    /// <param name="maCK">Mã chuyên khoa của bác sĩ để lọc, hoặc null để lấy tất cả.</param>
+    /// <param name="maDV">Mã dịch vụ trên phiếu khám để lọc, hoặc null để lấy tất cả.</param>
+    /// <returns>Chất lượng dữ liệu và các nhóm bệnh có số đếm nullable khi bị làm mờ.</returns>
     public KetQuaBenhLy DocBenhLy(KySoSanh ky, string? maCK = null, string? maDV = null)
     {
         KiemTraDinhDang("20",ky.TuNgay,ky.DenExclusive.AddDays(-1),30);
@@ -58,6 +69,9 @@ public sealed partial class DAL_BAOCAO
         });
     }
 
+    /// <summary>
+    /// Tổng hợp theo ngày các lượt xác nhận, số bệnh nhân và tình trạng gắn mã mà không nhân bản theo dịch vụ.
+    /// </summary>
     public ET_DONGBAOCAO[] DocLuotBenh(KySoSanh ky)
     {
         KiemTraDinhDang("20",ky.TuNgay,ky.DenExclusive.AddDays(-1),30);

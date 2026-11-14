@@ -1,3 +1,16 @@
+<#
+.SYNOPSIS
+Dựng bộ kiểm đối soát dữ liệu và tùy chọn kiểm chuỗi chứng từ DEMO P5.
+.DESCRIPTION
+Chỉ nhận database RHM_Hospital_Test_. Các ca gây lỗi dữ liệu chạy trong giao dịch
+rollback; KiemTraTrinhDien bổ sung đối chiếu báo cáo và giao diện trên DEMO đã chuẩn bị.
+.PARAMETER Database
+Database thử chứa schema hiện hành và dữ liệu phù hợp với chế độ kiểm.
+.PARAMETER MayChu
+SQL Server dùng chạy các ca kiểm đối soát.
+.PARAMETER KiemTraTrinhDien
+Truyền --demo để kiểm số liệu, chứng từ và ảnh báo cáo của bộ dữ liệu P5.
+#>
 param([Parameter(Mandatory=$true)][string]$Database,[string]$MayChu='.',[switch]$KiemTraTrinhDien)
 $ErrorActionPreference='Stop'
 if($Database -notmatch '^RHM_Hospital_Test_[A-Za-z0-9_]+$'){throw 'Chỉ kiểm trên database thử RHM_Hospital_Test_.'}

@@ -1,4 +1,13 @@
 # Helper cho bộ nghiệm thu, không ghi dữ liệu SQL hay sửa file nguồn.
+# Nạp bằng dot-source; các hàm phối hợp log, baseline Git, manifest nguồn và proof kho ảnh.
+<#
+.SYNOPSIS
+Đánh giá kết quả bằng mã thoát, dòng FAIL, số ca kiểm và marker bắt buộc trong log.
+.DESCRIPTION
+Summary đọc RESULT; Lines đếm dòng PASS; Marker yêu cầu bằng chứng thao tác.
+.OUTPUTS
+Đối tượng Status, Passed, Failed và Reason; chỉ PASS khi mọi điều kiện đều đạt.
+#>
 function Get-P6Outcome {
  param([string]$Log,[int]$ExitCode,[ValidateSet('Summary','Lines','Marker')][string]$Mode='Summary',[int]$MinimumPassed=1,[string[]]$RequiredPatterns=@())
  $body=[IO.File]::ReadAllText($Log)
@@ -16,6 +25,14 @@ function Get-P6Outcome {
  foreach($pattern in $RequiredPatterns){if(![regex]::IsMatch($body,$pattern,[Text.RegularExpressions.RegexOptions]::Multiline)){$reasons.Add('Thiếu marker: '+$pattern)}}
  [pscustomobject]@{Status=if($reasons.Count){'FAIL'}else{'PASS'};Passed=$passedCount;Failed=$failedCount;Reason=$reasons -join '; '}
 }
+<#
+.SYNOPSIS
+Chạy script con ở tiến trình PowerShell riêng, lưu log mới và đánh giá bằng Get-P6Outcome.
+.DESCRIPTION
+ToolArgs được truyền nguyên mảng; Directory chứa log theo Name và không được có log cùng tên.
+.OUTPUTS
+Kết quả bước kiểm gồm mã thoát, trạng thái, lý do, đường dẫn log và thời lượng.
+#>
 function Invoke-P6Tool {
  param([string]$Name,[string]$Tool,[string[]]$ToolArgs=@(),[string]$Directory,[string]$Mode='Summary',[int]$MinimumPassed=1,[string[]]$RequiredPatterns=@())
  if($Name -notmatch '^[A-Za-z0-9_-]+$'){throw 'Tên bước không hợp lệ.'}
@@ -26,6 +43,16 @@ function Invoke-P6Tool {
  $outcome=Get-P6Outcome -Log $log -ExitCode $childExit -Mode $Mode -MinimumPassed $MinimumPassed -RequiredPatterns $RequiredPatterns
  [pscustomobject]@{Name=$Name;Status=$outcome.Status;ExitCode=$childExit;Passed=$outcome.Passed;Failed=$outcome.Failed;Reason=$outcome.Reason;Log=$log;StartedUtc=$started;DurationSeconds=[Math]::Round(([DateTime]::UtcNow-$started).TotalSeconds,2)}
 }
+<#
+.SYNOPSIS
+Xuất nguyên byte SQL từ commit baseline cố định và xác minh hash sau chuẩn hóa CRLF.
+.PARAMETER Root
+Gốc repository để git cat-file đọc blob đã khóa.
+.PARAMETER Destination
+Tệp đích chưa tồn tại, dùng lưu bản baseline phục vụ kiểm nâng cấp.
+.OUTPUTS
+Commit, đường dẫn, hash blob/hash CRLF và số byte của baseline đã xác minh.
+#>
 function Export-P6Baseline {
  param([string]$Root,[string]$Destination)
  $sha='1cafa7d2096a3e954d381e473520cba8bab4b9dd'
@@ -46,16 +73,40 @@ function Export-P6Baseline {
  if($normalized -ne '1EEB1EF8232485C86B18700BB12A81149268D9B7E495E64F6E6E06541BA56BCB'){throw 'SQL baseline không khớp nguồn CRLF đã khóa trước P1.'}
  [pscustomobject]@{Commit=$sha;Path=$Destination;BlobSha256=(Get-FileHash -LiteralPath $Destination -Algorithm SHA256).Hash;CrlfSha256=$normalized;Bytes=$raw.Length}
 }
+<#
+.SYNOPSIS
+Lập danh sách đường dẫn, kích thước và SHA-256 của nguồn sản phẩm/công cụ và solution.
+.DESCRIPTION
+Bỏ bin/obj, sắp theo đường dẫn để so sánh nguồn trước và sau nghiệm thu hoặc đóng gói.
+.OUTPUTS
+Các mục Path tương đối với Root, Bytes và Sha256.
+#>
 function Get-P6SourceManifest {
  param([string]$Root)
  $files=@(foreach($folder in @('ET','DAL','BUS','RangHamMat.Wpf','Database','tools')){Get-ChildItem -LiteralPath (Join-Path $Root $folder) -File -Recurse | Where-Object {$_.FullName -notmatch '[\\/](obj|bin)[\\/]' -and $_.Name -match '\.(cs|xaml|csproj|json|sql|ps1|cs\.txt)$'}})
  $files+=Get-Item -LiteralPath (Join-Path $Root 'BenhVienRangHamMat.sln')
  @($files|Sort-Object FullName|ForEach-Object {[pscustomobject]@{Path=$_.FullName.Substring($Root.Length+1).Replace('\','/');Bytes=$_.Length;Sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash}})
 }
+<#
+.SYNOPSIS
+Ghi đối tượng kết quả thành JSON UTF-8 không BOM, với độ sâu tối đa 12.
+.DESCRIPTION
+Path do nơi gọi quản lý; WriteAllText sẽ thay nội dung nếu tệp đã tồn tại.
+#>
 function Write-P6Json {
  param([string]$Path,[object]$Value)
  [IO.File]::WriteAllText($Path,($Value|ConvertTo-Json -Depth 12),[Text.UTF8Encoding]::new($false))
 }
+<#
+.SYNOPSIS
+Đối chiếu hai proof khác hostname cùng nguồn SQL, kho UNC, metadata và số ảnh đã kiểm.
+.PARAMETER First
+Tệp JSON proof từ máy thứ nhất.
+.PARAMETER Second
+Tệp JSON proof từ máy thứ hai, cùng fixture và kho ảnh.
+.OUTPUTS
+PASS_SHARED_STORAGE hoặc FAIL kèm lý do; kết quả chỉ xác nhận phạm vi kho dùng chung.
+#>
 function Compare-P6StorageProof {
  param([string]$First,[string]$Second)
  $reasons=[Collections.Generic.List[string]]::new()

@@ -14,6 +14,9 @@ namespace RangHamMat.Views;
 public sealed record InvoicePrintLine(string Description, decimal SoLuong, decimal DonGia, decimal ThanhTien,
     IReadOnlyList<string> MaCTPX)
 {
+    /// <summary>
+    /// Số thứ tự dùng để đánh dấu dòng trên chứng từ hóa đơn.
+    /// </summary>
     public int Number { get; init; }
     /// <summary>
     /// Đơn vị.

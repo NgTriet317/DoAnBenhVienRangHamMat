@@ -1,3 +1,14 @@
+<#
+.SYNOPSIS
+Chạy form WPF thật để kiểm bảo trì, thanh lý thiết bị và đồng bộ dữ liệu hiển thị.
+.DESCRIPTION
+Dựng project tạm trong obj/ThanhLyUiChecks. Bộ kiểm có commit hồ sơ thiết bị/thanh lý
+trên database thử, giữ dữ liệu để kiểm chạy lại SQL và xuất ảnh làm bằng chứng.
+.PARAMETER Database
+Database thử đã có schema và dữ liệu nền, với tiền tố RHM_Hospital_Test_.
+.PARAMETER MayChu
+SQL Server dùng cho các thao tác form trong bộ kiểm.
+#>
 param([string]$Database='RHM_Hospital_Test_AssetDisposal_20261105',[string]$MayChu='.')
 $ErrorActionPreference='Stop'
 if($Database -notmatch '^RHM_Hospital_Test_[A-Za-z0-9_]+$'){throw 'Chỉ chạy trên database kiểm thử cách ly.'}

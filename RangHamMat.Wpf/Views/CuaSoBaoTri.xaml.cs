@@ -85,6 +85,12 @@ public partial class CuaSoBaoTri : UserControl, IBieuMauLuu
         {
             error = "Chỉ sửa nội dung phiếu chưa xác nhận."; return false;
         }
+        if(!KiemTraNhapLieu.PrepareSave(TruongNhap,out error))return false;
+        if(xacNhan && KiemTraNhapLieu.ReadDate(dpBatDau) is DateTime start && start.Date>DateTime.Today)
+        {
+            var input=new LoiNhapLieu("NgayBatDau","Chưa đến ngày bắt đầu dự kiến. Lưu chưa xác nhận hoặc chọn ngày bắt đầu đã đến để xác nhận phiếu.");
+            error=input.Message;KiemTraNhapLieu.MarkError(this,input);return false;
+        }
         var thietBi = DuLieuGiaoDien.Find("THIET_BI", maThietBi);
         if (maThietBi.Length == 0 || thietBi is null)
         {
@@ -100,6 +106,22 @@ public partial class CuaSoBaoTri : UserControl, IBieuMauLuu
         var success = BieuMauHoSo.TrySave(this, out _, out error);
         if (!success) txtTrangThai.Text = "Chưa xác nhận";
         return success;
+    }
+
+    /// <summary>Đối chiếu ngày tiếp theo với ngày bắt đầu khi rời ô, giữ ngày trống nếu không lập lịch tiếp.</summary>
+    private void Schedule_LostKeyboardFocus(object sender,System.Windows.Input.KeyboardFocusChangedEventArgs e)
+    {
+        if(sender is not DatePicker field || field.IsKeyboardFocusWithin || !TruongNhap.IsEnabled)return;
+        try
+        {
+            KiemTraNhapLieu.ValidateValues("BAO_TRI_THIET_BI",new Dictionary<string,object?> {["NgayBatDau"]=KiemTraNhapLieu.ReadDate(dpBatDau),["NgayBaoTriTiepTheo"]=KiemTraNhapLieu.ReadDate(dpTiepTheo)});
+            KiemTraNhapLieu.SetError(dpTiepTheo,"");
+        }
+        catch(LoiNhapLieu ex)
+        {
+            if(ex.Field=="NgayBaoTriTiepTheo")KiemTraNhapLieu.SetError(dpTiepTheo,ex.Message);
+            else if(ex.Field=="NgayBatDau")KiemTraNhapLieu.SetError(dpBatDau,ex.Message);
+        }
     }
 
     /// <summary>

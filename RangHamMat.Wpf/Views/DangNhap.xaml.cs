@@ -13,12 +13,19 @@ namespace RangHamMat.Views;
 /// </summary>
 public partial class DangNhap : Window
 {
+    /// <summary>
+    /// Dịch vụ thiết lập định danh, phiên nhật ký và ghi nhớ sau khi xác thực tài khoản.
+    /// </summary>
     private readonly DichVuDangNhap dichVu;
     /// <summary>
     /// Khởi tạo hộp thoại đăng nhập từ XAML.
     /// </summary>
     public DangNhap() : this(new DichVuDangNhap()) { }
 
+    /// <summary>
+    /// Nạp hộp thoại với dịch vụ đăng nhập do ứng dụng cung cấp.
+    /// </summary>
+    /// <param name="dichVu">Dịch vụ dùng chung với luồng khôi phục và đăng xuất của ứng dụng.</param>
     internal DangNhap(DichVuDangNhap dichVu)
     {
         this.dichVu = dichVu;

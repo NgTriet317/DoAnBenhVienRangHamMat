@@ -1,3 +1,16 @@
+<#
+.SYNOPSIS
+Kiểm toàn bộ chuỗi sao lưu SQL và ảnh, phục hồi riêng, rồi mở ảnh qua ứng dụng.
+.DESCRIPTION
+Chỉ nhận fixture RHM_Hospital_Test_. Kiểm kho trước sao lưu, phục hồi sang database
+và thư mục khác, thử từ chối database đích đã có rồi chạy kiểm BUS/giao diện sau phục hồi.
+.PARAMETER Database
+Database fixture nguồn đã có metadata ảnh và kho tương ứng.
+.PARAMETER ThuMucKho
+Kho ảnh nguồn; bộ kiểm cho phép kho cục bộ để chạy fixture.
+.PARAMETER MayChu
+SQL Server thực hiện sao lưu và phục hồi database thử.
+#>
 param([Parameter(Mandatory=$true)][string]$Database,[Parameter(Mandatory=$true)][string]$ThuMucKho,[string]$MayChu='.')
 $ErrorActionPreference='Stop'
 if($Database -notmatch '^RHM_Hospital_Test_[A-Za-z0-9_]+$'){throw 'Chỉ sao lưu/phục hồi fixture cách ly.'}

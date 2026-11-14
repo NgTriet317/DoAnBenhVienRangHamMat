@@ -74,9 +74,12 @@ public partial class BaoTri : UserControl
         if (!sanSang) return;
         try
         {
-            var tuNgay = KiemTraNhapLieu.ReadDate(dpTuNgay);
-            var denNgay = KiemTraNhapLieu.ReadDate(dpDenNgay);
-            if (tuNgay > denNgay) throw new InvalidOperationException("Ngày kết thúc bộ lọc phải từ ngày bắt đầu trở đi.");
+            if(!ReadFilterDates(dpTuNgay,dpDenNgay,out var tuNgay,out var denNgay))return;
+            if(cboTrangThai.SelectedIndex<0)
+            {
+                KiemTraNhapLieu.SetError(cboTrangThai,"Chọn trạng thái trong danh sách, hoặc chọn Tất cả trạng thái để bỏ lọc.");return;
+            }
+            KiemTraNhapLieu.SetError(cboTrangThai,"");
             var tuKhoa = txtTimKiem.Text.Trim();
             var trangThai = cboTrangThai.SelectedItem as string;
             var maDaChon = (Grid_BAO_TRI_THIET_BI.SelectedItem as DongBaoTri)?.MaBT;
@@ -119,6 +122,20 @@ public partial class BaoTri : UserControl
     /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
     /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void BoLoc_ThayDoi(object sender, RoutedEventArgs e) => LocDanhSach();
+
+    private static bool ReadFilterDates(DatePicker start,DatePicker end,out DateTime? from,out DateTime? to)
+    {
+        from=to=null;var valid=true;
+        try{from=KiemTraNhapLieu.ReadDate(start);KiemTraNhapLieu.SetError(start,"");}
+        catch(LoiNhapLieu ex){KiemTraNhapLieu.SetError(start,ex.Message);valid=false;}
+        try{to=KiemTraNhapLieu.ReadDate(end);KiemTraNhapLieu.SetError(end,"");}
+        catch(LoiNhapLieu ex){KiemTraNhapLieu.SetError(end,ex.Message);valid=false;}
+        if(valid&&from>to)
+        {
+            KiemTraNhapLieu.SetError(end,"Đến ngày phải bằng hoặc sau Từ ngày. Chọn lại ngày kết thúc, hoặc để trống để không giới hạn ngày.");valid=false;
+        }
+        return valid;
+    }
     /// <summary>
     /// Tiếp nhận thay đổi tìm thiết bị và cập nhật trạng thái/dữ liệu phụ thuộc.
     /// </summary>

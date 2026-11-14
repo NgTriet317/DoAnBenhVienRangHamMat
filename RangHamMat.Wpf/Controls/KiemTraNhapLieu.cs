@@ -4,10 +4,12 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Input;
 using System.Xml.Linq;
+using System.Net.Mail;
 
 namespace RangHamMat.Controls;
 
@@ -33,6 +35,8 @@ public static class KiemTraNhapLieu
     /// Định danh dependency property đánh dấu ngày không hợp lệ được giữ trong phạm vi lớp để các thao tác dùng lại.
     /// </summary>
     private static readonly DependencyProperty InvalidDateProperty=DependencyProperty.RegisterAttached("InvalidDate",typeof(string),typeof(KiemTraNhapLieu),new PropertyMetadata(""));
+    private static readonly DependencyProperty CalendarChoiceProperty=DependencyProperty.RegisterAttached("CalendarChoice",typeof(bool),typeof(KiemTraNhapLieu),new PropertyMetadata(false));
+    private static readonly DependencyProperty CalendarOwnerProperty=DependencyProperty.RegisterAttached("CalendarOwner",typeof(DatePicker),typeof(KiemTraNhapLieu));
     /// <summary>
     /// Định danh dependency property lưu thông báo lỗi trên điều khiển được giữ trong phạm vi lớp để các thao tác dùng lại.
     /// </summary>
@@ -41,6 +45,16 @@ public static class KiemTraNhapLieu
     /// Định danh dependency property cho trạng thái có lỗi được giữ trong phạm vi lớp để các thao tác dùng lại.
     /// </summary>
     public static readonly DependencyProperty HasErrorProperty = DependencyProperty.RegisterAttached("HasError", typeof(bool), typeof(KiemTraNhapLieu), new PropertyMetadata(false));
+    public static readonly DependencyProperty HintProperty = DependencyProperty.RegisterAttached("Hint", typeof(string), typeof(KiemTraNhapLieu), new PropertyMetadata(""));
+    private static readonly DependencyProperty FieldValidatorProperty = DependencyProperty.RegisterAttached("FieldValidator", typeof(Action), typeof(KiemTraNhapLieu));
+    public static void SetFieldValidator(FrameworkElement field, Action validate) => field.SetValue(FieldValidatorProperty, validate);
+    public static bool RecheckField(FrameworkElement field)
+    {
+        try { ValidateField(field); SetError(field, ""); return true; }
+        catch (LoiNhapLieu ex) { SetError(field, ex.Message); return false; }
+    }
+    private static bool HasFieldValidator(FrameworkElement field) => field.GetValue(FieldValidatorProperty) is Action;
+    public static string GetHint(DependencyObject target) => (string)target.GetValue(HintProperty);
     /// <summary>Cờ cho trigger XAML đổi viền khi có lỗi nhập liệu.</summary>
     public static bool GetHasError(DependencyObject target) => (bool)target.GetValue(HasErrorProperty);
     /// <summary>Gán cờ lỗi; SetError đồng bộ cờ này với nội dung thông báo.</summary>
@@ -48,7 +62,37 @@ public static class KiemTraNhapLieu
     /// <summary>Đọc lỗi của ô nhập để trigger XAML hiện viền đỏ và tooltip hướng dẫn sửa.</summary>
     public static string GetError(DependencyObject target) => (string)target.GetValue(ErrorProperty);
     /// <summary>Đặt/xóa lỗi tại control hiện hữu; không tạo control bằng C#.</summary>
-    public static void SetError(DependencyObject target, string value) { target.SetValue(ErrorProperty, value); SetHasError(target, value.Length > 0); }
+    public static void SetError(DependencyObject target, string value)
+    {
+        target.SetValue(ErrorProperty, value);
+        target.SetValue(HintProperty, value.Length == 0 ? "" : CorrectionHint(target));
+        SetHasError(target, value.Length > 0);
+    }
+
+    private static string CorrectionHint(DependencyObject target)
+    {
+        if (target is not FrameworkElement field) return "Kiểm tra và nhập lại theo thông báo trên.";
+        var key = FieldName(field);
+        if (field.Tag is string time && time.StartsWith("Time:")) return "Nhập giờ dạng HH:mm, ví dụ 08:30; giờ từ 00:00 đến 23:59.";
+        if (field is DatePicker) return "Chọn ngày trên lịch hoặc nhập dd/MM/yyyy, ví dụ 25/10/2026; kiểm tra thứ tự các ngày liên quan.";
+        if (field is ComboBox) return "Chọn một giá trị có sẵn trong danh sách; tải lại danh mục nếu lựa chọn không còn sử dụng.";
+        if (key is "SDT" or "DienThoai") return "Nhập 8–15 chữ số, ví dụ 0901234567 hoặc +84 901 234 567; có thể để trống nếu chưa có.";
+        if (key == "Email") return "Nhập địa chỉ email đầy đủ, ví dụ lienhe@example.com, không có khoảng trắng hoặc dấu chấm liên tiếp.";
+        if (key == "HoTenBN") return "Nhập họ tên bằng chữ có dấu hoặc không dấu; có thể dùng khoảng trắng, dấu nháy, chấm hoặc gạch nối.";
+        if (key == "NhomMau") return "Nhập A, B, AB hoặc O, có thể kèm + hoặc −, ví dụ AB+; để trống nếu chưa xác định.";
+        if (key == "MaBHYT") return "Nhập mã chữ/số đúng trên thẻ bảo hiểm, không dùng khoảng trắng hay ký hiệu; để trống nếu chưa có thông tin.";
+        var parts = (field.Tag as string ?? "").Replace("DB:", "").Split('.');
+        if (parts.Length == 2 && rules.TryGetValue(parts[0], out var columns) && columns.TryGetValue(parts[1], out var column))
+        {
+            var type = (string?)column.Attribute("Kieu");
+            var size = (string?)column.Attribute("QuyCach") ?? "";
+            if (type == "int") return "Nhập số nguyên trong giới hạn cho phép, ví dụ 1; không dùng dấu phân cách hoặc phần thập phân.";
+            if (type is "decimal" or "numeric") return "Nhập số không âm, tối đa " + size.Split(',').Last() + " chữ số lẻ; dùng dấu phẩy hoặc chấm cho phần lẻ, không dùng phân cách hàng nghìn.";
+            if (type == "time") return "Nhập giờ dạng HH:mm, ví dụ 08:30; giờ từ 00:00 đến 23:59.";
+            return "Nhập nội dung" + (int.TryParse(size, out var limit) ? " tối đa " + limit + " ký tự" : "") + "; trường bắt buộc phải có nội dung, không chỉ khoảng trắng.";
+        }
+        return "Nhập lại theo định dạng và giới hạn trong thông báo trên.";
+    }
 
     /// <summary>Nạp metadata cột được trích từ SQL: kiểu, nullable, độ dài và precision/scale; không cần kết nối database.</summary>
     private static Dictionary<string, Dictionary<string, XElement>> LoadRules()
@@ -66,31 +110,22 @@ public static class KiemTraNhapLieu
         if (registered) return;
         registered = true;
         EventManager.RegisterClassHandler(typeof(DatePicker), FrameworkElement.LoadedEvent, new RoutedEventHandler(DateLoaded));
+        // Xóa trạng thái ngày gõ sai trước khi biểu mẫu kiểm tra ngày mới và khoảng ngày liên quan.
+        EventManager.RegisterClassHandler(typeof(DatePicker), DatePicker.SelectedDateChangedEvent, new EventHandler<SelectionChangedEventArgs>(DateSelected));
         // AI bổ sung: cả form đang hoạt động và form mẫu có Tag DB hợp lệ đều được kiểm tra khi rời ô nhập.
-        foreach(var type in new[]{typeof(TextBox),typeof(ComboBox),typeof(DatePicker),typeof(PasswordBox)})
+        foreach(var type in new[]{typeof(TextBox),typeof(ComboBox),typeof(DatePicker),typeof(PasswordBox),typeof(CheckBox)})
             EventManager.RegisterClassHandler(type,Keyboard.LostKeyboardFocusEvent,new KeyboardFocusChangedEventHandler(FieldLostFocus));
+        EventManager.RegisterClassHandler(typeof(TextBox), TextBox.TextChangedEvent, new TextChangedEventHandler(ErroredTextChanged));
     }
     /// <summary>AI tạo: kiểm tra một ô theo Tag DB khi người dùng rời ô; lỗi xuất hiện ở viền/tooltip và vùng thông báo có sẵn.</summary>
     private static void FieldLostFocus(object sender,KeyboardFocusChangedEventArgs e)
     {
         if(sender is not FrameworkElement field || !field.IsEnabled || field.IsKeyboardFocusWithin || field is TextBox {IsReadOnly:true} ||
-            field.Tag is not string tag || !tag.StartsWith("DB:")) return;
-        var parts=tag[3..].Split('.');
-        if(parts.Length!=2)return;
+            !HasFieldValidator(field) && (field.Tag is not string tag || !(tag.StartsWith("DB:") || tag.StartsWith("Time:")))) return;
         try
         {
             var previous=GetError(field);
-            var value=field switch
-            {
-                TextBox text=>text.Text.Trim(),
-                DatePicker date=>ReadDate(date),
-                ComboBox box=>box.ItemsSource is null ? (box.SelectedItem as ComboBoxItem)?.Content : box.SelectedValue,
-                PasswordBox password=>password.Password,
-                _=>null
-            };
-            if(rules.TryGetValue(parts[0],out var columns) && columns.ContainsKey(parts[1]))
-                ValidateValues(parts[0],new Dictionary<string,object?> {[parts[1]]=value});
-            else ValidatePrototypeField(field,parts[1],value);
+            ValidateField(field);
             SetError(field,"");
             var form=Ancestors(field).OfType<UserControl>().FirstOrDefault();
             var label=form is null?null:Elements(form).OfType<TextBlock>().FirstOrDefault(x=>x.Name is "FormError" or "Feedback" or "PageStatus");
@@ -102,6 +137,45 @@ public static class KiemTraNhapLieu
             var form=Ancestors(field).OfType<UserControl>().FirstOrDefault();
             if(form is not null) ShowError(form,ex.Message);
         }
+    }
+
+    private static void ErroredTextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (sender is not TextBox field || !GetHasError(field) || field.IsReadOnly || !field.IsEnabled || !HasFieldValidator(field) && (field.Tag is not string tag || !tag.StartsWith("DB:"))) return;
+        try { ValidateField(field); SetError(field, ""); }
+        catch (LoiNhapLieu ex) { SetError(field, ex.Message); }
+    }
+
+    private static object? ReadField(FrameworkElement field) => field switch
+    {
+        TextBox text => text.Text.Trim(), DatePicker date => ReadDate(date),
+        ComboBox box => box.ItemsSource is null ? (box.SelectedItem as ComboBoxItem)?.Content ?? box.SelectedItem : box.SelectedValue ?? box.SelectedItem,
+        PasswordBox password => password.Password, _ => null
+    };
+
+    private static void ValidateField(FrameworkElement field)
+    {
+        ValidateStoredField(field);
+        if (field.GetValue(FieldValidatorProperty) is Action validate) validate();
+    }
+
+    private static void ValidateStoredField(FrameworkElement field)
+    {
+        if (field.Tag is not string tag) return;
+        var parts = tag[(tag.IndexOf(':') + 1)..].Split('.');
+        if (parts.Length != 2) return;
+        if (tag.StartsWith("Time:") && field is TextBox time)
+        {
+            if (!TimeSpan.TryParseExact(time.Text.Trim(), new[] { @"h\:mm", @"hh\:mm" }, CultureInfo.InvariantCulture, out var clock) || clock >= TimeSpan.FromDays(1))
+                throw new LoiNhapLieu(tag, "Giờ không hợp lệ. Nhập HH:mm từ 00:00 đến 23:59, ví dụ 08:30.");
+            return;
+        }
+        if (field is ComboBox combo && (combo.IsEditable && combo.SelectedIndex < 0 && !string.IsNullOrWhiteSpace(combo.Text) || combo.SelectedIndex >= 0 && !combo.Items.Contains(combo.SelectedItem)))
+            throw new LoiNhapLieu(parts[1], InputLabel(field) + " không có trong danh sách. Hãy chọn một lựa chọn có sẵn.");
+        var value = ReadField(field);
+        if (rules.TryGetValue(parts[0], out var columns) && columns.ContainsKey(parts[1]))
+            ValidateValues(parts[0], new Dictionary<string, object?> { [parts[1]] = value });
+        else ValidatePrototypeField(field, parts[1], value);
     }
 
     /// <summary>AI tạo: form mẫu còn Tag cũ vẫn kiểm tra trường đánh dấu *, định dạng số/ngày và độ dài theo tên trường chung; không biến Tag cũ thành cột SQL.</summary>
@@ -139,7 +213,7 @@ public static class KiemTraNhapLieu
         picker.DateValidationError += DateError;
         picker.PreviewTextInput -= EditingDate; picker.PreviewTextInput += EditingDate;
         picker.PreviewKeyDown -= DeletingDate; picker.PreviewKeyDown += DeletingDate;
-        picker.SelectedDateChanged -= DateSelected; picker.SelectedDateChanged += DateSelected;
+        picker.CalendarOpened -= CalendarOpened; picker.CalendarOpened += CalendarOpened;
         picker.CalendarClosed -= CalendarClosed; picker.CalendarClosed += CalendarClosed;
         DataObject.RemovePastingHandler(picker,PastingDate); DataObject.AddPastingHandler(picker,PastingDate);
     }
@@ -152,7 +226,35 @@ public static class KiemTraNhapLieu
     /// <summary>AI tạo: chọn ngày mới bằng lịch xóa lỗi của chuỗi ngày cũ.</summary>
     private static void DateSelected(object? sender,SelectionChangedEventArgs e) {if(sender is DatePicker picker){picker.SetValue(InvalidDateProperty,"");SetError(picker,"");}}
     /// <summary>AI tạo: chọn lại ngày trên lịch xác nhận lựa chọn hợp lệ kể cả khi chọn cùng ngày đang lưu.</summary>
-    private static void CalendarClosed(object? sender,RoutedEventArgs e) {if(sender is DatePicker picker){picker.SetValue(InvalidDateProperty,"");SetError(picker,"");}}
+    private static void CalendarClosed(object? sender,RoutedEventArgs e)
+    {
+        if(sender is not DatePicker picker || picker.GetValue(CalendarChoiceProperty) is not true || string.IsNullOrEmpty((string)picker.GetValue(InvalidDateProperty)) || picker.SelectedDate is not DateTime selected)return;
+        picker.SetValue(InvalidDateProperty,"");
+        picker.Text=selected.ToString("d",new CultureInfo(picker.Language.IetfLanguageTag,true));
+        // Chọn lại cùng ngày cũng là xác nhận sửa, dù giá trị SelectedDate không thay đổi.
+        picker.RaiseEvent(new ConfirmedDateEventArgs(selected));
+    }
+
+    private sealed class ConfirmedDateEventArgs(DateTime selected)
+        : SelectionChangedEventArgs(DatePicker.SelectedDateChangedEvent,Array.Empty<object>(),new object[]{selected})
+    {
+        protected override void InvokeEventHandler(Delegate handler,object target)
+            => ((EventHandler<SelectionChangedEventArgs>)handler)(target,this);
+    }
+
+    private static void CalendarOpened(object? sender,RoutedEventArgs e)
+    {
+        if(sender is not DatePicker picker)return;
+        picker.SetValue(CalendarChoiceProperty,false);
+        if(picker.Template.FindName("PART_Popup",picker) is not Popup { Child: DependencyObject child })return;
+        var calendar=Elements(child).OfType<System.Windows.Controls.Calendar>().FirstOrDefault();
+        if(calendar is null || calendar.GetValue(CalendarOwnerProperty) is not null)return;
+        calendar.SetValue(CalendarOwnerProperty,picker);
+        bool IsDay(object source)=>source is DependencyObject node && new[]{node}.Concat(Ancestors(node)).OfType<CalendarDayButton>().Any(day=>day.IsEnabled&&!day.IsBlackedOut);
+        calendar.AddHandler(Mouse.PreviewMouseUpEvent,new MouseButtonEventHandler((_,args)=>{if(args.ChangedButton==MouseButton.Left&&IsDay(args.OriginalSource))picker.SetValue(CalendarChoiceProperty,true);}),true);
+        calendar.AddHandler(ButtonBase.ClickEvent,new RoutedEventHandler((_,args)=>{if(IsDay(args.OriginalSource))picker.SetValue(CalendarChoiceProperty,true);}),true);
+        calendar.AddHandler(Keyboard.PreviewKeyDownEvent,new KeyEventHandler((_,args)=>{if(args.Key is Key.Enter or Key.Space && calendar.DisplayMode==CalendarMode.Month && calendar.SelectedDate is not null && Keyboard.FocusedElement is DependencyObject focused && IsDay(focused))picker.SetValue(CalendarChoiceProperty,true);}),true);
+    }
 
     /// <summary>Thông báo ngày không tồn tại/ngoài phạm vi thay vì âm thầm sử dụng ngày đã chọn trước đó.</summary>
     private static void DateError(object? sender, DatePickerDateValidationErrorEventArgs e)
@@ -163,8 +265,7 @@ public static class KiemTraNhapLieu
         var message = InputLabel(picker) + ": ngày không hợp lệ. Chọn lại ngày trên lịch hoặc nhập ngày/tháng/năm, ví dụ 25/10/2026.";
         SetError(picker, message);
         var parent = Ancestors(picker).OfType<UserControl>().FirstOrDefault();
-        if (parent is null || !ShowError(parent, message))
-            MessageBox.Show(message, "Kiểm tra ngày nhập", MessageBoxButton.OK, MessageBoxImage.Warning);
+        if (parent is not null) ShowError(parent, message);
     }
 
     /// <summary>Kiểm tra riêng các giá trị có trong dữ liệu form; bỏ khóa tự sinh/computed và giữ quyền bỏ trống cột nullable.</summary>
@@ -181,21 +282,25 @@ public static class KiemTraNhapLieu
                 if (!(bool)column.Attribute("ChoTrong")!) throw new LoiNhapLieu(field, "Vui lòng nhập/chọn " + label + ".");
                 continue;
             }
+            if(text.All(ch=>char.IsWhiteSpace(ch)||char.GetUnicodeCategory(ch)==UnicodeCategory.Format))
+                throw new LoiNhapLieu(field,label+" chỉ chứa ký tự trống hoặc vô hình. Xóa ký tự lạ và nhập nội dung rõ ràng.");
             var type = (string)column.Attribute("Kieu")!;
             var size = (string)column.Attribute("QuyCach")!;
             if (type is "nvarchar" or "varchar")
             {
+                if (text.Any(ch => char.IsControl(ch) && ch is not ('\r' or '\n' or '\t')))
+                    throw new LoiNhapLieu(field, label + " chứa ký tự điều khiển không hợp lệ. Xóa ký tự lạ và nhập lại nội dung.");
                 if (int.TryParse(size, out var limit) && text.Length > limit)
                     throw new LoiNhapLieu(field, label + " tối đa " + limit + " ký tự.");
             }
-            if (type == "int" && !int.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out _))
+            if (type == "int" && (!Regex.IsMatch(text, @"^-?[0-9]+$") || !int.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out _)))
                 throw new LoiNhapLieu(field, label + " phải là số nguyên trong phạm vi cho phép.");
             if (type is "decimal" or "numeric")
             {
                 var parts = size.Split(',').Select(int.Parse).ToArray();
-                if (!decimal.TryParse(text.Replace(',', '.'), NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var number))
+                if (!Regex.IsMatch(text, @"^-?[0-9]+(?:[.,][0-9]+)?$") || !decimal.TryParse(text.Replace(',', '.'), NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var number))
                     throw new LoiNhapLieu(field, label + " phải là số hợp lệ; dùng dấu phẩy hoặc chấm cho phần lẻ, không nhập phân cách hàng nghìn.");
-                if (decimal.Round(number, parts[1]) != number)
+                if (decimal.Round(number, parts[1]) != number || value is string && text.IndexOfAny(new[] { '.', ',' }) is var separator && separator >= 0 && text.Length - separator - 1 > parts[1])
                     throw new LoiNhapLieu(field, label + " tối đa " + parts[1] + " chữ số thập phân.");
                 var maximum = 1m;
                 for (var n = 0; n < parts[0] - parts[1]; n++) maximum *= 10;
@@ -226,8 +331,18 @@ public static class KiemTraNhapLieu
                 if (!Regex.IsMatch(text, @"^\+?[0-9 ()\-.]+$") || digits is < 8 or > 15)
                     throw new LoiNhapLieu(field, label + " cần 8–15 chữ số; chỉ dùng số, dấu + ở đầu, khoảng trắng, dấu ngoặc, chấm hoặc gạch nối.");
             }
-            if (field == "Email" && !Regex.IsMatch(text, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            if (field == "Email" && (!MailAddress.TryCreate(text, out var address) || address.Address != text || !Regex.IsMatch(text, @"^[^@\s]+@[^@\s]+\.[^@\s]+$") || text.Contains("..") || text.StartsWith('.') || text.Contains(".@") || text.Contains("@.") || text.EndsWith('.')))
                 throw new LoiNhapLieu(field, label + " không đúng định dạng, ví dụ ten@example.com.");
+            if (table == "BENH_NHAN" && field == "HoTenBN" && (!text.Any(char.IsLetter) || !Regex.IsMatch(text, @"^[\p{L}\p{M} .'’\-]+$")))
+                throw new LoiNhapLieu(field, "Họ tên bệnh nhân phải có chữ; không nhập số, biểu tượng hoặc ký tự đặc biệt. Ví dụ Nguyễn Văn An.");
+            if (table == "BENH_NHAN" && field == "NhomMau" && !Regex.IsMatch(text.Replace('−', '-').Replace(" ", ""), @"^(?:AB|A|B|O)[+-]?$", RegexOptions.IgnoreCase))
+                throw new LoiNhapLieu(field, "Nhóm máu không đúng định dạng. Nhập A, B, AB hoặc O, có thể kèm + hoặc −; để trống nếu chưa xác định.");
+            if (table == "BENH_NHAN" && field == "GioiTinh" && text is not ("Nam" or "Nữ" or "Khác"))
+                throw new LoiNhapLieu(field, "Giới tính không hợp lệ. Chọn Nam, Nữ hoặc Khác trong danh sách.");
+            if(table=="BENH_NHAN"&&field=="MaBHYT"&&!Regex.IsMatch(text,@"^[A-Za-z0-9]+$"))
+                throw new LoiNhapLieu(field,"Mã BHYT chỉ gồm chữ và số. Nhập đúng mã trên thẻ, hoặc để trống nếu chưa có thông tin.");
+            if(table=="NHA_CUNG_CAP"&&field is "TenNCC" or "NguoiLienHe"&&!text.Any(char.IsLetter))
+                throw new LoiNhapLieu(field,label+" phải có chữ để nhận diện. Nhập tên đầy đủ, không chỉ nhập số hoặc ký hiệu.");
         }
         CheckDates(table, values, "NgayBatDau", "NgayDuKienKetThuc");
         CheckDates(table, values, "NgayHieuLuc", "NgayHetHieuLuc");
@@ -281,7 +396,10 @@ public static class KiemTraNhapLieu
         error = "";
         try
         {
-            var elements = Elements(root).OfType<FrameworkElement>().Distinct().Where(x => x.IsVisible && x.IsEnabled).ToArray();
+            var table = root is UserControl form ? BieuMauHoSo.GetTable(form) : "";
+            var elements = Elements(root).OfType<FrameworkElement>().Distinct().Where(x => x.IsEnabled &&
+                (x.IsVisible || root is FrameworkElement { IsVisible: false } && IsSectionAvailable(x,root) || table.Length > 0 && x.Tag is string tag && (tag.StartsWith("DB:" + table + ".") || tag.StartsWith("Time:" + table + ".")))).ToArray();
+            var failures = new List<(FrameworkElement Field, LoiNhapLieu Error)>();
             // Chỉ chốt ô đang gõ và còn chờ LostFocus; binding PropertyChanged đã tự cập nhật.
             // Không đẩy lại chữ cũ từ control vào model đã được code xử lý/cập nhật trực tiếp.
             foreach (var text in elements.OfType<TextBox>().Where(text=>text.IsKeyboardFocusWithin))
@@ -291,19 +409,58 @@ public static class KiemTraNhapLieu
             }
             foreach (var grid in elements.OfType<DataGrid>().Where(grid => !grid.IsReadOnly))
                 if (!grid.CommitEdit(DataGridEditingUnit.Cell, true) || !grid.CommitEdit(DataGridEditingUnit.Row, true))
-                    throw new LoiNhapLieu("", "Dòng đang sửa có dữ liệu sai. Kiểm tra số lượng, lần thứ và đơn giá trước khi lưu.");
+                    failures.Add((grid, new LoiNhapLieu("", "Dòng đang sửa có dữ liệu sai. Nhập lần thứ là số nguyên dương; số lượng dương và đơn giá không âm, không dùng phân cách hàng nghìn.")));
+            var groups = new Dictionary<string, Dictionary<string, (object? Value, FrameworkElement Control)>>();
             foreach (var element in elements)
             {
+                if (element is TextBox { IsReadOnly: true }) continue;
+                if (table.Length > 0 && element.Tag is string db && (db.StartsWith("DB:") || db.StartsWith("Time:")) && !db.StartsWith("DB:" + table + ".") && !db.StartsWith("Time:" + table + ".")) continue;
                 if (Validation.GetHasError(element))
                 {
                     var content=Validation.GetErrors(element).FirstOrDefault()?.ErrorContent as string;
                     var message = content is not null && (content.StartsWith("Nhập ")||content.StartsWith("Số ")||content.StartsWith("Đơn "))
                         ? content : InputLabel(element) + ": dữ liệu không đúng kiểu. Kiểm tra số/ngày đã nhập.";
-                    SetError(element, message); element.BringIntoView(); element.Focus();
-                    throw new LoiNhapLieu(FieldName(element), message);
+                    SetError(element, message);
+                    failures.Add((element, new LoiNhapLieu(FieldName(element), message)));
+                    continue;
                 }
-                if (element is DatePicker date) date.SelectedDate=ReadDate(date);
-                SetError(element, "");
+                try
+                {
+                    // Kiểm tra chữ gốc trước khi đọc binding hoặc chuyển số vào mô hình có kiểu.
+                    if (HasFieldValidator(element) || element.Tag is string tag && (tag.StartsWith("DB:") || tag.StartsWith("Time:"))) ValidateField(element);
+                    if (element is DatePicker date) date.SelectedDate = ReadDate(date);
+                    if (element.Tag is string path && path.StartsWith("DB:") && path[3..].Split('.') is [var owner, var column])
+                    {
+                        if (!groups.TryGetValue(owner, out var values)) groups[owner] = values = new();
+                        values[column] = (ReadField(element), element);
+                    }
+                    // Ô không có Tag được kiểm tra theo quy tắc nghiệp vụ riêng của biểu mẫu.
+                    if (HasFieldValidator(element) || element.Tag is string attached && (attached.StartsWith("DB:") || attached.StartsWith("Time:")) || element is DatePicker) SetError(element, "");
+                }
+                catch (LoiNhapLieu ex) { SetError(element, ex.Message); failures.Add((element, ex)); }
+            }
+            foreach (var (owner, inputs) in groups)
+            {
+                if (!rules.ContainsKey(owner)) continue;
+                var values = inputs.ToDictionary(x => x.Key, x => x.Value.Value);
+                while (values.Count > 0)
+                {
+                    try { ValidateValues(owner, values); break; }
+                    catch (LoiNhapLieu ex)
+                    {
+                        if (!inputs.TryGetValue(ex.Field, out var input)) throw;
+                        SetError(input.Control, ex.Message); failures.Add((input.Control, ex));
+                        values.Remove(ex.Field);
+                    }
+                }
+            }
+            if (failures.Count > 0)
+            {
+                var first = failures.OrderBy(x => x.Field.IsVisible ? 0 : 1).First();
+                error = first.Error.Message;
+                RevealField(first.Field);
+                ShowError(root, error);
+                return false;
             }
             return true;
         }
@@ -313,17 +470,37 @@ public static class KiemTraNhapLieu
     /// <summary>Đánh dấu đúng ô sai và cuộn cả ô cùng dòng lỗi vào vùng nhìn thấy.</summary>
     public static void MarkError(DependencyObject root, LoiNhapLieu error)
     {
+        var table=root is UserControl form?BieuMauHoSo.GetTable(form):"";
         var field = error.Field.Length==0 ? null : Elements(root).OfType<FrameworkElement>()
-            .Where(x => (FieldName(x) == error.Field || Equals(x.Tag, error.Field)) && x.IsVisible && x.IsEnabled)
-            .OrderBy(x => x.Tag is string tag && tag.StartsWith("Time:") ? 1 : 0).FirstOrDefault();
+            .Where(x => (FieldName(x) == error.Field || Equals(x.Tag, error.Field)) && x.IsEnabled && x is TextBox or ComboBox or DatePicker or PasswordBox or CheckBox)
+            .Where(x => table.Length==0 || x.Tag is not string tag || !tag.StartsWith("DB:") || tag.StartsWith("DB:"+table+"."))
+            .OrderBy(x=>x.IsVisible?0:1).ThenBy(x => x.Tag is string tag && tag.StartsWith("Time:") ? 1 : 0).FirstOrDefault();
         if (field is not null)
         {
-            field.Focus();
             SetError(field, error.Message);
-            var group = field.Parent is ContentControl { Tag: "InlineField" } wrapper ? wrapper : field;
-            group.UpdateLayout(); group.BringIntoView();
+            RevealField(field);
         }
         ShowError(root, error.Message);
+    }
+
+    private static void RevealField(FrameworkElement field)
+    {
+        foreach(var expander in Ancestors(field).OfType<Expander>())expander.IsExpanded=true;
+        foreach (var tab in Ancestors(field).OfType<TabItem>().Reverse())
+            if (tab.Visibility != Visibility.Collapsed && ItemsControl.ItemsControlFromItemContainer(tab) is TabControl tabs) tabs.SelectedItem = tab;
+        field.Focus();
+        var group = field.Parent is ContentControl { Tag: "InlineField" } wrapper ? wrapper : field;
+        group.UpdateLayout(); group.BringIntoView();
+    }
+
+    private static bool IsSectionAvailable(FrameworkElement field, DependencyObject root)
+    {
+        for (DependencyObject? node=field; node is not null; node=LogicalTreeHelper.GetParent(node))
+        {
+            if (node is FrameworkElement { Visibility: not Visibility.Visible }) return false;
+            if (ReferenceEquals(node,root)) return true;
+        }
+        return false;
     }
 
     /// <summary>Lỗi của một ô chỉ hiện dưới ô đó; vùng chung dành cho lỗi không gắn được với trường nhập.</summary>

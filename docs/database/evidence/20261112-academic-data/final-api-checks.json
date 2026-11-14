@@ -1,0 +1,6 @@
+{
+  "PrintedPrescriptions": 21,
+  "ValidHandovers": 18,
+  "PayableInvoices": 6,
+  "PaymentAndHandoverRetryRolledBack": true
+}

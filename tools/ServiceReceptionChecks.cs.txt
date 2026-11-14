@@ -9,12 +9,21 @@ using Dapper;
 using ET;
 using RangHamMat.Views;
 
+/// <summary>Điểm chạy STA cho bộ kiểm tiếp nhận dịch vụ, dùng chung fixture với HospitalWorkflowChecks.</summary>
 static class ServiceCheckEntry
 {
+    /// <summary>Chuyển quyền chạy sang bộ kiểm tiếp nhận dịch vụ trên luồng hỗ trợ WPF.</summary>
+    /// <param name="args">Máy chủ, database thử và tùy chọn --concurrency.</param>
+    /// <returns>Mã kết quả do Program.ServiceChecks trả về.</returns>
     [STAThread] static int Main(string[] args)=>Program.ServiceChecks(args);
 }
+/// <summary>Các ca kiểm tiếp nhận theo ca/phòng/chuyên khoa, phụ thu, phân quyền và nhiều quầy đồng thời.</summary>
+/// <remarks>Phối hợp các tiện ích trong HospitalWorkflowChecks.cs.txt; ca thường rollback, ca đồng thời giữ fixture riêng.</remarks>
 internal static partial class Program
 {
+    /// <summary>Chọn kiểm nghiệp vụ/giao diện hoặc tiếp nhận đồng thời trên database _Concurrent riêng.</summary>
+    /// <param name="args">Máy chủ SQL, database RHM_Hospital_Test_ và cờ --concurrency nếu cần.</param>
+    /// <returns>0 khi các ca đã chọn đạt; 1 khi có ca thất bại.</returns>
     internal static int ServiceChecks(string[] args)
     {
         if(args.Length is <2 or >3||!System.Text.RegularExpressions.Regex.IsMatch(args[1],"^RHM_Hospital_Test_[A-Za-z0-9_]+$"))throw new Exception("Isolated DB required");
@@ -236,6 +245,8 @@ internal static partial class Program
         var method=target.GetType().GetMethod(name)??throw new Exception("Missing service API: "+name);
         try{return method.Invoke(target,args)!;}catch(TargetInvocationException ex){ExceptionDispatchInfo.Capture(ex.InnerException!).Throw();throw;}
     }
+    /// <summary>Gửi các yêu cầu tiếp nhận song song để kiểm retry cùng phiếu và số thứ tự riêng cho hai bệnh nhân.</summary>
+    /// <remarks>Ghi fixture rồi dùng các kết nối độc lập; chỉ gọi trên database dành riêng cho kiểm đồng thời.</remarks>
     static void ConcurrentReception()
     {
         using var db=new Microsoft.Data.SqlClient.SqlConnection(cs);db.Open();NguCanhNghiepVu actor;

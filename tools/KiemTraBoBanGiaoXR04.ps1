@@ -1,3 +1,10 @@
+<#
+.SYNOPSIS
+Kiểm quy tắc xác minh gói XR04 và giới hạn đầu vào bằng các tệp giả lập trong obj.
+.DESCRIPTION
+Tạo gói có kiểm soát để thử hash, tệp thiếu/thừa, manifest và dấu INCOMPLETE.
+Các lời gọi CLI dùng đầu vào phải bị từ chối trước kết nối SQL; cuối cùng tổng hợp PASS/FAIL.
+#>
 param()
 $ErrorActionPreference='Stop'
 $work=Join-Path (Split-Path $PSScriptRoot -Parent) ('obj/XR04Handover/tests-'+[Guid]::NewGuid().ToString('N'))

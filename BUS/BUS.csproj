@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="fo-dicom" Version="5.2.6" />
     <PackageReference Include="fo-dicom.Imaging.ImageSharp" Version="5.2.6" />
+    <PackageReference Include="fo-dicom.Codecs" Version="5.16.6" />
   </ItemGroup>
 
   <!-- BUS gọi DAL và trao đổi các thực thể ET; không phụ thuộc vào giao diện WPF. -->

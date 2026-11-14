@@ -1,0 +1,106 @@
+using System.Globalization;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using ET;
+using RangHamMat.Controls;
+using RangHamMat.Views;
+
+/// <summary>Kiểm nhập liệu báo cáo/danh mục bằng WPF STA, không kết nối hay ghi cơ sở dữ liệu.</summary>
+internal static class ReportCatalogInputChecks
+{
+    [STAThread]
+    static int Main()
+    {
+        var app = Application.Current ?? new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml", UriKind.Relative) });
+        int failures = 0;
+        void Check(string name, Action test)
+        {
+            try { test(); Console.WriteLine("PASS " + name); }
+            catch (Exception ex) { failures++; Console.WriteLine("FAIL " + name + ": " + ex.GetBaseException().Message); }
+        }
+        void Require(bool condition, string message) { if (!condition) throw new Exception(message); }
+        var money = new DinhNghiaDanhMuc("DICH_VU", "Dịch vụ", "", ["MaDV"], [new("DonGia", "Đơn giá", "decimal")]);
+        Check("Danh mục: dấu phẩy phần lẻ không biến thành hàng nghìn", () =>
+        {
+            foreach (var culture in new[] { "en-US", "vi-VN" })
+            {
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(culture);
+                Require(Equals(money.ChuanHoa(new Dictionary<string, object?> { ["DonGia"] = "1000,50" })["DonGia"], 1000.50m), "Đọc sai số tiền ở " + culture);
+            }
+        });
+        Check("Danh mục: chặn nhóm hàng nghìn và thừa chữ số lẻ", () =>
+        {
+            foreach (var input in new[] { "1,000", "1.000,50", "1,000.50", "-1", "0.001", "10000000000000000" })
+            {
+                bool rejected = false;
+                try { money.ChuanHoa(new Dictionary<string, object?> { ["DonGia"] = input }); }
+                catch (ArgumentException) { rejected = true; }
+                Require(rejected, "Chấp nhận số sai " + input);
+            }
+        });
+        Check("Danh mục: form động bọc lỗi dưới ô và không cắt chữ", () =>
+        {
+            var view = new DichVu();
+            var list = (ListBox)view.FindName("CatalogList");
+            var changed = typeof(DichVu).GetMethod("Catalog_Changed", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            list.SelectionChanged -= (SelectionChangedEventHandler)changed.CreateDelegate(typeof(SelectionChangedEventHandler), view);
+            list.ItemsSource = new[] { DanhMucHeThong.Lay("NGAY_NGHI_LE") }; list.SelectedIndex = 0;
+            typeof(DichVu).GetMethod("ShowForm", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(view, [null]);
+            var inputs = (Dictionary<string, FrameworkElement>)typeof(DichVu).GetField("inputs", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(view)!;
+            foreach (var (column, control) in inputs)
+                Require(control.Parent is ContentControl { Tag: "InlineField" }, "Thiếu dòng lỗi dưới " + column);
+            var name = (TextBox)inputs["TenNgayNghi"];
+            Require(name.MaxLength == 0, "TextBox âm thầm cắt chữ quá dài");
+            name.Text = new string('A', 256);
+            typeof(DichVu).GetMethod("KiemTraBieuMau", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(view, null);
+            Require(KiemTraNhapLieu.GetHasError(name), "Không báo lỗi độ dài tại tên ngày nghỉ");
+            Require(KiemTraNhapLieu.GetError(name).Contains("255"), "Thiếu gợi ý giới hạn sửa");
+            name.Text = "Ngày nghỉ";
+            typeof(DichVu).GetMethod("KiemTraBieuMau", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(view, null);
+            Require(!KiemTraNhapLieu.GetHasError(name), "Lỗi không hết sau khi sửa hợp lệ");
+        });
+        Check("Báo cáo: sai khoảng ngày gắn lỗi đúng ô", () =>
+        {
+            var start = new DatePicker { SelectedDate = new DateTime(2026, 11, 10) };
+            var end = new DatePicker { SelectedDate = new DateTime(2026, 11, 1) };
+            using var host = new DateHost(start,end);
+            var method = typeof(BaoCao).GetMethod("KiemTraKhoangNgay", BindingFlags.Static | BindingFlags.NonPublic)!;
+            Require(method is not null, "Chưa có kiểm khoảng ngày tại ô nhập");
+            object?[] args = [start, end, default(DateTime), default(DateTime)];
+            Require(!(bool)method!.Invoke(null, args)!, "Chấp nhận ngày kết thúc trước ngày bắt đầu");
+            Require(KiemTraNhapLieu.GetHasError(end), "Lỗi ngày chỉ xuất hiện ở banner");
+            end.SelectedDate = new DateTime(2026, 11, 12);
+            Require((bool)method.Invoke(null, args)!, "Từ chối khoảng ngày hợp lệ");
+            Require(!KiemTraNhapLieu.GetHasError(end), "Không xóa lỗi ngày sau khi sửa");
+        });
+        Check("Báo cáo: ngày gõ sai không dùng SelectedDate cũ", () =>
+        {
+            var start = new DatePicker { SelectedDate = new DateTime(2026, 11, 1) };
+            var end = new DatePicker { SelectedDate = new DateTime(2026, 11, 12) };
+            using var host = new DateHost(start,end);
+            start.ApplyTemplate();
+            var text = (TextBox)start.Template.FindName("PART_TextBox", start);
+            text.Text = "31/02/2026";
+            var method = typeof(BaoCao).GetMethod("KiemTraKhoangNgay", BindingFlags.Static | BindingFlags.NonPublic)!;
+            object?[] args = [start, end, default(DateTime), default(DateTime)];
+            Require(!(bool)method.Invoke(null, args)!, "Báo cáo dùng lại SelectedDate cũ");
+            Require(KiemTraNhapLieu.GetHasError(start), "Thiếu lỗi dưới ô ngày gõ sai");
+        });
+        Console.WriteLine($"Report/catalog input checks: {failures} failure(s).");
+        return failures == 0 ? 0 : 1;
+    }
+    private sealed class DateHost : IDisposable
+    {
+        private readonly Window window;
+        public DateHost(params DatePicker[] fields)
+        {
+            var panel=new StackPanel();foreach(var field in fields)panel.Children.Add(field);
+            window=new Window{Content=panel,ShowInTaskbar=false,Left=-10000,Width=400,Height=300};
+            window.Show();window.UpdateLayout();
+        }
+        public void Dispose()=>window.Close();
+    }
+}

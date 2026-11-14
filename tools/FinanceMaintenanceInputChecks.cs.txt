@@ -1,0 +1,72 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Controls;
+using System.Xml.Linq;
+using RangHamMat.Controls;
+using RangHamMat.Views;
+
+// Không kết nối SQL: kiểm tra chính các hàm phân tích được handler gọi và cấu trúc form thật.
+static class FinanceMaintenanceInputChecks
+{
+    static int passed, failed;
+    [STAThread] public static int Main(string[] args)
+    {
+        var root = args.Length > 0 ? args[0] : Environment.CurrentDirectory;
+        foreach (var value in new[] { "-1", "+1", "1e3", "1,000", "1.000", "1 000", "1,234.56", "0.001", "10000000000000000", "" })
+        {
+            Run("discount rejects " + value, () => Reject(typeof(CuaSoHoaDon), "ReadDiscount", "GiamGia", value, 1000m));
+            Run("payment rejects " + value, () => Reject(typeof(HoaDon), "ReadTransaction", "SoTien", value, "Thu", "Tiền mặt", "", 1000m, 500m));
+        }
+        Run("discount decimal comma", () => Equal(Invoke(typeof(CuaSoHoaDon), "ReadDiscount", "100,50", 1000m), 100.50m));
+        Run("discount cannot exceed charges", () => Reject(typeof(CuaSoHoaDon), "ReadDiscount", "GiamGia", "1001", 1000m));
+        Run("zero discount valid", () => Equal(Invoke(typeof(CuaSoHoaDon), "ReadDiscount", "0", 0m), 0m));
+        Run("zero collection invalid", () => Reject(typeof(HoaDon), "ReadTransaction", "SoTien", "0", "Thu", "Tiền mặt", "", 100m, 50m));
+        Run("collection cannot exceed outstanding", () => Reject(typeof(HoaDon), "ReadTransaction", "SoTien", "101", "Thu", "Tiền mặt", "", 100m, 50m));
+        Run("refund cannot exceed net paid", () => Reject(typeof(HoaDon), "ReadTransaction", "SoTien", "51", "Hoàn", "Tiền mặt", "Điều chỉnh", 100m, 50m));
+        Run("refund reason required", () => Reject(typeof(HoaDon), "ReadTransaction", "LyDo", "50", "Hoàn", "Tiền mặt", " ", 100m, 50m));
+        Run("payment type required", () => Reject(typeof(HoaDon), "ReadTransaction", "LoaiGiaoDich", "50", "", "Tiền mặt", "", 100m, 50m));
+        Run("payment method required", () => Reject(typeof(HoaDon), "ReadTransaction", "PhuongThuc", "50", "Thu", "", "", 100m, 50m));
+        Run("exact outstanding valid", () => Equal(Invoke(typeof(HoaDon), "ReadTransaction", "100,50", "Thu", "Thẻ", "", 100.5m, 50m), 100.5m));
+        Run("exact refund valid", () => Equal(Invoke(typeof(HoaDon), "ReadTransaction", "50", "Hoàn", "Chuyển khoản", "Điều chỉnh", 100m, 50m), 50m));
+        Run("cash enough", () => Equal(Invoke(typeof(BangTinhPhiEditor), "ReadTender", "200", "Tiền mặt", "", false, 100m), 200m));
+        Run("cash short", () => Reject(typeof(BangTinhPhiEditor), "ReadTender", "SoTienKhachDua", "99", "Tiền mặt", "", false, 100m));
+        Run("tender integer only", () => Reject(typeof(BangTinhPhiEditor), "ReadTender", "SoTienKhachDua", "100,50", "Tiền mặt", "", false, 100m));
+        Run("transfer exact required", () => Reject(typeof(BangTinhPhiEditor), "ReadTender", "SoTienKhachDua", "101", "Chuyển khoản", "REF", true, 100m));
+        Run("transfer reference required", () => Reject(typeof(BangTinhPhiEditor), "ReadTender", "MaThamChieu", "100", "Chuyển khoản", "", true, 100m));
+        Run("transfer manual check required", () => Reject(typeof(BangTinhPhiEditor), "ReadTender", "TransferChecked", "100", "Chuyển khoản", "REF", false, 100m));
+        Run("reference length checked", () => Reject(typeof(BangTinhPhiEditor), "ReadTender", "MaThamChieu", "100", "Chuyển khoản", new string('a', 101), true, 100m));
+        Run("zero fee only zero tender", () => Reject(typeof(BangTinhPhiEditor), "ReadTender", "SoTienKhachDua", "1", "Tiền mặt", "", false, 0m));
+        Run("transfer valid", () => Equal(Invoke(typeof(BangTinhPhiEditor), "ReadTender", "100", "Chuyển khoản", "REF", true, 100m), 100m));
+        Run("maintenance next must be later", () => ExpectField("NgayBaoTriTiepTheo", () => KiemTraNhapLieu.ValidateValues("BAO_TRI_THIET_BI", new Dictionary<string,object?> { ["NgayBatDau"]=new DateTime(2026,11,14), ["NgayBaoTriTiepTheo"]=new DateTime(2026,11,14) })));
+        Run("supplier optional contact may be empty", () => KiemTraNhapLieu.ValidateValues("NHA_CUNG_CAP", new Dictionary<string,object?> { ["SDT"]="", ["DiaChi"]="" }));
+        Run("supplier invalid email", () => ExpectField("Email", () => KiemTraNhapLieu.ValidateValues("NHA_CUNG_CAP", new Dictionary<string,object?> { ["Email"]="abc@" })));
+        Run("supplier invalid phone", () => ExpectField("SDT", () => KiemTraNhapLieu.ValidateValues("NHA_CUNG_CAP", new Dictionary<string,object?> { ["SDT"]="123" })));
+        foreach(var (file,name,tag) in new[] {
+            ("CuaSoHoaDon","PatientBox","DB:LICH_SU_KHAM_BENH.MaBN"), ("CuaSoHoaDon","VisitBox","DB:HOA_DON.MaLS"), ("CuaSoHoaDon","EmployeeBox","DB:HOA_DON.MaNV"),
+            ("HoaDon","PaymentType","DB:THANH_TOAN.LoaiGiaoDich"), ("HoaDon","MethodBox","DB:THANH_TOAN.PhuongThuc"), ("HoaDon","EmployeeFilter","DB:THANH_TOAN.MaNV"),
+            ("BangTinhPhiEditor","GivenText","DB:THANH_TOAN.SoTienKhachDua"), ("BangTinhPhiEditor","ReferenceText","DB:THANH_TOAN.MaThamChieu"), ("BangTinhPhiEditor","MethodBox","DB:THANH_TOAN.PhuongThuc"),
+            ("CuaSoThanhLy","cboNhanVien","DB:THIET_BI.MaNVThanhLy"), ("CuaSoThanhLy","txtLyDo","DB:THIET_BI.LyDoThanhLy"), ("CuaSoThanhLy","txtGiaTri","DB:THIET_BI.GiaTriThanhLy") })
+            Run(file+" inline field "+name, () => {
+                var doc=XDocument.Load(Path.Combine(root,"RangHamMat.Wpf","Views",file+".xaml"));
+                XNamespace x="http://schemas.microsoft.com/winfx/2006/xaml";
+                var field=doc.Descendants().Single(e=>(string?)e.Attribute(x+"Name")==name);
+                if((string?)field.Attribute("Tag")!=tag || field.Parent?.Name.LocalName!="ContentControl" || (string?)field.Parent.Attribute("Style")!="{StaticResource TruongNhapLieu}") throw new Exception("Missing wrapper/tag for "+name);
+            });
+        Console.WriteLine($"RESULT finance/maintenance: {passed} passed, {failed} failed; no SQL reads/writes.");
+        return failed==0?0:1;
+    }
+    static object? Invoke(Type type,string name,params object[] args)
+    {
+        var method=type.GetMethod(name,BindingFlags.Static|BindingFlags.NonPublic)??throw new Exception("Missing validation path "+type.Name+"."+name);
+        try{return method.Invoke(null,args);}catch(TargetInvocationException ex) when(ex.InnerException is not null){throw ex.InnerException;}
+    }
+    static void Reject(Type type,string name,string field,params object[] args)=>ExpectField(field,()=>Invoke(type,name,args));
+    static void ExpectField(string field,Action action){try{action();}catch(LoiNhapLieu ex){if(ex.Field!=field||string.IsNullOrWhiteSpace(ex.Message))throw new Exception("Wrong field/message "+ex.Field);return;}throw new Exception("Expected LoiNhapLieu at "+field);}
+    static void Equal(object? actual,decimal expected){if(actual is not decimal number||number!=expected)throw new Exception("Wrong amount "+actual);}
+    static void Run(string name,Action test){try{test();passed++;Console.WriteLine("PASS "+name);}catch(Exception ex){failed++;Console.WriteLine("FAIL "+name+": "+ex.Message);}}
+}

@@ -1,0 +1,19 @@
+{
+  "Completed": [
+    "LSKB012",
+    "LSKB013",
+    "LSKB014",
+    "LSKB015",
+    "LSKB016",
+    "LSKB017",
+    "LSKB018"
+  ],
+  "RemovedEmptyWaitingReceipts": [
+    "DL26_PKB_09",
+    "DL26_PKB_10",
+    "DL26_PKB_11",
+    "DL26_PKB_12",
+    "DL26_PKB_07",
+    "DL26_PKB_08"
+  ]
+}

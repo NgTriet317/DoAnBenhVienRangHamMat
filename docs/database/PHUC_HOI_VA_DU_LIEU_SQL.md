@@ -1,5 +1,7 @@
 # Phục hồi dữ liệu và chạy một file SQL
 
+**Cập nhật 12/11/2026:** bộ dữ liệu hiện tại có **64 bảng,3.285 dòng**, đã bỏ nhãn đồ án, giữ lịch sử khám, dọn hàng chờ và phân phòng lịch làm việc. Xem [hướng dẫn và mã hiện tại](DU_LIEU_THONG_NHAT_20261112.md). Công cụ xuất hỗ trợ 60/62/64 bảng và giữ đúng giá trị cột tự tăng có dữ liệu. Mốc 911/3.221 dòng là trước các lần chuẩn hóa; các số liệu phục hồi 29–30/10 bên dưới là lịch sử.
+
 Mở **Database/QLBenhVienRangHamMat.sql** trong SSMS, kết nối đúng SQL Server rồi chạy toàn bộ bằng F5. File tự tạo duy nhất **QLBenhVienRangHamMat** nếu chưa có; không cần SQLCMD mode, file backup bên ngoài hoặc các script nâng cấp rời. Ứng dụng kết nối database này theo appsettings.json.
 
 Khi database chưa có bảng, snapshot nạp đủ schema và dữ liệu trong một giao dịch. Các khóa ngoại/CHECK được kiểm tra trước khi hoàn tất. Khi database đã có bảng, snapshot được bỏ qua; các pha đồng bộ giữ dữ liệu hiện tại, không khôi phục đè nội dung mới sửa, không tự xóa dữ liệu DEMO28. Không cần xóa database trước mỗi lần chạy SQL.
@@ -24,9 +26,9 @@ Dữ liệu nhập qua phần mềm được lưu trong SQL Server. File .sql kh
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\CapNhatDuLieuSql.ps1 -MayChu . -Database QLBenhVienRangHamMat
 ```
 
-Lệnh chỉ đọc database nguồn, kiểm tra đủ schema/60 bảng trước khi xuất, thay vùng snapshot trong file SQL chính và giữ bản SQL trước đó cùng manifest kiểm tra tại obj/SqlSnapshot/<thời điểm>/. Nguồn không hợp lệ khiến thao tác dừng và file SQL giữ nguyên. Không thay các pha nâng cấp. Giữ file SQL vừa xuất để cài mới; sao lưu .bak định kỳ nếu cần phục hồi đầy đủ sau sự cố. File có dữ liệu hồ sơ/tài khoản nên chỉ chuyển cho người được phép sử dụng.
+Lệnh chỉ đọc database nguồn, kiểm tra schema được hỗ trợ 60/62/64 bảng trước khi xuất, thay vùng snapshot trong file SQL chính và giữ bản SQL trước đó cùng manifest kiểm tra tại obj/SqlSnapshot/<thời điểm>/. Nguồn không hợp lệ khiến thao tác dừng và file SQL giữ nguyên. Không thay các pha nâng cấp. Giữ file SQL vừa xuất để cài mới; sao lưu .bak định kỳ nếu cần phục hồi đầy đủ sau sự cố. File có dữ liệu hồ sơ/tài khoản nên chỉ chuyển cho người được phép sử dụng.
 
-Giới hạn nhỏ của công cụ xuất: giữ giá trị identity hiện có và seed/increment, chưa giữ riêng bộ đếm identity đã tiêu hao do giao dịch rollback/xóa dòng. Không ảnh hưởng bản phục hồi hiện tại: bảng identity duy nhất NHAT_KY_DUYET_CHAM_CONG đang trống và chưa cấp số. Khi cần giữ chính xác cả trạng thái bộ đếm trong các bản sau, dùng backup/restore .bak.
+Giới hạn nhỏ của công cụ xuất: giữ giá trị identity hiện có và seed/increment, chưa giữ riêng bộ đếm identity đã tiêu hao do giao dịch rollback/xóa dòng. NHAT_KY_DUYET_CHAM_CONG hiện đã có dữ liệu và được kiểm cài lại giữ đúng giá trị. Khi cần giữ chính xác cả trạng thái bộ đếm sau rollback/xóa dòng, dùng backup/restore .bak.
 
 Chạy lại file SQL trên database đã có dữ liệu không tự đưa các dòng bị xóa trở lại. Khi cần khôi phục sau khi đã xóa dữ liệu, dùng bản backup phù hợp. Cài vào database mới chưa có bảng sẽ nạp bản snapshot đã đóng gói.
 

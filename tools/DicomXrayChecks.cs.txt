@@ -1,0 +1,146 @@
+using System.IO;
+using System.Security.Cryptography;
+using System.Windows;
+using System.Windows.Media.Imaging;
+using BUS;
+using ET;
+using FellowOakDicom;
+using FellowOakDicom.Imaging;
+using FellowOakDicom.Imaging.Codec;
+using FellowOakDicom.IO.Buffer;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+
+/// <summary>Kiểm chuyển đổi bằng DICOM tổng hợp; không đọc bệnh án hoặc dùng SQL.</summary>
+internal static class DicomXrayChecks
+{
+    private static int passed,failed;
+    private static readonly CauHinhKhoAnh Config=new();
+    private static AnhDaKiemTra Read(byte[] bytes,string name="xray.dcm",CauHinhKhoAnh? config=null)
+    {using var stream=new MemoryStream(bytes);return new KhoLuuAnhXquang(config??Config).KiemTraTep(stream,name);}
+
+    [STAThread]
+    private static int Main()
+    {
+        Check("DICOM 8-bit thành PNG đúng kích thước và hash",()=>{
+            var result=Read(Dicom());
+            Assert(result.MimeType=="image/png"&&result.PhanMoRong==".png","Chưa chuyển thành PNG");
+            Assert(result.ChieuRong==64&&result.ChieuCao==32,"Sai kích thước");
+            Assert(result.Sha256==Convert.ToHexString(SHA256.HashData(result.NoiDung)),"Hash không thuộc PNG");
+            using var image=Image.Load<Rgb24>(result.NoiDung);
+            Assert(image[0,0].R<5&&image[63,0].R>245,"Mất mức xám DICOM");
+        });
+        Check("Nhận đuôi .DCM và .dicom",()=>{
+            foreach(var name in new[]{"xray.DCM","xray.dicom"})Assert(Read(Dicom(),name).MimeType=="image/png","Không nhận "+name);
+        });
+        Check("DICOM MONOCHROME1 được đảo mức xám",()=>{
+            using var image=Image.Load<Rgb24>(Read(Dicom(inverted:true)).NoiDung);
+            Assert(image[0,0].R>245&&image[63,0].R<5,"Không áp MONOCHROME1");
+        });
+        Check("DICOM 16-bit áp window level",()=>{
+            using var image=Image.Load<Rgb24>(Read(Dicom(bits:16)).NoiDung);
+            Assert(image[0,0].R<5&&image[63,0].R>245&&image[32,0].R is >110 and <150,"Sai window 16-bit");
+        });
+        Check("DICOM nhiều khung chỉ lấy khung đầu",()=>{
+            using var image=Image.Load<Rgb24>(Read(Dicom(frames:2)).NoiDung);
+            Assert(image.Frames.Count==1&&image[63,0].R>245,"Không chọn khung đầu tiên");
+        });
+        Check("DICOM RGB giữ màu",()=>{
+            using var image=Image.Load<Rgb24>(Read(Dicom(color:true)).NoiDung);
+            Assert(image[0,0].R>245&&image[0,0].G<5&&image[0,0].B<5,"Mất màu đỏ");
+        });
+        foreach(var syntax in new[]{DicomTransferSyntax.RLELossless,DicomTransferSyntax.JPEGProcess1,
+            DicomTransferSyntax.JPEGProcess14SV1,DicomTransferSyntax.JPEGLSLossless,DicomTransferSyntax.JPEG2000Lossless})
+            Check("DICOM nén "+syntax.UID.Name+" chuyển được PNG",()=>{
+                using var source=new MemoryStream(Dicom());var file=DicomFile.Open(source);
+                var compressed=new DicomTranscoder(DicomTransferSyntax.ExplicitVRLittleEndian,syntax).Transcode(file);
+                using var stream=new MemoryStream();compressed.Save(stream);
+                using var image=Image.Load<Rgb24>(Read(stream.ToArray()).NoiDung);
+                Assert(image.Width==64&&image.Height==32&&image[0,0].R<10&&image[63,0].R>240,"Giải mã nén sai");
+            });
+        Check("PNG/JPEG tiếp tục giữ nguyên byte",()=>{
+            using var image=new Image<Rgb24>(16,8);
+            foreach(var jpeg in new[]{false,true}){
+                using var stream=new MemoryStream();if(jpeg)image.SaveAsJpeg(stream);else image.SaveAsPng(stream);
+                var bytes=stream.ToArray();Assert(Read(bytes,jpeg?"x.jpg":"x.png").NoiDung.SequenceEqual(bytes),"Đổi byte ảnh thường");
+            }
+        });
+        Check("PNG giả đuôi .dcm bị từ chối",()=>{
+            using var image=new Image<Rgb24>(16,8);using var stream=new MemoryStream();image.SaveAsPng(stream);
+            ExpectError(()=>Read(stream.ToArray()),"AnhDicomHong");
+        });
+        Check("DICOM giả đuôi .png bị từ chối",()=>ExpectError(()=>Read(Dicom(),"x.png"),"AnhHong"));
+        Check("DICOM rỗng bị từ chối",()=>ExpectError(()=>Read([]),"AnhHong"));
+        Check("DICOM hỏng bị từ chối có thông báo",()=>ExpectError(()=>Read([1,2,3,4]),"AnhDicomHong"));
+        Check("DICOM thiếu PixelData bị từ chối",()=>ExpectError(()=>Read(Dicom(noPixels:true)),"AnhDicomHong"));
+        Check("DICOM có SamplesPerPixel bằng 0 được báo lỗi thay vì thoát ứng dụng",()=>
+            ExpectError(()=>Read(Dicom(samples:0)),"AnhDicomHong"));
+        Check("DICOM bị cắt dữ liệu pixel bị từ chối",()=>{
+            var bytes=Dicom();ExpectError(()=>Read(bytes[..^100]),"AnhDicomHong");
+        });
+        Check("DICOM vượt dung lượng bị chặn trước giải mã",()=>ExpectError(()=>Read(new byte[20971521]),"QuaDungLuong"));
+        Check("PNG sau chuyển đổi vượt dung lượng cũng bị chặn",()=>
+            ExpectError(()=>Read(Dicom(width:1024,height:800,noise:true),config:Config with{DungLuongToiDaMB=1}),"QuaDungLuong"));
+        Check("DICOM vượt giới hạn điểm ảnh bị chặn",()=>ExpectError(()=>Read(Dicom(),config:Config with{DiemAnhToiDa=2047}),"QuaKichThuoc"));
+        Check("DICOM vượt giới hạn chiều ảnh bị chặn trước render",()=>ExpectError(()=>Read(Dicom(width:12001,height:1)),"QuaKichThuoc"));
+        Check("Tên tệp DICOM chứa đường dẫn bị từ chối",()=>ExpectError(()=>Read(Dicom(),"../x.dcm"),"TenTepKhongHopLe"));
+        Check("Lưu PNG và đọc lại khi tên gốc là DICOM",()=>{
+            var root=Path.GetFullPath(Path.Combine("obj/DicomXrayChecks/store",Guid.NewGuid().ToString("N")));Directory.CreateDirectory(root);
+            var store=new KhoLuuAnhXquang(Config with{ThuMucDungChung=root,ChoPhepDuongDanCucBo=true});
+            var result=Read(Dicom());var key=store.LuuTep(result);
+            var row=new ET_ANHXQUANGLANKHAM{TenTepGoc="xray.dcm",TenTepLuu=key,DuongDanTuongDoi=key,
+                MimeType=result.MimeType,KichThuocBytes=result.NoiDung.Length,Sha256=result.Sha256};
+            Assert(key.EndsWith(".png")&&store.DocTep(row).SequenceEqual(result.NoiDung),"Không mở lại được PNG từ DICOM");
+            Assert(store.KiemTra([row]).Count==0,"Kho báo sai toàn vẹn sau chuyển đổi");
+            File.WriteAllBytes(Path.Combine(root,key),new byte[result.NoiDung.Length]);
+            ExpectError(()=>store.DocTep(row));
+        });
+        Check("Cùng DICOM cho PNG và hash ổn định khi tải lại",()=>{
+            var bytes=Dicom();Assert(Read(bytes).Sha256==Read(bytes).Sha256,"Retry cho hash khác");
+        });
+        Check("WPF xem được PNG đã chuyển từ DICOM và phóng thu",()=>{
+            var result=Read(Dicom());
+            var viewer=new RangHamMat.Views.XemAnhXquang(new(new ET_ANHXQUANGLANKHAM{TenTepGoc="xray.dcm"},result.NoiDung));
+            try{
+                var image=(System.Windows.Controls.Image)viewer.FindName("FullImage");
+                Assert(image.Source is BitmapSource bitmap&&bitmap.PixelWidth==64&&bitmap.PixelHeight==32,"WPF không giải mã được PNG");
+                var zoom=(System.Windows.Controls.Slider)viewer.FindName("Zoom");zoom.Value=2;
+                Assert(image.LayoutTransform is System.Windows.Media.ScaleTransform scale&&scale.ScaleX==2,"Phóng thu không hoạt động");
+            }finally{viewer.Close();}
+        });
+        Console.WriteLine($"RESULT: {passed} passed, {failed} failed");return failed==0?0:1;
+    }
+
+    private static byte[] Dicom(int bits=8,bool inverted=false,int frames=1,bool color=false,bool noPixels=false,int width=64,int height=32,bool noise=false,int? samples=null)
+    {
+        var dataset=new DicomDataset(DicomTransferSyntax.ExplicitVRLittleEndian){
+            {DicomTag.SOPClassUID,DicomUID.DigitalXRayImageStorageForPresentation},
+            {DicomTag.SOPInstanceUID,DicomUID.Generate()},
+            {DicomTag.PhotometricInterpretation,color?"RGB":inverted?"MONOCHROME1":"MONOCHROME2"},
+            {DicomTag.Rows,(ushort)height},{DicomTag.Columns,(ushort)width},
+            {DicomTag.SamplesPerPixel,(ushort)(samples??(color?3:1))},{DicomTag.BitsAllocated,(ushort)bits},
+            {DicomTag.BitsStored,(ushort)bits},{DicomTag.HighBit,(ushort)(bits-1)},{DicomTag.PixelRepresentation,(ushort)0},
+            {DicomTag.WindowCenter,bits==16?2048.0:128.0},{DicomTag.WindowWidth,bits==16?4096.0:256.0}
+        };
+        if(color)dataset.Add(DicomTag.PlanarConfiguration,(ushort)0);
+        if(!noPixels){
+            var data=DicomPixelData.Create(dataset,true);
+            for(var frame=0;frame<frames;frame++){
+                var bytes=new byte[width*height*(bits/8)*(color?3:1)];
+                for(var p=0;p<width*height;p++){
+                    if(color){bytes[p*3]=255;continue;}
+                    var value=frame>0?0:(p%width)*(bits==16?4095:255)/Math.Max(1,width-1);
+                    if(bits==16){bytes[p*2]=(byte)value;bytes[p*2+1]=(byte)(value>>8);}else bytes[p]=(byte)value;
+                }
+                if(noise)new Random(1234).NextBytes(bytes);
+                data.AddFrame(new MemoryByteBuffer(bytes));
+            }
+        }
+        using var stream=new MemoryStream();new DicomFile(dataset).Save(stream);return stream.ToArray();
+    }
+    private static void Check(string name,Action action)
+    {try{action();passed++;Console.WriteLine("PASS "+name);}catch(Exception ex){failed++;Console.WriteLine("FAIL "+name+": "+ex.Message);}}
+    private static void Assert(bool ok,string message){if(!ok)throw new Exception(message);}
+    private static void ExpectError(Action action,string? code=null)
+    {try{action();}catch(LoiAnhXquangException ex){Assert(code is null||ex.MaLoi==code,$"Mong đợi {code}, nhận {ex.MaLoi}: {ex.Message}");return;}throw new Exception("Đáng lẽ phải bị từ chối");}
+}

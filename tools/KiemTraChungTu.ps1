@@ -1,3 +1,10 @@
+<#
+.SYNOPSIS
+Dựng và chạy bộ kiểm phân trang, nội dung in và bố cục chứng từ WPF.
+.DESCRIPTION
+Chép DocumentChecks.cs.txt vào project tạm trong obj, chạy Release và xuất bằng chứng
+từ dữ liệu fixture trong bộ nhớ. Bộ kiểm chứng từ không kết nối SQL.
+#>
 param()
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent

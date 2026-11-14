@@ -2,12 +2,28 @@ using ET;
 
 namespace BUS;
 
+/// <summary>
+/// Tính biến động và ghép kỳ thống kê, gồm kỳ tháng đầy đủ và kỳ lũy kế đến hôm nay.
+/// </summary>
 public static class SoSanhThongKe
 {
+    /// <summary>
+    /// Tính chênh lệch và phần trăm theo trị tuyệt đối kỳ gốc, giữ null khi thiếu dữ liệu.
+    /// </summary>
+    /// <param name="hienTai">Giá trị kỳ hiện tại; null nếu không có dữ liệu được phép so sánh.</param>
+    /// <param name="kyGoc">Giá trị đối chiếu; bằng 0 thì không tính phần trăm.</param>
+    /// <returns>Giá trị hai kỳ, chênh lệch và tỷ lệ phần trăm có thể tính được.</returns>
     public static KetQuaSoSanh Tinh(decimal? hienTai, decimal? kyGoc) =>
         new(hienTai, kyGoc, hienTai - kyGoc, hienTai is null || kyGoc is null || kyGoc == 0
             ? null : (hienTai - kyGoc) / Math.Abs(kyGoc.Value) * 100m);
 
+    /// <summary>
+    /// Kiểm tra bộ lọc rồi tạo tối đa 24 cặp kỳ tháng với mốc kết thúc không bao gồm.
+    /// </summary>
+    /// <remarks>Kỳ gốc phải đã diễn ra; lũy kế dùng cùng số ngày và chặn ở cuối tháng gốc nếu tháng đó ngắn hơn.</remarks>
+    /// <param name="filter">Khoảng tháng, chế độ đối chiếu và lựa chọn lũy kế cần tạo.</param>
+    /// <param name="homNay">Ngày chốt dùng xác định tháng hiện tại và độ dài kỳ lũy kế.</param>
+    /// <returns>Các kỳ hiện tại và kỳ gốc tương ứng; kỳ gốc null khi không chọn so sánh.</returns>
     public static CapKyThongKe[] TaoCacKy(BoLocThongKe filter, DateTime homNay)
     {
         static DateTime Thang(DateTime d) => new(d.Year, d.Month, 1);

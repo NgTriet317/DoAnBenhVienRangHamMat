@@ -13,6 +13,9 @@
     <TextBlock x:Name="InlineErrorText" DataContext="{TemplateBinding Content}" Text="{Binding Path=(input:KiemTraNhapLieu.Error)}" Foreground="#B42318" FontSize="12" TextWrapping="Wrap" Margin="0,5,0,0" AutomationProperties.LiveSetting="Polite">
      <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Path=(input:KiemTraNhapLieu.HasError)}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
     </TextBlock>
+    <TextBlock x:Name="InlineHintText" DataContext="{TemplateBinding Content}" Text="{Binding Path=(input:KiemTraNhapLieu.Hint)}" Foreground="#586B82" FontSize="12" TextWrapping="Wrap" Margin="0,3,0,0">
+     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Path=(input:KiemTraNhapLieu.HasError)}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+    </TextBlock>
    </StackPanel>
   </ControlTemplate></Setter.Value></Setter>
  </Style>

@@ -35,6 +35,7 @@
     <DataTrigger Binding="{Binding Status}" Value="Chờ khám"><Setter Property="Foreground" Value="#805911"/></DataTrigger>
     <DataTrigger Binding="{Binding Status}" Value="Đã xác nhận"><Setter Property="Foreground" Value="#1D5AAC"/></DataTrigger>
     <DataTrigger Binding="{Binding Status}" Value="Hoàn thành"><Setter Property="Foreground" Value="#176344"/></DataTrigger>
+    <DataTrigger Binding="{Binding Status}" Value="Đã giao thuốc"><Setter Property="Foreground" Value="#176344"/></DataTrigger>
     <DataTrigger Binding="{Binding Status}" Value="Đang thực hiện"><Setter Property="Foreground" Value="#1D5AAC"/></DataTrigger>
     <DataTrigger Binding="{Binding Status}" Value="Hủy"><Setter Property="Foreground" Value="#795050"/></DataTrigger>
   </Style.Triggers></Style>
@@ -44,6 +45,7 @@
     <DataTrigger Binding="{Binding Status}" Value="Chờ khám"><Setter Property="Background" Value="#FFF5DD"/></DataTrigger>
     <DataTrigger Binding="{Binding Status}" Value="Đã xác nhận"><Setter Property="Background" Value="#EAF2FF"/></DataTrigger>
     <DataTrigger Binding="{Binding Status}" Value="Hoàn thành"><Setter Property="Background" Value="#E9F5EE"/></DataTrigger>
+    <DataTrigger Binding="{Binding Status}" Value="Đã giao thuốc"><Setter Property="Background" Value="#E9F5EE"/></DataTrigger>
     <DataTrigger Binding="{Binding Status}" Value="Đang thực hiện"><Setter Property="Background" Value="#EAF2FF"/></DataTrigger>
     <DataTrigger Binding="{Binding Status}" Value="Hủy"><Setter Property="Background" Value="#F8EEEE"/></DataTrigger>
   </Style.Triggers></Style>

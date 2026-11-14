@@ -15,8 +15,13 @@ using System.Windows.Media.Imaging;
 using System.IO;
 using System.Windows.Threading;
 
+/// <summary>Kiểm công thức so sánh kỳ, thống kê bệnh, quyền truy cập báo cáo và cách hiển thị WPF.</summary>
+/// <remarks>Nhánh --sql đối chiếu số liệu và quyền trong TransactionScope không Complete; --render bổ sung kiểm/ảnh giao diện.</remarks>
 internal static class Program
 {
+    /// <summary>Chạy các ca trong bộ nhớ, sau đó tùy chọn kiểm SQL và render giao diện theo từng vai trò.</summary>
+    /// <param name="args">Máy chủ, database và các cờ --sql/--render do KiemTraBaoCao.ps1 truyền.</param>
+    /// <returns>0 khi tất cả ca đã chạy đều đạt; 1 khi có ca kiểm thất bại.</returns>
     [STAThread]
     static int Main(string[] args)
     {

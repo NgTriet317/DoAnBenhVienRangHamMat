@@ -1,3 +1,14 @@
+<#
+.SYNOPSIS
+Kiểm tệp phiên đăng nhập, xóa định danh và tùy chọn luồng đăng nhập WPF qua SQL.
+.DESCRIPTION
+Mặc định dùng tệp phiên riêng trong obj. KiemTraSql tạo database thử mới từ SQL chính,
+rồi chạy từng pha ở tiến trình riêng để kiểm khôi phục, đổi tài khoản và thu hồi phiên.
+.PARAMETER KiemTraSql
+Bổ sung các pha có ghi dữ liệu vào database thử; giữ database và log để đối chiếu.
+.PARAMETER MayChu
+SQL Server dùng tạo database thử khi bật KiemTraSql.
+#>
 param([switch]$KiemTraSql, [string]$MayChu = '.')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent

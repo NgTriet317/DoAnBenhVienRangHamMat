@@ -6,11 +6,21 @@ namespace RangHamMat;
 // Phiên tài khoản đã xác thực, dùng chung trong lần chạy ứng dụng.
 public static class PhienDangNhap
 {
+    /// <summary>
+    /// Mã tài khoản đã chốt trong định danh hiện tại; trả chuỗi rỗng khi chưa có tài khoản.
+    /// </summary>
     public static string MaTK => accountCommitted ?? "";
     /// <summary>Chỉ biểu thị phiên đã gắn định danh; quyền báo cáo được DAL xác thực lại với SQL.</summary>
     public static bool DaDangNhap => (Thread.CurrentPrincipal as ClaimsPrincipal)?.Identities
         .Any(x => x.IsAuthenticated && x.AuthenticationType == DinhDanhNghiepVu.KieuXacThuc) == true;
+    /// <summary>
+    /// Mã phiên nhật ký đang hoạt động; Guid.Empty biểu thị chưa bắt đầu hoặc đã kết thúc phiên.
+    /// </summary>
     public static Guid MaPhien { get; internal set; }
+    /// <summary>
+    /// Thay claim mã phiên nhật ký trên định danh hiện tại để các lời gọi nghiệp vụ dùng đúng phiên.
+    /// </summary>
+    /// <param name="session">Mã phiên cần gắn; Guid.Empty chỉ gỡ claim cũ.</param>
     internal static void GanPhienAudit(Guid session)
     {
         if((Thread.CurrentPrincipal as ClaimsPrincipal)?.Identity is not ClaimsIdentity identity)

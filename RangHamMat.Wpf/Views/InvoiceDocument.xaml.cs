@@ -29,7 +29,13 @@ internal sealed class InvoiceVisualPaginator : DocumentPaginator
     /// Giá trị lưu nội bộ của thuộc tính PageSize, dùng bởi getter/setter tương ứng.
     /// </summary>
     private const double Padding = 34;
+    /// <summary>
+    /// Chiều cao dành riêng cho chân trang, tách khỏi vùng nội dung hóa đơn.
+    /// </summary>
     private const double FooterHeight = 28;
+    /// <summary>
+    /// Chiều cao dành cho tiêu đề tiếp nối trên các trang sau trang đầu.
+    /// </summary>
     private const double ContinuationHeight = 28;
     /// <summary>
     /// Giá trị lưu nội bộ của thuộc tính Source, dùng bởi getter/setter tương ứng.
@@ -133,10 +139,20 @@ internal sealed class InvoiceVisualPaginator : DocumentPaginator
         slices = pages.ToArray();
     }
 
+    /// <summary>
+    /// Tạo chữ định dạng thống nhất để vẽ thông tin tiếp nối và số trang hóa đơn.
+    /// </summary>
+    /// <param name="value">Nội dung chữ cần vẽ trong lề trang.</param>
+    /// <returns>Chữ Segoe UI theo vi-VN dùng bởi bộ phân trang.</returns>
     private static FormattedText PageText(string value) => new(value,
         System.Globalization.CultureInfo.GetCultureInfo("vi-VN"), FlowDirection.LeftToRight,
         new Typeface("Segoe UI"), 10, new SolidColorBrush(Color.FromRgb(82, 100, 119)), 1);
 
+    /// <summary>
+    /// Duyệt cây visual để lấy vùng các khối gắn Tag KeepTogether trong hệ tọa độ của chứng từ.
+    /// </summary>
+    /// <param name="current">Nút visual đang xét và các phần tử con cần duyệt.</param>
+    /// <returns>Các hình chữ nhật của khối cần giữ trọn khi khối vừa một trang.</returns>
     private IEnumerable<Rect> KeepTogetherBands(DependencyObject current)
     {
         if (current is FrameworkElement { Tag: "KeepTogether", ActualHeight: > 0 } element)

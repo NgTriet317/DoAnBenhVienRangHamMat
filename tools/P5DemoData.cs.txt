@@ -12,12 +12,20 @@ internal static class P5DemoData
     {if(!System.Text.RegularExpressions.Regex.IsMatch(database,"^RHM_Hospital_Test_P5Demo_[A-Za-z0-9_]+$"))throw new ArgumentException("Only isolated P5 DEMO databases");}
     private static SqlConnection Open(string server,string database)
     {var db=new SqlConnection(new SqlConnectionStringBuilder{DataSource=server,InitialCatalog=database,IntegratedSecurity=true,TrustServerCertificate=true}.ConnectionString);db.Open();return db;}
+    /// <summary>Kiểm database DEMO chưa tồn tại rồi tạo thư mục bằng chứng mới với marker chưa hoàn tất.</summary>
+    /// <param name="server">Máy chủ SQL dùng kiểm sự tồn tại của database.</param>
+    /// <param name="database">Tên DEMO mới có tiền tố RHM_Hospital_Test_P5Demo_.</param>
+    /// <param name="outputPath">Thư mục kết quả mới; chưa tạo database trong bước này.</param>
     public static void Prepare(string server,string database,string outputPath)
     {
         CheckName(database);using var master=Open(server,"master");
         if(master.ExecuteScalar<int>("SELECT COUNT(*) FROM sys.databases WHERE name=@database",new{database})!=0)throw new InvalidOperationException("Database DEMO đã tồn tại; không ghi đè.");
         var output=P5Artifacts.CreateNewDirectory(outputPath);P5Artifacts.Text(Path.Combine(output,Incomplete),database);
     }
+    /// <summary>Đọc lại DEMO đã có marker hợp lệ để xuất bằng chứng vào thư mục mới.</summary>
+    /// <param name="server">Máy chủ SQL chứa DEMO.</param>
+    /// <param name="database">Database DEMO chỉ chứa bệnh nhân thuộc bộ giả lập.</param>
+    /// <param name="outputPath">Thư mục kết quả chưa tồn tại, dùng cho lần xuất lại.</param>
     public static void Export(string server,string database,string outputPath)
     {
         CheckName(database);using var db=Open(server,database);RequireDemo(db);
@@ -30,6 +38,11 @@ internal static class P5DemoData
             ||db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.BENH_NHAN WHERE MaBN NOT LIKE N'P5[_]BN[_]%' OR HoTenBN NOT LIKE N'[[]DEMO]%'")!=0)
             throw new InvalidOperationException("Chỉ xuất từ database DEMO đã đánh dấu, không chứa hồ sơ ngoài bộ giả lập.");
     }
+    /// <summary>Tạo lịch sử giả lập của 18 bệnh nhân/26 lần khám trong database đã cài schema và trống bệnh nhân.</summary>
+    /// <param name="server">Máy chủ SQL chứa database DEMO đã chuẩn bị.</param>
+    /// <param name="database">Database DEMO mới, chưa có marker RHM.Demo.P5.</param>
+    /// <param name="outputPath">Thư mục do Prepare tạo, chỉ chứa marker gắn đúng database.</param>
+    /// <remarks>Kiểm ràng buộc và đối soát trước commit giao dịch Serializable, sau đó xuất chuỗi chứng từ và báo cáo.</remarks>
     public static void Create(string server,string database,string outputPath)
     {
         CheckName(database);
@@ -96,6 +109,10 @@ internal static class P5DemoData
         Console.WriteLine("DEMO_DATABASE="+database);Console.WriteLine("DEMO_COMPLETE="+output);
         Console.WriteLine("PASS: 18 synthetic patients; 26 visits (8/12/6); 26 invoices; 13 service fees; 13 prescriptions; 300 in/26 out/274 on hand; all constraints and reconciliation valid.");
     }
+    /// <summary>Đọc DEMO trong giao dịch để xuất lineage, báo cáo và đối soát; bỏ marker khi bộ bằng chứng hoàn tất.</summary>
+    /// <param name="db">Kết nối đang mở tới database DEMO.</param>
+    /// <param name="database">Tên database ghi trong metadata bằng chứng.</param>
+    /// <param name="output">Thư mục kết quả đã có marker chưa hoàn tất.</param>
     private static void WriteEvidence(SqlConnection db,string database,string output)
     {
         RequireDemo(db);using var tx=db.BeginTransaction(IsolationLevel.Serializable);

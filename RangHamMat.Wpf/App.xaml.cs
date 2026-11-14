@@ -14,10 +14,20 @@ namespace wpftest
     /// </summary>
     public partial class App : Application
     {
+        /// <summary>
+        /// Dịch vụ dùng chung cho khôi phục đăng nhập, đăng nhập mới và xóa phiên đã ghi nhớ.
+        /// </summary>
         private readonly DichVuDangNhap dichVuDangNhap;
 
+        /// <summary>
+        /// Khởi tạo ứng dụng với kho ghi nhớ đăng nhập mặc định.
+        /// </summary>
         public App() : this(new DichVuDangNhap()) { }
 
+        /// <summary>
+        /// Nhận dịch vụ đăng nhập để dùng nhất quán khi chuyển giữa hộp thoại và cửa sổ chính.
+        /// </summary>
+        /// <param name="dichVuDangNhap">Dịch vụ xác thực và quản lý phiên ghi nhớ của ứng dụng.</param>
         internal App(DichVuDangNhap dichVuDangNhap) => this.dichVuDangNhap = dichVuDangNhap;
 
         /// <summary>
@@ -39,6 +49,9 @@ namespace wpftest
             else HienDangNhap();
         }
 
+        /// <summary>
+        /// Mở hộp thoại đăng nhập; kết thúc ứng dụng khi người dùng đóng mà chưa đăng nhập thành công.
+        /// </summary>
         private void HienDangNhap()
         {
             var login = new DangNhap(dichVuDangNhap);
@@ -51,6 +64,10 @@ namespace wpftest
             MoManHinhChinh();
         }
 
+        /// <summary>
+        /// Đồng bộ trạng thái nghỉ trước khi mở cửa sổ chính, rồi nối luồng đăng xuất về hộp thoại đăng nhập.
+        /// </summary>
+        /// <remarks>Nếu xóa phiên ghi nhớ thất bại, sự kiện Closing hủy đóng cửa sổ để người dùng còn xử lý được lỗi.</remarks>
         private void MoManHinhChinh()
         {
             // Khi mở ứng dụng, áp dụng các đơn đã tới ngày có hiệu lực trong lúc ứng dụng tắt.

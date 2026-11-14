@@ -1,0 +1,23 @@
+using System.Data;
+using System.Security.Claims;
+using BUS;
+using DAL;
+using Dapper;
+using ET;
+using Microsoft.Data.SqlClient;
+if(args.Length!=2||!args[1].StartsWith("RHM_Hospital_Test_AcademicInstall_",StringComparison.Ordinal))throw new Exception("Only the owned install fixture");
+var cs=new SqlConnectionStringBuilder{DataSource=args[0],InitialCatalog=args[1],IntegratedSecurity=true,TrustServerCertificate=true}.ConnectionString;
+Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",cs);
+using var db=new SqlConnection(cs);db.Open();using var tx=db.BeginTransaction(IsolationLevel.Serializable);
+NguCanhNghiepVu Login(string nv,string tk){Thread.CurrentPrincipal=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.NameIdentifier,tk),new(DinhDanhNghiepVu.MaNhanVienClaim,nv)],DinhDanhNghiepVu.KieuXacThuc));db.Execute("EXEC sys.sp_set_session_context @key=N'RHM.MaTK',@value=@tk",new{tk},tx);return new BUS_QUYENNGHIEPVU(tx).LayNguCanh(nv);}
+try
+{
+ var rx=db.QuerySingle<string>("SELECT TOP(1) MaDT FROM dbo.BAN_GIAO_THUOC WHERE TrangThai=N'Chờ giao' ORDER BY MaDT",transaction:tx);
+ new DAL_BANGIAOTHUOC(tx).XacNhanGiao(rx,Login("NV006","TK006"));
+ var visit=db.QuerySingle<string>("SELECT TOP(1) MaLS FROM dbo.HOA_DON WHERE TrangThai=N'Nháp' AND TaoKhiHoanTat=1 ORDER BY MaHD",transaction:tx);
+ var cashier=Login("NV008","TK008");var payment=new DAL_THANHTOANTRONGOI(tx);var fee=payment.LapBangTinh(visit,"KHO001",cashier);
+ if(!fee.DuocThanhToan)throw new Exception(fee.ThongBao);
+ var paid=payment.ThanhToan(new(){MaLS=visit,MaKhoCapThuoc=fee.MaKhoCapThuoc,MaYeuCau=Guid.NewGuid(),DauVanTayBangTinh=fee.DauVanTay!,PhuongThuc="Tiền mặt",SoTienKhachDua=decimal.Ceiling(fee.TongTien/50000)*50000},cashier);
+ tx.Commit();Console.WriteLine($"PASS: committed legitimate handover {rx} and payment {paid.MaHD} only on install fixture");
+}
+catch{if(tx.Connection is not null)tx.Rollback();throw;}

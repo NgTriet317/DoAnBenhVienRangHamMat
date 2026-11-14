@@ -6,13 +6,31 @@ using RangHamMat.Controls;
 
 namespace RangHamMat.Views;
 
+/// <summary>
+/// Phần mở rộng của màn hình báo cáo để áp dụng quyền, đối chiếu các kỳ và hiển thị chất lượng mã bệnh.
+/// </summary>
 public partial class BaoCao
 {
+    /// <summary>
+    /// Tập quyền báo cáo đã xác thực cho phiên mở màn hình hiện tại.
+    /// </summary>
     private QuyenBaoCao quyen;
+    /// <summary>
+    /// Thông báo lỗi xác thực quyền để màn hình giải thích vì sao không thể tải báo cáo.
+    /// </summary>
     private string? loiQuyen;
+    /// <summary>
+    /// Kết quả so sánh đã tải, dùng chung cho bảng, biểu đồ và xuất dữ liệu.
+    /// </summary>
     private DuLieuSoSanhBaoCao? soSanh;
+    /// <summary>
+    /// Kiểm tra quyền của chuyên đề đang chọn; khi chưa chọn dùng mã tổng quan 00.
+    /// </summary>
     private bool CoQuyenChuyenDe => ChinhSachBaoCao.ChoPhep(selected?.Ma??"00",quyen);
 
+    /// <summary>
+    /// Xóa kết quả và vô hiệu hóa tải báo cáo khi định danh phiên đã thay đổi.
+    /// </summary>
     private void PhienBaoCaoThayDoi()
     {
         XoaKetQua();quyen=QuyenBaoCao.Khong;
@@ -20,26 +38,46 @@ public partial class BaoCao
         ThongBao("Phiên đăng nhập đã thay đổi. Mở lại Báo cáo để xác thực quyền.",true);
     }
 
+    /// <summary>
+    /// Áp dụng lại bộ lọc khi người dùng đổi năm đối chiếu.
+    /// </summary>
     private void NamGoc_Changed(object sender,TextChangedEventArgs e) => BoLoc_Changed(sender,e);
+    /// <summary>
+    /// Cập nhật danh mục chuyên đề theo lựa chọn mở rộng danh sách.
+    /// </summary>
     private void DanhMucMoRong_Changed(object sender,RoutedEventArgs e) => HienDanhMuc();
+    /// <summary>
+    /// Vẽ lại bảng và biểu đồ bệnh lý khi đổi tiêu chí xếp hạng và đã có dữ liệu.
+    /// </summary>
     private void XepHangBenh_Changed(object sender,SelectionChangedEventArgs e)
     {
         if(ready&&selected is not null&&soSanh?.BenhLy is not null)HienSoSanh(selected);
     }
 
+    /// <summary>
+    /// Đọc khoảng tháng, chế độ so sánh và bộ lọc chuyên khoa/dịch vụ; yêu cầu năm hợp lệ khi so với năm chỉ định.
+    /// </summary>
+    /// <returns>Bộ lọc thống kê để tính các kỳ và giới hạn nguồn báo cáo.</returns>
     private BoLocThongKe DocBoLoc()
     {
-        if(ComparisonMode.SelectedIndex==3 && !int.TryParse(BaselineYear.Text,out _))
-            throw new ArgumentException("Nhập năm đối chiếu hợp lệ.");
+        var from=KiemTraNhapLieu.ReadDate(FromDate)??throw new LoiNhapLieu(nameof(FromDate),"Vui lòng nhập Từ ngày hoặc chọn ngày trên lịch.");
+        var to=KiemTraNhapLieu.ReadDate(ToDate)??throw new LoiNhapLieu(nameof(ToDate),"Vui lòng nhập Đến ngày hoặc chọn ngày trên lịch.");
+        if(ComparisonMode.SelectedIndex<0||!Enum.IsDefined((CachSoSanh)ComparisonMode.SelectedIndex))
+            throw new ArgumentException("Chế độ so sánh không hợp lệ. Chọn một mục trong danh sách.");
         return new()
         {
-            TuThang=FromDate.SelectedDate??DateTime.Today,DenThang=ToDate.SelectedDate??DateTime.Today,
-            SoSanh=(CachSoSanh)Math.Max(0,ComparisonMode.SelectedIndex),LuyKeThang=MonthToDate.IsChecked==true,
-            NamGoc=int.TryParse(BaselineYear.Text,out var year)?year:DateTime.Today.Year-1,
+            TuThang=from,DenThang=to,
+            SoSanh=(CachSoSanh)ComparisonMode.SelectedIndex,LuyKeThang=MonthToDate.IsChecked==true,
+            NamGoc=DocNamDoiChieu(BaselineYear,ComparisonMode.SelectedIndex==3),
             MaCK=selected?.Ma=="20"?SpecialtyCode.SelectedValue as string:null,MaDV=selected?.Ma=="20"?ServiceCode.SelectedValue as string:null
         };
     }
 
+    /// <summary>
+    /// Đưa cùng kết quả so sánh lên bảng, chỉ số và biểu đồ; chỉ vẽ kỳ có số liệu và giữ quy tắc làm mờ nhóm bệnh nhỏ.
+    /// </summary>
+    /// <remarks>Nguồn tổng đã tải và soSanh được phối hợp để hiển thị chỉ tiêu cùng đơn vị; dữ liệu thiếu mẫu số không bị chuyển thành 0.</remarks>
+    /// <param name="report">Chuyên đề cung cấp tên chỉ tiêu, đơn vị và quy tắc diễn giải.</param>
     private void HienSoSanh(ChuyenDeBaoCao report)
     {
         int metric=Math.Max(0,ChartMetric.SelectedIndex);

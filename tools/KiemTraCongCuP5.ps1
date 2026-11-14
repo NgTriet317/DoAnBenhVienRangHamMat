@@ -1,3 +1,14 @@
+<#
+.SYNOPSIS
+Kiểm các guard tạo DEMO, chống ghi đè bằng chứng và xuất lại minh chứng P5.
+.DESCRIPTION
+Cần database DEMO đã có. Thử đầu vào sai, database/thư mục đã tồn tại và đường dẫn
+liên kết; sau đó đối soát và xuất lại minh chứng vào thư mục mới trong obj/P5Evidence.
+.PARAMETER Database
+Database DEMO hiện có với tiền tố RHM_Hospital_Test_P5Demo_.
+.PARAMETER MayChu
+SQL Server chứa database DEMO để kiểm guard và đối chiếu kết quả xuất.
+#>
 param([Parameter(Mandatory=$true)][string]$Database,[string]$MayChu='.')
 $ErrorActionPreference='Stop'
 if($Database -notmatch '^RHM_Hospital_Test_P5Demo_[A-Za-z0-9_]+$'){throw 'Chỉ kiểm công cụ trên DEMO cách ly.'}

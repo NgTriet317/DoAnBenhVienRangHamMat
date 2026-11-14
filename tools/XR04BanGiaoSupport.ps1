@@ -1,4 +1,13 @@
 # Helper thuần cho gói nghiệm thu; không kết nối SQL hoặc chạy child process.
+# Nạp bằng dot-source để dùng chung quy tắc manifest, giới hạn đầu vào và nguồn P6 đã nghiệm thu.
+<#
+.SYNOPSIS
+Lập manifest mọi tệp payload kể cả tệp ẩn, bỏ package.json và thư mục Results.
+.DESCRIPTION
+Sắp theo đường dẫn và tính kích thước/SHA-256; từ chối tệp là reparse point.
+.OUTPUTS
+Các mục Path tương đối với Root, Bytes và Sha256 dùng trong package.json.
+#>
 function Get-XR04FileManifest {
  param([string]$Root)
  $base=(Get-Item -LiteralPath $Root).FullName.TrimEnd('\','/')
@@ -10,6 +19,16 @@ function Get-XR04FileManifest {
   [pscustomobject]@{Path=$_.FullName.Substring($base.Length+1).Replace('\','/');Bytes=$_.Length;Sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash}
  })
 }
+<#
+.SYNOPSIS
+Kiểm protocol, trạng thái INCOMPLETE và tính đầy đủ/hash của mọi tệp trong gói XR04.
+.PARAMETER Root
+Thư mục gói có package.json cần đối chiếu với payload thực tế.
+.PARAMETER DangDongGoi
+Cho phép marker INCOMPLETE ở thư mục cha trong bước kiểm trước khi hoàn tất đóng gói.
+.DESCRIPTION
+Phát lỗi khi có đường dẫn không hợp lệ, tệp thiếu/thừa hoặc liên kết trong payload.
+#>
 function Assert-XR04Package {
  param([string]$Root,[switch]$DangDongGoi)
  $base=(Get-Item -LiteralPath $Root).FullName
@@ -29,6 +48,12 @@ function Assert-XR04Package {
   if($folder.FullName.Substring($base.Length+1) -notmatch '^Results([\\/]|$)' -and ($folder.Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'Gói không được chứa thư mục liên kết.'}
  }
 }
+<#
+.SYNOPSIS
+Kiểm chế độ, database thử và đường dẫn UNC trước khi công cụ XR04 kết nối hoặc thao tác.
+.DESCRIPTION
+Compare/KiemTraGoi không cần kết nối; KhoiPhuc phải có tên database thử mới khác nguồn.
+#>
 function Assert-XR04Input {
  param([string]$Mode,[string]$Database,[string]$StorageRoot,[string]$NewDatabase)
  if($Mode -in @('Compare','KiemTraGoi')){return}
@@ -37,6 +62,16 @@ function Assert-XR04Input {
  if($StorageRoot -notmatch '^\\\\[^\\]+\\[^\\]+' -or $StorageRoot.StartsWith('\\?\') -or $StorageRoot.StartsWith('\\.\')){throw 'Kho ảnh phải là UNC thông thường.'}
  if($Mode -eq 'KhoiPhuc' -and ($NewDatabase -notmatch '^RHM_Hospital_Test_[A-Za-z0-9_]+$' -or $NewDatabase -eq $Database)){throw 'Phục hồi cần tên database thử mới khác nguồn.'}
 }
+<#
+.SYNOPSIS
+Đối chiếu manifest nguồn hiện tại với bản đã đạt P6 trước khi tạo gói bàn giao.
+.PARAMETER Accepted
+Danh sách nguồn đã nghiệm thu, mỗi mục có Path, Bytes và Sha256.
+.PARAMETER Current
+Danh sách nguồn hiện tại; chỉ bốn script bàn giao được phép phát sinh ngoài bản P6.
+.DESCRIPTION
+Phát lỗi nếu nguồn cũ thiếu/đổi/trùng hoặc xuất hiện tệp mới ngoài ngoại lệ được liệt kê.
+#>
 function Assert-XR04Source {
  param([object[]]$Accepted,[object[]]$Current)
  if(!$Accepted.Count){throw 'Thiếu manifest nguồn P6.'}

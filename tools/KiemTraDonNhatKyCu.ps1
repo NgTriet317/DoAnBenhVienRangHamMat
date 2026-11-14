@@ -1,3 +1,12 @@
+<#
+.SYNOPSIS
+Kiểm cài mới và chạy lại SQL chỉ dọn nhật ký cũ thiếu thời gian UTC.
+.DESCRIPTION
+Tạo database thử có tên ngẫu nhiên, chèn fixture rồi chạy lại installer hai lần.
+Đối chiếu để giữ nguyên nhật ký có UTC và phiên đăng nhập; xóa database thử trong finally.
+.PARAMETER MayChu
+SQL Server cho phép tạo và xóa database thử của lần kiểm này.
+#>
 param([string]$MayChu='.')
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
