@@ -1,6 +1,6 @@
 # Dữ liệu hiện tại — 12/11/2026
 
-Đã cập nhật cả SQL Server trên máy và `Database/QLBenhVienRangHamMat.sql`. Snapshot có **64 bảng,3.285 dòng**. Người dùng cho phép chuẩn hóa dữ liệu của đồ án và yêu cầu bỏ nhãn hiển thị; người bệnh, nhân sự bổ sung, giá cấu hình, lô và serial vẫn là dữ liệu giả lập, không phải hồ sơ hoặc giao dịch thật. Nguồn nhận diện danh mục và giá tham khảo đã có được giữ; xem [mốc bổ sung đầu và nguồn danh mục](DU_LIEU_DO_AN_20261112.md).
+Đã cập nhật cả SQL Server trên máy và `Database/QLBenhVienRangHamMat.sql`. Snapshot cập nhật ngày **14/11/2026** có **64 bảng,3.296 dòng**, gồm bốn ảnh X-quang tham khảo. Người dùng cho phép chuẩn hóa dữ liệu của đồ án và yêu cầu bỏ nhãn hiển thị; người bệnh, nhân sự bổ sung, giá cấu hình, lô và serial vẫn là dữ liệu giả lập, không phải hồ sơ hoặc giao dịch thật. Nguồn nhận diện danh mục và giá tham khảo đã có được giữ; xem [mốc bổ sung đầu và nguồn danh mục](DU_LIEU_DO_AN_20261112.md).
 
 ## Khám và điều trị
 
@@ -43,7 +43,7 @@ Tổng số phòng hiện tại **19**. Chưa phân phòng của thiết bị đ
 | Ca / lịch hẹn | CA011–CA012 / LK011–LK016 |
 | Phòng bổ sung | PH011–PH019 |
 
-Ví dụ: BN030 / LS019 / DT012 / HD012 chờ thanh toán; BN036 / LS025 / DT015 / HD018 chờ giao. NV004 vẫn được phân công hỗ trợ ảnh cho LS017; chưa tạo tệp ảnh hoặc metadata giả trỏ tới tệp không tồn tại.
+Ví dụ: BN030 / LS019 / DT012 / HD012 chờ thanh toán; BN036 / LS025 / DT015 / HD018 chờ giao. NV004 vẫn được phân công hỗ trợ ảnh cho LS017. Ngày 14/11 bổ sung bốn tệp panorama công khai có giấy phép và metadata liên kết đúng LS006/LS017/LS023/LS035; từng ảnh ghi rõ là ảnh tham khảo cho hồ sơ giả lập. Xem [cách mở ảnh và đồng bộ kho](ANH_XQUANG_LICH_SU_20261114.md).
 
 Tên đăng nhập mới: **user011** (CK002), **user012** (CK003), **user013** (CK004), **user014** (CK007). Mật khẩu khởi tạo vẫn `DoAnRHM@2026`; mật khẩu cũ và các bản hash được giữ. Admin `admin001 / 123456`.
 

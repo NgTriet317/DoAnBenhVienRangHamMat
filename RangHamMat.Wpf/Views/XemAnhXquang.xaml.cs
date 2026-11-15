@@ -9,12 +9,13 @@ namespace RangHamMat.Views;
 public partial class XemAnhXquang : Window
 {
     /// <summary>
-    /// Nạp ảnh đã đọc và hiển thị tên tệp, lần khám, thời điểm tạo để đối chiếu.
+    /// Nạp ảnh đã đọc, hiển thị lần khám và giữ ghi chú nguồn/ảnh tham khảo khi xem lớn.
     /// </summary>
     /// <param name="source">Nội dung ảnh cùng metadata do nghiệp vụ trả về sau khi kiểm tra quyền.</param>
     public XemAnhXquang(DuLieuAnhXquang source)
     {
         InitializeComponent();Caption.Text=$"{source.Anh.TenTepGoc} · Lần khám {source.Anh.MaLS} · {source.Anh.NgayTao:dd/MM/yyyy HH:mm:ss}";
+        if(!string.IsNullOrWhiteSpace(source.Anh.GhiChu))Caption.Text+="\n"+source.Anh.GhiChu;
         FullImage.Source=AnhXquangLanKham.Decode(source.NoiDung);
     }
 }

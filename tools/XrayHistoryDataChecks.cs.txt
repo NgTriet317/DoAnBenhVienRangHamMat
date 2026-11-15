@@ -1,0 +1,159 @@
+using System.Security.Cryptography;
+using System.IO;
+using System.Text.Json;
+using System.Security.Claims;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using BUS;
+using ET;
+
+// Các kiểm tra này bắt lỗi cấu hình đường dẫn phụ thuộc cwd và ảnh metadata không có tệp.
+static class Program
+{
+    static int failed;
+    static void Check(string name, Action action)
+    {
+        try { action(); Console.WriteLine("PASS " + name); }
+        catch (Exception ex) { failed++; Console.WriteLine("FAIL " + name + ": " + ex.Message); }
+    }
+    static void Require(bool value, string message) { if (!value) throw new Exception(message); }
+    [STAThread] static int Main(string[] args)
+    {
+        var configPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+        var original = File.Exists(configPath) ? File.ReadAllBytes(configPath) : null;
+        var priorOverride = Environment.GetEnvironmentVariable("RHM_XRAY_ROOT");
+        var priorDirectory = Environment.CurrentDirectory;
+        try
+        {
+            Environment.SetEnvironmentVariable("RHM_XRAY_ROOT", null);
+            Check("kho tương đối theo thư mục ứng dụng, độc lập cwd", () =>
+            {
+                File.WriteAllText(configPath, """{"XQuang":{"ThuMucDungChung":"DuLieu/AnhXquang","ChoPhepDuongDanCucBo":true}}""");
+                Environment.CurrentDirectory = Path.GetTempPath();
+                var config = CauHinhKhoAnh.Doc();
+                Require(config.ThuMucDungChung == Path.GetFullPath("DuLieu/AnhXquang", AppContext.BaseDirectory), "Chưa giải đường dẫn theo thư mục ứng dụng");
+            });
+            Check("đường dẫn tương đối không tự mở quyền dùng kho cục bộ", () =>
+            {
+                File.WriteAllText(configPath, """{"XQuang":{"ThuMucDungChung":"DuLieu/AnhXquang","ChoPhepDuongDanCucBo":false}}""");
+                var config = CauHinhKhoAnh.Doc();
+                Require(!config.ChoPhepDuongDanCucBo, "Đã tự mở quyền kho cục bộ");
+                try { new KhoLuuAnhXquang(config).ThuMucGoc(); throw new Exception("Kho tương đối chưa được cấp quyền vẫn được mở"); }
+                catch (LoiAnhXquangException ex) { Require(ex.MaLoi == "DuongDanKhongHopLe", ex.Message); }
+            });
+            Check("giữ UNC và ưu tiên biến môi trường", () =>
+            {
+                File.WriteAllText(configPath, """{"XQuang":{"ThuMucDungChung":"\\\\MAYCHU\\RHM_XQuang","ChoPhepDuongDanCucBo":false}}""");
+                Require(CauHinhKhoAnh.Doc().ThuMucDungChung == @"\\MAYCHU\RHM_XQuang", "Đã đổi cấu hình UNC");
+                var external = Path.Combine(Path.GetTempPath(), "RHM_External_Store");
+                Environment.SetEnvironmentVariable("RHM_XRAY_ROOT", external);
+                var config = CauHinhKhoAnh.Doc();
+                Require(config.ThuMucDungChung == external && !config.ChoPhepDuongDanCucBo, "Sai ưu tiên hoặc thay quyền kho");
+            });
+            Check("cấu hình đường dẫn tương đối hỏng trả lỗi nghiệp vụ", () =>
+            {
+                Environment.SetEnvironmentVariable("RHM_XRAY_ROOT", null);
+                File.WriteAllText(configPath, """{"XQuang":{"ThuMucDungChung":"bad\u0000path","ChoPhepDuongDanCucBo":true}}""");
+                try { CauHinhKhoAnh.Doc(); throw new Exception("Chấp nhận cấu hình đường dẫn hỏng"); }
+                catch (LoiAnhXquangException ex) { Require(ex.MaLoi == "CauHinh", ex.Message); }
+            });
+            if (args.Length > 0)
+                Check("bốn ảnh tham khảo có tệp thật, đúng hash, giải mã và đọc lại được", () =>
+                {
+                    var root = Path.GetFullPath(args[0]);
+                    using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "manifest.json")));
+                    var rows = manifest.RootElement.GetProperty("Images").EnumerateArray().ToArray();
+                    Require(rows.Length == 4, "Thiếu ảnh cho bốn lượt có dịch vụ chụp");
+                    var store = new KhoLuuAnhXquang(new() { ThuMucDungChung = root, ChoPhepDuongDanCucBo = true });
+                    foreach (var row in rows)
+                    {
+                        var file = row.GetProperty("TenTepLuu").GetString()!;
+                        var hash = row.GetProperty("Sha256").GetString()!;
+                        var bytes = row.GetProperty("KichThuocBytes").GetInt64();
+                        using var stream = File.OpenRead(Path.Combine(root, file));
+                        var image = store.KiemTraTep(stream, file);
+                        Require(image.ChieuRong >= 1000 && image.ChieuCao >= 500, "Ảnh quá nhỏ để khảo sát");
+                        Require(image.Sha256.Equals(hash, StringComparison.OrdinalIgnoreCase) && image.NoiDung.LongLength == bytes, "Sai hash/dung lượng");
+                        var opened = store.DocTep(new() { TenTepLuu = file, DuongDanTuongDoi = file, MimeType = image.MimeType, KichThuocBytes = bytes, Sha256 = hash });
+                        Require(opened.SequenceEqual(image.NoiDung), "Đọc lại không đúng byte");
+                        Require(row.GetProperty("GhiChu").GetString()!.Contains("tham khảo"), "Thiếu nhãn ảnh tham khảo");
+                    }
+                });
+            if (args.Length >= 4)
+                Check("SQL/BUS/WPF mở đúng ảnh của bốn lượt lịch sử và giữ chỉ xem", () =>
+                {
+                    var previousConnection = Environment.GetEnvironmentVariable("RHM_CONNECTION_STRING");
+                    Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING", $"Data Source={args[1]};Initial Catalog={args[2]};Integrated Security=True;TrustServerCertificate=True;");
+                    var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+                    app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml", UriKind.Relative) });
+                    try
+                    {
+                        var actor = Actor("NV001");
+                        var store = new CauHinhKhoAnh { ThuMucDungChung = Path.GetFullPath(args.Length > 4 ? args[4] : args[0]), ChoPhepDuongDanCucBo = true };
+                        var bus = new BUS_ANHXQUANG(null, store);
+                        if(args.Length > 4)Require(bus.KiemTraKho(actor).Count == 0, "Kho bản phát hành không khớp metadata");
+                        var expected = new[] { ("LS006", "BN006", "DVTH006"), ("LS017", "BN028", "DVTH014"), ("LS023", "BN034", "DVTH024"), ("LS035", "BN046", "DVTH048") };
+                        foreach (var (visit, patient, service) in expected)
+                        {
+                            var list = bus.LayDanhSach(visit, false, actor);
+                            Require(list.MaBN == patient && !list.DuocTaiLen, "Sai bệnh nhân/quyền lịch sử " + visit);
+                            var photo = list.CacAnh.SingleOrDefault(x => x.Anh.MaDVThucHien == service)?.Anh;
+                            Require(photo is not null, "Thiếu ảnh gắn đúng dịch vụ " + visit);
+                            var content = bus.MoAnh(visit, photo!.MaAnh, actor);
+                            Require(Convert.ToHexString(SHA256.HashData(content.NoiDung)).Equals(photo.Sha256, StringComparison.OrdinalIgnoreCase), "Sai byte đọc qua BUS");
+                            var editor = new RangHamMat.Views.AnhXquangLanKham(visit, actor, null, store);
+                            editor.RestrictToHistory();
+                            Require(((Image)editor.FindName("SelectedPreview")).Source is BitmapSource, "Không nạp ảnh xem trước " + visit);
+                            Require(!((Button)editor.FindName("UploadButton")).IsEnabled && !((Button)editor.FindName("HideButton")).IsEnabled, "Còn nút ghi trên lịch sử");
+                            Require(((TextBlock)editor.FindName("IdentityText")).Text.Contains(patient), "UI không hiện đúng bệnh nhân");
+                            Require((string?)((ComboBox)editor.FindName("ServicePicker")).SelectedValue == service, "UI lịch sử đang hiển thị sai dịch vụ liên kết " + visit);
+                            Capture(editor, Path.Combine(args[3], visit + "-history.png"));
+                            var viewer = new RangHamMat.Views.XemAnhXquang(content);
+                            Require(((Image)viewer.FindName("FullImage")).Source is BitmapSource bitmap && bitmap.PixelWidth >= 1000, "Cửa sổ xem ảnh không nạp ảnh gốc");
+                            Check("cửa sổ ảnh lớn giữ nhãn tham khảo/nguồn " + visit, () => Require(((TextBlock)viewer.FindName("Caption")).Text.Contains(photo.GhiChu!), "Cửa sổ ảnh lớn làm mất nhãn tham khảo và nguồn ảnh"));
+                            Capture((FrameworkElement)viewer.Content, Path.Combine(args[3], visit + "-fullview.png"));
+                            viewer.Close();
+                            Console.WriteLine($"  {visit}/{patient}/{service}: preview và ảnh gốc đạt");
+                        }
+                        foreach (var employee in new[] { "NV003", "NV005" })
+                        {
+                            var reader = Actor(employee);
+                            var list = bus.LayDanhSach("LS006", false, reader);
+                            Require(list.DichVu.Any(s => s.MaDVThucHien == "DVTH006"), "Người được phép xem lịch sử không thấy dịch vụ ảnh: " + employee);
+                            var editor = new RangHamMat.Views.AnhXquangLanKham("LS006", reader, null, store);
+                            editor.RestrictToHistory();
+                            Require((string?)((ComboBox)editor.FindName("ServicePicker")).SelectedValue == "DVTH006", "Ô dịch vụ lịch sử trống với người xem: " + employee);
+                        }
+                        var technician = bus.LayDanhSach("LS017", false, Actor("NV004"));
+                        Require(technician.DichVu.All(s => s.MaDVThucHien == "DVTH014") && technician.CacAnh.Single().Anh.MaDVThucHien == "DVTH014", "Kỹ thuật viên thấy ngoài dịch vụ được giao");
+                        try { bus.LayDanhSach("LS006", false, Actor("NV008")); throw new Exception("Thu ngân đọc được ảnh lâm sàng"); }
+                        catch (TuChoiQuyenNghiepVuException) { }
+                    }
+                    finally { app.Shutdown(); Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING", previousConnection); }
+                });
+        }
+        finally
+        {
+            Environment.CurrentDirectory = priorDirectory;
+            Environment.SetEnvironmentVariable("RHM_XRAY_ROOT", priorOverride);
+            if (original is null) File.Delete(configPath); else File.WriteAllBytes(configPath, original);
+        }
+        return failed == 0 ? 0 : 1;
+    }
+    static NguCanhNghiepVu Actor(string employee)
+    {
+        Thread.CurrentPrincipal = new ClaimsPrincipal(new ClaimsIdentity([
+            new Claim(ClaimTypes.NameIdentifier, "TK" + employee[2..]),
+            new Claim(DinhDanhNghiepVu.MaNhanVienClaim, employee)], DinhDanhNghiepVu.KieuXacThuc));
+        return new BUS_QUYENNGHIEPVU().LayNguCanh(employee);
+    }
+    static void Capture(FrameworkElement control, string target)
+    {
+        control.Measure(new Size(1120, 820)); control.Arrange(new Rect(0, 0, 1120, 820)); control.UpdateLayout();
+        var bitmap = new RenderTargetBitmap(1120, 820, 96, 96, PixelFormats.Pbgra32); bitmap.Render(control);
+        var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using var output = File.Create(target); encoder.Save(output);
+    }
+}

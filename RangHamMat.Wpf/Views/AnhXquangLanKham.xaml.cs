@@ -102,6 +102,8 @@ public partial class AnhXquangLanKham : UserControl
     {
         SelectedPreview.Source=null;SelectedCaption.Text="Chọn ảnh trong danh sách để xem trước.";
         if(!storeReady||ImageList.SelectedItem is not AnhXquangHienThi row)return;
+        // Ở lịch sử, ô dịch vụ phải phản ánh liên kết của ảnh đang xem thay vì lựa chọn tải ảnh mới.
+        if(readOnly||data?.DuocTaiLen==false)ServicePicker.SelectedValue=row.Anh.MaDVThucHien??"";
         SelectedCaption.Text=$"{row.Anh.TenTepGoc}\n{row.NguoiTai} · {row.Anh.NgayTao:dd/MM/yyyy HH:mm:ss}\n{row.Anh.GhiChu}";
         if(row.Anh.TrangThai!="Đang sử dụng"){SelectedCaption.Text+="\nẢnh đã ẩn; thông tin và ảnh trong kho được giữ lại.";return;}
         Guard(()=>SelectedPreview.Source=Decode(bus.MoAnh(visitId,row.Anh.MaAnh,actor).NoiDung,360),out _);

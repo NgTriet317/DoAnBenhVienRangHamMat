@@ -1,0 +1,14 @@
+﻿PASS kho tương đối theo thư mục ứng dụng, độc lập cwd
+PASS đường dẫn tương đối không tự mở quyền dùng kho cục bộ
+PASS giữ UNC và ưu tiên biến môi trường
+PASS cấu hình đường dẫn tương đối hỏng trả lỗi nghiệp vụ
+PASS bốn ảnh tham khảo có tệp thật, đúng hash, giải mã và đọc lại được
+PASS cửa sổ ảnh lớn giữ nhãn tham khảo/nguồn LS006
+  LS006/BN006/DVTH006: preview và ảnh gốc đạt
+PASS cửa sổ ảnh lớn giữ nhãn tham khảo/nguồn LS017
+  LS017/BN028/DVTH014: preview và ảnh gốc đạt
+PASS cửa sổ ảnh lớn giữ nhãn tham khảo/nguồn LS023
+  LS023/BN034/DVTH024: preview và ảnh gốc đạt
+PASS cửa sổ ảnh lớn giữ nhãn tham khảo/nguồn LS035
+  LS035/BN046/DVTH048: preview và ảnh gốc đạt
+PASS SQL/BUS/WPF mở đúng ảnh của bốn lượt lịch sử và giữ chỉ xem

@@ -9,6 +9,10 @@
   <ItemGroup>
     <!-- Chép cấu hình kết nối cạnh exe ở cả bản build và publish để máy triển khai có thể cấu hình SQL Server. -->
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Tệp tham khảo của các lần khám giả lập, giữ GUID/hash đồng bộ với snapshot SQL. -->
+    <Content Include="..\Database\AnhXquang\*.jpg" Link="DuLieu\AnhXquang\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\Database\AnhXquang\*.json;..\Database\AnhXquang\*.md" Link="DuLieu\NguonAnhXquang\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\Database\QLBenhVienRangHamMat.sql" Link="Database\QLBenhVienRangHamMat.sql" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <!-- Metadata kiểm tra nhập liệu được nhúng vào assembly; giao diện đối chiếu tên/kiểu/giới hạn cột. -->
     <EmbeddedResource Include="Controls\QuyTacNhapLieu.xml" />
     <PackageReference Include="fo-dicom" Version="5.2.6" />

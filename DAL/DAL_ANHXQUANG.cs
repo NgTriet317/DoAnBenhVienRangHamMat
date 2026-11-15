@@ -185,14 +185,14 @@ public sealed partial class DAL_ANHXQUANG(IDbTransaction? transaction=null) : db
         return(c,a);
     }
     /// <summary>
-    /// Đọc các dịch vụ X-quang của lượt, giới hạn theo phân công khi người dùng không phải quản trị hoặc bác sĩ phụ trách.
+    /// Đọc dịch vụ của lượt đã được Context cấp quyền; kỹ thuật viên chỉ thấy phần được giao.
     /// </summary>
     private static IReadOnlyList<DichVuAnhXquang> Services(IDbConnection db,IDbTransaction? tx,VisitImage c,NguCanhNghiepVu a)
         =>db.Query<DichVuAnhXquang>($"""
             SELECT s.MaDVThucHien,d.TenDV,s.MaNVThucHien FROM dbo.DICH_VU_THUC_HIEN s WITH(HOLDLOCK)
             JOIN dbo.DICH_VU d ON d.MaDV=s.MaDV WHERE s.MaLS=@MaLS AND d.MaCK=N'CK004'
              AND(@all=1 OR {AssignedScope}) ORDER BY s.ThoiGianThucHien,s.MaDVThucHien
-            """,new{c.MaLS,all=a.LaAdmin||Owner(c,a),a.MaNV},tx).ToArray();
+            """,new{c.MaLS,all=a.LaAdmin||Owner(c,a)||!Technician(a)&&c.TrangThai=="Đã xác nhận",a.MaNV},tx).ToArray();
     /// <summary>
     /// Nhận diện vai trò cập nhật kết quả được giao khi người dùng không có quyền khám và không phải quản trị.
     /// </summary>

@@ -31,6 +31,15 @@ public sealed record CauHinhKhoAnh
             {throw new LoiAnhXquangException("CauHinh","Cấu hình kho ảnh chưa hợp lệ. Liên hệ quản trị viên.",ex);}
         }
         var environment=Environment.GetEnvironmentVariable("RHM_XRAY_ROOT");
-        return string.IsNullOrWhiteSpace(environment)?config:config with{ThuMucDungChung=environment};
+        if(!string.IsNullOrWhiteSpace(environment))config=config with{ThuMucDungChung=environment};
+        // Bản đồ án đóng gói kho cạnh exe; chỉ giải đường dẫn tương đối khi đã cho phép kho cục bộ.
+        try
+        {
+            if(config.ChoPhepDuongDanCucBo&&!string.IsNullOrWhiteSpace(config.ThuMucDungChung)&&!Path.IsPathFullyQualified(config.ThuMucDungChung))
+                config=config with{ThuMucDungChung=Path.GetFullPath(config.ThuMucDungChung,AppContext.BaseDirectory)};
+        }
+        catch(Exception ex) when(ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {throw new LoiAnhXquangException("CauHinh","Đường dẫn kho ảnh trong cấu hình chưa hợp lệ. Liên hệ quản trị viên.",ex);}
+        return config;
     }
 }
