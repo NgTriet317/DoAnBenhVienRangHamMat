@@ -1,4 +1,4 @@
-/* NHÓM 4 - QUẢN LÝ BỆNH VIỆN RĂNG HÀM MẶT
+* NHÓM 4 - QUẢN LÝ BỆNH VIỆN RĂNG HÀM MẶT
    File độc lập khởi tạo hoặc đồng bộ SQL Server 2016 SP1 trở lên.
    Ứng dụng kết nối SQL Server; ứng dụng không đọc file SQL này khi chạy.
    Chạy toàn bộ bằng SSMS hoặc sqlcmd -b -f65001. Sao lưu database trước đồng bộ.
@@ -7,7 +7,7 @@
    Có 4 ảnh panorama tham khảo liên kết lượt khám/dịch vụ; tệp và giấy phép tại Database/AnhXquang.
    Giữ lịch sử khám, không nạp sẵn hàng chờ khám; lịch làm việc đã được phân phòng.
    Hướng dẫn, quy tắc mã và nguồn gốc dữ liệu: docs/database/DU_LIEU_THONG_NHAT_20261112.md.
-   Snapshot được nạp chỉ khi chưa có bảng; chạy lại giữ dữ liệu hiện tại.
+   Snapshot chỉ nạp khi chưa có bảng nền; cho phép giữ các bảng AI/cấu hình phép từ lần cài dở.
    admin001 / 123456 là tài khoản khởi tạo. Đổi mật khẩu sau khi đăng nhập.
    Đồng bộ không đặt lại tài khoản/mật khẩu/giá đã có,
    không nạp đè snapshot lên database đã có bảng.
@@ -25,7 +25,7 @@
 USE [master];
 EXEC sys.sp_set_session_context @key=N'RHM.ReadyBaseline',@value=0;
 EXEC sys.sp_set_session_context @key=N'RHM.ReadyV2',@value=0;
-EXEC sys.sp_set_session_context @key=N'RHM.HospitalWorkflow.Completed',@value=0;
+EXEC sys.sp_set_session_context @key=N'RHM.HospitalWorkflow.Completed',@value=0;[RHM_Hospital_Test_P6_MergeTanAI_20261115_FinalB_Xray]
 EXEC sys.sp_set_session_context @key=N'RHM.PrescriptionFlow.Completed',@value=0;
 EXEC sys.sp_set_session_context @key=N'RHM.SqlV9.Completed',@value=0;
 EXEC sys.sp_set_session_context @key=N'RHM.MaintenanceSerial.Completed',@value=0;
@@ -52,8 +52,13 @@ SET ANSI_WARNINGS ON;
 SET ARITHABORT ON;
 SET CONCAT_NULL_YIELDS_NULL ON;
 SET NUMERIC_ROUNDABORT OFF;
--- BEGIN RHM DATA SNAPSHOT: generated from restored and validated data; load only into a database with no user tables.
-IF NOT EXISTS(SELECT 1 FROM sys.tables WHERE is_ms_shipped=0)
+-- BEGIN RHM DATA SNAPSHOT: generated from restored and validated data; load only when no baseline or unknown user tables exist.
+-- Gộp bản vá RHM_F5_AI_DONGGOI: giữ bảng/dữ liệu AI và cấu hình phép khi cài lại sau lỗi.
+-- Chỉ bỏ qua đúng các bảng mở rộng đã biết trong dbo; bảng nghiệp vụ/bảng lạ vẫn chặn nạp snapshot.
+IF NOT EXISTS(SELECT 1 FROM sys.tables WHERE is_ms_shipped=0 AND
+ (schema_id<>SCHEMA_ID(N'dbo') OR name NOT IN(N'RHM_CAU_HINH_QUY_PHEP',
+ N'AI_PHIEN_TIEP_NHAN',N'AI_TIEP_NHAN_NHAP',N'AI_TIN_NHAN',N'AI_SU_KIEN',
+ N'AI_KET_QUA_TAO_PHIEU',N'AI_SERVICE_IDENTITY',N'AI_SERVICE_INTAKE_SESSION',N'AI_YEU_CAU_TAO_PHIEU')))
 BEGIN TRY
  BEGIN TRANSACTION;
  DECLARE @RhmSnapshotSql nvarchar(max);
@@ -676,7 +681,10 @@ END CATCH;
 
 -- PHA 1: NỀN TRỐNG HOẶC KIỂM TRA DATABASE V2 ĐANG CÓ.
 IF @@TRANCOUNT<>0 THROW 52270,N'Chạy toàn bộ file trong phiên không có giao dịch đang mở.',1;
-IF NOT EXISTS(SELECT 1 FROM sys.tables WHERE is_ms_shipped=0)
+IF NOT EXISTS(SELECT 1 FROM sys.tables WHERE is_ms_shipped=0 AND
+ (schema_id<>SCHEMA_ID(N'dbo') OR name NOT IN(N'RHM_CAU_HINH_QUY_PHEP',
+ N'AI_PHIEN_TIEP_NHAN',N'AI_TIEP_NHAN_NHAP',N'AI_TIN_NHAN',N'AI_SU_KIEN',
+ N'AI_KET_QUA_TAO_PHIEU',N'AI_SERVICE_IDENTITY',N'AI_SERVICE_INTAKE_SESSION',N'AI_YEU_CAU_TAO_PHIEU')))
 BEGIN
  BEGIN TRY
  BEGIN TRANSACTION;
@@ -8210,6 +8218,44 @@ INSERT dbo.PHAN_QUYEN_VAI_TRO(MaVaiTro,MaPhanHe,DuocTruyCap)
  FROM dbo.VAI_TRO v WHERE NOT EXISTS(SELECT 1 FROM dbo.PHAN_QUYEN_VAI_TRO p WHERE p.MaVaiTro=v.MaVaiTro AND p.MaPhanHe=N'TroLyAI');
 COMMIT;
 GO
+-- Hợp đồng chỉ đọc đang được DoctorScheduleLookup của Kiosk API sử dụng.
+-- Hai result set: tên bác sĩ đang công tác, sau đó các ca đã xác nhận phù hợp.
+CREATE OR ALTER PROCEDURE dbo.AI_TraCuuLichBacSi
+ @TuNgay date,
+ @DenNgay date,
+ @TenBacSi nvarchar(100)=NULL,
+ @Buoi nvarchar(20)=N'tat_ca'
+AS
+BEGIN
+ SET NOCOUNT ON;
+ DECLARE @homNay date=CONVERT(date,DATEADD(hour,7,SYSUTCDATETIME()));
+ IF @TuNgay IS NULL OR @DenNgay IS NULL OR @TuNgay<@homNay OR @DenNgay<@TuNgay
+  OR @DenNgay>DATEADD(day,60,@homNay) OR DATEDIFF(day,@TuNgay,@DenNgay)>6
+  OR @Buoi IS NULL OR @Buoi NOT IN(N'tat_ca',N'sang',N'chieu',N'toi')
+  THROW 55998,N'Tra lịch trong 60 ngày tới, tối đa 7 ngày/lần; buổi phải là tat_ca, sang, chieu hoặc toi.',1;
+ SET @TenBacSi=NULLIF(LTRIM(RTRIM(@TenBacSi)),N'');
+ DECLARE @bacSi TABLE(MaNV nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS PRIMARY KEY,HoTen nvarchar(255));
+ INSERT @bacSi(MaNV,HoTen)
+ SELECT n.MaNV,n.HoTen FROM dbo.NHAN_VIEN n
+ WHERE n.MaChucVu=N'CV002' AND n.TrangThai=N'Đang làm việc'
+  AND EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t WHERE t.MaNV=n.MaNV AND t.TrangThai=N'Đang hoạt động')
+  AND(@TenBacSi IS NULL OR CHARINDEX(@TenBacSi COLLATE Latin1_General_100_CI_AI,n.HoTen COLLATE Latin1_General_100_CI_AI)>0);
+ SELECT HoTen AS HoTenBacSi FROM @bacSi ORDER BY HoTen,MaNV;
+ SELECT n.HoTen AS HoTenBacSi,l.NgayLam,c.GioBatDau,c.GioKetThuc,p.TenPhong
+ FROM @bacSi n JOIN dbo.LICH_LAM_VIEC l ON l.MaNV=n.MaNV
+ JOIN dbo.CA_LAM c ON c.MaCa=l.MaCa AND c.TrangThai=N'Đang hoạt động'
+ JOIN dbo.PHONG p ON p.MaPhong=l.MaPhong AND p.TrangThai=N'Đang hoạt động'
+ WHERE l.NgayLam BETWEEN @TuNgay AND @DenNgay AND l.TrangThai=N'Đã xác nhận'
+  AND l.TrangThaiHienDien NOT IN(N'Vắng mặt',N'Nghỉ phép')
+  AND NOT EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI d WHERE d.MaNV=n.MaNV
+   AND d.TrangThaiDuyet=N'Đã duyệt' AND l.NgayLam BETWEEN d.TuNgay AND d.DenNgay)
+  AND(@Buoi=N'tat_ca'
+   OR(@Buoi=N'sang' AND c.GioBatDau>='05:00' AND c.GioBatDau<'12:00')
+   OR(@Buoi=N'chieu' AND c.GioBatDau>='12:00' AND c.GioBatDau<'18:00')
+   OR(@Buoi=N'toi' AND(c.GioBatDau>='18:00' OR c.GioBatDau<'05:00')))
+ ORDER BY l.NgayLam,c.GioBatDau,n.HoTen,p.TenPhong,l.MaLLV;
+END;
+GO
 CREATE OR ALTER PROCEDURE dbo.usp_RHM_KiemTraHopNhatAI AS
 BEGIN
  SET NOCOUNT ON;
@@ -8220,6 +8266,7 @@ BEGIN
   (N'RHM_CAU_HINH_QUY_PHEP'),(N'RHM_NGAY_PHEP_NAM')) required(T) WHERE OBJECT_ID(N'dbo.'+T,N'U') IS NULL)
   THROW 55991,N'Thiếu bảng AI/quỹ phép.',1;
  IF OBJECT_ID(N'dbo.AI_TaoPhieuTuBanKhai',N'P') IS NULL OR OBJECT_ID(N'dbo.AI_XacNhanPhien',N'P') IS NULL
+  OR OBJECT_ID(N'dbo.AI_TraCuuLichBacSi',N'P') IS NULL
   OR OBJECT_ID(N'dbo.AI_TaoPhieuTuKiosk',N'P') IS NULL OR OBJECT_ID(N'dbo.RHM_GhiNhanQuyPhepKhiDuyet',N'P') IS NULL
   OR COL_LENGTH(N'dbo.AI_TIEP_NHAN_NHAP',N'LoaiKham') IS NULL
   OR COL_LENGTH(N'dbo.AI_TIEP_NHAN_NHAP',N'DaXacNhanCanhBao') IS NULL

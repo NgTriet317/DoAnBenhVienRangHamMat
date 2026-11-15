@@ -1,0 +1,54 @@
+2026-11-15 - supplied AI SQL package comparison and canonical installer verification
+
+Environment: Windows PowerShell; local SQL Server 2022 Developer 16.0.1000.6;
+.NET 8 solution. All SQL writes used newly created RHM_Hospital_Test_ databases.
+The application database was not changed.
+
+Comparison:
+- 141 named CREATE table/view/procedure/function/trigger objects in supplied package;
+  all already present in the canonical SQL before this change.
+- Retained newer Sprint3 snapshot, X-ray, fees, staff authorization, payroll protections.
+- Account MaTK NOT NULL and dynamic DonGiaCa CHECK fixes were already present.
+- Merged partial-install recovery, restricted to recognized dbo extension tables.
+- Supplied missing read-only AI_TraCuuLichBacSi required by Kiosk API.
+
+RED:
+- KiemTraHopNhatAI.ps1 -Database RHM_Hospital_Test_PackageRed_20261115_A -KhoiPhucDangDo
+  failed as expected with Msg 52270 before any baseline was imported.
+- AiScheduleChecks against existing test installer failed with
+  "FAIL: API doctor schedule procedure is installed" before implementation.
+
+GREEN:
+- KiemTraHopNhatAI.ps1 -Database RHM_Hospital_Test_PackageGreen_20261115_A -KhoiPhucDangDo
+  PASS: 74 tables, trusted constraints/active triggers, preserved 18-day/10-month
+  annual leave config, inactive AI identity, their values/timestamps/object IDs;
+  staff approvals, retry, access rejection, fixed-shift payroll and annual leave;
+  rerun preserves all table row counts.
+- Same script on new RHM_Hospital_Test_PackageFresh_20261115_A without recovery switch
+  PASS: fresh install and rerun, same business checks.
+- Supplied RHM_F5_AI_DONGGOI.sql installed into RHM_Hospital_Test_PackageUpgrade_20261115_A,
+  followed by canonical SQL: PASS. Patient, medical record and payroll counts,
+  and sampled core/AI table object IDs preserved. -ChiKiemTra passed after upgrade.
+- Unknown dbo.AI_UNRELATED and archive.AI_SERVICE_IDENTITY fixtures:
+  installer rejected with Msg 52270, imported no baseline and kept existing marker rows.
+- Final AiScheduleChecks: all 18 assertions pass; real two-result-set calls,
+  accent-insensitive name and period filters, wildcard literal handling, empty results,
+  inactive doctor/account/room/shift, draft schedule, approved leave and invalid inputs.
+  All schedule fixtures rolled back.
+- KiemTraDongBoSql.ps1 -MayChu lpc:localhost -Database RHM_Hospital_Test_PackageFresh_20261115_A
+  RESULT: 32 passed; 0 failed. 47 ET tables / 393 mapped properties verified.
+- KiemTraQuyTrinhBenhVien.ps1 -MayChu lpc:localhost
+  -Database RHM_Hospital_Test_PackageClinical_20261115_A -TaoDatabaseKiemThu
+  RESULT: 47 passed; 0 failed. Exercises fallback initializer without snapshot.
+- Test/ApiIntegrationChecks against fresh test DB/current backend build:
+  PASS: static page/DB health, save/retry/urgent drafts, validation, blocked creation,
+  origin check and no added patients/official receipts.
+- Test/AIIntakeStateChecks: passed.
+- dotnet build BenhVienRangHamMat.sln --no-restore -p:NuGetAudit=false -v minimal
+  Build succeeded, 0 Warning(s), 0 Error(s).
+- Independent read-only review: no critical/important findings.
+
+Full local logs and generated isolated installers: obj/SqlMergeReview/ (ignored).
+All seven test databases created by this run were removed after verification;
+cleanup query confirmed zero remaining. Previously existing databases were retained.
+Tests did not call a live AI provider or run on SQL Server 2016 SP1.

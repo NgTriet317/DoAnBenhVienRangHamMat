@@ -2,6 +2,14 @@
 
 Chạy toàn bộ `Database/QLBenhVienRangHamMat.sql`. File thay thế installer đổi tên `RHM_F5_Khong_GhiNhoPhien.sql` và các bản vá AI cài riêng. Không chạy các bản vá cũ sau khi cài bản hợp nhất.
 
+## Đối chiếu file đóng gói AI ngày 15/11/2026
+
+Đã đối chiếu `Database/RHM_F5_AI_DONGGOI.sql`: cả 141 đối tượng có định nghĩa `CREATE` theo tên trong file này đều đã có ở installer chuẩn. Giữ các định nghĩa mới hơn của Sprint3, dữ liệu ngày 14/11, phụ thu, phân quyền nhân viên và cách tính lương tương thích V9. Hai bản sửa `TAI_KHOAN.MaTK NOT NULL` và CHECK `DonGiaCa` dùng SQL động đã có sẵn, không cần chép lặp lại.
+
+Đã gộp điều kiện phục hồi cài dở: nếu chưa có bảng nền và chỉ còn các bảng AI đã biết hoặc `dbo.RHM_CAU_HINH_QUY_PHEP`, installer vẫn khởi tạo nền và giữ bảng/dữ liệu mở rộng hiện có. Chỉ bỏ qua đúng tên bảng trong schema `dbo`; bảng lạ như `AI_UNRELATED`, hoặc tên giống bảng AI ở schema khác, vẫn chặn nạp snapshot. Không dùng điều kiện rộng `AI_%` của file đóng gói.
+
+Bổ sung `dbo.AI_TraCuuLichBacSi` vì `DoctorScheduleLookup.cs` của API đã gọi thủ tục này nhưng cả hai file SQL đều còn thiếu. Thủ tục chỉ đọc, trả hai tập kết quả theo hợp đồng API: tên bác sĩ đang công tác, sau đó tên bác sĩ/ngày/giờ bắt đầu/giờ kết thúc/phòng. Chỉ trả ca đã xác nhận, bác sĩ có tài khoản hoạt động, phòng và ca hoạt động; loại trừ vắng mặt, nghỉ phép và khoảng nghỉ đã duyệt. Tìm tên không phân biệt dấu/hoa thường, không diễn giải ký tự wildcard. Giới hạn từng lần tra 7 ngày trong 60 ngày tới, theo giờ Việt Nam; buổi phân theo giờ bắt đầu ca (sáng 05–12h, chiều 12–18h, tối gồm phần còn lại).
+
 Schema có **74 bảng**: giữ nguyên 64 bảng Sprint3, metadata/phân công X-quang và dữ liệu phục hồi; thêm 10 bảng:
 
 | Nhóm | Bảng |
@@ -39,4 +47,14 @@ Chỉ nâng matrix User nếu khớp toàn bộ seed cũ: 25 dòng, ba quyền c
 
 `tools/KiemTraHopNhatAI.ps1` chỉ nhận database mới có tiền tố `RHM_Hospital_Test_`; tự đổi tên database trong bản SQL tạm. Không đụng database thật. Kiểm gồm cài mới, schema 74 bảng, FK/CHECK/trigger, hai luồng nhân viên tạo phiếu, retry, liên kết giao dịch, từ chối giả nhân viên, lương ca và quỹ phép, chạy lại và đối chiếu số dòng từng bảng. Các fixture nghiệp vụ được rollback.
 
+Kiểm bổ sung trường hợp cài dở (tạo database thử **mới**, tự lưu cấu hình phép 18 ngày/10 tháng và AI identity trước khi cài, rồi đối chiếu cả dữ liệu và object ID sau cài/chạy lại):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraHopNhatAI.ps1 -Database RHM_Hospital_Test_Package_MyRun -KhoiPhucDangDo
+```
+
+Cả chế độ cài mới, cài dở và `-ChiKiemTra` đều chạy `tools/AiScheduleChecks.cs.txt` để gọi thủ tục tra lịch thật, đọc hai result set, kiểm tên/buổi, ngày không hợp lệ, ca nháp, nghỉ đã duyệt và bác sĩ/tài khoản/phòng/ca ngừng hoạt động. Fixture tra lịch được rollback. Cần .NET SDK 8 cho bước này.
+
 Đã kiểm trên `RHM_Hospital_Test_MergeSql_20261115_F`: cài/chạy lại và nhân viên duyệt đạt; `SqlSyncChecks.exe` đạt **32/32**, giữ nguyên assertions lương tháng V9. Kiểm bổ sung đạt lương ca rõ ràng, hai ca nghỉ chỉ trừ một ngày quỹ, 0,5 công phép, hoa hồng không trùng và chốt lương. Bằng chứng gọn tại `evidence/20261115-merge-ai/SQL_VERIFICATION.txt`.
+
+Lần đối chiếu file đóng gói: cài mới/chạy lại, phục hồi cài dở và nâng cấp từ chính `RHM_F5_AI_DONGGOI.sql` đều đạt trên SQL Server 2022. SQL sync đạt **32/32**, quy trình khám–thuốc–hóa đơn đạt **47/47**, API integration, trạng thái bản khai và tra lịch đạt; build solution có **0 warning/0 error**. Chi tiết tại [`evidence/20261115-merge-ai/SQL_PACKAGE_VERIFICATION.txt`](evidence/20261115-merge-ai/SQL_PACKAGE_VERIFICATION.txt). Các ca này dùng database riêng, không cập nhật database chính. Chưa chạy hội thoại với nhà cung cấp AI thật hoặc kiểm trên SQL Server 2016 SP1.

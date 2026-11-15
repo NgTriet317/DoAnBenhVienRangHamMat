@@ -13,3 +13,5 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraHopNhatAI.ps1 -
 ```
 
 Chi tiết schema, phụ thu và tương thích lương: [`docs/database/HOP_NHAT_SPRINT3_AI.md`](../docs/database/HOP_NHAT_SPRINT3_AI.md).
+
+`Database/RHM_F5_AI_DONGGOI.sql` là bản nguồn đã đối chiếu; các chức năng cần thiết và bản sửa phục hồi cài dở đã nằm trong installer chuẩn. Thủ tục tra lịch bác sĩ mà API đang gọi cũng được cài tại đây. Không cần chạy thêm file đóng gói sau file gốc. Thêm `-KhoiPhucDangDo` vào lệnh kiểm để kiểm trường hợp chỉ còn bảng AI/cấu hình phép từ lần cài lỗi.

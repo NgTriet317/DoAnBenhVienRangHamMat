@@ -3,15 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RangHamMat.Wpf", "RangHamMat.Wpf\RangHamMat.Wpf.csproj", "{B429F28D-467D-4550-B2B3-496715CD3468}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RangHamMat.Wpf", "RangHamMat.Wpf\RangHamMat.Wpf.csproj", "{B429F28D-467D-4550-B2B3-496715CD3468}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ET", "ET\ET.csproj", "{E640B571-5657-443D-9103-CEDD82BF6294}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ET", "ET\ET.csproj", "{E640B571-5657-443D-9103-CEDD82BF6294}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DAL", "DAL\DAL.csproj", "{7572B35F-F7E3-4D1F-A4D8-1FCD24FC7BD3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DAL", "DAL\DAL.csproj", "{7572B35F-F7E3-4D1F-A4D8-1FCD24FC7BD3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BUS", "BUS\BUS.csproj", "{3492FEC6-C7AF-4433-87D3-09A9765D2097}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BUS", "BUS\BUS.csproj", "{3492FEC6-C7AF-4433-87D3-09A9765D2097}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RangHamMat.Kiosk.Api", "RangHamMat.Kiosk.Api\RangHamMat.Kiosk.Api.csproj", "{62A246DA-51B5-4403-B4C4-BDFFE8C0935C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RangHamMat.Kiosk.Api", "RangHamMat.Kiosk.Api\RangHamMat.Kiosk.Api.csproj", "{62A246DA-51B5-4403-B4C4-BDFFE8C0935C}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "RHM", "RHM\RHM.vdproj", "{C3CA2903-1DA8-42EA-AB1C-C9AC3686950B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{62A246DA-51B5-4403-B4C4-BDFFE8C0935C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{62A246DA-51B5-4403-B4C4-BDFFE8C0935C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{62A246DA-51B5-4403-B4C4-BDFFE8C0935C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3CA2903-1DA8-42EA-AB1C-C9AC3686950B}.Debug|Any CPU.ActiveCfg = Debug
+		{C3CA2903-1DA8-42EA-AB1C-C9AC3686950B}.Debug|Any CPU.Build.0 = Debug
+		{C3CA2903-1DA8-42EA-AB1C-C9AC3686950B}.Release|Any CPU.ActiveCfg = Release
+		{C3CA2903-1DA8-42EA-AB1C-C9AC3686950B}.Release|Any CPU.Build.0 = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

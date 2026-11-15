@@ -1,0 +1,99 @@
+using System.Data;
+using System.Text.RegularExpressions;
+using Dapper;
+using Microsoft.Data.SqlClient;
+
+if (args.Length != 2 || !Regex.IsMatch(args[1], "^RHM_Hospital_Test_[A-Za-z0-9_]+$"))
+    throw new ArgumentException("Usage: server RHM_Hospital_Test_database");
+using var db = new SqlConnection(new SqlConnectionStringBuilder {
+    DataSource=args[0], InitialCatalog=args[1], IntegratedSecurity=true, TrustServerCertificate=true
+}.ConnectionString);
+db.Open();
+Check(db.ExecuteScalar<int>("SELECT CASE WHEN OBJECT_ID(N'dbo.AI_TraCuuLichBacSi',N'P') IS NULL THEN 0 ELSE 1 END")==1,
+    "API doctor schedule procedure is installed");
+using var tx = db.BeginTransaction();
+try
+{
+    db.Execute("""
+        SET ANSI_NULLS ON; SET QUOTED_IDENTIFIER ON; SET ANSI_WARNINGS ON;
+        SET ANSI_PADDING ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF;
+        EXEC sys.sp_set_session_context @key=N'RHM.MaPhien',@value=NULL;
+        INSERT dbo.NHAN_VIEN(MaNV,HoTen,MaChucVu,MaCK,NgayVaoLam,TrangThai)
+        VALUES(N'PKG_SCHEDULE_DOCTOR',N'FIXTURE Đóng Gói',N'CV002',N'CK001','20200101',N'Đang làm việc');
+        INSERT dbo.TAI_KHOAN(MaTK,TenDangNhap,MatKhauHash,MaVaiTro,MaNV,TrangThai)
+        VALUES(N'PKG_SCHEDULE_ACCOUNT',N'pkg_schedule',N'fixture',N'VTRO002',N'PKG_SCHEDULE_DOCTOR',N'Đang hoạt động');
+        INSERT dbo.CA_LAM(MaCa,GioBatDau,GioKetThuc,TrangThai)
+        VALUES(N'PKG_MORNING','07:00','11:00',N'Đang hoạt động'),
+              (N'PKG_AFTERNOON','13:00','17:00',N'Đang hoạt động'),
+              (N'PKG_EVENING','18:00','22:00',N'Đang hoạt động');
+        INSERT dbo.LICH_LAM_VIEC(MaLLV,MaNV,MaCa,NgayLam,MaPhong,TrangThai,TrangThaiHienDien)
+        VALUES(N'PKG_S1',N'PKG_SCHEDULE_DOCTOR',N'PKG_MORNING',@tomorrow,N'PH001',N'Đã xác nhận',N'Chưa chấm công'),
+              (N'PKG_S2',N'PKG_SCHEDULE_DOCTOR',N'PKG_AFTERNOON',@tomorrow,N'PH001',N'Đã xác nhận',N'Chưa chấm công'),
+              (N'PKG_S3',N'PKG_SCHEDULE_DOCTOR',N'PKG_EVENING',@tomorrow,N'PH001',N'Đã xác nhận',N'Chưa chấm công'),
+              (N'PKG_DRAFT',N'PKG_SCHEDULE_DOCTOR',N'PKG_MORNING',@day2,N'PH001',N'Nháp',N'Chưa chấm công'),
+              (N'PKG_LEAVE',N'PKG_SCHEDULE_DOCTOR',N'PKG_MORNING',@day3,N'PH001',N'Đã xác nhận',N'Chưa chấm công');
+        INSERT dbo.DON_XIN_NGHI(MaDonNghi,MaNV,TuNgay,DenNgay,LyDo,NgayGui,TrangThaiDuyet,MaNVDuyet,NgayDuyet)
+        VALUES(N'PKG_LEAVE_REQUEST',N'PKG_SCHEDULE_DOCTOR',@day3,@day3,N'FIXTURE',SYSDATETIME(),N'Đã duyệt',N'NV001',SYSDATETIME());
+        """, new { tomorrow=Today().AddDays(1), day2=Today().AddDays(2), day3=Today().AddDays(3) }, tx);
+    DateTime from=Today().AddDays(1), to=Today().AddDays(3);
+    var result=Lookup(from,to,"dong goi");
+    Check(result.Names.SequenceEqual(new[]{"FIXTURE Đóng Gói"}) && result.Shifts.Count==3,
+        "Accent-insensitive names and confirmed shifts; draft and approved leave excluded");
+    Check(result.Shifts.All(s=>s.HoTenBacSi=="FIXTURE Đóng Gói" && s.NgayLam.Date==from
+        && s.TenPhong.Length>0 && s.GioKetThuc>s.GioBatDau),
+        "API shift fields contain the correct date, room and times");
+    foreach (var (period,hour) in new[]{("sang",7),("chieu",13),("toi",18)})
+    {
+        var filtered=Lookup(from,to,"Đóng Gói",period);
+        Check(filtered.Shifts.Count==1 && filtered.Shifts[0].GioBatDau.Hours==hour,
+            "Period filter: "+period);
+    }
+    Check(Lookup(from,to,"NO_SUCH_DOCTOR").Names.Count==0 && Lookup(from,to,"NO_SUCH_DOCTOR").Shifts.Count==0,
+        "Unknown doctor returns two empty result sets");
+    Check(Lookup(from.AddDays(1),from.AddDays(1),"Đóng Gói").Names.Count==1
+        && Lookup(from.AddDays(1),from.AddDays(1),"Đóng Gói").Shifts.Count==0,
+        "Known doctor with no confirmed shifts retains the name result");
+    // Run while the fixture doctor is active so a wildcard regression is observable.
+    Check(Lookup(from,to,"%").Names.Count==0,"Doctor search does not broaden wildcard input");
+    db.Execute("UPDATE dbo.NHAN_VIEN SET TrangThai=N'Đã nghỉ việc' WHERE MaNV=N'PKG_SCHEDULE_DOCTOR'",transaction:tx);
+    Check(Lookup(from,to,"Đóng Gói").Names.Count==0 && Lookup(from,to,"Đóng Gói").Shifts.Count==0,"Inactive doctor excluded");
+    db.Execute("UPDATE dbo.NHAN_VIEN SET TrangThai=N'Đang làm việc' WHERE MaNV=N'PKG_SCHEDULE_DOCTOR'",transaction:tx);
+    db.Execute("UPDATE dbo.PHONG SET TrangThai=N'Ngừng hoạt động' WHERE MaPhong=N'PH001'", transaction:tx);
+    Check(Lookup(from,to,"Đóng Gói").Shifts.Count==0,"Inactive room excluded");
+    db.Execute("UPDATE dbo.PHONG SET TrangThai=N'Đang hoạt động' WHERE MaPhong=N'PH001'; UPDATE dbo.CA_LAM SET TrangThai=N'Ngừng hoạt động' WHERE MaCa=N'PKG_MORNING';",transaction:tx);
+    Check(Lookup(from,to,"Đóng Gói").Shifts.Count==2,"Inactive shift excluded");
+    db.Execute("UPDATE dbo.TAI_KHOAN SET TrangThai=N'Khóa' WHERE MaTK=N'PKG_SCHEDULE_ACCOUNT'",transaction:tx);
+    Check(Lookup(from,to,"Đóng Gói").Names.Count==0 && Lookup(from,to,"Đóng Gói").Shifts.Count==0,"Inactive doctor account excluded");
+    foreach (var (start,end,period) in new[]{(from,from.AddDays(-1),"tat_ca"),(from,from.AddDays(7),"tat_ca"),
+        (Today().AddDays(-1),from,"tat_ca"),(from,Today().AddDays(61),"tat_ca"),(from,to,"invalid")})
+    {
+        bool rejected=false;
+        try { Lookup(start,end,null,period); }
+        catch (SqlException ex) when (ex.Number==55998) { rejected=true; }
+        Check(rejected,"Invalid date range or period rejected");
+    }
+    Console.WriteLine("PASS: API doctor schedule SQL contract (all fixtures rolled back).");
+}
+finally { tx.Rollback(); }
+
+(List<string> Names,List<Shift> Shifts) Lookup(DateTime from,DateTime to,string? name,string period="tat_ca")
+{
+    using var reader=db.QueryMultiple("dbo.AI_TraCuuLichBacSi",new {TuNgay=from,DenNgay=to,TenBacSi=name,Buoi=period},tx,commandType:CommandType.StoredProcedure);
+    var names=reader.Read<string>().ToList();
+    var shifts=reader.Read<Shift>().ToList();
+    return(names,shifts);
+}
+static DateTime Today()=>DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)).Date;
+static void Check(bool ok,string message)
+{
+    if(!ok) throw new InvalidOperationException("FAIL: "+message);
+    Console.WriteLine("PASS: "+message);
+}
+sealed class Shift
+{
+    public string HoTenBacSi {get;set;}="";
+    public DateTime NgayLam {get;set;}
+    public TimeSpan GioBatDau {get;set;}
+    public TimeSpan GioKetThuc {get;set;}
+    public string TenPhong {get;set;}="";
+}

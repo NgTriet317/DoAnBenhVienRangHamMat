@@ -10,6 +10,7 @@ IF EXISTS(SELECT T FROM (VALUES
 IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0)<>74
     THROW 55992,N'Expected 64 Sprint3 tables plus 10 AI/leave extension tables.',1;
 IF OBJECT_ID(N'dbo.AI_XacNhanPhien',N'P') IS NULL
+ OR OBJECT_ID(N'dbo.AI_TraCuuLichBacSi',N'P') IS NULL
  OR OBJECT_ID(N'dbo.AI_TaoPhieuTuKiosk',N'P') IS NULL
  OR OBJECT_ID(N'dbo.AI_TaoPhieuTuBanKhai',N'P') IS NULL
  OR OBJECT_ID(N'dbo.RHM_GhiNhanQuyPhepKhiDuyet',N'P') IS NULL
