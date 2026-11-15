@@ -81,10 +81,10 @@ public static class BaoCaoDuLieu
     /// </summary>
     public static IReadOnlyList<ChuyenDeBaoCao> DanhMuc { get; } = new ChuyenDeBaoCao[]
     {
-        new("00", "Tổng quan", "Tổng quan điều hành", "Nhu cầu khám, bệnh nhân thực tế, thu ròng và mức đầy đủ của thống kê bệnh lý.",
-            new[]{"Lượt khám xác nhận", "Bệnh nhân duy nhất", "Thu ròng", "Lượt khám đã phân loại"},new[]{"lượt", "người", "VNĐ", "%"},
-            "LICH_SU_KHAM_BENH · THANH_TOAN · TINH_TRANG_BENH · DM_TINH_TRANG_BENH · PHIEU_KHAM_BENH · HO_SO_BENH_AN", "Chỉ lượt khám Đã xác nhận theo ThoiGianKham; bệnh nhân DISTINCT MaBN trên toàn kỳ qua phiếu/hồ sơ, không cộng số người giữa các tháng. Thu ròng = Thu − Hoàn theo NgayThanhToan, Đã xác nhận. Bao phủ = lượt có ít nhất một mã / tổng lượt xác nhận × 100%; không có lượt thì để trống. Tình trạng DISTINCT (MaLS,MaDMTT); không suy từ chẩn đoán tự do, che nhóm dưới 5 bệnh nhân."),
-        new("20", "Khám & bệnh lý", "Bệnh/tình trạng thường gặp", "Bệnh nhân đến khám những bệnh/tình trạng nào; xếp theo số người hoặc số lượt khám.",
+        new("00", "Tổng quan", "Tổng quan điều hành", "Tóm tắt bệnh nhân đến khám, hoạt động khám chữa bệnh, lịch hẹn và tiền thu thực tế trong kỳ.",
+            new[]{"Số bệnh nhân đến khám", "Tổng lượt khám", "Tiền thực thu", "Tổng lịch hẹn"},new[]{"người", "lượt", "VNĐ", "lịch"},
+            "LICH_SU_KHAM_BENH · PHIEU_KHAM_BENH · HO_SO_BENH_AN · LICH_KHAM · THANH_TOAN · DICH_VU_THUC_HIEN · DICH_VU · TINH_TRANG_BENH", "Bệnh nhân DISTINCT MaBN trên toàn kỳ, chỉ lượt khám Đã xác nhận theo thời gian khám. Tiền thực thu = Thu − Hoàn đã xác nhận theo ngày thanh toán. Lịch hẹn theo ngày giờ hẹn; phiếu tiếp nhận theo thời gian tiếp nhận. Trạng thái lịch/hồ sơ là trạng thái khi tải. Dịch vụ theo thời gian thực hiện, đếm lượt khám khác nhau có dịch vụ xác nhận; một lượt có thể có nhiều dịch vụ."),
+        new("20", "Khám & bệnh lý", "Bệnh/tình trạng thường gặp", "Tổng quan bệnh nhân đến khám, tình trạng phổ biến và so sánh hai tháng trong cùng năm hoặc khác năm.",
             new[]{"Lượt khám xác nhận", "Bệnh nhân duy nhất", "Lượt có mã tình trạng", "Lượt chưa phân loại"},new[]{"lượt", "người", "lượt", "lượt"},
             "LICH_SU_KHAM_BENH → TINH_TRANG_BENH → DM_TINH_TRANG_BENH · PHIEU_KHAM_BENH → HO_SO_BENH_AN", "Theo ThoiGianKham, chỉ Đã xác nhận. DISTINCT (MaLS,MaDMTT) và MaBN theo từng mã; không suy luận từ chẩn đoán tự do. Một lượt có nhiều mã; tỷ trọng có thể cộng >100%. Đây là tần suất khám tại bệnh viện, không phải tỷ lệ mắc trong cộng đồng. Nhóm dưới 5 bệnh nhân được ẩn số liệu."),
         new("02", "Khám & bệnh lý", "Hồ sơ bệnh nhân", "Theo dõi hồ sơ mới và hoạt động tiếp nhận, khám chữa bệnh.",

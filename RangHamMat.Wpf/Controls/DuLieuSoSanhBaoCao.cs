@@ -30,9 +30,16 @@ public sealed record DongSoSanhBaoCao(string ChiTieu,string DonVi,string Ky,stri
 /// <param name="BoLoc">Bộ lọc đã dùng để tải và tính kết quả.</param>
 /// <param name="TongCong">Các chỉ tiêu tổng được tính trên toàn khoảng thời gian.</param>
 /// <param name="XepTheoBenhNhan">True khi bảng bệnh lý xếp theo số bệnh nhân duy nhất.</param>
-public sealed record DuLieuSoSanhBaoCao(CapKyThongKe[] CacKy,DongSoSanhBaoCao[] CacDong,
+public sealed partial record DuLieuSoSanhBaoCao(CapKyThongKe[] CacKy,DongSoSanhBaoCao[] CacDong,
     KetQuaBenhLy? BenhLy,DateTime ThoiDiemTai,BoLocThongKe BoLoc,DongSoSanhBaoCao[] TongCong,bool XepTheoBenhNhan=true)
 {
+    public KetQuaBenhLy? BenhLyGoc { get; init; }
+    public ChiTietLuotKhamBaoCao[] ChiTietBenhNhan { get; init; } = [];
+    public DongSoSanhBenh[] CacBenhSoSanh => BenhLy is null ? [] : ThongKeBenhLy.GhepKy(BenhLy, BenhLyGoc)
+        .OrderByDescending(x => XepTheoBenhNhan ? x.BenhNhanHienTai : x.LuotHienTai)
+        .ThenByDescending(x => XepTheoBenhNhan ? x.LuotHienTai : x.BenhNhanHienTai)
+        .ThenBy(x => x.TenTinhTrang).ThenBy(x => x.MaDMTT).ToArray();
+
     /// <summary>
     /// Tổng hợp từng cặp kỳ và toàn khoảng, dùng bộ nhớ đệm để tránh đọc lại; bệnh nhân duy nhất được tính lại cho cả khoảng.
     /// </summary>
@@ -40,17 +47,20 @@ public sealed record DuLieuSoSanhBaoCao(CapKyThongKe[] CacKy,DongSoSanhBaoCao[] 
     /// <param name="report">Chuyên đề xác định bốn chỉ tiêu và đơn vị cần đối chiếu.</param>
     /// <param name="filter">Khoảng tháng, kiểu so sánh và các mã giới hạn nguồn.</param>
     /// <param name="doc">Hàm đọc phát sinh theo mã chuyên đề, từ ngày và đến ngày gồm cả hai đầu.</param>
+    /// <param name="docBenhLy">Nguồn thống kê tùy chọn cho bộ kiểm; mặc định đọc qua BUS và kiểm quyền DAL.</param>
     /// <returns>Kết quả gồm biến động từng kỳ, tổng toàn khoảng và thống kê bệnh lý nếu chuyên đề yêu cầu.</returns>
     public static DuLieuSoSanhBaoCao Doc(ChuyenDeBaoCao report,BoLocThongKe filter,
-        Func<string,DateTime,DateTime,PhatSinhBaoCao[]> doc)
+        Func<string,DateTime,DateTime,PhatSinhBaoCao[]> doc, Func<KySoSanh,KetQuaBenhLy>? docBenhLy = null)
     {
+        if(report.Ma=="00")return DocTongQuan(report,filter,new BUS_BAOCAO().DocGoiTongQuan(filter));
         var periods=SoSanhThongKe.TaoCacKy(filter,DateTime.Today);
         var rows=new List<DongSoSanhBaoCao>();
         var cache=new Dictionary<KySoSanh,decimal?[]>();
         var clinicalCache=new Dictionary<KySoSanh,KetQuaBenhLy>();
         KetQuaBenhLy Clinical(KySoSanh ky)
         {
-            if(!clinicalCache.TryGetValue(ky,out var value))clinicalCache[ky]=value=new BUS_BAOCAO().DocBenhLy(ky,filter.MaCK,filter.MaDV);
+            if(!clinicalCache.TryGetValue(ky,out var value))clinicalCache[ky]=value=docBenhLy is null
+                ? new BUS_BAOCAO().DocBenhLy(ky,filter.MaCK,filter.MaDV) : docBenhLy(ky);
             return value;
         }
         decimal?[] Read(KySoSanh ky)
@@ -65,13 +75,7 @@ public sealed record DuLieuSoSanhBaoCao(CapKyThongKe[] CacKy,DongSoSanhBaoCao[] 
             else
             {
                 var total=BaoCaoDuLieu.TongHop(report.Ma,doc(report.Ma,ky.TuNgay,ky.DenExclusive.AddDays(-1)),ky.TuNgay,ky.DenExclusive.AddDays(-1),"Tháng").Tong;
-                if(report.Ma=="00")
-                {
-                    var q=Clinical(ky).ChatLuong;
-                    // Nguồn phát sinh 00 dùng Hai cho thu ròng; bệnh nhân/% phải tính lại trên toàn kỳ.
-                    values=[q.TongLuot,q.SoBenhNhan,total.Hai,q.DoBaoPhu];
-                }
-                else values=[total.Mot,total.Hai,total.Ba,total.Bon??0];
+                values=[total.Mot,total.Hai,total.Ba,total.Bon??0];
             }
             cache[ky]=values;return values;
         }
@@ -86,7 +90,8 @@ public sealed record DuLieuSoSanhBaoCao(CapKyThongKe[] CacKy,DongSoSanhBaoCao[] 
             }
         }
         KetQuaBenhLy? disease=null;
-        if(report.Ma is "00" or "20")
+        KetQuaBenhLy? baselineDisease=null;
+        if(report.Ma=="20")
         {
             var whole=new KySoSanh(periods[0].HienTai.TuNgay,periods[^1].HienTai.DenExclusive);
             disease=Clinical(whole);
@@ -94,12 +99,11 @@ public sealed record DuLieuSoSanhBaoCao(CapKyThongKe[] CacKy,DongSoSanhBaoCao[] 
             if(periods[0].KyGoc is KySoSanh firstBase && periods[^1].KyGoc is KySoSanh lastBase)
             {
                 var baseline=new KySoSanh(firstBase.TuNgay,lastBase.DenExclusive);
-                var old=Clinical(baseline).CacBenh.ToDictionary(x=>x.MaDMTT);
+                baselineDisease=Clinical(baseline);
+                var changes=ThongKeBenhLy.GhepKy(disease,baselineDisease).ToDictionary(x=>x.MaDMTT);
                 foreach(var item in disease.CacBenh)
                 {
-                    // Khi nhóm ở một kỳ bị che, không xuất Δ để suy ngược ra nhóm nhỏ.
-                    var before=old.GetValueOrDefault(item.MaDMTT);
-                    item.BienDong=SoSanhThongKe.Tinh(item.SoLuotKham,before?.DaLamMo==true?null:before?.SoLuotKham??0);
+                    item.BienDong=changes[item.MaDMTT].BienDongLuot;
                 }
             }
             disease=disease with {CacBenh=BaoCaoDuLieu.XepHangBenh(disease.CacBenh)};
@@ -112,7 +116,7 @@ public sealed record DuLieuSoSanhBaoCao(CapKyThongKe[] CacKy,DongSoSanhBaoCao[] 
             var delta=SoSanhThongKe.Tinh(totals[i],baseTotals?[i]);
             return new DongSoSanhBaoCao(report.ChiSo[i],report.DonVi[i],"Tổng "+wholePeriod.Nhan,wholeBase?.Nhan??"Không so sánh",delta.HienTai,delta.KyGoc,delta.ChenhLech,delta.PhanTram,delta.DienGiai);
         }).ToArray();
-        return new(periods,rows.ToArray(),disease,DateTime.Now,filter,summary);
+        return new(periods,rows.ToArray(),disease,DateTime.Now,filter,summary){BenhLyGoc=baselineDisease};
     }
 
     /// <summary>
@@ -120,7 +124,7 @@ public sealed record DuLieuSoSanhBaoCao(CapKyThongKe[] CacKy,DongSoSanhBaoCao[] 
     /// </summary>
     /// <param name="nguoiXuat">Tên người xuất được ghi vào phần thông tin nguồn.</param>
     /// <param name="lucXuat">Thời điểm thực hiện xuất, tách biệt với thời điểm tải dữ liệu.</param>
-    /// <returns>Nội dung CSV gồm tổng, từng kỳ và tối đa 10 nhóm bệnh theo kết quả hiện có.</returns>
+    /// <returns>Nội dung CSV gồm tổng, từng kỳ và toàn bộ nhóm bệnh của cả hai kỳ.</returns>
     public string TaoCsv(string nguoiXuat,DateTime lucXuat)
     {
         static string Cell(string text)=>"\""+((text.TrimStart().FirstOrDefault() is '=' or '+' or '-' or '@')?"'":"")+text.Replace("\"","\"\"")+"\"";
@@ -132,14 +136,45 @@ public sealed record DuLieuSoSanhBaoCao(CapKyThongKe[] CacKy,DongSoSanhBaoCao[] 
         Line("Chỉ tiêu","Đơn vị","Kỳ này","Kỳ gốc","Giá trị kỳ này","Giá trị gốc","Chênh lệch","%","Diễn giải");
         foreach(var row in TongCong.Concat(CacDong))
             result.AppendLine(string.Join(",",new[]{Cell(row.ChiTieu),Cell(row.DonVi),Cell(row.Ky),Cell(row.KyGoc),Num(row.HienTai),Num(row.GiaTriGoc),Num(row.ChenhLech),Num(row.PhanTram),Cell(row.GhiChu)}));
+        if(TongQuan is GoiTongQuanDieuHanh overview)
+        {
+            var t=overview.HienTai;
+            Line();Line("Thu tiền trong kỳ","Số tiền (VNĐ)");
+            void Money(string label,decimal value)=>result.AppendLine(Cell(label)+","+Num(value));
+            Money("Tiền đã thu",t.TienThu);Money("Tiền đã hoàn",t.TienHoan);Money("Tiền thực thu = Thu - Hoàn",t.TienThucThu);
+            Line("Giao dịch xác nhận",t.SoGiaoDich.ToString());
+            Line();Line("Lịch hẹn theo ngày hẹn","Số lịch","Trạng thái khi tải",overview.ThoiDiemTai.ToString("O"));
+            foreach(var s in overview.TrangThaiLichHen)Line(s.TrangThai,s.SoLuong.ToString());
+            Line();Line("Dịch vụ thực hiện nhiều","Mã dịch vụ","Số lượt khám khác nhau có dịch vụ");
+            foreach(var s in overview.DichVu)Line(s.TenDV,s.MaDV,s.SoLuotKham.ToString());
+            Line();Line("Phiếu tiếp nhận trong kỳ",t.SoPhieuTiepNhan.ToString());Line("Lượt khám còn nháp",t.LuotKhamNhap.ToString());
+            Line("Lượt khám chưa gắn mã tình trạng",t.LuotChuaPhanLoai.ToString());
+        }
         if(BenhLy is not null)
         {
             var q=BenhLy.ChatLuong;
             Line();Line("Chất lượng mã",q.CanhBao,"Độ bao phủ (%)",Num(q.DoBaoPhu),"Lượt chưa phân loại",q.LuotChuaPhanLoai.ToString(),"Dòng thiếu mã",q.DongChuaGanMa.ToString(),"Dòng trùng mã",q.DongTrungMa.ToString());
             Line("Đọc kết quả",q.ThongBaoXepHang,"Xếp theo",XepTheoBenhNhan?"Số bệnh nhân duy nhất":"Số lượt khám");
-            Line("Tình trạng ghi nhận","Mã","Lượt khám","Bệnh nhân","Tỷ trọng lượt đã có mã (%)","Chênh lệch lượt","%","Ghi chú");
-            foreach(var d in BenhLy.CacBenh.Take(10))
-                result.AppendLine(string.Join(",",new[]{Cell(d.TenTinhTrang),Cell(d.MaDMTT),Num(d.SoLuotKham),Num(d.SoBenhNhan),Num(d.TyTrong),Num(d.BienDong?.ChenhLech),Num(d.BienDong?.PhanTram),Cell(d.DaLamMo?"Ẩn nhóm dưới 5 bệnh nhân":d.HienThiBienDong)}));
+            Line("Phổ biến nhất kỳ này",ThongKeBenhLy.PhoBienNhat(BenhLy,XepTheoBenhNhan));
+            if(BenhLyGoc is not null)
+            {
+                var old=BenhLyGoc.ChatLuong;
+                Line("Phổ biến nhất kỳ đối chiếu",ThongKeBenhLy.PhoBienNhat(BenhLyGoc,XepTheoBenhNhan));
+                Line("Chất lượng kỳ đối chiếu",old.ThongBaoXepHang,"Độ bao phủ (%)",Num(old.DoBaoPhu),"Lượt chưa phân loại",old.LuotChuaPhanLoai.ToString());
+            }
+            Line("Tình trạng ghi nhận","Mã","Bệnh nhân kỳ này","Bệnh nhân kỳ đối chiếu","% bệnh nhân kỳ này","% bệnh nhân kỳ đối chiếu",
+                "Lượt khám kỳ này","Lượt khám kỳ đối chiếu","Chênh lệch bệnh nhân","% biến động bệnh nhân","Chênh lệch lượt","% biến động lượt","Ghi chú");
+            foreach(var d in CacBenhSoSanh)
+                result.AppendLine(string.Join(",",new[]{Cell(d.TenTinhTrang),Cell(d.MaDMTT),Num(d.BenhNhanHienTai),Num(d.BenhNhanGoc),Num(d.TyLeBenhNhanHienTai),Num(d.TyLeBenhNhanGoc),
+                    Num(d.LuotHienTai),Num(d.LuotGoc),Num(d.BienDongBenhNhan.ChenhLech),Num(d.BienDongBenhNhan.PhanTram),
+                    Num(d.BienDongLuot.ChenhLech),Num(d.BienDongLuot.PhanTram),Cell(d.GhiChu)}));
+        }
+        if(ChiTietBenhNhan.Length>0)
+        {
+            Line();Line("Chi tiết bệnh nhân đến khám","Phạm vi",CacKy[0].HienTai.Nhan);
+            Line("Mã bệnh nhân","Họ tên bệnh nhân","Ngày giờ khám","Dịch vụ khám","Chẩn đoán","Tình trạng ghi nhận","Bác sĩ","Mã lượt khám");
+            foreach(var d in ChiTietBenhNhan)
+                Line(d.MaBN,d.HoTenBN,d.ThoiGianKham.ToString("dd/MM/yyyy HH:mm",CultureInfo.InvariantCulture),d.DichVuKham,d.ChanDoan,d.TinhTrangBenh,d.BacSi,d.MaLS);
         }
         return result.ToString();
     }

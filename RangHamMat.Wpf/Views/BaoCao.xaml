@@ -48,11 +48,16 @@
       <!-- Trường lựa chọn PeriodMode. Chuyển sự kiện đến BoLoc_Changed trong code-behind. -->
       <StackPanel Width="145" Margin="0,0,12,6"><TextBlock Text="Nhóm số liệu theo" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="PeriodMode" SelectionChanged="BoLoc_Changed" AutomationProperties.Name="Nhóm số liệu theo ngày tuần tháng"><ComboBoxItem Content="Ngày"/><ComboBoxItem Content="Tuần"/><ComboBoxItem Content="Tháng"/></ComboBox></ContentControl></StackPanel>
      </WrapPanel>
+     <WrapPanel x:Name="DiseaseMonthFields" Visibility="Collapsed">
+      <StackPanel Width="170" Margin="0,0,12,6"><TextBlock Text="Tháng cần xem" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="DiseaseMonth" ItemStringFormat="Tháng {0}" SelectionChanged="ThangBenhLy_Changed" AutomationProperties.Name="Tháng thống kê bệnh lý"/></ContentControl></StackPanel>
+      <StackPanel Width="120" Margin="0,0,12,6"><TextBlock Text="Năm" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="DiseaseYear" TextChanged="ThangBenhLy_Changed" AutomationProperties.Name="Năm thống kê bệnh lý"/></ContentControl></StackPanel>
+     </WrapPanel>
      <WrapPanel x:Name="ComparisonFields" Margin="0,6,0,0">
-      <StackPanel Width="190" Margin="0,0,12,6"><TextBlock Text="So với" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="ComparisonMode" SelectionChanged="BoLoc_Changed" SelectedIndex="1" AutomationProperties.Name="Chế độ so sánh kỳ"><ComboBoxItem Content="Không so sánh"/><ComboBoxItem Content="Tháng trước (MoM)"/><ComboBoxItem Content="Cùng kỳ năm trước (YoY)"/><ComboBoxItem Content="Năm được chọn"/></ComboBox></ContentControl></StackPanel>
+      <StackPanel Width="210" Margin="0,0,12,6"><TextBlock Text="So với" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="ComparisonMode" SelectionChanged="BoLoc_Changed" SelectedIndex="1" AutomationProperties.Name="Chế độ so sánh kỳ"><ComboBoxItem Content="Không so sánh"/><ComboBoxItem Content="Tháng trước (MoM)"/><ComboBoxItem Content="Cùng kỳ năm trước (YoY)"/><ComboBoxItem Content="Năm được chọn"/><ComboBoxItem Content="Tháng / năm tùy chọn"/></ComboBox></ContentControl></StackPanel>
+      <StackPanel x:Name="BaselineMonthField" Width="145" Margin="0,0,12,6" Visibility="Collapsed"><TextBlock Text="Tháng đối chiếu" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="BaselineMonth" ItemStringFormat="Tháng {0}" SelectionChanged="BoLoc_Changed" AutomationProperties.Name="Tháng đối chiếu bệnh lý"/></ContentControl></StackPanel>
       <StackPanel Width="120" Margin="0,0,12,6"><TextBlock Text="Năm đối chiếu" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><TextBox x:Name="BaselineYear" Text="2025" TextChanged="NamGoc_Changed" AutomationProperties.Name="Năm đối chiếu"/></ContentControl></StackPanel>
       <CheckBox x:Name="MonthToDate" Content="Lũy kế tháng hiện tại (MTD)" Checked="BoLoc_Changed" Unchecked="BoLoc_Changed" VerticalAlignment="Center" Margin="0,16,12,6"/>
-      <StackPanel Width="225" Margin="0,0,12,6"><TextBlock Text="Chỉ tiêu trên biểu đồ" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="ChartMetric" SelectionChanged="BoLoc_Changed" AutomationProperties.Name="Chỉ tiêu so sánh trên biểu đồ"/></ContentControl></StackPanel>
+      <StackPanel x:Name="ChartMetricField" Width="225" Margin="0,0,12,6"><TextBlock Text="Chỉ tiêu trên biểu đồ" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="ChartMetric" SelectionChanged="ChiTieuBieuDo_Changed" AutomationProperties.Name="Chỉ tiêu so sánh trên biểu đồ"/></ContentControl></StackPanel>
      </WrapPanel>
      <WrapPanel x:Name="ClinicalFilters" Visibility="Collapsed">
       <StackPanel Width="230" Margin="0,0,12,6"><TextBlock Text="Chuyên khoa của bác sĩ" Style="{StaticResource FieldLabel}"/><ContentControl Style="{StaticResource TruongNhapLieu}"><ComboBox x:Name="SpecialtyCode" SelectionChanged="BoLoc_Changed" DisplayMemberPath="Ten" SelectedValuePath="Ma" AutomationProperties.Name="Chuyên khoa của bác sĩ"/></ContentControl></StackPanel>
@@ -73,22 +78,71 @@
     <!-- Vùng bố cục StatusSurface. -->
     <Border x:Name="StatusSurface" Background="#EAF2FF" CornerRadius="7" Padding="14,11" Margin="0,0,0,14"><StackPanel><TextBlock x:Name="PageStatus" Text="Chưa tải báo cáo. Chọn khoảng thời gian rồi nhấn Tải báo cáo." Foreground="#1D5AAC" TextWrapping="Wrap" FontSize="13" AutomationProperties.LiveSetting="Polite"/><ProgressBar x:Name="LoadingProgress" Height="3" IsIndeterminate="True" Visibility="Collapsed" Margin="0,10,0,0" Foreground="#2468CD"/></StackPanel></Border>
     <!-- Thành phần MetricItems. -->
-    <Border Style="{StaticResource ReportPanel}" Padding="4,8" Margin="0,0,0,16"><ItemsControl x:Name="MetricItems"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding KpiColumns, RelativeSource={RelativeSource AncestorType=UserControl}}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><StackPanel Margin="15,8" ToolTip="{Binding GhiChu}"><TextBlock Text="{Binding Ten}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding GiaTri}" Foreground="{Binding Mau}" FontSize="27" FontWeight="SemiBold" Margin="0,7,0,4" TextTrimming="CharacterEllipsis" ToolTip="{Binding GiaTri}"/><TextBlock Text="{Binding DonVi}" Style="{StaticResource ReportMuted}" FontSize="12"/><TextBlock Text="{Binding BienDong}" Style="{StaticResource ReportMuted}" FontSize="12" Margin="0,6,0,0"/></StackPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></Border>
+    <Border Style="{StaticResource ReportPanel}" Padding="4,8" Margin="0,0,0,16"><ItemsControl x:Name="MetricItems"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding KpiColumns, RelativeSource={RelativeSource AncestorType=UserControl}}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><StackPanel Margin="15,8" ToolTip="{Binding GhiChu}"><TextBlock Text="{Binding Ten}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding GiaTri}" Foreground="{Binding Mau}" FontSize="{Binding CoChu}" FontWeight="SemiBold" Margin="0,7,0,4" TextWrapping="Wrap" MaxHeight="85" TextTrimming="CharacterEllipsis" ToolTip="{Binding GiaTri}"/><TextBlock Text="{Binding DonVi}" Style="{StaticResource ReportMuted}" FontSize="12"/><TextBlock Text="{Binding BienDong}" Style="{StaticResource ReportMuted}" FontSize="12" Margin="0,6,0,0"/></StackPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></Border>
+    <StackPanel x:Name="OverviewPanel" Visibility="Collapsed">
+     <Border Style="{StaticResource ReportPanel}" Margin="0,0,0,14"><StackPanel>
+      <TextBlock x:Name="OverviewPeriodNote" Style="{StaticResource ReportSection}" Text="Hoạt động trong kỳ đã chọn"/>
+      <TextBlock x:Name="OverviewWorkNote" Style="{StaticResource ReportMuted}" Margin="0,8,0,10" Text="Tải báo cáo để xem tình hình tiếp nhận và hồ sơ khám."/>
+      <WrapPanel><Button Content="Bệnh nhân và bệnh lý" Tag="20" Click="MoChuyenDeTongQuan_Click" Style="{StaticResource ReportShortcut}"/><Button Content="Chi tiết thu – hoàn" Tag="09" Click="MoChuyenDeTongQuan_Click" Style="{StaticResource ReportShortcut}"/><Button Content="Lịch hẹn" Tag="04" Click="MoChuyenDeTongQuan_Click" Style="{StaticResource ReportShortcut}"/><Button Content="Dịch vụ thực hiện" Tag="07" Click="MoChuyenDeTongQuan_Click" Style="{StaticResource ReportShortcut}"/></WrapPanel>
+     </StackPanel></Border>
+     <Grid x:Name="OverviewLayout" Margin="0,0,0,16">
+      <Grid.ColumnDefinitions><ColumnDefinition x:Name="OverviewLeftColumn" Width="*"/><ColumnDefinition x:Name="OverviewGapColumn" Width="14"/><ColumnDefinition x:Name="OverviewRightColumn" Width="*"/></Grid.ColumnDefinitions>
+      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition x:Name="OverviewGapRow" Height="0"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <Border x:Name="OverviewAppointmentPanel" Style="{StaticResource ReportPanel}"><StackPanel>
+       <TextBlock Text="Tình hình lịch hẹn" Style="{StaticResource ReportSection}"/>
+       <TextBlock x:Name="OverviewAppointmentNote" Style="{StaticResource ReportMuted}" Margin="0,6,0,12" Text="Lịch có ngày hẹn trong kỳ; trạng thái tại lúc tải."/>
+       <ItemsControl x:Name="OverviewAppointmentItems"><ItemsControl.ItemTemplate><DataTemplate><DockPanel Margin="0,5"><TextBlock DockPanel.Dock="Right" Text="{Binding GiaTri}" FontWeight="SemiBold" Margin="12,0,0,0"/><TextBlock Text="{Binding Ten}" Style="{StaticResource ReportMuted}"/></DockPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+      </StackPanel></Border>
+      <Border x:Name="OverviewMoneyPanel" Grid.Column="2" Style="{StaticResource ReportPanel}"><StackPanel>
+       <TextBlock Text="Tiền thu và hoàn trong kỳ" Style="{StaticResource ReportSection}"/>
+       <TextBlock Text="Tiền thực thu = Tiền đã thu − Tiền đã hoàn. Chỉ tính giao dịch đã xác nhận theo ngày thanh toán." Style="{StaticResource ReportMuted}" Margin="0,6,0,12"/>
+       <ItemsControl x:Name="OverviewMoneyItems"><ItemsControl.ItemTemplate><DataTemplate><DockPanel Margin="0,5"><TextBlock DockPanel.Dock="Right" Text="{Binding GiaTri}" FontWeight="SemiBold" Margin="12,0,0,0"/><TextBlock Text="{Binding Ten}" Style="{StaticResource ReportMuted}"/></DockPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+      </StackPanel></Border>
+     </Grid>
+    </StackPanel>
+    <Border x:Name="PatientVisitsPanel" Style="{StaticResource ReportPanel}" Margin="0,0,0,16" Visibility="Collapsed"><StackPanel>
+     <TextBlock Text="Chi tiết bệnh nhân đến khám" Style="{StaticResource ReportSection}"/>
+     <TextBlock Text="Bệnh nhân nào đến khám, khám lúc nào, chẩn đoán và tình trạng ghi nhận trong kỳ cần xem." Style="{StaticResource ReportMuted}" Margin="0,6,0,12"/>
+     <StackPanel Margin="0,0,0,10"><TextBlock Text="Tìm bệnh nhân, mã lượt khám, chẩn đoán hoặc tình trạng" Style="{StaticResource FieldLabel}"/><TextBox x:Name="PatientVisitSearch" TextChanged="TimBenhNhanBaoCao_Changed" IsEnabled="False" MaxWidth="560" HorizontalAlignment="Left" MinWidth="240" AutomationProperties.Name="Tìm trong danh sách bệnh nhân đến khám"/></StackPanel>
+     <TextBlock x:Name="PatientVisitsNote" Style="{StaticResource ReportMuted}" Margin="0,0,0,10" AutomationProperties.LiveSetting="Polite"/>
+     <DataGrid x:Name="PatientVisitsGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" FrozenColumnCount="2" RowHeight="NaN" MinRowHeight="54" MaxHeight="380" MinColumnWidth="110" ScrollViewer.HorizontalScrollBarVisibility="Auto" AutomationProperties.Name="Chi tiết bệnh nhân đến khám trong kỳ">
+      <DataGrid.Resources><Style x:Key="VisitClinicalText" TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="MaxHeight" Value="90"/><Setter Property="Margin" Value="0,5"/><Setter Property="ToolTip" Value="{Binding Text, RelativeSource={RelativeSource Self}}"/></Style></DataGrid.Resources>
+      <DataGrid.Columns>
+       <DataGridTextColumn Header="Mã BN" Binding="{Binding MaBN}" Width="100"/>
+       <DataGridTextColumn Header="Bệnh nhân" Binding="{Binding HoTenBN}" Width="180"/>
+       <DataGridTextColumn Header="Ngày giờ khám" Binding="{Binding ThoiGianKham, StringFormat=dd/MM/yyyy HH:mm}" Width="165"/>
+       <DataGridTextColumn Header="Dịch vụ khám" Binding="{Binding DichVuKham}" Width="220" ElementStyle="{StaticResource VisitClinicalText}"/>
+       <DataGridTextColumn Header="Chẩn đoán / bệnh khám" Binding="{Binding ChanDoan}" Width="260" ElementStyle="{StaticResource VisitClinicalText}"/>
+       <DataGridTextColumn Header="Tình trạng ghi nhận" Binding="{Binding TinhTrangBenh}" Width="340" ElementStyle="{StaticResource VisitClinicalText}"/>
+       <DataGridTextColumn Header="Bác sĩ" Binding="{Binding BacSi}" Width="175"/>
+       <DataGridTextColumn Header="Mã lượt khám" Binding="{Binding MaLS}" Width="115"/>
+      </DataGrid.Columns>
+     </DataGrid>
+    </StackPanel></Border>
     <Border x:Name="DiseasePanel" Style="{StaticResource ReportPanel}" Margin="0,0,0,16" Visibility="Collapsed"><StackPanel>
-     <TextBlock Text="Bệnh/tình trạng nào được bệnh nhân khám nhiều?" Style="{StaticResource ReportSection}"/>
+     <TextBlock Text="Bệnh nhân đến khám những bệnh / tình trạng nào?" Style="{StaticResource ReportSection}"/>
+     <TextBlock x:Name="DiseasePeriodNote" Style="{StaticResource ReportMuted}" Margin="0,6,0,12"/>
+     <Border Background="#EAF2FF" CornerRadius="6" Padding="14" Margin="0,0,0,12"><StackPanel>
+      <TextBlock Text="PHỔ BIẾN NHẤT TRONG KỲ" Foreground="#1D5AAC" FontSize="11" FontWeight="SemiBold"/>
+      <TextBlock x:Name="DiseaseMostCommon" Text="Tải báo cáo để xác định bệnh phổ biến nhất." FontSize="17" FontWeight="SemiBold" Foreground="#102F54" TextWrapping="Wrap" Margin="0,5,0,0"/>
+      <TextBlock x:Name="DiseaseBaselineMostCommon" Style="{StaticResource ReportMuted}" Margin="0,8,0,0"/>
+     </StackPanel></Border>
      <WrapPanel Margin="0,8,0,0"><TextBlock Text="Xếp hạng theo" Style="{StaticResource FieldLabel}" VerticalAlignment="Center" Margin="0,0,12,0"/><ComboBox x:Name="DiseaseRanking" Width="230" SelectedIndex="0" SelectionChanged="XepHangBenh_Changed"><ComboBoxItem Content="Số bệnh nhân duy nhất"/><ComboBoxItem Content="Số lượt khám"/></ComboBox></WrapPanel>
      <TextBlock x:Name="DiseaseQuality" Style="{StaticResource ReportWarning}" Margin="0,8,0,12"/>
-     <DataGrid x:Name="DiseaseGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="False" MaxHeight="360" MinColumnWidth="110" ScrollViewer.HorizontalScrollBarVisibility="Auto"><DataGrid.Columns>
-      <DataGridTextColumn Header="Mã" Binding="{Binding MaDMTT}" Width="90"/>
-      <DataGridTextColumn Header="Tình trạng ghi nhận" Binding="{Binding TenTinhTrang}" Width="240"/>
-      <DataGridTextColumn Header="Lượt khám" Binding="{Binding HienThiLuot}"/>
-      <DataGridTextColumn Header="Bệnh nhân duy nhất" Binding="{Binding HienThiBenhNhan}" Width="160"/>
-      <DataGridTextColumn Header="% lượt đã có mã" Binding="{Binding TyTrong, StringFormat=N2, TargetNullValue=—}" Width="150"/>
-      <DataGridTextColumn Header="Biến động lượt" Binding="{Binding HienThiBienDong}" Width="270"/>
+     <DataGrid x:Name="DiseaseGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="False" FrozenColumnCount="1" MaxHeight="360" MinColumnWidth="110" ScrollViewer.HorizontalScrollBarVisibility="Auto"><DataGrid.Columns>
+      <DataGridTextColumn Header="Bệnh / tình trạng" Binding="{Binding TenTinhTrang}" Width="290"/>
+      <DataGridTextColumn x:Name="DiseasePatientsColumn" Header="BN kỳ này" Binding="{Binding BenhNhanHienTai, StringFormat=N0, TargetNullValue=—}" Width="125"/>
+      <DataGridTextColumn x:Name="DiseaseBasePatientsColumn" Header="BN đối chiếu" Binding="{Binding BenhNhanGoc, StringFormat=N0, TargetNullValue=—}" Width="125"/>
+      <DataGridTextColumn x:Name="DiseaseChangeColumn" Header="Tăng / giảm BN" Binding="{Binding HienThiBienDongBenhNhan}" Width="190"/>
+      <DataGridTextColumn Header="% BN kỳ này" Binding="{Binding TyLeBenhNhanHienTai, StringFormat=N2, TargetNullValue=—}" Width="125"/>
+      <DataGridTextColumn Header="% BN đối chiếu" Binding="{Binding TyLeBenhNhanGoc, StringFormat=N2, TargetNullValue=—}" Width="135"/>
+      <DataGridTextColumn Header="Lượt kỳ này" Binding="{Binding LuotHienTai, StringFormat=N0, TargetNullValue=—}" Width="120"/>
+      <DataGridTextColumn Header="Lượt đối chiếu" Binding="{Binding LuotGoc, StringFormat=N0, TargetNullValue=—}" Width="130"/>
+      <DataGridTextColumn Header="Mã" Binding="{Binding MaDMTT}" Width="100"/>
      </DataGrid.Columns></DataGrid>
      <TextBlock x:Name="DiseaseEmpty" Style="{StaticResource ReportMuted}" Margin="0,8,0,0" Text="Tải báo cáo để xem thống kê bệnh/tình trạng."/>
      <TextBlock x:Name="DecisionAdvice" Style="{StaticResource ReportMuted}" Margin="0,10,0,0"/>
-     <TextBlock Text="Nhóm dưới 5 bệnh nhân được ẩn số và chênh lệch. Tỷ trọng giữa các mã có thể cộng lớn hơn 100%." Style="{StaticResource ReportMuted}" Margin="0,10,0,0"/>
+     <TextBlock Text="BN = bệnh nhân duy nhất. Tỷ lệ = số BN có tình trạng / tổng BN đến khám trong kỳ. Một người có thể có nhiều tình trạng nên tổng tỷ lệ có thể vượt 100%. Dấu —: không so sánh, nhóm dưới 5 BN hoặc chưa đủ dữ liệu phân loại." Style="{StaticResource ReportMuted}" Margin="0,10,0,0"/>
     </StackPanel></Border>
     <!-- Vùng bố cục ChartLayout. -->
     <Grid x:Name="ChartLayout" Margin="0,0,0,16">
@@ -104,6 +158,18 @@
       <ScrollViewer Grid.Row="2" Height="224" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Grid><ItemsControl x:Name="CompositionItems"><ItemsControl.ItemTemplate><DataTemplate><StackPanel Margin="0,0,0,16"><DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding HienThi}" FontSize="13" FontWeight="SemiBold" Margin="10,0,0,0"/><TextBlock Text="{Binding Ten}" Style="{StaticResource ReportMuted}" ToolTip="{Binding Ten}"/></DockPanel><ProgressBar Value="{Binding TiLe, Mode=OneWay}" Maximum="100" Height="7" Margin="0,7,0,0" Foreground="#087A73" Background="#E8EEF5" BorderThickness="0" IsHitTestVisible="False"/></StackPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl><TextBlock x:Name="CompositionEmpty" Text="Cơ cấu sẽ hiển thị sau khi tải dữ liệu." Style="{StaticResource ReportMuted}" TextAlignment="Center" VerticalAlignment="Center" Margin="12"/></Grid></ScrollViewer>
      </Grid></Border>
     </Grid>
+    <Border x:Name="OverviewComparePanel" Style="{StaticResource ReportPanel}" Margin="0,0,0,16" Visibility="Collapsed"><StackPanel>
+     <TextBlock Text="So với kỳ đối chiếu" Style="{StaticResource ReportSection}"/>
+     <TextBlock x:Name="OverviewCompareNote" Style="{StaticResource ReportMuted}" Margin="0,6,0,10"/>
+     <DataGrid x:Name="OverviewCompareGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="False" RowHeight="NaN" MinRowHeight="46" MaxHeight="270" ScrollViewer.HorizontalScrollBarVisibility="Auto">
+      <DataGrid.Resources><Style x:Key="OverviewChangeText" TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="Margin" Value="0,5"/><Setter Property="ToolTip" Value="{Binding Text, RelativeSource={RelativeSource Self}}"/></Style></DataGrid.Resources>
+      <DataGrid.Columns>
+      <DataGridTextColumn Header="Chỉ tiêu" Binding="{Binding Ten}" Width="200"/>
+      <DataGridTextColumn Header="Kỳ đang xem" Binding="{Binding HienTai}" Width="180"/>
+      <DataGridTextColumn Header="Kỳ đối chiếu" Binding="{Binding KyGoc}" Width="180"/>
+      <DataGridTextColumn Header="Thay đổi" Binding="{Binding ThayDoi}" Width="*" MinWidth="280" ElementStyle="{StaticResource OverviewChangeText}"/>
+     </DataGrid.Columns></DataGrid>
+    </StackPanel></Border>
     <!-- Vùng bố cục SummaryPanel. -->
     <Border x:Name="SummaryPanel" Style="{StaticResource ReportPanel}" Padding="0" Margin="0,0,0,16"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
      <!-- Thông tin hiển thị TableTitle — Bảng đối chiếu theo kỳ. -->

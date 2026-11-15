@@ -42,6 +42,75 @@ public sealed partial class DAL_BAOCAO
             GROUP BY b.MaDMTT,dm.TenTinhTrang ORDER BY COUNT(*) DESC,b.MaDMTT;
             """;
 
+    // Gộp tình trạng bằng XML để dùng được trên SQL Server 2016; mỗi MaLS vẫn chỉ có một dòng.
+    private const string SqlChiTietLuotKham = LuotKham + """
+        SELECT l.MaLS,l.MaBN,bn.HoTenBN,l.ThoiGianKham,
+          COALESCE(dv.TenDV,N'Chưa ghi dịch vụ') AS DichVuKham,
+          COALESCE(NULLIF(ls.ChanDoan,N''),N'Chưa ghi chẩn đoán') AS ChanDoan,
+          COALESCE(t.TinhTrangBenh,N'Chưa ghi nhận tình trạng') AS TinhTrangBenh,bs.HoTen AS BacSi
+        FROM Luot l
+        JOIN dbo.BENH_NHAN bn ON bn.MaBN=l.MaBN
+        JOIN dbo.LICH_SU_KHAM_BENH ls ON ls.MaLS=l.MaLS
+        JOIN dbo.PHIEU_KHAM_BENH pk ON pk.MaPhieu=ls.MaPhieu
+        JOIN dbo.NHAN_VIEN bs ON bs.MaNV=ls.MaBS
+        LEFT JOIN dbo.DICH_VU dv ON dv.MaDV=pk.MaDV
+        OUTER APPLY (
+          SELECT STUFF((SELECT N'; '+s.NoiDung FROM (
+            SELECT DISTINCT COALESCE(NULLIF(tt.LoaiTinhTrang,N''),dm.TenTinhTrang,N'Chưa phân loại')+
+              CASE WHEN NULLIF(tt.MoTaTinhTrang,N'') IS NULL THEN N'' ELSE N': '+tt.MoTaTinhTrang END AS NoiDung
+            FROM dbo.TINH_TRANG_BENH tt
+            LEFT JOIN dbo.DM_TINH_TRANG_BENH dm ON dm.MaDMTT=tt.MaDMTT
+            WHERE tt.MaLS=l.MaLS
+          ) s ORDER BY s.NoiDung FOR XML PATH(''),TYPE).value('.','nvarchar(max)'),1,2,N'') AS TinhTrangBenh
+        ) t
+        ORDER BY l.ThoiGianKham DESC,l.MaLS DESC;
+        """;
+
+    /// <summary>Đọc từng lượt khám và các tình trạng của lượt đó; kiểm quyền lâm sàng trước khi trả danh tính.</summary>
+    public ChiTietLuotKhamBaoCao[] DocChiTietBenhNhan(KySoSanh ky, string? maCK = null, string? maDV = null)
+    {
+        KiemTraDinhDang("20",ky.TuNgay,ky.DenExclusive.AddDays(-1),30);
+        if(ky.TuNgay.TimeOfDay!=TimeSpan.Zero||ky.DenExclusive.TimeOfDay!=TimeSpan.Zero)
+            throw new ArgumentException("Kỳ thống kê phải dùng ngày tròn.");
+        if(maCK?.Length>50||maDV?.Length>50)throw new ArgumentException("Mã bộ lọc quá dài.");
+        KiemTraPrincipal();
+        return ThucHien((db,tx)=>
+        {
+            var rights=XacThucQuyen(db,"20",tx);
+            if(!ChinhSachBaoCao.ChoPhepChiTiet("20",rights))
+                throw new UnauthorizedAccessException("Không có quyền xem chi tiết bệnh nhân và dữ liệu lâm sàng.");
+            return db.Query<ChiTietLuotKhamBaoCao>(SqlChiTietLuotKham,new{ky.TuNgay,ky.DenExclusive,
+                MaCK=string.IsNullOrWhiteSpace(maCK)?null:maCK,MaDV=string.IsNullOrWhiteSpace(maDV)?null:maDV},tx).ToArray();
+        });
+    }
+
+    /// <summary>Đọc mọi kỳ so sánh và chi tiết trên cùng kết nối/giao dịch để tổng và danh sách luôn khớp.</summary>
+    public GoiBaoCaoBenhLy DocGoiBenhLy(KySoSanh[] cacKy,KySoSanh kyHienTai,bool docChiTiet,string? maCK=null,string? maDV=null)
+    {
+        ArgumentNullException.ThrowIfNull(cacKy);
+        if(cacKy.Length is <1 or >50||!cacKy.Contains(kyHienTai))throw new ArgumentException("Gói thống kê phải có kỳ cần xem và tối đa 50 kỳ.");
+        if(maCK?.Length>50||maDV?.Length>50)throw new ArgumentException("Mã bộ lọc quá dài.");
+        foreach(var ky in cacKy)
+        {
+            KiemTraDinhDang("20",ky.TuNgay,ky.DenExclusive.AddDays(-1),30);
+            if(ky.TuNgay.TimeOfDay!=TimeSpan.Zero||ky.DenExclusive.TimeOfDay!=TimeSpan.Zero)
+                throw new ArgumentException("Kỳ thống kê phải dùng ngày tròn.");
+        }
+        KiemTraPrincipal();
+        return ThucHien((db,tx)=>
+        {
+            var rights=XacThucQuyen(db,"20",tx);
+            if(docChiTiet&&!ChinhSachBaoCao.ChoPhepChiTiet("20",rights))
+                throw new UnauthorizedAccessException("Không có quyền xem chi tiết bệnh nhân và dữ liệu lâm sàng.");
+            object Args(KySoSanh ky)=>new{ky.TuNgay,ky.DenExclusive,
+                MaCK=string.IsNullOrWhiteSpace(maCK)?null:maCK,MaDV=string.IsNullOrWhiteSpace(maDV)?null:maDV};
+            var periods=cacKy.Distinct().ToDictionary(ky=>ky,ky=>new KetQuaBenhLy(
+                db.QuerySingle<ChatLuongMaBenh>(SqlChatLuong,Args(ky),tx),db.Query<DongThongKeBenh>(SqlBenh,Args(ky),tx).ToArray()));
+            var details=docChiTiet?db.Query<ChiTietLuotKhamBaoCao>(SqlChiTietLuotKham,Args(kyHienTai),tx).ToArray():[];
+            return new GoiBaoCaoBenhLy(periods,details);
+        });
+    }
+
     /// <summary>
     /// Đọc chất lượng gắn mã và phân bố bệnh lý trong cùng giao dịch sau khi xác thực quyền báo cáo.
     /// </summary>

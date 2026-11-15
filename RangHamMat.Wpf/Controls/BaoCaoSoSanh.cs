@@ -60,15 +60,16 @@ public partial class BaoCao
     /// <returns>Bộ lọc thống kê để tính các kỳ và giới hạn nguồn báo cáo.</returns>
     private BoLocThongKe DocBoLoc()
     {
-        var from=KiemTraNhapLieu.ReadDate(FromDate)??throw new LoiNhapLieu(nameof(FromDate),"Vui lòng nhập Từ ngày hoặc chọn ngày trên lịch.");
-        var to=KiemTraNhapLieu.ReadDate(ToDate)??throw new LoiNhapLieu(nameof(ToDate),"Vui lòng nhập Đến ngày hoặc chọn ngày trên lịch.");
+        var from=selected?.Ma=="20"?DocThangBenhLy():KiemTraNhapLieu.ReadDate(FromDate)??throw new LoiNhapLieu(nameof(FromDate),"Vui lòng nhập Từ ngày hoặc chọn ngày trên lịch.");
+        var to=selected?.Ma=="20"?from:KiemTraNhapLieu.ReadDate(ToDate)??throw new LoiNhapLieu(nameof(ToDate),"Vui lòng nhập Đến ngày hoặc chọn ngày trên lịch.");
         if(ComparisonMode.SelectedIndex<0||!Enum.IsDefined((CachSoSanh)ComparisonMode.SelectedIndex))
             throw new ArgumentException("Chế độ so sánh không hợp lệ. Chọn một mục trong danh sách.");
         return new()
         {
             TuThang=from,DenThang=to,
             SoSanh=(CachSoSanh)ComparisonMode.SelectedIndex,LuyKeThang=MonthToDate.IsChecked==true,
-            NamGoc=DocNamDoiChieu(BaselineYear,ComparisonMode.SelectedIndex==3),
+            NamGoc=DocNamDoiChieu(BaselineYear,ComparisonMode.SelectedIndex is 3 or 4),
+            ThangGoc=BaselineMonth.SelectedIndex+1,
             MaCK=selected?.Ma=="20"?SpecialtyCode.SelectedValue as string:null,MaDV=selected?.Ma=="20"?ServiceCode.SelectedValue as string:null
         };
     }
@@ -95,10 +96,10 @@ public partial class BaoCao
         ComparisonPanel.Visibility=Visibility.Visible;
         ComparisonGrid.ItemsSource=soSanh.TongCong.Concat(soSanh.CacDong);
         var totals=result?.Tong;
-        if(totals is not null)
+        if(totals is not null&&report.Ma!="20")
         {
             var values=new[]{totals.Mot,totals.Hai,totals.Ba,totals.Bon};
-            MetricItems.ItemsSource=report.ChiSo.Select((name,i)=>new ChiSoBaoCao(name,
+            MetricItems.ItemsSource=Enumerable.Range(0,4).Select(i=>new ChiSoBaoCao(report.ChiSo[i],
                 values[i]?.ToString(report.DonVi[i] is "VNĐ" or "%"?"N2":"N0",Vietnamese)??"—",report.DonVi[i],Colors[i],report.QuyTac,
                 soSanh.TongCong[i].GhiChu)).ToArray();
         }
@@ -114,14 +115,15 @@ public partial class BaoCao
         TrendSubtitle.Text=report.ChiSo[metric]+" · "+report.DonVi[metric];
         TrendCaption.Text="Hai chuỗi dùng cùng chỉ tiêu, đơn vị, trạng thái và mốc thời gian. Kỳ không đủ mẫu số không được vẽ thành 0. "+soSanh.CacKy[^1].GhiChu;
         FilterHint.Text="Kỳ Tháng lấy trọn các tháng đã chọn; MTD chỉ lấy tới ngày hiện tại.";
+        if(report.Ma=="00"){HienTongQuanDieuHanh();return;}
         if(soSanh.BenhLy is not KetQuaBenhLy disease)return;
         bool byPatients=DiseaseRanking.SelectedIndex!=1;
         disease=disease with {CacBenh=BaoCaoDuLieu.XepHangBenh(disease.CacBenh,byPatients)};
         soSanh=soSanh with {BenhLy=disease,XepTheoBenhNhan=byPatients};
-        DiseasePanel.Visibility=Visibility.Visible;DiseaseGrid.ItemsSource=disease.CacBenh.Take(10);
+        DiseasePanel.Visibility=Visibility.Visible;DiseaseGrid.ItemsSource=soSanh.CacBenhSoSanh;
         var q=disease.ChatLuong;
         DiseaseQuality.Text=$"{q.ThongBaoXepHang}\nBao phủ mã: {(q.DoBaoPhu is decimal rate?rate.ToString("N2",Vietnamese)+"%":"Không có mẫu số")} · Chưa phân loại: {q.LuotChuaPhanLoai:N0} lượt · Dòng thiếu mã: {q.DongChuaGanMa:N0} · Dòng trùng: {q.DongTrungMa:N0}.";
-        DiseaseEmpty.Visibility=disease.CacBenh.Length==0?Visibility.Visible:Visibility.Collapsed;
+        DiseaseEmpty.Visibility=soSanh.CacBenhSoSanh.Length==0?Visibility.Visible:Visibility.Collapsed;
         DiseaseEmpty.Text=q.TongLuot>0?"Chưa có mã bệnh/tình trạng để xếp hạng. Lượt khám mới cần lưu lựa chọn danh mục của bác sĩ; hồ sơ cũ cần được rà soát chuyên môn.":"Không phát sinh lượt khám trong kỳ đã chọn.";
         DecisionAdvice.Text=q.LuotCoMa<q.TongLuot?"Ưu tiên hoàn thiện mã bệnh trước khi dùng thứ hạng để dự trù vật tư hoặc bố trí chuyên khoa. Có thể dùng số lượt khám, bệnh nhân duy nhất và thu ròng để đối chiếu hoạt động trong kỳ."
             :"Đối chiếu nhóm bệnh/tình trạng với lịch bác sĩ, cơ cấu dịch vụ và nhu cầu vật tư. Số lượt tăng có thể do tái khám; cần xem đồng thời số bệnh nhân duy nhất.";
@@ -131,6 +133,7 @@ public partial class BaoCao
         CompositionItems.ItemsSource=safe.Select(x=>new{Ten=x.TenTinhTrang,HienThi=byPatients?x.HienThiBenhNhan:x.HienThiLuot,TiLe=max==0?0:100d*((byPatients?x.SoBenhNhan:x.SoLuotKham)??0)/max});
         CompositionEmpty.Visibility=safe.Length==0?Visibility.Visible:Visibility.Collapsed;
         CompositionEmpty.Text=disease.CacBenh.Length==0?(q.TongLuot>0?"Chưa thể xếp hạng vì chưa có mã bệnh/tình trạng.":"Không phát sinh lượt khám trong kỳ."):"Các nhóm hiện có dưới 5 bệnh nhân; xem thông báo trong bảng.";
+        HienTongQuanBenhLy(byPatients);
         if(report.Ma=="20") DetailsPanel.Visibility=Visibility.Collapsed;
     }
 }

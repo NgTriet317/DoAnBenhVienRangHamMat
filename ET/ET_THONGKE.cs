@@ -1,9 +1,9 @@
 namespace ET;
 
 /// <summary>
-/// Các cách chọn kỳ đối chiếu: không so sánh, tháng trước, cùng kỳ năm trước hoặc năm chỉ định.
+/// Các cách chọn kỳ đối chiếu: không so sánh, tháng trước, cùng kỳ năm trước, năm hoặc tháng/năm chỉ định.
 /// </summary>
-public enum CachSoSanh { Khong, ThangTruoc, CungKyNamTruoc, NamDuocChon }
+public enum CachSoSanh { Khong, ThangTruoc, CungKyNamTruoc, NamDuocChon, ThangDuocChon }
 
 /// <summary>Kỳ nửa mở, dùng thống nhất cho tất cả truy vấn thống kê.</summary>
 public sealed record KySoSanh(DateTime TuNgay, DateTime DenExclusive)
@@ -21,6 +21,7 @@ public sealed record BoLocThongKe
     public CachSoSanh SoSanh { get; init; } = CachSoSanh.ThangTruoc;
     public bool LuyKeThang { get; init; }
     public int NamGoc { get; init; } = DateTime.Today.Year - 1;
+    public int ThangGoc { get; init; } = 1;
     public string? MaCK { get; init; }
     public string? MaDV { get; init; }
 }
@@ -81,6 +82,34 @@ public sealed class ChatLuongMaBenh
 /// Kết quả thống kê bệnh lý gồm chất lượng gắn mã và các nhóm bệnh đã áp dụng quy tắc làm mờ.
 /// </summary>
 public sealed record KetQuaBenhLy(ChatLuongMaBenh ChatLuong, DongThongKeBenh[] CacBenh);
+
+/// <summary>Một lượt khám đã xác nhận, chỉ trả về cho tài khoản có quyền xem dữ liệu lâm sàng.</summary>
+public sealed class ChiTietLuotKhamBaoCao
+{
+    public string MaLS { get; set; } = "";
+    public string MaBN { get; set; } = "";
+    public string HoTenBN { get; set; } = "";
+    public DateTime ThoiGianKham { get; set; }
+    public string DichVuKham { get; set; } = "";
+    public string ChanDoan { get; set; } = "";
+    public string TinhTrangBenh { get; set; } = "";
+    public string BacSi { get; set; } = "";
+}
+
+/// <summary>Các kỳ thống kê và danh sách của kỳ cần xem, được đọc trong cùng giao dịch SQL.</summary>
+public sealed record GoiBaoCaoBenhLy(IReadOnlyDictionary<KySoSanh,KetQuaBenhLy> CacKy,ChiTietLuotKhamBaoCao[] ChiTietBenhNhan);
+
+/// <summary>Số liệu cùng một bệnh ở hai kỳ; null khi nhóm nhỏ hoặc chưa đủ dữ liệu phân loại.</summary>
+public sealed record DongSoSanhBenh(string MaDMTT, string TenTinhTrang,
+    int? BenhNhanHienTai, int? BenhNhanGoc, int? LuotHienTai, int? LuotGoc,
+    decimal? TyLeBenhNhanHienTai, decimal? TyLeBenhNhanGoc,
+    KetQuaSoSanh BienDongBenhNhan, KetQuaSoSanh BienDongLuot)
+{
+    public string HienThiBienDongBenhNhan => BienDongBenhNhan.DienGiai;
+    public string HienThiBienDongLuot => BienDongLuot.DienGiai;
+    public string GhiChu => BenhNhanHienTai is null || BenhNhanGoc is null
+        ? "Dấu —: không so sánh, nhóm dưới 5 bệnh nhân hoặc kỳ chưa đủ dữ liệu phân loại." : "";
+}
 /// <summary>
 /// Mã và nhãn chuyên khoa hoặc dịch vụ dùng cho lựa chọn bộ lọc thống kê.
 /// </summary>
@@ -126,6 +155,7 @@ public static class ChinhSachBaoCao
         "09" or "10" => rights.HasFlag(QuyenBaoCao.XemTaiChinhChiTiet),
         "11" or "18" => rights.HasFlag(QuyenBaoCao.XemLuong),
         "13" or "14" => rights.HasFlag(QuyenBaoCao.XemKhoChiTiet),
+        "20" => rights.HasFlag(QuyenBaoCao.XemDuLieuLamSang),
         _ => false
     });
 }

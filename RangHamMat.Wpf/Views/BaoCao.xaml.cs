@@ -80,7 +80,7 @@ public sealed class NhomBaoCao : INotifyPropertyChanged
 /// <param name="DonVi">Giá trị đơn vị dùng khi thực hiện thao tác; kiểu string.</param>
 /// <param name="Mau">Giá trị mẫu dùng khi thực hiện thao tác; kiểu string.</param>
 /// <param name="GhiChu">Giá trị ghi chú dùng khi thực hiện thao tác; kiểu string.</param>
-public sealed record ChiSoBaoCao(string Ten, string GiaTri, string DonVi, string Mau, string GhiChu,string BienDong="");
+public sealed record ChiSoBaoCao(string Ten, string GiaTri, string DonVi, string Mau, string GhiChu,string BienDong="",double CoChu=27);
 
 /// <summary>XAML giữ toàn bộ bố cục. Code-behind chọn chuyên đề, tải snapshot chỉ đọc và xuất bảng tổng hợp.</summary>
 public partial class BaoCao : UserControl
@@ -175,6 +175,9 @@ public partial class BaoCao : UserControl
         FromDate.SelectedDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-1);
         ToDate.SelectedDate = new DateTime(DateTime.Today.Year,DateTime.Today.Month,1).AddDays(-1); AsOfDate.SelectedDate = DateTime.Today; PeriodMode.SelectedIndex = 2;
         BaselineYear.Text = (DateTime.Today.Year-1).ToString();
+        DiseaseMonth.ItemsSource=BaselineMonth.ItemsSource=Enumerable.Range(1,12).ToArray();
+        DiseaseMonth.SelectedIndex=DateTime.Today.Month-1;DiseaseYear.Text=DateTime.Today.Year.ToString(CultureInfo.InvariantCulture);
+        BaselineMonth.SelectedIndex=DateTime.Today.AddMonths(-1).Month-1;
         Loaded += (_,_) => PhienDangNhap.DinhDanhThayDoi += PhienBaoCaoThayDoi;
         Unloaded += (_,_) => PhienDangNhap.DinhDanhThayDoi -= PhienBaoCaoThayDoi;
         // DatePicker có thể giữ SelectedDate cũ khi gõ sai: mọi lần sửa text đều khóa xuất ngay.
@@ -217,7 +220,10 @@ public partial class BaoCao : UserControl
         ChartMetric.ItemsSource = report.ChiSo;
         ChartMetric.SelectedIndex = report.Ma == "09" ? 2 : 0;
         ClinicalFilters.Visibility = report.Ma == "20" ? Visibility.Visible : Visibility.Collapsed;
+        DiseaseMonthFields.Visibility=report.Ma=="20"?Visibility.Visible:Visibility.Collapsed;
+        ChartMetricField.Visibility=report.Ma=="20"?Visibility.Collapsed:Visibility.Visible;
         if(report.Ma is "00" or "20")PeriodMode.SelectedIndex=2;
+        PeriodMode.IsEnabled=report.Ma is not("00" or "20");
         ComparisonFields.Visibility = report.TheoThoiDiem ? Visibility.Collapsed : Visibility.Visible;
         SourceText.Text = report.Nguon; RuleText.Text = report.QuyTac;
         ReportChart.PrimaryLabel = report.ChiSo[0]; ReportChart.SecondaryLabel = report.ChiSo[1];
@@ -232,7 +238,7 @@ public partial class BaoCao : UserControl
             columns[i].Header = report.ChiSo[i] + " (" + report.DonVi[i] + ")";
             columns[i].Binding = new Binding(properties[i]) { StringFormat = report.DonVi[i] is "VNĐ" or "%" ? "N2" : "N0", ConverterCulture = Vietnamese, TargetNullValue = "—" };
         }
-        RangeShortcuts.Visibility = DateRangeFields.Visibility = report.TheoThoiDiem ? Visibility.Collapsed : Visibility.Visible;
+        RangeShortcuts.Visibility = DateRangeFields.Visibility = report.TheoThoiDiem || report.Ma=="20" ? Visibility.Collapsed : Visibility.Visible;
         SnapshotFields.Visibility = report.TheoThoiDiem ? Visibility.Visible : Visibility.Collapsed;
         ChartLayout.Visibility = report.TheoThoiDiem ? Visibility.Collapsed : Visibility.Visible;
         SummaryPanel.Visibility = report.TheoThoiDiem ? Visibility.Collapsed : Visibility.Visible;
@@ -252,6 +258,12 @@ public partial class BaoCao : UserControl
         }
         else ThongBao("Chưa tải báo cáo. Chọn khoảng thời gian rồi nhấn Tải báo cáo.");
         ReportScroll.ScrollToTop();
+        if(report.Ma=="20"&&!daMoBenhLy)
+        {
+            daMoBenhLy=true;ComparisonMode.SelectedIndex=4;
+            BaselineYear.Text=DateTime.Today.AddMonths(-1).Year.ToString(CultureInfo.InvariantCulture);
+            MonthToDate.IsChecked=true;
+        }
         CapNhatTruongBoLoc();
     }
 
@@ -387,6 +399,7 @@ public partial class BaoCao : UserControl
             { "Year" => month.AddMonths(-12),"LastYear"=>new DateTime(today.Year-1,1,1),"LastMonth"=>month.AddMonths(-1), _ => month };
             ToDate.SelectedDate = tag=="LastYear"?new DateTime(today.Year-1,12,31):tag=="Month"?today:month.AddDays(-1);
             MonthToDate.IsChecked=tag=="Month";PeriodMode.SelectedIndex=2;
+            if(tag is "Year" or "LastYear"&&ComparisonMode.SelectedIndex==4)ComparisonMode.SelectedIndex=1;
         }
         finally { ready = true; }
         BoLoc_Changed(sender, e);
@@ -438,19 +451,23 @@ public partial class BaoCao : UserControl
     }
 
     /// <summary>Các ô có lỗi tại trường, gồm cả ô đang tạm ẩn do chuyển loại báo cáo.</summary>
-    private FrameworkElement[] TruongBoLoc()=>[FromDate,ToDate,AsOfDate,PeriodMode,ComparisonMode,BaselineYear,ChartMetric,SpecialtyCode,ServiceCode,ExpiryThreshold];
+    private FrameworkElement[] TruongBoLoc()=>[FromDate,ToDate,AsOfDate,PeriodMode,ComparisonMode,BaselineYear,BaselineMonth,DiseaseMonth,DiseaseYear,ChartMetric,SpecialtyCode,ServiceCode,ExpiryThreshold];
 
     /// <summary>Chỉ giữ kiểm tra các bộ lọc có hiệu lực; năm đối chiếu không tham gia kỳ ngày/tuần hoặc chế độ khác.</summary>
     private void CapNhatTruongBoLoc()
     {
         var snapshot=selected?.TheoThoiDiem==true;
         ComparisonMode.IsEnabled=MonthToDate.IsEnabled=!snapshot&&PeriodMode.SelectedIndex==2;
-        BaselineYear.IsEnabled=ComparisonMode.IsEnabled&&ComparisonMode.SelectedIndex==3;
+        BaselineYear.IsEnabled=ComparisonMode.IsEnabled&&ComparisonMode.SelectedIndex is 3 or 4;
+        BaselineMonth.IsEnabled=ComparisonMode.IsEnabled&&ComparisonMode.SelectedIndex==4;
+        BaselineMonthField.Visibility=BaselineMonth.IsEnabled?Visibility.Visible:Visibility.Collapsed;
         foreach(var field in TruongBoLoc())
         {
             var active=snapshot?field==AsOfDate||field==ExpiryThreshold:
                 field!=AsOfDate&&field!=ExpiryThreshold&&(field!=BaselineYear||BaselineYear.IsEnabled)&&
                 (field!=ComparisonMode||ComparisonMode.IsEnabled)&&
+                (field!=BaselineMonth||BaselineMonth.IsEnabled)&&
+                (selected?.Ma=="20"?field!=FromDate&&field!=ToDate&&field!=PeriodMode&&field!=ChartMetric:field!=DiseaseMonth&&field!=DiseaseYear)&&
                 (selected?.Ma=="20"||field!=SpecialtyCode&&field!=ServiceCode);
             if(!active)KiemTraNhapLieu.SetError(field,"");
         }
@@ -480,6 +497,7 @@ public partial class BaoCao : UserControl
     private bool KiemTraBoLoc(out DateTime from,out DateTime to)
     {
         CapNhatTruongBoLoc();
+        if(selected?.Ma=="20")return KiemTraBoLocBenhLy(out from,out to);
         var valid=KiemTraNgay(out from,out to);
         if(selected?.TheoThoiDiem==true)return KiemTraLuaChon(ExpiryThreshold,"Ngưỡng cảnh báo hạn dùng")&&valid;
         valid=KiemTraLuaChon(PeriodMode,"Nhóm số liệu theo")&&valid;
@@ -496,6 +514,7 @@ public partial class BaoCao : UserControl
         if(PeriodMode.SelectedIndex==2)
         {
             valid=KiemTraLuaChon(ComparisonMode,"Chế độ so sánh")&&valid;
+            if(BaselineMonth.IsEnabled)valid=KiemTraLuaChon(BaselineMonth,"Tháng đối chiếu")&&valid;
             try{DocNamDoiChieu(BaselineYear,BaselineYear.IsEnabled);}catch(LoiNhapLieu){valid=false;}
             if(valid)
             {
@@ -512,8 +531,10 @@ public partial class BaoCao : UserControl
     private void BaoLoiSoSanh(ArgumentException error)
     {
         FrameworkElement field=error.Message.StartsWith("Năm đối chiếu",StringComparison.Ordinal)?BaselineYear:
+            error.Message.StartsWith("Tháng đối chiếu",StringComparison.Ordinal)?BaselineMonth:
             error.Message.StartsWith("Chế độ so sánh",StringComparison.Ordinal)?ComparisonMode:
-            error.Message.StartsWith("Kỳ gốc",StringComparison.Ordinal)?ComparisonMode.SelectedIndex==3?BaselineYear:ComparisonMode:
+            error.Message.StartsWith("Kỳ gốc",StringComparison.Ordinal)?ComparisonMode.SelectedIndex is 3 or 4?BaselineYear:ComparisonMode:
+            selected?.Ma=="20"?DiseaseYear:
             FromDate.SelectedDate?.Year<1901?FromDate:ToDate;
         KiemTraNhapLieu.SetError(field,error.Message+" Chọn lại "+(field==BaselineYear?"năm đối chiếu đã diễn ra.":field==ComparisonMode?"chế độ so sánh hoặc khoảng tháng đã kết thúc.":"khoảng từ 1 đến 24 tháng; bật MTD nếu lấy tháng hiện tại."));
     }
@@ -566,18 +587,25 @@ public partial class BaoCao : UserControl
             var packet = await Task.Run(() =>
             {
                 PhatSinhBaoCao[] Read(string id,DateTime start,DateTime end) => read is null ? BaoCaoDuLieu.Doc(id,start,end,threshold) : read(id);
-                var comparison = filter is null ? null : DuLieuSoSanhBaoCao.Doc(report,filter,Read);
+                DuLieuSoSanhBaoCao? comparison;
+                if(report.Ma=="20"&&filter is not null)
+                {
+                    var clinical=new BUS_BAOCAO().DocGoiBenhLy(filter,ChinhSachBaoCao.ChoPhepChiTiet("20",quyen));
+                    comparison=DuLieuSoSanhBaoCao.Doc(report,filter,Read,ky=>clinical.CacKy[ky])
+                        with{ChiTietBenhNhan=clinical.ChiTietBenhNhan};
+                }
+                else comparison=filter is null?null:DuLieuSoSanhBaoCao.Doc(report,filter,Read);
                 KetQuaBaoCao data;
                 if(report.Ma is "00" or "20")
                 {
-                    var disease=comparison?.BenhLy??throw new InvalidOperationException("Không đủ dữ liệu thống kê theo bộ lọc.");
-                    var q=disease.ChatLuong;
+                    if(comparison is null)throw new InvalidOperationException("Không đủ dữ liệu thống kê theo bộ lọc.");
+                    var q=comparison.BenhLy?.ChatLuong;
                     var totals=comparison!.TongCong;
                     data=new(new("Tổng kỳ",totals[0].HienTai??0,totals[1].HienTai??0,totals[2].HienTai??0,totals[3].HienTai),
                         comparison!.CacKy.Select((p,i)=>new DongBaoCao($"Tháng {p.HienTai.TuNgay:MM/yyyy}",
                             comparison.CacDong[i*4].HienTai??0,comparison.CacDong[i*4+1].HienTai??0,
                             comparison.CacDong[i*4+2].HienTai??0,comparison.CacDong[i*4+3].HienTai,p.HienTai.TuNgay,p.HienTai.DenExclusive.AddDays(-1))).ToArray(),
-                        Array.Empty<CoCauBaoCao>(),report.Ma=="20"?q.TongLuot:Read("00",from,to).Length,Array.Empty<ChiTietBaoCao>());
+                        Array.Empty<CoCauBaoCao>(),report.Ma=="20"?q!.TongLuot:comparison.TongQuan?.CoPhatSinh==true?1:0,Array.Empty<ChiTietBaoCao>());
                 }
                 else data = BaoCaoDuLieu.TongHop(report.Ma,Read(report.Ma,from,to),from,to,mode);
                 if(read is null && (report.Ma is "11" or "18" || report.Ma=="14"&&quyen.HasFlag(QuyenBaoCao.XemKhoChiTiet)
@@ -594,14 +622,18 @@ public partial class BaoCao : UserControl
             if (request != version) return;
             if (!CoQuyenChuyenDe) { ThongBao("Phiên hiện tại không còn quyền xem báo cáo.", true); return; }
             var data=packet.Data;
+            var comparisonData=packet.Comparison;
+            if(report.Ma=="20"&&comparisonData is not null&&!ChinhSachBaoCao.ChoPhepChiTiet("20",quyen))
+                comparisonData=comparisonData with {ChiTietBenhNhan=[]};
             if((report.Ma is "09" or "10" or "11" or "14" or "18")&&!ChinhSachBaoCao.ChoPhepChiTiet(report.Ma,quyen))
                 data=data with {ChiTiet=Array.Empty<ChiTietBaoCao>()};
             CauHinhChiTiet(report);
             result = data; appliedFrom = from; appliedTo = to; appliedMode = mode; appliedThreshold = threshold;
-            soSanh=packet.Comparison;
+            soSanh=comparisonData;
             HienKetQua(report, data);
             HienSoSanh(report);
-            if(report.Ma is "09" or "10" or "11" or "18")await Task.Run(()=>new BUS_BAOCAO().GhiTruyCap(report.Ma,"VIEW_REPORT",from,to));
+            if(report.Ma is "09" or "10" or "11" or "18"||report.Ma=="20"&&soSanh?.ChiTietBenhNhan.Length>0)
+                await Task.Run(()=>new BUS_BAOCAO().GhiTruyCap(report.Ma,"VIEW_REPORT",from,to));
             if(request!=version)return;
             ThongBao(report.TheoThoiDiem ? $"Đã kiểm tra {data.Tong.Mot:N0} lô · Ngày chốt {from:dd/MM/yyyy} · Ngưỡng {threshold} ngày · Cập nhật {DateTime.Now:HH:mm:ss}"
                 : data.SoPhatSinh == 0 ? $"Không có phát sinh trong khoảng {from:dd/MM/yyyy} – {to:dd/MM/yyyy}. Các kỳ trong bảng có giá trị 0."
@@ -633,11 +665,15 @@ public partial class BaoCao : UserControl
     {
         version++; result = null; ExportButton.IsEnabled = false; ReportGrid.ItemsSource = null;
         soSanh=null; ComparisonGrid.ItemsSource=null; DiseaseGrid.ItemsSource=null;
+        PatientVisitsGrid.ItemsSource=null;PatientVisitSearch.Text="";HienDanhSachBenhNhan();
         ComparisonPanel.Visibility=Visibility.Collapsed;
-        DiseasePanel.Visibility=selected?.Ma is "00" or "20"?Visibility.Visible:Visibility.Collapsed;
+        DiseasePanel.Visibility=selected?.Ma=="20"?Visibility.Visible:Visibility.Collapsed;
+        HienTongQuanDieuHanh();
         DiseaseQuality.Text="Chưa tải dữ liệu bệnh lý. Chọn kỳ và tải báo cáo để xem số bệnh nhân theo từng bệnh/tình trạng.";
         DiseaseEmpty.Text="Bảng xếp hạng sẽ có số bệnh nhân duy nhất và số lượt khám riêng.";
         DiseaseEmpty.Visibility=Visibility.Visible;DecisionAdvice.Text="";
+        DiseaseMostCommon.Text="Tải báo cáo để xác định bệnh phổ biến nhất.";
+        DiseaseBaselineMostCommon.Text=DiseasePeriodNote.Text="";
         ReportChart.Points = Array.Empty<ChartPoint>(); CompositionItems.ItemsSource = null;
         ReportChart.MinWidth = 0; DetailsGrid.ItemsSource = null; DetailsCount.Text = "Chưa tải dữ liệu";
         DetailsEmpty.Visibility = Visibility.Visible; DetailsEmpty.Text = "Tải báo cáo để xem chi tiết từ dữ liệu nguồn.";
@@ -656,6 +692,7 @@ public partial class BaoCao : UserControl
     private void HienChiSo(DongBaoCao? total)
     {
         if (selected is null) { MetricItems.ItemsSource = null; return; }
+        if(selected.Ma=="20"){HienChiSoBenhLy(total is null?null:soSanh?.BenhLy);return;}
         var values = total is null ? null : new[] { total.Mot, total.Hai, total.Ba, total.Bon };
         MetricItems.ItemsSource = selected.ChiSo.Select((name, i) => new ChiSoBaoCao(name,
             values is null || values[i] is null ? "—" : values[i]!.Value.ToString(selected.DonVi[i] is "VNĐ" or "%" ? "N2" : "N0", Vietnamese),
@@ -720,7 +757,8 @@ public partial class BaoCao : UserControl
         if (dialog.ShowDialog() != true || generation != version || !CoQuyenChuyenDe) return;
         try
         {
-            var sensitiveDetails=(report.Ma is "09" or "10" or "11" or "14" or "18")&&data.ChiTiet.Length>0;
+            var sensitiveDetails=(report.Ma is "09" or "10" or "11" or "14" or "18")&&data.ChiTiet.Length>0
+                ||report.Ma=="20"&&soSanh?.ChiTietBenhNhan.Length>0;
             new BUS_BAOCAO().KiemTraXuat(report.Ma,sensitiveDetails);
             new BUS_BAOCAO().GhiTruyCap(report.Ma,"EXPORT_REPORT",appliedFrom,appliedTo);
             var sourceLabel=new BUS_BAOCAO().LaDuLieuTrinhDien()?"\"Nguồn dữ liệu\",\"DEMO — dữ liệu giả lập, không phải hồ sơ thật\"\r\n":"";
@@ -746,5 +784,9 @@ public partial class BaoCao : UserControl
         ChartGapColumn.Width = new GridLength(compact ? 0 : 14); CompositionColumn.Width = compact ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
         ChartGapRow.Height = new GridLength(compact ? 14 : 0);
         Grid.SetColumn(CompositionPanel, compact ? 0 : 2); Grid.SetRow(CompositionPanel, compact ? 2 : 0);
+        OverviewGapColumn.Width=new GridLength(compact?0:14);
+        OverviewRightColumn.Width=compact?new GridLength(0):new GridLength(1,GridUnitType.Star);
+        OverviewGapRow.Height=new GridLength(compact?14:0);
+        Grid.SetColumn(OverviewMoneyPanel,compact?0:2);Grid.SetRow(OverviewMoneyPanel,compact?2:0);
     }
 }

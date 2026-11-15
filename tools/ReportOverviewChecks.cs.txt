@@ -1,0 +1,158 @@
+using BUS;
+using DAL;
+using ET;
+using Dapper;
+using System.IO;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using RangHamMat.Controls;
+using RangHamMat.Views;
+
+internal static partial class Program
+{
+    static (BoLocThongKe Filter,GoiTongQuanDieuHanh Packet) OverviewFixture()
+    {
+        var filter=new BoLocThongKe{TuThang=new(2025,1,1),DenThang=new(2025,2,1),SoSanh=CachSoSanh.Khong};
+        var whole=new KySoSanh(new(2025,1,1),new(2025,3,1));
+        var periods=new Dictionary<KySoSanh,ThongKeDieuHanh>
+        {
+            [new(new(2025,1,1),new(2025,2,1))]=new(){SoBenhNhan=5,TongLuotKham=6,TongLichHen=3,TienThu=100,TienHoan=10},
+            [new(new(2025,2,1),new(2025,3,1))]=new(){SoBenhNhan=7,TongLuotKham=8,TongLichHen=4,TienThu=50},
+            [whole]=new(){SoBenhNhan=9,TongLuotKham=14,TongLichHen=7,TienThu=150,TienHoan=10,SoGiaoDich=3,SoPhieuTiepNhan=15,LuotKhamNhap=1,LuotChuaPhanLoai=2}
+        };
+        return(filter,new(periods,whole,[new(){TrangThai="Đã khám",SoLuong=4},new(){TrangThai="Đã xác nhận",SoLuong=2},new(){TrangThai="Hủy",SoLuong=1}],
+            [new(){MaDV="DV1",TenDV="Khám răng tổng quát",SoLuotKham=10},new(){MaDV="DV2",TenDV="Cạo vôi răng",SoLuotKham=6}],DateTime.Now));
+    }
+
+    static void OverviewMemoryChecks()
+    {
+        var (filter,packet)=OverviewFixture();var report=BaoCaoDuLieu.DanhMuc.Single(x=>x.Ma=="00");
+        var data=DuLieuSoSanhBaoCao.DocTongQuan(report,filter,packet);
+        if(data.TongCong[0].HienTai!=9||data.CacDong.Where(x=>x.ChiTieu==report.ChiSo[0]).Sum(x=>x.HienTai)!=12||data.TongCong[1].HienTai!=14||data.TongCong[2].HienTai!=140||data.TongCong[3].HienTai!=7)
+            throw new Exception("Cộng trùng người giữa các tháng hoặc sai thứ tự/đơn vị chỉ số.");
+        if(data.BenhLy is not null||data.ChiTietBenhNhan.Length!=0)throw new Exception("Tổng quan kèm dữ liệu định danh hoặc thay bằng thống kê bệnh lý.");
+        var csv=data.TaoCsv("Kiểm thử",DateTime.Now);
+        if(!csv.Contains("Tiền đã hoàn")||!csv.Contains("Cạo vôi răng")||!csv.Contains("Trạng thái khi tải")||!csv.Contains("Phiếu tiếp nhận trong kỳ"))throw new Exception("CSV thiếu phần hiển thị điều hành.");
+        var jan=packet.CacKy.Keys.Single(x=>x.DenExclusive==new DateTime(2025,2,1));
+        var dec=new KySoSanh(new(2024,12,1),new(2025,1,1));
+        var negative=new GoiTongQuanDieuHanh(new Dictionary<KySoSanh,ThongKeDieuHanh>{[jan]=new(){TienHoan=20,SoGiaoDich=1},[dec]=new()},jan,[],[],DateTime.Now);
+        var compared=DuLieuSoSanhBaoCao.DocTongQuan(report,filter with{DenThang=filter.TuThang,SoSanh=CachSoSanh.ThangTruoc},negative);
+        if(compared.TongCong[2].HienTai!=-20||compared.TongCong[2].PhanTram is not null||!negative.HienTai.CoPhatSinh||!compared.TaoCsv("test",DateTime.Now).Contains(",-20,"))
+            throw new Exception("Bỏ thu âm / kỳ gốc 0 / phát sinh chỉ có hoàn tiền.");
+        if(new ThongKeDieuHanh().CoPhatSinh||new ThongKeDieuHanh().ChiSo.Any(x=>x!=0))throw new Exception("Kỳ rỗng không đúng trạng thái.");
+        var serviceOnly=new GoiTongQuanDieuHanh(new Dictionary<KySoSanh,ThongKeDieuHanh>{[jan]=new()},jan,[],[new(){MaDV="DV1",TenDV="Dịch vụ từ lượt khám kỳ trước",SoLuotKham=1}],DateTime.Now);
+        if(typeof(GoiTongQuanDieuHanh).GetProperty("CoPhatSinh")?.GetValue(serviceOnly) is not true)
+            throw new Exception("Kỳ chỉ có dịch vụ thực hiện bị coi là không phát sinh.");
+        if(!compared.TaoCsv("test",DateTime.Now).Contains("\"Tiền thực thu = Thu - Hoàn\",-20"))
+            throw new Exception("Thu âm trong bảng thu/hoàn CSV bị chuyển thành ô chữ.");
+    }
+
+    static void OverviewUiChecks()
+    {
+        var (filter,packet)=OverviewFixture();var report=BaoCaoDuLieu.DanhMuc.Single(x=>x.Ma=="00");
+        var data=DuLieuSoSanhBaoCao.DocTongQuan(report,filter,packet);
+        var page=new BaoCao();var flags=BindingFlags.Instance|BindingFlags.NonPublic;
+        typeof(BaoCao).GetField("quyen",flags)!.SetValue(page,(QuyenBaoCao)63);page.ChonBaoCao("00");
+        ((DatePicker)page.FindName("FromDate")).SelectedDate=filter.TuThang;
+        ((DatePicker)page.FindName("ToDate")).SelectedDate=filter.DenThang.AddMonths(1).AddDays(-1);
+        ((ComboBox)page.FindName("ComparisonMode")).SelectedIndex=0;
+        var window=new Window{Content=page,Left=-20000,Top=-20000,ShowInTaskbar=false,ShowActivated=false,WindowStyle=WindowStyle.None};
+        try
+        {
+            window.Show();Dispatcher.CurrentDispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
+            typeof(BaoCao).GetField("soSanh",flags)!.SetValue(page,data);
+            typeof(BaoCao).GetField("result",flags)!.SetValue(page,new KetQuaBaoCao(new("Tổng kỳ",9,14,140,7),[],[],1,[]));
+            typeof(BaoCao).GetMethod("HienSoSanh",flags)!.Invoke(page,new object[]{report});
+            var cards=((ItemsControl)page.FindName("MetricItems")).Items.Cast<ChiSoBaoCao>().ToArray();
+            if(!cards.Select(x=>x.Ten).SequenceEqual(report.ChiSo)||cards[0].GiaTri!="9")throw new Exception("Bốn ô không khớp tổng toàn kỳ.");
+            if(((ItemsControl)page.FindName("OverviewAppointmentItems")).Items.Count!=3||((ItemsControl)page.FindName("OverviewMoneyItems")).Items.Count!=4||((DataGrid)page.FindName("OverviewCompareGrid")).Items.Count!=4)
+                throw new Exception("Thiếu lịch hẹn / thu hoàn / bảng đối chiếu.");
+            if(((FrameworkElement)page.FindName("DiseasePanel")).Visibility!=Visibility.Collapsed||((FrameworkElement)page.FindName("PatientVisitsPanel")).Visibility!=Visibility.Collapsed)
+                throw new Exception("Tổng quan vẫn lẫn bảng chi tiết bệnh lý/bệnh nhân.");
+            if(!((TextBlock)page.FindName("CompositionTitle")).Text.Contains("dịch vụ"))throw new Exception("Biểu đồ phải chỉ rõ xếp hạng dịch vụ.");
+            var chart=(ChartView)page.FindName("ReportChart");
+            if(chart.Points!.Count()!=2||chart.Unit!="người"||chart.Points!.First().Primary!=5)throw new Exception("Biểu đồ nhầm đơn vị / người mỗi tháng.");
+            ((ComboBox)page.FindName("ChartMetric")).SelectedIndex=2;
+            if(chart.Unit!="VNĐ"||chart.Points!.First().Primary!=90||typeof(BaoCao).GetField("soSanh",flags)!.GetValue(page) is null)
+                throw new Exception("Đổi chỉ tiêu biểu đồ không vẽ lại gói đã tải.");
+            ((ComboBox)page.FindName("ChartMetric")).SelectedIndex=0;
+            Directory.CreateDirectory("obj/ReportChecks/evidence");
+            foreach(var size in new[]{(1024,768),(1366,768),(1920,1080)})
+            {
+                window.Width=size.Item1;window.Height=size.Item2;window.UpdateLayout();Dispatcher.CurrentDispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
+                var money=(FrameworkElement)page.FindName("OverviewMoneyPanel");var p=money.TranslatePoint(new Point(),page);
+                if(p.X<0||p.X+money.ActualWidth>page.ActualWidth+1)throw new Exception("Khối thu/hoàn bị cắt tại "+size.Item1);
+                var bitmap=new RenderTargetBitmap(size.Item1,size.Item2,96,96,PixelFormats.Pbgra32);bitmap.Render(page);
+                using var file=File.Create($"obj/ReportChecks/evidence/overview-new-{size.Item1}.png");
+                var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));encoder.Save(file);
+            }
+            ((DatePicker)page.FindName("FromDate")).SelectedDate=new DateTime(2025,4,1);
+            if(((ItemsControl)page.FindName("OverviewMoneyItems")).ItemsSource is not null||((DataGrid)page.FindName("OverviewCompareGrid")).ItemsSource is not null||((Button)page.FindName("ExportButton")).IsEnabled)
+                throw new Exception("Đổi kỳ giữ số liệu tổng quan cũ.");
+            typeof(BaoCao).GetMethod("MoChuyenDeTongQuan_Click",flags)!.Invoke(page,new object[]{new Button{Tag="07"},new RoutedEventArgs()});
+            if(((FrameworkElement)page.FindName("OverviewPanel")).Visibility!=Visibility.Collapsed||((TextBlock)page.FindName("ReportTitle")).Text!="Dịch vụ thực hiện")
+                throw new Exception("Nút mở chuyên đề không chuyển đúng hoặc giữ khối tổng quan.");
+        }
+        finally{window.Close();}
+    }
+
+    static void OverviewSqlFixture()
+    {
+        using var db=Open();
+        db.Execute("""
+            CREATE TABLE #OVLS(MaLS nvarchar(50),MaPhieu nvarchar(50),MaBS nvarchar(50),ThoiGianKham datetime2,TrangThai nvarchar(50));
+            CREATE TABLE #OVPK(MaPhieu nvarchar(50),MaHS nvarchar(50),MaDV nvarchar(50),ThoiGianTiepNhan datetime2);
+            CREATE TABLE #OVHS(MaHS nvarchar(50),MaBN nvarchar(50));
+            CREATE TABLE #OVNV(MaNV nvarchar(50),MaCK nvarchar(50));
+            CREATE TABLE #OVTT(MaLS nvarchar(50),MaDMTT nvarchar(50));
+            CREATE TABLE #OVLK(NgayGioKham datetime2,TrangThai nvarchar(50));
+            CREATE TABLE #OVTIEN(NgayThanhToan datetime2,TrangThai nvarchar(50),LoaiGiaoDich nvarchar(50),SoTien decimal(18,2));
+            CREATE TABLE #OVDV(MaDV nvarchar(50),TenDV nvarchar(100));
+            CREATE TABLE #OVTH(MaLS nvarchar(50),MaDV nvarchar(50),ThoiGianThucHien datetime2,TrangThai nvarchar(50));
+            INSERT #OVNV VALUES('BS','CK1');INSERT #OVHS VALUES('H1','B1'),('H2','B2'),('H3','B3');
+            INSERT #OVPK VALUES('P1','H1','D1','20261001'),('P2','H2','D2','20261103'),('P3','H3','D1','20261007'),('P4','H1','D1','20261201');
+            INSERT #OVLS VALUES('L1','P1','BS','20261003',N'Đã xác nhận'),('L2','P1','BS','20261004',N'Đã xác nhận'),
+                ('L3','P1','BS','20261101',N'Đã xác nhận'),('L6','P2','BS','20261105',N'Đã xác nhận'),
+                ('L4','P3','BS','20261007',N'Nháp'),('L5','P4','BS','20261201',N'Đã xác nhận');
+            INSERT #OVTT VALUES('L1','A'),('L1','B'),('L1','A'),('L2',NULL);
+            INSERT #OVLK VALUES('20261001',N'Đã khám'),('20261002',N'Hủy'),('20261010',N'Đã xác nhận'),('20261105',N'Hoàn thành'),('20261201',N'Đã khám');
+            INSERT #OVTIEN VALUES('20261003',N'Đã xác nhận',N'Thu',100),('20261004',N'Đã xác nhận',N'Hoàn',150),
+                ('20261009',N'Nháp',N'Thu',999),('20261109',N'Đã xác nhận',N'Thu',80);
+            INSERT #OVDV VALUES('D1',N'Khám răng'),('D2',N'Cạo vôi');
+            INSERT #OVTH VALUES('L1','D1','20261003',N'Đã xác nhận'),('L1','D1','20261003',N'Đã xác nhận'),
+                ('L2','D1','20261004',N'Đã xác nhận'),('L1','D2','20261003',N'Đã xác nhận'),
+                ('L4','D1','20261007',N'Đã xác nhận'),('L1','D1','20261009',N'Nháp'),('L1','D1','20261201',N'Đã xác nhận'),
+                ('L1','D1','20270107',N'Đã xác nhận');
+            """);
+        string Sql(string name)
+        {
+            var sql=(string)typeof(DAL_BAOCAO).GetField(name,BindingFlags.Static|BindingFlags.NonPublic)!.GetRawConstantValue()!;
+            foreach(var map in new[]{("LICH_SU_KHAM_BENH","#OVLS"),("PHIEU_KHAM_BENH","#OVPK"),("HO_SO_BENH_AN","#OVHS"),("NHAN_VIEN","#OVNV"),
+                ("TINH_TRANG_BENH","#OVTT"),("LICH_KHAM","#OVLK"),("THANH_TOAN","#OVTIEN"),("DICH_VU_THUC_HIEN","#OVTH"),("DICH_VU","#OVDV")})
+                sql=sql.Replace("dbo."+map.Item1,map.Item2);
+            return sql;
+        }
+        var p=new{TuNgay=new DateTime(2026,10,1),DenExclusive=new DateTime(2026,11,1),MaCK=(string?)null,MaDV=(string?)null};
+        var oct=db.QuerySingle<ThongKeDieuHanh>(Sql("SqlTongQuanDieuHanh"),p);
+        if(!oct.ChiSo.SequenceEqual(new decimal[]{1,2,-50,3})||oct.SoGiaoDich!=2||oct.SoPhieuTiepNhan!=2||oct.LuotKhamNhap!=1||oct.LuotChuaPhanLoai!=1)
+            throw new Exception("JOIN nhân số hoặc lẫn tiền nháp / lịch hẹn / thời gian nghiệp vụ.");
+        var whole=db.QuerySingle<ThongKeDieuHanh>(Sql("SqlTongQuanDieuHanh"),new{p.TuNgay,DenExclusive=new DateTime(2026,12,1),p.MaCK,p.MaDV});
+        if(whole.SoBenhNhan!=2||whole.TongLuotKham!=4||whole.TienThucThu!=30)throw new Exception("Tổng nhiều tháng đếm trùng người hoặc lấy thêm mốc cuối.");
+        if(db.Query<DongTrangThaiDieuHanh>(Sql("SqlTrangThaiLichDieuHanh"),p).Sum(x=>x.SoLuong)!=3)throw new Exception("Sai cơ cấu lịch.");
+        var services=db.Query<DongDichVuDieuHanh>(Sql("SqlDichVuDieuHanh"),p).ToArray();
+        if(services.Length!=2||services[0].MaDV!="D1"||services[0].SoLuotKham!=2||services[1].SoLuotKham!=1)throw new Exception("Dịch vụ lặp một lượt bị đếm nhiều lần hoặc nhận nháp/ngoài kỳ.");
+        var empty=db.QuerySingle<ThongKeDieuHanh>(Sql("SqlTongQuanDieuHanh"),new{TuNgay=new DateTime(2020,1,1),DenExclusive=new DateTime(2020,2,1),p.MaCK,p.MaDV});
+        if(empty.CoPhatSinh||empty.ChiSo.Any(x=>x!=0))throw new Exception("Kỳ trống trả số giả/null thay vì 0 sau đọc thành công.");
+        var later=new{TuNgay=new DateTime(2027,1,1),DenExclusive=new DateTime(2027,2,1),p.MaCK,p.MaDV};
+        var serviceOnlyStats=db.QuerySingle<ThongKeDieuHanh>(Sql("SqlTongQuanDieuHanh"),later);
+        var laterServices=db.Query<DongDichVuDieuHanh>(Sql("SqlDichVuDieuHanh"),later).ToArray();
+        var laterPeriod=new KySoSanh(later.TuNgay,later.DenExclusive);
+        var laterPacket=new GoiTongQuanDieuHanh(new Dictionary<KySoSanh,ThongKeDieuHanh>{[laterPeriod]=serviceOnlyStats},laterPeriod,[],laterServices,DateTime.Now);
+        if(serviceOnlyStats.CoPhatSinh||laterServices.Length!=1||!laterPacket.CoPhatSinh)
+            throw new Exception("Dịch vụ ở kỳ sau phải ghi nhận hoạt động theo ngày thực hiện dù lượt khám thuộc kỳ trước.");
+    }
+}

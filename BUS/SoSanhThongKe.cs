@@ -32,6 +32,8 @@ public static class SoSanhThongKe
             throw new ArgumentException("Chọn khoảng từ 1 đến 24 tháng, năm từ 1901 đến 9997.");
         if (!Enum.IsDefined(filter.SoSanh)) throw new ArgumentException("Chế độ so sánh không hợp lệ.");
         if (filter.NamGoc is < 1900 or > 9997) throw new ArgumentException("Năm đối chiếu không hợp lệ.");
+        if (filter.SoSanh == CachSoSanh.ThangDuocChon && (filter.ThangGoc is < 1 or > 12 || from != end))
+            throw new ArgumentException("Tháng đối chiếu tùy chọn yêu cầu chọn một tháng cần xem và tháng gốc từ 1 đến 12.");
         if (filter.SoSanh == CachSoSanh.NamDuocChon && from.Year != end.Year)
             throw new ArgumentException("So sánh hai năm: chọn các tháng trong cùng một năm.");
         if (end >= Thang(homNay) && (!filter.LuyKeThang || end != Thang(homNay)))
@@ -46,6 +48,7 @@ public static class SoSanhThongKe
                 CachSoSanh.ThangTruoc => month.AddMonths(-1),
                 CachSoSanh.CungKyNamTruoc => month.AddYears(-1),
                 CachSoSanh.NamDuocChon => new DateTime(filter.NamGoc, month.Month, 1),
+                CachSoSanh.ThangDuocChon => new DateTime(filter.NamGoc, filter.ThangGoc, 1),
                 _ => null
             };
             var baseline = previous is DateTime start ? new KySoSanh(start,

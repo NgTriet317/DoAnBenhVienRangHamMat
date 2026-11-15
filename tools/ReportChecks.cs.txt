@@ -17,7 +17,7 @@ using System.Windows.Threading;
 
 /// <summary>Kiểm công thức so sánh kỳ, thống kê bệnh, quyền truy cập báo cáo và cách hiển thị WPF.</summary>
 /// <remarks>Nhánh --sql đối chiếu số liệu và quyền trong TransactionScope không Complete; --render bổ sung kiểm/ảnh giao diện.</remarks>
-internal static class Program
+internal static partial class Program
 {
     /// <summary>Chạy các ca trong bộ nhớ, sau đó tùy chọn kiểm SQL và render giao diện theo từng vai trò.</summary>
     /// <param name="args">Máy chủ, database và các cờ --sql/--render do KiemTraBaoCao.ps1 truyền.</param>
@@ -82,6 +82,101 @@ internal static class Program
             p=SoSanhThongKe.TaoCacKy(f with {SoSanh=CachSoSanh.NamDuocChon,NamGoc=2023},new(2026,11,5)).Single();
             if(p.KyGoc?.TuNgay!=new DateTime(2023,10,1))throw new Exception("Sai năm gốc.");
         });
+        Check("Bệnh lý: hai tháng bất kỳ cùng năm và khác năm",()=>
+        {
+            var monthProperty=typeof(BoLocThongKe).GetProperty("ThangGoc")
+                ??throw new Exception("Chưa chọn được tháng đối chiếu bất kỳ.");
+            var f=new BoLocThongKe{TuThang=new(2026,10,1),DenThang=new(2026,10,1),SoSanh=(CachSoSanh)4,NamGoc=2026};
+            monthProperty.SetValue(f,2);
+            var p=SoSanhThongKe.TaoCacKy(f,new(2026,11,15)).Single();
+            if(p.KyGoc!=new KySoSanh(new(2026,2,1),new(2026,3,1)))throw new Exception("Không so được tháng 10 với tháng 2 cùng năm.");
+            f=f with {NamGoc=2024};
+            p=SoSanhThongKe.TaoCacKy(f,new(2026,11,15)).Single();
+            if(p.KyGoc?.DenExclusive!=new DateTime(2024,3,1))throw new Exception("Sai tháng nhuận năm đối chiếu.");
+            f=f with {TuThang=new(2026,11,1),DenThang=new(2026,11,1),LuyKeThang=true};
+            p=SoSanhThongKe.TaoCacKy(f,new(2026,11,15)).Single();
+            if(p.KyGoc?.DenExclusive!=new DateTime(2024,2,16))throw new Exception("MTD không dùng cùng số ngày.");
+            try{SoSanhThongKe.TaoCacKy(f with {DenThang=new(2026,12,1)},new(2026,11,15));}
+            catch(ArgumentException){return;}
+            throw new Exception("Tháng đối chiếu tùy chọn nhận nhiều tháng cần xem.");
+        });
+        static KetQuaBenhLy Benh(int people,int visits,params DongThongKeBenh[] rows)=>
+            new(new(){SoBenhNhan=people,TongLuot=visits,LuotCoMa=visits},rows);
+        static dynamic[] GhepBenh(KetQuaBenhLy current,KetQuaBenhLy? previous)
+        {
+            var type=typeof(BUS_BAOCAO).Assembly.GetType("BUS.ThongKeBenhLy")
+                ??throw new Exception("Chưa có đối chiếu từng bệnh giữa hai kỳ.");
+            var method=type.GetMethod("GhepKy")??throw new Exception("Thiếu hàm ghép kỳ bệnh lý.");
+            return ((System.Collections.IEnumerable)method.Invoke(null,new object?[]{current,previous})!).Cast<dynamic>().ToArray();
+        }
+        Check("Bệnh lý: số người, tỷ lệ và bệnh chỉ có trong kỳ gốc",()=>
+        {
+            var a=new DongThongKeBenh{MaDMTT="A",TenTinhTrang="Sâu răng",SoBenhNhan=10,SoLuotKham=25};
+            var b=new DongThongKeBenh{MaDMTT="B",TenTinhTrang="Viêm lợi",SoBenhNhan=6,SoLuotKham=7};
+            var before=new DongThongKeBenh{MaDMTT="A",TenTinhTrang="Sâu răng",SoBenhNhan=5,SoLuotKham=15};
+            var rows=GhepBenh(Benh(20,30,a),Benh(12,22,b,before));
+            dynamic row=rows.Single(x=>x.MaDMTT=="A");
+            if(row.BenhNhanHienTai!=10||row.BenhNhanGoc!=5||row.TyLeBenhNhanHienTai!=50m||row.BienDongBenhNhan.ChenhLech!=5)
+                throw new Exception("So sánh người hoặc mẫu số tỷ lệ sai.");
+            row=rows.Single(x=>x.MaDMTT=="B");
+            if(row.BenhNhanHienTai!=0||row.BenhNhanGoc!=6||row.BienDongBenhNhan.ChenhLech!=-6)
+                throw new Exception("Làm mất bệnh chỉ có ở kỳ gốc.");
+        });
+        Check("Bệnh lý: nhóm nhỏ và chưa phân loại không bị suy thành 0",()=>
+        {
+            var visible=new DongThongKeBenh{MaDMTT="A",TenTinhTrang="A",SoBenhNhan=10,SoLuotKham=12};
+            var hidden=new DongThongKeBenh{MaDMTT="A",TenTinhTrang="A",DaLamMo=true,SoBenhNhan=3,SoLuotKham=4};
+            dynamic row=GhepBenh(Benh(15,20,visible),Benh(10,12,hidden)).Single();
+            if(row.BenhNhanGoc is not null||row.LuotGoc is not null||row.BienDongBenhNhan.ChenhLech is not null)
+                throw new Exception("Lộ số nhóm nhỏ qua chênh lệch.");
+            var incomplete=new KetQuaBenhLy(new(){TongLuot=5,SoBenhNhan=5,LuotCoMa=0,LuotChuaPhanLoai=5},Array.Empty<DongThongKeBenh>());
+            row=GhepBenh(incomplete,Benh(15,20,visible)).Single();
+            if(row.BenhNhanHienTai is not null||row.BienDongBenhNhan.ChenhLech is not null)
+                throw new Exception("Chưa phân loại bị coi là không có bệnh.");
+            row=GhepBenh(Benh(15,20,visible),null).Single();
+            if(row.BenhNhanGoc is not null||row.TyLeBenhNhanGoc is not null)throw new Exception("Không so sánh bị coi là kỳ gốc 0.");
+        });
+        Check("Bệnh lý: đồng hạng, CSV đủ hai kỳ và hơn 10 nhóm",()=>
+        {
+            var current=Benh(20,35,Enumerable.Range(1,12).Select(i=>new DongThongKeBenh{
+                MaDMTT="A"+i,TenTinhTrang="Tình trạng "+i,SoBenhNhan=5,SoLuotKham=i+5}).ToArray());
+            if(!ThongKeBenhLy.PhoBienNhat(current).Contains("đồng hạng"))throw new Exception("Không thể hiện đồng hạng theo số người.");
+            var previous=Benh(10,20,new DongThongKeBenh{MaDMTT="ONLY_BASE",TenTinhTrang="Chỉ kỳ gốc",SoBenhNhan=6,SoLuotKham=9});
+            var report=BaoCaoDuLieu.DanhMuc.Single(x=>x.Ma=="20");
+            var filter=new BoLocThongKe{TuThang=new(2026,10,1),DenThang=new(2026,10,1),SoSanh=CachSoSanh.ThangDuocChon,ThangGoc=2,NamGoc=2025};
+            var data=DuLieuSoSanhBaoCao.Doc(report,filter,(_,_,_)=>[],ky=>ky.TuNgay.Year==2026?current:previous);
+            if(data.TongCong[1].HienTai!=20||data.TongCong[1].GiaTriGoc!=10||data.CacBenhSoSanh.Length!=13)
+                throw new Exception("Mất số bệnh nhân hoặc nhóm chỉ có ở một kỳ.");
+            var csv=data.TaoCsv("Kiểm thử",DateTime.Now);
+            if(!csv.Contains("Tình trạng 12")||!csv.Contains("Chỉ kỳ gốc")||!csv.Contains("Bệnh nhân kỳ đối chiếu")||!csv.Contains("Phổ biến nhất kỳ đối chiếu"))
+                throw new Exception("CSV không khớp toàn bộ bảng hai kỳ.");
+            if(!data.CacBenhSoSanh.Where(x=>x.BenhNhanHienTai>0).Select(x=>x.MaDMTT).SequenceEqual(BaoCaoDuLieu.XepHangBenh(current.CacBenh).Select(x=>x.MaDMTT)))
+                throw new Exception("Hai biểu đồ / bảng dùng thứ tự khác nhau khi đồng hạng.");
+            data=data with {XepTheoBenhNhan=false};
+            if(data.CacBenhSoSanh.First().MaDMTT!="A12")throw new Exception("Đổi tiêu chí xếp hạng không cập nhật dữ liệu xuất.");
+        });
+        Check("Bệnh lý: không kết luận nhiều lượt nhất khi còn nhóm ẩn",()=>
+        {
+            var data=Benh(10,40,new DongThongKeBenh{MaDMTT="A",TenTinhTrang="Nhóm hiển thị",SoBenhNhan=5,SoLuotKham=10},
+                new DongThongKeBenh{MaDMTT="H",TenTinhTrang="Nhóm nhỏ tái khám nhiều",DaLamMo=true});
+            if(!ThongKeBenhLy.PhoBienNhat(data,false).Contains("Chưa thể kết luận"))throw new Exception("Công bố nhóm nhiều lượt nhất dù nhóm ẩn có thể có nhiều lượt hơn.");
+        });
+        Check("Bệnh lý: bộ lọc, bảng, biểu đồ và ảnh WPF",ClinicalComparisonUi);
+        Check("Bệnh lý: chi tiết bệnh nhân chỉ mở theo quyền lâm sàng",()=>
+        {
+            if(!ChinhSachBaoCao.ChoPhepChiTiet("20",QuyenBaoCao.XemTongHop|QuyenBaoCao.XemDuLieuLamSang))
+                throw new Exception("Chưa nối quyền xem chi tiết bệnh nhân cho báo cáo bệnh lý.");
+            if(ChinhSachBaoCao.ChoPhepChiTiet("20",QuyenBaoCao.XemTongHop|QuyenBaoCao.Xuat))
+                throw new Exception("Quyền tổng hợp tự mở danh tính bệnh nhân.");
+        });
+        Check("Tổng quan điều hành: bốn chỉ số dễ hiểu và đủ hoạt động",()=>
+        {
+            var report=BaoCaoDuLieu.DanhMuc.Single(x=>x.Ma=="00");
+            if(!report.ChiSo.SequenceEqual(new[]{"Số bệnh nhân đến khám","Tổng lượt khám","Tiền thực thu","Tổng lịch hẹn"})||!report.DonVi.SequenceEqual(new[]{"người","lượt","VNĐ","lịch"}))
+                throw new Exception("Tổng quan còn dùng chỉ số chất lượng mã và tên chưa rõ nghĩa.");
+        });
+        Check("Tổng quan điều hành: tổng toàn kỳ, thu âm, CSV và trạng thái rỗng",OverviewMemoryChecks);
+        Check("Tổng quan điều hành: bố cục, biểu đồ và đổi bộ lọc",OverviewUiChecks);
         Check("BC-05 từ chối kỳ gốc tương lai/chưa hoàn chỉnh",()=>
         {
             foreach(var f in new[]{new BoLocThongKe{TuThang=new(2026,10,1),DenThang=new(2026,10,1),SoSanh=CachSoSanh.NamDuocChon,NamGoc=2027},
@@ -175,10 +270,28 @@ internal static class Program
                 throw new Exception("DAL đã cho khách đọc lương.");
             });
             Check("TC-08/09/10/11 SQL fixture tạm: trùng mã, tái khám, thiếu mã và lịch sử",DiseaseFixture);
+            Check("Bệnh nhân chi tiết SQL: một dòng/lượt, chẩn đoán, tình trạng và bộ lọc",PatientVisitsFixture);
+            Check("Tổng quan SQL: các nguồn độc lập và bệnh nhân qua nhiều tháng",OverviewSqlFixture);
             using var scope=new TransactionScope(TransactionScopeOption.Required,new TransactionOptions{IsolationLevel=System.Transactions.IsolationLevel.Serializable,Timeout=TimeSpan.FromMinutes(5)},TransactionScopeAsyncFlowOption.Enabled);
             // Chỉ tạo phiên kiểm tra trong giao dịch rollback; không sửa dữ liệu khám/tiền/kho.
             var accounts=Accounts();
             var admin=accounts.First(x=>x.LaAdmin);var doctor=accounts.First(x=>x.MaChucVu=="CV002"&&!x.LaAdmin);
+            Check("Bệnh nhân chi tiết SQL: chặn tài khoản chỉ có quyền tổng hợp",()=>
+            {
+                var original=Thread.CurrentPrincipal;
+                try
+                {
+                    var other=accounts.First(x=>!x.LaAdmin&&x.MaChucVu is not("CV002" or "CV003"));
+                    SetIdentity(other);var session=Guid.NewGuid();
+                    using(var db=Open())db.Execute("INSERT dbo.PHIEN_DANG_NHAP(MaPhien,MaTK,DangNhapUtc,HoatDongCuoiUtc,TrangThaiPhien) VALUES(@session,@MaTK,SYSUTCDATETIME(),SYSUTCDATETIME(),N'Đang mở')",new{session,other.MaTK});
+                    ((ClaimsIdentity)Thread.CurrentPrincipal!.Identity!).AddClaim(new Claim("RHM.MaPhien",session.ToString()));
+                    var bus=new BUS_BAOCAO();
+                    Denied(()=>bus.DocChiTietBenhNhan(new(new(2026,10,1),new(2026,11,1))));
+                    Denied(()=>bus.KiemTraXuat("20",true));
+                    bus.DocBenhLy(new(new(2026,10,1),new(2026,11,1)));
+                }
+                finally{Thread.CurrentPrincipal=original;}
+            });
             foreach(var actor in new[]{admin,doctor})
             {
                 SetIdentity(actor);
@@ -246,15 +359,40 @@ internal static class Program
                     var expected=db.ExecuteScalar<int>("SELECT COUNT(DISTINCT hs.MaBN) FROM dbo.LICH_SU_KHAM_BENH ls JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=ls.MaPhieu JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS WHERE ls.TrangThai=N'Đã xác nhận' AND ls.ThoiGianKham>='20260101' AND ls.ThoiGianKham<'20261101'");
                     if(disease.ChatLuong.SoBenhNhan!=expected)throw new Exception("Đếm bệnh nhân sai.");
                 });
+                Check("Bệnh nhân chi tiết đối chiếu SQL "+(actor.LaAdmin?"Admin":"Bác sĩ"),()=>
+                {
+                    var period=new KySoSanh(new(2026,10,1),new(2026,11,1));
+                    var rows=bus.DocChiTietBenhNhan(period);
+                    var totals=bus.DocBenhLy(period).ChatLuong;
+                    if(rows.Length!=totals.TongLuot||rows.Select(x=>x.MaLS).Distinct().Count()!=rows.Length||rows.Select(x=>x.MaBN).Distinct().Count()!=totals.SoBenhNhan)
+                        throw new Exception("Chi tiết không khớp số lượt/số bệnh nhân tổng quan.");
+                    if(rows.Any(x=>string.IsNullOrWhiteSpace(x.HoTenBN)||string.IsNullOrWhiteSpace(x.ChanDoan)||string.IsNullOrWhiteSpace(x.TinhTrangBenh)||x.ThoiGianKham<period.TuNgay||x.ThoiGianKham>=period.DenExclusive))
+                        throw new Exception("Chi tiết thiếu tên/chẩn đoán/tình trạng hoặc sai kỳ.");
+                    bus.KiemTraXuat("20",true);
+                });
+                Check("Bệnh nhân chi tiết và tổng quan lấy cùng gói dữ liệu "+(actor.LaAdmin?"Admin":"Bác sĩ"),()=>
+                {
+                    var method=typeof(BUS_BAOCAO).GetMethod("DocGoiBenhLy")
+                        ??throw new Exception("Tổng quan và danh sách vẫn được đọc thành các gói độc lập.");
+                    var filter=new BoLocThongKe{TuThang=new(2026,10,1),DenThang=new(2026,10,1),SoSanh=CachSoSanh.ThangTruoc};
+                    dynamic packet=method.Invoke(bus,new object[]{filter,true})!;
+                    var periods=(IReadOnlyDictionary<KySoSanh,KetQuaBenhLy>)packet.CacKy;
+                    var visits=(ChiTietLuotKhamBaoCao[])packet.ChiTietBenhNhan;
+                    var data=DuLieuSoSanhBaoCao.Doc(BaoCaoDuLieu.DanhMuc.Single(x=>x.Ma=="20"),filter,(_,_,_)=>throw new Exception("Đọc ngoài gói"),ky=>periods[ky])
+                        with{ChiTietBenhNhan=visits};
+                    if(data.TongCong[0].HienTai!=visits.Length||data.TongCong[1].HienTai!=visits.Select(x=>x.MaBN).Distinct().Count())
+                        throw new Exception("Gói dữ liệu chứa tổng và chi tiết khác phạm vi.");
+                });
                 if(args.Contains("--render"))Check("TC-17 render WPF "+(actor.LaAdmin?"Admin":"User"),()=>RenderChecks(actor.LaAdmin));
                 if(args.Contains("--render"))Check("TC-15/16 phản hồi cũ, mất kết nối và khóa xuất",UiStateChecks);
                 if(args.Contains("--render"))Check("BC-04 bộ lọc bệnh lý không phát sinh",EmptyFilteredDisease);
-                if(args.Contains("--render"))Check("Tổng quan ưu tiên bệnh nhân và giải thích thiếu mã",ExecutiveOverview);
+                if(args.Contains("--render"))Check("Tổng quan điều hành khớp SQL và các phần hiển thị",ExecutiveOverview);
                 if(args.Contains("--render")&&actor.LaAdmin)Check("Chọn danh mục cùng tên vẫn lưu mã vào dòng đang soạn",()=>ClinicalSelectionEvent(actor));
                 Check("BC-06 DAL từ chối phiên hết hạn "+(actor.LaAdmin?"Admin":"User"),()=>
                 {
                     using(var db=Open())db.Execute("UPDATE dbo.PHIEN_DANG_NHAP SET HoatDongCuoiUtc=DATEADD(minute,-10,SYSUTCDATETIME()) WHERE MaPhien=@session",new{session});
                     Denied(()=>bus.Doc("00",new(2026,10,1),new(2026,10,31)));
+                    Denied(()=>bus.DocChiTietBenhNhan(new(new(2026,10,1),new(2026,11,1))));
                 });
             }
             // Không Complete(): rollback các phiên kiểm thử, không để dữ liệu phụ trong SQL.
@@ -305,6 +443,50 @@ internal static class Program
         if(a.SoLuotKham!=7||a.SoBenhNhan!=5||a.TyTrong!=100||!b.DaLamMo||b.SoLuotKham is not null)throw new Exception("Sai DISTINCT lượt/người hoặc che nhóm nhỏ.");
         if(db.Query<DongThongKeBenh>(Sql("SqlBenh"),new{p.TuNgay,p.DenExclusive,MaCK="KHONG_CO",p.MaDV}).Any())throw new Exception("Lọc khoa không có hiệu lực.");
     }
+    static void PatientVisitsFixture()
+    {
+        using var db=Open();
+        db.Execute("""
+            CREATE TABLE #RLS(MaLS nvarchar(50),MaPhieu nvarchar(50),MaBS nvarchar(50),ThoiGianKham datetime2,TrangThai nvarchar(50),ChanDoan nvarchar(max));
+            CREATE TABLE #RPK(MaPhieu nvarchar(50),MaHS nvarchar(50),MaDV nvarchar(50));
+            CREATE TABLE #RHS(MaHS nvarchar(50),MaBN nvarchar(50));
+            CREATE TABLE #RNV(MaNV nvarchar(50),MaCK nvarchar(50),HoTen nvarchar(100));
+            CREATE TABLE #RBN(MaBN nvarchar(50),HoTenBN nvarchar(100));
+            CREATE TABLE #RDV(MaDV nvarchar(50),TenDV nvarchar(100));
+            CREATE TABLE #RTT(MaLS nvarchar(50),MaDMTT nvarchar(50),LoaiTinhTrang nvarchar(100),MoTaTinhTrang nvarchar(max));
+            CREATE TABLE #RDM(MaDMTT nvarchar(50),TenTinhTrang nvarchar(100));
+            INSERT #RNV VALUES('BS1','CK1',N'Bác sĩ một'),('BS2','CK2',N'Bác sĩ hai');
+            INSERT #RBN VALUES('B1',N'Nguyễn An'),('B2',N'Trần Bình');
+            INSERT #RHS VALUES('H1','B1'),('H2','B2');
+            INSERT #RPK VALUES('P1','H1','DV1'),('P2','H2','DV2');
+            INSERT #RDV VALUES('DV1',N'Khám tổng quát'),('DV2',N'Khám chuyên khoa');
+            INSERT #RDM VALUES('A',N'Sâu răng');
+            INSERT #RLS VALUES('L1','P1','BS1','20261003 09:15',N'Đã xác nhận',N'Sâu răng hàm'),
+                ('L2','P1','BS1','20261004 10:30',N'Đã xác nhận',N'Tái khám sâu răng'),
+                ('L3','P2','BS2','20261005',N'Đã xác nhận',N'Viêm lợi'),
+                ('L4','P1','BS1','20261006',N'Nháp',N'Chưa ký'),
+                ('L5','P1','BS1','20261101',N'Đã xác nhận',N'Ngoài kỳ');
+            INSERT #RTT VALUES('L1','A',N'Sâu răng',N'Ê buốt'),('L1','A',N'Sâu răng',N'Ê buốt'),
+                ('L1',NULL,N'Đau răng',N'Đau <nhẹ> & ê');
+            """);
+        var sql=(string)typeof(DAL_BAOCAO).GetField("SqlChiTietLuotKham",BindingFlags.Static|BindingFlags.NonPublic)!.GetRawConstantValue()!;
+        foreach(var mapping in new[]{("LICH_SU_KHAM_BENH","#RLS"),("PHIEU_KHAM_BENH","#RPK"),("HO_SO_BENH_AN","#RHS"),
+            ("NHAN_VIEN","#RNV"),("BENH_NHAN","#RBN"),("DICH_VU","#RDV"),("TINH_TRANG_BENH","#RTT"),("DM_TINH_TRANG_BENH","#RDM")})
+            sql=sql.Replace("dbo."+mapping.Item1,mapping.Item2);
+        var args=new{TuNgay=new DateTime(2026,10,1),DenExclusive=new DateTime(2026,11,1),MaCK=(string?)null,MaDV=(string?)null};
+        var rows=db.Query<ChiTietLuotKhamBaoCao>(sql,args).ToArray();
+        if(rows.Length!=3||rows.Select(x=>x.MaBN).Distinct().Count()!=2||rows.Select(x=>x.MaLS).Distinct().Count()!=3)
+            throw new Exception("Gộp tình trạng làm nhân dòng hoặc mất lượt tái khám.");
+        var first=rows.Single(x=>x.MaLS=="L1");
+        if(first.HoTenBN!="Nguyễn An"||first.ThoiGianKham!=new DateTime(2026,10,3,9,15,0)||first.ChanDoan!="Sâu răng hàm"||first.DichVuKham!="Khám tổng quát")
+            throw new Exception("Sai bệnh nhân, giờ khám, dịch vụ hoặc chẩn đoán.");
+        if(!first.TinhTrangBenh.Contains("Đau <nhẹ> & ê")||first.TinhTrangBenh.Split("Sâu răng").Length!=2)
+            throw new Exception("Mất tình trạng chưa mã / lỗi giải mã XML / lặp tình trạng.");
+        if(rows.Single(x=>x.MaLS=="L2").TinhTrangBenh!="Chưa ghi nhận tình trạng")throw new Exception("Lượt chưa ghi tình trạng bị loại khỏi chi tiết.");
+        if(db.Query<ChiTietLuotKhamBaoCao>(sql,new{args.TuNgay,args.DenExclusive,MaCK="CK1",args.MaDV}).Count()!=2||
+            db.Query<ChiTietLuotKhamBaoCao>(sql,new{args.TuNgay,args.DenExclusive,args.MaCK,MaDV="DV2"}).Single().MaLS!="L3")
+            throw new Exception("Bộ lọc chi tiết khác bộ lọc tổng quan.");
+    }
     static void RenderChecks(bool admin)
     {
         var app=Application.Current;
@@ -328,11 +510,24 @@ internal static class Program
                 var point=load.TranslatePoint(new Point(0,0),page);
                 if(point.X<0||point.X+load.ActualWidth>page.ActualWidth+1)throw new Exception("Nút Tải bị cắt khỏi chiều ngang.");
             }
+            ((ScrollViewer)page.FindName("ReportScroll")).ScrollToVerticalOffset(560);window.UpdateLayout();
+            var overviewBitmap=new RenderTargetBitmap((int)window.Width,(int)window.Height,96,96,PixelFormats.Pbgra32);overviewBitmap.Render(page);
+            using(var overviewFile=File.Create($"obj/ReportChecks/evidence/{(admin?"admin":"user")}-overview-details.png"))
+            {
+                var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(overviewBitmap));encoder.Save(overviewFile);
+            }
             page.ChonBaoCao("20");Pump(page.TaiBaoCaoAsync());window.UpdateLayout();
             if(((DataGrid)page.FindName("DiseaseGrid")).ItemsSource is null)throw new Exception("Không có nguồn bảng tình trạng.");
             var diseaseBitmap=new RenderTargetBitmap((int)window.Width,(int)window.Height,96,96,PixelFormats.Pbgra32);diseaseBitmap.Render(page);
             using var diseaseFile=File.Create($"obj/ReportChecks/evidence/{(admin?"admin":"user")}-disease.png");
             var diseaseEncoder=new PngBitmapEncoder();diseaseEncoder.Frames.Add(BitmapFrame.Create(diseaseBitmap));diseaseEncoder.Save(diseaseFile);
+            var visits=(DataGrid)page.FindName("PatientVisitsGrid");
+            if(visits.Items.Count!=new BUS_BAOCAO().DocBenhLy(new(new(DateTime.Today.Year,DateTime.Today.Month,1),DateTime.Today.AddDays(1).Date)).ChatLuong.TongLuot)
+                throw new Exception("Bảng bệnh nhân thực tế không khớp số lượt trong tháng.");
+            ((ScrollViewer)page.FindName("ReportScroll")).ScrollToVerticalOffset(320);window.UpdateLayout();
+            var visitsBitmap=new RenderTargetBitmap((int)window.Width,(int)window.Height,96,96,PixelFormats.Pbgra32);visitsBitmap.Render(page);
+            using var visitsFile=File.Create($"obj/ReportChecks/evidence/{(admin?"admin":"user")}-patient-visits.png");
+            var visitsEncoder=new PngBitmapEncoder();visitsEncoder.Frames.Add(BitmapFrame.Create(visitsBitmap));visitsEncoder.Save(visitsFile);
         }
         finally{window.Close();}
     }
@@ -367,21 +562,133 @@ internal static class Program
         using(var db=Open())unused=db.QuerySingle<string>("SELECT TOP(1) MaDV FROM dbo.DICH_VU dv WHERE NOT EXISTS(SELECT 1 FROM dbo.PHIEU_KHAM_BENH p JOIN dbo.LICH_SU_KHAM_BENH ls ON ls.MaPhieu=p.MaPhieu WHERE p.MaDV=dv.MaDV AND ls.TrangThai=N'Đã xác nhận' AND ls.ThoiGianKham>='20261001' AND ls.ThoiGianKham<'20261101')");
         var page=new BaoCao();page.ChonBaoCao("20");
         ((DatePicker)page.FindName("FromDate")).SelectedDate=new DateTime(2026,10,1);((DatePicker)page.FindName("ToDate")).SelectedDate=new DateTime(2026,10,31);
+        ((ComboBox)page.FindName("DiseaseMonth")).SelectedIndex=9;((TextBox)page.FindName("DiseaseYear")).Text="2026";
         ((ComboBox)page.FindName("ServiceCode")).SelectedValue=unused;Pump(page.TaiBaoCaoAsync());
         if(!((TextBlock)page.FindName("PageStatus")).Text.Contains("Không có phát sinh"))throw new Exception("Trạng thái vẫn dùng lượt không thuộc bộ lọc.");
     }
+    static void ClinicalComparisonUi()
+    {
+        if(Application.Current is null)
+        {
+            var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
+            app.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("/RangHamMat.Wpf;component/Themes/Theme.xaml",UriKind.Relative)});
+        }
+        var page=new BaoCao();var flags=BindingFlags.Instance|BindingFlags.NonPublic;
+        typeof(BaoCao).GetField("quyen",flags)!.SetValue(page,(QuyenBaoCao)63);
+        page.ChonBaoCao("20");
+        ((ComboBox)page.FindName("SpecialtyCode")).ItemsSource=new[]{new LuaChonThongKe("","Tất cả chuyên khoa")};
+        ((ComboBox)page.FindName("SpecialtyCode")).SelectedIndex=0;
+        ((ComboBox)page.FindName("ServiceCode")).ItemsSource=new[]{new LuaChonThongKe("","Tất cả dịch vụ")};
+        ((ComboBox)page.FindName("ServiceCode")).SelectedIndex=0;
+        ((ComboBox)page.FindName("DiseaseMonth")).SelectedIndex=9;((TextBox)page.FindName("DiseaseYear")).Text="2026";
+        ((ComboBox)page.FindName("ComparisonMode")).SelectedIndex=4;
+        ((ComboBox)page.FindName("BaselineMonth")).SelectedIndex=1;((TextBox)page.FindName("BaselineYear")).Text="2025";
+        var args=new object?[]{default(DateTime),default(DateTime)};
+        if(!(bool)typeof(BaoCao).GetMethod("KiemTraBoLoc",flags)!.Invoke(page,args)!)throw new Exception("Bộ lọc hai tháng hợp lệ bị từ chối.");
+        var filter=(BoLocThongKe)typeof(BaoCao).GetMethod("DocBoLoc",flags)!.Invoke(page,null)!;
+        if(filter.TuThang!=new DateTime(2026,10,1)||filter.NamGoc!=2025||filter.ThangGoc!=2)throw new Exception("Giao diện không đọc tháng/năm đã chọn.");
+        var current=new KetQuaBenhLy(new(){TongLuot=25,LuotCoMa=25,SoBenhNhan=20},new[]{
+            new DongThongKeBenh{MaDMTT="A",TenTinhTrang="Sâu răng",SoBenhNhan=12,SoLuotKham=14},
+            new DongThongKeBenh{MaDMTT="B",TenTinhTrang="Viêm lợi",SoBenhNhan=6,SoLuotKham=9}});
+        var previous=new KetQuaBenhLy(new(){TongLuot=20,LuotCoMa=20,SoBenhNhan=15},new[]{
+            new DongThongKeBenh{MaDMTT="A",TenTinhTrang="Sâu răng",SoBenhNhan=5,SoLuotKham=7},
+            new DongThongKeBenh{MaDMTT="B",TenTinhTrang="Viêm lợi",SoBenhNhan=10,SoLuotKham=10},
+            new DongThongKeBenh{MaDMTT="C",TenTinhTrang="Viêm quanh răng",SoBenhNhan=5,SoLuotKham=5}});
+        var report=BaoCaoDuLieu.DanhMuc.Single(x=>x.Ma=="20");
+        var comparison=DuLieuSoSanhBaoCao.Doc(report,filter,(_,_,_)=>[],ky=>ky.TuNgay.Year==2026?current:previous) with
+        {
+            ChiTietBenhNhan=Enumerable.Range(0,25).Select(i=>new ChiTietLuotKhamBaoCao{
+                MaLS="LS"+i,MaBN="BN"+(i%20+1),HoTenBN=i%20==0?"Nguyễn Minh An":"Bệnh nhân minh họa "+(i%20+1),
+                ThoiGianKham=new DateTime(2026,10,3,9,15,0).AddDays(i),DichVuKham="Khám răng tổng quát",
+                ChanDoan=i%2==0?"Sâu răng":"Viêm lợi",TinhTrangBenh=i%2==0?"Sâu răng: Ê buốt khi ăn lạnh":"Viêm lợi: Sưng nướu",BacSi="Bác sĩ minh họa"}).ToArray()
+        };
+        typeof(BaoCao).GetField("soSanh",flags)!.SetValue(page,comparison);
+        typeof(BaoCao).GetField("result",flags)!.SetValue(page,new KetQuaBaoCao(new("Tổng kỳ",25,20,25,0),[],[],25,[]));
+        typeof(BaoCao).GetMethod("HienSoSanh",flags)!.Invoke(page,new object[]{report});
+        var grid=(DataGrid)page.FindName("DiseaseGrid");
+        var cards=((ItemsControl)page.FindName("MetricItems")).Items.Cast<ChiSoBaoCao>().ToArray();
+        var expectedCards=new[]{"Số bệnh nhân đến khám","Tổng lượt khám","Số loại bệnh / tình trạng","Tình trạng gặp nhiều nhất"};
+        if(!cards.Select(x=>x.Ten).SequenceEqual(expectedCards))throw new Exception("Bốn ô vẫn dùng thuật ngữ kỹ thuật / chất lượng mã.");
+        if(cards[0].GiaTri!="20"||cards[1].GiaTri!="25"||cards[2].GiaTri!="2"||cards[3].GiaTri!="Sâu răng")
+            throw new Exception("Giá trị bốn ô tổng quan không khớp nguồn bệnh nhân / tình trạng.");
+        if(page.FindName("PatientVisitsGrid") is not DataGrid)throw new Exception("Thiếu bảng bệnh nhân tới khám lúc nào, khám bệnh gì.");
+        var patientGrid=(DataGrid)page.FindName("PatientVisitsGrid");
+        if(patientGrid.Items.Count!=25)throw new Exception("Bảng không giữ từng lượt khám / tái khám.");
+        ((TextBox)page.FindName("PatientVisitSearch")).Text="nguyen minh an";
+        if(patientGrid.Items.Count!=2)throw new Exception("Tìm bệnh nhân không dấu không khớp các lượt tái khám.");
+        ((TextBox)page.FindName("PatientVisitSearch")).Text="";
+        var patientCsv=comparison.TaoCsv("Kiểm thử",DateTime.Now);
+        if(!patientCsv.Contains("Nguyễn Minh An")||!patientCsv.Contains("03/10/2026 09:15")||!patientCsv.Contains("Ê buốt khi ăn lạnh"))
+            throw new Exception("CSV thiếu danh tính / giờ khám / tình trạng trong bảng chi tiết.");
+        var formulaCsv=(comparison with{ChiTietBenhNhan=[new(){MaBN="BN1",HoTenBN="=1+1",ChanDoan="@test"}]}).TaoCsv("Kiểm thử",DateTime.Now);
+        if(!formulaCsv.Contains("\"'=1+1\"")||!formulaCsv.Contains("\"'@test\""))throw new Exception("Ô danh tính / chẩn đoán trong CSV có thể bị coi là công thức.");
+        if(grid.Items.Count!=3)throw new Exception("Bảng thiếu bệnh chỉ có ở kỳ đối chiếu.");
+        if(!((TextBlock)page.FindName("DiseaseMostCommon")).Text.Contains("Sâu răng")||!((TextBlock)page.FindName("DiseaseBaselineMostCommon")).Text.Contains("Viêm lợi"))
+            throw new Exception("Không xác định bệnh phổ biến nhất của từng kỳ.");
+        var chart=(ChartView)page.FindName("ReportChart");
+        if(chart.Points!.Count()!=3||chart.PrimaryLabel!="10/2026"||chart.SecondaryLabel!="02/2025")throw new Exception("Biểu đồ không đối chiếu từng bệnh đúng kỳ.");
+        var window=new Window{Content=page,Left=-20000,Top=-20000,ShowActivated=false,ShowInTaskbar=false,WindowStyle=WindowStyle.None};
+        try
+        {
+            window.Show();Dispatcher.CurrentDispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
+            // Loaded gọi refresh của màn hình; nạp fixture sau khi vòng đời WPF đã khởi tạo xong.
+            typeof(BaoCao).GetField("soSanh",flags)!.SetValue(page,comparison);
+            typeof(BaoCao).GetField("result",flags)!.SetValue(page,new KetQuaBaoCao(new("Tổng kỳ",25,20,25,0),[],[],25,[]));
+            typeof(BaoCao).GetMethod("HienSoSanh",flags)!.Invoke(page,new object[]{report});
+            Directory.CreateDirectory("obj/ReportChecks/evidence");
+            foreach(var size in new[]{(1024,768),(1366,768),(1920,1080)})
+            {
+                window.Width=size.Item1;window.Height=size.Item2;window.UpdateLayout();
+                Dispatcher.CurrentDispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
+                var load=(Button)page.FindName("LoadButton");var p=load.TranslatePoint(new Point(0,0),page);
+                if(p.X<0||p.X+load.ActualWidth>page.ActualWidth+1)throw new Exception("Nút tải bị cắt ở cỡ "+size.Item1);
+                var bitmap=new RenderTargetBitmap(size.Item1,size.Item2,96,96,PixelFormats.Pbgra32);bitmap.Render(page);
+                using var file=File.Create($"obj/ReportChecks/evidence/disease-comparison-{size.Item1}.png");
+                var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));encoder.Save(file);
+            }
+            var reportScroll=(ScrollViewer)page.FindName("ReportScroll");
+            reportScroll.ScrollToVerticalOffset(320);window.UpdateLayout();
+            var patientBitmap=new RenderTargetBitmap(1920,1080,96,96,PixelFormats.Pbgra32);patientBitmap.Render(page);
+            using(var patientFile=File.Create("obj/ReportChecks/evidence/patient-visits-1920.png"))
+            {
+                var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(patientBitmap));encoder.Save(patientFile);
+            }
+            ((ComboBox)page.FindName("DiseaseRanking")).SelectedIndex=1;
+            if(((DataGridTextColumn)grid.Columns[3]).Header?.ToString()!="Tăng / giảm lượt")throw new Exception("Đổi xếp hạng không đổi cột biến động.");
+            ((Button)page.FindName("ExportButton")).IsEnabled=true;
+            ((TextBox)page.FindName("DiseaseYear")).Text="20a";
+            if(((Button)page.FindName("ExportButton")).IsEnabled||grid.ItemsSource is not null)throw new Exception("Đổi năm không xóa kết quả / khóa xuất.");
+            if(patientGrid.ItemsSource is not null)throw new Exception("Đổi năm còn giữ danh tính bệnh nhân của kỳ trước.");
+            if((bool)typeof(BaoCao).GetMethod("KiemTraBoLoc",flags)!.Invoke(page,new object?[]{default(DateTime),default(DateTime)})!)
+                throw new Exception("Năm sai định dạng vẫn hợp lệ.");
+            page.ChonBaoCao("09");
+            typeof(BaoCao).GetMethod("ChonNhanh_Click",flags)!.Invoke(page,new object[]{new Button{Tag="Year"},new RoutedEventArgs()});
+            if(!(bool)typeof(BaoCao).GetMethod("KiemTraBoLoc",flags)!.Invoke(page,new object?[]{default(DateTime),default(DateTime)})!)
+                throw new Exception("Chuyển từ bệnh lý sang báo cáo 12 tháng làm bộ lọc không hợp lệ.");
+        }
+        finally{window.Close();}
+    }
     static void ExecutiveOverview()
     {
+        var filter=new BoLocThongKe{TuThang=new(2026,10,1),DenThang=new(2026,10,1)};
+        var packet=new BUS_BAOCAO().DocGoiTongQuan(filter);
         var page=new BaoCao();Pump(page.TaiBaoCaoAsync());
-        var kpis=((ItemsControl)page.FindName("MetricItems")).Items.Cast<ChiSoBaoCao>().ToArray();
-        if(!kpis.Any(x=>x.Ten.Contains("Bệnh nhân"))||!kpis.Any(x=>x.DonVi=="%"))throw new Exception("KPI vẫn ưu tiên số chứng từ thay cho bệnh nhân và độ đầy đủ dữ liệu.");
-        var quality=new BUS_BAOCAO().DocBenhLy(new(new(2026,10,1),new(2026,11,1))).ChatLuong;
-        if(kpis.Single(x=>x.Ten=="Bệnh nhân duy nhất").GiaTri!=quality.SoBenhNhan.ToString("N0",System.Globalization.CultureInfo.GetCultureInfo("vi-VN")))throw new Exception("KPI bệnh nhân không khớp DISTINCT SQL.");
-        var note=((TextBlock)page.FindName("DiseaseQuality")).Text;
-        if(quality.TongLuot>0&&quality.LuotCoMa==0&&!note.Contains("Chưa thể"))throw new Exception("Thiếu mã nhưng không nói rõ chưa thể xếp hạng bệnh.");
-        var panel=(FrameworkElement)page.FindName("DiseasePanel");var chart=(FrameworkElement)page.FindName("ChartLayout");
-        var parent=(Panel)VisualTreeHelper.GetParent(panel);
-        if(parent.Children.IndexOf(panel)>parent.Children.IndexOf(chart))throw new Exception("Bảng bệnh lý vẫn bị đặt sau biểu đồ/bảng đối chiếu.");
+        var cards=((ItemsControl)page.FindName("MetricItems")).Items.Cast<ChiSoBaoCao>().ToArray();
+        var expected=packet.HienTai.ChiSo;
+        for(int i=0;i<4;i++)
+            if(cards[i].GiaTri!=expected[i].ToString(i==2?"N2":"N0",System.Globalization.CultureInfo.GetCultureInfo("vi-VN")))
+                throw new Exception("Chỉ số tổng quan không khớp SQL: "+cards[i].Ten);
+        if(((FrameworkElement)page.FindName("OverviewPanel")).Visibility!=Visibility.Visible||((FrameworkElement)page.FindName("DiseasePanel")).Visibility!=Visibility.Collapsed)
+            throw new Exception("Tổng quan chưa chuyển sang nội dung điều hành.");
+        if(((ItemsControl)page.FindName("OverviewMoneyItems")).Items.Count!=4||((DataGrid)page.FindName("OverviewCompareGrid")).Items.Count!=4)
+            throw new Exception("Thiếu giải thích thu/hoàn hoặc đối chiếu chỉ số.");
+        var q=new BUS_BAOCAO().DocBenhLy(packet.KyHienTai).ChatLuong;
+        var money=new BUS_BAOCAO().Doc("09",packet.KyHienTai.TuNgay,packet.KyHienTai.DenExclusive.AddDays(-1));
+        if(packet.HienTai.SoBenhNhan!=q.SoBenhNhan||packet.HienTai.TongLuotKham!=q.TongLuot||packet.HienTai.TienThucThu!=money.Sum(x=>x.Ba))
+            throw new Exception("Tổng quan khác báo cáo bệnh nhân/thu hoàn cùng kỳ.");
+        using var db=Open();
+        var count=db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.LICH_KHAM WHERE NgayGioKham>=@TuNgay AND NgayGioKham<@DenExclusive",new{packet.KyHienTai.TuNgay,packet.KyHienTai.DenExclusive});
+        if(packet.HienTai.TongLichHen!=count||packet.TrangThaiLichHen.Sum(x=>x.SoLuong)!=count)throw new Exception("Tổng lịch hẹn không khớp nguồn gốc.");
     }
     static void ClinicalSelectionEvent(NguCanhNghiepVu actor)
     {

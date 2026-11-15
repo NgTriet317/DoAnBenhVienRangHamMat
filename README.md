@@ -63,9 +63,11 @@ Biến môi trường `RHM_XRAY_ROOT` ưu tiên hơn đường dẫn trong file.
 
 Đã chuẩn bị [bộ chạy XR04 cho máy nghiệm thu](docs/sprint3/BO_NGHIEM_THU_XR04.md), gồm binary/manifest/hash và wrapper dùng runtime. [Kết quả gói ngày10/11](docs/sprint3/KET_QUA_BO_NGHIEM_THU_XR04_20261110.md):17/17 guard,12/12 bước từ ZIP giải nén, phục hồi đủ15 ảnh và viewer đạt. Các ca vẫn trên một máy qua UNC loopback; XR04 còn chờ hai máy/SQL từ xa, chưa chuyển môi trường nghiệp vụ.
 
-Tổng quan ưu tiên lượt khám, bệnh nhân duy nhất, thu ròng và tỷ lệ lượt đã phân loại; bảng **Bệnh/tình trạng thường gặp** đặt ngay sau KPI, xếp theo số người hoặc số lượt. Xem [thống kê trọng tâm và nguyên nhân dữ liệu bệnh lý hiện chưa đủ](docs/sprint3/BAO_CAO_TRONG_TAM.md). Luồng Chọn nhanh của bác sĩ giữ mã tình trạng khi lưu lượt khám mới; không tự gán mã cho hồ sơ cũ.
+**Tổng quan điều hành** hiển thị số bệnh nhân đến khám, tổng lượt khám, tiền thực thu và tổng lịch hẹn; có tình hình lịch, thu/hoàn, dịch vụ thực hiện nhiều, hồ sơ cần rà soát, xu hướng và đối chiếu tháng. Xem [hướng dẫn tổng quan và kết quả 58/58 kiểm tra SQL/WPF](docs/sprint3/TONG_QUAN_DIEU_HANH.md). Chuyên đề **Bệnh/tình trạng thường gặp** có bảng bệnh nhân và đối chiếu tình trạng riêng. Luồng Chọn nhanh của bác sĩ giữ mã tình trạng khi lưu lượt khám mới; không tự gán mã cho hồ sơ cũ.
 
 Phân hệ Báo cáo mở cho nhân viên có phiên hợp lệ, có dashboard và thống kê tình trạng theo mã, giữ đủ 18 chuyên đề cũ. Hỗ trợ MoM/YoY, so sánh hai năm, chuỗi tối đa 24 tháng, MTD, CSV và phân quyền riêng cho chi tiết tài chính/lương/kho. Xem [hướng dẫn, định nghĩa KPI và bằng chứng kiểm thử](docs/sprint3/BAO_CAO_TRIEN_KHAI.md). Chạy `powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraBaoCao.ps1 -Sql -Render` để kiểm báo cáo bằng SQL và render WPF; không cần chạy thêm SQL nâng cấp cho thay đổi báo cáo này.
+
+Tab **Bệnh/tình trạng thường gặp** có bốn ô tổng quan bệnh nhân/lượt khám/loại bệnh/tình trạng phổ biến, bảng từng bệnh nhân kèm giờ khám/chẩn đoán/tình trạng, chọn hai tháng cùng năm hoặc khác năm để đối chiếu và CSV đầy đủ. Chi tiết bệnh nhân dùng quyền dữ liệu lâm sàng hiện có. Xem [cách chọn kỳ và đọc thống kê bệnh lý](docs/sprint3/BAO_CAO_BENH_LY_SO_SANH_THANG.md); bản ngày15/11/2026 đạt54/54 kiểm tra SQL/WPF.
 
 ## Đối soát dữ liệu và bộ trình diễn
 

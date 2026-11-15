@@ -41,6 +41,41 @@ public sealed class BUS_BAOCAO
     public KetQuaBenhLy DocBenhLy(KySoSanh ky, string? maCK = null, string? maDV = null)
         => new DAL_BAOCAO().DocBenhLy(ky,maCK,maDV);
 
+    /// <summary>Đọc các lượt khám trong kỳ cùng danh tính/chẩn đoán/tình trạng, được DAL kiểm quyền lâm sàng.</summary>
+    public ChiTietLuotKhamBaoCao[] DocChiTietBenhNhan(KySoSanh ky, string? maCK = null, string? maDV = null)
+        => new DAL_BAOCAO().DocChiTietBenhNhan(ky,maCK,maDV);
+
+    /// <summary>Ghép các kỳ cần đọc rồi lấy thống kê và chi tiết trong cùng giao dịch DAL.</summary>
+    public GoiBaoCaoBenhLy DocGoiBenhLy(BoLocThongKe filter,bool docChiTiet)
+    {
+        var pairs=SoSanhThongKe.TaoCacKy(filter,DateTime.Today);
+        var whole=new KySoSanh(pairs[0].HienTai.TuNgay,pairs[^1].HienTai.DenExclusive);
+        var periods=new List<KySoSanh>{whole};
+        foreach(var pair in pairs)
+        {
+            periods.Add(pair.HienTai);
+            if(pair.KyGoc is KySoSanh baseline)periods.Add(baseline);
+        }
+        if(pairs[0].KyGoc is KySoSanh first&&pairs[^1].KyGoc is KySoSanh last)
+            periods.Add(new(first.TuNgay,last.DenExclusive));
+        return new DAL_BAOCAO().DocGoiBenhLy(periods.Distinct().ToArray(),whole,docChiTiet,filter.MaCK,filter.MaDV);
+    }
+
+    /// <summary>Đọc gói điều hành nhiều kỳ; số người toàn khoảng được tính lại, không cộng các tháng.</summary>
+    public GoiTongQuanDieuHanh DocGoiTongQuan(BoLocThongKe filter)
+    {
+        var pairs=SoSanhThongKe.TaoCacKy(filter,DateTime.Today);
+        var whole=new KySoSanh(pairs[0].HienTai.TuNgay,pairs[^1].HienTai.DenExclusive);
+        var periods=new List<KySoSanh>{whole};
+        foreach(var pair in pairs)
+        {
+            periods.Add(pair.HienTai);
+            if(pair.KyGoc is KySoSanh baseline)periods.Add(baseline);
+        }
+        if(pairs[0].KyGoc is KySoSanh first&&pairs[^1].KyGoc is KySoSanh last)periods.Add(new(first.TuNgay,last.DenExclusive));
+        return new DAL_BAOCAO().DocGoiTongQuan(periods.Distinct().ToArray(),whole);
+    }
+
     /// <summary>
     /// Đọc báo cáo với quyền được xác thực lại tại DAL từ phiên đăng nhập hiện tại.
     /// </summary>

@@ -22,6 +22,7 @@ $project = Join-Path $scratch 'RangHamMat.ReportChecks.csproj'
 $xml = '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0-windows</TargetFramework><UseWPF>true</UseWPF><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup><ItemGroup><ProjectReference Include="../../RangHamMat.Wpf/RangHamMat.Wpf.csproj" /></ItemGroup></Project>'
 [IO.File]::WriteAllText($project, $xml, [Text.UTF8Encoding]::new($false))
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'ReportChecks.cs.txt') -Destination (Join-Path $scratch 'Program.cs') -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'ReportOverviewChecks.cs.txt') -Destination (Join-Path $scratch 'OverviewChecks.cs') -Force
 & dotnet restore $project --ignore-failed-sources -p:NuGetAudit=false -v quiet
 if ($LASTEXITCODE -ne 0) { throw 'Restore ReportChecks thất bại.' }
 $options = @($MayChu, $Database)
