@@ -1,4 +1,4 @@
-* NHÓM 4 - QUẢN LÝ BỆNH VIỆN RĂNG HÀM MẶT
+/* NHÓM 4 - QUẢN LÝ BỆNH VIỆN RĂNG HÀM MẶT
    File độc lập khởi tạo hoặc đồng bộ SQL Server 2016 SP1 trở lên.
    Ứng dụng kết nối SQL Server; ứng dụng không đọc file SQL này khi chạy.
    Chạy toàn bộ bằng SSMS hoặc sqlcmd -b -f65001. Sao lưu database trước đồng bộ.
