@@ -27,7 +27,7 @@ public partial class KhamDieuTri
             if(VisitList.SelectedItem is MucDanhSachLanKham selected)ShowVisit(selected);
             else{DetailHost.Content=null;DetailEmpty.Visibility=Visibility.Visible;ContextNote.Text=explicitVisitId is null?"Chọn đúng người bệnh và lần khám để tiếp tục.":"Không tìm thấy lần khám được yêu cầu trong phạm vi; không chọn lượt khác.";}
         }
-        catch(InvalidOperationException){VisitList.ItemsSource=Array.Empty<object>();DetailHost.Content=null;DetailEmpty.Visibility=Visibility.Visible;ContextNote.Text="Không tải được danh sách lần khám. Kiểm tra kết nối/quyền và tải lại.";}
+        catch(InvalidOperationException ex){RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex);VisitList.ItemsSource=Array.Empty<object>();DetailHost.Content=null;DetailEmpty.Visibility=Visibility.Visible;ContextNote.Text="Không tải được danh sách lần khám. Kiểm tra kết nối/quyền và tải lại.";}
     }
     /// <summary>
     /// Xử lý thao tác trước lần khám khi người dùng bấm nút tương ứng trên màn hình.

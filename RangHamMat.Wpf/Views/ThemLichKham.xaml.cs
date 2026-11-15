@@ -65,6 +65,17 @@ namespace RangHamMat.Views
         /// Cờ Đang nhúng trong lịch khám; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
         /// </summary>
         bool dangNhungTrongLichKham;
+        private string[]? dongBoMocForm;
+        internal bool DongBoDangSua => dongBoMocForm is not null && !dongBoMocForm.SequenceEqual(DongBoGiaTriForm());
+
+        private string[] DongBoGiaTriForm() =>
+        [
+            txtMaLich.Text, GiaTriChon(cboBenhNhan), GiaTriChon(cboDichVu),
+            GiaTriChon(cboBacSi), GiaTriChon(cboBacSiDuBi), GiaTriChon(cboPhong), GiaTriChon(cboCa),
+            NoiDungChon(cboMucDo), NoiDungChon(cboUuTien), NoiDungChon(cboTrangThai),
+            dpNgayKham.Text, dpNgayKham.SelectedDate?.ToString("O", CultureInfo.InvariantCulture) ?? "",
+            txtGioKham.Text, txtThoiLuong.Text, txtLyDoKham.Text, txtGhiChu.Text, txtLyDoThayDoi.Text
+        ];
         /// <summary>
         /// Thông báo lưu thành công cho các thành phần đã đăng ký theo dõi.
         /// </summary>
@@ -272,6 +283,7 @@ namespace RangHamMat.Views
                     cboBenhNhan.SelectedValue = maBenhNhanKhoa;
                     cboBenhNhan.IsEnabled = false;
                 }
+                dongBoMocForm = DongBoGiaTriForm();
                 return;
             }
 
@@ -291,6 +303,7 @@ namespace RangHamMat.Views
             txtLyDoThayDoi.Text = "";
             ChonGiaTriCombo(cboUuTien, lichCu.UuTien);
             ChonGiaTriCombo(cboTrangThai, lichCu.TrangThai);
+            dongBoMocForm = DongBoGiaTriForm();
         }
 
         /// <summary>

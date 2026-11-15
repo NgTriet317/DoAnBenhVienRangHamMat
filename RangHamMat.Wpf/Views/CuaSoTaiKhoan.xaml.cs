@@ -48,19 +48,19 @@ public partial class CuaSoTaiKhoan : UserControl
         lblLoi.Text = "";
 
         taiKhoanCu = dangSuaTaiKhoan
-            ? busTaiKhoan.layTaiKhoanTheoMa(maTK!) ?? throw new InvalidOperationException("Tài khoản không còn tồn tại.")
+            ? (DongBoNguon is { } source ? source.TaiKhoan.FirstOrDefault(x => x.MaTK == maTK) : busTaiKhoan.layTaiKhoanTheoMa(maTK!)) ?? throw new InvalidOperationException("Tài khoản không còn tồn tại.")
             : null;
 
         cboVaiTro.Items.Clear();
-        foreach (var vt in busVaiTro.layToanBoVaiTro().OrderBy(x => x.TenVaiTro))
+        foreach (var vt in (DongBoNguon?.VaiTro ?? busVaiTro.layToanBoVaiTro()).OrderBy(x => x.TenVaiTro))
             cboVaiTro.Items.Add(new ComboBoxItem { Content = vt.TenVaiTro, Tag = vt.MaVaiTro });
 
         cboNhanVien.Items.Clear();
-        var daCoTaiKhoan = busTaiKhoan.layToanBoTaiKhoan()
+        var daCoTaiKhoan = (DongBoNguon?.TaiKhoan ?? busTaiKhoan.layToanBoTaiKhoan())
             .Where(x => x.MaTK != maTK)
             .Select(x => x.MaNV)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var nv in busNhanVien.layToanBoNhanVien().OrderBy(x => x.HoTen))
+        foreach (var nv in (DongBoNguon?.NhanVien ?? DongBoChuanBi.NhanVien(busNhanVien)).OrderBy(x => x.HoTen))
             if (!daCoTaiKhoan.Contains(nv.MaNV))
                 cboNhanVien.Items.Add(new ComboBoxItem
                 {
@@ -75,14 +75,14 @@ public partial class CuaSoTaiKhoan : UserControl
         try
         {
             cboKhoa.Items.Clear();
-            foreach (var khoa in busKhoa.layToanBoKhoa().OrderBy(x => x.TenKhoa))
+            foreach (var khoa in (DongBoNguon?.Khoa ?? busKhoa.layToanBoKhoa()).OrderBy(x => x.TenKhoa))
                 cboKhoa.Items.Add(new ComboBoxItem
                 {
                     Content = khoa.TenKhoa + " (" + khoa.MaKhoa + ")",
                     Tag = khoa.MaKhoa
                 });
 
-            danhSachPhong = busPhong.layToanBoPhong().ToList();
+            danhSachPhong = DongBoNguon?.Phong ?? busPhong.layToanBoPhong().ToList();
             var phongDaGan = danhSachPhong.FirstOrDefault(x => x.MaPhong == taiKhoanCu?.MaPhong);
             var maKhoaDeChon = taiKhoanCu?.MaKhoa ?? phongDaGan?.MaKhoa;
             rbTheoPhong.IsChecked = !string.IsNullOrWhiteSpace(taiKhoanCu?.MaPhong);
@@ -105,6 +105,7 @@ public partial class CuaSoTaiKhoan : UserControl
             ? "Nếu không muốn đổi mật khẩu, để trống cả hai ô. Khi đổi phải có ít nhất 8 ký tự gồm chữ và số."
             : "Tài khoản mới cần mật khẩu ít nhất 8 ký tự, gồm chữ và số.";
         btnLuu.IsEnabled = PhienDangNhap.IsAdmin;
+        DongBoGhiNhanForm();
     }
 
     public void MoVaiTro(string? maVaiTro = null)
@@ -119,11 +120,12 @@ public partial class CuaSoTaiKhoan : UserControl
         lblLoi.Text = "";
 
         vaiTroCu = string.IsNullOrWhiteSpace(maVaiTro) ? null :
-            busVaiTro.layVaiTroTheoMa(maVaiTro) ?? throw new InvalidOperationException("Vai trò không còn tồn tại.");
+            (DongBoNguon is { } source ? source.VaiTro.FirstOrDefault(x => x.MaVaiTro == maVaiTro) : busVaiTro.layVaiTroTheoMa(maVaiTro)) ?? throw new InvalidOperationException("Vai trò không còn tồn tại.");
         txtMaVaiTro.Text = vaiTroCu?.MaVaiTro ?? "Tự sinh khi lưu";
         txtTenVaiTro.Text = vaiTroCu?.TenVaiTro ?? "";
         txtMoTa.Text = vaiTroCu?.MoTa ?? "";
         btnLuu.IsEnabled = PhienDangNhap.IsAdmin;
+        DongBoGhiNhanForm();
     }
 
     // Mọi khoa/phòng đều lấy từ BUS: cho phép hiển thị cả liên kết lịch sử khi sửa.
@@ -245,6 +247,7 @@ public partial class CuaSoTaiKhoan : UserControl
                 MaVuaLuu = entity.MaVaiTro;
             }
             DaLuu = true;
+            DongBoGhiNhanForm();
             LuuThanhCong?.Invoke(MaVuaLuu);
         }
         catch (Exception ex)

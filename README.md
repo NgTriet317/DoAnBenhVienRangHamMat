@@ -28,6 +28,8 @@ Danh mục gốc có52 sản phẩm có nguồn và20 nhóm độc lập mẫu �
 
 ## Cấu hình và chạy
 
+Nhánh `dong_bo_giua_cac_may` bổ sung kiểm tra thay đổi SQL mỗi khoảng 2 giây, cập nhật màn hình liên quan và giữ nội dung đang nhập. Cần áp dụng phần Change Tracking trong file SQL chính từ nhánh này trên server và chạy ứng dụng mới trên các máy. Xem [cài đặt và vận hành đồng bộ](docs/database/DONG_BO_GIUA_CAC_MAY.md).
+
 Mở BenhVienRangHamMat.sln bằng Visual Studio2022 có .NET desktop development/.NET8 SDK, chọn RangHamMat.Wpf làm startup rồi F5. Hoặc mở PhatHanh/RangHamMat.Wpf.exe với .NET8 Desktop Runtime trên Windows. Backend Kiosk trong bản phát hành cần thêm ASP.NET Core Runtime8. Build/publish WPF tự dựng backend từ mã nguồn hiện tại và đặt vào KioskServer; các DLL/MSI cũ trong thư mục nguồn không được dùng để phát hành bản hợp nhất.
 
 Máy mới cần cài SQL Server2016SP1 trở lên, mở toàn bộ file SQL chính trong SSMS rồi F5 và cấu hình đúng instance/quyền truy cập trước khi F5 ứng dụng. Không cần SQLCMD mode hoặc đường dẫn backup của máy cũ. File hiện tại chứa dữ liệu phục hồi; dữ liệu nhập sau lần đóng gói cần sao lưu/khôi phục hoặc cập nhật snapshot bằng tools/CapNhatDuLieuSql.ps1 trước khi chuyển máy.

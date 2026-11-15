@@ -39,13 +39,14 @@ namespace RangHamMat.Views
         /// </summary>
         public NhanSu()
         {
-            InitializeComponent();
+            InitializeComponent(); DangKyDongBoManHinh();
 
             LoadDuLieuNhanVien();
             LoadDuLieuChucVu();
             LoadDuLieuChuyenKhoa();
             DangKySuKienXoaBaoDo();
             IsVisibleChanged += NhanSu_IsVisibleChanged;
+            DongBoGhiNhanForm();
         }
 
         // Tải lại để phản ánh ngày nghỉ có hiệu lực khi quay về màn hình Nhân sự.
@@ -62,7 +63,7 @@ namespace RangHamMat.Views
         {
             try
             {
-                IEnumerable<ET_NHANVIEN> duLieu = busNhanVien.layToanBoNhanVien();
+                IEnumerable<ET_NHANVIEN> duLieu = dongBoNhanSu?.NhanVien ?? DongBoChuanBi.NhanVien(busNhanVien);
                 if (duLieu == null)
                     danhSachNhanVien = new List<ET_NHANVIEN>();
                 else
@@ -71,7 +72,7 @@ namespace RangHamMat.Views
                 ApDungBoLocNhanVien();
             }
             catch (Exception ex)
-            {
+            { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
                 MessageBox.Show("Lỗi khi tải danh sách nhân viên: " + ex.Message, "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -82,7 +83,7 @@ namespace RangHamMat.Views
         /// <remarks>Các bước được phối hợp qua <c>busChucVu.layToanBoChucVu</c>.</remarks>
         private void LoadDuLieuChucVu()
         {
-            var chucVuList = busChucVu.layToanBoChucVu().ToList();
+            var chucVuList = dongBoNhanSu?.ChucVu ?? busChucVu.layToanBoChucVu().ToList();
             dgvChucVu.ItemsSource = chucVuList;
             cboChucVu.ItemsSource = chucVuList;
         }
@@ -93,7 +94,7 @@ namespace RangHamMat.Views
         /// <remarks>Các bước được phối hợp qua <c>busChuyenKhoa.layToanBoChuyenKhoa</c>.</remarks>
         private void LoadDuLieuChuyenKhoa()
         {
-            cboChuyenKhoa.ItemsSource = busChuyenKhoa.layToanBoChuyenKhoa();
+            cboChuyenKhoa.ItemsSource = dongBoNhanSu?.ChuyenKhoa ?? busChuyenKhoa.layToanBoChuyenKhoa();
         }
 
         /// <summary>
@@ -449,6 +450,8 @@ namespace RangHamMat.Views
             cboChuyenKhoa.SelectedIndex = -1;
             dpNgaySinh.SelectedDate = null;
             dpNgayVaoLam.SelectedDate = DateTime.Today;
+            dongBoMocNhanVien=DongBoGiaTriNhanVien();
+            dongBoMocChucVu??=DongBoGiaTriChucVu();
 
             XoaToanBoBaoDoNhanVien();
         }
@@ -500,6 +503,7 @@ namespace RangHamMat.Views
             txtMaChucVu.Text = string.Empty;
             txtTenChucVu.Text = string.Empty;
             txtMoTaChucVu.Text = string.Empty;
+            dongBoMocChucVu=DongBoGiaTriChucVu();
             XoaToanBoBaoDoChucVu();
         }
 

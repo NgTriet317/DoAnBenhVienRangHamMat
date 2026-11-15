@@ -50,6 +50,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        KhoiTaoDongBo();
         if(Content is Panel root)root.Children.Add(detachedWorkError);
         RolePicker.Items.Clear();
         RolePicker.Items.Add(new ComboBoxItem { Content = PhienDangNhap.IsAdmin ? "Admin" : "User" });

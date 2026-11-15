@@ -51,7 +51,8 @@ public partial class BanGiaoThuocEditor : UserControl
     /// </summary>
     /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
     public BanGiaoThuocEditor(NguCanhNghiepVu? user=null)
-    {InitializeComponent();DrugLines.RowHeight=double.NaN;actor=user??QuyenNghiepVu.LayNguCanh();GuidanceButton.Visibility=actor.CoQuyen(QuyenLamViec.CauHinhHoTro)?Visibility.Visible:Visibility.Collapsed;Reload(null,false);}
+    {InitializeComponent();DrugLines.RowHeight=double.NaN;actor=user??QuyenNghiepVu.LayNguCanh();GuidanceButton.Visibility=actor.CoQuyen(QuyenLamViec.CauHinhHoTro)?Visibility.Visible:Visibility.Collapsed;Reload(null,false);
+        RangHamMat.Services.DongBoManHinh.Register(this,["BAN_GIAO_THUOC","HOA_DON","THANH_TOAN","DON_THUOC","CHI_TIET_DON_THUOC","PHIEU_XUAT"],()=>Reload(ChiTiet?.Luot.MaDT,false),()=>DangXuLy||pendingId is not null||ReceiverChecked.IsChecked==true||GuidanceChecked.IsChecked==true);}
     /// <summary>
     /// Chuyển màn hình tới đúng bệnh nhân/lần khám hoặc chứng từ theo ngữ cảnh được yêu cầu.
     /// </summary>
@@ -80,7 +81,7 @@ public partial class BanGiaoThuocEditor : UserControl
             var id=(QueueList.SelectedItem as HangBanGiao)?.MaDT??(keep?selected:null);
             if(id is null)Clear();else LoadDetail(id);
         }
-        catch(Exception ex){Clear();StatusText.Text=ex is TuChoiQuyenNghiepVuException or LoiKhamException?ex.Message:"Không tải được hàng chờ. Tải lại khi kết nối ổn định.";}
+        catch(Exception ex){RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex);Clear();StatusText.Text=ex is TuChoiQuyenNghiepVuException or LoiKhamException?ex.Message:"Không tải được hàng chờ. Tải lại khi kết nối ổn định.";}
         finally{loading=false;UpdateRights();}
     }
     /// <summary>

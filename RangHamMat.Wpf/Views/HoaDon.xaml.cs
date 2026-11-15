@@ -135,7 +135,7 @@ public partial class HoaDon : UserControl, IPatientScoped
                 PageStatus.Text = "Xem bảng tính theo lượt; chọn hóa đơn để đối chiếu lịch sử và in lại.";
             }
         }
-        catch (Exception ex) { PageStatus.Text = "Không thể tải hóa đơn: " + ClinicalFormInput.Message(ex); }
+        catch (Exception ex) {RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex); PageStatus.Text = "Không thể tải hóa đơn: " + ClinicalFormInput.Message(ex); }
         finally { updating = false; }
     }
     /// <summary>
@@ -201,25 +201,25 @@ public partial class HoaDon : UserControl, IPatientScoped
     {
         if (DuLieuGiaoDien.PhamViLamSang) { PageStatus.Text = "Chứng từ lịch sử chỉ được đối chiếu và in lại."; return; }
         try { operation(); }
-        catch (Exception ex) { if(ex is LoiNhapLieu inputError) KiemTraNhapLieu.MarkError(this,inputError); else PageStatus.Text = "Không thể thực hiện: " + ex.Message; return; }
+        catch (Exception ex) {RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex); if(ex is LoiNhapLieu inputError) KiemTraNhapLieu.MarkError(this,inputError); else PageStatus.Text = "Không thể thực hiện: " + ex.Message; return; }
         try { DuLieuGiaoDien.RefreshFromDatabase(); Refresh(); PageStatus.Text = success; }
-        catch (Exception ex) { PageStatus.Text = success + " Chưa tải lại được danh sách; bấm Tải lại để cập nhật: " + ex.Message; }
+        catch (Exception ex) {RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex); PageStatus.Text = success + " Chưa tải lại được danh sách; bấm Tải lại để cập nhật: " + ex.Message; }
     }
     /// <summary>
     /// Đọc lại cache SQL và danh sách hóa đơn, thông báo kết quả; lỗi tải lại chỉ hiện lên PageStatus.
     /// </summary>
     private void Reload_Click(object sender, RoutedEventArgs e)
-    { try { DuLieuGiaoDien.RefreshFromDatabase(); Refresh(); PageStatus.Text = "Đã tải lại từ database."; } catch (Exception ex) { PageStatus.Text = "Không thể tải lại dữ liệu: " + ex.Message; } }
+    { try { DuLieuGiaoDien.RefreshFromDatabase(); Refresh(); PageStatus.Text = "Đã tải lại từ database."; } catch (Exception ex) {RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex); PageStatus.Text = "Không thể tải lại dữ liệu: " + ex.Message; } }
     /// <summary>
     /// Đổi bệnh nhân lọc, xóa ngữ cảnh lần khám/đơn/hóa đơn cũ và làm mới để không dùng dữ liệu thuộc bệnh nhân trước.
     /// </summary>
     private void Patient_Changed(object sender, SelectionChangedEventArgs e)
-    { if (updating || !CanChangePricingContext()) return; PatientId = HoTroGiaoDien.Selected(PatientFilter);if(PatientId=="")PatientId=null;visitId = prescriptionId = null; invoiceId = null;sourcePage=1;sourceQuery="";FinanceSearch.Clear();try{EnsureSelectedClinicalContext();Refresh();}catch(InvalidOperationException ex){PageStatus.Text=ClinicalFormInput.Message(ex);} }
+    { if (updating || !CanChangePricingContext()) return; PatientId = HoTroGiaoDien.Selected(PatientFilter);if(PatientId=="")PatientId=null;visitId = prescriptionId = null; invoiceId = null;sourcePage=1;sourceQuery="";FinanceSearch.Clear();try{EnsureSelectedClinicalContext();Refresh();}catch(InvalidOperationException ex){RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex);PageStatus.Text=ClinicalFormInput.Message(ex);} }
     /// <summary>
     /// Đổi lần khám, bỏ lựa chọn đơn và hóa đơn cũ, suy ra đúng bệnh nhân từ lần khám rồi tải lại dữ liệu.
     /// </summary>
     private void Visit_Changed(object sender, SelectionChangedEventArgs e)
-    { if (updating || !CanChangePricingContext()) return; visitId = HoTroGiaoDien.Selected(VisitFilter);if(visitId=="")visitId=null;prescriptionId = null; invoiceId = null;var source=sourceVisits.FirstOrDefault(r=>r.MaLS==visitId);if(source is not null)PatientId=source.MaBN;else{var visit=DuLieuGiaoDien.Find("LICH_SU_KHAM_BENH",visitId);if(visit is not null)PatientId=DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH",visit);}try{EnsureSelectedClinicalContext();Refresh();}catch(InvalidOperationException ex){PageStatus.Text=ClinicalFormInput.Message(ex);} }
+    { if (updating || !CanChangePricingContext()) return; visitId = HoTroGiaoDien.Selected(VisitFilter);if(visitId=="")visitId=null;prescriptionId = null; invoiceId = null;var source=sourceVisits.FirstOrDefault(r=>r.MaLS==visitId);if(source is not null)PatientId=source.MaBN;else{var visit=DuLieuGiaoDien.Find("LICH_SU_KHAM_BENH",visitId);if(visit is not null)PatientId=DuLieuGiaoDien.PatientId("LICH_SU_KHAM_BENH",visit);}try{EnsureSelectedClinicalContext();Refresh();}catch(InvalidOperationException ex){RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex);PageStatus.Text=ClinicalFormInput.Message(ex);} }
 
     /// <summary>
     /// Kiểm tra vùng lập phí có cho phép đổi ngữ cảnh bệnh nhân/lần khám hay không.
@@ -236,17 +236,17 @@ public partial class HoaDon : UserControl, IPatientScoped
     /// Khi đổi nhân viên thực hiện, cập nhật khả năng lập hóa đơn/thanh toán/cấp thuốc theo lựa chọn hiện tại.
     /// </summary>
     private void Employee_Changed(object sender, SelectionChangedEventArgs e)
-    { if (updating) return; try { CreateButton.IsEnabled = !DuLieuGiaoDien.PhamViLamSang && HasVisit() && HasEmployee(); ShowInvoice(); ShowStock(); } catch (Exception ex) { PageStatus.Text = ex.Message; } }
+    { if (updating) return; try { CreateButton.IsEnabled = !DuLieuGiaoDien.PhamViLamSang && HasVisit() && HasEmployee(); ShowInvoice(); ShowStock(); } catch (Exception ex) {RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex); PageStatus.Text = ex.Message; } }
     /// <summary>
     /// Đọc và hiển thị chi tiết hóa đơn vừa chọn; bỏ qua sự kiện phát sinh trong lúc đổ danh sách.
     /// </summary>
     private void Invoice_Changed(object sender, SelectionChangedEventArgs e)
-    { if (updating) return; try { ShowInvoice(); } catch (Exception ex) { PageStatus.Text = "Không thể đọc chi tiết: " + ex.Message; } }
+    { if (updating) return; try { ShowInvoice(); } catch (Exception ex) {RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex); PageStatus.Text = "Không thể đọc chi tiết: " + ex.Message; } }
     /// <summary>
     /// Tải lại dòng đơn thuốc và tồn lô khi đổi đơn hoặc kho cấp thuốc, báo lỗi nếu BUS không đọc được tồn.
     /// </summary>
     private void Stock_Changed(object sender, SelectionChangedEventArgs e)
-    { if (updating) return; try { ShowStock(); } catch (Exception ex) { PageStatus.Text = "Không thể đọc tồn kho: " + ex.Message; } }
+    { if (updating) return; try { ShowStock(); } catch (Exception ex) {RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex); PageStatus.Text = "Không thể đọc tồn kho: " + ex.Message; } }
     /// <summary>
     /// Mở CuaSoHoaDon ngay trong trang, truyền bệnh nhân/lần khám/nhân viên; khi lưu xong nhận mã hóa đơn nháp và chọn lại nó.
     /// </summary>

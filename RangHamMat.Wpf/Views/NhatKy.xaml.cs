@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using System.Windows;
 using System.Windows.Controls;
 using BUS;
@@ -26,7 +26,7 @@ public partial class NhatKy:UserControl
     /// <summary>
     /// Nạp bố cục tra cứu nhật ký và các sự kiện khai báo trong XAML.
     /// </summary>
-    public NhatKy()=>InitializeComponent();
+    public NhatKy(){InitializeComponent();DangKyDongBoManHinh();}
     /// <summary>
     /// Khởi tạo danh sách hành động một lần khi màn hình được nạp, sau đó tải trang đầu.
     /// </summary>
@@ -56,10 +56,10 @@ public partial class NhatKy:UserControl
                 applied=new BoLocNhatKy{TuUtc=FromDate.SelectedDate?.Date.Add(from).AddHours(-7),DenUtc=ToDate.SelectedDate?.Date.Add(to).AddMinutes(1).AddHours(-7),TaiKhoan=AccountFilter.Text.Trim(),PhanHe=ModuleFilter.Text.Trim(),HanhDong=ActionFilter.SelectedValue as string??"",KetQua=ResultFilter.Text.Trim(),MaDoiTuong=ObjectFilter.Text.Trim()};
             }
             applied.Trang=page;applied.KichThuocTrang=int.Parse(Convert.ToString((PageSize.SelectedItem as ComboBoxItem)?.Content)??"50");
-            var actor=new BUS_QUYENNGHIEPVU().LayNguCanh(PhienDangNhap.MaNV);
-            var stats=new BUS_NHATKY().ThongKe(actor);
+            var actor=dongBoNhatKy?.Actor??new BUS_QUYENNGHIEPVU().LayNguCanh(PhienDangNhap.MaNV);
+            var stats=dongBoNhatKy?.ThongKe??new BUS_NHATKY().ThongKe(actor);
             Statistics.Text=$"Hôm nay: {stats.DangNhap} đăng nhập thành công · {stats.DangNhapThatBai} đăng nhập thất bại · {stats.ThayDoi} thao tác thay đổi dữ liệu";
-            var result=new BUS_NHATKY().LayTrang(applied,actor);total=result.Tong;
+            var result=dongBoNhatKy?.Trang??new BUS_NHATKY().LayTrang(applied,actor);total=result.Tong;
             var table=new DataTable();
             foreach(var row in result.Dong)
             {
@@ -80,7 +80,7 @@ public partial class NhatKy:UserControl
             AuditGrid.ItemsSource=table.DefaultView;ShowDetail(null);
             PageLabel.Text=$"Trang {page}/{Math.Max(1,(int)Math.Ceiling((double)total/applied.KichThuocTrang))} · {total} bản ghi";
         }
-        catch(Exception ex){AuditGrid.ItemsSource=null;ShowDetail(null);Message.Text=ex.Message;}
+        catch(Exception ex){ if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;AuditGrid.ItemsSource=null;ShowDetail(null);Message.Text=ex.Message;}
     }
     /// <summary>
     /// Ẩn payload và khóa kỹ thuật của nhật ký, đổi tên các cột còn lại thành nhãn dễ đọc.

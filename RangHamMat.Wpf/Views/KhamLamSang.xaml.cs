@@ -86,6 +86,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
         PlanStart.AddHandler(TextBox.TextChangedEvent,new TextChangedEventHandler(PlanDate_TextChanged));
         PlanEnd.AddHandler(TextBox.TextChangedEvent,new TextChangedEventHandler(PlanDate_TextChanged));
         conditions.CollectionChanged+=(_,_)=>{if(!loading)dirty=true;};steps.CollectionChanged+=(_,e)=>{if(!loading)planDirty=true;if(e.NewItems is not null)foreach(BuocKeHoachNhap row in e.NewItems)row.PropertyChanged+=(_,_)=>UpdatePlanTotal();UpdatePlanTotal();};
+        RangHamMat.Services.DongBoManHinh.RegisterPrepared(this,["LICH_SU_KHAM_BENH","TINH_TRANG_BENH","KE_HOACH_DIEU_TRI","CHI_TIET_KE_HOACH","DICH_VU_THUC_HIEN","DON_THUOC","CHI_TIET_DON_THUOC","HOA_DON","BENH_NHAN","DICH_VU"],PrepareDongBoKham,()=>CoThayDoiChuaLuu);
         LoadWorkspace();
     }
     /// <summary>
@@ -112,11 +113,25 @@ public partial class KhamLamSang : UserControl,IPatientScoped
     /// </summary>
     /// <remarks>Các bước được phối hợp qua <c>service.LayKhongGianKham</c>, <c>Known</c>, <c>data.DichVu.Select</c>, <c>ConfigureConditionPicker</c>.</remarks>
     private void LoadWorkspace()
+        => ApplyWorkspace(service.LayKhongGianKham(visitId,actor));
+    private async Task<Action> PrepareDongBoKham(CancellationToken token)
+    {
+        var selected=plan?.KeHoach.MaKHDT;
+        var result=await Task.Run(()=>
+        {
+            token.ThrowIfCancellationRequested();
+            var data=service.LayKhongGianKham(visitId,actor);
+            var selectedPlan=selected is not null&&data.KeHoach.Any(k=>k.MaKHDT==selected)?service.LayKeHoach(selected!,actor):null;
+            return (data,selectedPlan);
+        },token);
+        return ()=>{ApplyWorkspace(result.data);if(result.selectedPlan is not null)FillPlan(result.selectedPlan);};
+    }
+    private void ApplyWorkspace(DuLieuKhongGianKham data)
     {
         loading=true;
         try
         {
-            var data=service.LayKhongGianKham(visitId,actor);PatientId=data.BenhNhan.MaBN;
+            PatientId=data.BenhNhan.MaBN;
             PatientHeader.Text=data.BenhNhan.HoTenBN;
             PatientDemographics.Text=$"{PatientId} · Ngày sinh: {data.BenhNhan.NgaySinh?.ToString("dd/MM/yyyy")??"Chưa cập nhật"}";
             SafetyHeader.Text=$"Dị ứng: {Known(data.BenhNhan.DiUng)} · Tiền sử: {Known(data.BenhNhan.TienSuBenh)}";

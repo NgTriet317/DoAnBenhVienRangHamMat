@@ -41,7 +41,7 @@ public partial class ChungChiNhanVien : UserControl
     /// </summary>
     public ChungChiNhanVien()
     {
-        InitializeComponent();
+        InitializeComponent(); DangKyDongBoManHinh();
 
         LoadDuLieu();
     }
@@ -63,7 +63,7 @@ public partial class ChungChiNhanVien : UserControl
     private void LoadDanhSachNhanVien()
     {
 
-        danhSachNhanVien = busNhanVien.layToanBoNhanVien().ToList();
+        danhSachNhanVien = dongBoChungChi?.NhanVien ?? DongBoChuanBi.NhanVien(busNhanVien).ToList();
         LocDanhSachNhanVien();
 
     }
@@ -94,12 +94,12 @@ public partial class ChungChiNhanVien : UserControl
     {
         try
         {
-            danhSachChungChi = busChungChi.layToanBoChungChiNhanVien().ToList();
+            danhSachChungChi = dongBoChungChi?.ChungChi ?? busChungChi.layToanBoChungChiNhanVien().ToList();
             CapNhatThongKe();
             ApDungBoLocChungChi();
         }
         catch (Exception ex)
-        {
+        { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
             MessageBox.Show("Lỗi khi tải danh sách chứng chỉ: " + ex.Message, "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }

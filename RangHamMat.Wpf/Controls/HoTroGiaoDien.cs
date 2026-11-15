@@ -87,6 +87,7 @@ public static class HoTroGiaoDien
     /// </summary>
     public static void Observe(UserControl control, Action refresh)
     {
+        RangHamMat.Services.DongBoManHinh.RegisterCache(control, refresh);
         var listening = false;
         EventHandler changed = (_, _) => refresh();
         control.Loaded += (_, _) => { if (!listening) { DuLieuGiaoDien.Changed += changed; listening = true; } refresh(); };

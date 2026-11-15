@@ -1,4 +1,4 @@
-﻿using BUS;
+using BUS;
 using ET;
 using System;
 using System.Collections.Generic;
@@ -21,7 +21,7 @@ public partial class DonXinNghiQuanLy : UserControl
 
     public DonXinNghiQuanLy()
     {
-        InitializeComponent();
+        InitializeComponent(); DangKyDongBoManHinh();
         cboTrangThaiDon.SelectedIndex = 1; // Mặc định xem các đơn chờ duyệt.
         if (!PhienDangNhap.IsAdmin)
         {
@@ -36,7 +36,7 @@ public partial class DonXinNghiQuanLy : UserControl
     {
         try
         {
-            danhSach = bus.layDanhSachDon();
+            danhSach = dongBoDonNghi ?? bus.layDanhSachDon();
             string chuyenKhoaDaChon = "Tất cả chuyên khoa";
             if (cboChuyenKhoaDon.SelectedItem is string giaTri)
                 chuyenKhoaDaChon = giaTri;
@@ -55,7 +55,7 @@ public partial class DonXinNghiQuanLy : UserControl
             LocDanhSach();
         }
         catch (Exception ex)
-        {
+        { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
             daNapDuLieu = false;
             dgvDonXinNghi.ItemsSource = null;
             txtSoDon.Text = "Không thể tải dữ liệu";
@@ -464,7 +464,7 @@ public partial class DonXinNghiQuanLy : UserControl
         if (!PhienDangNhap.IsAdmin) return;
         try
         {
-            cboNhanVienKhanCap.ItemsSource = new BUS_NHANVIEN().layToanBoNhanVien();
+            cboNhanVienKhanCap.ItemsSource = DongBoChuanBi.NhanVien(new BUS_NHANVIEN());
             cboNhanVienKhanCap.SelectedIndex = -1;
             dpKhanCapTuNgay.DisplayDateStart = DateTime.Today;
             dpKhanCapDenNgay.DisplayDateStart = DateTime.Today;

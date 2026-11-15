@@ -27,7 +27,7 @@ public partial class HoSoBenhNhan
             HistoryEmpty.Visibility=page.CacDong.Count==0?Visibility.Visible:Visibility.Collapsed;
             HistoryPages.Visibility=Visibility.Visible;PreviousHistoryPage.IsEnabled=historyPage>1;NextHistoryPage.IsEnabled=historyPage<pages;
         }
-        catch(InvalidOperationException){HistoryGrid.ItemsSource=Array.Empty<object>();HistoryCount.Text="Không tải được lịch sử. Kiểm tra kết nối/quyền và tải lại.";}
+        catch(InvalidOperationException ex){RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex);HistoryGrid.ItemsSource=Array.Empty<object>();HistoryCount.Text="Không tải được lịch sử. Kiểm tra kết nối/quyền và tải lại.";}
     }
     /// <summary>
     /// Xử lý thao tác trước lịch sử khi người dùng bấm nút tương ứng trên màn hình.

@@ -92,6 +92,11 @@ public partial class AppWorkspace : UserControl
     /// Giá trị Lâm sàng các phần tử gốc; được xác định bởi phần getter/setter của thuộc tính.
     /// </summary>
     internal IEnumerable<DependencyObject> ClinicalRoots=>new[]{Workspace.Content,ModalContent.Content}.Concat(history).Concat(modalHistory).OfType<DependencyObject>();
+    internal bool DongBoDangNhapLieu => ModalLayer.Visibility == Visibility.Visible
+        || ClinicalRoots.SelectMany(ClinicalPendingWork.Nodes).OfType<UserControl>().Where(f=>f.IsVisible).Any(f=>
+            f.GetType().Name.StartsWith("CuaSo",StringComparison.Ordinal) && f is not CuaSoTaiKhoan
+            || f.GetType().Name is "KeDonThuocWindow"
+            || f is ThemLichKham appointment && appointment.DongBoDangSua);
     /// <summary>
     /// Truyền ngữ cảnh bệnh nhân/lần khám/đơn thuốc cho đúng loại màn hình; lịch khám chỉ nhận phạm vi bệnh nhân.
     /// </summary>
@@ -346,10 +351,10 @@ public partial class AppWorkspace : UserControl
     /// <summary>
     /// Đọc lại dữ liệu SQL cho bộ cache giao diện; nếu lỗi kết nối thì hiển thị thông báo và giữ dữ liệu đang xem.
     /// </summary>
-    private void Reload_Click(object sender, RoutedEventArgs e)
+    private async void Reload_Click(object sender, RoutedEventArgs e)
     {
         if(!TryLeaveClinicalWork())return;
-        try {DuLieuGiaoDien.RefreshFromDatabase();}
+        try {await home.TaiLaiDongBoAsync();}
         catch(InvalidOperationException ex) {MessageBox.Show(ex.Message,"Tải dữ liệu",MessageBoxButton.OK,MessageBoxImage.Error);}
     }
 

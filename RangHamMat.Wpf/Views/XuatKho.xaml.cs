@@ -263,7 +263,7 @@ namespace RangHamMat.Views
         /// </summary>
         public XuatKho()
         {
-            InitializeComponent();
+            InitializeComponent(); DangKyDongBoManHinh();
             lblNgayXuatMoi.Text = "Tự động lấy khi lưu phiếu mới";
             Loaded += XuatKho_Loaded;
         }
@@ -315,34 +315,34 @@ namespace RangHamMat.Views
                 List<LuaChonXuat> luaChonNhanVien = new List<LuaChonXuat>();
                 locKho.Add(new LuaChonXuat { Ma = "", Ten = "Tất cả kho" });
 
-                foreach (ET_KHO k in new BUS_KHO().layToanBoKho())
+                foreach (ET_KHO k in DongBoNguonKho.Read("Kho", () => new BUS_KHO().layToanBoKho()))
                 {
                     tenKho[k.MaKho] = k.TenKho;
                     if (k.TrangThai == "Đang hoạt động") luaChonKho.Add(new LuaChonXuat { Ma = k.MaKho, Ten = k.TenKho });
                     locKho.Add(new LuaChonXuat { Ma = k.MaKho, Ten = k.TenKho });
                 }
-                foreach (ET_NHANVIEN n in new BUS_NHANVIEN().layToanBoNhanVien())
+                foreach (ET_NHANVIEN n in DongBoNguonKho.Read("NhanVien", () => DongBoChuanBi.NhanVien(new BUS_NHANVIEN())))
                 {
                     tenNguoi[n.MaNV] = n.HoTen;
                     if (n.TrangThai == "Đang làm việc" || n.MaNV == PhienDangNhap.MaNV)
                         luaChonNhanVien.Add(new LuaChonXuat { Ma = n.MaNV, Ten = n.HoTen });
                 }
-                foreach (ET_KHOA k in new BUS_KHOA().layToanBoKhoa())
+                foreach (ET_KHOA k in DongBoNguonKho.Read("Khoa", () => new BUS_KHOA().layToanBoKhoa()))
                 {
                     tenKhoa[k.MaKhoa] = k.TenKhoa;
                     cacKhoa.Add(new LuaChonXuat { Ma = k.MaKhoa, Ten = k.TenKhoa });
                 }
-                foreach (ET_PHONG p in new BUS_PHONG().layToanBoPhong())
+                foreach (ET_PHONG p in DongBoNguonKho.Read("Phong", () => new BUS_PHONG().layToanBoPhong()))
                 {
                     tenPhong[p.MaPhong] = p.TenPhong;
                     cacPhong.Add(new LuaChonXuat { Ma = p.MaPhong, Ten = p.TenPhong });
                 }
-                foreach (ET_HANGHOA h in new BUS_HANGHOA().layToanBoHangHoa())
+                foreach (ET_HANGHOA h in DongBoNguonKho.Read("HangHoa", () => new BUS_HANGHOA().layToanBoHangHoa()))
                 {
                     tenHang[h.MaHH] = h.TenHH;
                     donVi[h.MaHH] = h.DonViTinh;
                 }
-                foreach (ET_LOHANGHOA l in new BUS_LOHANGHOA().layToanBoLoHangHoa())
+                foreach (ET_LOHANGHOA l in DongBoNguonKho.Read("Lo", () => new BUS_LOHANGHOA().layToanBoLoHangHoa()))
                 {
                     if (string.IsNullOrWhiteSpace(l.SoLo)) tenLo[l.MaLo] = l.MaLo;
                     else tenLo[l.MaLo] = l.SoLo;
@@ -359,7 +359,7 @@ namespace RangHamMat.Views
 
                 danhSach.Clear();
                 Dictionary<string, PhieuXuatHienThi> theoMa = new Dictionary<string, PhieuXuatHienThi>();
-                foreach (ET_PHIEUXUAT p in new BUS_PHIEUXUAT().LayDanhSach())
+                foreach (ET_PHIEUXUAT p in DongBoNguonKho.Read("PhieuXuat", () => new BUS_PHIEUXUAT().LayDanhSach()))
                 {
                     PhieuXuatHienThi dong = new PhieuXuatHienThi();
                     dong.MaPhieu = p.MaPX;
@@ -382,7 +382,7 @@ namespace RangHamMat.Views
                     danhSach.Add(dong);
                     theoMa[p.MaPX] = dong;
                 }
-                foreach (ET_CHITIETPHIEUXUAT c in new BUS_CHITIETPHIEUXUAT().LayDanhSach())
+                foreach (ET_CHITIETPHIEUXUAT c in DongBoNguonKho.Read("ChiTietXuat", () => new BUS_CHITIETPHIEUXUAT().LayDanhSach()))
                 {
                     if (!theoMa.ContainsKey(c.MaPX)) continue;
                     HangXuatHienThi dong = new HangXuatHienThi();
@@ -402,7 +402,7 @@ namespace RangHamMat.Views
                 ApDungBoLoc(maChon);
             }
             catch (Exception ex)
-            {
+            { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) { dangTai=false;throw; }
                 dangTai = false;
                 MessageBox.Show("Không tải được phiếu xuất: " + ex.Message, "Xuất kho", MessageBoxButton.OK, MessageBoxImage.Warning);
             }

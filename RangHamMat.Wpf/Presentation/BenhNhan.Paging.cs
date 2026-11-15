@@ -29,7 +29,7 @@ public partial class BenhNhan
             PreviousButton.IsEnabled=currentPage>1;NextButton.IsEnabled=currentPage<pages;
             ListEmpty.Visibility=page.CacDong.Count==0?Visibility.Visible:Visibility.Collapsed;ListEmpty.Text="Không có bệnh nhân phù hợp với tìm kiếm và bộ lọc.";
         }
-        catch(InvalidOperationException){Grid_BENH_NHAN.ItemsSource=Array.Empty<object>();ListEmpty.Text="Không tải được danh sách. Kiểm tra kết nối/quyền và tải lại.";ListEmpty.Visibility=Visibility.Visible;}
+        catch(InvalidOperationException ex){RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex);Grid_BENH_NHAN.ItemsSource=Array.Empty<object>();ListEmpty.Text="Không tải được danh sách. Kiểm tra kết nối/quyền và tải lại.";ListEmpty.Visibility=Visibility.Visible;}
         finally{refreshing=false;}
     }
 }

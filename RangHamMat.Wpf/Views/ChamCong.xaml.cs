@@ -45,7 +45,7 @@ namespace RangHamMat.Views
         /// </summary>
         public ChamCong()
         {
-            InitializeComponent();
+            InitializeComponent(); DangKyDongBoManHinh();
             cboThang.SelectedIndex = DateTime.Today.Month - 1;
             txtNam.Text = DateTime.Today.Year.ToString();
             Loaded += (sender, e) => { if (!daTai) hienThiDuLieu(); };
@@ -72,7 +72,7 @@ namespace RangHamMat.Views
             dangTai = true;
             try
             {
-                danhSachCong = busChamCong.layChamCongTheoThang(cboThang.SelectedIndex + 1, nam);
+                danhSachCong = dongBoChamCong ?? busChamCong.layChamCongTheoThang(cboThang.SelectedIndex + 1, nam);
                 danhSachCong.DefaultView.Sort = "NgayLam ASC, MaCa ASC, HoTen ASC";
                 // Bỏ bảng cũ để DataGrid đo lại đúng chiều rộng cột khi đổi kỳ.
                 gridChamCong.SelectedItem = null;
@@ -88,7 +88,7 @@ namespace RangHamMat.Views
                 lblThongBao.Text = "BQL có thể duyệt ca ngắn hơn 8 giờ, mỗi ca hoàn tất tính 0,5 công; không tính lại bảng lương đã lưu.";
             }
             catch (Exception ex)
-            {
+            { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
                 daTai = false;
                 gridChamCong.ItemsSource = null;
                 danhSachCong = new DataTable();
@@ -215,6 +215,7 @@ namespace RangHamMat.Views
             cboKetQua.IsEnabled = duocDuyet;
             txtLyDo.IsEnabled = duocDuyet;
             btnDuyetNhieu.IsEnabled = duocDuyet && gridChamCong.SelectedItems.Count > 1;
+            DongBoGhiNhanForm();
         }
 
         /// <summary>

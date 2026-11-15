@@ -142,7 +142,7 @@ namespace RangHamMat.Views
         /// </summary>
         public NhapXuatVatTu()
         {
-            InitializeComponent();
+            InitializeComponent(); DangKyDongBoManHinh();
             viewHoaDon.Content = new HoaDonNhaCungCap();
             viewNhap.Content = new NhapKho();
             viewXuat.Content = new XuatKho();
@@ -254,27 +254,27 @@ namespace RangHamMat.Views
                 Dictionary<string, string> tenHoaDon = new Dictionary<string, string>();
                 Dictionary<string, string> tenNCC = new Dictionary<string, string>();
 
-                foreach (ET_KHO k in new BUS_KHO().layToanBoKho())
+                foreach (ET_KHO k in DongBoNguonKho.Read("Kho", () => new BUS_KHO().layToanBoKho()))
                     tenKho[k.MaKho] = k.TenKho;
-                foreach (ET_NHANVIEN n in new BUS_NHANVIEN().layToanBoNhanVien())
+                foreach (ET_NHANVIEN n in DongBoNguonKho.Read("NhanVien", () => DongBoChuanBi.NhanVien(new BUS_NHANVIEN())))
                     tenNhanVien[n.MaNV] = n.HoTen;
-                foreach (ET_HANGHOA h in new BUS_HANGHOA().layToanBoHangHoa())
+                foreach (ET_HANGHOA h in DongBoNguonKho.Read("HangHoa", () => new BUS_HANGHOA().layToanBoHangHoa()))
                 {
                     tenHang[h.MaHH] = h.TenHH;
                     donVi[h.MaHH] = h.DonViTinh;
                 }
-                foreach (ET_LOHANGHOA l in new BUS_LOHANGHOA().layToanBoLoHangHoa())
+                foreach (ET_LOHANGHOA l in DongBoNguonKho.Read("Lo", () => new BUS_LOHANGHOA().layToanBoLoHangHoa()))
                 {
                     if (string.IsNullOrWhiteSpace(l.SoLo)) tenLo[l.MaLo] = l.MaLo;
                     else tenLo[l.MaLo] = l.SoLo;
                 }
-                foreach (ET_KHOA k in new BUS_KHOA().layToanBoKhoa())
+                foreach (ET_KHOA k in DongBoNguonKho.Read("Khoa", () => new BUS_KHOA().layToanBoKhoa()))
                     tenKhoa[k.MaKhoa] = k.TenKhoa;
-                foreach (ET_PHONG p in new BUS_PHONG().layToanBoPhong())
+                foreach (ET_PHONG p in DongBoNguonKho.Read("Phong", () => new BUS_PHONG().layToanBoPhong()))
                     tenPhong[p.MaPhong] = p.TenPhong;
-                foreach (ET_NHACUNGCAP n in new BUS_NHACUNGCAP().layToanBoNhaCungCap())
+                foreach (ET_NHACUNGCAP n in DongBoNguonKho.Read("NhaCungCap", () => new BUS_NHACUNGCAP().layToanBoNhaCungCap()))
                     tenNCC[n.MaNCC] = n.TenNCC;
-                foreach (ET_HOADONNHAP h in new BUS_HOADONNHAP().layToanBoHoaDonNhap())
+                foreach (ET_HOADONNHAP h in DongBoNguonKho.Read("HoaDonNhap", () => new BUS_HOADONNHAP().layToanBoHoaDonNhap()))
                 {
                     string ncc = TenTheoMa(tenNCC, h.MaNCC, "Chưa xác định");
                     tenHoaDon[h.MaHDN] = ncc + " · " + h.SoHoaDonNCC;
@@ -284,7 +284,7 @@ namespace RangHamMat.Views
                 Dictionary<string, SoKhoPhieu> phieuNhap = new Dictionary<string, SoKhoPhieu>();
                 Dictionary<string, SoKhoPhieu> phieuXuat = new Dictionary<string, SoKhoPhieu>();
 
-                foreach (ET_PHIEUNHAP p in new BUS_PHIEUNHAP().layToanBoPhieuNhap())
+                foreach (ET_PHIEUNHAP p in DongBoNguonKho.Read("PhieuNhap", () => new BUS_PHIEUNHAP().layToanBoPhieuNhap()))
                 {
                     SoKhoPhieu dong = new SoKhoPhieu();
                     dong.Loai = "Nhập kho";
@@ -300,7 +300,7 @@ namespace RangHamMat.Views
                     phieuNhap[p.MaPN] = dong;
                     tatCaPhieu.Add(dong);
                 }
-                foreach (ET_PHIEUXUAT p in new BUS_PHIEUXUAT().LayDanhSach())
+                foreach (ET_PHIEUXUAT p in DongBoNguonKho.Read("PhieuXuat", () => new BUS_PHIEUXUAT().LayDanhSach()))
                 {
                     SoKhoPhieu dong = new SoKhoPhieu();
                     dong.Loai = "Xuất kho";
@@ -322,7 +322,7 @@ namespace RangHamMat.Views
                     phieuXuat[p.MaPX] = dong;
                     tatCaPhieu.Add(dong);
                 }
-                foreach (ET_CHITIETPHIEUNHAP c in new BUS_CHITIETPHIEUNHAP().layToanBoChiTietPhieuNhap())
+                foreach (ET_CHITIETPHIEUNHAP c in DongBoNguonKho.Read("ChiTietNhap", () => new BUS_CHITIETPHIEUNHAP().layToanBoChiTietPhieuNhap()))
                 {
                     if (!phieuNhap.ContainsKey(c.MaPN)) continue;
                     SoKhoHang h = new SoKhoHang();
@@ -334,7 +334,7 @@ namespace RangHamMat.Views
                     h.LaPhieuNhap = true;
                     phieuNhap[c.MaPN].HangHoa.Add(h);
                 }
-                foreach (ET_CHITIETPHIEUXUAT c in new BUS_CHITIETPHIEUXUAT().LayDanhSach())
+                foreach (ET_CHITIETPHIEUXUAT c in DongBoNguonKho.Read("ChiTietXuat", () => new BUS_CHITIETPHIEUXUAT().LayDanhSach()))
                 {
                     if (!phieuXuat.ContainsKey(c.MaPX)) continue;
                     SoKhoHang h = new SoKhoHang();
@@ -361,7 +361,7 @@ namespace RangHamMat.Views
                 ApDungBoLoc(maDaChon, loaiDaChon);
             }
             catch (Exception ex)
-            {
+            { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) { dangTai=false;throw; }
                 dangTai = false;
                 MessageBox.Show("Không tải được chứng từ kho: " + ex.Message, "Nhập / xuất vật tư", MessageBoxButton.OK, MessageBoxImage.Warning);
             }

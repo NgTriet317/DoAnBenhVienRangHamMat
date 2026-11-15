@@ -25,7 +25,7 @@
 USE [master];
 EXEC sys.sp_set_session_context @key=N'RHM.ReadyBaseline',@value=0;
 EXEC sys.sp_set_session_context @key=N'RHM.ReadyV2',@value=0;
-EXEC sys.sp_set_session_context @key=N'RHM.HospitalWorkflow.Completed',@value=0;[RHM_Hospital_Test_P6_MergeTanAI_20261115_FinalB_Xray]
+EXEC sys.sp_set_session_context @key=N'RHM.HospitalWorkflow.Completed',@value=0;
 EXEC sys.sp_set_session_context @key=N'RHM.PrescriptionFlow.Completed',@value=0;
 EXEC sys.sp_set_session_context @key=N'RHM.SqlV9.Completed',@value=0;
 EXEC sys.sp_set_session_context @key=N'RHM.MaintenanceSerial.Completed',@value=0;
@@ -8284,3 +8284,42 @@ EXEC dbo.usp_RHM_KiemTraSchema;
 PRINT N'PROJECT_SCHEMA_READY: 74 bảng; Sprint3, ảnh X-quang, AI bản khai/duyệt, quỹ phép và lương ca đã hợp nhất.';
 GO
 -- END MERGED AI CONTRACTS
+
+-- BEGIN RHM CROSS-MACHINE CHANGE TRACKING
+-- Có thể chọn riêng phần này để cài trên database đã có schema/dữ liệu.
+-- Ứng dụng chỉ SELECT, không tự chạy phần ALTER này khi mở WPF.
+-- Tài khoản đọc cần VIEW DEFINITION ở database, SELECT và VIEW CHANGE TRACKING
+-- trên tất cả user table; cần thấy sys.database_recovery_status để nhận restore.
+-- Không GRANT tự động: người vận hành cấp theo chính sách SQL hiện có.
+-- Không ghi dữ liệu nghiệp vụ; giữ retention/auto cleanup/column tracking đã có.
+SET NOCOUNT ON;
+IF DB_NAME() IN(N'master',N'model',N'msdb',N'tempdb')
+ THROW 56020,N'Chọn database ứng dụng trước khi cài Change Tracking; không cài trên database hệ thống.',1;
+IF EXISTS(SELECT 1 FROM sys.tables t WHERE t.is_ms_shipped=0
+ AND NOT EXISTS(SELECT 1 FROM sys.indexes i WHERE i.object_id=t.object_id AND i.is_primary_key=1))
+BEGIN
+ DECLARE @RhmMissingPk nvarchar(2048)=N'Không bật Change Tracking: bảng thiếu PRIMARY KEY: ';
+ SELECT @RhmMissingPk=LEFT(@RhmMissingPk+QUOTENAME(SCHEMA_NAME(t.schema_id))+N'.'+QUOTENAME(t.name)+N'; ',2048)
+ FROM sys.tables t WHERE t.is_ms_shipped=0
+ AND NOT EXISTS(SELECT 1 FROM sys.indexes i WHERE i.object_id=t.object_id AND i.is_primary_key=1);
+ THROW 56021,@RhmMissingPk,1;
+END;
+IF EXISTS(SELECT 1 FROM sys.databases WHERE database_id=DB_ID() AND snapshot_isolation_state IN(2,3))
+ THROW 56022,N'Snapshot isolation đang chuyển trạng thái; chờ hoàn tất rồi chạy lại phần cài đồng bộ.',1;
+DECLARE @RhmTrackingDatabase nvarchar(258)=QUOTENAME(DB_NAME());
+IF EXISTS(SELECT 1 FROM sys.databases WHERE database_id=DB_ID() AND snapshot_isolation_state=0)
+ EXEC(N'ALTER DATABASE '+@RhmTrackingDatabase+N' SET ALLOW_SNAPSHOT_ISOLATION ON');
+IF NOT EXISTS(SELECT 1 FROM sys.change_tracking_databases WHERE database_id=DB_ID())
+ EXEC(N'ALTER DATABASE '+@RhmTrackingDatabase+N' SET CHANGE_TRACKING = ON (CHANGE_RETENTION = 7 DAYS, AUTO_CLEANUP = ON)');
+DECLARE @RhmTrackSql nvarchar(max)=N'';
+SELECT @RhmTrackSql=@RhmTrackSql+N'ALTER TABLE '+QUOTENAME(SCHEMA_NAME(t.schema_id))+N'.'+QUOTENAME(t.name)
+ +N' ENABLE CHANGE_TRACKING WITH (TRACK_COLUMNS_UPDATED = OFF);'+NCHAR(10)
+FROM sys.tables t LEFT JOIN sys.change_tracking_tables c ON c.object_id=t.object_id
+WHERE t.is_ms_shipped=0 AND c.object_id IS NULL;
+IF @RhmTrackSql<>N'' EXEC sys.sp_executesql @RhmTrackSql;
+IF EXISTS(SELECT 1 FROM sys.tables t LEFT JOIN sys.change_tracking_tables c ON c.object_id=t.object_id
+ WHERE t.is_ms_shipped=0 AND c.object_id IS NULL)
+ THROW 56023,N'Còn bảng chưa bật Change Tracking; kiểm tra lỗi ALTER TABLE phía trên.',1;
+PRINT N'CROSS_MACHINE_TRACKING_READY: snapshot + Change Tracking; giữ cấu hình tracking đã có.';
+GO
+-- END RHM CROSS-MACHINE CHANGE TRACKING

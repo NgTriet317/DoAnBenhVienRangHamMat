@@ -44,7 +44,7 @@ public partial class ThucHienDichVuEditor:UserControl,IPatientScoped
  /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
  /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
  public ThucHienDichVuEditor(NguCanhNghiepVu? user=null,IDbTransaction? transaction=null)
- {this.transaction=transaction;service=new(transaction);actor=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(user?.MaNV??PhienDangNhap.MaNV);InitializeComponent();AssignedImagesButton.Visibility=actor.LaAdmin||actor.CoQuyen(QuyenLamViec.CapNhatKetQuaDuocGiao)?Visibility.Visible:Visibility.Collapsed;LoadHistory();}
+ {this.transaction=transaction;service=new(transaction);actor=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(user?.MaNV??PhienDangNhap.MaNV);InitializeComponent();AssignedImagesButton.Visibility=actor.LaAdmin||actor.CoQuyen(QuyenLamViec.CapNhatKetQuaDuocGiao)?Visibility.Visible:Visibility.Collapsed;LoadHistory();RangHamMat.Services.DongBoManHinh.Register(this,["DICH_VU_THUC_HIEN","LICH_SU_KHAM_BENH","ANH_XQUANG_LAN_KHAM"],LoadHistory);}
  /// <summary>
  /// Áp dụng bệnh nhân được chỉ định làm phạm vi dữ liệu của màn hình.
  /// </summary>
@@ -66,7 +66,7 @@ public partial class ThucHienDichVuEditor:UserControl,IPatientScoped
  {
   ErrorText.Text="";loading=true;
   try{var rows=service.LayLuotThucHien(actor,scope);VisitPicker.ItemsSource=rows.Select(x=>new LuaChonDanhMuc(x.MaLS,$"{x.ThoiGianKham:dd/MM/yyyy HH:mm} · {x.HoTenBN} · {x.MaLS}")).ToArray();VisitPicker.SelectedValue=selected;if(selected is not null&&rows.All(x=>x.MaLS!=selected)){ActualGrid.ItemsSource=null;PatientHeader.Text="Chưa có dịch vụ đã chốt ở lần khám được yêu cầu.";VisitHeader.Text="Chọn một lần khám đã hoàn tất để xem lịch sử.";ActualSummary.Text="";}else if(selected is not null)ShowHistory(selected);else{ActualGrid.ItemsSource=null;PatientHeader.Text="Chọn người bệnh và lần khám để tra cứu.";VisitHeader.Text="Chỉ hiển thị lần khám đã hoàn tất.";ActualSummary.Text=$"{rows.Count} lần khám trong phạm vi";}}
-  catch(InvalidOperationException ex){ActualGrid.ItemsSource=null;ErrorText.Text=ex.Message;}
+  catch(InvalidOperationException ex){RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex);ActualGrid.ItemsSource=null;ErrorText.Text=ex.Message;}
   finally{loading=false;}
  }
  /// <summary>

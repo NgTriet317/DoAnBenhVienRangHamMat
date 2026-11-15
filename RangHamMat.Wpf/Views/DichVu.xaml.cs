@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -41,7 +41,7 @@ public partial class DichVu : UserControl
     /// <summary>
     /// Nạp bố cục quản lý danh mục và đăng ký các sự kiện đã khai báo trong XAML.
     /// </summary>
-    public DichVu()=>InitializeComponent();
+    public DichVu(){InitializeComponent();DangKyDongBoManHinh();}
     /// <summary>
     /// Nạp danh sách định nghĩa danh mục một lần và chọn danh mục đầu tiên.
     /// </summary>
@@ -76,7 +76,7 @@ public partial class DichVu : UserControl
         }
         KiemTraNhapLieu.SetError(StatusFilter,"");
         var status=StatusFilter.SelectedIndex switch{0=>d.DangDung,1=>d.NgungDung,_=>""};
-        var rows=bus.Lay(d.Bang,SearchBox.Text.Trim(),status,Actor());
+        var rows=dongBoDichVu?.Dong??bus.Lay(d.Bang,SearchBox.Text.Trim(),status,Actor());
         var table=new DataTable();
         foreach(var key in d.Khoa.Concat(d.Truong.Select(f=>f.Cot)).Append("TrangThai").Append("DauVanTay").Distinct())table.Columns.Add(key,typeof(object));
         foreach(var row in rows){var dr=table.NewRow();foreach(var p in row)dr[p.Key]=p.Value??DBNull.Value;table.Rows.Add(dr);}
@@ -144,7 +144,7 @@ public partial class DichVu : UserControl
             if(f.BangCha is not null)
             {
                 var parent=DanhMucHeThong.Lay(f.BangCha);
-                var options=bus.Lay(parent.Bang,"",parent.DangDung,Actor()).Select(r=>new Choice(Convert.ToString(r[parent.Khoa[0]])??"",Convert.ToString(r[parent.Truong.First(x=>x.Cot.StartsWith("Ten")).Cot])??"")).ToList();
+                var options=(dongBoDichVu?.Cha[parent.Bang]??bus.Lay(parent.Bang,"",parent.DangDung,Actor())).Select(r=>new Choice(Convert.ToString(r[parent.Khoa[0]])??"",Convert.ToString(r[parent.Truong.First(x=>x.Cot.StartsWith("Ten")).Cot])??"")).ToList();
                 string id=Convert.ToString(value)??"";
                 if(id.Length>0&&!options.Any(o=>o.Id==id))options.Add(new(id,id+" · đã ngừng dùng"));
                 control=new ComboBox{ItemsSource=options,SelectedValuePath="Id",SelectedValue=id,MinHeight=30};
@@ -176,6 +176,7 @@ public partial class DichVu : UserControl
         }
         StateButton.IsEnabled=row is not null;
         StateButton.Content=row is null||Equals(row.GetValueOrDefault("TrangThai"),d.DangDung)?"Ngừng sử dụng":"Sử dụng lại";
+        DongBoGhiNhanForm();
     }
     /// <summary>
     /// Đọc các điều khiển động thành từ điển cột/giá trị để chuẩn hóa và lưu.

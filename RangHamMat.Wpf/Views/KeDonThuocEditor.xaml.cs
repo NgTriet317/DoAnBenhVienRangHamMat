@@ -84,6 +84,7 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
     {
         this.transaction=transaction;service=new(transaction);actor=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(user?.MaNV??PhienDangNhap.MaNV);if(!actor.CoQuyen(QuyenLamViec.Kham))throw new TuChoiQuyenNghiepVuException();
         InitializeComponent();
+        RangHamMat.Services.DongBoManHinh.Register(this,["DON_THUOC","CHI_TIET_DON_THUOC","THUOC","NHOM_THUOC_KE_DON","HUONG_DAN_THUOC","LICH_SU_KHAM_BENH"],DongBoDonThuoc,()=>CoThayDoiChuaLuu);
         KiemTraNhapLieu.SetFieldValidator(RouteEditor,()=>{if(string.IsNullOrWhiteSpace(RouteEditor.Text))throw new LoiNhapLieu("DuongDung","Nhập đường dùng thuốc theo chỉ định của bác sĩ.");});
         KiemTraNhapLieu.SetFieldValidator(ReplacementReason,()=>{if(replacement is not null&&string.IsNullOrWhiteSpace(ReplacementReason.Text))throw new LoiNhapLieu("LyDoThayThe","Nhập lý do thay đơn để đối chiếu với đơn thuốc cũ.");});
         RxLines.ItemsSource=lines;lines.CollectionChanged+=(_,_)=>{if(!loading)dirty=true;};RxLines.BeginningEdit+=(_,_)=>{if(!loading)dirty=true;};LoadGroups();LoadVisits();Search();loading=false;UpdateRights();
@@ -125,6 +126,15 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
     /// </summary>
     /// <remarks>Các bước được phối hợp qua <c>service.LayLuotKeDon</c>.</remarks>
     private void LoadVisits()=>VisitPicker.ItemsSource=service.LayLuotKeDon(actor,patientScope).Select(v=>new LuaChonDanhMuc(v.MaLS,$"{v.MaLS} · {v.HoTenBN} ({v.MaBN}) · {v.ThoiGianKham:dd/MM/yyyy}")).ToArray();
+    private void DongBoDonThuoc()
+    {
+        var selectedVisit=board?.Luot.MaLS;var selectedOrder=saved?.Don.MaDT;
+        var next=selectedVisit is null?null:service.LayKhongGianKeDon(selectedVisit,actor);
+        var order=selectedOrder is null?null:service.LayBanNhapDon(selectedOrder,actor);
+        loading=true;
+        try{board=next;LoadVisits();VisitPicker.SelectedValue=selectedVisit;RefreshOrders(selectedOrder);Fill(order);Search();}
+        finally{loading=false;}
+    }
     /// <summary>
     /// Nạp các nhóm thuốc dùng lọc danh mục kê đơn.
     /// </summary>

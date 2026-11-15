@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -16,7 +16,7 @@ public partial class QuyPhepNhanSu : UserControl
 
     public QuyPhepNhanSu()
     {
-        InitializeComponent();
+        InitializeComponent(); DangKyDongBoManHinh();
         Loaded += QuyPhepNhanSu_Loaded;
     }
 
@@ -42,7 +42,7 @@ public partial class QuyPhepNhanSu : UserControl
         try
         {
             string maDaChon = (gridQuyPhep.SelectedItem as DataRowView)?["MaNV"].ToString() ?? "";
-            danhSach = bus.layDanhSachQuyPhep(nam);
+            danhSach = dongBoQuyPhep?.DanhSach ?? bus.layDanhSachQuyPhep(nam);
             gridQuyPhep.ItemsSource = danhSach.DefaultView;
 
             decimal duoc = 0, nghi = 0, dat = 0, con = 0;
@@ -59,7 +59,7 @@ public partial class QuyPhepNhanSu : UserControl
             txtTongCon.Text = con.ToString("0.##") + " ngày";
             lblSoNhanVien.Text = danhSach.Rows.Count + " nhân viên";
 
-            DataTable cauHinh = bus.layCauHinh(nam);
+            DataTable cauHinh = dongBoQuyPhep?.CauHinh ?? bus.layCauHinh(nam);
             lblCauHinh.Text = cauHinh.Rows.Count == 0 ? "Chưa thiết lập cấu hình năm" :
                 $"Định mức: {Convert.ToDecimal(cauHinh.Rows[0]["SoNgayPhepNam"]):0.##} ngày / {cauHinh.Rows[0]["SoThangTieuChuan"]} tháng";
             LocDanhSach();
@@ -68,14 +68,14 @@ public partial class QuyPhepNhanSu : UserControl
             gridQuyPhep.SelectedItem = null;
             foreach (DataRowView item in danhSach.DefaultView)
                 if (item["MaNV"].ToString() == maDaChon) { gridQuyPhep.SelectedItem = item; break; }
-            if (gridQuyPhep.SelectedItem == null && danhSach.DefaultView.Count > 0)
+            if (!RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong && gridQuyPhep.SelectedItem == null && danhSach.DefaultView.Count > 0)
                 gridQuyPhep.SelectedIndex = 0;
             if (gridQuyPhep.SelectedItem == null) XoaChiTiet();
             lblThongBao.Text = "Chỉ các đơn nghỉ phép năm đã duyệt mới có lịch sử ngày phép. " +
                 "Quỹ năm mới không tự cộng số dư từ năm cũ; dữ liệu lịch sử vẫn được giữ.";
         }
         catch (Exception ex)
-        {
+        { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
             gridQuyPhep.ItemsSource = null;
             XoaChiTiet();
             lblThongBao.Text = "Không thể tải quỹ phép từ SQL: " + ex.Message;
@@ -124,10 +124,10 @@ public partial class QuyPhepNhanSu : UserControl
             $"Còn {Convert.ToDecimal(hang["PhepConKhaDung"]):0.##} ngày";
         try
         {
-            gridNgayPhep.ItemsSource = bus.layNgayPhepNhanVien(hang["MaNV"].ToString()!, nam).DefaultView;
+            gridNgayPhep.ItemsSource = (dongBoQuyPhep?.NgayPhep ?? bus.layNgayPhepNhanVien(hang["MaNV"].ToString()!, nam)).DefaultView;
         }
         catch (Exception ex)
-        {
+        { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
             gridNgayPhep.ItemsSource = null;
             lblThongBao.Text = "Không thể đọc chi tiết ngày phép: " + ex.Message;
         }

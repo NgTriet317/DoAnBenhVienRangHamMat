@@ -113,7 +113,7 @@ namespace RangHamMat.Views
         /// </summary>
         public HoaDonNhaCungCap()
         {
-            InitializeComponent();
+            InitializeComponent(); DangKyDongBoManHinh();
             dpNgayHoaDon.SelectedDate = DateTime.Today;
             Loaded += HoaDonNhaCungCap_Loaded;
         }
@@ -177,17 +177,17 @@ namespace RangHamMat.Views
                 List<ChonNhaCungCap> cacNcc = new List<ChonNhaCungCap>();
                 cacNcc.Add(new ChonNhaCungCap { Ma = "", Ten = "Tất cả nhà cung cấp" });
                 List<ChonNhaCungCap> nccTrongForm = new List<ChonNhaCungCap>();
-                foreach (ET_NHACUNGCAP n in new BUS_NHACUNGCAP().layToanBoNhaCungCap())
+                foreach (ET_NHACUNGCAP n in DongBoNguonKho.Read("NhaCungCap", () => new BUS_NHACUNGCAP().layToanBoNhaCungCap()))
                 {
                     tenNcc[n.MaNCC] = n.TenNCC;
                     cacNcc.Add(new ChonNhaCungCap { Ma = n.MaNCC, Ten = n.TenNCC });
                     nccTrongForm.Add(new ChonNhaCungCap { Ma = n.MaNCC, Ten = n.TenNCC });
                 }
-                foreach (ET_NHANVIEN nv in new BUS_NHANVIEN().layToanBoNhanVien())
+                foreach (ET_NHANVIEN nv in DongBoNguonKho.Read("NhanVien", () => DongBoChuanBi.NhanVien(new BUS_NHANVIEN())))
                     tenNhanVien[nv.MaNV] = nv.HoTen;
 
                 Dictionary<string, HoaDonNccDong> theoMa = new Dictionary<string, HoaDonNccDong>();
-                foreach (ET_HOADONNHAP h in bus.layToanBoHoaDonNhap())
+                foreach (ET_HOADONNHAP h in DongBoNguonKho.Read("HoaDonNhap", () => bus.layToanBoHoaDonNhap()))
                 {
                     HoaDonNccDong d = new HoaDonNccDong();
                     d.DuLieu = h;
@@ -196,7 +196,7 @@ namespace RangHamMat.Views
                     danhSach.Add(d);
                     theoMa[h.MaHDN] = d;
                 }
-                foreach (ET_PHIEUNHAP phieu in new BUS_PHIEUNHAP().layToanBoPhieuNhap())
+                foreach (ET_PHIEUNHAP phieu in DongBoNguonKho.Read("PhieuNhap", () => new BUS_PHIEUNHAP().layToanBoPhieuNhap()))
                 {
                     if (!theoMa.ContainsKey(phieu.MaHDN)) continue;
                     HoaDonNccDong d = theoMa[phieu.MaHDN];
@@ -231,6 +231,7 @@ namespace RangHamMat.Views
             catch (Exception ex)
             {
                 dangTai = false;
+                if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
                 MessageBox.Show("Không tải được hóa đơn nhà cung cấp: " + ex.Message,
                     "Hóa đơn nhà cung cấp", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
@@ -281,11 +282,29 @@ namespace RangHamMat.Views
             {
                 if (d.DuLieu.MaHDN == maCanChon) { chon = d; break; }
             }
-            if (chon == null && ketQua.Count > 0 && !dangTaoMoi) chon = ketQua[0];
+            if (chon == null && ketQua.Count > 0 && !dangTaoMoi && !RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong)
+                chon = ketQua[0];
             lstHoaDon.SelectedItem = chon;
             dangTai = false;
             if (chon != null) DienHoaDon(chon);
+            else if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) XoaHoaDonDangXem();
             else if (!dangTaoMoi) TaoFormMoi();
+        }
+
+        private void XoaHoaDonDangXem()
+        {
+            dangChon = null;
+            dangTaoMoi = false;
+            lblCheDo.Text = "Chưa chọn hóa đơn";
+            lblTrangThai.Text = "—";
+            txtSoHoaDon.Clear();
+            txtTongTien.Clear();
+            txtGhiChu.Clear();
+            txtNguoiLap.Clear();
+            dpNgayHoaDon.SelectedDate = null;
+            cboNhaCungCap.SelectedIndex = -1;
+            lblPhieuLienKet.Text = "Hóa đơn đã rời danh sách; chọn chứng từ để tiếp tục.";
+            CapNhatQuyen();
         }
 
         /// <summary>
@@ -552,6 +571,7 @@ namespace RangHamMat.Views
         {
             if (dangTai) return;
             if (lstHoaDon.SelectedItem is HoaDonNccDong dong) DienHoaDon(dong);
+            else if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) XoaHoaDonDangXem();
         }
     }
 }

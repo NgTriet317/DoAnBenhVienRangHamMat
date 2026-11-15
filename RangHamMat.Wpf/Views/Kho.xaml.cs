@@ -55,7 +55,7 @@ namespace RangHamMat.Views
         /// </summary>
         public Kho()
         {
-            InitializeComponent();
+            InitializeComponent(); DangKyDongBoManHinh();
 
             Loaded += (sender, e) => { if (!daTai) hienThiDuLieu(); };
         }
@@ -70,7 +70,7 @@ namespace RangHamMat.Views
             try
             {
                 string? maKhoCu = cboKho.SelectedValue as string;
-                var cacKho = busKho.layToanBoKho().ToList();
+                var cacKho = dongBoKho?.Kho ?? busKho.layToanBoKho().ToList();
 
                 cboKho.ItemsSource = cacKho;
                 cboKho.SelectedValue = maKhoCu;
@@ -83,7 +83,7 @@ namespace RangHamMat.Views
                 daTai = true;
             }
             catch (Exception ex)
-            {
+            { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
                 daTai = false;
                 MessageBox.Show("Không thể tải danh sách kho: " + ex.Message,
                     "Thông báo", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -117,10 +117,10 @@ namespace RangHamMat.Views
                 else
                 {
                     lblMoTaKho.Text = "Loại kho: " + kho.LoaiKho + " • " + kho.TrangThai;
-                    var nguoiPhuTrach = busNhanVien.layNhanVienTheoMa(kho.MaNV);
+                    var nguoiPhuTrach = (dongBoKho?.NhanVien ?? DongBoChuanBi.NhanVien(busNhanVien)).FirstOrDefault(x => x.MaNV == kho.MaNV);
                     lblNguoiPhuTrach.Text = "Người phụ trách: " + (nguoiPhuTrach?.HoTen ?? "Chưa xác định");
-                    danhSachLo = busKho.layLoTonTheoKho(kho.MaKho);
-                    danhSachTon = busKho.layTonKhoTheoKho(kho.MaKho);
+                    danhSachLo = dongBoKho?.Lo ?? busKho.layLoTonTheoKho(kho.MaKho);
+                    danhSachTon = dongBoKho?.Ton ?? busKho.layTonKhoTheoKho(kho.MaKho);
                 }
                                
                 lblLoSapHetHan.Text = danhSachLo.Columns.Count == 0 ? "0" : danhSachLo.AsEnumerable()
@@ -160,7 +160,7 @@ namespace RangHamMat.Views
                 }
             }
             catch (Exception ex)
-            {
+            { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
                 danhSachTon = new DataTable();
                 danhSachLo = new DataTable();
                 gridTonKho.ItemsSource = null;

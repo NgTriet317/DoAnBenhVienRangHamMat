@@ -53,6 +53,14 @@ public partial class BangTinhPhiEditor : UserControl
         WarehouseFilter.SelectedIndex = 0;
         InitializePayment();
         FocusContext(null);
+        RangHamMat.Services.DongBoManHinh.RegisterPrepared(this,["HOA_DON","CHI_TIET_HOA_DON","THANH_TOAN","DON_THUOC","CHI_TIET_DON_THUOC","DICH_VU_THUC_HIEN","LO_HANG_HOA","KHO"],PrepareDongBoBangTinh,()=>DangXuLy||ChoDoiChieu);
+    }
+    private async Task<Action> PrepareDongBoBangTinh(CancellationToken token)
+    {
+        if(BangTinh is null||KetQua is not null||string.IsNullOrEmpty(visitId))return ()=>{};
+        var visit=visitId;var warehouse=WarehouseFilter.SelectedValue as string;
+        var data=await Task.Run(()=>bus.LapBangTinh(visit,warehouse,user),token);
+        return ()=>{Clear();ApplyFee(data);};
     }
     /// <summary>
     /// Chuyển màn hình tới đúng bệnh nhân/lần khám hoặc chứng từ theo ngữ cảnh được yêu cầu.
@@ -89,10 +97,16 @@ public partial class BangTinhPhiEditor : UserControl
     public bool TryLapBangTinh(out string? error)
     {
         if(!CanChangeSource(out error))return false;
-        Clear(); error = null;
+        error = null;
         try
         {
             var s = bus.LapBangTinh(visitId ?? "", WarehouseFilter.SelectedValue as string, user);
+            Clear();ApplyFee(s);return true;
+        }
+        catch (Exception ex) { RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex);error = ClinicalFormInput.Message(ex); StatusText.Text = "Chưa lập được bảng tính: " + error; return false; }
+    }
+    private void ApplyFee(BangTinhPhi s)
+    {
             BangTinh = s;RenderVisitIdentity();
             SurchargeText.Visibility=s.PhiPhuThu>0?Visibility.Visible:Visibility.Collapsed;
             SurchargeText.Text=s.PhiPhuThu>0?$"Phụ thu khám dịch vụ (chọn bác sĩ): {Money(s.PhiPhuThu)} · 1 lượt · Đã gồm trong tổng phải thu.":"";
@@ -104,9 +118,7 @@ public partial class BangTinhPhiEditor : UserControl
             HistoryGrid.ItemsSource = s.HoaDonCu.Select(h => new { h.MaHD, h.TrangThai, PhaiThu = Money(h.PhaiThu), DaThu = Money(h.DaThu), ConPhaiThu = Money(h.ConPhaiThu) }).ToArray();
             TotalText.Text = s.MaHDChoThu is not null ? $"Hóa đơn chờ thu #{s.MaHDChoThu} · Phải thu: {Money(s.TongTien)}" :
                 s.DauVanTay is null ? "Đối chiếu chứng từ đã có" : $"Tổng dự kiến: {Money(s.TongTien)}";
-            StatusText.Text = s.ThongBao; UpdatePaymentControls(); return true;
-        }
-        catch (Exception ex) { error = ClinicalFormInput.Message(ex); StatusText.Text = "Chưa lập được bảng tính: " + error; return false; }
+            StatusText.Text = s.ThongBao; UpdatePaymentControls();
     }
     /// <summary>
     /// Định dạng giá trị tiền dùng trong phần hiển thị.

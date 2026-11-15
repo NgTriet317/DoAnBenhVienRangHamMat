@@ -44,7 +44,7 @@ public partial class DonThuoc
             NextPrescriptionPage.IsEnabled = historyPage < pages;
         }
         catch (InvalidOperationException ex)
-        {
+        {RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex);
             PrescriptionList.ItemsSource = Array.Empty<IssuedPrescriptionCard>();
             PatientFilter.ItemsSource = Array.Empty<LuaChonDanhMuc>();
             RecordCount.Text = "Không tải được danh sách đơn thuốc";

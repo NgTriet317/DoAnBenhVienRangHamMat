@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -30,7 +30,7 @@ public partial class PhieuHuongDan : UserControl
 
     public PhieuHuongDan()
     {
-        InitializeComponent();
+        InitializeComponent(); DangKyDongBoManHinh();
         Loaded += PhieuHuongDan_Loaded;
         viewerPhieu.Document = TaoTrangTrong();
     }
@@ -55,7 +55,7 @@ public partial class PhieuHuongDan : UserControl
         try
         {
             // Phạm vi SQL: quản trị viên đọc tất cả, người khác chỉ phiếu do mình tiếp nhận hoặc được phân công khám.
-            danhSachPhieu = busPhieu.layDanhSachPhieu(PhienDangNhap.MaNV, PhienDangNhap.IsAdmin);
+            danhSachPhieu = dongBoPhieu ?? busPhieu.layDanhSachPhieu(PhienDangNhap.MaNV, PhienDangNhap.IsAdmin);
             gridPhieu.ItemsSource = danhSachPhieu.DefaultView;
             cboTrangThai.Items.Clear();
             cboTrangThai.Items.Add("Tất cả trạng thái");
@@ -70,7 +70,7 @@ public partial class PhieuHuongDan : UserControl
             lblThongBao.Text = "Danh sách đã được đồng bộ từ phiếu tiếp nhận.";
         }
         catch (Exception ex)
-        {
+        { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
             lblThongBao.Text = "Không thể tải dữ liệu: " + ex.Message;
             MessageBox.Show(ex.Message, "Phiếu hướng dẫn", MessageBoxButton.OK, MessageBoxImage.Error);
             daTai = false;

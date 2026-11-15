@@ -31,7 +31,7 @@ public partial class AnhXquangDuocGiao : UserControl
     /// <param name="transaction">Giao dịch tùy chọn dùng cho các lời gọi nghiệp vụ liên quan.</param>
     /// <param name="cauHinh">Cấu hình kho ảnh tùy chọn truyền cho màn hình chi tiết.</param>
     public AnhXquangDuocGiao(NguCanhNghiepVu user,IDbTransaction? transaction=null,CauHinhKhoAnh? cauHinh=null)
-    {actor=user;this.transaction=transaction;config=cauHinh;InitializeComponent();Reload();}
+    {actor=user;this.transaction=transaction;config=cauHinh;InitializeComponent(); DangKyDongBoManHinh();Reload();}
     /// <summary>
     /// Xóa chi tiết cũ trước khi đọc lại các lượt đang mở được giao; hiển thị lỗi nếu không đọc được phạm vi.
     /// </summary>
@@ -44,13 +44,13 @@ public partial class AnhXquangDuocGiao : UserControl
             VisitPicker.ItemsSource=rows.Select(x=>new LuaChonDanhMuc(x.MaLS,$"{x.ThoiGianKham:dd/MM HH:mm} · {x.HoTenBN} ({x.MaBN}) · {x.MaLS}")).ToArray();
             StatusText.Text=rows.Count==0?"Chưa có lượt chụp đang mở được giao trong phạm vi của bạn.":$"{rows.Count} lượt chụp đang mở. Quyền được kiểm tra lại khi tải hoặc xem ảnh.";
         }
-        catch(InvalidOperationException ex){VisitPicker.ItemsSource=null;StatusText.Text=ex.Message;}
+        catch(InvalidOperationException ex){ if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;VisitPicker.ItemsSource=null;StatusText.Text=ex.Message;}
     }
     /// <summary>
     /// Mở điều khiển ảnh của lần khám đang chọn với cùng người dùng, giao dịch và cấu hình kho.
     /// </summary>
     private void Visit_Changed(object sender,SelectionChangedEventArgs e)
-    {ImageHost.Content=VisitPicker.SelectedValue is string id?new AnhXquangLanKham(id,actor,transaction,config):null;}
+    {if(dongBoDangTai)return;ImageHost.Content=VisitPicker.SelectedValue is string id?new AnhXquangLanKham(id,actor,transaction,config):null;}
     /// <summary>
     /// Tải lại danh sách các lượt chụp đang mở được giao cho người dùng.
     /// </summary>

@@ -72,7 +72,7 @@ namespace RangHamMat.Views
         /// </summary>
         public DanhMucHangHoa()
         {
-            InitializeComponent();
+            InitializeComponent(); DangKyDongBoManHinh();
             Loaded += (sender, e) => { if (!daTaiDuLieu) LoadDuLieu(); };
         }
 
@@ -173,9 +173,9 @@ namespace RangHamMat.Views
             try
             {
                 daTaiDuLieu = false;
-                danhSachHangHoa = busHangHoa.layDanhMucChiTiet();
+                danhSachHangHoa = dongBoDanhMuc?.HangHoa ?? busHangHoa.layDanhMucChiTiet();
                 danhSachHangHoa.CaseSensitive = false;
-                danhSachLoai = busLoaiHangHoa.layToanBoLoaiHangHoa().ToList();
+                danhSachLoai = dongBoDanhMuc?.Loai ?? busLoaiHangHoa.layToanBoLoaiHangHoa().ToList();
                 CapNhatDanhMucTheoTab();
 
                 var trangThai = new List<string> { "Đang hoạt động", "Ngừng hoạt động" };
@@ -221,7 +221,7 @@ namespace RangHamMat.Views
                 lblThongBao.Text = "";
             }
             catch (Exception ex)
-            {
+            { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
                 daTaiDuLieu = false;
                 Grid_HANG_HOA.ItemsSource = null;
                 lblThongBao.Text = "Không thể tải danh mục: " + ex.Message;

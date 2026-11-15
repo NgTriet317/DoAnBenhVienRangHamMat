@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Data;
@@ -14,7 +14,7 @@ public partial class XinNghiViec : UserControl
 
     public XinNghiViec()
     {
-        InitializeComponent();
+        InitializeComponent(); DangKyDongBoManHinh();
         string hoTen = "Chưa có thông tin nhân viên";
         if (!string.IsNullOrWhiteSpace(PhienDangNhap.MaNV))
         {
@@ -320,7 +320,7 @@ public partial class XinNghiViec : UserControl
         }
         try
         {
-            DataTable data = new BUS_QUYPHEP().layQuyPhep(PhienDangNhap.MaNV, nam);
+            DataTable data = dongBoPhepCaNhan?.Quy[nam] ?? new BUS_QUYPHEP().layQuyPhep(PhienDangNhap.MaNV, nam);
             if (data.Rows.Count == 0) return;
             DataRow h = data.Rows[0];
             txtPhepDuocHuong.Text = Convert.ToDecimal(h["PhepDuocHuong"]).ToString("0.##") + " ngày";
@@ -329,7 +329,7 @@ public partial class XinNghiViec : UserControl
             txtPhepCon.Text = Convert.ToDecimal(h["PhepConKhaDung"]).ToString("0.##") + " ngày";
         }
         catch (Exception ex)
-        {
+        { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
             txtDuKienPhep.Text = "Không thể đọc quỹ phép: " + ex.Message;
         }
     }
@@ -363,11 +363,11 @@ public partial class XinNghiViec : UserControl
         TaiQuyPhep(tuNgay.Year);
         try
         {
-            int soNgay = new BUS_QUYPHEP().demNgayDuKien(PhienDangNhap.MaNV, tuNgay, denNgay);
+            int soNgay = dongBoPhepCaNhan?.NgayDuKien ?? new BUS_QUYPHEP().demNgayDuKien(PhienDangNhap.MaNV, tuNgay, denNgay);
             txtDuKienPhep.Text = soNgay == 0
                 ? "Chưa có ngày làm việc được xếp ca trong khoảng đã chọn."
                 : $"Dự kiến {soNgay} ngày phép (tương đương {soNgay * 0.5m:0.##} công hưởng lương). Số chính thức xác định khi quản lý duyệt.";
         }
-        catch (Exception ex) { txtDuKienPhep.Text = "Chưa thể tính dự kiến: " + ex.Message; }
+        catch (Exception ex) { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw; txtDuKienPhep.Text = "Chưa thể tính dự kiến: " + ex.Message; }
     }
 }

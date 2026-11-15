@@ -1,4 +1,4 @@
-﻿using BUS;
+using BUS;
 using ET;
 using System;
 using System.Collections.Generic;
@@ -52,7 +52,9 @@ namespace RangHamMat.Views
                 .Where(cv => string.Equals(cv.MaChucVu?.Trim(), "CV002", StringComparison.OrdinalIgnoreCase) ||
                     (cv.TenChucVu?.Contains("Bác sĩ", StringComparison.OrdinalIgnoreCase) ?? false))
                 .Select(cv => cv.MaChucVu).ToList();
-            return new BUS_NHANVIEN().layToanBoNhanVien()
+            var employees = new BUS_NHANVIEN();
+            return (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong
+                    ? employees.DocDanhSachKhongGhi() : employees.layToanBoNhanVien())
                 .Where(nv => maChucVuBacSi.Contains(nv.MaChucVu)).ToList();
         }
 
@@ -103,6 +105,7 @@ namespace RangHamMat.Views
             }
             catch (Exception ex)
             {
+                RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex);
                 MessageBox.Show("Không tải được lịch khám: " + ex.Message);
             }
         }
@@ -301,6 +304,7 @@ namespace RangHamMat.Views
             }
             catch (Exception ex)
             {
+                RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex);
                 MessageBox.Show("Không tải được chi tiết lịch khám: " + ex.Message,
                     "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }

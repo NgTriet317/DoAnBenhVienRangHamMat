@@ -79,6 +79,7 @@ public partial class PrescriptionHistoryDetail : UserControl, IClinicalPendingWo
         prescriptions = new(transaction);
         handover = new(transaction);
         InitializeComponent();
+        RangHamMat.Services.DongBoManHinh.Register(this,["DON_THUOC","CHI_TIET_DON_THUOC","BAN_GIAO_THUOC","THANH_TOAN","HOA_DON"],LoadDetail,()=>MustKeepSource||ReceiverChecked.IsChecked==true||GuidanceChecked.IsChecked==true);
         HandoverPanel.Visibility = actor.LaAdmin || actor.CoQuyen(QuyenLamViec.GiaoThuoc) ? Visibility.Visible : Visibility.Collapsed;
         LoadDetail();
     }
@@ -121,7 +122,7 @@ public partial class PrescriptionHistoryDetail : UserControl, IClinicalPendingWo
                 ValidateSource(ChiTiet.Luot.MaBN, ChiTiet.Luot.MaLS, ChiTiet.Luot.MaDT);
                 RenderHandover();
             }
-            catch (InvalidOperationException ex) { ChiTiet = null; HandoverText.Text = ClinicalFormInput.Message(ex); }
+            catch (InvalidOperationException ex) { RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex);ChiTiet = null; HandoverText.Text = ClinicalFormInput.Message(ex); }
         }
         var savedHandover = handover.LayTheoDon(OrderId, actor);
         source.TrangThai = detail.DonThuoc.TrangThai;

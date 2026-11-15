@@ -76,6 +76,10 @@ public class DAL_NHANVIEN : dbconnect
         return db.Query<ET_NHANVIEN>("SELECT * FROM dbo.NHAN_VIEN ORDER BY MaNV",transaction:tx).ToArray();
     });
 
+    /// <summary>Đọc ảnh chụp nhân sự đã commit cho đồng bộ; không áp dụng nghiệp vụ trạng thái nghỉ.</summary>
+    public IEnumerable<ET_NHANVIEN> DocDanhSachKhongGhi() => ThucHien((db,tx) =>
+        db.Query<ET_NHANVIEN>("SELECT * FROM dbo.NHAN_VIEN ORDER BY MaNV",transaction:tx).ToArray());
+
     /// <summary>
     /// Đọc nhân viên theo mã sau khi đồng bộ trạng thái nghỉ đến ngày hiện tại.
     /// </summary>

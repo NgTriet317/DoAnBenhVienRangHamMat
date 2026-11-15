@@ -215,6 +215,36 @@ public static class DuLieuGiaoDien
         finally { batching = false; }
         Notify();
     }
+    /// <summary>Đọc trên luồng nền với phiên và phạm vi đã chụp; chỉ áp dụng trên Dispatcher khi vẫn còn đúng ngữ cảnh.</summary>
+    internal static async Task<Action> PrepareRefreshAsync(CancellationToken token)
+    {
+        if(batching)throw new InvalidOperationException("Đang lưu chứng từ.");
+        var mode=PhamViLamSang; var scope=clinicalScope; var employee=PhienDangNhap.MaNV;
+        var principal=new System.Security.Claims.ClaimsPrincipal(
+            (Thread.CurrentPrincipal as System.Security.Claims.ClaimsPrincipal)?.Identities.Select(i=>i.Clone())
+            ?? Enumerable.Empty<System.Security.Claims.ClaimsIdentity>());
+        NguCanhNghiepVu? user=null;
+        var snapshot=await Task.Run(()=>
+        {
+            var previous=Thread.CurrentPrincipal;
+            try
+            {
+                Thread.CurrentPrincipal=principal;token.ThrowIfCancellationRequested();
+                return LoadRecords(mode,scope,employee,value=>user=value);
+            }
+            finally{Thread.CurrentPrincipal=previous;}
+        },token);
+        return ()=>
+        {
+            token.ThrowIfCancellationRequested();
+            if(batching || mode!=PhamViLamSang || !ReferenceEquals(scope,clinicalScope) || employee!=PhienDangNhap.MaNV)
+                throw new InvalidOperationException("Ngữ cảnh đã đổi trong khi tải dữ liệu; sẽ thử lại.");
+            batching=true;
+            try{foreach(var table in snapshot)Replace(table.Key,table.Value);clinicalUser=user;loaded=true;}
+            finally{batching=false;}
+            // Các adapter được gọi riêng sau khi toàn bộ cache đã thay; không phát Changed vào form đang nhập.
+        };
+    }
     /// <summary>
     /// Nạp cache từ SQL ở lần sử dụng đầu tiên; các lần sau dùng dữ liệu hiện tại đến khi có yêu cầu tải lại.
     /// </summary>
@@ -223,6 +253,7 @@ public static class DuLieuGiaoDien
         if (PhamViLamSang && clinicalUser is not null && clinicalUser.MaNV != PhienDangNhap.MaNV) XoaCachePhien();
         if (!loaded) RefreshFromDatabase();
     }
+    internal static void InvalidateForSync(){if(!batching)loaded=false;}
     /// <summary>
     /// Dùng chung IDbTransaction cho các thao tác lồng nhau; chụp cache, commit khi action trả true, rollback SQL và khôi phục cache khi false hoặc có lỗi; luôn giải phóng kết nối.
     /// </summary>
@@ -278,13 +309,13 @@ public static class DuLieuGiaoDien
     /// <summary>
     /// Đọc các bảng hồ sơ, danh mục và tài chính qua BUS trong cùng một giao dịch đọc để tạo snapshot nhất quán cho giao diện.
     /// </summary>
-    private static Dictionary<string, object[]> LoadRecords()
+    private static Dictionary<string, object[]> LoadRecords(bool? clinicalMode=null,NguCanhHoSo? scope=null,string? employee=null,Action<NguCanhNghiepVu?>? userLoaded=null)
     {
         using var pending = new BUS_DONTHUOC().BatDauGiaoDich();
         using var connection = pending.Connection!;
         var transaction = pending;
-        var scoped = PhamViLamSang ? new BUS_KHAMDIEUTRI(transaction).LayDuLieuHoSoGiaoDien(clinicalScope,new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(PhienDangNhap.MaNV)) : null;
-        clinicalUser = scoped?.NguoiDung;
+        var scoped = (clinicalMode??PhamViLamSang) ? new BUS_KHAMDIEUTRI(transaction).LayDuLieuHoSoGiaoDien(scope??clinicalScope,new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(employee??PhienDangNhap.MaNV)) : null;
+        if(userLoaded is null)clinicalUser = scoped?.NguoiDung;else userLoaded(scoped?.NguoiDung);
         if (scoped is not null)
         {
             pending.Commit();
@@ -307,7 +338,9 @@ public static class DuLieuGiaoDien
             ["DICH_VU_THUC_HIEN"] = new BUS_DICHVUTHUCHIEN(transaction).layToanBoDichVuThucHien().Cast<object>().ToArray(),
             ["DON_THUOC"] = new BUS_DONTHUOC(transaction).layToanBoDonThuoc().Cast<object>().ToArray(),
             ["CHI_TIET_DON_THUOC"] = new BUS_CHITIETDONTHUOC(transaction).layToanBoChiTietDonThuoc().Cast<object>().ToArray(),
-            ["NHAN_VIEN"] = new BUS_NHANVIEN().layToanBoNhanVien().Cast<object>().ToArray(),
+            ["NHAN_VIEN"] = (clinicalMode.HasValue
+                ? new BUS_NHANVIEN(transaction).DocDanhSachKhongGhi()
+                : new BUS_NHANVIEN().layToanBoNhanVien()).Cast<object>().ToArray(),
             ["PHONG"] = new BUS_PHONG(transaction).layToanBoPhong().Cast<object>().ToArray(),
             ["CA_LAM"] = new BUS_CALAM(transaction).layToanBoCaLam().Cast<object>().ToArray(),
             ["DICH_VU"] = new BUS_DICHVU(transaction).layToanBoDichVu().Cast<object>().ToArray(),

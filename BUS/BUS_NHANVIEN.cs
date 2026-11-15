@@ -39,6 +39,9 @@ namespace BUS
             return dalNhanVien.layToanBoNV();
         }
 
+        /// <summary>Đọc danh sách cho giao diện tự cập nhật; không đồng bộ trạng thái nghỉ bằng lệnh ghi.</summary>
+        public IEnumerable<ET_NHANVIEN> DocDanhSachKhongGhi() => data.DocDanhSachKhongGhi();
+
         /// <summary>
         /// Đọc nhân viên theo mã sau khi đồng bộ trạng thái nghỉ đến ngày hiện tại. Chuyển thao tác dữ liệu đến DAL; giữ kết quả trả về cho nơi gọi.
         /// </summary>

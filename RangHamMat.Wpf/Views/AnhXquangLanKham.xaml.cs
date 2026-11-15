@@ -48,7 +48,7 @@ public partial class AnhXquangLanKham : UserControl
     /// <param name="cauHinh">Cấu hình kho ảnh tùy chọn cho lần mở điều khiển.</param>
     public AnhXquangLanKham(string maLS,NguCanhNghiepVu user,IDbTransaction? transaction=null,CauHinhKhoAnh? cauHinh=null)
     {
-        visitId=maLS;actor=user;config=cauHinh;bus=new(transaction,cauHinh);InitializeComponent();TaiLai();
+        visitId=maLS;actor=user;config=cauHinh;bus=new(transaction,cauHinh);InitializeComponent(); DangKyDongBoManHinh();TaiLai();
     }
     /// <summary>
     /// Giới hạn điều khiển thành chế độ xem lịch sử, tắt tải lên, ẩn ảnh và phân công.
@@ -70,30 +70,34 @@ public partial class AnhXquangLanKham : UserControl
     /// Tải lại ảnh và dịch vụ của lần khám, phục hồi lựa chọn, kiểm tra kho ảnh rồi cập nhật quyền trên giao diện.
     /// </summary>
     /// <param name="select">Mã ảnh muốn chọn lại sau khi tải; null để chọn ảnh đầu tiên.</param>
-    private void TaiLai(string? select=null)
+    private void TaiLai(string? select=null,bool xemTruoc=true)
     {
-        loading=true;SelectedPreview.Source=null;
+        loading=true;
+        if(xemTruoc)SelectedPreview.Source=null;
         try
         {
-            data=bus.LayDanhSach(visitId,ShowHidden.IsChecked==true,actor);
+            data=dongBoAnh?.DanhSach??bus.LayDanhSach(visitId,ShowHidden.IsChecked==true,actor);
             IdentityText.Text=$"{data.HoTenBN} · {data.MaBN} · Lần khám {data.MaLS}";
             var prior=ServicePicker.SelectedValue as string;
             var services=data.DichVu.Select(s=>new LuaChonDanhMuc(s.MaDVThucHien,$"{s.TenDV} · {s.MaDVThucHien}")).ToList();
             if(actor.LaAdmin||actor.CoQuyen(QuyenLamViec.Kham))services.Insert(0,new("","Không liên kết dịch vụ chụp"));
             ServicePicker.ItemsSource=services;ServicePicker.SelectedValue=prior??"";
             if(ServicePicker.SelectedItem is null&&services.Count>0)ServicePicker.SelectedIndex=0;
-            TechnicianPicker.ItemsSource=data.DuocPhanCong?bus.LayKyThuatVien(visitId,actor):Array.Empty<NhanVienChupAnh>();
+            TechnicianPicker.ItemsSource=dongBoAnh?.KyThuatVien??(data.DuocPhanCong?bus.LayKyThuatVien(visitId,actor):Array.Empty<NhanVienChupAnh>());
             ImageList.ItemsSource=data.CacAnh;
-            ImageList.SelectedItem=data.CacAnh.FirstOrDefault(x=>x.Anh.MaAnh==select)??data.CacAnh.FirstOrDefault();
+            ImageList.SelectedItem=data.CacAnh.FirstOrDefault(x=>x.Anh.MaAnh==select)??(xemTruoc?data.CacAnh.FirstOrDefault():null);
             storeReady=false;
-            try{new KhoLuuAnhXquang(config??CauHinhKhoAnh.Doc()).ThuMucGoc();storeReady=true;}
-            catch(LoiAnhXquangException ex){StatusText.Text=ex.Message;}
+            try{if(dongBoAnh is null)new KhoLuuAnhXquang(config??CauHinhKhoAnh.Doc()).ThuMucGoc();storeReady=true;}
+            catch(LoiAnhXquangException ex){ if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;StatusText.Text=ex.Message;}
             if(storeReady)StatusText.Text=data.CacAnh.Count==0?"Chưa có ảnh trong lần khám này.":$"{data.CacAnh.Count} ảnh · Mở ảnh sẽ được ghi nhật ký truy cập.";
             if(!data.DuocTaiLen)StatusText.Text+=" Chỉ xem trong phạm vi được phép; lượt đã hoàn tất không nhận thêm ảnh.";
         }
-        catch(InvalidOperationException ex){data=null;ImageList.ItemsSource=null;StatusText.Text=ex.Message;IdentityText.Text="Không tải được ảnh trong phạm vi được phép.";storeReady=false;}
+        catch(InvalidOperationException ex){ if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;data=null;ImageList.ItemsSource=null;StatusText.Text=ex.Message;IdentityText.Text="Không tải được ảnh trong phạm vi được phép.";storeReady=false;}
         finally{loading=false;UpdateButtons();}
-        PreviewSelected();
+        // MoAnh ghi nhật ký truy cập. Nhịp đồng bộ chỉ đọc metadata, không mở ảnh tự động.
+        if(xemTruoc)PreviewSelected();
+        else if(ImageList.SelectedItem is not AnhXquangHienThi row || row.Anh.TrangThai!="Đang sử dụng")
+        {SelectedPreview.Source=null;SelectedCaption.Text="Chọn ảnh trong danh sách để xem trước.";}
     }
     /// <summary>
     /// Xóa ảnh xem trước cũ và đọc ảnh đang sử dụng qua nghiệp vụ; ảnh đã ẩn chỉ hiện metadata.

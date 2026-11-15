@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Globalization;
 using System.Text.RegularExpressions;
@@ -18,7 +18,7 @@ public partial class ChinhSachLuong : UserControl
 
     public ChinhSachLuong()
     {
-        InitializeComponent();
+        InitializeComponent(); DangKyDongBoManHinh();
         Loaded += (_, _) => { if (danhSachChinhSach.Columns.Count==0) hienThiDuLieu(); };
     }
 
@@ -28,8 +28,8 @@ public partial class ChinhSachLuong : UserControl
         dangTai = true;
         try
         {
-            danhSachChinhSach = busChinhSach.layDanhSachChinhSach();
-            var chucVu = busChinhSach.layDanhSachChucVu();
+            danhSachChinhSach = dongBoChinhSach?.ChinhSach ?? busChinhSach.layDanhSachChinhSach();
+            var chucVu = dongBoChinhSach?.ChucVu ?? busChinhSach.layDanhSachChucVu();
             cboChucVuChinhSach.ItemsSource = chucVu.DefaultView;
             gridChinhSach.ItemsSource = danhSachChinhSach.DefaultView;
             timChinhSach();
@@ -44,7 +44,7 @@ public partial class ChinhSachLuong : UserControl
             if (gridChinhSach.SelectedItem == null) TaoPhienBan_Click(this, new RoutedEventArgs());
         }
         catch (Exception ex)
-        {
+        { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
             lblThongBao.Text = "Không tải được chính sách. Kiểm tra SQL nâng cấp: " + ex.Message;
             btnLuuNhap.IsEnabled = false;
             btnDuyet.IsEnabled = false;

@@ -50,7 +50,7 @@ public partial class TiepNhanKham : UserControl
     /// <param name="transaction">Giao dịch dùng chung tùy chọn; nơi cấp chịu trách nhiệm kết thúc giao dịch.</param>
     public TiepNhanKham(NguCanhNghiepVu? nguoiDung,IDbTransaction? transaction)
     {
-        InitializeComponent();user=nguoiDung;this.transaction=transaction;receptionBus=new(transaction);
+        InitializeComponent(); DangKyDongBoManHinh();user=nguoiDung;this.transaction=transaction;receptionBus=new(transaction);
         LoaiKhamPicker.ItemsSource=new[]{new LuaChonDanhMuc("Thông thường","Khám thông thường"),new LuaChonDanhMuc("Dịch vụ","Khám dịch vụ — chọn bác sĩ")};
         LoaiKhamPicker.SelectedValue="Thông thường";
     }

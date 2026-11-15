@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -24,7 +24,7 @@ namespace RangHamMat.Views
 
         public BangLuong()
         {
-            InitializeComponent();
+            InitializeComponent(); DangKyDongBoManHinh();
             cboThang.SelectedIndex = DateTime.Now.Month - 1;
             txtNam.Text = DateTime.Now.Year.ToString();
             Loaded += (sender, e) => { if (!daTai) hienThiDuLieu(); };
@@ -56,15 +56,15 @@ namespace RangHamMat.Views
             try
             {
                 string maBLDangChon = (gridBangLuong.SelectedItem as DataRowView)?["MaBL"].ToString() ?? "";
-                bool laV9 = busBangLuong.suDungSchemaV9();
-                daCaiTinhLuong = laV9 && busBangLuong.daCaiTinhLuong();
-                ngayMayChu = busBangLuong.layNgayMayChu();
+                bool laV9 = dongBoLuong?.V9 ?? busBangLuong.suDungSchemaV9();
+                daCaiTinhLuong = dongBoLuong?.DaCai ?? (laV9 && busBangLuong.daCaiTinhLuong());
+                ngayMayChu = dongBoLuong?.Ngay ?? busBangLuong.layNgayMayChu();
                 btnTinhLuong.IsEnabled = daCaiTinhLuong;
                 DateTime tuNgay = new DateTime(nam,cboThang.SelectedIndex+1,1);
                 DateTime denNgay = tuNgay.AddMonths(1).AddDays(-1);
-                danhSachLuong = busBangLuong.layBangLuongTheoKy(tuNgay,denNgay);
-                int choDoiSoat = busBangLuong.demCongChoDoiSoat(tuNgay,denNgay);
-                danhSachDoiSoat = laV9 ? busBangLuong.layDoiSoatTheoKy(tuNgay,denNgay) : new DataTable();
+                danhSachLuong = dongBoLuong?.Luong ?? busBangLuong.layBangLuongTheoKy(tuNgay,denNgay);
+                int choDoiSoat = dongBoLuong?.CongCho ?? busBangLuong.demCongChoDoiSoat(tuNgay,denNgay);
+                danhSachDoiSoat = dongBoLuong?.DoiSoat ?? (laV9 ? busBangLuong.layDoiSoatTheoKy(tuNgay,denNgay) : new DataTable());
 
                 lblTongNhanVien.Text = danhSachLuong.Rows.Count.ToString("N0");
                 lblQuyLuong.Text = danhSachLuong.AsEnumerable().Sum(h => h.Field<decimal>("TongLuong")).ToString("N0")+" đ";
@@ -116,7 +116,7 @@ namespace RangHamMat.Views
                 daTai = true;
             }
             catch (Exception ex)
-            {
+            { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
                 daTai = false;
                 danhSachLuong = new DataTable();
                 danhSachDoiSoat = new DataTable();

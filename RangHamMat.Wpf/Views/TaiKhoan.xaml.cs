@@ -27,7 +27,7 @@ public partial class TaiKhoan : UserControl
 
     public TaiKhoan()
     {
-        InitializeComponent();
+        InitializeComponent(); DangKyDongBoManHinh();
         Loaded += TaiKhoan_Loaded;
     }
 
@@ -49,11 +49,11 @@ public partial class TaiKhoan : UserControl
         dangTai = true;
         try
         {
-            var taiKhoan = busTaiKhoan.layToanBoTaiKhoan().ToList();
-            var vaiTro = busVaiTro.layToanBoVaiTro().ToList();
-            var nhanVien = busNhanVien.layToanBoNhanVien().ToList();
-            var cacKhoa = new BUS_KHOA().layToanBoKhoa().ToList();
-            var cacPhong = new BUS_PHONG().layToanBoPhong().ToList();
+            var taiKhoan = dongBoTaiKhoan?.TaiKhoan ?? busTaiKhoan.layToanBoTaiKhoan().ToList();
+            var vaiTro = dongBoTaiKhoan?.VaiTro ?? busVaiTro.layToanBoVaiTro().ToList();
+            var nhanVien = dongBoTaiKhoan?.NhanVien ?? DongBoChuanBi.NhanVien(busNhanVien).ToList();
+            var cacKhoa = dongBoTaiKhoan?.Khoa ?? new BUS_KHOA().layToanBoKhoa().ToList();
+            var cacPhong = dongBoTaiKhoan?.Phong ?? new BUS_PHONG().layToanBoPhong().ToList();
 
             danhSachTaiKhoan = new DataTable();
             danhSachTaiKhoan.Columns.Add("MaTK", typeof(string));
@@ -132,7 +132,7 @@ public partial class TaiKhoan : UserControl
             lblTongVaiTro.Text = vaiTro.Count.ToString();
         }
         catch (Exception ex)
-        {
+        { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
             MessageBox.Show("Không tải được dữ liệu tài khoản và vai trò.\n" + ex.Message,
                 "Tài khoản và vai trò", MessageBoxButton.OK, MessageBoxImage.Error);
         }
@@ -168,7 +168,7 @@ public partial class TaiKhoan : UserControl
 
         danhSachTaiKhoan.DefaultView.RowFilter = string.Join(" AND ", loc);
         lblKetQuaTaiKhoan.Text = $"{danhSachTaiKhoan.DefaultView.Count} tài khoản";
-        if (!dangThemTaiKhoan && Grid_TAI_KHOAN.SelectedItem == null && danhSachTaiKhoan.DefaultView.Count > 0)
+        if (!RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong && !dangThemTaiKhoan && Grid_TAI_KHOAN.SelectedItem == null && danhSachTaiKhoan.DefaultView.Count > 0)
             Grid_TAI_KHOAN.SelectedIndex = 0;
 
     }
@@ -184,7 +184,7 @@ public partial class TaiKhoan : UserControl
             : $"MaVaiTro LIKE '%{timKiem}%' OR TenVaiTro LIKE '%{timKiem}%'";
 
         lblKetQuaVaiTro.Text = $"{danhSachVaiTro.DefaultView.Count} vai trò";
-        if (!dangThemVaiTro && Grid_VAI_TRO.SelectedItem == null && danhSachVaiTro.DefaultView.Count > 0)
+        if (!RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong && !dangThemVaiTro && Grid_VAI_TRO.SelectedItem == null && danhSachVaiTro.DefaultView.Count > 0)
             Grid_VAI_TRO.SelectedIndex = 0;
 
     }
@@ -226,7 +226,7 @@ public partial class TaiKhoan : UserControl
             bool laVaiTroQuanTri = tenVaiTro.Equals("Admin", StringComparison.OrdinalIgnoreCase)
                 || tenVaiTro.Equals("Quản trị", StringComparison.OrdinalIgnoreCase)
                 || tenVaiTro.Equals("Quản trị viên", StringComparison.OrdinalIgnoreCase);
-            var quyenDaCap = busPhanQuyen.layQuyenTheoVaiTro(maVaiTro).ToHashSet(StringComparer.Ordinal);
+            var quyenDaCap = dongBoTaiKhoan?.Quyen[maVaiTro] ?? busPhanQuyen.layQuyenTheoVaiTro(maVaiTro).ToHashSet(StringComparer.Ordinal);
 
             int thuTu = 0;
             foreach (var phanHe in BUS_PHANQUYENVAITRO.CacPhanHe)
@@ -249,13 +249,14 @@ public partial class TaiKhoan : UserControl
                     PhienDangNhap.IsAdmin && !batBuoc, nhom, thuTu++);
             }
 
+            danhSachPhanQuyen.AcceptChanges();
             btnLuuPhanQuyen.IsEnabled = PhienDangNhap.IsAdmin;
             lblThongBaoQuyen.Text = PhienDangNhap.IsAdmin
                 ? "Tích chọn rồi nhấn Lưu để cấp quyền cho vai trò này."
                 : "Chỉ quản trị viên được phép sửa quyền.";
         }
         catch (Exception ex)
-        {
+        { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
             lblThongBaoQuyen.Text = "Không tải được quyền: " + ex.Message;
         }
     }
@@ -348,7 +349,7 @@ public partial class TaiKhoan : UserControl
             }
         }
         catch (Exception ex)
-        {
+        { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
             lblThongBaoTaiKhoan.Text = "Không đọc được tài khoản: " + ex.Message;
             btnKhoaTaiKhoan.IsEnabled = false;
             btnKhoiPhucTaiKhoan.IsEnabled = false;
@@ -366,7 +367,7 @@ public partial class TaiKhoan : UserControl
             hienThiPhanQuyen();
         }
         catch (Exception ex)
-        {
+        { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
             lblThongBaoQuyen.Text = "Không đọc được vai trò: " + ex.Message;
         }
     }

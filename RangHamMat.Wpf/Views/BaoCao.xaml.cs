@@ -185,11 +185,7 @@ public partial class BaoCao : UserControl
         foreach(var field in TruongBoLoc())
             field.LostKeyboardFocus+=(_,_)=>{if(ready&&!field.IsKeyboardFocusWithin)KiemTraBoLoc(out _,out _);};
         Unloaded += (_, _) => XoaKetQua();
-        HoTroGiaoDien.Observe(this, () =>
-        {
-            if (result is null && !loading) return;
-            XoaKetQua(); ThongBao("Dữ liệu hệ thống đã được làm mới. Nhấn Tải báo cáo để cập nhật kết quả.");
-        });
+        RangHamMat.Services.DongBoManHinh.RegisterAsync(this,["*"],()=>TaiBaoCaoAsync(true),()=>loading);
         ready = true;
         HienDanhMuc(); ChonBaoCao("00");
         CapNhatTruongBoLoc();
@@ -551,11 +547,11 @@ public partial class BaoCao : UserControl
     /// </summary>
     /// <remarks>Các bước được phối hợp qua <c>XoaKetQua</c>, <c>ThongBao</c>, <c>KiemTraNgay</c>, <c>Task.Run</c>.</remarks>
     /// <returns>Tác vụ bất đồng bộ để nơi gọi theo dõi thời điểm kết thúc và kết quả xử lý.</returns>
-    public async Task TaiBaoCaoAsync()
+    public async Task TaiBaoCaoAsync(bool automatic=false)
     {
         if (loading) return;
-        XoaKetQua();
-        if (!CoQuyenChuyenDe) { ThongBao("Tài khoản hiện tại không có quyền đọc báo cáo.", true); return; }
+        if(!automatic)XoaKetQua();
+        if (!CoQuyenChuyenDe) { XoaKetQua();ThongBao("Tài khoản hiện tại không có quyền đọc báo cáo.", true); return; }
         if (selected is null || !selected.DaKetNoi) { ThongBao("Chuyên đề chưa tích hợp nguồn dữ liệu."); return; }
         if (!KiemTraBoLoc(out var from, out var to))
         {
@@ -632,7 +628,7 @@ public partial class BaoCao : UserControl
             soSanh=comparisonData;
             HienKetQua(report, data);
             HienSoSanh(report);
-            if(report.Ma is "09" or "10" or "11" or "18"||report.Ma=="20"&&soSanh?.ChiTietBenhNhan.Length>0)
+            if(!automatic && (report.Ma is "09" or "10" or "11" or "18"||report.Ma=="20"&&soSanh?.ChiTietBenhNhan.Length>0))
                 await Task.Run(()=>new BUS_BAOCAO().GhiTruyCap(report.Ma,"VIEW_REPORT",from,to));
             if(request!=version)return;
             ThongBao(report.TheoThoiDiem ? $"Đã kiểm tra {data.Tong.Mot:N0} lô · Ngày chốt {from:dd/MM/yyyy} · Ngưỡng {threshold} ngày · Cập nhật {DateTime.Now:HH:mm:ss}"
@@ -642,6 +638,7 @@ public partial class BaoCao : UserControl
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or UnauthorizedAccessException or NotSupportedException or System.Data.Common.DbException or TimeoutException)
         {
             if (request != version) return;
+            if(automatic)throw;
             XoaKetQua(); EmptyTitle.Text = "Không tải được báo cáo"; EmptyDescription.Text = "Kiểm tra kết nối và bộ lọc, sau đó nhấn Thử lại.";
             var message = ex.GetBaseException() is System.Data.Common.DbException
                 ? "Không truy cập được máy chủ dữ liệu. Kiểm tra kết nối rồi chọn Thử lại."

@@ -43,7 +43,7 @@ public partial class KhamDieuTri
                 selectedReceiptId=null;ClearDetail();
             }
         }
-        catch(InvalidOperationException ex){QueueList.ItemsSource=Array.Empty<HangDoiKhamItem>();QueueStartButton.IsEnabled=false;PageStatus.Text=ClinicalFormInput.Message(ex);}
+        catch(InvalidOperationException ex){RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex);QueueList.ItemsSource=Array.Empty<HangDoiKhamItem>();QueueStartButton.IsEnabled=false;PageStatus.Text=ClinicalFormInput.Message(ex);}
         finally{updating=prior;}
     }
     /// <summary>
@@ -100,7 +100,7 @@ public partial class KhamDieuTri
             PageStatus.Text=DetailHost.Content is ChiTietKhamDieuTri?$"Đang khám {row.HoTenBN} · {row.MaBN} · lượt {started}.":$"Đã bắt đầu lượt {started}; tải lại để mở tiếp đúng phiếu.";
         }
         catch(InvalidOperationException ex)
-        {
+        {RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex);
             var message=started is null?ClinicalFormInput.Message(ex):$"Đã bắt đầu lượt {started}. Tải lại để mở tiếp đúng phiếu. {ClinicalFormInput.Message(ex)}";
             if(started is null)RefreshQueue();
             PageStatus.Text=message;

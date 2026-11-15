@@ -151,8 +151,7 @@ namespace RangHamMat.Views
         /// </summary>
         public ThietBi()
         {
-            InitializeComponent();
-            HoTroGiaoDien.Observe(this,()=>LoadDuLieuThietBi(thietBiDangChon?.MaTB));
+            InitializeComponent(); DangKyDongBoManHinh();
             DangKySuKienXoaBaoDo();
         }
 
@@ -174,11 +173,11 @@ namespace RangHamMat.Views
             try
             {
                 daTaiDuLieu = false;
-                danhSachThietBi = new List<ET_THIETBI>(busThietBi.layToanBoThietBi());
-                danhSachHangHoa = new List<ET_HANGHOA>(busHangHoa.layToanBoHangHoa());
-                danhSachPhong = new List<ET_PHONG>(busPhong.layToanBoPhong());
-                danhSachNhaCungCap = new List<ET_NHACUNGCAP>(busNhaCungCap.layToanBoNhaCungCap());
-                List<ET_LOAIHANGHOA> danhSachLoai = new List<ET_LOAIHANGHOA>(busLoaiHangHoa.layToanBoLoaiHangHoa());
+                danhSachThietBi = dongBoThietBi?.ThietBi ?? new List<ET_THIETBI>(busThietBi.layToanBoThietBi());
+                danhSachHangHoa = dongBoThietBi?.HangHoa ?? new List<ET_HANGHOA>(busHangHoa.layToanBoHangHoa());
+                danhSachPhong = dongBoThietBi?.Phong ?? new List<ET_PHONG>(busPhong.layToanBoPhong());
+                danhSachNhaCungCap = dongBoThietBi?.NhaCungCap ?? new List<ET_NHACUNGCAP>(busNhaCungCap.layToanBoNhaCungCap());
+                List<ET_LOAIHANGHOA> danhSachLoai = dongBoThietBi?.Loai ?? new List<ET_LOAIHANGHOA>(busLoaiHangHoa.layToanBoLoaiHangHoa());
 
                 LoadDanhMuc(danhSachLoai);
                 TaoDanhSachHienThi();
@@ -204,7 +203,7 @@ namespace RangHamMat.Views
                 lblThongBao.Text = "";
             }
             catch (Exception ex)
-            {
+            { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
                 daTaiDuLieu = false;
                 lblThongBao.Text = "Không thể tải danh sách thiết bị: " + ex.Message;
                 MessageBox.Show("Lỗi khi tải thiết bị: " + ex.Message,

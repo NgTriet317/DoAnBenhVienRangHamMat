@@ -1,6 +1,6 @@
 # Đồng bộ dữ liệu giữa các máy qua SQL Server
 
-Trạng thái: dự thảo chờ người dùng duyệt trước khi triển khai.
+Trạng thái: người dùng đã duyệt và yêu cầu triển khai trong hội thoại ngày 16/11/2026.
 
 ## Yêu cầu và lựa chọn đã xác nhận
 
@@ -25,7 +25,7 @@ Trạng thái: dự thảo chờ người dùng duyệt trước khi triển kha
 1. **Đã chọn:** kiểm tra phiên bản thay đổi SQL định kỳ; mỗi máy tự tải lại dữ liệu liên quan bằng BUS/DAL hiện có. Không thêm dịch vụ hay cổng mạng. Độ trễ bao gồm chu kỳ kiểm tra và thời gian tải.
 2. Server đẩy thông báo qua kết nối lâu dài: có thể giảm độ trễ nhưng cần triển khai và vận hành một dịch vụ chung, khác với Kiosk localhost hiện có. Người dùng không chọn phương án này.
 
-Phần kỹ thuật bên dưới là đề xuất của người triển khai, chưa phải quyết định đã được người dùng duyệt.
+Phần kỹ thuật bên dưới thuộc bản thiết kế đã được người dùng duyệt.
 
 ## Phát hiện thay đổi
 

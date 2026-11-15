@@ -114,7 +114,7 @@ public partial class CaLamViec : UserControl
     /// <param name="laQuanLy">Giá trị là quản lý dùng khi thực hiện thao tác; kiểu bool.</param>
     public CaLamViec(string maNhanVien, bool laQuanLy)
     {
-        InitializeComponent();
+        InitializeComponent(); DangKyDongBoManHinh();
 
         // Quyền và mã nhân viên đã xác thực ở màn hình đăng nhập.
         maNV = RangHamMat.PhienDangNhap.MaNV;
@@ -149,11 +149,11 @@ public partial class CaLamViec : UserControl
         try
         {
             BUS_DON_XIN_NGHI bus = new BUS_DON_XIN_NGHI();
-            int soDon = bus.demDonChoDuyet();
+            int soDon = dongBoCa?.DonCho ?? bus.demDonChoDuyet();
             txtThongBaoDonXinNghi.Text = soDon + " đơn đang chờ quản lý xét duyệt · Nhấn để xem đơn và lịch sử";
         }
         catch (Exception ex)
-        {
+        { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
             txtThongBaoDonXinNghi.Text = "Không tải được số đơn mới · Nhấn để thử mở danh sách";
             btnThongBaoDonXinNghi.ToolTip = ex.Message;
         }
@@ -224,29 +224,29 @@ public partial class CaLamViec : UserControl
     {
         try
         {
-            danhSachCa = busCaLam.layToanBoCaLam().ToList();
+            danhSachCa = dongBoCa?.Ca ?? busCaLam.layToanBoCaLam().ToList();
             try
             {
-                danhSachNhanVien = new BUS_NHANVIEN().layToanBoNhanVien().ToList();
+                danhSachNhanVien = dongBoCa?.NhanVien ?? DongBoChuanBi.NhanVien(new BUS_NHANVIEN()).ToList();
             }
             catch
-            {
+            { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
                 danhSachNhanVien = new();
             }
-            danhSachLich = busLichLamViec.layLichTheoTuan(dauTuan);
-            danhSachCaiDat = busCaiDatCa.layCaTheoTuan(dauTuan);
+            danhSachLich = dongBoCa?.Lich ?? busLichLamViec.layLichTheoTuan(dauTuan);
+            danhSachCaiDat = dongBoCa?.CaiDat ?? busCaiDatCa.layCaTheoTuan(dauTuan);
             try
             {
-                danhSachPhong = busPhong.layToanBoPhong().ToList();
+                danhSachPhong = dongBoCa?.Phong ?? busPhong.layToanBoPhong().ToList();
             }
             catch
-            {
+            { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
                 danhSachPhong = new(); // Vẫn hiện lịch nếu danh sách phòng lỗi.
             }
             HienThiLich();
         }
         catch (Exception ex)
-        {
+        { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
             MessageBox.Show("Lỗi tải lịch làm việc: " + ex.Message);
         }
     }
