@@ -60,17 +60,18 @@ internal sealed class DichVuDangNhap
     internal void QuenPhien() => kho.Xoa();
 
     /// <summary>
-    /// Chấp nhận vai trò Admin, Quản trị hoặc User theo danh mục vai trò hiện tại.
+    /// Chấp nhận vai trò còn tồn tại trong SQL; chỉ các tên quản trị được xác định mới bật cờ Admin.
     /// </summary>
     /// <param name="account">Tài khoản có mã vai trò cần tra cứu.</param>
-    /// <param name="admin">Nhận true nếu vai trò là Admin hoặc Quản trị.</param>
-    /// <returns>True khi vai trò thuộc nhóm được phép đăng nhập.</returns>
+    /// <param name="admin">Nhận true nếu vai trò là Admin, Quản trị hoặc Quản trị viên.</param>
+    /// <returns>True khi tài khoản vẫn được gán một vai trò hợp lệ trong SQL.</returns>
     private static bool ThuLayVaiTro(ET_TAIKHOAN account, out bool admin)
     {
         var name = new BUS_VAITRO().layVaiTroTheoMa(account.MaVaiTro)?.TenVaiTro.Trim();
         admin = string.Equals(name, "Admin", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(name, "Quản trị", StringComparison.OrdinalIgnoreCase);
-        return admin || string.Equals(name, "User", StringComparison.OrdinalIgnoreCase);
+            || string.Equals(name, "Quản trị", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "Quản trị viên", StringComparison.OrdinalIgnoreCase);
+        return !string.IsNullOrWhiteSpace(name);
     }
 
     /// <summary>

@@ -92,7 +92,7 @@ public sealed partial class DAL_QUYENNGHIEPVU : dbconnect
             throw TuChoi();
         var user = db.QuerySingleOrDefault<NguCanhNghiepVu>("""
             SELECT nv.MaNV,tk.MaTK,nv.MaChucVu,nv.MaCK,
-                CONVERT(bit,CASE WHEN UPPER(LTRIM(RTRIM(vt.TenVaiTro))) IN(N'ADMIN',N'QUẢN TRỊ') THEN 1 ELSE 0 END) AS LaAdmin
+                CONVERT(bit,CASE WHEN UPPER(LTRIM(RTRIM(vt.TenVaiTro))) IN(N'ADMIN',N'QUẢN TRỊ',N'QUẢN TRỊ VIÊN') THEN 1 ELSE 0 END) AS LaAdmin
             FROM dbo.TAI_KHOAN tk WITH(HOLDLOCK)
             JOIN dbo.NHAN_VIEN nv WITH(HOLDLOCK) ON nv.MaNV=tk.MaNV
             JOIN dbo.CHUC_VU cv ON cv.MaChucVu=nv.MaChucVu

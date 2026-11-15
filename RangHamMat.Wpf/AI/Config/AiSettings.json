@@ -1,0 +1,161 @@
+{
+  "Endpoint": "https://api.groq.com/openai/v1/chat/completions",
+  "Model": "openai/gpt-oss-20b",
+  "PromptFile": "AI/Prompts/TroLyTiepNhan.md",
+  "IntakeDraftPromptFile": "AI/Prompts/BanKhaiAI.md",
+  "ApiKeyEnvironmentVariable": "GROQ_API_KEY",
+  "TimeoutSeconds": 75,
+  "MaxHistoryMessages": 8,
+  "MaxCompletionTokens": 1024,
+  "Temperature": 0.35,
+  "ReasoningEffort": "low",
+  "WelcomeMessage": "Xin chào! Tôi là trợ lý AI tiếp nhận của Bệnh viện Răng Hàm Mặt. Bạn cần hỗ trợ khám bệnh hoặc muốn hỏi thông tin gì?",
+  "RuntimeTimeLabel": "Thời gian hiện tại của máy chạy ứng dụng (giờ địa phương): ",
+  "TimeZoneId": "SE Asia Standard Time",
+  "MaxPromptCharacters": 14000,
+  "BaseSections": [
+    "02",
+    "03",
+    "05",
+    "13",
+    "14",
+    "20"
+  ],
+  "TopicRules": [
+    {
+      "Keywords": [
+        "từng khám",
+        "đã khám",
+        "hồ sơ",
+        "hồ sơ cũ",
+        "bệnh nhân mới",
+        "bệnh nhân cũ",
+        "đối chiếu",
+        "khai nhầm",
+        "khách cũ"
+      ],
+      "Sections": [
+        "06",
+        "15"
+      ]
+    },
+    {
+      "Keywords": [
+        "khám dịch vụ",
+        "khám thường",
+        "khám thông thường",
+        "phụ thu",
+        "chọn bác sĩ",
+        "chọn bs",
+        "bác sĩ riêng"
+      ],
+      "Sections": [
+        "07",
+        "11"
+      ]
+    },
+    {
+      "Keywords": [
+        "phiếu hướng dẫn",
+        "phiếu khám",
+        "số thứ tự",
+        "in phiếu",
+        "tiếp nhận",
+        "tạo phiếu",
+        "bản khai",
+        "xong rồi"
+      ],
+      "Sections": [
+        "08",
+        "21"
+      ]
+    },
+    {
+      "Keywords": [
+        "lịch bác sĩ",
+        "lịch làm việc",
+        "bác sĩ nào",
+        "bác sĩ",
+        "bac si",
+        "lịch khám",
+        "ngày mai có bác",
+        "trực",
+        "ca sáng",
+        "ca chiều",
+        "ca tối"
+      ],
+      "Sections": [
+        "09"
+      ]
+    },
+    {
+      "Keywords": [
+        "dịch vụ",
+        "chuyên khoa",
+        "cạo vôi",
+        "trám răng",
+        "nhổ răng",
+        "xem giá",
+        "giá bao nhiêu",
+        "bao nhiêu tiền",
+        "chi phí",
+        "hóa đơn",
+        "thanh toán",
+        "bảo hiểm"
+      ],
+      "Sections": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "Keywords": [
+        "x-quang",
+        "x quang",
+        "đơn thuốc",
+        "chữa trị",
+        "điều trị",
+        "chẩn đoán",
+        "đau răng",
+        "sưng",
+        "chảy máu",
+        "sốt",
+        "nhổ"
+      ],
+      "Sections": [
+        "12"
+      ]
+    },
+    {
+      "Keywords": [
+        "sửa",
+        "nhầm",
+        "sai",
+        "đổi tên",
+        "thay số",
+        "không đúng",
+        "thay đổi thông tin",
+        "quay lại"
+      ],
+      "Sections": [
+        "15"
+      ]
+    },
+    {
+      "Keywords": [
+        "ví dụ",
+        "ví dụ hội thoại",
+        "cho xem mẫu",
+        "mẫu hội thoại",
+        "minh họa",
+        "tình huống"
+      ],
+      "Sections": [
+        "19"
+      ]
+    }
+  ],
+  "QuickReplyPromptFile": "AI/Prompts/QuickReplyInstructions.md",
+  "QuickReplyOptionsFile": "AI/Config/QuickReplyOptions.json",
+  "QuickReplyResponseFormatFile": "AI/Config/QuickReplyResponseFormat.json"
+}

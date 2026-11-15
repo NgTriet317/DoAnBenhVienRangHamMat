@@ -40,17 +40,8 @@ public partial class MainWindow : Window
     {
         "TongQuan", "BenhNhan", "KhamDieuTri", "DichVuThucHien", "DonThuoc", "NhanSu", "ChungChiNhanVien", "CaLamViec",
         "ThietBi", "BaoTri", "Kho", "DanhMucHangHoa", "NhaCungCap", "NhapXuatVatTu", "LichKham",
-        "DichVu", "HoaDon", "BangLuong", "ChamCong", "ChinhSachLuong", "TaiKhoan", "BaoCao", "PhieuHuongDan",
+        "DichVu", "HoaDon", "BangLuong", "ChamCong", "ChinhSachLuong", "TaiKhoan", "BaoCao", "PhieuHuongDan", "TroLyAI",
         "NhatKy", "XinNghiViec"
-    };
-
-    /// <summary>
-    /// Vai trò các quyền được giữ trong phạm vi lớp để các thao tác dùng lại.
-    /// </summary>
-    private static readonly Dictionary<string, HashSet<string>> RolePermissions = new(StringComparer.Ordinal)
-    {
-        ["Admin"] = AllPages,
-        ["User"] = new(StringComparer.Ordinal) { "TongQuan", "CaLamViec", "XinNghiViec" }
     };
 
     /// <summary>
@@ -64,6 +55,7 @@ public partial class MainWindow : Window
         RolePicker.Items.Add(new ComboBoxItem { Content = PhienDangNhap.IsAdmin ? "Admin" : "User" });
         RolePicker.SelectedIndex = 0;
         RolePicker.IsEnabled = false;
+        Loaded += (_, _) => BatDauGiamSatTaiKhoan();
         KeyDown += (_, e) =>
         {
             if (e.Key == Key.Escape && AppHost.Content is AppWorkspace workspace && workspace.ReturnToPage())
@@ -102,14 +94,15 @@ public partial class MainWindow : Window
     internal bool CanOpen(string module)
     {
         module = module switch { "VatTu" => "Kho", "NhapKho" or "XuatKho" => "NhapXuatVatTu", _ => module };
+        if (!AllPages.Contains(module) || !CoQuyenMoPhanHe(module)) return false;
         if(module=="BaoCao")
         {
             try { return new BUS.BUS_BAOCAO().LayQuyen().HasFlag(ET.QuyenBaoCao.XemTongHop); }
             catch(Exception ex) when(ex is InvalidOperationException or UnauthorizedAccessException or System.Data.Common.DbException) { return false; }
         }
-        if (!QuyenNghiepVu.LaPhanHe(module)) return RolePermissions[CurrentRole].Contains(module);
+        if (!QuyenNghiepVu.LaPhanHe(module)) return true;
         try { return QuyenNghiepVu.CoTheMo(module, QuyenNghiepVu.LayNguCanh()); }
-        catch (InvalidOperationException) { return false; }
+        catch (Exception ex) when (ex is InvalidOperationException or UnauthorizedAccessException or System.Data.Common.DbException) { return false; }
     }
 
     /// <summary>
@@ -120,6 +113,9 @@ public partial class MainWindow : Window
         if (sender is Button { Tag: string tag })
             OpenApp(tag);
     }
+
+    // Mở trợ lý AI từ lối tắt trên trang chủ qua cùng kiểm tra quyền và dữ liệu đang nhập.
+    private void MoTroLyAI_TrangChu_Click(object sender, RoutedEventArgs e) => OpenApp("TroLyAI");
 
     // Mở khu vực làm đơn xin nghỉ phép / nghỉ việc từ trang chủ.
     private void XinNghiViec_Click(object sender, RoutedEventArgs e)
@@ -178,6 +174,7 @@ public partial class MainWindow : Window
             "DichVuThucHien" => new DichVuThucHien(),
             "DonThuoc" => new DonThuoc(),
             "PhieuHuongDan" => new PhieuHuongDan(),
+            "TroLyAI" => new TroLyAI(),
             "NhanSu" => new NhanSu(),
             "ChungChiNhanVien" => new ChungChiNhanVien(),
             "CaLamViec" => new CaLamViec(PhienDangNhap.MaNV, PhienDangNhap.IsAdmin),
@@ -311,6 +308,7 @@ public partial class MainWindow : Window
             if(clinical){AppHost.Content=null;AppHost.Visibility=Visibility.Collapsed;HomeSurface.Visibility=Visibility.Visible;}
         }
         sessionAccount=currentAccount;sessionEmployee=currentEmployee;
+        LamMoiDanhSachPhanHe();
         if(RolePicker.Items.OfType<ComboBoxItem>().FirstOrDefault() is { } item)item.Content=CurrentRole;
         Dispatcher.BeginInvoke(new Action(()=>{if(IsLoaded)FilterApps();}));
     }
@@ -371,6 +369,10 @@ public partial class MainWindow : Window
     {
         // TextChanged có thể chạy khi InitializeComponent chưa dựng xong các control trang chủ.
         if (AppGrid is null || AppCount is null || NoApps is null) return;
+        if (AiIntakeShortcut is not null)
+            AiIntakeShortcut.Visibility = CanOpen("TroLyAI") ? Visibility.Visible : Visibility.Collapsed;
+        if (LeaveRequestShortcut is not null)
+            LeaveRequestShortcut.Visibility = CanOpen("XinNghiViec") ? Visibility.Visible : Visibility.Collapsed;
         var query = AppSearch?.Text.Trim() ?? "";
         var count = 0;
         foreach (var tile in AppGrid.Children.OfType<Button>())

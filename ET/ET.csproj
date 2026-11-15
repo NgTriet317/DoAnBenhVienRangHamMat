@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Thư viện thực thể/hợp đồng dữ liệu dùng chung; không tham chiếu các tầng nghiệp vụ/giao diện. -->
   <PropertyGroup>

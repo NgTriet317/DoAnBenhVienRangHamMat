@@ -1,28 +1,17 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Data;
 using BUS;
 using ET;
 
 namespace RangHamMat.Views;
 
-/// <summary>
-/// Phần xử lý xin nghỉ việc của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
-/// </summary>
 public partial class XinNghiViec : UserControl
 {
-    /// <summary>
-    /// Cờ Đã gửi phép; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
-    /// </summary>
     private bool daGuiPhep;
-    /// <summary>
-    /// Cờ Đã gửi việc; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
-    /// </summary>
     private bool daGuiViec;
 
-    /// <summary>
-    /// Khởi tạo xin nghỉ việc. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
-    /// </summary>
     public XinNghiViec()
     {
         InitializeComponent();
@@ -56,12 +45,9 @@ public partial class XinNghiViec : UserControl
 
         CapNhatXemTruocNghiPhep();
         CapNhatXemTruocNghiViec();
+        TaiQuyPhep(DateTime.Today.Year);
     }
 
-    /// <summary>
-    /// Cập nhật giới hạn ngày lựa chọn theo điều kiện áp dụng cho loại đơn nghỉ.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>DateTime.Today.AddDays</c>.</remarks>
     private void CapNhatGioiHanNgay()
     {
         DateTime ngaySomNhat = DateTime.Today.AddDays(7);
@@ -81,12 +67,6 @@ public partial class XinNghiViec : UserControl
         dpNgayNghiViec.DisplayDateStart = ngaySomNhat;
     }
 
-    /// <summary>
-    /// Điền thông tin nhân viên và trạng thái biểu mẫu xin nghỉ lên giao diện.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>noiDung.Trim</c>.</remarks>
-    /// <param name="noiDung">Giá trị nội dung dùng khi thực hiện thao tác; kiểu string.</param>
-    /// <returns>Chuỗi kết quả của thao tác hiển thị.</returns>
     private static string HienThi(string noiDung)
     {
         if (string.IsNullOrWhiteSpace(noiDung))
@@ -94,12 +74,6 @@ public partial class XinNghiViec : UserControl
         return noiDung.Trim();
     }
 
-    /// <summary>
-    /// Định dạng ngày dùng cho phần mô tả hoặc xem trước đơn nghỉ.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>chonNgay.SelectedDate.Value.ToString</c>.</remarks>
-    /// <param name="chonNgay">Giá trị chọn ngày dùng khi thực hiện thao tác; kiểu DatePicker.</param>
-    /// <returns>Chuỗi kết quả của thao tác hiển thị ngày.</returns>
     private static string HienThiNgay(DatePicker chonNgay)
     {
         if (!chonNgay.SelectedDate.HasValue)
@@ -107,10 +81,6 @@ public partial class XinNghiViec : UserControl
         return chonNgay.SelectedDate.Value.ToString("dd/MM/yyyy");
     }
 
-    /// <summary>
-    /// Tổng hợp thông tin nghỉ phép đang nhập thành phần xem trước trước khi gửi đơn.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>item.Content.ToString</c>, <c>HienThi</c>, <c>HienThiNgay</c>.</remarks>
     private void CapNhatXemTruocNghiPhep()
     {
         string loaiNghi = "(Chưa chọn)";
@@ -132,10 +102,6 @@ public partial class XinNghiViec : UserControl
             "Người làm đơn: " + HienThi(txtHoTenNghiPhep.Text);
     }
 
-    /// <summary>
-    /// Tổng hợp ngày hiệu lực và nội dung nghỉ việc đang nhập để người dùng đối chiếu.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>HienThi</c>, <c>HienThiNgay</c>.</remarks>
     private void CapNhatXemTruocNghiViec()
     {
         txtXemTruocNghiViec.Text =
@@ -148,68 +114,34 @@ public partial class XinNghiViec : UserControl
             "Người làm đơn: " + HienThi(txtHoTenNghiViec.Text);
     }
 
-    /// <summary>
-    /// Tiếp nhận thay đổi phép và cập nhật trạng thái/dữ liệu phụ thuộc.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>CapNhatXemTruocNghiPhep</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Phep_TextChanged(object sender, TextChangedEventArgs e)
     {
         CapNhatXemTruocNghiPhep();
     }
 
-    /// <summary>
-    /// Tiếp nhận thay đổi phép và cập nhật trạng thái/dữ liệu phụ thuộc.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>CapNhatGioiHanNgay</c>, <c>CapNhatXemTruocNghiPhep</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Phep_DateChanged(object sender, SelectionChangedEventArgs e)
     {
         CapNhatGioiHanNgay();
         CapNhatXemTruocNghiPhep();
+        CapNhatDuKienPhep();
     }
 
-    /// <summary>
-    /// Phản ánh lựa chọn phép vào dữ liệu và phần hiển thị liên quan.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>CapNhatXemTruocNghiPhep</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Phep_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         CapNhatXemTruocNghiPhep();
+        CapNhatDuKienPhep();
     }
 
-    /// <summary>
-    /// Tiếp nhận thay đổi việc và cập nhật trạng thái/dữ liệu phụ thuộc.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>CapNhatXemTruocNghiViec</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Viec_TextChanged(object sender, TextChangedEventArgs e)
     {
         CapNhatXemTruocNghiViec();
     }
 
-    /// <summary>
-    /// Tiếp nhận thay đổi việc và cập nhật trạng thái/dữ liệu phụ thuộc.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>CapNhatXemTruocNghiViec</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void Viec_DateChanged(object sender, SelectionChangedEventArgs e)
     {
         CapNhatXemTruocNghiViec();
     }
 
-    /// <summary>
-    /// Xử lý thao tác gửi nghỉ phép khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>CapNhatGioiHanNgay</c>, <c>MessageBox.Show</c>, <c>DateTime.Today.AddDays</c>, <c>txtLyDoNghiPhep.Text.Trim</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void GuiNghiPhep_Click(object sender, RoutedEventArgs e)
     {
         if (daGuiPhep)
@@ -256,6 +188,7 @@ public partial class XinNghiViec : UserControl
             don.TuNgay = tuNgay;
             don.DenNgay = denNgay;
             don.LyDo = txtLyDoNghiPhep.Text.Trim();
+            don.LoaiNghi = loaiNghi.Content?.ToString() ?? "Chưa xác định";
             don.GhiChu = "Loại đơn: Nghỉ phép\nLoại nghỉ: " + loaiNghi.Content +
                          "\nNgười tiếp nhận / bàn giao: " + txtBanGiaoNghiPhep.Text.Trim();
 
@@ -263,6 +196,7 @@ public partial class XinNghiViec : UserControl
             string maDon = bus.guiDon(don);
             daGuiPhep = true;
             KhoaFormNghiPhep(true);
+            TaiQuyPhep(tuNgay.Year);
             txtTrangThaiNghiPhep.Text = "Đã gửi · " + maDon + " · Chờ duyệt";
             MessageBox.Show("Đã gửi đơn xin nghỉ phép. Mã đơn: " + maDon,
                 "Gửi đơn thành công", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -274,12 +208,6 @@ public partial class XinNghiViec : UserControl
         }
     }
 
-    /// <summary>
-    /// Xử lý thao tác gửi nghỉ việc khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>CapNhatGioiHanNgay</c>, <c>MessageBox.Show</c>, <c>DateTime.Today.AddDays</c>, <c>txtLyDoNghiViec.Text.Trim</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void GuiNghiViec_Click(object sender, RoutedEventArgs e)
     {
         if (daGuiViec)
@@ -318,6 +246,7 @@ public partial class XinNghiViec : UserControl
             don.TuNgay = ngayNghi;
             don.DenNgay = ngayNghi;
             don.LyDo = txtLyDoNghiViec.Text.Trim();
+            don.LoaiNghi = "Nghỉ việc";
             don.GhiChu = "Loại đơn: Nghỉ việc\nKế hoạch bàn giao: " + txtBanGiaoNghiViec.Text.Trim();
 
             BUS_DON_XIN_NGHI bus = new BUS_DON_XIN_NGHI();
@@ -336,10 +265,6 @@ public partial class XinNghiViec : UserControl
         }
     }
 
-    /// <summary>
-    /// Khóa hoặc mở các trường của biểu mẫu nghỉ phép theo trạng thái gửi đơn.
-    /// </summary>
-    /// <param name="daGui">Giá trị đã gửi dùng khi thực hiện thao tác; kiểu bool.</param>
     private void KhoaFormNghiPhep(bool daGui)
     {
         cboLoaiNghi.IsEnabled = !daGui;
@@ -350,10 +275,6 @@ public partial class XinNghiViec : UserControl
         btnGuiNghiPhep.IsEnabled = !daGui;
     }
 
-    /// <summary>
-    /// Khóa hoặc mở các trường của biểu mẫu nghỉ việc theo trạng thái gửi đơn.
-    /// </summary>
-    /// <param name="daGui">Giá trị đã gửi dùng khi thực hiện thao tác; kiểu bool.</param>
     private void KhoaFormNghiViec(bool daGui)
     {
         dpNgayNghiViec.IsEnabled = !daGui;
@@ -362,12 +283,6 @@ public partial class XinNghiViec : UserControl
         btnGuiNghiViec.IsEnabled = !daGui;
     }
 
-    /// <summary>
-    /// Xử lý thao tác làm mới nghỉ phép khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>KhoaFormNghiPhep</c>, <c>CapNhatGioiHanNgay</c>, <c>txtLyDoNghiPhep.Clear</c>, <c>txtBanGiaoNghiPhep.Clear</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void LamMoiNghiPhep_Click(object sender, RoutedEventArgs e)
     {
         daGuiPhep = false;
@@ -382,12 +297,6 @@ public partial class XinNghiViec : UserControl
         CapNhatXemTruocNghiPhep();
     }
 
-    /// <summary>
-    /// Xử lý thao tác làm mới nghỉ việc khi người dùng bấm nút tương ứng trên màn hình.
-    /// </summary>
-    /// <remarks>Các bước được phối hợp qua <c>KhoaFormNghiViec</c>, <c>CapNhatGioiHanNgay</c>, <c>txtLyDoNghiViec.Clear</c>, <c>txtBanGiaoNghiViec.Clear</c>.</remarks>
-    /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-    /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
     private void LamMoiNghiViec_Click(object sender, RoutedEventArgs e)
     {
         daGuiViec = false;
@@ -398,5 +307,67 @@ public partial class XinNghiViec : UserControl
         txtBanGiaoNghiViec.Clear();
         txtTrangThaiNghiViec.Text = "Bản nháp · Chưa gửi";
         CapNhatXemTruocNghiViec();
+    }
+
+    // Đọc quỹ phép của nhân viên đang đăng nhập, không tính lại định mức trên WPF.
+    private void TaiQuyPhep(int nam)
+    {
+        txtNamQuyPhep.Text = nam.ToString();
+        if (string.IsNullOrWhiteSpace(PhienDangNhap.MaNV))
+        {
+            txtDuKienPhep.Text = "Tài khoản chưa liên kết nhân viên.";
+            return;
+        }
+        try
+        {
+            DataTable data = new BUS_QUYPHEP().layQuyPhep(PhienDangNhap.MaNV, nam);
+            if (data.Rows.Count == 0) return;
+            DataRow h = data.Rows[0];
+            txtPhepDuocHuong.Text = Convert.ToDecimal(h["PhepDuocHuong"]).ToString("0.##") + " ngày";
+            txtPhepDaNghi.Text = Convert.ToDecimal(h["PhepDaSuDung"]).ToString("0.##") + " ngày";
+            txtPhepDaDat.Text = Convert.ToDecimal(h["PhepDaDatTruoc"]).ToString("0.##") + " ngày";
+            txtPhepCon.Text = Convert.ToDecimal(h["PhepConKhaDung"]).ToString("0.##") + " ngày";
+        }
+        catch (Exception ex)
+        {
+            txtDuKienPhep.Text = "Không thể đọc quỹ phép: " + ex.Message;
+        }
+    }
+
+    private void CapNhatDuKienPhep()
+    {
+        if (txtDuKienPhep == null || txtNamQuyPhep == null) return;
+        if (cboLoaiNghi.SelectedItem is not ComboBoxItem loai ||
+            !string.Equals(loai.Content?.ToString(), "Nghỉ phép năm", StringComparison.OrdinalIgnoreCase))
+        {
+            txtDuKienPhep.Text = "Chỉ loại Nghỉ phép năm mới trừ quỹ phép năm.";
+            return;
+        }
+        if (!dpTuNgay.SelectedDate.HasValue || !dpDenNgay.SelectedDate.HasValue)
+        {
+            txtDuKienPhep.Text = "Chọn đầy đủ từ ngày và đến ngày để xem dự kiến.";
+            return;
+        }
+        DateTime tuNgay = dpTuNgay.SelectedDate.Value.Date;
+        DateTime denNgay = dpDenNgay.SelectedDate.Value.Date;
+        if (denNgay < tuNgay)
+        {
+            txtDuKienPhep.Text = "Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.";
+            return;
+        }
+        if (denNgay.Year != tuNgay.Year)
+        {
+            txtDuKienPhep.Text = "Đơn qua năm mới: hệ thống tính theo quỹ từng năm khi duyệt.";
+            return;
+        }
+        TaiQuyPhep(tuNgay.Year);
+        try
+        {
+            int soNgay = new BUS_QUYPHEP().demNgayDuKien(PhienDangNhap.MaNV, tuNgay, denNgay);
+            txtDuKienPhep.Text = soNgay == 0
+                ? "Chưa có ngày làm việc được xếp ca trong khoảng đã chọn."
+                : $"Dự kiến {soNgay} ngày phép (tương đương {soNgay * 0.5m:0.##} công hưởng lương). Số chính thức xác định khi quản lý duyệt.";
+        }
+        catch (Exception ex) { txtDuKienPhep.Text = "Chưa thể tính dự kiến: " + ex.Message; }
     }
 }

@@ -76,7 +76,7 @@ internal static partial class AcademicData
         Require(Scalar<int>(presented?"SELECT COUNT(*) FROM dbo.BENH_NHAN":"SELECT COUNT(*) FROM dbo.BENH_NHAN WHERE MaBN LIKE N'DL26[_]BN[_]%'")>=30,"Chua co it nhat 30 benh nhan lien thong");
         if(presented)CheckPresentation();
         CheckApis(!presented);
-        Console.WriteLine("PASS: academic data, 64 tables, business consistency and linked scenarios");
+        Console.WriteLine("PASS: academic data, 74 tables, business consistency and linked scenarios");
     }
     /// <summary>Kiểm bản in, dữ liệu bàn giao, bảng tính phí và tính lặp an toàn của thanh toán/giao thuốc.</summary>
     /// <param name="verifySeedClocks">Có kiểm thêm mốc giờ tiếp nhận của các kịch bản nguồn trước khi đổi quy ước trình bày hay không.</param>
@@ -379,7 +379,7 @@ internal static partial class AcademicData
             try
             {
                 Require(Scalar<int>("DECLARE @r int;EXEC @r=sys.sp_getapplock @Resource=N'RHM:AcademicData:Write',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000;SELECT @r")>=0,"Academic data is being prepared by another session");
-                Require(Counts().Count==64,"Expected current 64-table schema");Login();
+                Require(Counts().Count==74,"Expected current 74-table schema");Login();
                 if(args[0]=="--apply")Apply();
                 if(args[0]=="--present")ApplyPresentation();
                 if(args[0]=="--present-check")CheckPresentation();

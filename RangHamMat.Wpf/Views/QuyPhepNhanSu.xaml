@@ -1,0 +1,159 @@
+<UserControl x:Class="RangHamMat.Views.QuyPhepNhanSu"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent" FontFamily="Segoe UI">
+  <UserControl.Resources>
+    <Style x:Key="ThongKeCard" TargetType="Border">
+      <Setter Property="Background" Value="White"/>
+      <Setter Property="BorderBrush" Value="#E1E7EC"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="11"/>
+      <Setter Property="Padding" Value="16,14"/>
+    </Style>
+    <Style x:Key="TuaNho" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Foreground" Value="#728296"/>
+    </Style>
+    <Style x:Key="SoLieu" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="24"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="Foreground" Value="#1B3144"/>
+      <Setter Property="Margin" Value="0,6,0,0"/>
+    </Style>
+    <Style x:Key="NutNhe" TargetType="Button">
+      <Setter Property="MinHeight" Value="36"/>
+      <Setter Property="Padding" Value="13,7"/>
+      <Setter Property="Background" Value="White"/>
+      <Setter Property="Foreground" Value="#254259"/>
+      <Setter Property="BorderBrush" Value="#D1DBE2"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+  </UserControl.Resources>
+  <Grid Margin="0,16,0,0" MinHeight="0">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+
+    <Border Background="#EAF0F3" CornerRadius="12" Padding="20,18" Margin="0,0,0,14">
+      <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <StackPanel>
+          <TextBlock Text="Tổng quan quỹ phép nhân sự" FontSize="22" FontWeight="Bold" Foreground="#193549"/>
+          <TextBlock Text="Theo dõi phép được hưởng, đã nghỉ, đã duyệt sắp tới và số dư theo từng năm."
+                     Foreground="#526B7E" FontSize="13" TextWrapping="Wrap" Margin="0,7,0,0"/>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+          <Button Content="‹" Width="38" Style="{StaticResource NutNhe}" Click="NamTruoc_Click" ToolTip="Năm trước"/>
+          <Border Background="White" BorderBrush="#CBD6E0" BorderThickness="1" Padding="18,8" Margin="7,0" CornerRadius="7">
+            <TextBlock x:Name="lblNam" Text="2026" FontWeight="Bold" FontSize="15" Foreground="#17374C"/>
+          </Border>
+          <Button Content="›" Width="38" Style="{StaticResource NutNhe}" Click="NamSau_Click" ToolTip="Năm sau"/>
+          <Button Content="Làm mới" Margin="10,0,0,0" Style="{StaticResource NutNhe}" Click="TaiLai_Click"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" Margin="0,0,0,14">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/>
+        <ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+      <Border Grid.Column="0" Style="{StaticResource ThongKeCard}">
+        <StackPanel><TextBlock Text="TỔNG PHÉP ĐƯỢC HƯỞNG" Style="{StaticResource TuaNho}"/>
+          <TextBlock x:Name="txtTongDuoc" Text="—" Style="{StaticResource SoLieu}"/></StackPanel>
+      </Border>
+      <Border Grid.Column="2" Style="{StaticResource ThongKeCard}">
+        <StackPanel><TextBlock Text="ĐÃ SỬ DỤNG" Style="{StaticResource TuaNho}"/>
+          <TextBlock x:Name="txtTongDaNghi" Text="—" Style="{StaticResource SoLieu}"/></StackPanel>
+      </Border>
+      <Border Grid.Column="4" Style="{StaticResource ThongKeCard}">
+        <StackPanel><TextBlock Text="ĐÃ DUYỆT SẮP TỚI" Style="{StaticResource TuaNho}"/>
+          <TextBlock x:Name="txtTongDaDat" Text="—" Style="{StaticResource SoLieu}"/></StackPanel>
+      </Border>
+      <Border Grid.Column="6" Style="{StaticResource ThongKeCard}">
+        <StackPanel><TextBlock Text="CÒN KHẢ DỤNG" Style="{StaticResource TuaNho}"/>
+          <TextBlock x:Name="txtTongCon" Text="—" Foreground="#12675D" FontSize="24" FontWeight="Bold" Margin="0,6,0,0"/></StackPanel>
+      </Border>
+    </Grid>
+
+    <Border Grid.Row="2" Background="White" BorderBrush="#E1E7EC" BorderThickness="1" Padding="15,12" CornerRadius="10" Margin="0,0,0,12">
+      <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <TextBlock Text="Tìm nhân viên" VerticalAlignment="Center" Foreground="#4A5F72" FontWeight="SemiBold" Margin="0,0,12,0"/>
+          <TextBox x:Name="txtTimKiem" Width="260" Height="35" Padding="10,6" VerticalContentAlignment="Center"
+                   ToolTip="Tìm theo mã hoặc họ tên nhân viên" TextChanged="TimKiem_TextChanged"/>
+          <TextBlock x:Name="lblSoNhanVien" Margin="16,0,0,0" VerticalAlignment="Center" Foreground="#607185"/>
+        </StackPanel>
+        <TextBlock Grid.Column="1" x:Name="lblCauHinh" Foreground="#607185" FontSize="12"
+                   VerticalAlignment="Center" TextWrapping="Wrap"/>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="3" MinHeight="150">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="1.8*" MinWidth="390"/><ColumnDefinition Width="14"/><ColumnDefinition Width="1*" MinWidth="280"/></Grid.ColumnDefinitions>
+      <Border Grid.Column="0" Background="White" BorderBrush="#E1E7EC" BorderThickness="1" CornerRadius="12" Padding="12">
+        <Grid>
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+          <TextBlock Text="Danh sách nhân viên" FontSize="16" FontWeight="Bold" Margin="4,4,0,12" Foreground="#213A4B"/>
+          <DataGrid x:Name="gridQuyPhep" Grid.Row="1" SelectionChanged="ChonNhanVien_SelectionChanged"
+                    AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False"
+                    SelectionMode="Single" SelectionUnit="FullRow" RowHeaderWidth="0"
+                    HeadersVisibility="Column" GridLinesVisibility="None" AlternatingRowBackground="#F7F9FB"
+                    RowHeight="40" ColumnHeaderHeight="42" BorderThickness="0" FontSize="12"
+                    HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="MÃ NV" Binding="{Binding MaNV}" Width="80"/>
+              <DataGridTextColumn Header="HỌ TÊN" Binding="{Binding HoTen}" Width="*" MinWidth="140"/>
+              <DataGridTextColumn Header="ĐƯỢC HƯỞNG" Binding="{Binding PhepDuocHuong, StringFormat=N2}" Width="104"/>
+              <DataGridTextColumn Header="ĐÃ NGHỈ" Binding="{Binding PhepDaSuDung}" Width="80"/>
+              <DataGridTextColumn Header="ĐÃ ĐẶT" Binding="{Binding PhepDaDatTruoc}" Width="80"/>
+              <DataGridTextColumn Header="CÒN" Binding="{Binding PhepConKhaDung, StringFormat=N2}" Width="80"/>
+              <DataGridTextColumn Header="TRẠNG THÁI" Binding="{Binding TrangThai}" Width="115"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+      </Border>
+      <Border Grid.Column="2" Background="White" BorderBrush="#E1E7EC" BorderThickness="1" CornerRadius="12" Padding="15">
+        <Grid>
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+          <StackPanel>
+            <TextBlock Text="CHI TIẾT NHÂN VIÊN" Style="{StaticResource TuaNho}"/>
+            <TextBlock x:Name="lblTenNhanVien" Text="Chọn nhân viên bên trái" FontWeight="Bold" FontSize="17" Foreground="#1C374A" Margin="0,7,0,2" TextWrapping="Wrap"/>
+            <TextBlock x:Name="lblChiTietNhanVien" Foreground="#647589" FontSize="12" TextWrapping="Wrap"/>
+          </StackPanel>
+          <Border Grid.Row="1" Background="#F4F7F9" CornerRadius="8" Margin="0,14,0,10" Padding="12">
+            <StackPanel>
+              <TextBlock x:Name="lblPhepNhanVien" Text="Chưa chọn nhân viên" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="#243C4F"/>
+              <TextBlock Text="1 ngày nghỉ phép năm hợp lệ = 1 ngày quỹ = 0,5 công hưởng lương."
+                         FontSize="11" Margin="0,7,0,0" TextWrapping="Wrap" Foreground="#65798B"/>
+            </StackPanel>
+          </Border>
+          <Grid Grid.Row="2">
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+            <TextBlock Text="Lịch sử ngày phép đã duyệt" FontWeight="SemiBold" FontSize="14" Foreground="#213B4C" Margin="0,0,0,8"/>
+            <DataGrid x:Name="gridNgayPhep" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                      SelectionMode="Single" RowHeaderWidth="0" GridLinesVisibility="None" AlternatingRowBackground="#F7F9FB"
+                      RowHeight="35" ColumnHeaderHeight="38" BorderThickness="0" FontSize="12"
+                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="NGÀY NGHỈ" Binding="{Binding NgayNghi, StringFormat=dd/MM/yyyy}" Width="108"/>
+                <DataGridTextColumn Header="MÃ ĐƠN" Binding="{Binding MaDonNghi}" Width="*" MinWidth="100"/>
+                <DataGridTextColumn Header="CÔNG" Binding="{Binding CongHuongLuong, StringFormat=N2}" Width="60"/>
+              </DataGrid.Columns>
+            </DataGrid>
+          </Grid>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <TextBlock Grid.Row="4" x:Name="lblThongBao" Foreground="#637487" FontSize="12" TextWrapping="Wrap"
+               Margin="4,12,0,0" Text="Dữ liệu được lấy từ SQL. Các năm khác nhau có quỹ phép độc lập."/>
+  </Grid>
+</UserControl>

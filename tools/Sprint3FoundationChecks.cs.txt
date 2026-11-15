@@ -92,7 +92,8 @@ static class Program
             db.Execute("DROP INDEX UX_PCAXQ_DichVu ON dbo.PHAN_CONG_ANH_XQUANG; CREATE UNIQUE INDEX UX_PCAXQ_DichVu ON dbo.PHAN_CONG_ANH_XQUANG(MaDVThucHien) WHERE TrangThai=N'Đã hủy'; EXEC dbo.usp_RHM_KiemTraKhoAnh",transaction:tx);
         });
         Reject("X-ray schema rejects assignment foreign key to wrong entity", [53415], (db,tx)=>{
-            db.Execute("ALTER TABLE dbo.PHAN_CONG_ANH_XQUANG DROP CONSTRAINT FK_PCAXQ_NguoiGiao; ALTER TABLE dbo.PHAN_CONG_ANH_XQUANG WITH CHECK ADD CONSTRAINT FK_PCAXQ_NguoiGiao FOREIGN KEY(MaNVPhanCong) REFERENCES dbo.BENH_NHAN(MaBN); EXEC dbo.usp_RHM_KiemTraKhoAnh",transaction:tx);
+            // Dữ liệu snapshot đã có phân công; tạo FK sai không kiểm dữ liệu cũ để kiểm schema validator.
+            db.Execute("ALTER TABLE dbo.PHAN_CONG_ANH_XQUANG DROP CONSTRAINT FK_PCAXQ_NguoiGiao; ALTER TABLE dbo.PHAN_CONG_ANH_XQUANG WITH NOCHECK ADD CONSTRAINT FK_PCAXQ_NguoiGiao FOREIGN KEY(MaNVPhanCong) REFERENCES dbo.BENH_NHAN(MaBN); EXEC dbo.usp_RHM_KiemTraKhoAnh",transaction:tx);
         });
         Reject("X-ray schema rejects assignment index on wrong key", [53415], (db,tx)=>{
             db.Execute("DROP INDEX UX_PCAXQ_DichVu ON dbo.PHAN_CONG_ANH_XQUANG; CREATE UNIQUE INDEX UX_PCAXQ_DichVu ON dbo.PHAN_CONG_ANH_XQUANG(MaPC) WHERE TrangThai=N'Đang áp dụng'; EXEC dbo.usp_RHM_KiemTraKhoAnh",transaction:tx);
@@ -100,8 +101,9 @@ static class Program
         Reject("Unified schema rejects missing audit event deduplication", [53417], (db,tx)=>{
             db.Execute("DROP INDEX UX_S3_Event ON dbo.NHAT_KY_THAO_TAC; EXEC dbo.usp_RHM_KiemTraSchema",transaction:tx);
         });
-        Check("Old receipts remain ordinary with zero fee", db => {
-            Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.PHIEU_KHAM_BENH WHERE MaPhieu NOT LIKE N'S3F[_]%' AND (LoaiKham<>N'Thông thường' OR PhiPhuThuDichVu<>0)") == 0, "Unexpected retroactive fee");
+        Check("Existing receipt type and fee remain a valid pair", db => {
+            // Snapshot hiện tại có lượt khám dịch vụ hợp lệ; kiểm không đổi dữ liệu cũ nằm ở CompareBaseline.
+            Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.PHIEU_KHAM_BENH WHERE NOT((LoaiKham=N'Thông thường' AND PhiPhuThuDichVu=0) OR (LoaiKham=N'Dịch vụ' AND PhiPhuThuDichVu=30000))") == 0, "Inconsistent existing receipt fee");
         });
         Reject("Schema check rejects nullable receipt type drift", [53408], (db,tx)=>{
             db.Execute("ALTER TABLE dbo.PHIEU_KHAM_BENH ALTER COLUMN LoaiKham nvarchar(20) NULL; EXEC dbo.usp_RHM_KiemTraNenTangSprint3",transaction:tx);
@@ -200,7 +202,9 @@ static class Program
         return failed==0?0:1;
     }
 
-    sealed record TableBaseline(string Table, string[] Columns, string[] Keys, long Rows, string Hash);
+    sealed record PermissionRow(string MaVaiTro,string MaPhanHe,bool DuocTruyCap,DateTime NgayCapNhat);
+    sealed record TableBaseline(string Table, string[] Columns, string[] Keys, long Rows, string Hash,
+        PermissionRow[]? Permissions=null,string[]? DefaultRoles=null);
     static string Q(string name)=>"["+name.Replace("]","]]")+"]";
     static (long Rows,string Hash) Fingerprint(SqlConnection db, TableBaseline table)
     {
@@ -222,6 +226,18 @@ static class Program
             var keys=db.Query<string>("SELECT c.name FROM sys.tables t JOIN sys.indexes i ON i.object_id=t.object_id AND i.is_primary_key=1 JOIN sys.index_columns ic ON ic.object_id=i.object_id AND ic.index_id=i.index_id JOIN sys.columns c ON c.object_id=ic.object_id AND c.column_id=ic.column_id WHERE t.name=@table ORDER BY ic.key_ordinal",new{table}).ToArray();
             Assert(keys.Length>0,"Baseline table must have a stable primary key");
             var snapshot=new TableBaseline(table,cols,keys,0,"");var fingerprint=Fingerprint(db,snapshot);
+            if(table=="PHAN_QUYEN_VAI_TRO")
+            {
+                var permissions=db.Query<PermissionRow>("SELECT MaVaiTro,MaPhanHe,DuocTruyCap,NgayCapNhat FROM dbo.PHAN_QUYEN_VAI_TRO").ToArray();
+                var defaultRoles=db.Query<string>("SELECT MaVaiTro FROM dbo.VAI_TRO WHERE TenVaiTro=N'User'").Where(role=>
+                {
+                    var rows=permissions.Where(p=>p.MaVaiTro==role).ToArray();
+                    return rows.Length==25 && rows.Select(p=>p.NgayCapNhat).Distinct().Count()==1
+                        && rows.All(p=>p.DuocTruyCap==(p.MaPhanHe is "TongQuan" or "CaLamViec" or "XinNghiViec"))
+                        && db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_THAO_TAC WHERE LoaiDoiTuong=N'PHAN_QUYEN_VAI_TRO' AND (MaDoiTuong LIKE @prefix OR JSON_VALUE(CASE WHEN ISJSON(DuLieuTruoc)=1 THEN DuLieuTruoc ELSE N'{}' END,N'$.MaVaiTro')=@role OR JSON_VALUE(CASE WHEN ISJSON(DuLieuSau)=1 THEN DuLieuSau ELSE N'{}' END,N'$.MaVaiTro')=@role)",new{role,prefix=role+"/%"})==0;
+                }).ToArray();
+                snapshot=snapshot with{Permissions=permissions,DefaultRoles=defaultRoles};
+            }
             snapshots.Add(snapshot with{Rows=fingerprint.Rows,Hash=fingerprint.Hash});
         }
         File.WriteAllText(path,System.Text.Json.JsonSerializer.Serialize(snapshots,new System.Text.Json.JsonSerializerOptions{WriteIndented=true}));
@@ -235,8 +251,34 @@ static class Program
         foreach(var table in tables)
             Check("Preserved legacy rows and columns: "+table.Table,connection=>{
                 var actual=Fingerprint(connection,table);
+                if(table.Table=="PHAN_QUYEN_VAI_TRO" && table.Permissions is not null && (actual.Rows!=table.Rows || actual.Hash!=table.Hash))
+                {
+                    VerifyMenuUpgrade(connection,table);
+                    return;
+                }
                 Assert(actual.Rows==table.Rows && actual.Hash==table.Hash,"Legacy rows changed during migration");
             });
+    }
+
+    static void VerifyMenuUpgrade(SqlConnection db,TableBaseline baseline)
+    {
+        var before=baseline.Permissions!;
+        var after=db.Query<PermissionRow>("SELECT MaVaiTro,MaPhanHe,DuocTruyCap,NgayCapNhat FROM dbo.PHAN_QUYEN_VAI_TRO").ToArray();
+        foreach(var old in before)
+        {
+            var current=after.SingleOrDefault(p=>p.MaVaiTro==old.MaVaiTro && p.MaPhanHe==old.MaPhanHe);
+            Assert(current is not null,"An existing menu permission was removed");
+            bool defaults=(baseline.DefaultRoles??[]).Contains(old.MaVaiTro)
+                && old.MaPhanHe is "BenhNhan" or "KhamDieuTri" or "DichVuThucHien" or "DonThuoc" or "HoaDon" or "PhieuHuongDan" or "BaoCao";
+            Assert(defaults ? current!.DuocTruyCap && current.NgayCapNhat>=old.NgayCapNhat : current==old,
+                "Customized permission or unrelated menu field changed");
+        }
+        foreach(var added in after.Where(p=>!before.Any(old=>old.MaVaiTro==p.MaVaiTro && old.MaPhanHe==p.MaPhanHe)))
+        {
+            Assert(added.MaPhanHe=="TroLyAI","Unexpected new menu permission");
+            var admin=db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.VAI_TRO WHERE MaVaiTro=@role AND TenVaiTro IN(N'Admin',N'Quản trị',N'Quản trị viên')",new{role=added.MaVaiTro})==1;
+            Assert(added.DuocTruyCap==(admin||after.Any(p=>p.MaVaiTro==added.MaVaiTro&&p.MaPhanHe=="PhieuHuongDan"&&p.DuocTruyCap)),"New AI grant exceeds reception/menu scope");
+        }
     }
 
     static void Fixture(SqlConnection db, SqlTransaction tx, bool service=true, decimal? fee=null)

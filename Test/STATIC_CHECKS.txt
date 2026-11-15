@@ -1,0 +1,15 @@
+KIEM TRA DA CHAY TRONG MOI TRUONG TAO MA (KHONG PHAI SQL/WPF RUNTIME)
+
+PASS - XAML TiepNhanAI.xaml parse XML thanh cong (lxml).
+PASS - Event Click/SelectionChanged cua TiepNhanAI co handler cung ten o code-behind.
+PASS - Nut MoTiepNhanAI_Click co anchor duy nhat trong PhieuHuongDan.xaml tham chieu.
+PASS - Handler co anchor duy nhat trong PhieuHuongDan.xaml.cs tham chieu.
+PASS - PhieuHuongDan.xaml sau khi mo phong chep nut van parse duoc XML.
+PASS - JavaScript giao dien /wwwroot/index.html qua node --check.
+PASS - Kiem tra ZIP CRC sau khi dong goi.
+CHUA CHAY - dotnet build .NET 8/Windows (container khong co dotnet SDK).
+CHUA CHAY - SQL migration / procedure (container khong co SQL Server).
+CHUA CHAY - HTTP /chat e2e voi DB thuc.
+CHUA CHAY - WPF E2E + in A5 tren Windows.
+
+Quan trong: Khong ghi Pass cho testcase nghiep vu neu chua thuc thi tren laptop cua ban.

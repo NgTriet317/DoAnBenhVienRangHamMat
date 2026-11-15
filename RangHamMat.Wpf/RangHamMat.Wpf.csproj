@@ -1,24 +1,46 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Ứng dụng desktop Windows dùng WPF .NET 8; XAML được biên dịch cùng code-behind. -->
   <PropertyGroup>
-    <OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework>
-    <UseWPF>true</UseWPF><EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>RangHamMat</RootNamespace><AssemblyName>RangHamMat.Wpf</AssemblyName>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>RangHamMat</RootNamespace>
+    <AssemblyName>RangHamMat.Wpf</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Chép cấu hình kết nối cạnh exe ở cả bản build và publish để máy triển khai có thể cấu hình SQL Server. -->
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <!-- Tệp tham khảo của các lần khám giả lập, giữ GUID/hash đồng bộ với snapshot SQL. -->
     <Content Include="..\Database\AnhXquang\*.jpg" Link="DuLieu\AnhXquang\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\Database\AnhXquang\*.json;..\Database\AnhXquang\*.md" Link="DuLieu\NguonAnhXquang\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\Database\QLBenhVienRangHamMat.sql" Link="Database\QLBenhVienRangHamMat.sql" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <!-- Metadata kiểm tra nhập liệu được nhúng vào assembly; giao diện đối chiếu tên/kiểu/giới hạn cột. -->
     <EmbeddedResource Include="Controls\QuyTacNhapLieu.xml" />
     <PackageReference Include="fo-dicom" Version="5.2.6" />
     <PackageReference Include="fo-dicom.Imaging.ImageSharp" Version="5.2.6" />
-    <!-- Giao diện gọi nghiệp vụ qua BUS và dùng ET cho dữ liệu; DAL được dẫn vào qua BUS. -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
     <ProjectReference Include="..\BUS\BUS.csproj" />
     <ProjectReference Include="..\ET\ET.csproj" />
+    <!-- Build backend từ cùng mã nguồn, không chạy các DLL đóng gói cũ trong Git. -->
+    <ProjectReference Include="..\RangHamMat.Kiosk.Api\RangHamMat.Kiosk.Api.csproj" ReferenceOutputAssembly="false" Private="false" />
+    <None Remove="AI\Config\AiSecrets.local.json" />
+    <None Update="AI\Prompts\**\*.md;AI\Config\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="AI\Config\AiSecrets.local.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" Condition="'$(Configuration)' == 'Debug' and Exists('AI\Config\AiSecrets.local.json')" />
   </ItemGroup>
+  <Target Name="CopyCurrentKioskBackend" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <CurrentKioskFiles Include="..\RangHamMat.Kiosk.Api\bin\$(Configuration)\net8.0\**\*" Exclude="..\RangHamMat.Kiosk.Api\bin\$(Configuration)\net8.0\publish\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(CurrentKioskFiles)" DestinationFiles="@(CurrentKioskFiles->'$(TargetDir)KioskServer\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="PublishCurrentKioskBackend" BeforeTargets="ComputeFilesToPublish">
+    <MSBuild Projects="..\RangHamMat.Kiosk.Api\RangHamMat.Kiosk.Api.csproj" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=$(MSBuildProjectDirectory)\obj\KioskPublish\$(Configuration)\;SelfContained=false;PublishSingleFile=false" RemoveProperties="RuntimeIdentifier" />
+    <ItemGroup>
+      <PublishedKioskFiles Include="$(MSBuildProjectDirectory)\obj\KioskPublish\$(Configuration)\**\*" />
+      <ResolvedFileToPublish Include="@(PublishedKioskFiles)">
+        <RelativePath>KioskServer\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
 </Project>

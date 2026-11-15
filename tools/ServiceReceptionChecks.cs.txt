@@ -93,6 +93,24 @@ internal static partial class Program
             Assert(At(new(2026,11,7,22,0,0)).Any(x=>x.MaNV=="NV002")&&At(new(2026,11,8,1,0,0)).Any(x=>x.MaNV=="NV002"),"Mất ca qua ngày");
             Assert(!At(new(2026,11,7,21,59,59)).Any(x=>x.MaNV=="NV002")&&!At(new(2026,11,8,6,0,0)).Any(x=>x.MaNV=="NV002"),"Nhận ngoài giờ ca");
         }));
+        Check("AI staff picker nhận ca qua ngày và chặn ngoài giờ",()=>Tx(tx=>{
+            ReceptionFixture(tx);tx.Connection!.Execute("UPDATE dbo.CA_LAM SET GioBatDau='22:00',GioKetThuc='06:00' WHERE MaCa=N'SVC_CA'; UPDATE dbo.LICH_LAM_VIEC SET NgayLam='20261107' WHERE MaLLV=N'SVC_SHIFT'",transaction:tx);
+            var query=typeof(DAL_AI_TAOPHIEU).GetMethod("BacSiTaiThoiDiem",BindingFlags.Static|BindingFlags.NonPublic)!;
+            IReadOnlyList<BacSiTiepNhan> At(DateTime time,bool service=false)=>(IReadOnlyList<BacSiTiepNhan>)query.Invoke(null,[tx.Connection,tx,"PH001",time,service])!;
+            Assert(At(new(2026,11,7,22,0,0)).Any(x=>x.MaNV=="NV002")&&At(new(2026,11,8,1,0,0)).Any(x=>x.MaNV=="NV002"),"AI mất bác sĩ có ca qua ngày");
+            Assert(!At(new(2026,11,7,21,59,59)).Any(x=>x.MaNV=="NV002")&&!At(new(2026,11,8,6,0,0)).Any(x=>x.MaNV=="NV002"),"AI hiện bác sĩ ngoài giờ ca");
+            tx.Connection.Execute("UPDATE dbo.LICH_LAM_VIEC SET TrangThaiHienDien=N'Chưa cập nhật' WHERE MaLLV=N'SVC_SHIFT'",transaction:tx);
+            Assert(At(new(2026,11,8,1,0,0)).Any(x=>x.MaNV=="NV002")&&!At(new(2026,11,8,1,0,0),true).Any(x=>x.MaNV=="NV002"),"Khám dịch vụ phải có mặt, khám thường giữ ca chưa cập nhật hiện diện");
+        }));
+        Check("AI staff picker chỉ hiện phòng khám đang hoạt động",()=>Tx(tx=>{
+            ReceptionFixture(tx);tx.Connection!.Execute("INSERT dbo.PHONG(MaPhong,MaKhoa,TenPhong,LoaiPhong,TinhTrang,TrangThai) VALUES(N'AI_BAD_ROOM',N'KHOA001',N'FIXTURE phòng không khám',N'Phòng hành chính',N'Đang sử dụng',N'Đang hoạt động')",transaction:tx);
+            Assert(!new DAL_AI_TAOPHIEU(tx).layPhong().Any(x=>x.Ma=="AI_BAD_ROOM"),"AI cho chọn phòng không phải phòng khám");
+        }));
+        Check("AI staff picker loại bác sĩ vắng khỏi danh mục và dịch vụ",()=>Tx(tx=>{
+            ReceptionFixture(tx);tx.Connection!.Execute("UPDATE dbo.LICH_LAM_VIEC SET TrangThaiHienDien=N'Vắng mặt' WHERE MaLLV=N'SVC_SHIFT'",transaction:tx);
+            var choices=new DAL_AI_TAOPHIEU(tx);
+            Assert(!choices.layBacSi("PH001").Any(x=>x.Ma=="NV002")&&!choices.layDichVu("PH001","NV002").Any(),"AI vẫn cho chọn bác sĩ/dịch vụ khi bác sĩ vắng");
+        }));
         Check("TN07 lịch hẹn hợp lệ vẫn là thông thường và retry cùng phiếu",()=>Tx(tx=>{
             ReceptionFixture(tx);tx.Connection!.Execute("""
                 INSERT dbo.LICH_KHAM(MaLich,MaBN,MaBS,MaCa,MaPhong,MaDV,NgayGioKham,ThoiLuongDuKien,UuTien,LyDoKham,TrangThai,NgayTao)

@@ -35,8 +35,8 @@ public sealed partial class DAL_THANHTOANTRONGOI
         if(h.PhienBanQuyTrinh==2)ReadPaymentResult(db,tx,h.MaHD,true); // Bản phát hành mới phải thu đủ.
         var details=db.Query<DongInHoaDon>("""
             SELECT c.MaCTHD,c.MaDVThucHien,c.MaCTPX,d.MaCTDT,d.MaDT,c.NoiDung,
-                CASE WHEN c.MaPhieuPhuThu IS NOT NULL THEN N'Lượt' ELSE COALESCE(d.DonViTinhChot,hh.DonViTinh) END DonViTinh,
-                CASE WHEN c.MaPhieuPhuThu IS NOT NULL THEN CAST(1 AS decimal(18,3)) ELSE COALESCE(s.SoLuong,x.SoLuong,d.SoLuong) END SoLuong,
+                CASE WHEN c.MaPhieuPhuThu IS NOT NULL OR c.MaPhienAI IS NOT NULL THEN N'Lượt' ELSE COALESCE(d.DonViTinhChot,hh.DonViTinh) END DonViTinh,
+                CASE WHEN c.MaPhieuPhuThu IS NOT NULL OR c.MaPhienAI IS NOT NULL THEN CAST(1 AS decimal(18,3)) ELSE COALESCE(s.SoLuong,x.SoLuong,d.SoLuong) END SoLuong,
                 COALESCE(s.DonGia,c.DonGia) DonGia,c.ThanhTien,x.MaLo,l.SoLo,c.MaPhieuPhuThu
             FROM dbo.CHI_TIET_HOA_DON c WITH(HOLDLOCK)
             LEFT JOIN dbo.DICH_VU_THUC_HIEN s WITH(HOLDLOCK) ON s.MaDVThucHien=c.MaDVThucHien

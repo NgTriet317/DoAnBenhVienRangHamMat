@@ -62,7 +62,32 @@ public sealed partial class DAL_DOISOATDULIEU
              JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=other.MaCTPX
              WHERE x.MaCTDT=c.MaCTDT AND bill.TrangThai<>N'Hủy' AND other.MaCTHD<>c.MaCTHD)
             """);
-        if(has("CHI_TIET_HOA_DON.MaPhieuPhuThu"))
+        if(has("CHI_TIET_HOA_DON.MaPhieuPhuThu") && has("CHI_TIET_HOA_DON.MaPhienAI") &&
+            has("AI_YEU_CAU_TAO_PHIEU.MaPhien") && has("AI_KET_QUA_TAO_PHIEU.MaPhien"))
+            add("HD_PHUTHU","SaiXacDinh","Hóa đơn dịch vụ phải có đúng một phụ thu theo phiếu hoặc phiên AI lịch sử, đúng nguồn và không giảm giá vào phụ thu.","""
+                SELECT N'HOA_DON' Bang,h.MaHD Khoa,p.MaPhieu LienQuan
+                FROM dbo.HOA_DON h JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=h.MaLS
+                JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu
+                OUTER APPLY(SELECT TOP(1) a.MaPhien FROM(
+                    SELECT k.MaPhien FROM dbo.AI_KET_QUA_TAO_PHIEU k
+                    WHERE k.MaPhieu=p.MaPhieu AND k.LoaiKham=N'DichVu' AND k.PhuThuDuKien=30000
+                    UNION ALL SELECT r.MaPhien FROM dbo.AI_YEU_CAU_TAO_PHIEU r
+                    WHERE r.MaPhieu=p.MaPhieu AND r.LoaiKham=N'service'
+                        AND NOT EXISTS(SELECT 1 FROM dbo.AI_KET_QUA_TAO_PHIEU k WHERE k.MaPhien=r.MaPhien)
+                ) a ORDER BY a.MaPhien) ai
+                CROSS APPLY(SELECT CASE WHEN p.LoaiKham=N'Dịch vụ' AND p.PhiPhuThuDichVu>0 THEN p.PhiPhuThuDichVu
+                    WHEN p.PhiPhuThuDichVu=0 AND ai.MaPhien IS NOT NULL THEN CAST(30000 AS decimal(18,2)) ELSE 0 END Fee) expected
+                WHERE h.TrangThai=N'Đã xác nhận' AND(
+                    (SELECT COUNT(*) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD
+                        AND(c.MaPhieuPhuThu IS NOT NULL OR c.MaPhienAI IS NOT NULL))<>CASE WHEN expected.Fee>0 THEN 1 ELSE 0 END
+                    OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD
+                        AND(c.MaPhieuPhuThu IS NOT NULL OR c.MaPhienAI IS NOT NULL)
+                        AND(c.ThanhTien<>expected.Fee OR c.DonGia<>expected.Fee
+                            OR(p.PhiPhuThuDichVu>0 AND(c.MaPhieuPhuThu IS NULL OR c.MaPhieuPhuThu<>p.MaPhieu OR c.MaPhienAI IS NOT NULL))
+                            OR(p.PhiPhuThuDichVu=0 AND(c.MaPhieuPhuThu IS NOT NULL OR c.MaPhienAI IS NULL OR c.MaPhienAI<>ai.MaPhien))))
+                    OR h.GiamGia>h.TongTien-expected.Fee)
+                """);
+        else if(has("CHI_TIET_HOA_DON.MaPhieuPhuThu"))
             add("HD_PHUTHU","SaiXacDinh","Hóa đơn xác nhận dịch vụ phải có đúng một phụ thu30000 đúng phiếu; phiếu thường không có phụ thu.","""
                 SELECT N'HOA_DON' Bang,h.MaHD Khoa,p.MaPhieu LienQuan FROM dbo.HOA_DON h JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=h.MaLS
                 JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=l.MaPhieu WHERE h.TrangThai=N'Đã xác nhận' AND(

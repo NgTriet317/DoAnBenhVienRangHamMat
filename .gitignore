@@ -3,4 +3,8 @@ obj/
 .vs/
 *.user
 *.suo
+**/AI/Config/AiSecrets.local.json
 /PhatHanh/
+/RangHamMat.Wpf/KioskServer/
+/RHM/Debug/
+/publish-kiosk-api.log

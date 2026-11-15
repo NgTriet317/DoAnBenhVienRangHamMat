@@ -1,6 +1,8 @@
 ﻿# Quản lý Bệnh viện Răng Hàm Mặt
 
-WPF .NET8 + SQL Server2016SP1 trở lên. Solution có đúng bốn project: RangHamMat.Wpf (giao diện), ET, DAL và BUS. Views chỉ có các cặp XAML/code-behind; C# phụ trợ ở Presentation/Controls.
+WPF .NET8 + SQL Server2016SP1 trở lên. Solution gồm bốn tầng RangHamMat.Wpf (giao diện), ET, DAL, BUS và backend RangHamMat.Kiosk.Api. Views chỉ có các cặp XAML/code-behind; C# phụ trợ ở Presentation/Controls. Các project trong Test là bộ kiểm tra, không phải ứng dụng phát hành.
+
+Bản hợp nhất `Sprint3_tan` và `AI` trên nhánh `tan` dùng chung SQL **74 bảng**, cấu hình kết nối, luồng tiếp nhận và hóa đơn. AI lưu bản khai để nhân viên có quyền tiếp nhận xác minh trước khi lập phiếu. Chính sách lương tháng cũ và chính sách lương ca được giữ riêng theo cấu hình chính sách; phụ thu khám dịch vụ chỉ được tính một lần. Xem [kết quả kiểm chứng tích hợp](docs/integration/HOP_NHAT_TAN_AI_20261115.md).
 
 ## Database: một file SQL duy nhất
 
@@ -26,7 +28,7 @@ Danh mục gốc có52 sản phẩm có nguồn và20 nhóm độc lập mẫu �
 
 ## Cấu hình và chạy
 
-Mở BenhVienRangHamMat.sln bằng Visual Studio2022 có .NET desktop development/.NET8 SDK, chọn RangHamMat.Wpf làm startup rồi F5. Hoặc mở PhatHanh/RangHamMat.Wpf.exe với .NET8 Desktop Runtime trên Windows.
+Mở BenhVienRangHamMat.sln bằng Visual Studio2022 có .NET desktop development/.NET8 SDK, chọn RangHamMat.Wpf làm startup rồi F5. Hoặc mở PhatHanh/RangHamMat.Wpf.exe với .NET8 Desktop Runtime trên Windows. Backend Kiosk trong bản phát hành cần thêm ASP.NET Core Runtime8. Build/publish WPF tự dựng backend từ mã nguồn hiện tại và đặt vào KioskServer; các DLL/MSI cũ trong thư mục nguồn không được dùng để phát hành bản hợp nhất.
 
 Máy mới cần cài SQL Server2016SP1 trở lên, mở toàn bộ file SQL chính trong SSMS rồi F5 và cấu hình đúng instance/quyền truy cập trước khi F5 ứng dụng. Không cần SQLCMD mode hoặc đường dẫn backup của máy cũ. File hiện tại chứa dữ liệu phục hồi; dữ liệu nhập sau lần đóng gói cần sao lưu/khôi phục hoặc cập nhật snapshot bằng tools/CapNhatDuLieuSql.ps1 trước khi chuyển máy.
 

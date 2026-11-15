@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Thư viện truy cập dữ liệu .NET 8, dùng kiểu nullable khi đọc các cột SQL cho phép NULL. -->
   <PropertyGroup>
@@ -24,5 +24,6 @@
   <ItemGroup>
     <!-- Nhúng ánh xạ quyền vào assembly để DAL xác thực lại quyền từ cấu hình đi kèm bản build. -->
     <EmbeddedResource Include="ClinicalWorkflowPermissions.json" />
+	<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
   </ItemGroup>
 </Project>

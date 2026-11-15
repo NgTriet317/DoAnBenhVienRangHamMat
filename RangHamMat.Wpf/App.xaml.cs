@@ -33,11 +33,23 @@ namespace wpftest
         /// <summary>
         /// Khôi phục tài khoản đã ghi nhớ hoặc hiển thị đăng nhập khi chưa có phiên hợp lệ.
         /// </summary>
-        private void App_Startup(object sender, StartupEventArgs e)
+        private async void App_Startup(object sender, StartupEventArgs e)
         {
             // AI bổ sung: bắt lỗi ngày nhập bằng bàn phím trên các DatePicker của ứng dụng.
             RangHamMat.Controls.KiemTraNhapLieu.Register();
             PhienDangNhap.KhoiTaoPhienUngDung();
+            // Xác nhận database trước khi kiểm tra phiên đã ghi nhớ hoặc đăng nhập.
+            var busKetNoi = new BUS_CAUHINHCSDL();
+            if (!await busKetNoi.khoiPhucKetNoiAsync())
+            {
+                var formKetNoi = new CauHinhMayChu(busKetNoi, false);
+                MainWindow = formKetNoi;
+                if (formKetNoi.ShowDialog() != true)
+                {
+                    Shutdown();
+                    return;
+                }
+            }
             bool restored = false;
             try { restored = dichVuDangNhap.ThuKhoiPhuc(); }
             catch (System.Exception ex)

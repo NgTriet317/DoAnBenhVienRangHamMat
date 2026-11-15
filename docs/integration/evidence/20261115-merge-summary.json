@@ -1,0 +1,417 @@
+﻿{
+    "Date":  "2026-11-15",
+    "Sources":  {
+                    "Sprint3_tan":  "0994ecb75769c96a6c089a7f86dc58bfb92787d7",
+                    "AI":  "71f344ac275bb831ecd29da593dd64d10b988823"
+                },
+    "TargetBranch":  "tan",
+    "LocalStatus":  "PASS",
+    "StepCount":  32,
+    "Criteria":  [
+                     {
+                         "Id":  "TN01",
+                         "Status":  "PASS",
+                         "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\service.log",
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "TN02",
+                         "Status":  "PASS",
+                         "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\service.log",
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "TN03",
+                         "Status":  "PASS",
+                         "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\service.log",
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "TN04",
+                         "Status":  "PASS",
+                         "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\service.log",
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "TN05",
+                         "Status":  "PASS",
+                         "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\service.log",
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "TN06",
+                         "Status":  "PASS",
+                         "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\concurrent.log",
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "TN07",
+                         "Status":  "PASS",
+                         "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\service.log",
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "HD01",
+                         "Status":  "PASS",
+                         "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\service.log",
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "HD02",
+                         "Status":  "PASS",
+                         "Evidence":  [
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\foundation-new.log",
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\service.log"
+                                      ],
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "HD03",
+                         "Status":  "PASS",
+                         "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\service.log",
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "HD04",
+                         "Status":  "PASS",
+                         "Evidence":  [
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\foundation-new.log",
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\service.log"
+                                      ],
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "HD05",
+                         "Status":  "PASS",
+                         "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\service.log",
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "XR01",
+                         "Status":  "PASS",
+                         "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\xray.log",
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "XR02",
+                         "Status":  "PASS",
+                         "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\xray.log",
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "XR03",
+                         "Status":  "PASS",
+                         "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\xray.log",
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "XR04",
+                         "Status":  "PENDING_ENVIRONMENT",
+                         "Evidence":  "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\xray-restore.log",
+                         "Note":  "SQL/file restore trên cùng máy đã kiểm nếu bước xanh; còn kho UNC/hai máy và restore trên máy khác."
+                     },
+                     {
+                         "Id":  "DB01",
+                         "Status":  "PASS",
+                         "Evidence":  [
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\install-new.log",
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\preserve-legacy.log",
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\preserve-rerun-1.log",
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\preserve-rerun-2.log",
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\interrupt-sealed.log"
+                                      ],
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "DB02",
+                         "Status":  "PASS",
+                         "Evidence":  [
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\foundation-upgrade.log",
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\sql-sync.log",
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\p5.log",
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\constraints.log"
+                                      ],
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "BC01",
+                         "Status":  "PASS",
+                         "Evidence":  [
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\p5.log",
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\reports.log"
+                                      ],
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "BC02",
+                         "Status":  "PASS",
+                         "Evidence":  [
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\p5.log",
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\reports.log"
+                                      ],
+                         "Note":  ""
+                     },
+                     {
+                         "Id":  "RG01",
+                         "Status":  "PASS",
+                         "Evidence":  [
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\sql-sync.log",
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\clinical.log",
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\smoke27.log",
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\reports.log",
+                                          "D:\\Hoc Tap\\ChuyenDe\\Nhom4_QuanLyBenhVienRHM\\obj\\P6Evidence\\run-MergeTanAI_20261115_FinalB\\build-schema.log"
+                                      ],
+                         "Note":  ""
+                     }
+                 ],
+    "Steps":  [
+                  {
+                      "Name":  "preflight",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  0.22
+                  },
+                  {
+                      "Name":  "runner-checks",
+                      "Status":  "PASS",
+                      "Passed":  16,
+                      "Failed":  0,
+                      "DurationSeconds":  1.56
+                  },
+                  {
+                      "Name":  "install-new",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  5.08
+                  },
+                  {
+                      "Name":  "foundation-new",
+                      "Status":  "PASS",
+                      "Passed":  44,
+                      "Failed":  0,
+                      "DurationSeconds":  3.98
+                  },
+                  {
+                      "Name":  "install-baseline",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  3
+                  },
+                  {
+                      "Name":  "save-legacy",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  3.03
+                  },
+                  {
+                      "Name":  "install-upgrade",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  2.79
+                  },
+                  {
+                      "Name":  "preserve-legacy",
+                      "Status":  "PASS",
+                      "Passed":  62,
+                      "Failed":  0,
+                      "DurationSeconds":  2.98
+                  },
+                  {
+                      "Name":  "foundation-upgrade",
+                      "Status":  "PASS",
+                      "Passed":  44,
+                      "Failed":  0,
+                      "DurationSeconds":  4.28
+                  },
+                  {
+                      "Name":  "save-upgraded",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  3.54
+                  },
+                  {
+                      "Name":  "rerun-1",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  3.04
+                  },
+                  {
+                      "Name":  "preserve-rerun-1",
+                      "Status":  "PASS",
+                      "Passed":  74,
+                      "Failed":  0,
+                      "DurationSeconds":  3.29
+                  },
+                  {
+                      "Name":  "rerun-2",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  2.43
+                  },
+                  {
+                      "Name":  "preserve-rerun-2",
+                      "Status":  "PASS",
+                      "Passed":  74,
+                      "Failed":  0,
+                      "DurationSeconds":  3.11
+                  },
+                  {
+                      "Name":  "seed-sealed",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  8.72
+                  },
+                  {
+                      "Name":  "rerun-sealed",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  6.08
+                  },
+                  {
+                      "Name":  "interrupt-sealed",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  5.34
+                  },
+                  {
+                      "Name":  "repair-sealed",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  5.93
+                  },
+                  {
+                      "Name":  "sql-sync",
+                      "Status":  "PASS",
+                      "Passed":  32,
+                      "Failed":  0,
+                      "DurationSeconds":  5.38
+                  },
+                  {
+                      "Name":  "service",
+                      "Status":  "PASS",
+                      "Passed":  34,
+                      "Failed":  0,
+                      "DurationSeconds":  15.64
+                  },
+                  {
+                      "Name":  "concurrent",
+                      "Status":  "PASS",
+                      "Passed":  1,
+                      "Failed":  0,
+                      "DurationSeconds":  7.65
+                  },
+                  {
+                      "Name":  "clinical",
+                      "Status":  "PASS",
+                      "Passed":  47,
+                      "Failed":  0,
+                      "DurationSeconds":  15.36
+                  },
+                  {
+                      "Name":  "smoke27",
+                      "Status":  "PASS",
+                      "Passed":  2,
+                      "Failed":  0,
+                      "DurationSeconds":  5.19
+                  },
+                  {
+                      "Name":  "xray",
+                      "Status":  "PASS",
+                      "Passed":  34,
+                      "Failed":  0,
+                      "DurationSeconds":  13.47
+                  },
+                  {
+                      "Name":  "xray-restore",
+                      "Status":  "PASS",
+                      "Passed":  2,
+                      "Failed":  0,
+                      "DurationSeconds":  20.82
+                  },
+                  {
+                      "Name":  "smb-loopback",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  4.58
+                  },
+                  {
+                      "Name":  "create-demo",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  11.49
+                  },
+                  {
+                      "Name":  "p5",
+                      "Status":  "PASS",
+                      "Passed":  21,
+                      "Failed":  0,
+                      "DurationSeconds":  9.18
+                  },
+                  {
+                      "Name":  "p5-guards",
+                      "Status":  "PASS",
+                      "Passed":  7,
+                      "Failed":  0,
+                      "DurationSeconds":  23.09
+                  },
+                  {
+                      "Name":  "reports",
+                      "Status":  "PASS",
+                      "Passed":  58,
+                      "Failed":  0,
+                      "DurationSeconds":  15.22
+                  },
+                  {
+                      "Name":  "constraints",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  2.21
+                  },
+                  {
+                      "Name":  "build-schema",
+                      "Status":  "PASS",
+                      "Passed":  null,
+                      "Failed":  0,
+                      "DurationSeconds":  6.31
+                  }
+              ],
+    "CanonicalSqlSha256":  "C4EFE875853FD0E21F994943EF6EE7FDED06101588FBA586F0CB818E028F25A0",
+    "PublishedAssemblySha256":  {
+                                    "DAL.dll":  "460E2AE630AFA325F42CFAFE78DF7D1BB36E9EA56D556F5592F38BECD9D20B9F",
+                                    "ET.dll":  "BD7525165ED46C780F52251FA2327E2BB5369E72A900EA21634ECF05A8FBF97B",
+                                    "BUS.dll":  "3BEDB23CBFC8D6A25551B0DB7223DCCF9203FB4AEF0684758F44A99F2F5E6DAA"
+                                },
+    "AdditionalChecks":  {
+                             "XrayHistory":  "4 visits, metadata/preview/fullview/read-only",
+                             "ReportFormulas":  "27",
+                             "Input":  "All suites PASS",
+                             "Navigation":  "9/9",
+                             "ReceptionWithOvernight":  "34/34",
+                             "Dicom":  "27/27",
+                             "CustomRoles":  "6/6",
+                             "Clinical":  "47/47",
+                             "PublishedApi":  "15",
+                             "Login":  "14 memory + 37 multi-process",
+                             "Payments":  "8/8"
+                         },
+    "NotVerified":  [
+                        "Live Groq/Ollama responses",
+                        "Real two-machine UNC/SQL restoration",
+                        "Operational patient data"
+                    ]
+}

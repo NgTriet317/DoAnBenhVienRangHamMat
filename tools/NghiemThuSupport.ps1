@@ -83,7 +83,7 @@ Các mục Path tương đối với Root, Bytes và Sha256.
 #>
 function Get-P6SourceManifest {
  param([string]$Root)
- $files=@(foreach($folder in @('ET','DAL','BUS','RangHamMat.Wpf','Database','tools')){Get-ChildItem -LiteralPath (Join-Path $Root $folder) -File -Recurse | Where-Object {$_.FullName -notmatch '[\\/](obj|bin)[\\/]' -and $_.Name -match '\.(cs|xaml|csproj|json|sql|ps1|cs\.txt)$'}})
+ $files=@(foreach($folder in @('ET','DAL','BUS','RangHamMat.Wpf','RangHamMat.Kiosk.Api','Test','Database','tools')){Get-ChildItem -LiteralPath (Join-Path $Root $folder) -File -Recurse | Where-Object {$_.FullName -notmatch '[\\/](obj|bin)[\\/]' -and $_.Name -match '\.(cs|xaml|csproj|json|sql|ps1|cs\.txt)$'}})
  $files+=Get-Item -LiteralPath (Join-Path $Root 'BenhVienRangHamMat.sln')
  @($files|Sort-Object FullName|ForEach-Object {[pscustomobject]@{Path=$_.FullName.Substring($Root.Length+1).Replace('\','/');Bytes=$_.Length;Sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash}})
 }

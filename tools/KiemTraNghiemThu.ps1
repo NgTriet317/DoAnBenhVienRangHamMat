@@ -59,17 +59,17 @@ exit $LASTEXITCODE
   $null=Step 'preflight' $script:sqlTool @('-MayChu',$MayChu,'-SqlFile',$preflight) 0 'Marker' @('^P6_DATABASES_NEW\s*$')
   $null=Step 'runner-checks' 'KiemTraBoNghiemThu.ps1' @() 16
   $current=Join-Path $root 'Database/QLBenhVienRangHamMat.sql'
-  $null=Install 'install-new' $current $databases.New $true 64
+  $null=Install 'install-new' $current $databases.New $true 74
   $null=Step 'foundation-new' 'KiemTraNenTangSprint3.ps1' @('-MayChu',$MayChu,'-Database',$databases.New) 35
   $null=Install 'install-baseline' $baseline.Path $databases.Upgrade $true 62
   $null=Step 'save-legacy' 'KiemTraNenTangSprint3.ps1' @('-MayChu',$MayChu,'-Database',$databases.Upgrade,'-CheDo','LuuDoiChieu') 0 'Marker' @('^Saved 62 table fingerprints')
-  $null=Install 'install-upgrade' $current $databases.Upgrade $false 64
+  $null=Install 'install-upgrade' $current $databases.Upgrade $false 74
   $null=Step 'preserve-legacy' 'KiemTraNenTangSprint3.ps1' @('-MayChu',$MayChu,'-Database',$databases.Upgrade,'-CheDo','DoiChieu') 62
   $null=Step 'foundation-upgrade' 'KiemTraNenTangSprint3.ps1' @('-MayChu',$MayChu,'-Database',$databases.Upgrade) 35
-  $null=Step 'save-upgraded' 'KiemTraNenTangSprint3.ps1' @('-MayChu',$MayChu,'-Database',$databases.Upgrade,'-CheDo','LuuDoiChieu') 0 'Marker' @('^Saved 64 table fingerprints')
+  $null=Step 'save-upgraded' 'KiemTraNenTangSprint3.ps1' @('-MayChu',$MayChu,'-Database',$databases.Upgrade,'-CheDo','LuuDoiChieu') 0 'Marker' @('^Saved 74 table fingerprints')
   foreach($iteration in 1,2){
-   $null=Install ('rerun-'+$iteration) $current $databases.Upgrade $false 64
-   $null=Step ('preserve-rerun-'+$iteration) 'KiemTraNenTangSprint3.ps1' @('-MayChu',$MayChu,'-Database',$databases.Upgrade,'-CheDo','DoiChieu') 64
+   $null=Install ('rerun-'+$iteration) $current $databases.Upgrade $false 74
+   $null=Step ('preserve-rerun-'+$iteration) 'KiemTraNenTangSprint3.ps1' @('-MayChu',$MayChu,'-Database',$databases.Upgrade,'-CheDo','DoiChieu') 74
   }
   $null=Step 'seed-sealed' 'KiemTraNenTangSprint3.ps1' @('-MayChu',$MayChu,'-Database',$databases.Rerun,'-TaoDatabaseKiemThu','-CheDo','GhiDuLieuChayLai') 0 'Marker' @('^PASS: --seed-rerun\s*$')
   $null=Step 'rerun-sealed' 'KiemTraNenTangSprint3.ps1' @('-MayChu',$MayChu,'-Database',$databases.Rerun,'-TaoDatabaseKiemThu','-CheDo','KiemTraChayLai') 0 'Marker' @('^PASS: --verify-rerun\s*$')

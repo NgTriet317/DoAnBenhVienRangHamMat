@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Thư viện nghiệp vụ .NET 8; nullable giúp phát hiện giá trị thiếu khi phối hợp các tầng. -->
   <PropertyGroup>

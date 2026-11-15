@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "RangHamMat.Kiosk.Api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:54200;http://localhost:54201"
+    }
+  }
+}

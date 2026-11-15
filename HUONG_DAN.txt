@@ -1,0 +1,42 @@
+RHM KIOSK AI V2.2 - TU DOI CHIEU BENH NHAN / KHONG TICK KHAI NHAM
+==================================================================
+1. CAC THAY DOI
+ - Xoa checkbox "Da tra cuu va xac minh: benh nhan khai nham da tung kham".
+ - Khi chon ban khai AI, WPF tra SQL theo HoTen + NgaySinh + SDT.
+ - Khong co ho so nghi trung -> hien tu tao benh nhan moi.
+ - Chi 1 ho so khop du 3 thong tin -> tu lien ket ho so cu.
+ - Ho so nghi trung / xung dot -> khong tu tao, can nhan vien doi chieu.
+ - Loi ket noi SQL -> KHONG xem nhu khong co ho so.
+ - Khi bam Tao phieu, SQL doi chieu lai va tao/ket noi trong cung transaction.
+ - DaTungKham la loi khai, KHONG phai dieu kien SQL de tao moi.
+ - Van giu checkbox "Toi da xac minh dung benh nhan..." truoc khi phat hanh
+   vi day la phieu y te chinh thuc, KHONG phai tick xac nhan KHAI NHAM.
+
+2. CAI DAT
+ - Sao luu database va source.
+ - Database da cai AI V2/V2.1: chay SQL/12_AI_TuDoiChieuBenhNhan.sql.
+ - Khong chay lai file SQL F5 tong hoac 07+08.
+ - Giai nen, mo PowerShell tai thu muc giai nen, chay:
+   powershell -ExecutionPolicy Bypass -File ".\CaiDat_V22.ps1" -ProjectRoot "D:\DoAnBenhVienRangHamMat"
+   Thay duong dan theo du an thuc te, thu muc chua RangHamMat.Wpf/BUS/DAL/ET.
+ - Hoac sao luu roi chep 5 file vao dung thu muc tuong ung.
+ - Visual Studio 2022 -> Clean Solution -> Rebuild Solution -> F5.
+ - Khong can sua PhieuHuongDan.xaml; nut da hoat dong giu nguyen.
+
+3. TEST
+ A. BN moi khai nham "da tung kham", HoTen+NgaySinh+SDT khong co trong DB:
+    hien "Khong tim thay ho so ... tu tao moi"; duyet -> tao BN/HS/Phieu.
+ B. BN cu co 1 ho so khop du HoTen+NgaySinh+SDT:
+    hien "Da tim thay ho so ... tu lien ket"; duyet -> lien ket dung MaBN.
+ C. BN khai "chua tung kham" nhung trung ho so cu: tu lien ket nhu B.
+ D. Trung ten+ngay sinh, khac SDT; trung SDT, khac ten: canh bao nghi trung.
+    Khong cho tu tao; nhan vien phai doi chieu danh tinh.
+ E. Doi ngay sinh/ten/SDT truoc khi duyet -> WPF tra lai SQL.
+ F. Mat SQL -> khong cho tu tao.
+ G. Duyet lai 1 phien -> nhan lai cung MaPhieu; khong tao trung.
+
+4. LUU Y
+ - Can co du thong tin HoTen, NgaySinh, SDT do nhan vien kiem tra.
+ - Neu khop thong tin khong du de xac minh danh tinh, nhan vien van chiu
+   trach nhiem doi chieu nguoi benh (checkbox xac minh chung duoc giu).
+ - Chua chay build / SQL Server tren Windows: kiem tra tren DB TEST truoc.

@@ -45,8 +45,17 @@ static class Program
         var timeout = new DispatcherTimer { Interval = TimeSpan.FromSeconds(40) };
         timeout.Tick += (_, _) => Fail(new Exception("Quá thời gian kiểm tra " + phase));
         timeout.Start();
-        app.Dispatcher.BeginInvoke(new Action(() => Step(RunPhase)));
+        // Khởi động hiện kiểm SQL bất đồng bộ trước khi mở cửa sổ; chờ đúng trạng thái sẵn sàng.
+        var startupReady = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+        startupReady.Tick += (_, _) =>
+        {
+            if (app.MainWindow is not (DangNhap or MainWindow) || !app.MainWindow.IsVisible) return;
+            startupReady.Stop();
+            Step(RunPhase);
+        };
+        startupReady.Start();
         app.Run();
+        startupReady.Stop();
         timeout.Stop();
         if (failures == 0 && phase is "login" or "restore" or "restore-staff") Check(File.Exists(path), "Thoát ứng dụng giữ phiên trên đĩa");
         if (failures == 0 && phase == "logout-exit") Check(!File.Exists(path), "Thoát màn hình đăng nhập sau đăng xuất không khôi phục tài khoản cũ");

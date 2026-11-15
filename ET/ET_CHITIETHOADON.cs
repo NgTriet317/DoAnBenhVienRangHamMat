@@ -80,6 +80,8 @@ namespace ET
         public string? MaCTDT { get; set; }
         /// <summary>Nguồn phụ thu độc lập với dịch vụ/thuốc; mỗi phiếu chỉ thu một lần.</summary>
         public string? MaPhieuPhuThu { get; set; }
+        /// <summary>Phiên AI khám dịch vụ được tính phụ thu một lần ở hóa đơn.</summary>
+        public Guid? MaPhienAI { get; set; }
         /// <summary>
         /// Nội dung chứng từ hoặc khoản thu; ánh xạ cột NoiDung của bảng trong TableAttribute.
         /// </summary>

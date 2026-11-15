@@ -61,7 +61,8 @@ public sealed record HoaDonDoiChieu(string MaHD, string TrangThai, int PhienBanQ
 public sealed record BangTinhPhi(string MaLS, string MaBN, string HoTenBN, string? MaKhoCapThuoc,
     IReadOnlyList<DongPhiDichVu> DichVu, IReadOnlyList<DongPhiThuoc> Thuoc,
     IReadOnlyList<HoaDonDoiChieu> HoaDonCu, string? DauVanTay, bool DuocThanhToan, string ThongBao,
-    string? MaHDChoThu = null, decimal PhiPhuThu = 0, string? MaPhieuPhuThu = null)
+    string? MaHDChoThu = null, decimal PhiPhuThu = 0, string? MaPhieuPhuThu = null,
+    decimal PhuThuTiepNhanAI = 0, Guid? MaPhienAI = null)
 {
     /// <summary>
     /// Tổng tiền dịch vụ được cộng từ các dòng thành phần trong DichVu.
@@ -72,7 +73,7 @@ public sealed record BangTinhPhi(string MaLS, string MaBN, string HoTenBN, strin
     /// </summary>
     public decimal TienThuoc => Thuoc.Sum(d => d.ThanhTien);
     /// <summary>
-    /// Tổng tiền cần đối chiếu trước khi thu, bằng tiền dịch vụ cộng tiền thuốc.
+    /// Tổng tiền cần đối chiếu trước khi thu; phụ thu dùng nguồn phiếu hoặc nguồn AI lịch sử.
     /// </summary>
-    public decimal TongTien => TienDichVu + TienThuoc + PhiPhuThu;
+    public decimal TongTien => TienDichVu + TienThuoc + PhiPhuThu + PhuThuTiepNhanAI;
 }

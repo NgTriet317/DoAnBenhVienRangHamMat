@@ -1,0 +1,32 @@
+Database: RHM_Hospital_Test_MergeSql_20261115_F
+Server: local MSSQLSERVER (shared-memory connection lpc:localhost)
+Scope: isolated test database only; no production database changes.
+
+Command:
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraHopNhatAI.ps1 -Database RHM_Hospital_Test_MergeSql_20261115_F
+
+PASS: fresh install, 74 tables and public runtime schema validation.
+PASS: foreign keys and CHECK constraints trusted; all workflow triggers enabled.
+PASS: normal/service staff issuance, canonical fee, retry and atomic draft links (rolled back).
+PASS: missing staff session is rejected.
+PASS: linking a receipt also requires a current staff session.
+PASS: rerunning installer preserves the row count of every table.
+
+Existing payroll regression binary:
+obj/SqlSyncChecks/bin/Debug/net8.0/SqlSyncChecks.exe lpc:localhost RHM_Hospital_Test_MergeSql_20261115_F
+RESULT: 32 passed; 0 failed
+Unchanged assertions include monthly V9 leave/late time/adjustments, holiday divisor,
+source commission identity, payroll closing, closed-document protection and V8 money.
+
+Additional rollback checks:
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraHopNhatAI.ps1 -Database RHM_Hospital_Test_MergeSql_20261115_F -ChiKiemTra
+PASS: fixed-shift salary, one annual-leave day for two shifts, commission retry and closing.
+
+Earlier failing cases reproduced before fixes:
+- Baseline Sprint3 installer: missing AI/annual-leave schema (55991).
+- Rerun: catalog rewriter attempted CREATE on an existing leading-comment procedure (2714).
+- Payroll: 22 passed/10 failed after dropping legacy unclassified leave; fixed without weakening assertions.
+- Legacy receipt linking: missing session reached draft lookup (51001); now rejected as unauthorized (55020).
+
+Raw local execution output: obj/MergeSqlChecks/install-F.log,
+obj/MergeSqlChecks/payroll-F.log, obj/MergeSqlChecks/extended-F.log.

@@ -1,0 +1,137 @@
+using System.Reflection;
+using System.Security.Claims;
+using System.Text.RegularExpressions;
+using BUS;
+using DAL;
+using Dapper;
+using ET;
+using Microsoft.Data.SqlClient;
+using RangHamMat;
+
+// Only GUID-prefixed fixtures are written, in an explicitly named test database.
+// No login/audit session is created and all fixture rows are removed after the checks.
+static class Program
+{
+    static int passed, failed;
+
+    static int Main(string[] args)
+    {
+        if (args.Length != 2 || !Regex.IsMatch(args[1], "^RHM_Hospital_Test_[A-Za-z0-9_]+$")) return 2;
+        var connection = new SqlConnectionStringBuilder
+        {
+            DataSource = args[0], InitialCatalog = args[1], IntegratedSecurity = true,
+            Encrypt = true, TrustServerCertificate = true
+        }.ConnectionString;
+        var suffix = Guid.NewGuid().ToString("N");
+        var roleId = "MUIR_" + suffix;
+        var aliasId = "MUIA_" + suffix;
+        var employeeId = "MUIN_" + suffix;
+        var accountId = "MUIT_" + suffix;
+        var username = "mui_" + suffix;
+        var roleName = "MUI Staff " + suffix[..8];
+        var aliasCreated = false;
+        var originalConnection = Environment.GetEnvironmentVariable("RHM_CONNECTION_STRING");
+        var originalPrincipal = Thread.CurrentPrincipal;
+        using var db = new SqlConnection(connection);
+        try
+        {
+            db.Open();
+            db.Execute("EXEC sys.sp_set_session_context @key=N'RHM.MaPhien',@value=NULL");
+            using (var tx = db.BeginTransaction())
+            {
+                db.Execute("INSERT dbo.VAI_TRO(MaVaiTro,TenVaiTro,MoTa) VALUES(@roleId,@roleName,N'Fixture kiểm thử hợp nhất')",
+                    new { roleId, roleName }, tx);
+                var existingAlias = db.QueryFirstOrDefault<string>(
+                    "SELECT MaVaiTro FROM dbo.VAI_TRO WHERE UPPER(LTRIM(RTRIM(TenVaiTro)))=N'QUẢN TRỊ VIÊN'", transaction: tx);
+                if (existingAlias is null)
+                {
+                    db.Execute("INSERT dbo.VAI_TRO(MaVaiTro,TenVaiTro,MoTa) VALUES(@aliasId,N'Quản trị viên',N'Fixture kiểm thử hợp nhất')",
+                        new { aliasId }, tx);
+                    aliasCreated = true;
+                }
+                else aliasId = existingAlias;
+                db.Execute("""
+                    INSERT dbo.NHAN_VIEN(MaNV,HoTen,MaChucVu,NgayVaoLam,TrangThai)
+                    VALUES(@employeeId,N'Kiểm thử hợp nhất vai trò',N'CV001',CONVERT(date,SYSDATETIME()),N'Đang làm việc');
+                    INSERT dbo.TAI_KHOAN(MaTK,TenDangNhap,MatKhauHash,MaVaiTro,MaNV,MaKhoa,MaPhong,TrangThai)
+                    SELECT TOP (1) @accountId,@username,MatKhauHash,@roleId,@employeeId,MaKhoa,MaPhong,N'Đang hoạt động'
+                    FROM dbo.TAI_KHOAN WHERE TrangThai=N'Đang hoạt động' ORDER BY MaTK;
+                    IF @@ROWCOUNT<>1 THROW 53099,N'Thiếu tài khoản gốc cho fixture kiểm thử.',1;
+                    INSERT dbo.PHAN_QUYEN_VAI_TRO(MaVaiTro,MaPhanHe,DuocTruyCap)
+                    VALUES(@roleId,N'KhamDieuTri',1),(@roleId,N'TroLyAI',1);
+                    """, new { employeeId, accountId, username, roleId }, tx);
+                tx.Commit();
+            }
+            Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING", connection);
+            Thread.CurrentPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, accountId),
+                new Claim(DinhDanhNghiepVu.MaNhanVienClaim, employeeId)
+            }, DinhDanhNghiepVu.KieuXacThuc));
+
+            Check("Custom role is accepted without the Admin flag", () =>
+            {
+                var result = RolePolicy(roleId);
+                Require(result.Valid && !result.Admin);
+            });
+            Check("Missing SQL role is rejected", () => Require(!RolePolicy("MUI_MISSING_" + suffix).Valid));
+            Check("Custom role receives its saved AI menu grant", () =>
+                Require(new BUS_PHANQUYENVAITRO().layQuyenTheoTaiKhoan(accountId).Contains("TroLyAI")));
+            Check("Menu grant does not grant clinical business rights", () =>
+            {
+                var actor = new DAL_QUYENNGHIEPVU().LayNguCanh(employeeId);
+                Require(!actor.LaAdmin && !actor.CoQuyen(QuyenLamViec.TiepNhan) && !actor.CoQuyen(QuyenLamViec.Kham));
+            });
+            Check("Quản trị viên is accepted by the login role policy", () =>
+            {
+                var result = RolePolicy(aliasId);
+                Require(result.Valid && result.Admin);
+            });
+            db.Execute("UPDATE dbo.TAI_KHOAN SET MaVaiTro=@aliasId WHERE MaTK=@accountId", new { aliasId, accountId });
+            Check("Quản trị viên is revalidated as Admin by the business DAL", () =>
+            {
+                var actor = new DAL_QUYENNGHIEPVU().LayNguCanh(employeeId);
+                Require(actor.LaAdmin && actor.CoQuyen(QuyenLamViec.TiepNhan) && actor.CoQuyen(QuyenLamViec.Kham));
+            });
+        }
+        catch (Exception ex) { failed++; Console.WriteLine("FAIL: SQL role fixture: " + ex.GetBaseException().Message); }
+        finally
+        {
+            Thread.CurrentPrincipal = originalPrincipal;
+            Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING", originalConnection);
+            if (db.State == System.Data.ConnectionState.Open)
+            {
+                try
+                {
+                    db.Execute("""
+                        DELETE dbo.TAI_KHOAN WHERE MaTK=@accountId AND MaNV=@employeeId;
+                        DELETE dbo.NHAN_VIEN WHERE MaNV=@employeeId;
+                        DELETE dbo.PHAN_QUYEN_VAI_TRO WHERE MaVaiTro=@roleId;
+                        DELETE dbo.VAI_TRO WHERE MaVaiTro=@roleId;
+                        IF @aliasCreated=1 DELETE dbo.VAI_TRO WHERE MaVaiTro=@aliasId;
+                        """, new { accountId, employeeId, roleId, aliasId, aliasCreated });
+                }
+                catch (Exception ex) { failed++; Console.WriteLine("FAIL: SQL fixture cleanup: " + ex.GetBaseException().Message); }
+            }
+        }
+        Console.WriteLine($"RESULT: {passed} passed, {failed} failed");
+        return failed == 0 ? 0 : 1;
+    }
+
+    static (bool Valid, bool Admin) RolePolicy(string role)
+    {
+        var service = typeof(PhienDangNhap).Assembly.GetType("RangHamMat.DichVuDangNhap")!;
+        var method = service.GetMethod("ThuLayVaiTro", BindingFlags.Static | BindingFlags.NonPublic)!;
+        object[] parameters = { new ET_TAIKHOAN { MaVaiTro = role }, false };
+        return ((bool)method.Invoke(null, parameters)!, (bool)parameters[1]);
+    }
+    static void Require(bool value)
+    {
+        if (!value) throw new Exception("SQL role authorization did not match the expected access.");
+    }
+    static void Check(string name, Action action)
+    {
+        try { action(); passed++; Console.WriteLine("PASS: " + name); }
+        catch (Exception ex) { failed++; Console.WriteLine("FAIL: " + name + ": " + ex.GetBaseException().Message); }
+    }
+}

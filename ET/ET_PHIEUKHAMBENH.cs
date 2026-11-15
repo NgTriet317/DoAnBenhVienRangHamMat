@@ -34,7 +34,7 @@ namespace ET
         /// <summary>
         /// Giá trị lưu nội bộ của thuộc tính MaNVTiepNhan, dùng bởi getter/setter tương ứng.
         /// </summary>
-        private string maNVTiepNhan = string.Empty;
+        private string? maNVTiepNhan;
         /// <summary>
         /// Giá trị lưu nội bộ của thuộc tính MaDV, dùng bởi getter/setter tương ứng.
         /// </summary>
@@ -68,7 +68,7 @@ namespace ET
         /// <summary>
         /// Nhận các giá trị cột qua tham số và gán cho thực thể; việc gọi constructor không ghi dữ liệu xuống SQL.
         /// </summary>
-        public ET_PHIEUKHAMBENH(string maPhieu, string maHS, string? maLich, string maPhong, string? maBS, string maNVTiepNhan, string? maDV, int soThuTu, DateTime thoiGianTiepNhan, string lyDoKham, string trangThai, string? ghiChu)
+        public ET_PHIEUKHAMBENH(string maPhieu, string maHS, string? maLich, string maPhong, string? maBS, string? maNVTiepNhan, string? maDV, int soThuTu, DateTime thoiGianTiepNhan, string lyDoKham, string trangThai, string? ghiChu)
         {
             this.maPhieu = maPhieu;
             this.maHS = maHS;
@@ -108,7 +108,7 @@ namespace ET
         /// <summary>
         /// Mã nhân viên tiếp nhận bệnh nhân; ánh xạ cột MaNVTiepNhan của bảng trong TableAttribute.
         /// </summary>
-        public string MaNVTiepNhan { get => maNVTiepNhan; set => maNVTiepNhan = value; }
+        public string? MaNVTiepNhan { get => maNVTiepNhan; set => maNVTiepNhan = value; }
         /// <summary>
         /// Mã dịch vụ; ánh xạ cột MaDV của bảng trong TableAttribute. Cho phép null khi thông tin chưa có theo schema.
         /// </summary>

@@ -81,6 +81,9 @@ public sealed partial class DAL_THANHTOANTRONGOI : dbconnect
                         OR EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WITH(HOLDLOCK) WHERE c.MaDVThucHien=s.MaDVThucHien AND c.MaHD=@pendingId))
                 ORDER BY s.MaDVThucHien
                 """, new { maLS, pendingId = pending?.MaHD }, tx).ToArray();
+            var surchargeSource = db.QuerySingleOrDefault<ET_CHITIETHOADON>(DAL_CHITIETHOADON.SurchargeSourcesSql,
+                new { visitId = maLS }, tx);
+            var surchargeAmount = surchargeSource?.DonGia ?? 0;
             var orders = db.Query<DonPhi>("SELECT MaDT,NgayKe,MaDTThayThe FROM dbo.DON_THUOC WITH(HOLDLOCK) WHERE MaLS=@maLS AND TrangThai=N'Đã xác nhận' ORDER BY MaDT", new { maLS }, tx).ToArray();
             var lines = db.Query<ThuocPhi>("""
                 SELECT c.MaDT,c.MaCTDT,c.MaThuoc,t.MaHH,c.SoLuong,COALESCE(bill.DonGia,t.DonGiaBan) DonGia,
@@ -93,8 +96,10 @@ public sealed partial class DAL_THANHTOANTRONGOI : dbconnect
             if (pending is not null)
             {
                 var sources = db.Query<ET_CHITIETHOADON>("SELECT * FROM dbo.CHI_TIET_HOA_DON WITH(HOLDLOCK) WHERE MaHD=@MaHD", pending, tx).ToArray();
-                var surcharge=sources.Where(c=>c.MaPhieuPhuThu is not null).ToArray();
-                if (surcharge.Length!=(visit.PhiPhuThuDichVu>0?1:0) || surcharge.Any(c=>c.MaPhieuPhuThu!=visit.MaPhieu || c.ThanhTien!=visit.PhiPhuThuDichVu || c.DonGia!=visit.PhiPhuThuDichVu) ||
+                var surcharge=sources.Where(c=>c.MaPhieuPhuThu is not null || c.MaPhienAI is not null).ToArray();
+                if (surcharge.Length!=(surchargeAmount>0?1:0) || surcharge.Any(c=>
+                        c.MaPhieuPhuThu!=surchargeSource?.MaPhieuPhuThu || c.MaPhienAI!=surchargeSource?.MaPhienAI ||
+                        c.ThanhTien!=surchargeAmount || c.DonGia!=surchargeAmount) ||
                     sources.Length != services.Length + lines.Length + surcharge.Length || sources.Any(c => c.MaCTPX is not null) ||
                     !sources.Where(c => c.MaDVThucHien is not null).Select(c => c.MaDVThucHien).Order().SequenceEqual(services.Select(c => c.MaDVThucHien).Order()) ||
                     !sources.Where(c => c.MaCTDT is not null).Select(c => c.MaCTDT).Order().SequenceEqual(lines.Select(c => c.MaCTDT).Order()))
@@ -108,7 +113,7 @@ public sealed partial class DAL_THANHTOANTRONGOI : dbconnect
             // Cùng độ chính xác với NgayKe do P07 tạo; datetime2(0) làm tròn giây khi ghi.
             var now = db.ExecuteScalar<DateTime>("SELECT CONVERT(datetime2(0),SYSDATETIME())", transaction: tx);
             if (visit.ThoiGianKham > now || orders.Any(o => o.NgayKe > now)) throw Error("MaLS", "Ngày khám hoặc kê đơn chưa đến.");
-            if (services.Length == 0 && lines.Length == 0) throw Error("MaLS", "Không có dịch vụ hoặc thuốc hợp lệ để tính phí.");
+            if (services.Length == 0 && lines.Length == 0 && surchargeAmount == 0) throw Error("MaLS", "Không có dịch vụ hoặc thuốc hợp lệ để tính phí.");
 
             PhanBoLoThuoc.Lo[] lots = [];
             var drugs = new List<DongPhiThuoc>();
@@ -131,13 +136,16 @@ public sealed partial class DAL_THANHTOANTRONGOI : dbconnect
             }
             else maKhoCapThuoc = null;
             var hash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { maLS, maKhoCapThuoc,
-                visit.TrangThai, visit.TrangThaiPhieu, visit.NgayXacNhan,visit.MaPhieu,visit.PhiPhuThuDichVu, services, orders, lines, lots, drugs })));
+                visit.TrangThai, visit.TrangThaiPhieu, visit.NgayXacNhan,visit.MaPhieu,visit.PhiPhuThuDichVu,
+                surchargeSource, services, orders, lines, lots, drugs })));
             var fractional = services.Any(s => s.ThanhTien != decimal.Truncate(s.ThanhTien)) || drugs.Any(d => d.ThanhTien != decimal.Truncate(d.ThanhTien));
-            if (pending is not null && services.Sum(s => s.ThanhTien) + drugs.Sum(d => d.ThanhTien) + visit.PhiPhuThuDichVu != pending.SoTienPhaiThu)
+            if (pending is not null && services.Sum(s => s.ThanhTien) + drugs.Sum(d => d.ThanhTien) + surchargeAmount != pending.SoTienPhaiThu)
                 throw Error("MaHD", "Tổng phân bổ thuốc khác hóa đơn đã chốt; cần đối chiếu trước thu.");
             return new BangTinhPhi(maLS, visit.MaBN, visit.HoTenBN, maKhoCapThuoc, services, drugs, [], hash, !fractional,
                 fractional ? "Nguồn phí có số lẻ đồng. Cần điều chỉnh giá phù hợp trước thu; bảng tính giữ đúng tổng theo từng lô." :
-                pending is null ? "Giá và tồn sẽ được kiểm tra lại khi thanh toán." : "Hóa đơn đã lập khi hoàn tất khám. Thu đúng khoản đã chốt; tồn thuốc được kiểm tra khi thanh toán.", pending?.MaHD,visit.PhiPhuThuDichVu,visit.PhiPhuThuDichVu>0?visit.MaPhieu:null);
+                pending is null ? "Giá và tồn sẽ được kiểm tra lại khi thanh toán." : "Hóa đơn đã lập khi hoàn tất khám. Thu đúng khoản đã chốt; tồn thuốc được kiểm tra khi thanh toán.", pending?.MaHD,
+                surchargeSource?.MaPhieuPhuThu is not null ? surchargeAmount : 0, surchargeSource?.MaPhieuPhuThu,
+                surchargeSource?.MaPhienAI is not null ? surchargeAmount : 0, surchargeSource?.MaPhienAI);
         });
 
     /// <summary>

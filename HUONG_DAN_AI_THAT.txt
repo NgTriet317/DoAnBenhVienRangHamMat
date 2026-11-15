@@ -1,0 +1,48 @@
+KIOSK AI CHAT THAT — NANG CAP TU V2.2 (KHONG SUA LUONG TAO PHIEU)
+===================================================================
+
+GOI NAY CHI CAP NHAT:
+  - RangHamMat.Kiosk.Api/Program.cs: SQL, cookie, giao tiep model.
+  - RangHamMat.Kiosk.Api/AiDialogueEngine.cs: Goi Groq Cloud/Ollama, trich xuat JSON va sinh cau hoi that.
+  - RangHamMat.Kiosk.Api/wwwroot/index.html: Thong bao che do AI dang dung, consent cloud/local.
+  - SQL/14_AI_ChatThat.sql: 1 cot bo sung phuc vu xac nhan canh bao.
+  - Chay_AI_That.ps1 va CaiDat_AI_That.ps1.
+
+KHONG sua: TiepNhanAI.xaml, PhieuHuongDan.xaml, BUS/DAL/ET V2.2,
+AI_TaoPhieuTuBanKhai va cac bang BENH_NHAN / HO_SO_BENH_AN / PHIEU_KHAM_BENH.
+
+CAI DAT
+1. Sao luu project va database. Chay SQL/14_AI_ChatThat.sql trong SSMS.
+2. Giai nen ZIP. Mo PowerShell tai thu muc vua giai nen.
+3. Chay:
+   powershell -ExecutionPolicy Bypass -File ".\CaiDat_AI_That.ps1" -ProjectRoot "D:\DoAnBenhVienRangHamMat"
+4. Chinh -ProjectRoot dung voi thu muc co RangHamMat.Kiosk.Api.
+5. Lay API key RIENG cua Groq tu console.groq.com. KHONG dan key vao source/public GitHub.
+6. De chay Groq:
+   powershell -ExecutionPolicy Bypass -File ".\Chay_AI_That.ps1" -SqlServer "." -Provider groq
+   Script hoi key an toan, luu trong process, khong ghi file.
+7. De chay local Ollama (khong can Groq key):
+   Cai Ollama, chay: ollama pull qwen2.5:7b
+   powershell -ExecutionPolicy Bypass -File ".\Chay_AI_That.ps1" -SqlServer "." -Provider ollama -Model "qwen2.5:7b"
+8. Mo http://127.0.0.1:5188/health/ai va /health/db. Ca 2 can status=ready/ok.
+9. Mo http://127.0.0.1:5188 va thu chat. WPF tiep nhan/phieu A5 van nhu V2.2.
+
+CHI SU DUNG DU LIEU GIA TRONG BAN DEMO:
+Voi provider Groq Cloud, noi dung hoi thoai, ho ten, ngay sinh, so dien thoai va
+trieu chung duoc gui toi nha cung cap de suy luan. Can co co che dong y va danh
+gia nha cung cap/dieu kien bao mat truoc khi dung du lieu benh nhan that.
+
+NGUYEN TAC:
+- Cau hoi/tra loi binh thuong do AI tao moi dua tren ngữ canh (khong dung switch cau hoi mau).
+- Model trich xuat nhieu truong trong mot cau, server validate gia tri va luu SQL.
+- Chỉ server cho phep gui ban khai khi nguoi benh bam Xac nhan o buoc tom tat.
+- Cac canh bao suc khoe nghiem trong van do quy tac an toan tren server xu ly.
+- Neu model loi, tra 503 va KHONG am tham quay ve chatbot lap trinh san.
+- API chi mo tai 127.0.0.1:5188: muon chay tren 2 may can thiet ke TLS va auth rieng.
+
+KIEM TRA/CANH BAO:
+- Khong chay lai SQL F5 benh vien va khong chay lai SQL 07/08/10/12 neu da cai.
+- Neu `/health/db` bao migration chua cai, chay SQL/14_AI_ChatThat.sql.
+- Neu key sai, server tra loi HTTP 401 tu nha cung cap (trong client hien thong bao).
+- Neu model khong tai duoc, API 503, kiem tra Groq model/ket noi hoac Ollama serve.
+- Chua build .NET 8 / SQL Server tren Windows trong moi truong tao goi, hay test du lieu gia.

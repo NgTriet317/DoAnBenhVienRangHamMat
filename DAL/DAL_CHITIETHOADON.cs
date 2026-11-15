@@ -76,11 +76,11 @@ public sealed class DAL_CHITIETHOADON : dbconnect
     public DataTable GetInvoiceDetails(string invoiceId)
     {
         return Query("""
-        SELECT c.MaCTHD,c.MaHD,c.MaDVThucHien,c.MaCTPX,COALESCE(c.MaCTDT,x.MaCTDT) MaCTDT,c.MaPhieuPhuThu,c.NoiDung,c.DonGia,c.ThanhTien,
-            CASE WHEN c.MaPhieuPhuThu IS NOT NULL THEN CAST(1 AS decimal(18,3)) ELSE COALESCE(s.SoLuong,x.SoLuong,d.SoLuong) END SoLuong,
+        SELECT c.MaCTHD,c.MaHD,c.MaDVThucHien,c.MaCTPX,COALESCE(c.MaCTDT,x.MaCTDT) MaCTDT,c.MaPhieuPhuThu,c.MaPhienAI,c.NoiDung,c.DonGia,c.ThanhTien,
+            CASE WHEN c.MaPhieuPhuThu IS NOT NULL OR c.MaPhienAI IS NOT NULL THEN CAST(1 AS decimal(18,3)) ELSE COALESCE(s.SoLuong,x.SoLuong,d.SoLuong) END SoLuong,
             COALESCE(s.DonGia,c.DonGia) DonGiaChot,
-            CASE WHEN c.MaPhieuPhuThu IS NOT NULL THEN N'Phụ thu khám dịch vụ' WHEN c.MaDVThucHien IS NOT NULL THEN N'Dịch vụ' WHEN c.MaCTDT IS NOT NULL THEN N'Thuốc theo đơn' ELSE N'Thuốc đã cấp' END Loai,
-            d.MaDT,l.SoLo,COALESCE(d.DonViTinhChot,hh.DonViTinh) DonViTinh
+            CASE WHEN c.MaPhieuPhuThu IS NOT NULL OR c.MaPhienAI IS NOT NULL THEN N'Phụ thu khám dịch vụ' WHEN c.MaDVThucHien IS NOT NULL THEN N'Dịch vụ' WHEN c.MaCTDT IS NOT NULL THEN N'Thuốc theo đơn' ELSE N'Thuốc đã cấp' END Loai,
+            d.MaDT,l.SoLo,CASE WHEN c.MaPhieuPhuThu IS NOT NULL OR c.MaPhienAI IS NOT NULL THEN N'Lượt' ELSE COALESCE(d.DonViTinhChot,hh.DonViTinh) END DonViTinh
         FROM dbo.CHI_TIET_HOA_DON c
         LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
         LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
@@ -92,40 +92,74 @@ public sealed class DAL_CHITIETHOADON : dbconnect
     }
 
     /// <summary>
-    /// SQL hợp nhất dịch vụ đã xác nhận và thuốc đã xuất của cùng lần khám; NOT EXISTS loại nguồn đã có chi tiết hóa đơn. HOLDLOCK giữ ổn định giá thuốc khi đọc; dòng thuốc tính thành tiền bằng lượng xuất nhân giá bán và làm tròn hai chữ số.
+    /// Chọn duy nhất một phụ thu cho phiếu: ưu tiên phí đã chốt tại tiếp nhận; phiên AI chỉ bổ sung cho phiếu cũ chưa lưu phí.
+    /// Dùng cả trước khi ký khám để tổng kết và dấu vân tay khớp nguồn hóa đơn sau khi ký.
+    /// </summary>
+    internal const string SurchargeSourcesSql = """
+        SELECT l.MaLS,p.MaPhieu,
+            CASE WHEN p.PhiPhuThuDichVu>0 THEN p.MaPhieu END MaPhieuPhuThu,
+            CASE WHEN p.PhiPhuThuDichVu=0 THEN ai.MaPhien END MaPhienAI,
+            CASE WHEN p.PhiPhuThuDichVu>0 THEN p.PhiPhuThuDichVu ELSE CAST(30000 AS decimal(18,2)) END DonGia,
+            CASE WHEN p.PhiPhuThuDichVu>0 THEN N'Phụ thu khám dịch vụ (chọn bác sĩ)' ELSE N'Phụ thu tiếp nhận khám dịch vụ' END NoiDung
+        FROM dbo.LICH_SU_KHAM_BENH l WITH(HOLDLOCK)
+        JOIN dbo.PHIEU_KHAM_BENH p WITH(HOLDLOCK) ON p.MaPhieu=l.MaPhieu
+        OUTER APPLY(
+            SELECT TOP(1) source.MaPhien FROM(
+                SELECT k.MaPhien FROM dbo.AI_KET_QUA_TAO_PHIEU k WITH(HOLDLOCK)
+                WHERE k.MaPhieu=p.MaPhieu AND k.LoaiKham=N'DichVu' AND k.PhuThuDuKien=30000
+                UNION ALL
+                SELECT r.MaPhien FROM dbo.AI_YEU_CAU_TAO_PHIEU r WITH(HOLDLOCK)
+                WHERE r.MaPhieu=p.MaPhieu AND r.LoaiKham=N'service'
+                    AND NOT EXISTS(SELECT 1 FROM dbo.AI_KET_QUA_TAO_PHIEU k WITH(HOLDLOCK) WHERE k.MaPhien=r.MaPhien)
+            ) source ORDER BY source.MaPhien
+        ) ai
+        WHERE l.MaLS=@visitId AND ((p.LoaiKham=N'Dịch vụ' AND p.PhiPhuThuDichVu>0)
+            OR (p.PhiPhuThuDichVu=0 AND ai.MaPhien IS NOT NULL))
+        """;
+
+    /// <summary>Loại cả hai kiểu nguồn phụ thu đã thu của cùng lượt; không cấp lại phụ thu bằng kiểu nguồn còn lại.</summary>
+    private const string UnbilledSurchargesSql = "SELECT f.* FROM (" + SurchargeSourcesSql + """
+        ) f WHERE NOT EXISTS(
+            SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WITH(HOLDLOCK)
+            JOIN dbo.HOA_DON h WITH(HOLDLOCK) ON h.MaHD=c.MaHD
+            WHERE h.MaLS=f.MaLS AND (c.MaPhieuPhuThu IS NOT NULL OR c.MaPhienAI IS NOT NULL))
+        """;
+
+    /// <summary>
+    /// SQL hợp nhất dịch vụ, thuốc theo đơn đã xác nhận và một phụ thu chưa tính tiền của cùng lần khám.
     /// </summary>
     internal const string CompletionChargesSql = """
         SELECT s.MaDVThucHien,CAST(NULL AS nvarchar(50)) MaCTPX,CAST(NULL AS nvarchar(50)) MaCTDT,
-            d.TenDV NoiDung,CAST(NULL AS decimal(18,2)) DonGia,s.ThanhTien,CAST(NULL AS nvarchar(50)) MaPhieuPhuThu
+            d.TenDV NoiDung,CAST(NULL AS decimal(18,2)) DonGia,s.ThanhTien,
+            CAST(NULL AS nvarchar(50)) MaPhieuPhuThu,CAST(NULL AS uniqueidentifier) MaPhienAI
         FROM dbo.DICH_VU_THUC_HIEN s WITH(HOLDLOCK) JOIN dbo.DICH_VU d ON d.MaDV=s.MaDV
         WHERE s.MaLS=@visitId AND s.TrangThai=N'Đã xác nhận'
           AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WITH(HOLDLOCK) WHERE c.MaDVThucHien=s.MaDVThucHien)
         UNION ALL
         SELECT NULL,NULL,c.MaCTDT,c.TenThuocChot+N' '+c.HamLuongChot,t.DonGiaBan,
-            CAST(ROUND(c.SoLuong*t.DonGiaBan,2) AS decimal(18,2)),NULL
+            CAST(ROUND(c.SoLuong*t.DonGiaBan,2) AS decimal(18,2)),NULL,CAST(NULL AS uniqueidentifier)
         FROM dbo.DON_THUOC r WITH(HOLDLOCK) JOIN dbo.CHI_TIET_DON_THUOC c WITH(HOLDLOCK) ON c.MaDT=r.MaDT
         JOIN dbo.THUOC t WITH(HOLDLOCK) ON t.MaThuoc=c.MaThuoc
         WHERE r.MaLS=@visitId AND r.TrangThai=N'Đã xác nhận'
           AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON h WITH(HOLDLOCK) WHERE h.MaCTDT=c.MaCTDT)
         UNION ALL
-        SELECT NULL,NULL,NULL,N'Phụ thu khám dịch vụ (chọn bác sĩ)',p.PhiPhuThuDichVu,p.PhiPhuThuDichVu,p.MaPhieu
-        FROM dbo.LICH_SU_KHAM_BENH l WITH(HOLDLOCK) JOIN dbo.PHIEU_KHAM_BENH p WITH(HOLDLOCK) ON p.MaPhieu=l.MaPhieu
-        WHERE l.MaLS=@visitId AND p.LoaiKham=N'Dịch vụ' AND p.PhiPhuThuDichVu>0
-          AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WITH(HOLDLOCK) WHERE c.MaPhieuPhuThu=p.MaPhieu)
-        """;
+        SELECT NULL,NULL,NULL,f.NoiDung,f.DonGia,f.DonGia,f.MaPhieuPhuThu,f.MaPhienAI
+        FROM (
+        """ + UnbilledSurchargesSql + ") f";
 
     /// <summary>
     /// Câu lệnh SQL đủ điều kiện các khoản phí SQL dùng trong các thao tác của lớp; giá trị đầu vào được truyền theo cách nơi gọi quy định.
     /// </summary>
     internal const string EligibleChargesSql = """
         SELECT s.MaDVThucHien,CAST(NULL AS nvarchar(50)) MaCTPX,d.TenDV NoiDung,s.SoLuong,
-            s.DonGia DonGiaChot,CAST(NULL AS decimal(18,2)) DonGia,s.ThanhTien,N'Dịch vụ' Loai,CAST(NULL AS nvarchar(50)) MaPhieuPhuThu
+            s.DonGia DonGiaChot,CAST(NULL AS decimal(18,2)) DonGia,s.ThanhTien,N'Dịch vụ' Loai,
+            CAST(NULL AS nvarchar(50)) MaPhieuPhuThu,CAST(NULL AS uniqueidentifier) MaPhienAI
         FROM dbo.DICH_VU_THUC_HIEN s JOIN dbo.DICH_VU d ON d.MaDV=s.MaDV
         WHERE s.MaLS=@visitId AND s.TrangThai=N'Đã xác nhận'
             AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaDVThucHien=s.MaDVThucHien)
         UNION ALL
         SELECT NULL,x.MaCTPX,COALESCE(NULLIF(ct.TenThuocChot,N''),hh.TenHH)+N' '+COALESCE(NULLIF(ct.HamLuongChot,N''),t.HamLuong),x.SoLuong,t.DonGiaBan,t.DonGiaBan,
-            CAST(ROUND(x.SoLuong*t.DonGiaBan,2) AS decimal(18,2)),N'Thuốc đã cấp',NULL
+            CAST(ROUND(x.SoLuong*t.DonGiaBan,2) AS decimal(18,2)),N'Thuốc đã cấp',NULL,CAST(NULL AS uniqueidentifier)
         FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX
         JOIN dbo.CHI_TIET_DON_THUOC ct ON ct.MaCTDT=x.MaCTDT
         JOIN dbo.DON_THUOC dt ON dt.MaDT=ct.MaDT JOIN dbo.THUOC t WITH(HOLDLOCK) ON t.MaThuoc=ct.MaThuoc
@@ -133,11 +167,10 @@ public sealed class DAL_CHITIETHOADON : dbconnect
         WHERE p.MaLS=@visitId AND dt.MaLS=@visitId AND p.TrangThai=N'Đã ghi sổ'
             AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaCTPX=x.MaCTPX)
         UNION ALL
-        SELECT NULL,NULL,N'Phụ thu khám dịch vụ (chọn bác sĩ)',CAST(1 AS decimal(18,3)),p.PhiPhuThuDichVu,p.PhiPhuThuDichVu,p.PhiPhuThuDichVu,N'Phụ thu khám dịch vụ',p.MaPhieu
-        FROM dbo.LICH_SU_KHAM_BENH l WITH(HOLDLOCK) JOIN dbo.PHIEU_KHAM_BENH p WITH(HOLDLOCK) ON p.MaPhieu=l.MaPhieu
-        WHERE l.MaLS=@visitId AND p.LoaiKham=N'Dịch vụ' AND p.PhiPhuThuDichVu>0
-          AND NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WITH(HOLDLOCK) WHERE c.MaPhieuPhuThu=p.MaPhieu)
-        """;
+        SELECT NULL,NULL,f.NoiDung,CAST(1 AS decimal(18,3)),f.DonGia,f.DonGia,f.DonGia,
+            N'Phụ thu khám dịch vụ',f.MaPhieuPhuThu,f.MaPhienAI
+        FROM (
+        """ + UnbilledSurchargesSql + ") f";
     /// <summary>
     /// Trả bảng khoản thu chưa nằm trên hóa đơn nào của lần khám: dịch vụ Đã xác nhận và thuốc từ phiếu xuất Đã ghi sổ; giá thuốc lấy từ danh mục hiện hành.
     /// </summary>
@@ -158,7 +191,7 @@ public sealed class DAL_CHITIETHOADON : dbconnect
     internal static void ThemChiTiet(IDbConnection db, IDbTransaction? tx, string invoiceId, ET_CHITIETHOADON charge)
     {
         var detailId = TaoMa(db, tx, "CHI_TIET_HOA_DON", "MaCTHD");
-        db.Execute("INSERT dbo.CHI_TIET_HOA_DON(MaCTHD,MaHD,MaDVThucHien,MaCTPX,MaCTDT,MaPhieuPhuThu,NoiDung,DonGia) VALUES(@detailId,@invoiceId,@MaDVThucHien,@MaCTPX,@MaCTDT,@MaPhieuPhuThu,@NoiDung,@DonGia)", new { detailId, invoiceId, charge.MaDVThucHien, charge.MaCTPX, charge.MaCTDT, charge.MaPhieuPhuThu, charge.NoiDung, charge.DonGia }, tx);
+        db.Execute("INSERT dbo.CHI_TIET_HOA_DON(MaCTHD,MaHD,MaDVThucHien,MaCTPX,MaCTDT,MaPhieuPhuThu,MaPhienAI,NoiDung,DonGia) VALUES(@detailId,@invoiceId,@MaDVThucHien,@MaCTPX,@MaCTDT,@MaPhieuPhuThu,@MaPhienAI,@NoiDung,@DonGia)", new { detailId, invoiceId, charge.MaDVThucHien, charge.MaCTPX, charge.MaCTDT, charge.MaPhieuPhuThu, charge.MaPhienAI, charge.NoiDung, charge.DonGia }, tx);
     }
 
     /// <summary>

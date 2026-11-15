@@ -1,9 +1,9 @@
-﻿/* NHÓM 4 - QUẢN LÝ BỆNH VIỆN RĂNG HÀM MẶT
+/* NHÓM 4 - QUẢN LÝ BỆNH VIỆN RĂNG HÀM MẶT
    File độc lập khởi tạo hoặc đồng bộ SQL Server 2016 SP1 trở lên.
    Ứng dụng kết nối SQL Server; ứng dụng không đọc file SQL này khi chạy.
    Chạy toàn bộ bằng SSMS hoặc sqlcmd -b -f65001. Sao lưu database trước đồng bộ.
    Hỗ trợ database trống hoặc ClinicalWorkflow v2 đã kiểm chứng; giữ dữ liệu người dùng.
-   Schema hiện tại: 64 bảng (gồm metadata và phân công ảnh X-quang); snapshot ngày 14/11/2026: 3.296 dòng.
+   Schema hiện tại: 74 bảng (64 bảng Sprint3 + 10 bảng AI/quỹ phép) (gồm metadata và phân công ảnh X-quang); snapshot ngày 14/11/2026: 3.296 dòng.
    Có 4 ảnh panorama tham khảo liên kết lượt khám/dịch vụ; tệp và giấy phép tại Database/AnhXquang.
    Giữ lịch sử khám, không nạp sẵn hàng chờ khám; lịch làm việc đã được phân phòng.
    Hướng dẫn, quy tắc mã và nguồn gốc dữ liệu: docs/database/DU_LIEU_THONG_NHAT_20261112.md.
@@ -548,12 +548,12 @@ BEGIN TRY
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   PROCEDURE dbo.RHM_ChotLuongNhanVien'+NCHAR(13)+N''+NCHAR(10)+N'    @MaBL NVARCHAR(50),'+NCHAR(13)+N''+NCHAR(10)+N'    @MaNVChot NVARCHAR(50),'+NCHAR(13)+N''+NCHAR(10)+N'    @CongDaXem DECIMAL(7,2),'+NCHAR(13)+N''+NCHAR(10)+N'    @TongDaXem DECIMAL(18,2),'+NCHAR(13)+N''+NCHAR(10)+N'    @HoaHongDaXem DECIMAL(18,2)'+NCHAR(13)+N''+NCHAR(10)+N'AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N'    SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'    SET XACT_ABORT ON;'+NCHAR(13)+N''+NCHAR(10)+N'    IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN tk JOIN dbo.VAI_TRO vt ON tk.MaVaiTro=vt.MaVaiTro'+NCHAR(13)+N''+NCHAR(10)+N'                  WHERE tk.MaNV=@MaNVChot AND vt.TenVaiTro=N''Admin'' AND tk.TrangThai=N''Đang hoạt động'')'+NCHAR(13)+N''+NCHAR(10)+N'        THROW 52010,N''Không có quyền chốt lương.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'    BEGIN TRY'+NCHAR(13)+N''+NCHAR(10)+N'        BEGIN TRANSACTION;'+NCHAR(13)+N''+NCHAR(10)+N'        DECLARE @Khoa INT;'+NCHAR(13)+N''+NCHAR(10)+N'        EXEC @Khoa=sys.sp_getapplock @Resource=N''RHM:TinhChotLuong'','+NCHAR(13)+N''+NCHAR(10)+N'             @LockMode=''Exclusive'',@LockOwner=''Transaction'',@LockTimeout=15000;'+NCHAR(13)+N''+NCHAR(10)+N'        IF @Khoa<0 THROW 52011,N''Có người đang thao tác kỳ lương.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'        DECLARE @MaNV NVARCHAR(50),@TuNgay DATE,@DenNgay DATE;'+NCHAR(13)+N''+NCHAR(10)+N'        SELECT @MaNV=MaNV,@TuNgay=TuNgay,@DenNgay=DenNgay'+NCHAR(13)+N''+NCHAR(10)+N'        FROM dbo.BANG_LUONG WITH(UPDLOCK,HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'        WHERE MaBL=@MaBL AND TrangThai=N''Nháp'';'+NCHAR(13)+N''+NCHAR(10)+N'        IF @MaNV IS NULL THROW 52012,N''Phiếu không tồn tại hoặc đã chốt.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'        IF @TuNgay<>DATEFROMPARTS(YEAR(@TuNgay),MONTH(@TuNgay),1) OR @DenNgay<>EOMONTH(@TuNgay)'+NCHAR(13)+N''+NCHAR(10)+N'            THROW 52013,N''Phiếu lương phải thuộc một tháng đầy đủ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'        IF CONVERT(DATE,SYSDATETIME()) < DATEADD(DAY,5,@DenNgay)'+NCHAR(13)+N''+NCHAR(10)+N'            THROW 52014,N''Chưa tới ngày được chốt: phải sau khi hết tháng ít nhất 5 ngày.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'        IF EXISTS('+NCHAR(13)+N''+NCHAR(10)+N'            SELECT 1 FROM dbo.LICH_LAM_VIEC ll WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'            LEFT JOIN dbo.CHAM_CONG cc WITH(HOLDLOCK) ON cc.MaLLV=ll.MaLLV'+NCHAR(13)+N''+NCHAR(10)+N'            WHERE ll.MaNV=@MaNV AND ll.NgayLam BETWEEN @TuNgay AND @DenNgay'+NCHAR(13)+N''+NCHAR(10)+N'              AND ll.TrangThai NOT IN(N''Hủy'',N''Từ chối'',N''Nghỉ phép'',N''Nghỉ việc'')'+NCHAR(13)+N''+NCHAR(10)+N'              AND NOT EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI d WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'                  WHERE d.MaNV=ll.MaNV AND d.TrangThaiDuyet=N''Đã duyệt'''+NCHAR(13)+N''+NCHAR(10)+N'                    AND ll.NgayLam BETWEEN d.TuNgay AND d.DenNgay)'+NCHAR(13)+N''+NCHAR(10)+N'              AND (cc.MaCC IS NULL OR cc.TrangThai<>N''Đã xác nhận'')'+NCHAR(13)+N''+NCHAR(10)+N'        ) THROW 52015,N''Nhân viên còn ca chưa xác nhận công. Hãy đối soát ở mục Chấm công.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'        IF EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI d WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'            WHERE d.MaNV=@MaNV AND d.TrangThaiDuyet=N''Chờ duyệt'''+NCHAR(13)+N''+NCHAR(10)+N'                AND d.TuNgay<=@DenNgay AND d.DenNgay>=@TuNgay)'+NCHAR(13)+N''+NCHAR(10)+N'            THROW 52016,N''Có đơn nghỉ trong kỳ chưa duyệt/từ chối.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'        IF EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI d WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'            JOIN dbo.LICH_LAM_VIEC ll WITH(HOLDLOCK) ON ll.MaNV=d.MaNV AND ll.NgayLam BETWEEN d.TuNgay AND d.DenNgay'+NCHAR(13)+N''+NCHAR(10)+N'            JOIN dbo.CHAM_CONG cc WITH(HOLDLOCK) ON cc.MaLLV=ll.MaLLV'+NCHAR(13)+N''+NCHAR(10)+N'            WHERE d.MaNV=@MaNV AND d.TrangThaiDuyet=N''Đã duyệt'''+NCHAR(13)+N''+NCHAR(10)+N'                AND ll.NgayLam BETWEEN @TuNgay AND @DenNgay'+NCHAR(13)+N''+NCHAR(10)+N'              '+N'  AND cc.TrangThai=N''Đã xác nhận'' AND cc.CongDuocTinh>0)'+NCHAR(13)+N''+NCHAR(10)+N'            THROW 52017,N''Ca có công bị trùng ngày nghỉ đã duyệt. Cần xử lý trước khi chốt.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'        -- Tránh bỏ sót các điều chỉnh CỘNG chưa được quy đổi về nhóm phụ cấp/tăng ca.'+NCHAR(13)+N''+NCHAR(10)+N'        IF EXISTS(SELECT 1 FROM dbo.CHI_TIET_LUONG ct WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'            WHERE ct.MaBL=@MaBL AND ct.TinhChat=N''Cộng'''+NCHAR(13)+N''+NCHAR(10)+N'                AND ct.LoaiKhoan NOT IN(N''Phụ cấp'',N''Làm thêm giờ''))'+NCHAR(13)+N''+NCHAR(10)+N'            THROW 52022,N''Có khoản cộng chưa có cột hạch toán (điều chỉnh). Hãy đối soát và phân loại lại.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'        IF EXISTS(SELECT 1 FROM dbo.CHI_TIET_LUONG ct WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'            WHERE ct.MaBL=@MaBL AND ct.MaNVDuyet IS NULL)'+NCHAR(13)+N''+NCHAR(10)+N'            THROW 52023,N''Có chi tiết lương chưa ghi người duyệt. Hãy duyệt chứng từ trước khi chốt.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'        -- Hoa hồng chỉ được chốt khi nguồn dịch vụ và hóa đơn đã xác nhận, thu đủ.'+NCHAR(13)+N''+NCHAR(10)+N'        IF EXISTS('+NCHAR(13)+N''+NCHAR(10)+N'            SELECT 1 FROM dbo.CHI_TIET_HOA_HONG_LUONG hh WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'            JOIN dbo.CHI_TIET_HOA_DON ct ON ct.MaCTHD=hh.MaCTHD'+NCHAR(13)+N''+NCHAR(10)+N'            JOIN dbo.HOA_DON hd ON hd.MaHD=ct.MaHD'+NCHAR(13)+N''+NCHAR(10)+N'            LEFT JOIN dbo.DICH_VU_THUC_HIEN dv ON dv.MaDVThucHien=ct.MaDVThucHien'+NCHAR(13)+N''+NCHAR(10)+N'            WHERE hh.MaBL=@MaBL AND ('+NCHAR(13)+N''+NCHAR(10)+N'                hd.TrangThai<>N''Đã xác nhận'' OR dv.MaDVThucHien IS NULL'+NCHAR(13)+N''+NCHAR(10)+N'                OR dv.TrangThai<>N''Đã xác nhận'''+NCHAR(13)+N''+NCHAR(10)+N'                OR COALESCE((SELECT SUM(CASE WHEN tt.LoaiGiaoDich=N''Thu'' THEN tt.SoTien'+NCHAR(13)+N''+NCHAR(10)+N'                                           ELSE -tt.SoTien END)'+NCHAR(13)+N''+NCHAR(10)+N'                             FROM dbo.THANH_TOAN tt WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'                             WHERE tt.MaHD=hd.MaHD AND tt.TrangThai=N''Đã xác nhận''),0)<>hd.SoTienPhaiThu'+NCHAR(13)+N''+NCHAR(10)+N'            )'+NCHAR(13)+N''+NCHAR(10)+N'        ) THROW 52021,N''Có hoa hồng liên kết hóa đơn/dịch vụ chưa xác nhận hoặc chưa thu đủ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'        -- Kiểm tra trước đó đã xem phiếu nào; calc chỉ cập nhật đúng phiếu này.'+NCHAR(13)+N''+NCHAR(10)+N'        EXEC dbo.RHM_TinhLuongKy @TuNgay=@TuNgay,@DenNgay=@DenNgay,@MaNVTinh=@MaNVChot,@MaBL=@MaBL;'+NCHAR(13)+N''+NCHAR(10)+N'        IF NOT EXISTS(SELECT 1 FROM dbo.BANG_LUONG WITH(UPDLOCK,HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'            WHERE MaBL=@MaBL AND TrangThai=N''Nháp'''+NCHAR(13)+N''+NCHAR(10)+N'              AND CongThucTe=@CongDaXem AND TongLuong=@TongDaXem AND TienHoaHong=@HoaHongDaXem)'+NCHAR(13)+N''+NCHAR(10)+N'            THROW 52018,N''Số liệu đã thay đổi sau lần tính/xem. Hãy tính lại, kiểm tra rồi chốt.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'        IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG WHERE MaBL=@MaBL AND TongLuong<0)'+NCHAR(13)+N''+NCHAR(10)+N'            THROW 52019,N''Thực nhận âm, cần điều chỉnh các khoản trừ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'        UPDATE dbo.BANG_LUONG'+NCHAR(13)+N''+NCHAR(10)+N'        SET TrangThai=N''Đã chốt'',NgayChot=SYSDATETIME(),MaNVChot=@MaNVChot'+NCHAR(13)+N''+NCHAR(10)+N'        WHERE MaBL=@MaBL AND TrangThai=N''Nháp'';'+NCHAR(13)+N''+NCHAR(10)+N'        IF @@ROWCOUNT<>1 THROW 52020,N''Phiếu đã thay đổi trạng thái, vui lòng tải lại.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'        -- SQL V9 kiểm tra chính sách, công, tiền qua TR_BL_ChotLuong.'+NCHAR(13)+N''+NCHAR(10)+N'        COMMIT TRANSACTION;'+NCHAR(13)+N''+NCHAR(10)+N'    END TRY'+NCHAR(13)+N''+NCHAR(10)+N'    B'+N'EGIN CATCH'+NCHAR(13)+N''+NCHAR(10)+N'        IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;'+NCHAR(13)+N''+NCHAR(10)+N'        THROW;'+NCHAR(13)+N''+NCHAR(10)+N'    END CATCH;'+NCHAR(13)+N''+NCHAR(10)+N'END;'+NCHAR(13)+N''+NCHAR(10)+N''; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   PROCEDURE dbo.RHM_TinhLuongKy'+NCHAR(13)+N''+NCHAR(10)+N'    @TuNgay DATE,'+NCHAR(13)+N''+NCHAR(10)+N'    @DenNgay DATE,'+NCHAR(13)+N''+NCHAR(10)+N'    @MaNVTinh NVARCHAR(50),'+NCHAR(13)+N''+NCHAR(10)+N'    @MaBL NVARCHAR(50)=NULL'+NCHAR(13)+N''+NCHAR(10)+N'AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N'    SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'    SET XACT_ABORT ON;'+NCHAR(13)+N''+NCHAR(10)+N'    IF @TuNgay IS NULL OR @DenNgay<>EOMONTH(@TuNgay) OR DAY(@TuNgay)<>1'+NCHAR(13)+N''+NCHAR(10)+N'        THROW 52001,N''Chỉ được tính lương cho một tháng đầy đủ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'    IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN tk JOIN dbo.VAI_TRO vt ON tk.MaVaiTro=vt.MaVaiTro'+NCHAR(13)+N''+NCHAR(10)+N'                  WHERE tk.MaNV=@MaNVTinh AND vt.TenVaiTro=N''Admin'' AND tk.TrangThai=N''Đang hoạt động'')'+NCHAR(13)+N''+NCHAR(10)+N'        THROW 52002,N''Chỉ tài khoản quản lý đang hoạt động được tính lương.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'    BEGIN TRY'+NCHAR(13)+N''+NCHAR(10)+N'        BEGIN TRANSACTION;'+NCHAR(13)+N''+NCHAR(10)+N'        DECLARE @Khoa INT;'+NCHAR(13)+N''+NCHAR(10)+N'        EXEC @Khoa=sys.sp_getapplock @Resource=N''RHM:TinhChotLuong'','+NCHAR(13)+N''+NCHAR(10)+N'             @LockMode=''Exclusive'',@LockOwner=''Transaction'',@LockTimeout=15000;'+NCHAR(13)+N''+NCHAR(10)+N'        IF @Khoa<0 THROW 52003,N''Kỳ lương đang được thao tác ở cửa sổ khác.'',1;'+NCHAR(13)+N''+NCHAR(10)+N''+NCHAR(13)+N''+NCHAR(10)+N'        IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG old WITH(UPDLOCK,HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' WHERE old.PhienBanTinhLuong=8 AND old.TuNgay<=@DenNgay AND old.DenNgay>=@TuNgay'+NCHAR(13)+N''+NCHAR(10)+N' AND (old.TuNgay<>@TuNgay OR old.DenNgay<>@DenNgay)'+NCHAR(13)+N''+NCHAR(10)+N' AND (@MaBL IS NULL OR old.MaNV=(SELECT MaNV FROM dbo.BANG_LUONG WHERE MaBL=@MaBL)))'+NCHAR(13)+N''+NCHAR(10)+N' THROW 52333,N''Có phiếu lương cũ chưa đủ tháng hoặc chồng kỳ. Giữ nguyên phiếu cũ; cần đối chiếu trước khi lập/tính cả tháng để tránh chi trùng.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF @MaBL IS NOT NULL AND NOT EXISTS(SELECT 1 FROM dbo.BANG_LUONG WITH(UPDLOCK,HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'            WHERE MaBL=@MaBL AND TuNgay=@TuNgay AND DenNgay=@DenNgay AND TrangThai=N''Nháp'')'+NCHAR(13)+N''+NCHAR(10)+N'            THROW 52004,N''Phiếu đã chốt, không còn hoặc không thuộc kỳ lương được chọn.'',1;'+NCHAR(13)+N''+NCHAR(10)+N''+NCHAR(13)+N''+NCHAR(10)+N'        -- Khi mở kỳ mới: lập phiếu nháp cho nhân viên đang làm việc và đã có'+NCHAR(13)+N''+NCHAR(10)+N'        -- CHÍNH XÁC MỘT chính sách được duyệt áp dụng trọn tháng.'+NCHAR(13)+N''+NCHAR(10)+N'        IF @MaBL IS NULL'+NCHAR(13)+N''+NCHAR(10)+N'        BEGIN'+NCHAR(13)+N''+NCHAR(10)+N'            IF EXISTS('+NCHAR(13)+N''+NCHAR(10)+N'                SELECT 1 FROM dbo.NHAN_VIEN nv'+NCHAR(13)+N''+NCHAR(10)+N'                WHERE nv.TrangThai=N''Đang làm việc'' AND nv.NgayVaoLam<=@DenNgay'+NCHAR(13)+N''+NCHAR(10)+N'                  AND NOT EXISTS(SELECT 1 FROM dbo.BANG_LUONG bl WITH(UPDLOCK,HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'                                 WHERE bl.MaNV=nv.MaNV AND bl.TuNgay=@TuNgay AND bl.DenNgay=@DenNgay)'+NCHAR(13)+N''+NCHAR(10)+N'                  AND (SELECT COUNT(*) FROM dbo.CHINH_SACH_LUONG cs'+NCHAR(13)+N''+NCHAR(10)+N'                       WHERE cs.MaChucVu=nv.MaChucVu AND cs.TrangThai=N''Đã duyệt'''+NCHAR(13)+N''+NCHAR(10)+N'                         AND cs.NgayHieuLuc<=@TuNgay AND (cs.NgayHetHieuLuc IS NULL OR cs.NgayHetHieuLuc>=@DenNgay))<>1'+NCHAR(13)+N''+NCHAR(10)+N'            ) THROW 52005,N''Có nhân viên chưa có hoặc có nhiều chính sách lương hợp lệ. Hãy kiểm tra chính sách trước khi tạo kỳ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N''+NCHAR(13)+N''+NCHAR(10)+N'            INSERT dbo.BANG_LUONG (MaBL,MaNV,MaCSL,TuNgay,DenNgay,SoCaTinh,LuongCoBan,'+NCHAR(13)+N''+NCHAR(10)+N'                SoCaDinhMuc,CongChuan,CongNghiPhep,CongTruDiTre,CongThucTe,TienHoaHong,'+NCHAR(13)+N''+NCHAR(10)+N'                TienPhuCap,TienTan'+N'gCa,TienBaoHiem,TienKhauTruKhac,TrangThai,NgayChot,MaNVChot,GhiChu)'+NCHAR(13)+N''+NCHAR(10)+N'            SELECT N''BL''+CONVERT(CHAR(6),@TuNgay,112)+N''-''+REPLACE(CONVERT(NVARCHAR(36),NEWID()),N''-'',N''''),'+NCHAR(13)+N''+NCHAR(10)+N'                nv.MaNV,cs.MaCSL,@TuNgay,@DenNgay,0,cs.LuongCoBan,cs.SoCaDinhMuc,'+NCHAR(13)+N''+NCHAR(10)+N'                1,0,0,0,0,0,0,0,0,N''Nháp'',NULL,NULL,N''Phiếu được tạo từ chính sách lương đã duyệt.'''+NCHAR(13)+N''+NCHAR(10)+N'            FROM dbo.NHAN_VIEN nv'+NCHAR(13)+N''+NCHAR(10)+N'            CROSS APPLY ('+NCHAR(13)+N''+NCHAR(10)+N'                SELECT cs.MaCSL,cs.LuongCoBan,cs.SoCaDinhMuc'+NCHAR(13)+N''+NCHAR(10)+N'                FROM dbo.CHINH_SACH_LUONG cs WHERE cs.MaChucVu=nv.MaChucVu'+NCHAR(13)+N''+NCHAR(10)+N'                    AND cs.TrangThai=N''Đã duyệt'' AND cs.NgayHieuLuc<=@TuNgay'+NCHAR(13)+N''+NCHAR(10)+N'                    AND (cs.NgayHetHieuLuc IS NULL OR cs.NgayHetHieuLuc>=@DenNgay)'+NCHAR(13)+N''+NCHAR(10)+N'            ) cs'+NCHAR(13)+N''+NCHAR(10)+N'            WHERE nv.TrangThai=N''Đang làm việc'' AND nv.NgayVaoLam<=@DenNgay'+NCHAR(13)+N''+NCHAR(10)+N'                AND NOT EXISTS(SELECT 1 FROM dbo.BANG_LUONG bl WITH(UPDLOCK,HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'                    WHERE bl.MaNV=nv.MaNV AND bl.TuNgay=@TuNgay AND bl.DenNgay=@DenNgay);'+NCHAR(13)+N''+NCHAR(10)+N'        END;'+NCHAR(13)+N''+NCHAR(10)+N''+NCHAR(13)+N''+NCHAR(10)+N'        -- Số công chuẩn tính thứ Hai-Thứ Bảy, loại ngày nghỉ lễ có hưởng lương'+NCHAR(13)+N''+NCHAR(10)+N'        -- (theo cùng quy ước của trigger TR_BL_ChotLuong trong SQL V9).'+NCHAR(13)+N''+NCHAR(10)+N'        DECLARE @CongChuan INT;'+NCHAR(13)+N''+NCHAR(10)+N'        ;WITH N AS ('+NCHAR(13)+N''+NCHAR(10)+N'            SELECT n.k FROM (VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9),'+NCHAR(13)+N''+NCHAR(10)+N'                (10),(11),(12),(13),(14),(15),(16),(17),(18),(19),'+NCHAR(13)+N''+NCHAR(10)+N'                (20),(21),(22),(23),(24),(25),(26),(27),(28),(29),(30)) n(k)'+NCHAR(13)+N''+NCHAR(10)+N'        )'+NCHAR(13)+N''+NCHAR(10)+N'        SELECT @CongChuan=COUNT(*) FROM N'+NCHAR(13)+N''+NCHAR(10)+N'        WHERE DATEADD(DAY,N.k,@TuNgay)<=@DenNgay'+NCHAR(13)+N''+NCHAR(10)+N'            AND DATEDIFF(DAY,CONVERT(DATE,''19000107''),DATEADD(DAY,N.k,@TuNgay))%7<>0'+NCHAR(13)+N''+NCHAR(10)+N'            AND NOT EXISTS(SELECT 1 FROM dbo.NGAY_NGHI_LE h'+NCHAR(13)+N''+NCHAR(10)+N'                WHERE h.NgayNghi=DATEADD(DAY,N.k,@TuNgay) AND h.CoHuongLuong=1 AND h.TrangThai=N''Đang hoạt động'');'+NCHAR(13)+N''+NCHAR(10)+N'        IF @CongChuan IS NULL OR @CongChuan<=0 THROW 52006,N''Không xác định được công chuẩn trong kỳ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N''+NCHAR(13)+N''+NCHAR(10)+N'        IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG b'+NCHAR(13)+N''+NCHAR(10)+N'            JOIN dbo.NHAN_VIEN nv ON nv.MaNV=b.MaNV'+NCHAR(13)+N''+NCHAR(10)+N'            JOIN dbo.CHINH_SACH_LUONG cs ON cs.MaCSL=b.MaCSL'+NCHAR(13)+N''+NCHAR(10)+N'            WHERE b.TuNgay=@TuNgay AND b.DenNgay=@DenNgay AND b.TrangThai=N''Nháp'''+NCHAR(13)+N''+NCHAR(10)+N'            AND (@MaBL IS NULL OR b.MaBL=@MaBL)'+NCHAR(13)+N''+NCHAR(10)+N'            AND (cs.TrangThai<>N''Đã duyệt'' OR cs.MaChucVu<>nv.MaChucVu'+NCHAR(13)+N''+NCHAR(10)+N'                OR cs.NgayHieuLuc>@TuNgay OR (cs.NgayHetHieuLuc IS NOT NULL AND cs.NgayHetHieuLuc<@DenNgay)))'+NCHAR(13)+N''+NCHAR(10)+N'            THROW 52007,N''Chính sách lương của phiếu chưa duyệt, sai chức vụ hoặc không bao phủ cả kỳ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N''+NCHAR(13)+N''+NCHAR(10)+N'        ;WITH SoCong AS ('+NCHAR(13)+N''+NCHAR(10)+N'            SELECT b.MaBL,'+NCHAR(13)+N''+NCHAR(10)+N'                COALESCE((SELECT SUM(cc.CongDuocTinh) FROM dbo.CHAM_CONG cc WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'                    JOIN dbo.LICH_LAM_VIEC ll WITH(HOLDLOCK) ON ll.MaLLV=cc.MaLLV'+NCHAR(13)+N''+NCHAR(10)+N'                    WHERE ll.MaNV=b.MaNV AND ll.NgayLam B'+N'ETWEEN @TuNgay AND @DenNgay'+NCHAR(13)+N''+NCHAR(10)+N'                      AND cc.TrangThai=N''Đã xác nhận''),0) AS CongCa,'+NCHAR(13)+N''+NCHAR(10)+N'                (SELECT COUNT(*) FROM dbo.CHAM_CONG cc WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'                    JOIN dbo.LICH_LAM_VIEC ll WITH(HOLDLOCK) ON ll.MaLLV=cc.MaLLV'+NCHAR(13)+N''+NCHAR(10)+N'                    WHERE ll.MaNV=b.MaNV AND ll.NgayLam BETWEEN @TuNgay AND @DenNgay'+NCHAR(13)+N''+NCHAR(10)+N'                      AND cc.TrangThai=N''Đã xác nhận'' AND cc.CongDuocTinh=0.5) AS SoCa,'+NCHAR(13)+N''+NCHAR(10)+N'                (SELECT COUNT(*) FROM dbo.CHAM_CONG cc WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'                    JOIN dbo.LICH_LAM_VIEC ll WITH(HOLDLOCK) ON ll.MaLLV=cc.MaLLV'+NCHAR(13)+N''+NCHAR(10)+N'                    WHERE ll.MaNV=b.MaNV AND ll.NgayLam BETWEEN @TuNgay AND @DenNgay'+NCHAR(13)+N''+NCHAR(10)+N'                      AND cc.TrangThai=N''Đã xác nhận'' AND cc.CongDuocTinh=0.5'+NCHAR(13)+N''+NCHAR(10)+N'                      AND cc.SoPhutDiTre BETWEEN 16 AND 60) * CAST(0.25 AS DECIMAL(7,2)) AS TruTre,'+NCHAR(13)+N''+NCHAR(10)+N'                (SELECT COUNT(*) FROM (VALUES(0),(1),(2),(3),(4),(5),(6),(7),(8),(9),'+NCHAR(13)+N''+NCHAR(10)+N'                    (10),(11),(12),(13),(14),(15),(16),(17),(18),(19),(20),'+NCHAR(13)+N''+NCHAR(10)+N'                    (21),(22),(23),(24),(25),(26),(27),(28),(29),(30)) n(k)'+NCHAR(13)+N''+NCHAR(10)+N'                    WHERE DATEADD(DAY,n.k,@TuNgay)<=@DenNgay'+NCHAR(13)+N''+NCHAR(10)+N'                        AND DATEDIFF(DAY,CONVERT(DATE,''19000107''),DATEADD(DAY,n.k,@TuNgay))%7<>0'+NCHAR(13)+N''+NCHAR(10)+N'                        AND NOT EXISTS(SELECT 1 FROM dbo.NGAY_NGHI_LE h'+NCHAR(13)+N''+NCHAR(10)+N'                            WHERE h.NgayNghi=DATEADD(DAY,n.k,@TuNgay) AND h.CoHuongLuong=1 AND h.TrangThai=N''Đang hoạt động'')'+NCHAR(13)+N''+NCHAR(10)+N'                        AND EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI d WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'                            WHERE d.MaNV=b.MaNV AND d.TrangThaiDuyet=N''Đã duyệt'''+NCHAR(13)+N''+NCHAR(10)+N'                              AND DATEADD(DAY,n.k,@TuNgay) BETWEEN d.TuNgay AND d.DenNgay)) AS CongPhep,'+NCHAR(13)+N''+NCHAR(10)+N'                COALESCE((SELECT SUM(hh.TienHoaHong) FROM dbo.CHI_TIET_HOA_HONG_LUONG hh WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'                    WHERE hh.MaBL=b.MaBL),0) AS HoaHong,'+NCHAR(13)+N''+NCHAR(10)+N'                COALESCE((SELECT SUM(ct.SoTien) FROM dbo.CHI_TIET_LUONG ct WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'                    WHERE ct.MaBL=b.MaBL AND ct.LoaiKhoan=N''Phụ cấp'' AND ct.TinhChat=N''Cộng''),0) AS PhuCapThem,'+NCHAR(13)+N''+NCHAR(10)+N'                COALESCE((SELECT SUM(ct.SoTien) FROM dbo.CHI_TIET_LUONG ct WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'                    WHERE ct.MaBL=b.MaBL AND ct.LoaiKhoan=N''Làm thêm giờ'' AND ct.TinhChat=N''Cộng''),0) AS TangCa,'+NCHAR(13)+N''+NCHAR(10)+N'                COALESCE((SELECT SUM(ct.SoTien) FROM dbo.CHI_TIET_LUONG ct WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'                    WHERE ct.MaBL=b.MaBL AND ct.TinhChat=N''Trừ''),0) AS KhauTru'+NCHAR(13)+N''+NCHAR(10)+N'            FROM dbo.BANG_LUONG b WITH(UPDLOCK,HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N'            WHERE b.TuNgay=@TuNgay AND b.DenNgay=@DenNgay AND b.TrangThai=N''Nháp'''+NCHAR(13)+N''+NCHAR(10)+N'                AND (@MaBL IS NULL OR b.MaBL=@MaBL)'+NCHAR(13)+N''+NCHAR(10)+N'        )'+NCHAR(13)+N''+NCHAR(10)+N'        UPDATE b SET b.PhienBanTinhLuong=9,'+NCHAR(13)+N''+NCHAR(10)+N'            b.SoCaTinh=c.SoCa,'+NCHAR(13)+N''+NCHAR(10)+N'            b.SoCaDinhMuc=cs.SoCaDinhMuc,'+NCHAR(13)+N''+NCHAR(10)+N'           '+N' b.LuongCoBan=cs.LuongCoBan,'+NCHAR(13)+N''+NCHAR(10)+N'            b.CongChuan=@CongChuan,'+NCHAR(13)+N''+NCHAR(10)+N'            b.CongNghiPhep=c.CongPhep,'+NCHAR(13)+N''+NCHAR(10)+N'            b.CongTruDiTre=c.TruTre,'+NCHAR(13)+N''+NCHAR(10)+N'            b.CongThucTe=c.CongCa+c.CongPhep-c.TruTre,'+NCHAR(13)+N''+NCHAR(10)+N'            b.TienHoaHong=c.HoaHong,'+NCHAR(13)+N''+NCHAR(10)+N'            b.TienPhuCap=cs.PhuCapCoDinh+c.PhuCapThem,'+NCHAR(13)+N''+NCHAR(10)+N'            b.TienTangCa=c.TangCa,'+NCHAR(13)+N''+NCHAR(10)+N'            b.TienBaoHiem=CAST(ROUND(cs.LuongCoBan*(cs.TyLeBHXH+cs.TyLeBHYT+cs.TyLeBHTN),2) AS DECIMAL(18,2)),'+NCHAR(13)+N''+NCHAR(10)+N'            b.TienKhauTruKhac=c.KhauTru,'+NCHAR(13)+N''+NCHAR(10)+N'            b.GhiChu=N''Tính tự động từ công đã duyệt, nghỉ phép, hoa hồng và chi tiết lương. Chỉ chi trả sau khi chốt.'''+NCHAR(13)+N''+NCHAR(10)+N'        FROM dbo.BANG_LUONG b'+NCHAR(13)+N''+NCHAR(10)+N'        JOIN SoCong c ON c.MaBL=b.MaBL'+NCHAR(13)+N''+NCHAR(10)+N'        JOIN dbo.CHINH_SACH_LUONG cs ON cs.MaCSL=b.MaCSL;'+NCHAR(13)+N''+NCHAR(10)+N''+NCHAR(13)+N''+NCHAR(10)+N'        IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG b WHERE b.TuNgay=@TuNgay AND b.DenNgay=@DenNgay'+NCHAR(13)+N''+NCHAR(10)+N'            AND b.TrangThai=N''Nháp'' AND (@MaBL IS NULL OR b.MaBL=@MaBL)'+NCHAR(13)+N''+NCHAR(10)+N'            AND (b.CongThucTe<0 OR b.CongThucTe>b.CongChuan))'+NCHAR(13)+N''+NCHAR(10)+N'            THROW 52008,N''Công thực tế vượt công chuẩn (hoặc âm); cần đối soát lại ca/nghỉ phép trước khi tính.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'        COMMIT TRANSACTION;'+NCHAR(13)+N''+NCHAR(10)+N'    END TRY'+NCHAR(13)+N''+NCHAR(10)+N'    BEGIN CATCH'+NCHAR(13)+N''+NCHAR(10)+N'        IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;'+NCHAR(13)+N''+NCHAR(10)+N'        THROW;'+NCHAR(13)+N''+NCHAR(10)+N'    END CATCH;'+NCHAR(13)+N''+NCHAR(10)+N'END;'+NCHAR(13)+N''+NCHAR(10)+N''; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   PROCEDURE dbo.usp_RHM_KiemTraBaoTriSerial AS'+NCHAR(13)+N''+NCHAR(10)+N' BEGIN'+NCHAR(13)+N''+NCHAR(10)+N'  SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'  IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.MaintenanceSerial.Version'' AND TRY_CONVERT(int,value)=1)'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52600,N''Chưa đồng bộ bảo trì serial; chạy toàn bộ QLBenhVienRangHamMat.sql.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF COL_LENGTH(N''dbo.THIET_BI'',N''NgayThanhLy'') IS NULL'+NCHAR(13)+N''+NCHAR(10)+N'   OR OBJECT_ID(N''dbo.TR_TB_ThanhLy_BaoVe'',N''TR'') IS NULL'+NCHAR(13)+N''+NCHAR(10)+N'   OR OBJECT_ID(N''dbo.FK_TB_NhanVienThanhLy'',N''F'') IS NULL'+NCHAR(13)+N''+NCHAR(10)+N'   OR OBJECT_ID(N''dbo.CK_TB_ThanhLy'',N''C'') IS NULL'+NCHAR(13)+N''+NCHAR(10)+N'   OR EXISTS(SELECT 1 FROM sys.triggers WHERE name=N''TR_TB_ThanhLy_BaoVe'' AND is_disabled=1)'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52600,N''Chưa đồng bộ thanh lý; chạy toàn bộ QLBenhVienRangHamMat.sql.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM (VALUES(N''NgayXacNhan''),(N''NgayThucHien'')) e(N) LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.BAO_TRI_THIET_BI'') AND c.name=e.N'+NCHAR(13)+N''+NCHAR(10)+N'   WHERE c.column_id IS NULL OR TYPE_NAME(c.user_type_id)<>N''datetime2'' OR c.scale<>0 OR c.is_nullable<>1)'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52600,N''Thiếu hoặc sai kiểu thời điểm xác nhận/thực hiện bảo trì.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM (VALUES(N''UQ_THIET_BI_SoSerial'',N''UQ''),(N''CK_TB_Serial_KhongTrong'',N''C''),(N''CK_TB_TinhTrang_BaoTri'',N''C''),(N''CK_BT_VongDoi'',N''C''),(N''CK_BT_NoiDung'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''FK_BAO_TRI_THIET_BI_MaTB'',N''F''),(N''FK_BAO_TRI_THIET_BI_MaNV'',N''F''),(N''TR_BT_Serial_VongDoi'',N''TR''),(N''TR_TB_Serial_BaoVe'',N''TR'')) e(N,T) WHERE OBJECT_ID(N''dbo.''+e.N,e.T) IS NULL)'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52600,N''Thiếu liên kết hoặc bảo vệ bảo trì theo serial.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.BAO_TRI_THIET_BI'') AND name=N''UX_BT_Serial_PhieuMo'' AND is_unique=1 AND has_filter=1 AND is_disabled=0'+NCHAR(13)+N''+NCHAR(10)+N'   AND filter_definition LIKE N''%Chưa xác nhận%'' AND filter_definition LIKE N''%Đã xác nhận%'' AND filter_definition LIKE N''%Đang thực hiện%'')'+NCHAR(13)+N''+NCHAR(10)+N'   OR NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.THIET_BI'') AND name=N''UQ_THIET_BI_SoSerial'' AND is_unique=1 AND is_disabled=0)'+NCHAR(13)+N''+NCHAR(10)+N'   OR EXISTS(SELECT 1 FROM sys.triggers WHERE name IN(N''TR_BT_Serial_VongDoi'',N''TR_TB_Serial_BaoVe'') AND is_disabled=1)'+NCHAR(13)+N''+NCHAR(10)+N'   OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE parent_object_id IN(OBJECT_ID(N''dbo.BAO_TRI_THIET_BI''),OBJECT_ID(N''dbo.THIET_BI'')) AND(is_disabled=1 OR is_not_trusted=1))'+NCHAR(13)+N''+NCHAR(10)+N'   OR EXISTS(SELECT 1 FROM sys.foreign_keys WHERE parent_object_id=OBJECT_ID(N''dbo.BAO_TRI_THIET_BI'') AND(is_disabled=1 OR is_not_trusted=1))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52600,N''Index/ràng buộc/trigger bảo trì bị tắt hoặc chưa trusted.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
- SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   PROCEDURE dbo.usp_RHM_KiemTraDongBoV9 AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.SqlV9.Version'' AND TRY_CONVERT(int,value)=9)'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Chưa hoàn tất hợp nhất SQL V9; chạy toàn bộ QLBenhVienRangHamMat.sql.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @cols TABLE(T sysname,C sysname,Ty sysname,L smallint,P tinyint,S tinyint,N bit);'+NCHAR(13)+N''+NCHAR(10)+N' INSERT @cols VALUES(N''NGAY_NGHI_LE'',N''MaNgayNghi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NGAY_NGHI_LE'',N''NgayNghi'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NGAY_NGHI_LE'',N''TenNgayNghi'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NGAY_NGHI_LE'',N''LoaiNgayNghi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NGAY_NGHI_LE'',N''CoHuongLuong'',N''bit'',1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NGAY_NGHI_LE'',N''GhiChu'',N''nvarchar'',1000,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''MaCC'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''MaLLV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''SoPhutDiTre'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''CongDuocTinh'',N''decimal'',5,4,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''MaNVDoiSoat'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''NgayDoiSoat'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''MaCTL'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''MaBL'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''LoaiKhoan'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''TinhChat'',N''nvarchar'',20,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''SoTien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''NgayPhatSinh'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''LyDo'',N''nvarchar'',1000,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''MaNVDuyet'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHU_TA_DICH_VU'',N''MaPTDV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHU_TA_DICH_VU'',N''MaDVThucHien'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHU_TA_DICH_VU'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHU_TA_DICH_VU'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHU_TA_DICH_VU'',N''GhiChu'',N''nvarchar'',1000,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_HONG_LUONG'',N''MaCTHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_HONG_LUONG'',N''MaBL'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_HONG_LUONG'',N''MaCTHD'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_HONG_LUONG'',N''VaiTroHoaHong'',N''nvarchar'',40,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_HONG_LUONG'',N''GiaTriTinh'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_HONG_LUONG'',N''TyLe'',N''decimal'',5,9,6,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''MaLTG'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''NgayLam'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''SoGio'',N''decimal'',5,7,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''HeSo'',N''decimal'',5,4,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''MaNVDuyet'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''NgayDuyet'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''LyDo'',N''nvarchar'',1000,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''PhuCapCoDinh'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''TyLeBHXH'',N''decimal'',5,9,6,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI'+N'NH_SACH_LUONG'',N''TyLeBHYT'',N''decimal'',5,9,6,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''TyLeBHTN'',N''decimal'',5,9,6,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''HeSoTangCaThuong'',N''decimal'',5,4,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''HeSoTangCaChuNhat'',N''decimal'',5,4,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''HeSoTangCaNgayLe'',N''decimal'',5,4,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''PhienBanTinhLuong'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''LuongTheoCaTruocDongBo'',N''decimal'',9,18,2,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TongLuongTruocDongBo'',N''decimal'',9,18,2,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''CongChuan'',N''decimal'',5,7,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''CongNghiPhep'',N''decimal'',5,7,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''CongTruDiTre'',N''decimal'',5,7,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''CongThucTe'',N''decimal'',5,7,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TienPhuCap'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TienTangCa'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TienBaoHiem'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TienKhauTruKhac'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''MaNVChot'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MucDoNghiemTrong'',N''nvarchar'',40,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MaBSDuBi'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''MaNhatKy'',N''bigint'',8,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''MaLLV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''NguoiThucHien'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''NgayThucHien'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''TrangThaiCu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''TrangThaiMoi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''GioVaoCu'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''GioRaCu'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''GioVaoMoi'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''GioRaMoi'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''CongCu'',N''decimal'',5,4,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''CongMoi'',N''decimal'',5,4,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''LyDo'',N''nvarchar'',1000,0,0,0);'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM (VALUES'+NCHAR(13)+N''+NCHAR(10)+N'(N''PK_NGAY_NGHI_LE'',N''PK''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''UQ_NGAY_NGHI_LE_NgayNghi'',N''UQ''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DF_NNL_HuongLuong'',N''D''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_NGAY_NGHI_LE_Loai'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PK_CHAM_CONG'',N''PK''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''UQ_CHAM_CONG_Lich'',N''UQ''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DF_CC_DiTre'',N''D''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DF_CC_Cong'',N''D''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CHAM_CONG_1'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CHAM_CONG_2'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CHAM_CONG_3'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PK_CHI_TIET_LUONG'',N''PK''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CTL_1'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CTL_2'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CTL_3'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PK_PHU_TA_DICH_VU'',N''PK''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''UQ_PHU_TA_DV'',N''UQ''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_PHU_TA_DV_TT'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PK_CHI_TIET_HOA_HONG_LUONG'',N''PK''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CTHH_1'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CTHH_2'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''UQ_CTHH_Luong_DichVu'',N''UQ''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PK_LAM_THEM_GIO'',N''PK''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_LTG_1'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_LTG_2'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_LTG_3'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PK_NHAT_KY_DUYET_CHAM_CONG'',N''PK'')) required(N,T) WHERE OBJECT_ID(N''dbo.''+required.N,required.T) IS NULL)'+N''+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Thiếu PK/UNIQUE/CHECK/DEFAULT của các bảng V9.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM @cols e LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+e.T) AND c.name=e.C'+NCHAR(13)+N''+NCHAR(10)+N'  LEFT JOIN sys.types t ON t.user_type_id=c.user_type_id WHERE c.column_id IS NULL OR t.name<>e.Ty OR c.max_length<>e.L OR c.is_nullable<>e.N'+NCHAR(13)+N''+NCHAR(10)+N'  OR (e.Ty=N''decimal'' AND(c.precision<>e.P OR c.scale<>e.S)) OR(e.Ty=N''datetime2'' AND c.scale<>e.S))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Thiếu hoặc sai kiểu cột lịch khám/chấm công/lương V9.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N''PHIEN_DANG_NHAP'',N''PHAN_QUYEN_VAI_TRO'',N''ANH_XQUANG_LAN_KHAM'',N''PHAN_CONG_ANH_XQUANG''))<>60'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Schema hợp nhất phải có đủ 60 bảng.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF NOT EXISTS(SELECT 1 FROM sys.computed_columns WHERE object_id=OBJECT_ID(N''dbo.BANG_LUONG'') AND name=N''LuongTheoCa'' AND is_persisted=1 AND definition LIKE N''%PhienBanTinhLuong%'' AND definition LIKE N''%LuongTheoCaTruocDongBo%'' AND definition LIKE N''%CongThucTe%'')'+NCHAR(13)+N''+NCHAR(10)+N' OR NOT EXISTS(SELECT 1 FROM sys.computed_columns WHERE object_id=OBJECT_ID(N''dbo.BANG_LUONG'') AND name=N''TongLuong'' AND is_persisted=1 AND definition LIKE N''%TongLuongTruocDongBo%'' AND definition LIKE N''%TienBaoHiem%'')'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Công thức lương không giữ bản tiền cũ hoặc chưa dùng V9.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM (VALUES'+NCHAR(13)+N''+NCHAR(10)+N' (N''TR_BL_ChotLuong'',N''TR''),(N''TR_CTL_KhoaTheoBangLuong'',N''TR''),(N''TR_CTHH_KhoaTheoBangLuong'',N''TR''),'+NCHAR(13)+N''+NCHAR(10)+N' (N''TR_NKCC_KhongSua'',N''TR''),(N''TR_CC_KhoaKyDaChot'',N''TR''),(N''TR_LLV_KhoaKyDaChot'',N''TR''),'+NCHAR(13)+N''+NCHAR(10)+N' (N''RHM_TinhLuongKy'',N''P''),(N''RHM_ChotLuongNhanVien'',N''P''),(N''VW_CONG_CHUAN_BANG_LUONG'',N''V''),(N''VW_DICH_VU_DU_HOA_HONG'',N''V''),'+NCHAR(13)+N''+NCHAR(10)+N' (N''CK_BL_PhienBan'',N''C''),(N''CK_BANG_LUONG_1'',N''C''),(N''CK_BANG_LUONG_2'',N''C''),(N''CK_BANG_LUONG_3'',N''C''),(N''CK_BANG_LUONG_4'',N''C''),(N''CK_BANG_LUONG_5'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N' (N''CK_CHINH_SACH_LUONG_6'',N''C''),(N''CK_CHINH_SACH_LUONG_7'',N''C''),(N''CK_LICH_KHAM_MucDoNghiemTrong'',N''C''),(N''FK_LICH_KHAM_BacSiDuBi'',N''F''),'+NCHAR(13)+N''+NCHAR(10)+N' (N''FK_BL_NguoiChot'',N''F''),(N''FK_CC_MaLLV'',N''F''),(N''FK_CC_NguoiDoiSoat'',N''F''),(N''FK_CTL_BangLuong'',N''F''),(N''FK_CTL_NguoiDuyet'',N''F''),'+NCHAR(13)+N''+NCHAR(10)+N' (N''FK_PTDV_DVTH'',N''F''),(N''FK_PTDV_NV'',N''F''),(N''FK_CTHH_BL'',N''F''),(N''FK_CTHH_CTHD'',N''F''),(N''FK_LTG_NV'',N''F''),(N''FK_LTG_NguoiDuyet'',N''F''),'+NCHAR(13)+N''+NCHAR(10)+N' (N''FK_NKCC_Lich'',N''F''),(N''FK_NKCC_NhanVien'',N''F''),(N''FK_NKCC_NguoiDuyet'',N''F''),(N''UQ_BANG_LUONG_NhanVien_Ky'',N''UQ'')) o(N,T)'+NCHAR(13)+N''+NCHAR(10)+N' WHERE OBJECT_ID(N''dbo.''+o.N,o.T) IS NULL)'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Thiếu đối tượng/ràng buộc SQL V9.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM (VALUES(N''NGAY_NGHI_LE'',N''IX_NNL_Ngay''),(N''CHI_TIET_LUONG'',N''IX_CTL_BangLuong''),(N''CHI_TIET_HOA_HONG_LUONG'',N''IX_CTHH_BangLuong''),(N''LAM_THEM_GIO'',N''IX_LTG_NV_Ngay''),(N''NHAT_KY_DUYET_CHAM_CONG'',N''IX_NKCC_Lich_Ngay'')) e(T,N)'+NCHAR(13)+N''+NCHAR(10)+N'  LEFT JOIN sys.indexes i ON i.object_id=OBJECT_ID(N''dbo.''+e.T) AND i.name=e.N WHERE i.index_id IS NU'+N'LL OR i.is_disabled=1 OR i.is_hypothetical=1)'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Thiếu hoặc tắt index SQL V9.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE is_disabled=1 OR is_not_trusted=1)'+NCHAR(13)+N''+NCHAR(10)+N' OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE is_disabled=1 OR is_not_trusted=1)'+NCHAR(13)+N''+NCHAR(10)+N' OR EXISTS(SELECT 1 FROM sys.triggers WHERE parent_class=1 AND is_disabled=1)'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Có ràng buộc chưa trusted hoặc trigger bị tắt.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''SqlV9Merged'' SchemaVersion,(SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0) TableCount,'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT COUNT(*) FROM dbo.BANG_LUONG WHERE PhienBanTinhLuong=8) PreservedLegacyPayroll;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
+ SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   PROCEDURE dbo.usp_RHM_KiemTraDongBoV9 AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.SqlV9.Version'' AND TRY_CONVERT(int,value)=9)'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Chưa hoàn tất hợp nhất SQL V9; chạy toàn bộ QLBenhVienRangHamMat.sql.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @cols TABLE(T sysname,C sysname,Ty sysname,L smallint,P tinyint,S tinyint,N bit);'+NCHAR(13)+N''+NCHAR(10)+N' INSERT @cols VALUES(N''NGAY_NGHI_LE'',N''MaNgayNghi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NGAY_NGHI_LE'',N''NgayNghi'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NGAY_NGHI_LE'',N''TenNgayNghi'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NGAY_NGHI_LE'',N''LoaiNgayNghi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NGAY_NGHI_LE'',N''CoHuongLuong'',N''bit'',1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NGAY_NGHI_LE'',N''GhiChu'',N''nvarchar'',1000,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''MaCC'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''MaLLV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''SoPhutDiTre'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''CongDuocTinh'',N''decimal'',5,4,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''MaNVDoiSoat'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''NgayDoiSoat'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHAM_CONG'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''MaCTL'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''MaBL'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''LoaiKhoan'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''TinhChat'',N''nvarchar'',20,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''SoTien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''NgayPhatSinh'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''LyDo'',N''nvarchar'',1000,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_LUONG'',N''MaNVDuyet'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHU_TA_DICH_VU'',N''MaPTDV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHU_TA_DICH_VU'',N''MaDVThucHien'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHU_TA_DICH_VU'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHU_TA_DICH_VU'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHU_TA_DICH_VU'',N''GhiChu'',N''nvarchar'',1000,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_HONG_LUONG'',N''MaCTHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_HONG_LUONG'',N''MaBL'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_HONG_LUONG'',N''MaCTHD'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_HONG_LUONG'',N''VaiTroHoaHong'',N''nvarchar'',40,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_HONG_LUONG'',N''GiaTriTinh'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_HONG_LUONG'',N''TyLe'',N''decimal'',5,9,6,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''MaLTG'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''NgayLam'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''SoGio'',N''decimal'',5,7,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''HeSo'',N''decimal'',5,4,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''MaNVDuyet'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''NgayDuyet'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LAM_THEM_GIO'',N''LyDo'',N''nvarchar'',1000,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''PhuCapCoDinh'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''TyLeBHXH'',N''decimal'',5,9,6,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI'+N'NH_SACH_LUONG'',N''TyLeBHYT'',N''decimal'',5,9,6,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''TyLeBHTN'',N''decimal'',5,9,6,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''HeSoTangCaThuong'',N''decimal'',5,4,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''HeSoTangCaChuNhat'',N''decimal'',5,4,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''HeSoTangCaNgayLe'',N''decimal'',5,4,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''PhienBanTinhLuong'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''LuongTheoCaTruocDongBo'',N''decimal'',9,18,2,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TongLuongTruocDongBo'',N''decimal'',9,18,2,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''CongChuan'',N''decimal'',5,7,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''CongNghiPhep'',N''decimal'',5,7,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''CongTruDiTre'',N''decimal'',5,7,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''CongThucTe'',N''decimal'',5,7,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TienPhuCap'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TienTangCa'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TienBaoHiem'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TienKhauTruKhac'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''MaNVChot'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MucDoNghiemTrong'',N''nvarchar'',40,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MaBSDuBi'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''MaNhatKy'',N''bigint'',8,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''MaLLV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''NguoiThucHien'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''NgayThucHien'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''TrangThaiCu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''TrangThaiMoi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''GioVaoCu'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''GioRaCu'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''GioVaoMoi'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''GioRaMoi'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''CongCu'',N''decimal'',5,4,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''CongMoi'',N''decimal'',5,4,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_DUYET_CHAM_CONG'',N''LyDo'',N''nvarchar'',1000,0,0,0);'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM (VALUES'+NCHAR(13)+N''+NCHAR(10)+N'(N''PK_NGAY_NGHI_LE'',N''PK''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''UQ_NGAY_NGHI_LE_NgayNghi'',N''UQ''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DF_NNL_HuongLuong'',N''D''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_NGAY_NGHI_LE_Loai'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PK_CHAM_CONG'',N''PK''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''UQ_CHAM_CONG_Lich'',N''UQ''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DF_CC_DiTre'',N''D''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DF_CC_Cong'',N''D''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CHAM_CONG_1'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CHAM_CONG_2'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CHAM_CONG_3'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PK_CHI_TIET_LUONG'',N''PK''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CTL_1'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CTL_2'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CTL_3'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PK_PHU_TA_DICH_VU'',N''PK''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''UQ_PHU_TA_DV'',N''UQ''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_PHU_TA_DV_TT'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PK_CHI_TIET_HOA_HONG_LUONG'',N''PK''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CTHH_1'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_CTHH_2'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''UQ_CTHH_Luong_DichVu'',N''UQ''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PK_LAM_THEM_GIO'',N''PK''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_LTG_1'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_LTG_2'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CK_LTG_3'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PK_NHAT_KY_DUYET_CHAM_CONG'',N''PK'')) required(N,T) WHERE OBJECT_ID(N''dbo.''+required.N,required.T) IS NULL)'+N''+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Thiếu PK/UNIQUE/CHECK/DEFAULT của các bảng V9.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM @cols e LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+e.T) AND c.name=e.C'+NCHAR(13)+N''+NCHAR(10)+N'  LEFT JOIN sys.types t ON t.user_type_id=c.user_type_id WHERE c.column_id IS NULL OR t.name<>e.Ty OR c.max_length<>e.L OR c.is_nullable<>e.N'+NCHAR(13)+N''+NCHAR(10)+N'  OR (e.Ty=N''decimal'' AND(c.precision<>e.P OR c.scale<>e.S)) OR(e.Ty=N''datetime2'' AND c.scale<>e.S))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Thiếu hoặc sai kiểu cột lịch khám/chấm công/lương V9.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N''RHM_CAU_HINH_QUY_PHEP'',N''RHM_NGAY_PHEP_NAM'',N''AI_PHIEN_TIEP_NHAN'',N''AI_TIEP_NHAN_NHAP'',N''AI_TIN_NHAN'',N''AI_SU_KIEN'',N''AI_KET_QUA_TAO_PHIEU'',N''AI_SERVICE_IDENTITY'',N''AI_SERVICE_INTAKE_SESSION'',N''AI_YEU_CAU_TAO_PHIEU'') AND name NOT IN(N''PHIEN_DANG_NHAP'',N''PHAN_QUYEN_VAI_TRO'',N''ANH_XQUANG_LAN_KHAM'',N''PHAN_CONG_ANH_XQUANG''))<>60'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Schema hợp nhất phải có đủ 60 bảng.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF NOT EXISTS(SELECT 1 FROM sys.computed_columns WHERE object_id=OBJECT_ID(N''dbo.BANG_LUONG'') AND name=N''LuongTheoCa'' AND is_persisted=1 AND definition LIKE N''%PhienBanTinhLuong%'' AND definition LIKE N''%LuongTheoCaTruocDongBo%'' AND definition LIKE N''%CongThucTe%'')'+NCHAR(13)+N''+NCHAR(10)+N' OR NOT EXISTS(SELECT 1 FROM sys.computed_columns WHERE object_id=OBJECT_ID(N''dbo.BANG_LUONG'') AND name=N''TongLuong'' AND is_persisted=1 AND definition LIKE N''%TongLuongTruocDongBo%'' AND definition LIKE N''%TienBaoHiem%'')'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Công thức lương không giữ bản tiền cũ hoặc chưa dùng V9.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM (VALUES'+NCHAR(13)+N''+NCHAR(10)+N' (N''TR_BL_ChotLuong'',N''TR''),(N''TR_CTL_KhoaTheoBangLuong'',N''TR''),(N''TR_CTHH_KhoaTheoBangLuong'',N''TR''),'+NCHAR(13)+N''+NCHAR(10)+N' (N''TR_NKCC_KhongSua'',N''TR''),(N''TR_CC_KhoaKyDaChot'',N''TR''),(N''TR_LLV_KhoaKyDaChot'',N''TR''),'+NCHAR(13)+N''+NCHAR(10)+N' (N''RHM_TinhLuongKy'',N''P''),(N''RHM_ChotLuongNhanVien'',N''P''),(N''VW_CONG_CHUAN_BANG_LUONG'',N''V''),(N''VW_DICH_VU_DU_HOA_HONG'',N''V''),'+NCHAR(13)+N''+NCHAR(10)+N' (N''CK_BL_PhienBan'',N''C''),(N''CK_BANG_LUONG_1'',N''C''),(N''CK_BANG_LUONG_2'',N''C''),(N''CK_BANG_LUONG_3'',N''C''),(N''CK_BANG_LUONG_4'',N''C''),(N''CK_BANG_LUONG_5'',N''C''),'+NCHAR(13)+N''+NCHAR(10)+N' (N''CK_CHINH_SACH_LUONG_6'',N''C''),(N''CK_CHINH_SACH_LUONG_7'',N''C''),(N''CK_LICH_KHAM_MucDoNghiemTrong'',N''C''),(N''FK_LICH_KHAM_BacSiDuBi'',N''F''),'+NCHAR(13)+N''+NCHAR(10)+N' (N''FK_BL_NguoiChot'',N''F''),(N''FK_CC_MaLLV'',N''F''),(N''FK_CC_NguoiDoiSoat'',N''F''),(N''FK_CTL_BangLuong'',N''F''),(N''FK_CTL_NguoiDuyet'',N''F''),'+NCHAR(13)+N''+NCHAR(10)+N' (N''FK_PTDV_DVTH'',N''F''),(N''FK_PTDV_NV'',N''F''),(N''FK_CTHH_BL'',N''F''),(N''FK_CTHH_CTHD'',N''F''),(N''FK_LTG_NV'',N''F''),(N''FK_LTG_NguoiDuyet'',N''F''),'+NCHAR(13)+N''+NCHAR(10)+N' (N''FK_NKCC_Lich'',N''F''),(N''FK_NKCC_NhanVien'',N''F''),(N''FK_NKCC_NguoiDuyet'',N''F''),(N''UQ_BANG_LUONG_NhanVien_Ky'',N''UQ'')) o(N,T)'+NCHAR(13)+N''+NCHAR(10)+N' WHERE OBJECT_ID(N''dbo.''+o.N,o.T) IS NULL)'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Thiếu đối tượng/ràng buộc SQL V9.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM (VALUES(N''NGAY_NGHI_LE'',N''IX_NNL_Ngay''),(N''CHI_TIET_LUONG'',N''IX_CTL_BangLuong''),(N''CHI_TIET_HOA_HONG_LUONG'',N''IX_CTHH_BangLuong''),(N''LAM_THEM_GIO'',N''IX_LTG_NV_Ngay''),(N''NHAT_KY_DUYET_CHAM_CONG'',N''IX_NKCC_Lich_Ngay'')) e(T,N)'+NCHAR(13)+N''+NCHAR(10)+N'  LEFT JOIN sys.indexes i ON i.object_id=OBJECT_ID(N''dbo.''+e.T) AND i.name=e.N WHERE i.index_id IS NU'+N'LL OR i.is_disabled=1 OR i.is_hypothetical=1)'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Thiếu hoặc tắt index SQL V9.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE is_disabled=1 OR is_not_trusted=1)'+NCHAR(13)+N''+NCHAR(10)+N' OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE is_disabled=1 OR is_not_trusted=1)'+NCHAR(13)+N''+NCHAR(10)+N' OR EXISTS(SELECT 1 FROM sys.triggers WHERE parent_class=1 AND is_disabled=1)'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52335,N''Có ràng buộc chưa trusted hoặc trigger bị tắt.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''SqlV9Merged'' SchemaVersion,(SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N''RHM_CAU_HINH_QUY_PHEP'',N''RHM_NGAY_PHEP_NAM'',N''AI_PHIEN_TIEP_NHAN'',N''AI_TIEP_NHAN_NHAP'',N''AI_TIN_NHAN'',N''AI_SU_KIEN'',N''AI_KET_QUA_TAO_PHIEU'',N''AI_SERVICE_IDENTITY'',N''AI_SERVICE_INTAKE_SESSION'',N''AI_YEU_CAU_TAO_PHIEU'')) TableCount,'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT COUNT(*) FROM dbo.BANG_LUONG WHERE PhienBanTinhLuong=8) PreservedLegacyPayroll;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   PROCEDURE dbo.usp_RHM_KiemTraKeThuoc AS'+NCHAR(13)+N''+NCHAR(10)+N' BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.PrescriptionFlow.Version'' AND TRY_CONVERT(int,value)=1)'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52325,N''Chạy toàn bộ QLBenhVienRangHamMat.sql để đồng bộ kê thuốc trong khám.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF NOT EXISTS(SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID(N''dbo.THUOC'') AND name=N''MaNhomThuoc'' AND TYPE_NAME(user_type_id)=N''nvarchar'' AND max_length=100 AND is_nullable=1)'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52325,N''Thiếu nhóm thuốc trực tiếp hoặc sai kiểu.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF NOT EXISTS(SELECT 1 FROM sys.foreign_keys f JOIN sys.foreign_key_columns c ON c.constraint_object_id=f.object_id'+NCHAR(13)+N''+NCHAR(10)+N'  WHERE f.name=N''FK_RX_Thuoc_Nhom'' AND f.parent_object_id=OBJECT_ID(N''dbo.THUOC'') AND f.referenced_object_id=OBJECT_ID(N''dbo.NHOM_THUOC_KE_DON'')'+NCHAR(13)+N''+NCHAR(10)+N'   AND COL_NAME(c.parent_object_id,c.parent_column_id)=N''MaNhomThuoc'' AND COL_NAME(c.referenced_object_id,c.referenced_column_id)=N''MaNhomThuoc'' AND f.is_disabled=0 AND f.is_not_trusted=0)'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52325,N''Khóa ngoại nhóm thuốc thiếu hoặc chưa trusted.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.THUOC'') AND name=N''IX_RX_Thuoc_Nhom'' AND is_disabled=0)'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52325,N''Thiếu index nhóm thuốc.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''PrescriptionFlow1'' PrescriptionFlow,(SELECT COUNT(*) FROM dbo.NHOM_THUOC_KE_DON) DrugGroups,(SELECT COUNT(*) FROM dbo.THUOC) Medicines;'+NCHAR(13)+N''+NCHAR(10)+N' END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   PROCEDURE dbo.usp_RHM_KiemTraKhoAnh AS'+NCHAR(13)+N''+NCHAR(10)+N' BEGIN'+NCHAR(13)+N''+NCHAR(10)+N'  SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'  IF OBJECT_ID(N''dbo.PHAN_CONG_ANH_XQUANG'',N''U'') IS NULL OR OBJECT_ID(N''dbo.TR_PCAXQ_BaoVe'',N''TR'') IS NULL OR OBJECT_ID(N''dbo.TR_DVTH_PCAXQ'',N''TR'') IS NULL'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53415,N''Chưa đồng bộ phân công ảnh P4.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM(VALUES'+NCHAR(13)+N''+NCHAR(10)+N'   (N''FK_PCAXQ_DichVu'',N''MaDVThucHien'',N''DICH_VU_THUC_HIEN'',N''MaDVThucHien''),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''FK_PCAXQ_KyThuat'',N''MaNVKyThuat'',N''NHAN_VIEN'',N''MaNV''),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''FK_PCAXQ_NguoiGiao'',N''MaNVPhanCong'',N''NHAN_VIEN'',N''MaNV'')) required(N,C,RT,RC)'+NCHAR(13)+N''+NCHAR(10)+N'   WHERE NOT EXISTS(SELECT 1 FROM sys.foreign_keys f JOIN sys.foreign_key_columns k ON k.constraint_object_id=f.object_id'+NCHAR(13)+N''+NCHAR(10)+N'    JOIN sys.columns c ON c.object_id=k.parent_object_id AND c.column_id=k.parent_column_id'+NCHAR(13)+N''+NCHAR(10)+N'    JOIN sys.columns r ON r.object_id=k.referenced_object_id AND r.column_id=k.referenced_column_id'+NCHAR(13)+N''+NCHAR(10)+N'    WHERE f.object_id=OBJECT_ID(N''dbo.''+required.N,N''F'') AND f.parent_object_id=OBJECT_ID(N''dbo.PHAN_CONG_ANH_XQUANG'')'+NCHAR(13)+N''+NCHAR(10)+N'     AND f.referenced_object_id=OBJECT_ID(N''dbo.''+required.RT) AND c.name=required.C AND r.name=required.RC'+NCHAR(13)+N''+NCHAR(10)+N'     AND f.is_disabled=0 AND f.is_not_trusted=0 AND k.constraint_column_id=1'+NCHAR(13)+N''+NCHAR(10)+N'     AND(SELECT COUNT(*) FROM sys.foreign_key_columns k2 WHERE k2.constraint_object_id=f.object_id)=1))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53415,N''Thiếu FK phân công ảnh đã kiểm chứng.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF NOT EXISTS(SELECT 1 FROM sys.check_constraints WHERE name=N''CK_PCAXQ_TrangThai'' AND is_disabled=0 AND is_not_trusted=0)'+NCHAR(13)+N''+NCHAR(10)+N'   OR NOT EXISTS(SELECT 1 FROM sys.indexes i WHERE i.object_id=OBJECT_ID(N''dbo.PHAN_CONG_ANH_XQUANG'') AND i.name=N''UX_PCAXQ_DichVu'' AND i.is_unique=1 AND i.is_disabled=0'+NCHAR(13)+N''+NCHAR(10)+N'    AND i.has_filter=1 AND i.filter_definition=N''([TrangThai]=N''''Đang áp dụng'''')'''+NCHAR(13)+N''+NCHAR(10)+N'    AND EXISTS(SELECT 1 FROM sys.index_columns k JOIN sys.columns c ON c.object_id=k.object_id AND c.column_id=k.column_id'+NCHAR(13)+N''+NCHAR(10)+N'     WHERE k.object_id=i.object_id AND k.index_id=i.index_id AND k.key_ordinal=1 AND c.name=N''MaDVThucHien'')'+NCHAR(13)+N''+NCHAR(10)+N'    AND(SELECT COUNT(*) FROM sys.index_columns k WHERE k.object_id=i.object_id AND k.index_id=i.index_id AND k.key_ordinal>0)=1)'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53415,N''Thiếu CHECK/index phân công ảnh.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM(VALUES(N''TR_PCAXQ_BaoVe'',N''PHAN_CONG_ANH_XQUANG''),(N''TR_DVTH_PCAXQ'',N''DICH_VU_THUC_HIEN'')) required(N,T)'+NCHAR(13)+N''+NCHAR(10)+N'   WHERE NOT EXISTS(SELECT 1 FROM sys.triggers t WHERE t.object_id=OBJECT_ID(N''dbo.''+required.N,N''TR'')'+NCHAR(13)+N''+NCHAR(10)+N'    AND t.parent_id=OBJECT_ID(N''dbo.''+required.T) AND t.is_disabled=0))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53415,N''Trigger bảo vệ phân công ảnh bị thiếu, sai bảng hoặc đã tắt.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  -- Đối chiếu đủ thuộc tính ET để DAL không nhận lỗi cột/kiểu sau khi kiểm schema thành công.'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM(VALUES'+NCHAR(13)+N''+NCHAR(10)+N'   (N''ANH_XQUANG_LAN_KHAM'',N''MaAnh'',231,100,0,0),(N''ANH_XQUANG_LAN_KHAM'',N''MaLS'',231,100,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''ANH_XQUANG_LAN_KHAM'',N''MaDVThucHien'',231'+N',100,0,1),(N''ANH_XQUANG_LAN_KHAM'',N''TenTepGoc'',231,510,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''ANH_XQUANG_LAN_KHAM'',N''TenTepLuu'',231,510,0,0),(N''ANH_XQUANG_LAN_KHAM'',N''DuongDanTuongDoi'',231,1000,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''ANH_XQUANG_LAN_KHAM'',N''MimeType'',231,200,0,0),(N''ANH_XQUANG_LAN_KHAM'',N''KichThuocBytes'',127,8,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''ANH_XQUANG_LAN_KHAM'',N''Sha256'',175,64,0,0),(N''ANH_XQUANG_LAN_KHAM'',N''GhiChu'',231,1000,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''ANH_XQUANG_LAN_KHAM'',N''NgayTao'',42,6,0,0),(N''ANH_XQUANG_LAN_KHAM'',N''MaNVUpload'',231,100,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''ANH_XQUANG_LAN_KHAM'',N''TrangThai'',231,40,0,0),(N''ANH_XQUANG_LAN_KHAM'',N''NgayAn'',42,6,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''PHAN_CONG_ANH_XQUANG'',N''MaPC'',231,100,0,0),(N''PHAN_CONG_ANH_XQUANG'',N''MaDVThucHien'',231,100,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''PHAN_CONG_ANH_XQUANG'',N''MaNVKyThuat'',231,100,0,0),(N''PHAN_CONG_ANH_XQUANG'',N''MaNVPhanCong'',231,100,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''PHAN_CONG_ANH_XQUANG'',N''NgayPhanCong'',42,6,0,0),(N''PHAN_CONG_ANH_XQUANG'',N''TrangThai'',231,40,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''PHAN_CONG_ANH_XQUANG'',N''NgayHuy'',42,6,0,1)) required(T,C,TypeId,L,S,N)'+NCHAR(13)+N''+NCHAR(10)+N'   LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+required.T) AND c.name=required.C'+NCHAR(13)+N''+NCHAR(10)+N'   WHERE c.column_id IS NULL OR c.system_type_id<>required.TypeId OR c.max_length<>required.L OR c.scale<>required.S OR c.is_nullable<>required.N)'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53415,N''Cột metadata/phân công ảnh không khớp ET/DAL hiện tại.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  EXEC dbo.usp_RHM_KiemTraNenTangSprint3;'+NCHAR(13)+N''+NCHAR(10)+N' END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   PROCEDURE dbo.usp_RHM_KiemTraNenTangSprint3 AS'+NCHAR(13)+N''+NCHAR(10)+N' BEGIN'+NCHAR(13)+N''+NCHAR(10)+N'  SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'  IF ISNULL(COL_LENGTH(N''dbo.PHIEU_KHAM_BENH'',N''LoaiKham''),-1)<>40'+NCHAR(13)+N''+NCHAR(10)+N'   OR ISNULL(COL_LENGTH(N''dbo.PHIEU_KHAM_BENH'',N''PhiPhuThuDichVu''),-1)<>9'+NCHAR(13)+N''+NCHAR(10)+N'   OR ISNULL(COL_LENGTH(N''dbo.CHI_TIET_HOA_DON'',N''MaPhieuPhuThu''),-1)<>100'+NCHAR(13)+N''+NCHAR(10)+N'   OR OBJECT_ID(N''dbo.ANH_XQUANG_LAN_KHAM'',N''U'') IS NULL'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53408,N''Thiếu hoặc sai schema nền tảng Sprint 3.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM(VALUES'+NCHAR(13)+N''+NCHAR(10)+N'   (N''PHIEU_KHAM_BENH'',N''LoaiKham'',231,40,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''PHIEU_KHAM_BENH'',N''PhiPhuThuDichVu'',106,9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''CHI_TIET_HOA_DON'',N''MaPhieuPhuThu'',231,100,0,0,1)) required(T,C,TypeId,L,P,S,N)'+NCHAR(13)+N''+NCHAR(10)+N'   LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+required.T) AND c.name=required.C'+NCHAR(13)+N''+NCHAR(10)+N'   WHERE c.column_id IS NULL OR c.system_type_id<>required.TypeId OR c.max_length<>required.L OR c.is_nullable<>required.N'+NCHAR(13)+N''+NCHAR(10)+N'    OR(required.TypeId=106 AND(c.precision<>required.P OR c.scale<>required.S)))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53408,N''Sai kiểu hoặc nullability cột khám dịch vụ/phụ thu.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT name FROM(VALUES(N''CK_PKB_LoaiKham_PhuThu''),(N''CK_CHI_TIET_HOA_DON_3''),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''CK_AXQ_Tep''),(N''CK_AXQ_Hash''),(N''CK_AXQ_KichThuoc''),(N''CK_AXQ_TrangThai'')) required(name)'+NCHAR(13)+N''+NCHAR(10)+N'   WHERE NOT EXISTS(SELECT 1 FROM sys.check_constraints c WHERE c.name=required.name AND c.is_disabled=0 AND c.is_not_trusted=0))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53408,N''Thiếu CHECK tin cậy của nền tảng Sprint 3.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT name FROM(VALUES(N''FK_CTHD_PhieuPhuThu''),(N''FK_AXQ_LanKham''),(N''FK_AXQ_DichVu''),(N''FK_AXQ_NhanVien'')) required(name)'+NCHAR(13)+N''+NCHAR(10)+N'   WHERE NOT EXISTS(SELECT 1 FROM sys.foreign_keys f WHERE f.name=required.name AND f.is_disabled=0 AND f.is_not_trusted=0))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53408,N''Thiếu FK tin cậy của nền tảng Sprint 3.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT name FROM(VALUES(N''TR_PKB_KhoaLoaiKham''),(N''TR_CTHD_TinhTien''),(N''TR_HD_PhuThuDichVu''),'+NCHAR(13)+N''+NCHAR(10)+N'   (N''TR_HD_XacNhan''),(N''TR_HD_ChotHoanTat''),(N''TR_AXQ_BaoVe''),(N''TR_DVTH_AnhXquang''),(N''TR_LS_NguonAnhPhuThu'')) required(name)'+NCHAR(13)+N''+NCHAR(10)+N'   WHERE NOT EXISTS(SELECT 1 FROM sys.triggers t WHERE t.name=required.name AND t.is_disabled=0))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53408,N''Thiếu trigger đang hoạt động của nền tảng Sprint 3.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.CHI_TIET_HOA_DON'') AND name=N''UX_CTHD_PhieuPhuThu'' AND is_unique=1 AND has_filter=1 AND is_disabled=0)'+NCHAR(13)+N''+NCHAR(10)+N'   OR NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.ANH_XQUANG_LAN_KHAM'') AND name=N''UX_AXQ_DuongDan'' AND is_unique=1 AND is_disabled=0)'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53408,N''Thiếu index chống trùng phụ thu hoặc đường dẫn ảnh.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c JOIN dbo.HOA_DON h ON h.MaHD=c.MaHD'+NCHAR(13)+N''+NCHAR(10)+N'   JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=c.MaPhieuPhuThu'+NCHAR(13)+N''+NCHAR(10)+N'   WHERE p.LoaiKham<>N''Dịch vụ'' OR c.DonGia<>p.PhiPhuThuDichVu OR c.ThanhTien<>p.PhiPhuThuDi'+N'chVu'+NCHAR(13)+N''+NCHAR(10)+N'    OR NOT EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaLS=h.MaLS AND l.MaPhieu=p.MaPhieu))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53408,N''Có dòng phụ thu không khớp nguồn.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM dbo.ANH_XQUANG_LAN_KHAM a JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=a.MaDVThucHien WHERE a.MaLS<>s.MaLS)'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53408,N''Có ảnh tham chiếu dịch vụ của lần khám khác.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  SELECT N''Sprint3Foundation1'' AS HopDong,COUNT_BIG(*) AS SoAnh FROM dbo.ANH_XQUANG_LAN_KHAM;'+NCHAR(13)+N''+NCHAR(10)+N' END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   PROCEDURE dbo.usp_RHM_KiemTraSchema AS'+NCHAR(13)+N''+NCHAR(10)+N' BEGIN'+NCHAR(13)+N''+NCHAR(10)+N'  SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'  EXEC dbo.usp_RHM_KiemTraSchemaNen;'+NCHAR(13)+N''+NCHAR(10)+N'  EXEC dbo.usp_RHM_KiemTraKeThuoc;'+NCHAR(13)+N''+NCHAR(10)+N'  EXEC dbo.usp_RHM_KiemTraDongBoV9;'+NCHAR(13)+N''+NCHAR(10)+N'  EXEC dbo.usp_RHM_KiemTraBaoTriSerial;'+NCHAR(13)+N''+NCHAR(10)+N'  IF NOT EXISTS(SELECT 1 FROM sys.indexes i WHERE i.object_id=OBJECT_ID(N''dbo.NHAT_KY_THAO_TAC'') AND i.name=N''UX_S3_Event'''+NCHAR(13)+N''+NCHAR(10)+N'   AND i.is_unique=1 AND i.is_disabled=0 AND i.has_filter=1 AND i.filter_definition=N''([MaSuKien] IS NOT NULL)'''+NCHAR(13)+N''+NCHAR(10)+N'   AND EXISTS(SELECT 1 FROM sys.index_columns k JOIN sys.columns c ON c.object_id=k.object_id AND c.column_id=k.column_id'+NCHAR(13)+N''+NCHAR(10)+N'    WHERE k.object_id=i.object_id AND k.index_id=i.index_id AND k.key_ordinal=1 AND c.name=N''MaSuKien'')'+NCHAR(13)+N''+NCHAR(10)+N'   AND(SELECT COUNT(*) FROM sys.index_columns k WHERE k.object_id=i.object_id AND k.index_id=i.index_id AND k.key_ordinal>0)=1)'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53417,N''Thiếu hoặc sai index chống trùng sự kiện nhật ký ứng dụng.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  -- Kiểm kho ảnh gọi tiếp nền tảng Sprint3, bao gồm loại khám/phụ thu/hóa đơn.'+NCHAR(13)+N''+NCHAR(10)+N'  EXEC dbo.usp_RHM_KiemTraKhoAnh;'+NCHAR(13)+N''+NCHAR(10)+N' END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
- SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   PROCEDURE dbo.usp_RHM_KiemTraSchemaNen AS BEGIN SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'DECLARE @core TABLE(T sysname,C sysname,TypeName sysname,L smallint,P tinyint,S tinyint,N bit);'+NCHAR(13)+N''+NCHAR(10)+N'INSERT @core VALUES'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''MaBN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''HoTenBN'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''GioiTinh'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''NgaySinh'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''SDT'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''DiaChi'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''MaBHYT'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''NhomMau'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''TienSuBenh'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''DiUng'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HO_SO_BENH_AN'',N''MaHS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HO_SO_BENH_AN'',N''MaBN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HO_SO_BENH_AN'',N''NgayLap'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HO_SO_BENH_AN'',N''LyDoKhamBanDau'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HO_SO_BENH_AN'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HO_SO_BENH_AN'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''MaPhieu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''MaHS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''MaLich'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''MaPhong'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''MaBS'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''MaNVTiepNhan'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''MaDV'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''SoThuTu'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''ThoiGianTiepNhan'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''LyDoKham'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''MaLS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''MaPhieu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''MaBS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''MaPhong'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''ThoiGianKham'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''TrieuChung'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''ChanDoan'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''KeHoachXuLy'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''NgayXacNhan'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''KhongKeThuoc'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''LyDoKhongKeThuoc'',N''nvarchar'',1000,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TINH_TRANG_BENH'',N''MaTTB'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TINH_TRANG_BENH'',N''MaLS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TINH_TRANG_BENH'',N''LoaiTinhTrang'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TINH_TRANG_BENH'',N''MoTaTinhTrang'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TINH_TRANG_BENH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TINH_TRANG_BENH'',N''MaDMT'+N'T'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''MaDV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''TenDV'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''NhomDV'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''MaCK'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''DonGia'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''ThoiGianDuKien'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''MoTa'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''NgayApDung'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''MaKHDT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''MaLS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''MaBS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''NgayLap'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''NgayBatDau'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''NgayDuKienKetThuc'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''TongTienDuKien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''MaTTBNguon'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''MaMauKH'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''PhienBanMau'',N''int'',4,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''MaCTKH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''MaKHDT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''MaDV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''LanThu'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''SoLuongDuKien'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''DonGiaDuKien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''NoiDungBuoc'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''MaDVThucHien'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''MaLS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''MaCTKH'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''MaDV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''MaNVThucHien'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''ThoiGianThucHien'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''SoLuong'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''DonGia'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''KetQua'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''MaDT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''MaLS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''MaBS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''NgayKe'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''LyDoThayThe'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''MaDTThayThe'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''MaCTDT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''MaDT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''MaThuoc'',N''nvarchar'',10'+N'0,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''LieuDung'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''SoLuong'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''SoNgayDung'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''HuongDan'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''DuongDung'',N''nvarchar'',200,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''TenThuocChot'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''HamLuongChot'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''DonViTinhChot'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''PhienBanHuongDan'',N''int'',4,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''VAI_TRO'',N''MaVaiTro'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''VAI_TRO'',N''TenVaiTro'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''VAI_TRO'',N''MoTa'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUC_VU'',N''MaChucVu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUC_VU'',N''TenChucVu'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUC_VU'',N''MoTa'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''MaTK'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''TenDangNhap'',N''nvarchar'',200,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''MatKhauHash'',N''nvarchar'',1024,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''MaVaiTro'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''MaKhoa'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''MaPhong'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''HoTen'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''GioiTinh'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''NgaySinh'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''SDT'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''DiaChi'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''MaChucVu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''MaCK'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''BangCap'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''NgayVaoLam'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''MaCC'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''SoChungChi'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''TenChungChi'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''NgayCap'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''NoiCap'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''HanChungChi'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHOA'',N''MaKhoa'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHOA'',N''TenKhoa'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHOA'',N''DienThoai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUYEN_KHOA'',N''MaCK'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUYEN_KHOA'',N''MaKhoa'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUYEN_KHOA'',N''TenCK'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUYEN_KHOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUYEN_KHOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHONG'',N'+N'''MaPhong'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHONG'',N''TenPhong'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHONG'',N''MaKhoa'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHONG'',N''LoaiPhong'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHONG'',N''TinhTrang'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHONG'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''MaTB'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''MaHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''SoSerial'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''NgayMua'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''MaNCC'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''MaPhong'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''TinhTrang'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''HanBaoHanh'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''MaBT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''MaTB'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''NgayBatDau'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''NgayKetThuc'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''NoiDung'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''ChiPhi'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''NgayBaoTriTiepTheo'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHA_CUNG_CAP'',N''MaNCC'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHA_CUNG_CAP'',N''TenNCC'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHA_CUNG_CAP'',N''SDT'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHA_CUNG_CAP'',N''Email'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHA_CUNG_CAP'',N''DiaChi'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHA_CUNG_CAP'',N''NguoiLienHe'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHA_CUNG_CAP'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHO'',N''MaKho'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHO'',N''TenKho'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHO'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHO'',N''LoaiKho'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHO'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LOAI_HANG_HOA'',N''MaLoaiHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LOAI_HANG_HOA'',N''TenLoaiHH'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LOAI_HANG_HOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LOAI_HANG_HOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HANG_HOA'',N''MaHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HANG_HOA'',N''TenHH'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HANG_HOA'',N''MaLoaiHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HANG_HOA'',N''DonViTinh'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HANG_HOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HANG_HOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''VAT_TU'',N''MaVT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''VAT_TU'',N''MaHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''VAT_TU'',N''MucTonToiThieu'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THUOC'',N''MaThuoc'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THUOC'',N''MaHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THUOC'',N''HamLuong'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THUOC'',N''MucTonToiThieu'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THUOC'',N''DonGiaBan'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''MaLo'',N''nv'+N'archar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''MaHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''MaNCC'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''MaKho'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''SoLo'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''NgayNhap'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''HanSuDung'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''MaHDN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''SoHoaDonNCC'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''MaNCC'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''NgayHoaDon'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''TongTien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''MaPN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''MaHDN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''MaKho'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''NgayNhap'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''TongTien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''LyDo'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_NHAP'',N''MaCTPN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_NHAP'',N''MaPN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_NHAP'',N''MaHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_NHAP'',N''MaLo'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_NHAP'',N''SoLuong'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_NHAP'',N''DonGia'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_NHAP'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''MaPX'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''MaKho'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''MaKhoa'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''MaPhong'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''MaLS'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''NgayXuat'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''LyDo'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_XUAT'',N''MaCTPX'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_XUAT'',N''MaPX'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_XUAT'',N''MaHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_XUAT'',N''MaLo'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_XUAT'',N''MaCTDT'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_XUAT'',N''SoLuong'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_XUAT'',N''GhiChu'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CA_LAM'',N''MaCa'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CA_LAM'',N''GioBatDau'',N''time'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CA_LAM'',N''GioKetThuc'',N''time'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CA_LAM'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CA_LAM'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''MaLLV'',N''nvarc'+N'har'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''MaCa'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''NgayLam'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''MaPhong'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''TrangThaiHienDien'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''GioVao'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''GioRa'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''MaDonNghi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''TuNgay'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''DenNgay'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''LyDo'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''NgayGui'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''TrangThaiDuyet'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''MaNVDuyet'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''NgayDuyet'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHAN_CONG_THAY_THE'',N''MaPCTT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHAN_CONG_THAY_THE'',N''MaDonNghi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHAN_CONG_THAY_THE'',N''MaLLVThayThe'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHAN_CONG_THAY_THE'',N''NgayXuLy'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHAN_CONG_THAY_THE'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHAN_CONG_THAY_THE'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MaLich'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MaBN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MaBS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MaCa'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MaPhong'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MaDV'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''NgayGioKham'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''ThoiLuongDuKien'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''UuTien'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''LyDoKham'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''LyDoThayDoi'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''NgayTao'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''NgayCapNhat'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''MaHD'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''MaLS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''NgayLap'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''NgayXacNhan'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''TongTien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''GiamGia'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''PhienBanQuyTrinh'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''MaYeuCau'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''DauVanTayYeuCau'',N''nvarchar'',128,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_DON'',N''MaCTHD'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_DON'',N''MaHD'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_DON'',N''MaDVThucHien'',N'+N'''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_DON'',N''MaCTPX'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_DON'',N''NoiDung'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_DON'',N''DonGia'',N''decimal'',9,18,2,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_DON'',N''ThanhTien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''MaTT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''MaHD'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''NgayThanhToan'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''SoTien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''LoaiGiaoDich'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''PhuongThuc'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''LyDo'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''SoTienKhachDua'',N''decimal'',9,18,2,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''TienThua'',N''decimal'',9,18,2,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''MaThamChieu'',N''nvarchar'',200,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''MaCSL'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''MaChucVu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''TenChinhSach'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''PhienBan'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''NgayHieuLuc'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''NgayHetHieuLuc'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''LuongCoBan'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''SoCaDinhMuc'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''CoSoHoaHong'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''TyLeHoaHong'',N''decimal'',5,9,6,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''MaNVDuyet'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''NgayDuyet'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''MaBL'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''MaCSL'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TuNgay'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''DenNgay'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''SoCaTinh'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''LuongCoBan'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''SoCaDinhMuc'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TienHoaHong'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''NgayChot'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''MaNK'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''MaTK'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''ThoiGian'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''HanhDong'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''LoaiDoiTuong'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''MaDoiTuong'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''KetQua'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''DuLieuTruoc'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''DuLieuSau'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaDonNghi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH'+N'_KHAM'',N''MaLich'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaBSCu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaPhongCu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaBSMoi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaPhongMoi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaLLVThayThe'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaCa'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''NgayGioKham'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''ThoiLuongDuKien'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaNVXacNhan'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''NgayXacNhan'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''TrangThai'',N''nvarchar'',60,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CA_THEO_NGAY'',N''NgayLam'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CA_THEO_NGAY'',N''MaCa'',N''nvarchar'',100,0,0,0);'+NCHAR(13)+N''+NCHAR(10)+N'IF EXISTS(SELECT 1 FROM @core e LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+e.T) AND c.name=e.C LEFT JOIN sys.types t ON t.user_type_id=c.user_type_id'+NCHAR(13)+N''+NCHAR(10)+N'WHERE c.column_id IS NULL OR t.name<>e.TypeName OR c.max_length<>e.L OR c.is_nullable<>e.N OR(e.TypeName=N''decimal'' AND(c.precision<>e.P OR c.scale<>e.S)) OR(e.TypeName IN(N''datetime2'',N''time'') AND c.scale<>e.S))'+NCHAR(13)+N''+NCHAR(10)+N'THROW 52271,N''Cấu trúc nền không khớp hợp đồng; dừng đồng bộ để bảo toàn dữ liệu.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'-- Chỉ đọc, kiểm chứng hợp đồng sau nâng cấp.'+NCHAR(13)+N''+NCHAR(10)+N'SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'DECLARE @expected TABLE(T sysname,C sysname,TypeName sysname,MaxLength smallint,PrecisionValue tinyint,ScaleValue tinyint,Nullable bit);'+NCHAR(13)+N''+NCHAR(10)+N'INSERT @expected VALUES'+NCHAR(13)+N''+NCHAR(10)+N'(N''DM_TINH_TRANG_BENH'',N''MaDMTT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DM_TINH_TRANG_BENH'',N''TenTinhTrang'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DM_TINH_TRANG_BENH'',N''MoTa'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DM_TINH_TRANG_BENH'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''MaMauKH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''MaDMTT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''MucDo'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''TenMau'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''PhienBan'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''MaBSDuyet'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''NgayDuyet'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_MAU_KE_HOACH'',N''MaCTMau'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_MAU_KE_HOACH'',N''MaMauKH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_MAU_KE_HOACH'',N''MaDV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_MAU_KE_HOACH'',N''ThuTu'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_MAU_KE_HOACH'',N''LanThu'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_MAU_KE_HOACH'',N''SoLuongDuKien'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_MAU_KE_HOACH'',N''NoiDung'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHOM_THUOC_KE_DON'',N''MaNhomThuoc'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHOM_THUOC_KE_DON'',N''TenNhom'',N''nvarchar'',510,'+N'0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHOM_THUOC_KE_DON'',N''MoTa'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHOM_THUOC_KE_DON'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''MaThuoc'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''MaNhomThuoc'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''DoiTuongApDung'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''DuongDung'',N''nvarchar'',200,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''LieuDungGoiY'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''HuongDanGoiY'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''PhienBan'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''MaNguoiDuyet'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''NgayDuyet'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAN_GIAO_THUOC'',N''MaDT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAN_GIAO_THUOC'',N''MaHD'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAN_GIAO_THUOC'',N''MaPX'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAN_GIAO_THUOC'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAN_GIAO_THUOC'',N''MaNVGiao'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAN_GIAO_THUOC'',N''ThoiGianGiao'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAN_GIAO_THUOC'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TINH_TRANG_BENH'',N''MaDMTT'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''MaTTBNguon'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''MaMauKH'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''PhienBanMau'',N''int'',4,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''NoiDungBuoc'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''KhongKeThuoc'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''LyDoKhongKeThuoc'',N''nvarchar'',1000,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''MaDTThayThe'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''DuongDung'',N''nvarchar'',200,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''TenThuocChot'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''HamLuongChot'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''DonViTinhChot'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''PhienBanHuongDan'',N''int'',4,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''PhienBanQuyTrinh'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''MaYeuCau'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''DauVanTayYeuCau'',N''nvarchar'',128,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''SoTienKhachDua'',N''decimal'',9,18,2,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''TienThua'',N''decimal'',9,18,2,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''MaThamChieu'',N''nvarchar'',200,0,0,1);'+NCHAR(13)+N''+NCHAR(10)+N'IF EXISTS(SELECT 1 FROM @expected e LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+e.T) AND c.name=e.C LEFT JOIN sys.types t ON t.user_type_id=c.user_type_id WHERE c.column_id IS NULL OR (c.column_id IS NOT NULL AND (t.name<>e.TypeName OR c.max_length<>e.MaxLength OR c.is_nullable<>e.Nullable OR (e.TypeName=N''decimal'' AND(c.precision<>e.PrecisionValue OR c.scale<>e.ScaleValue)) OR (e.TypeName=N''datetime2'' AND c.scale<>e.ScaleValue)))) THROW 52101,N''Cấu trúc cột không khớp hợp đồng quy trình khám; không tự sửa kiểu dữ liệu.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EX'+N'ISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.ClinicalWorkflow.Version'' AND TRY_CONVERT(int,value)=2) THROW 52102,N''Chưa ghi phiên bản quy trình khám 2.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF EXISTS(SELECT 1 FROM (VALUES (N''FK_CW_TTB_DMTT''),(N''FK_CW_KH_TTB''),(N''FK_CW_KH_Mau''),(N''FK_CW_DT_ThayThe''),(N''CK_CW_LS_NoRx''),(N''CK_CW_KH_Source''),(N''CK_CW_CTDT_Version''),(N''CK_CW_HD_Request''),(N''CK_CW_TT_Cash''),(N''PK_CW_DMTT''),(N''CK_CW_DMTT''),(N''PK_CW_MauKH''),(N''FK_CW_MauKH_DMTT''),(N''FK_CW_MauKH_BS''),(N''CK_CW_MauKH''),(N''PK_CW_CTMau''),(N''FK_CW_CTMau_MauKH''),(N''FK_CW_CTMau_DV''),(N''UQ_CW_CTMau_ThuTu''),(N''CK_CW_CTMau''),(N''PK_CW_NhomThuoc''),(N''CK_CW_NhomThuoc''),(N''PK_CW_CauHinhThuoc''),(N''FK_CW_CauHinh_Thuoc''),(N''FK_CW_CauHinh_Nhom''),(N''FK_CW_CauHinh_Duyet''),(N''CK_CW_CauHinh''),(N''PK_CW_BanGiao''),(N''FK_CW_BanGiao_DT''),(N''FK_CW_BanGiao_HD''),(N''FK_CW_BanGiao_PX''),(N''FK_CW_BanGiao_NV''),(N''CK_CW_BanGiao''),(N''TR_CW_LS_BaoVe''),(N''TR_CW_TTB_BaoVe''),(N''TR_CW_Phieu_BacSi''),(N''TR_CW_KH_BaoVe''),(N''TR_CW_CTKH_BaoVe''),(N''TR_CW_DT_ThayThe''),(N''TR_CW_MauKH_BaoVe''),(N''TR_CW_CTMau_BaoVe''),(N''TR_CW_CauHinh_BaoVe''),(N''TR_CW_HD_Request''),(N''TR_CW_TT_ThuDu''),(N''TR_CW_BanGiao_BaoVe''),(N''TR_CW_Audit_DM_TINH_TRANG_BENH''),(N''TR_CW_Audit_MAU_KE_HOACH_DIEU_TRI''),(N''TR_CW_Audit_CHI_TIET_MAU_KE_HOACH''),(N''TR_CW_Audit_NHOM_THUOC_KE_DON''),(N''TR_CW_Audit_CAU_HINH_THUOC_KE_DON'')) expected(Name) WHERE OBJECT_ID(N''dbo.''+Name) IS NULL) THROW 52102,N''Thiếu FK/CHECK/trigger của migration.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF EXISTS(SELECT 1 FROM sys.triggers WHERE name LIKE N''TR[_]CW[_]%'' AND is_disabled=1) OR EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name LIKE N''FK[_]CW[_]%'' AND(is_disabled=1 OR is_not_trusted=1)) OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE name LIKE N''CK[_]CW[_]%'' AND(is_disabled=1 OR is_not_trusted=1)) THROW 52102,N''Trigger hoặc ràng buộc mới bị tắt/chưa kiểm chứng.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.PHIEU_KHAM_BENH'') AND name=N''IX_CW_Phieu_BacSi'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_Phieu_BacSi.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.LICH_SU_KHAM_BENH'') AND name=N''IX_CW_LS_BacSi'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_LS_BacSi.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.HOA_DON'') AND name=N''UX_CW_HD_YeuCau'' AND is_disabled=0) THROW 52102,N''Thiếu index UX_CW_HD_YeuCau.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.HOA_DON'') AND name=N''UX_CW_HD_LuotV2'' AND is_disabled=0) THROW 52102,N''Thiếu index UX_CW_HD_LuotV2.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.KE_HOACH_DIEU_TRI'') AND name=N''UX_CW_KH_Source'' AND is_disabled=0) THROW 52102,N''Thiếu index UX_CW_KH_Source.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes W'+N'HERE object_id=OBJECT_ID(N''dbo.TINH_TRANG_BENH'') AND name=N''IX_CW_TTB_DMTT'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_TTB_DMTT.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.KE_HOACH_DIEU_TRI'') AND name=N''IX_CW_KH_Mau'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_KH_Mau.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.DON_THUOC'') AND name=N''IX_CW_DT_ThayThe'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_DT_ThayThe.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.MAU_KE_HOACH_DIEU_TRI'') AND name=N''IX_CW_Mau_TinhTrang'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_Mau_TinhTrang.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.CAU_HINH_THUOC_KE_DON'') AND name=N''IX_CW_CauHinh_Nhom'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_CauHinh_Nhom.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.BAN_GIAO_THUOC'') AND name=N''IX_CW_BanGiao_HD'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_BanGiao_HD.'',1;IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name LIKE N''FK[_]CW[_]%'' AND(is_disabled=1 OR is_not_trusted=1)) THROW 52102,N''FK mới chưa được kiểm chứng.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'SELECT N''ClinicalWorkflow v2'' AS SchemaVersion,COUNT(*) AS TableCount FROM sys.tables WHERE is_ms_shipped=0;'+NCHAR(13)+N''+NCHAR(10)+N'SELECT MaHD,MaLS,SoTienPhaiThu,DaThuRong,ConPhaiTra FROM dbo.VW_HOA_DON_THANH_TOAN WHERE ConPhaiTra<>0;IF COL_LENGTH(N''dbo.HOA_DON'',N''TaoKhiHoanTat'') IS NULL OR COL_LENGTH(N''dbo.CHI_TIET_HOA_DON'',N''MaCTDT'') IS NULL THROW 52272,N''Thiếu cột hóa đơn hoàn tất; chạy toàn bộ QLBenhVienRangHamMat.sql.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF COL_LENGTH(N''dbo.TINH_TRANG_BENH'',N''MucDo'') IS NOT NULL OR COL_LENGTH(N''dbo.TINH_TRANG_BENH'',N''ViTriRang'') IS NOT NULL THROW 52272,N''Schema tình trạng không khớp ứng dụng.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF OBJECT_ID(N''dbo.DICH_VU_TINH_TRANG'') IS NULL OR OBJECT_ID(N''dbo.TR_RHM_DichVu_ChiTrongKham'') IS NULL OR OBJECT_ID(N''dbo.TR_HD_ChotHoanTat'') IS NULL THROW 52272,N''Thiếu liên kết hoặc bảo vệ hoàn tất.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.HospitalWorkflow.Version'' AND TRY_CONVERT(int,value)=3) THROW 52272,N''Chưa đồng bộ HospitalWorkflow3.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N''PHIEN_DANG_NHAP'',N''PHAN_QUYEN_VAI_TRO'',N''ANH_XQUANG_LAN_KHAM'',N''PHAN_CONG_ANH_XQUANG'')) NOT IN(53,60) THROW 52272,N''Số bảng không đúng nền 53 hoặc bản hợp nhất 60.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.triggers WHERE parent_class=1 AND is_disabled=1) THROW 52272,N''Ràng buộc hoặc trigger chưa hợp lệ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
+ SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   PROCEDURE dbo.usp_RHM_KiemTraSchemaNen AS BEGIN SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'DECLARE @core TABLE(T sysname,C sysname,TypeName sysname,L smallint,P tinyint,S tinyint,N bit);'+NCHAR(13)+N''+NCHAR(10)+N'INSERT @core VALUES'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''MaBN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''HoTenBN'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''GioiTinh'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''NgaySinh'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''SDT'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''DiaChi'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''MaBHYT'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''NhomMau'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''TienSuBenh'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''DiUng'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BENH_NHAN'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HO_SO_BENH_AN'',N''MaHS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HO_SO_BENH_AN'',N''MaBN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HO_SO_BENH_AN'',N''NgayLap'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HO_SO_BENH_AN'',N''LyDoKhamBanDau'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HO_SO_BENH_AN'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HO_SO_BENH_AN'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''MaPhieu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''MaHS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''MaLich'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''MaPhong'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''MaBS'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''MaNVTiepNhan'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''MaDV'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''SoThuTu'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''ThoiGianTiepNhan'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''LyDoKham'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_KHAM_BENH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''MaLS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''MaPhieu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''MaBS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''MaPhong'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''ThoiGianKham'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''TrieuChung'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''ChanDoan'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''KeHoachXuLy'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''NgayXacNhan'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''KhongKeThuoc'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''LyDoKhongKeThuoc'',N''nvarchar'',1000,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TINH_TRANG_BENH'',N''MaTTB'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TINH_TRANG_BENH'',N''MaLS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TINH_TRANG_BENH'',N''LoaiTinhTrang'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TINH_TRANG_BENH'',N''MoTaTinhTrang'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TINH_TRANG_BENH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TINH_TRANG_BENH'',N''MaDMT'+N'T'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''MaDV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''TenDV'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''NhomDV'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''MaCK'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''DonGia'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''ThoiGianDuKien'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''MoTa'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''NgayApDung'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''MaKHDT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''MaLS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''MaBS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''NgayLap'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''NgayBatDau'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''NgayDuKienKetThuc'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''TongTienDuKien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''MaTTBNguon'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''MaMauKH'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''PhienBanMau'',N''int'',4,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''MaCTKH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''MaKHDT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''MaDV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''LanThu'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''SoLuongDuKien'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''DonGiaDuKien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''NoiDungBuoc'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''MaDVThucHien'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''MaLS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''MaCTKH'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''MaDV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''MaNVThucHien'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''ThoiGianThucHien'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''SoLuong'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''DonGia'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''KetQua'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DICH_VU_THUC_HIEN'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''MaDT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''MaLS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''MaBS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''NgayKe'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''LyDoThayThe'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''MaDTThayThe'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''MaCTDT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''MaDT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''MaThuoc'',N''nvarchar'',10'+N'0,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''LieuDung'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''SoLuong'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''SoNgayDung'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''HuongDan'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''DuongDung'',N''nvarchar'',200,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''TenThuocChot'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''HamLuongChot'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''DonViTinhChot'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''PhienBanHuongDan'',N''int'',4,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''VAI_TRO'',N''MaVaiTro'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''VAI_TRO'',N''TenVaiTro'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''VAI_TRO'',N''MoTa'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUC_VU'',N''MaChucVu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUC_VU'',N''TenChucVu'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUC_VU'',N''MoTa'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''MaTK'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''TenDangNhap'',N''nvarchar'',200,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''MatKhauHash'',N''nvarchar'',1024,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''MaVaiTro'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''MaKhoa'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''MaPhong'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TAI_KHOAN'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''HoTen'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''GioiTinh'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''NgaySinh'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''SDT'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''DiaChi'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''MaChucVu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''MaCK'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''BangCap'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''NgayVaoLam'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAN_VIEN'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''MaCC'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''SoChungChi'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''TenChungChi'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''NgayCap'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''NoiCap'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''HanChungChi'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUNG_CHI_NHAN_VIEN'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHOA'',N''MaKhoa'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHOA'',N''TenKhoa'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHOA'',N''DienThoai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUYEN_KHOA'',N''MaCK'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUYEN_KHOA'',N''MaKhoa'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUYEN_KHOA'',N''TenCK'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUYEN_KHOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHUYEN_KHOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHONG'',N'+N'''MaPhong'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHONG'',N''TenPhong'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHONG'',N''MaKhoa'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHONG'',N''LoaiPhong'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHONG'',N''TinhTrang'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHONG'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''MaTB'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''MaHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''SoSerial'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''NgayMua'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''MaNCC'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''MaPhong'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''TinhTrang'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''HanBaoHanh'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THIET_BI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''MaBT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''MaTB'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''NgayBatDau'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''NgayKetThuc'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''NoiDung'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''ChiPhi'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''NgayBaoTriTiepTheo'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAO_TRI_THIET_BI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHA_CUNG_CAP'',N''MaNCC'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHA_CUNG_CAP'',N''TenNCC'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHA_CUNG_CAP'',N''SDT'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHA_CUNG_CAP'',N''Email'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHA_CUNG_CAP'',N''DiaChi'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHA_CUNG_CAP'',N''NguoiLienHe'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHA_CUNG_CAP'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHO'',N''MaKho'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHO'',N''TenKho'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHO'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHO'',N''LoaiKho'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KHO'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LOAI_HANG_HOA'',N''MaLoaiHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LOAI_HANG_HOA'',N''TenLoaiHH'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LOAI_HANG_HOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LOAI_HANG_HOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HANG_HOA'',N''MaHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HANG_HOA'',N''TenHH'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HANG_HOA'',N''MaLoaiHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HANG_HOA'',N''DonViTinh'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HANG_HOA'',N''MoTa'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HANG_HOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''VAT_TU'',N''MaVT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''VAT_TU'',N''MaHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''VAT_TU'',N''MucTonToiThieu'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THUOC'',N''MaThuoc'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THUOC'',N''MaHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THUOC'',N''HamLuong'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THUOC'',N''MucTonToiThieu'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THUOC'',N''DonGiaBan'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''MaLo'',N''nv'+N'archar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''MaHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''MaNCC'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''MaKho'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''SoLo'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''NgayNhap'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''HanSuDung'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LO_HANG_HOA'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''MaHDN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''SoHoaDonNCC'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''MaNCC'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''NgayHoaDon'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''TongTien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON_NHAP'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''MaPN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''MaHDN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''MaKho'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''NgayNhap'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''TongTien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''LyDo'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_NHAP'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_NHAP'',N''MaCTPN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_NHAP'',N''MaPN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_NHAP'',N''MaHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_NHAP'',N''MaLo'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_NHAP'',N''SoLuong'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_NHAP'',N''DonGia'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_NHAP'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''MaPX'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''MaKho'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''MaKhoa'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''MaPhong'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''MaLS'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''NgayXuat'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''LyDo'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHIEU_XUAT'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_XUAT'',N''MaCTPX'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_XUAT'',N''MaPX'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_XUAT'',N''MaHH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_XUAT'',N''MaLo'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_XUAT'',N''MaCTDT'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_XUAT'',N''SoLuong'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_PHIEU_XUAT'',N''GhiChu'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CA_LAM'',N''MaCa'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CA_LAM'',N''GioBatDau'',N''time'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CA_LAM'',N''GioKetThuc'',N''time'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CA_LAM'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CA_LAM'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''MaLLV'',N''nvarc'+N'har'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''MaCa'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''NgayLam'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''MaPhong'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''TrangThaiHienDien'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''GioVao'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''GioRa'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_LAM_VIEC'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''MaDonNghi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''TuNgay'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''DenNgay'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''LyDo'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''NgayGui'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''TrangThaiDuyet'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''MaNVDuyet'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''NgayDuyet'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_XIN_NGHI'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHAN_CONG_THAY_THE'',N''MaPCTT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHAN_CONG_THAY_THE'',N''MaDonNghi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHAN_CONG_THAY_THE'',N''MaLLVThayThe'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHAN_CONG_THAY_THE'',N''NgayXuLy'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHAN_CONG_THAY_THE'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''PHAN_CONG_THAY_THE'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MaLich'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MaBN'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MaBS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MaCa'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MaPhong'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''MaDV'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''NgayGioKham'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''ThoiLuongDuKien'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''UuTien'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''LyDoKham'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''LyDoThayDoi'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''NgayTao'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_KHAM'',N''NgayCapNhat'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''MaHD'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''MaLS'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''NgayLap'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''NgayXacNhan'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''TongTien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''GiamGia'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''PhienBanQuyTrinh'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''MaYeuCau'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''DauVanTayYeuCau'',N''nvarchar'',128,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_DON'',N''MaCTHD'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_DON'',N''MaHD'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_DON'',N''MaDVThucHien'',N'+N'''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_DON'',N''MaCTPX'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_DON'',N''NoiDung'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_DON'',N''DonGia'',N''decimal'',9,18,2,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_HOA_DON'',N''ThanhTien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''MaTT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''MaHD'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''NgayThanhToan'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''SoTien'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''LoaiGiaoDich'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''PhuongThuc'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''LyDo'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''SoTienKhachDua'',N''decimal'',9,18,2,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''TienThua'',N''decimal'',9,18,2,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''MaThamChieu'',N''nvarchar'',200,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''MaCSL'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''MaChucVu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''TenChinhSach'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''PhienBan'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''NgayHieuLuc'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''NgayHetHieuLuc'',N''date'',3,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''LuongCoBan'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''SoCaDinhMuc'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''CoSoHoaHong'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''TyLeHoaHong'',N''decimal'',5,9,6,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''MaNVDuyet'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''NgayDuyet'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHINH_SACH_LUONG'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''MaBL'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''MaNV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''MaCSL'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TuNgay'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''DenNgay'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''SoCaTinh'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''LuongCoBan'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''SoCaDinhMuc'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TienHoaHong'',N''decimal'',9,18,2,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''NgayChot'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BANG_LUONG'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''MaNK'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''MaTK'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''ThoiGian'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''HanhDong'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''LoaiDoiTuong'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''MaDoiTuong'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''KetQua'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''DuLieuTruoc'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHAT_KY_THAO_TAC'',N''DuLieuSau'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaDonNghi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH'+N'_KHAM'',N''MaLich'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaBSCu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaPhongCu'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaBSMoi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaPhongMoi'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaLLVThayThe'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaCa'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''NgayGioKham'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''ThoiLuongDuKien'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''MaNVXacNhan'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''NgayXacNhan'',N''datetime2'',6,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''XAC_NHAN_DOI_LICH_KHAM'',N''TrangThai'',N''nvarchar'',60,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CA_THEO_NGAY'',N''NgayLam'',N''date'',3,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CA_THEO_NGAY'',N''MaCa'',N''nvarchar'',100,0,0,0);'+NCHAR(13)+N''+NCHAR(10)+N'IF EXISTS(SELECT 1 FROM @core e LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+e.T) AND c.name=e.C LEFT JOIN sys.types t ON t.user_type_id=c.user_type_id'+NCHAR(13)+N''+NCHAR(10)+N'WHERE c.column_id IS NULL OR t.name<>e.TypeName OR c.max_length<>e.L OR c.is_nullable<>e.N OR(e.TypeName=N''decimal'' AND(c.precision<>e.P OR c.scale<>e.S)) OR(e.TypeName IN(N''datetime2'',N''time'') AND c.scale<>e.S))'+NCHAR(13)+N''+NCHAR(10)+N'THROW 52271,N''Cấu trúc nền không khớp hợp đồng; dừng đồng bộ để bảo toàn dữ liệu.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'-- Chỉ đọc, kiểm chứng hợp đồng sau nâng cấp.'+NCHAR(13)+N''+NCHAR(10)+N'SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'DECLARE @expected TABLE(T sysname,C sysname,TypeName sysname,MaxLength smallint,PrecisionValue tinyint,ScaleValue tinyint,Nullable bit);'+NCHAR(13)+N''+NCHAR(10)+N'INSERT @expected VALUES'+NCHAR(13)+N''+NCHAR(10)+N'(N''DM_TINH_TRANG_BENH'',N''MaDMTT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DM_TINH_TRANG_BENH'',N''TenTinhTrang'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DM_TINH_TRANG_BENH'',N''MoTa'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DM_TINH_TRANG_BENH'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''MaMauKH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''MaDMTT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''MucDo'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''TenMau'',N''nvarchar'',510,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''PhienBan'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''MaBSDuyet'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''MAU_KE_HOACH_DIEU_TRI'',N''NgayDuyet'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_MAU_KE_HOACH'',N''MaCTMau'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_MAU_KE_HOACH'',N''MaMauKH'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_MAU_KE_HOACH'',N''MaDV'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_MAU_KE_HOACH'',N''ThuTu'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_MAU_KE_HOACH'',N''LanThu'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_MAU_KE_HOACH'',N''SoLuongDuKien'',N''decimal'',9,18,3,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_MAU_KE_HOACH'',N''NoiDung'',N''nvarchar'',-1,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHOM_THUOC_KE_DON'',N''MaNhomThuoc'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHOM_THUOC_KE_DON'',N''TenNhom'',N''nvarchar'',510,'+N'0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHOM_THUOC_KE_DON'',N''MoTa'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''NHOM_THUOC_KE_DON'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''MaThuoc'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''MaNhomThuoc'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''DoiTuongApDung'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''DuongDung'',N''nvarchar'',200,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''LieuDungGoiY'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''HuongDanGoiY'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''PhienBan'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''MaNguoiDuyet'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CAU_HINH_THUOC_KE_DON'',N''NgayDuyet'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAN_GIAO_THUOC'',N''MaDT'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAN_GIAO_THUOC'',N''MaHD'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAN_GIAO_THUOC'',N''MaPX'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAN_GIAO_THUOC'',N''TrangThai'',N''nvarchar'',100,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAN_GIAO_THUOC'',N''MaNVGiao'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAN_GIAO_THUOC'',N''ThoiGianGiao'',N''datetime2'',6,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''BAN_GIAO_THUOC'',N''GhiChu'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''TINH_TRANG_BENH'',N''MaDMTT'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''MaTTBNguon'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''MaMauKH'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''KE_HOACH_DIEU_TRI'',N''PhienBanMau'',N''int'',4,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_KE_HOACH'',N''NoiDungBuoc'',N''nvarchar'',-1,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''KhongKeThuoc'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''LICH_SU_KHAM_BENH'',N''LyDoKhongKeThuoc'',N''nvarchar'',1000,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''DON_THUOC'',N''MaDTThayThe'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''DuongDung'',N''nvarchar'',200,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''TenThuocChot'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''HamLuongChot'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''DonViTinhChot'',N''nvarchar'',510,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''CHI_TIET_DON_THUOC'',N''PhienBanHuongDan'',N''int'',4,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''PhienBanQuyTrinh'',N''int'',4,0,0,0),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''MaYeuCau'',N''nvarchar'',100,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''HOA_DON'',N''DauVanTayYeuCau'',N''nvarchar'',128,0,0,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''SoTienKhachDua'',N''decimal'',9,18,2,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''TienThua'',N''decimal'',9,18,2,1),'+NCHAR(13)+N''+NCHAR(10)+N'(N''THANH_TOAN'',N''MaThamChieu'',N''nvarchar'',200,0,0,1);'+NCHAR(13)+N''+NCHAR(10)+N'IF EXISTS(SELECT 1 FROM @expected e LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+e.T) AND c.name=e.C LEFT JOIN sys.types t ON t.user_type_id=c.user_type_id WHERE c.column_id IS NULL OR (c.column_id IS NOT NULL AND (t.name<>e.TypeName OR c.max_length<>e.MaxLength OR c.is_nullable<>e.Nullable OR (e.TypeName=N''decimal'' AND(c.precision<>e.PrecisionValue OR c.scale<>e.ScaleValue)) OR (e.TypeName=N''datetime2'' AND c.scale<>e.ScaleValue)))) THROW 52101,N''Cấu trúc cột không khớp hợp đồng quy trình khám; không tự sửa kiểu dữ liệu.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EX'+N'ISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.ClinicalWorkflow.Version'' AND TRY_CONVERT(int,value)=2) THROW 52102,N''Chưa ghi phiên bản quy trình khám 2.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF EXISTS(SELECT 1 FROM (VALUES (N''FK_CW_TTB_DMTT''),(N''FK_CW_KH_TTB''),(N''FK_CW_KH_Mau''),(N''FK_CW_DT_ThayThe''),(N''CK_CW_LS_NoRx''),(N''CK_CW_KH_Source''),(N''CK_CW_CTDT_Version''),(N''CK_CW_HD_Request''),(N''CK_CW_TT_Cash''),(N''PK_CW_DMTT''),(N''CK_CW_DMTT''),(N''PK_CW_MauKH''),(N''FK_CW_MauKH_DMTT''),(N''FK_CW_MauKH_BS''),(N''CK_CW_MauKH''),(N''PK_CW_CTMau''),(N''FK_CW_CTMau_MauKH''),(N''FK_CW_CTMau_DV''),(N''UQ_CW_CTMau_ThuTu''),(N''CK_CW_CTMau''),(N''PK_CW_NhomThuoc''),(N''CK_CW_NhomThuoc''),(N''PK_CW_CauHinhThuoc''),(N''FK_CW_CauHinh_Thuoc''),(N''FK_CW_CauHinh_Nhom''),(N''FK_CW_CauHinh_Duyet''),(N''CK_CW_CauHinh''),(N''PK_CW_BanGiao''),(N''FK_CW_BanGiao_DT''),(N''FK_CW_BanGiao_HD''),(N''FK_CW_BanGiao_PX''),(N''FK_CW_BanGiao_NV''),(N''CK_CW_BanGiao''),(N''TR_CW_LS_BaoVe''),(N''TR_CW_TTB_BaoVe''),(N''TR_CW_Phieu_BacSi''),(N''TR_CW_KH_BaoVe''),(N''TR_CW_CTKH_BaoVe''),(N''TR_CW_DT_ThayThe''),(N''TR_CW_MauKH_BaoVe''),(N''TR_CW_CTMau_BaoVe''),(N''TR_CW_CauHinh_BaoVe''),(N''TR_CW_HD_Request''),(N''TR_CW_TT_ThuDu''),(N''TR_CW_BanGiao_BaoVe''),(N''TR_CW_Audit_DM_TINH_TRANG_BENH''),(N''TR_CW_Audit_MAU_KE_HOACH_DIEU_TRI''),(N''TR_CW_Audit_CHI_TIET_MAU_KE_HOACH''),(N''TR_CW_Audit_NHOM_THUOC_KE_DON''),(N''TR_CW_Audit_CAU_HINH_THUOC_KE_DON'')) expected(Name) WHERE OBJECT_ID(N''dbo.''+Name) IS NULL) THROW 52102,N''Thiếu FK/CHECK/trigger của migration.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF EXISTS(SELECT 1 FROM sys.triggers WHERE name LIKE N''TR[_]CW[_]%'' AND is_disabled=1) OR EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name LIKE N''FK[_]CW[_]%'' AND(is_disabled=1 OR is_not_trusted=1)) OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE name LIKE N''CK[_]CW[_]%'' AND(is_disabled=1 OR is_not_trusted=1)) THROW 52102,N''Trigger hoặc ràng buộc mới bị tắt/chưa kiểm chứng.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.PHIEU_KHAM_BENH'') AND name=N''IX_CW_Phieu_BacSi'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_Phieu_BacSi.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.LICH_SU_KHAM_BENH'') AND name=N''IX_CW_LS_BacSi'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_LS_BacSi.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.HOA_DON'') AND name=N''UX_CW_HD_YeuCau'' AND is_disabled=0) THROW 52102,N''Thiếu index UX_CW_HD_YeuCau.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.HOA_DON'') AND name=N''UX_CW_HD_LuotV2'' AND is_disabled=0) THROW 52102,N''Thiếu index UX_CW_HD_LuotV2.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.KE_HOACH_DIEU_TRI'') AND name=N''UX_CW_KH_Source'' AND is_disabled=0) THROW 52102,N''Thiếu index UX_CW_KH_Source.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes W'+N'HERE object_id=OBJECT_ID(N''dbo.TINH_TRANG_BENH'') AND name=N''IX_CW_TTB_DMTT'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_TTB_DMTT.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.KE_HOACH_DIEU_TRI'') AND name=N''IX_CW_KH_Mau'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_KH_Mau.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.DON_THUOC'') AND name=N''IX_CW_DT_ThayThe'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_DT_ThayThe.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.MAU_KE_HOACH_DIEU_TRI'') AND name=N''IX_CW_Mau_TinhTrang'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_Mau_TinhTrang.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.CAU_HINH_THUOC_KE_DON'') AND name=N''IX_CW_CauHinh_Nhom'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_CauHinh_Nhom.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''dbo.BAN_GIAO_THUOC'') AND name=N''IX_CW_BanGiao_HD'' AND is_disabled=0) THROW 52102,N''Thiếu index IX_CW_BanGiao_HD.'',1;IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name LIKE N''FK[_]CW[_]%'' AND(is_disabled=1 OR is_not_trusted=1)) THROW 52102,N''FK mới chưa được kiểm chứng.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'SELECT N''ClinicalWorkflow v2'' AS SchemaVersion,COUNT(*) AS TableCount FROM sys.tables WHERE is_ms_shipped=0;'+NCHAR(13)+N''+NCHAR(10)+N'SELECT MaHD,MaLS,SoTienPhaiThu,DaThuRong,ConPhaiTra FROM dbo.VW_HOA_DON_THANH_TOAN WHERE ConPhaiTra<>0;IF COL_LENGTH(N''dbo.HOA_DON'',N''TaoKhiHoanTat'') IS NULL OR COL_LENGTH(N''dbo.CHI_TIET_HOA_DON'',N''MaCTDT'') IS NULL THROW 52272,N''Thiếu cột hóa đơn hoàn tất; chạy toàn bộ QLBenhVienRangHamMat.sql.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF COL_LENGTH(N''dbo.TINH_TRANG_BENH'',N''MucDo'') IS NOT NULL OR COL_LENGTH(N''dbo.TINH_TRANG_BENH'',N''ViTriRang'') IS NOT NULL THROW 52272,N''Schema tình trạng không khớp ứng dụng.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF OBJECT_ID(N''dbo.DICH_VU_TINH_TRANG'') IS NULL OR OBJECT_ID(N''dbo.TR_RHM_DichVu_ChiTrongKham'') IS NULL OR OBJECT_ID(N''dbo.TR_HD_ChotHoanTat'') IS NULL THROW 52272,N''Thiếu liên kết hoặc bảo vệ hoàn tất.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.HospitalWorkflow.Version'' AND TRY_CONVERT(int,value)=3) THROW 52272,N''Chưa đồng bộ HospitalWorkflow3.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N''RHM_CAU_HINH_QUY_PHEP'',N''RHM_NGAY_PHEP_NAM'',N''AI_PHIEN_TIEP_NHAN'',N''AI_TIEP_NHAN_NHAP'',N''AI_TIN_NHAN'',N''AI_SU_KIEN'',N''AI_KET_QUA_TAO_PHIEU'',N''AI_SERVICE_IDENTITY'',N''AI_SERVICE_INTAKE_SESSION'',N''AI_YEU_CAU_TAO_PHIEU'') AND name NOT IN(N''PHIEN_DANG_NHAP'',N''PHAN_QUYEN_VAI_TRO'',N''ANH_XQUANG_LAN_KHAM'',N''PHAN_CONG_ANH_XQUANG'')) NOT IN(53,60) THROW 52272,N''Số bảng không đúng nền 53 hoặc bản hợp nhất 60.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.triggers WHERE parent_class=1 AND is_disabled=1) THROW 52272,N''Ràng buộc hoặc trigger chưa hợp lệ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_AXQ_BaoVe ON dbo.ANH_XQUANG_LAN_KHAM AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N' BEGIN'+NCHAR(13)+N''+NCHAR(10)+N'  SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaAnh=d.MaAnh WHERE i.MaAnh IS NULL)'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53407,N''Không xóa cứng metadata ảnh bệnh án; dùng trạng thái Đã ẩn.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaAnh=i.MaAnh WHERE EXISTS('+NCHAR(13)+N''+NCHAR(10)+N'   SELECT i.MaLS,i.MaDVThucHien,i.TenTepGoc,i.TenTepLuu,i.DuongDanTuongDoi,i.MimeType,i.KichThuocBytes,i.Sha256,i.NgayTao,i.MaNVUpload'+NCHAR(13)+N''+NCHAR(10)+N'   EXCEPT SELECT d.MaLS,d.MaDVThucHien,d.TenTepGoc,d.TenTepLuu,d.DuongDanTuongDoi,d.MimeType,d.KichThuocBytes,d.Sha256,d.NgayTao,d.MaNVUpload))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53405,N''Nguồn lần khám, tệp và người tải ảnh được giữ nguyên; chỉ sửa ghi chú hoặc ẩn ảnh.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=i.MaDVThucHien WHERE s.MaLS<>i.MaLS)'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 53406,N''Dịch vụ liên kết ảnh phải thuộc cùng lần khám.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_BL_ChotLuong ON dbo.BANG_LUONG'+NCHAR(13)+N''+NCHAR(10)+N'AFTER INSERT, UPDATE, DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i LEFT JOIN deleted d ON d.MaBL=i.MaBL WHERE d.MaBL IS NULL AND i.PhienBanTinhLuong<>9)'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52332,N''Phiếu lương mới phải dùng công thức V9.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaBL=i.MaBL WHERE'+NCHAR(13)+N''+NCHAR(10)+N'  i.PhienBanTinhLuong<d.PhienBanTinhLuong OR EXISTS(SELECT i.LuongTheoCaTruocDongBo,i.TongLuongTruocDongBo EXCEPT SELECT d.LuongTheoCaTruocDongBo,d.TongLuongTruocDongBo))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52332,N''Không sửa bản tiền trước đồng bộ hoặc hạ phiên bản tính lương.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM deleted WHERE TrangThai=N''Đã chốt'')'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 51038,N''Bảng lương đã chốt không sửa hoặc xóa.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS('+NCHAR(13)+N''+NCHAR(10)+N'   SELECT 1 FROM inserted i'+NCHAR(13)+N''+NCHAR(10)+N'   JOIN dbo.NHAN_VIEN nv ON nv.MaNV=i.MaNV'+NCHAR(13)+N''+NCHAR(10)+N'   JOIN dbo.CHINH_SACH_LUONG cs ON cs.MaCSL=i.MaCSL'+NCHAR(13)+N''+NCHAR(10)+N'   WHERE i.TrangThai=N''Đã chốt'' AND ('+NCHAR(13)+N''+NCHAR(10)+N'     i.TuNgay<>DATEFROMPARTS(YEAR(i.TuNgay),MONTH(i.TuNgay),1)'+NCHAR(13)+N''+NCHAR(10)+N'     OR i.DenNgay<>EOMONTH(i.TuNgay)'+NCHAR(13)+N''+NCHAR(10)+N'     OR CAST(i.NgayChot AS DATE)<DATEADD(DAY,5,EOMONTH(i.TuNgay))'+NCHAR(13)+N''+NCHAR(10)+N'     OR nv.MaChucVu<>cs.MaChucVu OR cs.TrangThai<>N''Đã duyệt'''+NCHAR(13)+N''+NCHAR(10)+N'     OR i.TuNgay<cs.NgayHieuLuc OR (cs.NgayHetHieuLuc IS NOT NULL AND i.DenNgay>cs.NgayHetHieuLuc)'+NCHAR(13)+N''+NCHAR(10)+N'     OR i.LuongCoBan<>cs.LuongCoBan'+NCHAR(13)+N''+NCHAR(10)+N'     OR i.CongChuan<>(SELECT COUNT(*) FROM (VALUES(0),(1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),(12),(13),(14),(15),(16),(17),(18),(19),(20),(21),(22),(23),(24),(25),(26),(27),(28),(29),(30)) n(k)'+NCHAR(13)+N''+NCHAR(10)+N'                        WHERE DATEADD(DAY,n.k,i.TuNgay)<=i.DenNgay'+NCHAR(13)+N''+NCHAR(10)+N'                          AND DATEDIFF(DAY,CONVERT(date,''19000107''),DATEADD(DAY,n.k,i.TuNgay))%7<>0'+NCHAR(13)+N''+NCHAR(10)+N'                          AND NOT EXISTS(SELECT 1 FROM dbo.NGAY_NGHI_LE x WHERE x.NgayNghi=DATEADD(DAY,n.k,i.TuNgay) AND x.CoHuongLuong=1 AND x.TrangThai=N''Đang hoạt động''))'+NCHAR(13)+N''+NCHAR(10)+N'     OR i.CongTruDiTre<>COALESCE((SELECT COUNT(*)*CAST(0.25 AS DECIMAL(4,2)) FROM dbo.CHAM_CONG cc JOIN dbo.LICH_LAM_VIEC l ON l.MaLLV=cc.MaLLV'+NCHAR(13)+N''+NCHAR(10)+N'                          WHERE l.MaNV=i.MaNV AND l.NgayLam BETWEEN i.TuNgay AND i.DenNgay AND cc.TrangThai=N''Đã xác nhận'''+NCHAR(13)+N''+NCHAR(10)+N'                                AND cc.CongDuocTinh=0.50 AND cc.SoPhutDiTre BETWEEN 16 AND 60),0)'+NCHAR(13)+N''+NCHAR(10)+N'     OR i.CongThucTe<>COALESCE((SELECT SUM(cc.CongDuocTinh) FROM dbo.CHAM_CONG cc JOIN dbo.LICH_LAM_VIEC l ON l.MaLLV=cc.MaLLV'+NCHAR(13)+N''+NCHAR(10)+N'                        WHERE l.MaNV=i.MaNV AND l.NgayLam BETWEEN i.TuNgay AND i.DenNgay AND cc.TrangThai=N''Đã xác nhận''),0)+i.CongNghiPhep-i.CongTruDiTre'+NCHAR(13)+N''+NCHAR(10)+N'     OR i.TienHoaHong<>COALESCE((SELECT SUM(hh.TienHoaHong) FROM dbo.CHI_TIET_HOA_HONG_LUONG hh WHERE hh.MaBL=i.MaBL),0)'+NCHAR(13)+N''+NCHAR(10)+N'     OR i.TienBaoHiem<>CAST(ROUND(i.LuongCoBan*(cs.TyLeBHXH+cs.TyLeBHYT+cs.TyLeBHTN),2) AS DECIMAL(18,2))'+NCHAR(13)+N''+NCHAR(10)+N'     OR i.TienPhuCap<>cs.PhuCapCoDinh+COALESCE((SELECT SUM(ct.SoTien) FROM '+N'dbo.CHI_TIET_LUONG ct WHERE ct.MaBL=i.MaBL AND ct.LoaiKhoan=N''Phụ cấp'' AND ct.TinhChat=N''Cộng''),0)'+NCHAR(13)+N''+NCHAR(10)+N'     OR i.TienKhauTruKhac<>COALESCE((SELECT SUM(ct.SoTien) FROM dbo.CHI_TIET_LUONG ct WHERE ct.MaBL=i.MaBL AND ct.TinhChat=N''Trừ''),0)'+NCHAR(13)+N''+NCHAR(10)+N'     OR i.TienTangCa<>COALESCE((SELECT SUM(ct.SoTien) FROM dbo.CHI_TIET_LUONG ct WHERE ct.MaBL=i.MaBL AND ct.LoaiKhoan=N''Làm thêm giờ'' AND ct.TinhChat=N''Cộng''),0)'+NCHAR(13)+N''+NCHAR(10)+N'   )'+NCHAR(13)+N''+NCHAR(10)+N' ) THROW 51039,N''Bảng lương chốt phải đúng kỳ tháng, chính sách, công và các khoản cộng trừ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_BT_Serial_VongDoi ON dbo.BAO_TRI_THIET_BI'+NCHAR(13)+N''+NCHAR(10)+N' AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N' BEGIN'+NCHAR(13)+N''+NCHAR(10)+N'  SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'  IF TRIGGER_NESTLEVEL(OBJECT_ID(N''dbo.TR_BT_Serial_VongDoi''))>1 RETURN;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaBT=d.MaBT WHERE i.MaBT IS NULL)'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52602,N''Không xóa lịch sử bảo trì; chỉ hủy phiếu Chưa xác nhận.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM inserted i LEFT JOIN deleted d ON d.MaBT=i.MaBT WHERE d.MaBT IS NULL AND i.TrangThai NOT IN(N''Chưa xác nhận'',N''Đã xác nhận'',N''Đang thực hiện''))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52603,N''Phiếu mới chỉ được lưu Chưa xác nhận hoặc Đang thực hiện.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaBT=i.MaBT WHERE d.TrangThai IN(N''Đã hoàn thành'',N''Hủy''))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52604,N''Phiếu đã hoàn thành hoặc hủy chỉ được xem.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaBT=i.MaBT WHERE i.MaTB<>d.MaTB)'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52604,N''Không chuyển phiếu sang thiết bị/serial khác.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaBT=i.MaBT WHERE d.TrangThai<>N''Chưa xác nhận'' AND EXISTS('+NCHAR(13)+N''+NCHAR(10)+N'   SELECT i.MaNV,i.NgayBatDau,i.NoiDung,i.ChiPhi,i.NgayBaoTriTiepTheo,i.GhiChu EXCEPT SELECT d.MaNV,d.NgayBatDau,d.NoiDung,d.ChiPhi,d.NgayBaoTriTiepTheo,d.GhiChu))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52604,N''Không sửa nội dung phiếu đã xác nhận.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaBT=i.MaBT WHERE i.TrangThai<>d.TrangThai AND NOT('+NCHAR(13)+N''+NCHAR(10)+N'   (d.TrangThai=N''Chưa xác nhận'' AND i.TrangThai IN(N''Đã xác nhận'',N''Đang thực hiện'',N''Hủy''))'+NCHAR(13)+N''+NCHAR(10)+N'   OR(d.TrangThai=N''Đã xác nhận'' AND i.TrangThai=N''Đang thực hiện'')'+NCHAR(13)+N''+NCHAR(10)+N'   OR(d.TrangThai=N''Đang thực hiện'' AND i.TrangThai=N''Đã hoàn thành'')))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52603,N''Chuyển trạng thái bảo trì không đúng vòng đời.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaBT=i.MaBT WHERE EXISTS(SELECT i.NgayXacNhan,i.NgayThucHien,i.NgayKetThuc EXCEPT SELECT d.NgayXacNhan,d.NgayThucHien,d.NgayKetThuc))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52604,N''Các thời điểm xác nhận, thực hiện và kết thúc do hệ thống ghi.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM inserted i LEFT JOIN deleted d ON d.MaBT=i.MaBT WHERE d.MaBT IS NULL AND(i.NgayXacNhan IS NOT NULL OR i.NgayThucHien IS NOT NULL OR i.NgayKetThuc IS NOT NULL))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52604,N''Không tự nhập thời điểm kết thúc hoặc xác nhận phiếu mới.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  DECLARE @locked int;'+NCHAR(13)+N''+NCHAR(10)+N'  SELECT @locked=COUNT(*) FROM dbo.THIET_BI t WITH(UPDLOCK,HOLDLOCK) JOIN inserted i ON i.MaTB=t.MaTB;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.THIET_BI t ON t.MaTB=i.MaTB LEFT JOIN deleted d ON d.MaBT=i.MaBT'+NCHAR(13)+N''+NCHAR(10)+N'   WHERE (d.MaBT IS NULL OR d.TrangThai IN(N''Chưa xác nhận'',N''Đã xác nhận'')) AND i.TrangThai<>N''Hủy'''+NCHAR(13)+N''+NCHAR(10)+N'    AND(t.TinhTrang<>N''Hư hại'' OR t.TrangThai IN(N''Ngưng sử dụng'',N''Ngừng sử dụng'') OR NULLIF(LTRIM(RTRIM(t.SoSerial)),N'''') IS NULL))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52605,N''Chỉ lập/xác nhận/bắt đầu bảo trì se'+N'rial đang Hư hại và chưa ngưng sử dụng.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM inserted i LEFT JOIN deleted d ON d.MaBT=i.MaBT WHERE i.TrangThai IN(N''Đã xác nhận'',N''Đang thực hiện'') AND(d.MaBT IS NULL OR d.TrangThai IN(N''Chưa xác nhận'',N''Đã xác nhận'')) AND i.NgayBatDau>CONVERT(date,SYSDATETIME()))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52605,N''Chưa đến ngày dự kiến bắt đầu bảo trì.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  DECLARE @now datetime2(0)=SYSDATETIME();'+NCHAR(13)+N''+NCHAR(10)+N'  UPDATE b SET'+NCHAR(13)+N''+NCHAR(10)+N'   TrangThai=CASE WHEN i.TrangThai=N''Đã xác nhận'' THEN N''Đang thực hiện'' ELSE i.TrangThai END,'+NCHAR(13)+N''+NCHAR(10)+N'   NgayXacNhan=CASE WHEN i.TrangThai IN(N''Đã xác nhận'',N''Đang thực hiện'') AND(d.MaBT IS NULL OR d.TrangThai=N''Chưa xác nhận'') THEN @now ELSE b.NgayXacNhan END,'+NCHAR(13)+N''+NCHAR(10)+N'   NgayThucHien=CASE WHEN i.TrangThai IN(N''Đã xác nhận'',N''Đang thực hiện'') AND(d.MaBT IS NULL OR d.TrangThai IN(N''Chưa xác nhận'',N''Đã xác nhận'')) THEN @now ELSE b.NgayThucHien END,'+NCHAR(13)+N''+NCHAR(10)+N'   NgayKetThuc=CASE WHEN i.TrangThai=N''Đã hoàn thành'' AND d.TrangThai=N''Đang thực hiện'' THEN @now ELSE b.NgayKetThuc END'+NCHAR(13)+N''+NCHAR(10)+N'   FROM dbo.BAO_TRI_THIET_BI b JOIN inserted i ON i.MaBT=b.MaBT LEFT JOIN deleted d ON d.MaBT=i.MaBT;'+NCHAR(13)+N''+NCHAR(10)+N'  UPDATE t SET TinhTrang=CASE WHEN i.TrangThai IN(N''Đã xác nhận'',N''Đang thực hiện'') THEN N''Đang bảo trì'' ELSE N''Đang hoạt động'' END'+NCHAR(13)+N''+NCHAR(10)+N'   FROM dbo.THIET_BI t JOIN inserted i ON i.MaTB=t.MaTB LEFT JOIN deleted d ON d.MaBT=i.MaBT'+NCHAR(13)+N''+NCHAR(10)+N'   WHERE(i.TrangThai IN(N''Đã xác nhận'',N''Đang thực hiện'') AND(d.MaBT IS NULL OR d.TrangThai IN(N''Chưa xác nhận'',N''Đã xác nhận''))) OR(d.TrangThai=N''Đang thực hiện'' AND i.TrangThai=N''Đã hoàn thành'');'+NCHAR(13)+N''+NCHAR(10)+N' END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
@@ -571,15 +571,15 @@ BEGIN TRY
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_CW_Audit_DM_TINH_TRANG_BENH] ON dbo.[DM_TINH_TRANG_BENH] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N'SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'DECLARE @actor nvarchar(50)=TRY_CONVERT(nvarchar(50),SESSION_CONTEXT(N''RHM.MaTK''));'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.NHAN_VIEN n ON n.MaNV=t.MaNV WHERE t.MaTK=@actor AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'')'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52120,N''Cấu hình chuyên môn cần người sửa đã xác thực để lưu nhật ký.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N'SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),N''Cập nhật cấu hình hỗ trợ'',N''DM_TINH_TRANG_BENH'',COALESCE(i.[MaDMTT],d.[MaDMTT]),N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N'  CASE WHEN d.[MaDMTT] IS NOT NULL THEN (SELECT d.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END,'+NCHAR(13)+N''+NCHAR(10)+N'  CASE WHEN i.[MaDMTT] IS NOT NULL THEN (SELECT i.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END'+NCHAR(13)+N''+NCHAR(10)+N'FROM inserted i FULL JOIN deleted d ON d.[MaDMTT]=i.[MaDMTT];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_CW_Audit_MAU_KE_HOACH_DIEU_TRI] ON dbo.[MAU_KE_HOACH_DIEU_TRI] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N'SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'DECLARE @actor nvarchar(50)=TRY_CONVERT(nvarchar(50),SESSION_CONTEXT(N''RHM.MaTK''));'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.NHAN_VIEN n ON n.MaNV=t.MaNV WHERE t.MaTK=@actor AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'')'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52120,N''Cấu hình chuyên môn cần người sửa đã xác thực để lưu nhật ký.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N'SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),N''Cập nhật cấu hình hỗ trợ'',N''MAU_KE_HOACH_DIEU_TRI'',COALESCE(i.[MaMauKH],d.[MaMauKH]),N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N'  CASE WHEN d.[MaMauKH] IS NOT NULL THEN (SELECT d.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END,'+NCHAR(13)+N''+NCHAR(10)+N'  CASE WHEN i.[MaMauKH] IS NOT NULL THEN (SELECT i.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END'+NCHAR(13)+N''+NCHAR(10)+N'FROM inserted i FULL JOIN deleted d ON d.[MaMauKH]=i.[MaMauKH];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_CW_Audit_NHOM_THUOC_KE_DON] ON dbo.[NHOM_THUOC_KE_DON] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N'SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'DECLARE @actor nvarchar(50)=TRY_CONVERT(nvarchar(50),SESSION_CONTEXT(N''RHM.MaTK''));'+NCHAR(13)+N''+NCHAR(10)+N'IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.NHAN_VIEN n ON n.MaNV=t.MaNV WHERE t.MaTK=@actor AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'')'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52120,N''Cấu hình chuyên môn cần người sửa đã xác thực để lưu nhật ký.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N'SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),N''Cập nhật cấu hình hỗ trợ'',N''NHOM_THUOC_KE_DON'',COALESCE(i.[MaNhomThuoc],d.[MaNhomThuoc]),N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N'  CASE WHEN d.[MaNhomThuoc] IS NOT NULL THEN (SELECT d.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END,'+NCHAR(13)+N''+NCHAR(10)+N'  CASE WHEN i.[MaNhomThuoc] IS NOT NULL THEN (SELECT i.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES) END'+NCHAR(13)+N''+NCHAR(10)+N'FROM inserted i FULL JOIN deleted d ON d.[MaNhomThuoc]=i.[MaNhomThuoc];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
- SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_CW_BanGiao_BaoVe ON dbo.BAN_GIAO_THUOC AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaDT=d.MaDT WHERE i.MaDT IS NULL OR d.TrangThai=N''Đã giao'' OR EXISTS('+NCHAR(13)+N''+NCHAR(10)+N' SELECT i.MaHD,i.MaPX EXCEPT SELECT d.MaHD,d.MaPX)) THROW 52121,N''Không xóa/đổi nguồn bàn giao hoặc sửa bản đã giao.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.DON_THUOC d ON d.MaDT=i.MaDT JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD JOIN dbo.PHIEU_XUAT p ON p.MaPX=i.MaPX'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.VW_HOA_DON_THANH_TOAN v ON v.MaHD=h.MaHD WHERE h.PhienBanQuyTrinh<>2 OR h.TrangThai<>N''Đã xác nhận'' OR v.ConPhaiTra<>0 OR d.MaLS<>h.MaLS OR p.MaLS<>h.MaLS OR p.TrangThai<>N''Đã ghi sổ'' OR'+NCHAR(13)+N''+NCHAR(10)+N' NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT WHERE x.MaPX=i.MaPX AND c.MaDT=i.MaDT) OR'+NCHAR(13)+N''+NCHAR(10)+N' EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT x LEFT JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT WHERE x.MaPX=i.MaPX AND(c.MaDT IS NULL OR c.MaDT<>i.MaDT)))'+NCHAR(13)+N''+NCHAR(10)+N' THROW 52121,N''Bàn giao cần hóa đơn đã thu đủ, xuất ghi sổ và đơn cùng lượt.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã giao'' AND NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNVGiao AND (n.MaChucVu=N''CV005'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))'+NCHAR(13)+N''+NCHAR(10)+N' THROW 52121,N''Người giao phải là dược sĩ hoặc Admin đang hoạt động.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
- SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_CW_CauHinh_BaoVe ON dbo.CAU_HINH_THUOC_KE_DON AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaThuoc=d.MaThuoc WHERE d.TrangThai<>N''Nháp'' AND'+NCHAR(13)+N''+NCHAR(10)+N' (i.MaThuoc IS NULL OR NOT((i.PhienBan=d.PhienBan AND i.TrangThai<>N''Nháp'' AND NOT EXISTS('+NCHAR(13)+N''+NCHAR(10)+N' SELECT i.MaNhomThuoc,i.DoiTuongApDung,i.DuongDung,i.LieuDungGoiY,i.HuongDanGoiY,i.MaNguoiDuyet,i.NgayDuyet'+NCHAR(13)+N''+NCHAR(10)+N' EXCEPT SELECT d.MaNhomThuoc,d.DoiTuongApDung,d.DuongDung,d.LieuDungGoiY,d.HuongDanGoiY,d.MaNguoiDuyet,d.NgayDuyet))'+NCHAR(13)+N''+NCHAR(10)+N' OR(i.PhienBan=d.PhienBan+1 AND i.TrangThai=N''Nháp'' AND i.MaNguoiDuyet IS NULL AND i.NgayDuyet IS NULL))))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52117,N''Đổi hướng dẫn đã duyệt phải lập phiên bản nháp tiếp theo và giữ lịch sử.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã duyệt'' AND NOT EXISTS('+NCHAR(13)+N''+NCHAR(10)+N' SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNguoiDuyet AND (n.MaChucVu IN(N''CV002'',N''CV005'') OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52117,N''Người duyệt hướng dẫn cần quyền chuyên môn đang hoạt động.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
+ SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_CW_BanGiao_BaoVe ON dbo.BAN_GIAO_THUOC AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaDT=d.MaDT WHERE i.MaDT IS NULL OR d.TrangThai=N''Đã giao'' OR EXISTS('+NCHAR(13)+N''+NCHAR(10)+N' SELECT i.MaHD,i.MaPX EXCEPT SELECT d.MaHD,d.MaPX)) THROW 52121,N''Không xóa/đổi nguồn bàn giao hoặc sửa bản đã giao.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.DON_THUOC d ON d.MaDT=i.MaDT JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD JOIN dbo.PHIEU_XUAT p ON p.MaPX=i.MaPX'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.VW_HOA_DON_THANH_TOAN v ON v.MaHD=h.MaHD WHERE h.PhienBanQuyTrinh<>2 OR h.TrangThai<>N''Đã xác nhận'' OR v.ConPhaiTra<>0 OR d.MaLS<>h.MaLS OR p.MaLS<>h.MaLS OR p.TrangThai<>N''Đã ghi sổ'' OR'+NCHAR(13)+N''+NCHAR(10)+N' NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT WHERE x.MaPX=i.MaPX AND c.MaDT=i.MaDT) OR'+NCHAR(13)+N''+NCHAR(10)+N' EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT x LEFT JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT WHERE x.MaPX=i.MaPX AND(c.MaDT IS NULL OR c.MaDT<>i.MaDT)))'+NCHAR(13)+N''+NCHAR(10)+N' THROW 52121,N''Bàn giao cần hóa đơn đã thu đủ, xuất ghi sổ và đơn cùng lượt.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã giao'' AND NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNVGiao AND (n.MaChucVu=N''CV005'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'',N''QUẢN TRỊ VIÊN''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))'+NCHAR(13)+N''+NCHAR(10)+N' THROW 52121,N''Người giao phải là dược sĩ hoặc Admin đang hoạt động.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
+ SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_CW_CauHinh_BaoVe ON dbo.CAU_HINH_THUOC_KE_DON AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaThuoc=d.MaThuoc WHERE d.TrangThai<>N''Nháp'' AND'+NCHAR(13)+N''+NCHAR(10)+N' (i.MaThuoc IS NULL OR NOT((i.PhienBan=d.PhienBan AND i.TrangThai<>N''Nháp'' AND NOT EXISTS('+NCHAR(13)+N''+NCHAR(10)+N' SELECT i.MaNhomThuoc,i.DoiTuongApDung,i.DuongDung,i.LieuDungGoiY,i.HuongDanGoiY,i.MaNguoiDuyet,i.NgayDuyet'+NCHAR(13)+N''+NCHAR(10)+N' EXCEPT SELECT d.MaNhomThuoc,d.DoiTuongApDung,d.DuongDung,d.LieuDungGoiY,d.HuongDanGoiY,d.MaNguoiDuyet,d.NgayDuyet))'+NCHAR(13)+N''+NCHAR(10)+N' OR(i.PhienBan=d.PhienBan+1 AND i.TrangThai=N''Nháp'' AND i.MaNguoiDuyet IS NULL AND i.NgayDuyet IS NULL))))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52117,N''Đổi hướng dẫn đã duyệt phải lập phiên bản nháp tiếp theo và giữ lịch sử.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã duyệt'' AND NOT EXISTS('+NCHAR(13)+N''+NCHAR(10)+N' SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNguoiDuyet AND (n.MaChucVu IN(N''CV002'',N''CV005'') OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'',N''QUẢN TRỊ VIÊN''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52117,N''Người duyệt hướng dẫn cần quyền chuyên môn đang hoạt động.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_CW_CTKH_BaoVe ON dbo.CHI_TIET_KE_HOACH AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM dbo.KE_HOACH_DIEU_TRI k WITH(UPDLOCK,HOLDLOCK) JOIN(SELECT MaKHDT FROM inserted UNION SELECT MaKHDT FROM deleted) x ON x.MaKHDT=k.MaKHDT'+NCHAR(13)+N''+NCHAR(10)+N' WHERE k.TrangThai<>N''Nháp'' AND EXISTS(SELECT 1 FROM inserted i FULL JOIN deleted d ON d.MaCTKH=i.MaCTKH'+NCHAR(13)+N''+NCHAR(10)+N' WHERE (i.MaKHDT=k.MaKHDT OR d.MaKHDT=k.MaKHDT) AND(i.MaCTKH IS NULL OR d.MaCTKH IS NULL OR EXISTS('+NCHAR(13)+N''+NCHAR(10)+N' SELECT i.MaKHDT,i.MaDV,i.LanThu,i.SoLuongDuKien,i.DonGiaDuKien,i.GhiChu,i.NoiDungBuoc'+NCHAR(13)+N''+NCHAR(10)+N' EXCEPT SELECT d.MaKHDT,d.MaDV,d.LanThu,d.SoLuongDuKien,d.DonGiaDuKien,d.GhiChu,d.NoiDungBuoc))))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52114,N''Không thay nội dung/định lượng bước thuộc kế hoạch đã duyệt.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaCTKH=d.MaCTKH WHERE EXISTS(SELECT 1 FROM dbo.DICH_VU_THUC_HIEN s WHERE s.MaCTKH=d.MaCTKH AND s.TrangThai=N''Đã xác nhận'')'+NCHAR(13)+N''+NCHAR(10)+N' AND(i.MaCTKH IS NULL OR EXISTS(SELECT i.MaKHDT,i.MaDV,i.SoLuongDuKien,i.DonGiaDuKien,i.NoiDungBuoc EXCEPT SELECT d.MaKHDT,d.MaDV,d.SoLuongDuKien,d.DonGiaDuKien,d.NoiDungBuoc)))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52114,N''Bước đã thực hiện không sửa nguồn.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_CW_CTMau_BaoVe ON dbo.CHI_TIET_MAU_KE_HOACH AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM dbo.MAU_KE_HOACH_DIEU_TRI m WITH(UPDLOCK,HOLDLOCK) JOIN(SELECT MaMauKH FROM inserted UNION SELECT MaMauKH FROM deleted) x ON x.MaMauKH=m.MaMauKH WHERE m.TrangThai<>N''Nháp'')'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52115,N''Chỉ sửa bước của mẫu nháp.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_CW_DT_ThayThe ON dbo.DON_THUOC AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM deleted d JOIN inserted i ON i.MaDT=d.MaDT WHERE d.TrangThai<>N''Nháp'' AND EXISTS(SELECT i.MaDTThayThe EXCEPT SELECT d.MaDTThayThe))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52116,N''Đơn đã ký giữ nguyên nguồn thay thế.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=i.MaLS WHERE l.KhongKeThuoc=1 AND i.TrangThai IN(N''Nháp'',N''Đã xác nhận''))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52116,N''Lượt đã chọn không kê thuốc.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.DON_THUOC old ON old.MaDT=i.MaDTThayThe WHERE i.MaDT=old.MaDT OR i.MaLS<>old.MaLS OR i.MaBS<>old.MaBS)'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52116,N''Đơn thay thế phải cùng lượt và bác sĩ, không tự trỏ chính nó.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i LEFT JOIN deleted d ON d.MaDT=i.MaDT WHERE i.MaDTThayThe IS NOT NULL AND (d.MaDT IS NULL OR d.TrangThai=N''Nháp'') AND'+NCHAR(13)+N''+NCHAR(10)+N' (EXISTS(SELECT 1 FROM dbo.HOA_DON h WHERE h.MaLS=i.MaLS) OR EXISTS(SELECT 1 FROM dbo.PHIEU_XUAT p WHERE p.MaLS=i.MaLS AND p.TrangThai=N''Đã ghi sổ'')))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52116,N''Không thay đơn của lượt đã lập hóa đơn hoặc đã xuất thuốc.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaDT=i.MaDT WHERE i.TrangThai=N''Ngừng áp dụng'' AND d.TrangThai<>N''Ngừng áp dụng'' AND'+NCHAR(13)+N''+NCHAR(10)+N' EXISTS(SELECT 1 FROM dbo.CHI_TIET_DON_THUOC c JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTDT=c.MaCTDT JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX WHERE c.MaDT=i.MaDT AND p.TrangThai=N''Đã ghi sổ''))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52116,N''Đơn đã xuất thuốc giữ nguyên hiệu lực lịch sử.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_CW_HD_Request ON dbo.HOA_DON AFTER UPDATE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaHD=i.MaHD WHERE d.TrangThai=N''Đã xác nhận'' AND EXISTS('+NCHAR(13)+N''+NCHAR(10)+N' SELECT i.PhienBanQuyTrinh,i.MaYeuCau,i.DauVanTayYeuCau EXCEPT SELECT d.PhienBanQuyTrinh,d.MaYeuCau,d.DauVanTayYeuCau))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52118,N''Hóa đơn đã xác nhận giữ nguyên khóa yêu cầu/phiên bản.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_CW_KH_BaoVe ON dbo.KE_HOACH_DIEU_TRI AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaKHDT=d.MaKHDT WHERE d.TrangThai<>N''Nháp'' AND'+NCHAR(13)+N''+NCHAR(10)+N' (i.MaKHDT IS NULL OR i.TrangThai=N''Nháp'' OR EXISTS(SELECT i.MaLS,i.MaBS,i.NgayLap,i.NgayBatDau,i.NgayDuKienKetThuc,i.GhiChu,i.MaTTBNguon,i.MaMauKH,i.PhienBanMau'+NCHAR(13)+N''+NCHAR(10)+N' EXCEPT SELECT d.MaLS,d.MaBS,d.NgayLap,d.NgayBatDau,d.NgayDuKienKetThuc,d.GhiChu,d.MaTTBNguon,d.MaMauKH,d.PhienBanMau)))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52113,N''Kế hoạch đã duyệt chỉ cập nhật trạng thái tiến độ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i LEFT JOIN dbo.TINH_TRANG_BENH t ON t.MaTTB=i.MaTTBNguon'+NCHAR(13)+N''+NCHAR(10)+N' LEFT JOIN dbo.MAU_KE_HOACH_DIEU_TRI m ON m.MaMauKH=i.MaMauKH WHERE'+NCHAR(13)+N''+NCHAR(10)+N' (i.MaTTBNguon IS NOT NULL AND(t.MaTTB IS NULL OR t.MaLS<>i.MaLS)) OR'+NCHAR(13)+N''+NCHAR(10)+N' (i.MaMauKH IS NOT NULL AND(m.MaDMTT<>t.MaDMTT OR t.MaDMTT IS NULL OR m.PhienBan<>i.PhienBanMau)))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52113,N''Nguồn tình trạng và mẫu phải khớp lượt, danh mục và phiên bản.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i LEFT JOIN deleted d ON d.MaKHDT=i.MaKHDT JOIN dbo.MAU_KE_HOACH_DIEU_TRI m ON m.MaMauKH=i.MaMauKH'+NCHAR(13)+N''+NCHAR(10)+N' WHERE (d.MaKHDT IS NULL OR EXISTS(SELECT i.MaMauKH,i.PhienBanMau EXCEPT SELECT d.MaMauKH,d.PhienBanMau)) AND m.TrangThai<>N''Đã duyệt'')'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52113,N''Chỉ sao chép mẫu đã duyệt.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_CW_LS_BaoVe ON dbo.LICH_SU_KHAM_BENH AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaLS=d.MaLS WHERE d.TrangThai=N''Đã xác nhận'' AND'+NCHAR(13)+N''+NCHAR(10)+N' (i.MaLS IS NULL OR EXISTS(SELECT i.TrieuChung,i.ChanDoan,i.KeHoachXuLy,i.GhiChu,i.KhongKeThuoc,i.LyDoKhongKeThuoc'+NCHAR(13)+N''+NCHAR(10)+N' EXCEPT SELECT d.TrieuChung,d.ChanDoan,d.KeHoachXuLy,d.GhiChu,d.KhongKeThuoc,d.LyDoKhongKeThuoc)))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52110,N''Nội dung lần khám đã ký được giữ nguyên; ghi bổ sung bằng nhật ký.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i WHERE i.KhongKeThuoc=1 AND EXISTS(SELECT 1 FROM dbo.DON_THUOC d WHERE d.MaLS=i.MaLS AND d.TrangThai IN(N''Nháp'',N''Đã xác nhận'')))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52110,N''Đã chọn không kê thuốc thì không có đơn nháp hoặc đơn hiệu lực.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
- SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_CW_MauKH_BaoVe ON dbo.MAU_KE_HOACH_DIEU_TRI AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaMauKH=d.MaMauKH WHERE d.TrangThai<>N''Nháp'' AND'+NCHAR(13)+N''+NCHAR(10)+N' (i.MaMauKH IS NULL OR i.TrangThai=N''Nháp'' OR EXISTS(SELECT i.MaDMTT,i.MucDo,i.TenMau,i.PhienBan,i.MaBSDuyet,i.NgayDuyet EXCEPT SELECT d.MaDMTT,d.MucDo,d.TenMau,d.PhienBan,d.MaBSDuyet,d.NgayDuyet)))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52115,N''Mẫu đã duyệt giữ nguyên nội dung; tạo mã/phiên bản mới.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã duyệt'' AND'+NCHAR(13)+N''+NCHAR(10)+N' (NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_MAU_KE_HOACH c WHERE c.MaMauKH=i.MaMauKH) OR'+NCHAR(13)+N''+NCHAR(10)+N' NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaBSDuyet AND (n.MaChucVu=N''CV002'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động'')))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52115,N''Mẫu cần các bước và bác sĩ hoặc Admin đang hoạt động duyệt.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
+ SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_CW_MauKH_BaoVe ON dbo.MAU_KE_HOACH_DIEU_TRI AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaMauKH=d.MaMauKH WHERE d.TrangThai<>N''Nháp'' AND'+NCHAR(13)+N''+NCHAR(10)+N' (i.MaMauKH IS NULL OR i.TrangThai=N''Nháp'' OR EXISTS(SELECT i.MaDMTT,i.MucDo,i.TenMau,i.PhienBan,i.MaBSDuyet,i.NgayDuyet EXCEPT SELECT d.MaDMTT,d.MucDo,d.TenMau,d.PhienBan,d.MaBSDuyet,d.NgayDuyet)))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52115,N''Mẫu đã duyệt giữ nguyên nội dung; tạo mã/phiên bản mới.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã duyệt'' AND'+NCHAR(13)+N''+NCHAR(10)+N' (NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_MAU_KE_HOACH c WHERE c.MaMauKH=i.MaMauKH) OR'+NCHAR(13)+N''+NCHAR(10)+N' NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaBSDuyet AND (n.MaChucVu=N''CV002'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'',N''QUẢN TRỊ VIÊN''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động'')))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52115,N''Mẫu cần các bước và bác sĩ hoặc Admin đang hoạt động duyệt.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_CW_Phieu_BacSi ON dbo.PHIEU_KHAM_BENH AFTER UPDATE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaPhieu=i.MaPhieu WHERE EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaPhieu=i.MaPhieu)'+NCHAR(13)+N''+NCHAR(10)+N' AND EXISTS(SELECT i.MaBS,i.MaPhong EXCEPT SELECT d.MaBS,d.MaPhong))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52112,N''Phiếu đã bắt đầu khám không thay bác sĩ hoặc phòng.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_CW_TT_ThuDu ON dbo.THANH_TOAN AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @id nvarchar(50); SELECT @id=h.MaHD FROM dbo.HOA_DON h WITH(UPDLOCK,HOLDLOCK) JOIN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted) x ON x.MaHD=h.MaHD;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD WHERE h.PhienBanQuyTrinh=2 AND'+NCHAR(13)+N''+NCHAR(10)+N' (i.TrangThai<>N''Đã xác nhận'' OR i.LoaiGiaoDich<>N''Thu'' OR i.SoTien<>h.SoTienPhaiThu OR i.SoTienKhachDua IS NULL OR i.TienThua IS NULL))'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52119,N''Quy trình 2 chỉ ghi một giao dịch Thu đủ có tiền đưa và tiền thối.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM dbo.HOA_DON h JOIN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted) x ON x.MaHD=h.MaHD WHERE h.PhienBanQuyTrinh=2 AND'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT COUNT(*) FROM dbo.THANH_TOAN t WHERE t.MaHD=h.MaHD AND t.TrangThai=N''Đã xác nhận'' AND t.LoaiGiaoDich=N''Thu'')<>1)'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52119,N''Hóa đơn quy trình 2 có đúng một lần Thu đủ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_CW_TTB_BaoVe ON dbo.TINH_TRANG_BENH AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' IF EXISTS(SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WITH(UPDLOCK,HOLDLOCK) JOIN(SELECT MaLS FROM inserted UNION SELECT MaLS FROM deleted) x ON x.MaLS=l.MaLS WHERE l.TrangThai=N''Đã xác nhận'')'+NCHAR(13)+N''+NCHAR(10)+N'  THROW 52111,N''Không sửa hoặc bổ sung tình trạng vào lượt đã ký.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
@@ -623,15 +623,15 @@ BEGIN TRY
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_LO_HANG_HOA] ON dbo.[LO_HANG_HOA] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' '+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.LO_HANG_HOA'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''LO_HANG_HOA'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE CASE WHEN i.TrangThai=d.TrangThai THEN N''UPDATE'' WHEN i.TrangThai=N''Đã duyệt'' THEN N''APPROVE'' WHEN i.TrangThai=N''Đã xác nhận'' THEN N''CONFIRM'' WHEN i.TrangThai IN(N''Đã chốt'',N''Đã hoàn thành'') THEN N''FINALIZE'' WHEN i.TrangThai IN(N''Hủy'',N''Đã hủy'') THEN N''CANCEL'' WHEN i.TrangThai IN(N''Khóa'',N''Đã khóa'') THEN N''LOCK'' ELSE N''UPDATE'' END END,'+NCHAR(13)+N''+NCHAR(10)+N' N''LO_HANG_HOA'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaLo]),CONVERT(nvarchar(100),d.[MaLo])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaLo]),CONVERT(nvarchar(100),d.[MaLo]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaLo]),CONVERT(nvarchar(100),d.[MaLo])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaLo],d.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaLo],i.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i FULL JOIN deleted d ON i.[MaLo]=d.[MaLo];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_NHAN_VIEN] ON dbo.[NHAN_VIEN] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' '+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.NHAN_VIEN'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''NHAN_VIEN'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE CASE WHEN i.TrangThai=d.TrangThai THEN N''UPDATE'' WHEN i.TrangThai=N''Đã duyệt'' THEN N''APPROVE'' WHEN i.TrangThai=N''Đã xác nhận'' THEN N''CONFIRM'' WHEN i.TrangThai IN(N''Đã chốt'',N''Đã hoàn thành'') THEN N''FINALIZE'' WHEN i.TrangThai IN(N''Hủy'',N''Đã hủy'') THEN N''CANCEL'' WHEN i.TrangThai IN(N''Khóa'',N''Đã khóa'') THEN N''LOCK'' ELSE N''UPDATE'' END END,'+NCHAR(13)+N''+NCHAR(10)+N' N''NHAN_VIEN'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaNV]),CONVERT(nvarchar(100),d.[MaNV])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaNV]),CONVERT(nvarchar(100),d.[MaNV]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaNV]),CONVERT(nvarchar(100),d.[MaNV])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaNV],d.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaNV],i.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i FULL JOIN deleted d ON i.[MaNV]=d.[MaNV];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_PHAN_CONG_THAY_THE] ON dbo.[PHAN_CONG_THAY_THE] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' '+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.PHAN_CONG_THAY_THE'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''PHAN_CONG_THAY_THE'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE CASE WHEN i.TrangThai=d.TrangThai THEN N''UPDATE'' WHEN i.TrangThai=N''Đã duyệt'' THEN N''APPROVE'' WHEN i.TrangThai=N''Đã xác nhận'' THEN N''CONFIRM'' WHEN i.TrangThai IN(N''Đã chốt'',N''Đã hoàn thành'') THEN N''FINALIZE'' WHEN i.TrangThai IN(N''Hủy'',N''Đã hủy'') THEN N''CANCEL'' WHEN i.TrangThai IN(N''Khóa'',N''Đã khóa'') THEN N''LOCK'' ELSE N''UPDATE'' END END,'+NCHAR(13)+N''+NCHAR(10)+N' N''PHAN_CONG_THAY_THE'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaPCTT]),CONVERT(nvarchar(100),d.[MaPCTT])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaPCTT]),CONVERT(nvarchar(100),d.[MaPCTT]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaPCTT]),CONVERT(nvarchar(100),d.[MaPCTT])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaPCTT],d.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaPCTT],i.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i FULL JOIN deleted d ON i.[MaPCTT]=d.[MaPCTT];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
- SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_PHAN_QUYEN_VAI_TRO] ON dbo.[PHAN_QUYEN_VAI_TRO] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.VAI_TRO v ON v.MaVaiTro=t.MaVaiTro WHERE t.MaTK=@actor AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'')) THROW 53023,N''Chỉ quản trị viên được sửa tài khoản, vai trò và phân quyền.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.PHAN_QUYEN_VAI_TRO'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''PHAN_QUYEN_VAI_TRO'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE N''PERMISSION_CHANGE'' END,'+NCHAR(13)+N''+NCHAR(10)+N' N''PHAN_QUYEN_VAI_TRO'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaVaiTro]),CONVERT(nvarchar(100),d.[MaVaiTro]))+N''/''+COALESCE(CONVERT(nvarchar(100),i.[MaPhanHe]),CONVERT(nvarchar(100),d.[MaPhanHe])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaVaiTro]),CONVERT(nvarchar(100),d.[MaVaiTro]))+N''/''+COALESCE(CONVERT(nvarchar(100),i.[MaPhanHe]),CONVERT(nvarchar(100),d.[MaPhanHe]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaVaiTro]),CONVERT(nvarchar(100),d.[MaVaiTro]))+N''/''+COALESCE(CONVERT(nvarchar(100),i.[MaPhanHe]),CONVERT(nvarchar(100),d.[MaPhanHe])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaVaiTro],d.[MaPhanHe],@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaVaiTro],i.[MaPhanHe],@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i'+N' FULL JOIN deleted d ON i.[MaVaiTro]=d.[MaVaiTro] AND i.[MaPhanHe]=d.[MaPhanHe];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
+ SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_PHAN_QUYEN_VAI_TRO] ON dbo.[PHAN_QUYEN_VAI_TRO] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.VAI_TRO v ON v.MaVaiTro=t.MaVaiTro WHERE t.MaTK=@actor AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'',N''QUẢN TRỊ VIÊN'')) THROW 53023,N''Chỉ quản trị viên được sửa tài khoản, vai trò và phân quyền.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.PHAN_QUYEN_VAI_TRO'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''PHAN_QUYEN_VAI_TRO'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE N''PERMISSION_CHANGE'' END,'+NCHAR(13)+N''+NCHAR(10)+N' N''PHAN_QUYEN_VAI_TRO'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaVaiTro]),CONVERT(nvarchar(100),d.[MaVaiTro]))+N''/''+COALESCE(CONVERT(nvarchar(100),i.[MaPhanHe]),CONVERT(nvarchar(100),d.[MaPhanHe])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaVaiTro]),CONVERT(nvarchar(100),d.[MaVaiTro]))+N''/''+COALESCE(CONVERT(nvarchar(100),i.[MaPhanHe]),CONVERT(nvarchar(100),d.[MaPhanHe]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaVaiTro]),CONVERT(nvarchar(100),d.[MaVaiTro]))+N''/''+COALESCE(CONVERT(nvarchar(100),i.[MaPhanHe]),CONVERT(nvarchar(100),d.[MaPhanHe])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaVaiTro],d.[MaPhanHe],@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaVaiTro],i.[MaPhanHe],@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i'+N' FULL JOIN deleted d ON i.[MaVaiTro]=d.[MaVaiTro] AND i.[MaPhanHe]=d.[MaPhanHe];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_PHIEU_NHAP] ON dbo.[PHIEU_NHAP] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' '+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.PHIEU_NHAP'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''PHIEU_NHAP'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE CASE WHEN i.TrangThai=d.TrangThai THEN N''UPDATE'' WHEN i.TrangThai=N''Đã duyệt'' THEN N''APPROVE'' WHEN i.TrangThai=N''Đã xác nhận'' THEN N''CONFIRM'' WHEN i.TrangThai IN(N''Đã chốt'',N''Đã hoàn thành'') THEN N''FINALIZE'' WHEN i.TrangThai IN(N''Hủy'',N''Đã hủy'') THEN N''CANCEL'' WHEN i.TrangThai IN(N''Khóa'',N''Đã khóa'') THEN N''LOCK'' ELSE N''UPDATE'' END END,'+NCHAR(13)+N''+NCHAR(10)+N' N''PHIEU_NHAP'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaPN]),CONVERT(nvarchar(100),d.[MaPN])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaPN]),CONVERT(nvarchar(100),d.[MaPN]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaPN]),CONVERT(nvarchar(100),d.[MaPN])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaPN],d.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaPN],i.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i FULL JOIN deleted d ON i.[MaPN]=d.[MaPN];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_PHIEU_XUAT] ON dbo.[PHIEU_XUAT] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' '+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.PHIEU_XUAT'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''PHIEU_XUAT'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE CASE WHEN i.TrangThai=d.TrangThai THEN N''UPDATE'' WHEN i.TrangThai=N''Đã duyệt'' THEN N''APPROVE'' WHEN i.TrangThai=N''Đã xác nhận'' THEN N''CONFIRM'' WHEN i.TrangThai IN(N''Đã chốt'',N''Đã hoàn thành'') THEN N''FINALIZE'' WHEN i.TrangThai IN(N''Hủy'',N''Đã hủy'') THEN N''CANCEL'' WHEN i.TrangThai IN(N''Khóa'',N''Đã khóa'') THEN N''LOCK'' ELSE N''UPDATE'' END END,'+NCHAR(13)+N''+NCHAR(10)+N' N''PHIEU_XUAT'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaPX]),CONVERT(nvarchar(100),d.[MaPX])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaPX]),CONVERT(nvarchar(100),d.[MaPX]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaPX]),CONVERT(nvarchar(100),d.[MaPX])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaPX],d.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaPX],i.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i FULL JOIN deleted d ON i.[MaPX]=d.[MaPX];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_PHU_TA_DICH_VU] ON dbo.[PHU_TA_DICH_VU] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' '+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.PHU_TA_DICH_VU'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''PHU_TA_DICH_VU'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE CASE WHEN i.TrangThai=d.TrangThai THEN N''UPDATE'' WHEN i.TrangThai=N''Đã duyệt'' THEN N''APPROVE'' WHEN i.TrangThai=N''Đã xác nhận'' THEN N''CONFIRM'' WHEN i.TrangThai IN(N''Đã chốt'',N''Đã hoàn thành'') THEN N''FINALIZE'' WHEN i.TrangThai IN(N''Hủy'',N''Đã hủy'') THEN N''CANCEL'' WHEN i.TrangThai IN(N''Khóa'',N''Đã khóa'') THEN N''LOCK'' ELSE N''UPDATE'' END END,'+NCHAR(13)+N''+NCHAR(10)+N' N''PHU_TA_DICH_VU'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaPTDV]),CONVERT(nvarchar(100),d.[MaPTDV])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaPTDV]),CONVERT(nvarchar(100),d.[MaPTDV]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaPTDV]),CONVERT(nvarchar(100),d.[MaPTDV])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaPTDV],d.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaPTDV],i.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i FULL JOIN deleted d ON i.[MaPTDV]=d.[MaPTDV];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
- SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_TAI_KHOAN] ON dbo.[TAI_KHOAN] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.VAI_TRO v ON v.MaVaiTro=t.MaVaiTro WHERE t.MaTK=@actor AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'')) THROW 53023,N''Chỉ quản trị viên được sửa tài khoản, vai trò và phân quyền.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.TAI_KHOAN'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''TAI_KHOAN'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE CASE WHEN i.MaVaiTro<>d.MaVaiTro THEN N''ROLE_CHANGE'' WHEN i.TrangThai<>d.TrangThai AND i.TrangThai<>N''Đang hoạt động'' THEN N''ACCOUNT_LOCK'' WHEN i.TrangThai<>d.TrangThai AND i.TrangThai=N''Đang hoạt động'' THEN N''ACCOUNT_RESTORE'' ELSE N''UPDATE'' END END,'+NCHAR(13)+N''+NCHAR(10)+N' N''TAI_KHOAN'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaTK]),CONVERT(nvarchar(100),d.[MaTK])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaTK]),CONVERT(nvarchar(100),d.[MaTK]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaTK]),CONVERT(nvarchar(100),d.[MaTK])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaTK],d.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaTK],i.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i FULL JOIN deleted d ON i.[MaTK]=d.[MaTK];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
+ SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_TAI_KHOAN] ON dbo.[TAI_KHOAN] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.VAI_TRO v ON v.MaVaiTro=t.MaVaiTro WHERE t.MaTK=@actor AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'',N''QUẢN TRỊ VIÊN'')) THROW 53023,N''Chỉ quản trị viên được sửa tài khoản, vai trò và phân quyền.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.TAI_KHOAN'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''TAI_KHOAN'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE CASE WHEN i.MaVaiTro<>d.MaVaiTro THEN N''ROLE_CHANGE'' WHEN i.TrangThai<>d.TrangThai AND i.TrangThai<>N''Đang hoạt động'' THEN N''ACCOUNT_LOCK'' WHEN i.TrangThai<>d.TrangThai AND i.TrangThai=N''Đang hoạt động'' THEN N''ACCOUNT_RESTORE'' ELSE N''UPDATE'' END END,'+NCHAR(13)+N''+NCHAR(10)+N' N''TAI_KHOAN'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaTK]),CONVERT(nvarchar(100),d.[MaTK])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaTK]),CONVERT(nvarchar(100),d.[MaTK]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaTK]),CONVERT(nvarchar(100),d.[MaTK])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaTK],d.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaTK],i.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i FULL JOIN deleted d ON i.[MaTK]=d.[MaTK];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_THANH_TOAN] ON dbo.[THANH_TOAN] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' '+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.THANH_TOAN'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''THANH_TOAN'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE CASE WHEN i.TrangThai=d.TrangThai THEN N''UPDATE'' WHEN i.TrangThai=N''Đã duyệt'' THEN N''APPROVE'' WHEN i.TrangThai=N''Đã xác nhận'' THEN N''CONFIRM'' WHEN i.TrangThai IN(N''Đã chốt'',N''Đã hoàn thành'') THEN N''FINALIZE'' WHEN i.TrangThai IN(N''Hủy'',N''Đã hủy'') THEN N''CANCEL'' WHEN i.TrangThai IN(N''Khóa'',N''Đã khóa'') THEN N''LOCK'' ELSE N''UPDATE'' END END,'+NCHAR(13)+N''+NCHAR(10)+N' N''THANH_TOAN'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaTT]),CONVERT(nvarchar(100),d.[MaTT])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaTT]),CONVERT(nvarchar(100),d.[MaTT]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaTT]),CONVERT(nvarchar(100),d.[MaTT])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaTT],d.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaTT],i.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i FULL JOIN deleted d ON i.[MaTT]=d.[MaTT];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_THIET_BI] ON dbo.[THIET_BI] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' '+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.THIET_BI'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''THIET_BI'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE CASE WHEN i.TrangThai=d.TrangThai THEN N''UPDATE'' WHEN i.TrangThai=N''Đã duyệt'' THEN N''APPROVE'' WHEN i.TrangThai=N''Đã xác nhận'' THEN N''CONFIRM'' WHEN i.TrangThai IN(N''Đã chốt'',N''Đã hoàn thành'') THEN N''FINALIZE'' WHEN i.TrangThai IN(N''Hủy'',N''Đã hủy'') THEN N''CANCEL'' WHEN i.TrangThai IN(N''Khóa'',N''Đã khóa'') THEN N''LOCK'' ELSE N''UPDATE'' END END,'+NCHAR(13)+N''+NCHAR(10)+N' N''THIET_BI'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaTB]),CONVERT(nvarchar(100),d.[MaTB])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaTB]),CONVERT(nvarchar(100),d.[MaTB]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaTB]),CONVERT(nvarchar(100),d.[MaTB])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaTB],d.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaTB],i.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i FULL JOIN deleted d ON i.[MaTB]=d.[MaTB];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_THUOC] ON dbo.[THUOC] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' '+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.THUOC'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''THUOC'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE N''UPDATE'' END,'+NCHAR(13)+N''+NCHAR(10)+N' N''THUOC'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaThuoc]),CONVERT(nvarchar(100),d.[MaThuoc])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaThuoc]),CONVERT(nvarchar(100),d.[MaThuoc]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaThuoc]),CONVERT(nvarchar(100),d.[MaThuoc])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaThuoc],@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaThuoc],@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i FULL JOIN deleted d ON i.[MaThuoc]=d.[MaThuoc];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
- SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_VAI_TRO] ON dbo.[VAI_TRO] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.VAI_TRO v ON v.MaVaiTro=t.MaVaiTro WHERE t.MaTK=@actor AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'')) THROW 53023,N''Chỉ quản trị viên được sửa tài khoản, vai trò và phân quyền.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.VAI_TRO'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''VAI_TRO'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE N''ROLE_CHANGE'' END,'+NCHAR(13)+N''+NCHAR(10)+N' N''VAI_TRO'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaVaiTro]),CONVERT(nvarchar(100),d.[MaVaiTro])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaVaiTro]),CONVERT(nvarchar(100),d.[MaVaiTro]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaVaiTro]),CONVERT(nvarchar(100),d.[MaVaiTro])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaVaiTro],@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaVaiTro],@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i FULL JOIN deleted d ON i.[MaVaiTro]=d.[MaVaiTro];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
+ SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_VAI_TRO] ON dbo.[VAI_TRO] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.VAI_TRO v ON v.MaVaiTro=t.MaVaiTro WHERE t.MaTK=@actor AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'',N''QUẢN TRỊ VIÊN'')) THROW 53023,N''Chỉ quản trị viên được sửa tài khoản, vai trò và phân quyền.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.VAI_TRO'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''VAI_TRO'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE N''ROLE_CHANGE'' END,'+NCHAR(13)+N''+NCHAR(10)+N' N''VAI_TRO'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaVaiTro]),CONVERT(nvarchar(100),d.[MaVaiTro])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaVaiTro]),CONVERT(nvarchar(100),d.[MaVaiTro]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaVaiTro]),CONVERT(nvarchar(100),d.[MaVaiTro])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaVaiTro],@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaVaiTro],@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i FULL JOIN deleted d ON i.[MaVaiTro]=d.[MaVaiTro];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_VAT_TU] ON dbo.[VAT_TU] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' '+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.VAT_TU'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''VAT_TU'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE N''UPDATE'' END,'+NCHAR(13)+N''+NCHAR(10)+N' N''VAT_TU'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaVT]),CONVERT(nvarchar(100),d.[MaVT])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaVT]),CONVERT(nvarchar(100),d.[MaVT]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaVT]),CONVERT(nvarchar(100),d.[MaVT])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaVT],@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaVT],@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i FULL JOIN deleted d ON i.[MaVT]=d.[MaVT];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.[TR_S3_Audit_XAC_NHAN_DOI_LICH_KHAM] ON dbo.[XAC_NHAN_DOI_LICH_KHAM] AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N'BEGIN'+NCHAR(13)+N''+NCHAR(10)+N' SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @session uniqueidentifier=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N''RHM.MaPhien''));'+NCHAR(13)+N''+NCHAR(10)+N' IF @session IS NULL RETURN;'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @actor nvarchar(50);'+NCHAR(13)+N''+NCHAR(10)+N' SELECT @actor=s.MaTK FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.TAI_KHOAN t WITH(HOLDLOCK) ON t.MaTK=s.MaTK'+NCHAR(13)+N''+NCHAR(10)+N' JOIN dbo.NHAN_VIEN n WITH(HOLDLOCK) ON n.MaNV=t.MaNV'+NCHAR(13)+N''+NCHAR(10)+N' WHERE s.MaPhien=@session AND s.TrangThaiPhien=N''Đang mở'''+NCHAR(13)+N''+NCHAR(10)+N' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())'+NCHAR(13)+N''+NCHAR(10)+N' AND t.TrangThai=N''Đang hoạt động'' AND n.TrangThai=N''Đang làm việc'';'+NCHAR(13)+N''+NCHAR(10)+N' IF @actor IS NULL THROW 53022,N''Không có phiên hợp lệ để ghi audit nghiệp vụ.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' '+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @mask varbinary(max)=COLUMNS_UPDATED();'+NCHAR(13)+N''+NCHAR(10)+N' DECLARE @changed nvarchar(max)=STUFF((SELECT N'',''+c.name FROM sys.columns c'+NCHAR(13)+N''+NCHAR(10)+N' WHERE c.object_id=OBJECT_ID(N''dbo.XAC_NHAN_DOI_LICH_KHAM'')'+NCHAR(13)+N''+NCHAR(10)+N' AND c.name NOT LIKE N''%MatKhau%'' AND c.name NOT LIKE N''%Token%'' AND c.name NOT LIKE N''%Secret%'' AND c.name NOT LIKE N''%ApiKey%'''+NCHAR(13)+N''+NCHAR(10)+N' AND CONVERT(int,SUBSTRING(@mask,(c.column_id-1)/8+1,1)) & CONVERT(int,POWER(2,(c.column_id-1)%8))>0'+NCHAR(13)+N''+NCHAR(10)+N' ORDER BY c.column_id FOR XML PATH(''''),TYPE).value(''.'',''nvarchar(max)''),1,1,N'''');'+NCHAR(13)+N''+NCHAR(10)+N' INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuTruoc,DuLieuSau)'+NCHAR(13)+N''+NCHAR(10)+N' SELECT N''NK''+CONVERT(nvarchar(36),NEWID()),@actor,SYSDATETIME(),SYSUTCDATETIME(),@session,NEWID(),N''XAC_NHAN_DOI_LICH_KHAM'','+NCHAR(13)+N''+NCHAR(10)+N' CASE WHEN NOT EXISTS(SELECT 1 FROM deleted) THEN N''CREATE'' WHEN NOT EXISTS(SELECT 1 FROM inserted) THEN N''CANCEL'' ELSE CASE WHEN i.TrangThai=d.TrangThai THEN N''UPDATE'' WHEN i.TrangThai=N''Đã duyệt'' THEN N''APPROVE'' WHEN i.TrangThai=N''Đã xác nhận'' THEN N''CONFIRM'' WHEN i.TrangThai IN(N''Đã chốt'',N''Đã hoàn thành'') THEN N''FINALIZE'' WHEN i.TrangThai IN(N''Hủy'',N''Đã hủy'') THEN N''CANCEL'' WHEN i.TrangThai IN(N''Khóa'',N''Đã khóa'') THEN N''LOCK'' ELSE N''UPDATE'' END END,'+NCHAR(13)+N''+NCHAR(10)+N' N''XAC_NHAN_DOI_LICH_KHAM'',CASE WHEN LEN(COALESCE(CONVERT(nvarchar(100),i.[MaDonNghi]),CONVERT(nvarchar(100),d.[MaDonNghi]))+N''/''+COALESCE(CONVERT(nvarchar(100),i.[MaLich]),CONVERT(nvarchar(100),d.[MaLich])))>50 THEN LEFT(CONVERT(varchar(64),HASHBYTES(''SHA2_256'',COALESCE(CONVERT(nvarchar(100),i.[MaDonNghi]),CONVERT(nvarchar(100),d.[MaDonNghi]))+N''/''+COALESCE(CONVERT(nvarchar(100),i.[MaLich]),CONVERT(nvarchar(100),d.[MaLich]))),2),50) ELSE COALESCE(CONVERT(nvarchar(100),i.[MaDonNghi]),CONVERT(nvarchar(100),d.[MaDonNghi]))+N''/''+COALESCE(CONVERT(nvarchar(100),i.[MaLich]),CONVERT(nvarchar(100),d.[MaLich])) END,N''Thành công'','+NCHAR(13)+N''+NCHAR(10)+N' (SELECT d.[MaDonNghi],d.[MaLich],d.TrangThai,@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES),'+NCHAR(13)+N''+NCHAR(10)+N' (SELECT i.[MaDonNghi],i.[MaLich],i.TrangThai'+N',@changed AS TruongDaDoi FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)'+NCHAR(13)+N''+NCHAR(10)+N' FROM inserted i FULL JOIN deleted d ON i.[MaDonNghi]=d.[MaDonNghi] AND i.[MaLich]=d.[MaLich];'+NCHAR(13)+N''+NCHAR(10)+N'END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
  SET @RhmSnapshotSql=CAST(N'' AS nvarchar(max))+N'CREATE   TRIGGER dbo.TR_TB_Serial_BaoVe ON dbo.THIET_BI'+NCHAR(13)+N''+NCHAR(10)+N' AFTER INSERT,UPDATE,DELETE AS'+NCHAR(13)+N''+NCHAR(10)+N' BEGIN'+NCHAR(13)+N''+NCHAR(10)+N'  SET NOCOUNT ON;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaTB=i.MaTB WHERE(i.SoSerial<>d.SoSerial OR i.MaHH<>d.MaHH) AND EXISTS(SELECT 1 FROM dbo.BAO_TRI_THIET_BI b WITH(HOLDLOCK) WHERE b.MaTB=i.MaTB))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52606,N''Thiết bị đã có lịch sử bảo trì; không đổi serial hoặc nguồn hàng hóa.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaTB=i.MaTB WHERE d.TinhTrang=N''Ngưng sử dụng'' AND i.TinhTrang<>d.TinhTrang)'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52606,N''Thiết bị đã ngưng sử dụng không được tự khôi phục.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM inserted i WHERE i.TinhTrang=N''Đang bảo trì'' AND NOT EXISTS(SELECT 1 FROM dbo.BAO_TRI_THIET_BI b WITH(HOLDLOCK) WHERE b.MaTB=i.MaTB AND b.TrangThai=N''Đang thực hiện''))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52606,N''Tình trạng Đang bảo trì chỉ được đặt khi thực hiện phiếu bảo trì.'',1;'+NCHAR(13)+N''+NCHAR(10)+N'  IF EXISTS(SELECT 1 FROM inserted i WHERE EXISTS(SELECT 1 FROM dbo.BAO_TRI_THIET_BI b WITH(HOLDLOCK) WHERE b.MaTB=i.MaTB AND('+NCHAR(13)+N''+NCHAR(10)+N'   (b.TrangThai=N''Đang thực hiện'' AND i.TinhTrang<>N''Đang bảo trì'') OR(b.TrangThai IN(N''Chưa xác nhận'',N''Đã xác nhận'') AND i.TinhTrang<>N''Hư hại'')'+NCHAR(13)+N''+NCHAR(10)+N'   OR(b.TrangThai IN(N''Chưa xác nhận'',N''Đã xác nhận'',N''Đang thực hiện'') AND i.TrangThai IN(N''Ngưng sử dụng'',N''Ngừng sử dụng'')))))'+NCHAR(13)+N''+NCHAR(10)+N'   THROW 52606,N''Thiết bị đang có phiếu mở; cập nhật tình trạng qua Lịch sử bảo trì.'',1;'+NCHAR(13)+N''+NCHAR(10)+N' END;'; EXEC sys.sp_executesql @RhmSnapshotSql;
@@ -2295,7 +2295,7 @@ BEGIN
   THROW 52115,N''Mẫu đã duyệt giữ nguyên nội dung; tạo mã/phiên bản mới.'',1;
  IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã duyệt'' AND
  (NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_MAU_KE_HOACH c WHERE c.MaMauKH=i.MaMauKH) OR
- NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaBSDuyet AND (n.MaChucVu=N''CV002'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động'')))
+ NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaBSDuyet AND (n.MaChucVu=N''CV002'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'',N''QUẢN TRỊ VIÊN''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động'')))
   THROW 52115,N''Mẫu cần các bước và bác sĩ hoặc Admin đang hoạt động duyệt.'',1;
 END;';
 EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_CTMau_BaoVe ON dbo.CHI_TIET_MAU_KE_HOACH AFTER INSERT,UPDATE,DELETE AS
@@ -2314,7 +2314,7 @@ BEGIN
  OR(i.PhienBan=d.PhienBan+1 AND i.TrangThai=N''Nháp'' AND i.MaNguoiDuyet IS NULL AND i.NgayDuyet IS NULL))))
   THROW 52117,N''Đổi hướng dẫn đã duyệt phải lập phiên bản nháp tiếp theo và giữ lịch sử.'',1;
  IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã duyệt'' AND NOT EXISTS(
- SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNguoiDuyet AND (n.MaChucVu IN(N''CV002'',N''CV005'') OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
+ SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNguoiDuyet AND (n.MaChucVu IN(N''CV002'',N''CV005'') OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'',N''QUẢN TRỊ VIÊN''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
   THROW 52117,N''Người duyệt hướng dẫn cần quyền chuyên môn đang hoạt động.'',1;
 END;';
 EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_HD_Request ON dbo.HOA_DON AFTER UPDATE AS
@@ -2345,7 +2345,7 @@ BEGIN
  NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT WHERE x.MaPX=i.MaPX AND c.MaDT=i.MaDT) OR
  EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT x LEFT JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT WHERE x.MaPX=i.MaPX AND(c.MaDT IS NULL OR c.MaDT<>i.MaDT)))
  THROW 52121,N''Bàn giao cần hóa đơn đã thu đủ, xuất ghi sổ và đơn cùng lượt.'',1;
- IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã giao'' AND NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNVGiao AND (n.MaChucVu=N''CV005'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã giao'' AND NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNVGiao AND (n.MaChucVu=N''CV005'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'',N''QUẢN TRỊ VIÊN''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
  THROW 52121,N''Người giao phải là dược sĩ hoặc Admin đang hoạt động.'',1;
 END;';
 EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.[TR_CW_Audit_DM_TINH_TRANG_BENH] ON dbo.[DM_TINH_TRANG_BENH] AFTER INSERT,UPDATE,DELETE AS
@@ -2909,7 +2909,7 @@ INSERT @core VALUES
 (N''CA_THEO_NGAY'',N''NgayLam'',N''date'',3,0,0,0),
 (N''CA_THEO_NGAY'',N''MaCa'',N''nvarchar'',100,0,0,0);
 IF EXISTS(SELECT 1 FROM @core e LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+e.T) AND c.name=e.C LEFT JOIN sys.types t ON t.user_type_id=c.user_type_id
-WHERE c.column_id IS NULL OR t.name<>e.TypeName OR c.max_length<>e.L OR c.is_nullable<>e.N OR(e.TypeName=N''decimal'' AND(c.precision<>e.P OR c.scale<>e.S)) OR(e.TypeName IN(N''datetime2'',N''time'') AND c.scale<>e.S))
+WHERE c.column_id IS NULL OR t.name<>e.TypeName OR c.max_length<>e.L OR (c.is_nullable<>e.N AND NOT(c.is_nullable=1 AND ((e.T=N''PHIEU_KHAM_BENH'' AND e.C=N''MaNVTiepNhan'') OR(e.T=N''NHAT_KY_THAO_TAC'' AND e.C=N''MaTK'')))) OR(e.TypeName=N''decimal'' AND(c.precision<>e.P OR c.scale<>e.S)) OR(e.TypeName IN(N''datetime2'',N''time'') AND c.scale<>e.S))
 THROW 52271,N''Cấu trúc nền không khớp hợp đồng; dừng đồng bộ để bảo toàn dữ liệu.'',1;';
 
 IF COL_LENGTH(N'dbo.CHI_TIET_HOA_DON',N'MaPhieuPhuThu') IS NULL
@@ -3251,7 +3251,7 @@ BEGIN
   THROW 52115,N''Mẫu đã duyệt giữ nguyên nội dung; tạo mã/phiên bản mới.'',1;
  IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã duyệt'' AND
  (NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_MAU_KE_HOACH c WHERE c.MaMauKH=i.MaMauKH) OR
- NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaBSDuyet AND (n.MaChucVu=N''CV002'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động'')))
+ NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaBSDuyet AND (n.MaChucVu=N''CV002'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'',N''QUẢN TRỊ VIÊN''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động'')))
   THROW 52115,N''Mẫu cần các bước và bác sĩ hoặc Admin đang hoạt động duyệt.'',1;
 END;';
 EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_CTMau_BaoVe ON dbo.CHI_TIET_MAU_KE_HOACH AFTER INSERT,UPDATE,DELETE AS
@@ -3270,7 +3270,7 @@ BEGIN
  OR(i.PhienBan=d.PhienBan+1 AND i.TrangThai=N''Nháp'' AND i.MaNguoiDuyet IS NULL AND i.NgayDuyet IS NULL))))
   THROW 52117,N''Đổi hướng dẫn đã duyệt phải lập phiên bản nháp tiếp theo và giữ lịch sử.'',1;
  IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã duyệt'' AND NOT EXISTS(
- SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNguoiDuyet AND (n.MaChucVu IN(N''CV002'',N''CV005'') OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
+ SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNguoiDuyet AND (n.MaChucVu IN(N''CV002'',N''CV005'') OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'',N''QUẢN TRỊ VIÊN''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
   THROW 52117,N''Người duyệt hướng dẫn cần quyền chuyên môn đang hoạt động.'',1;
 END;';
 EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_CW_HD_Request ON dbo.HOA_DON AFTER UPDATE AS
@@ -3301,7 +3301,7 @@ BEGIN
  NOT EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT x JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT WHERE x.MaPX=i.MaPX AND c.MaDT=i.MaDT) OR
  EXISTS(SELECT 1 FROM dbo.CHI_TIET_PHIEU_XUAT x LEFT JOIN dbo.CHI_TIET_DON_THUOC c ON c.MaCTDT=x.MaCTDT WHERE x.MaPX=i.MaPX AND(c.MaDT IS NULL OR c.MaDT<>i.MaDT)))
  THROW 52121,N''Bàn giao cần hóa đơn đã thu đủ, xuất ghi sổ và đơn cùng lượt.'',1;
- IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã giao'' AND NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNVGiao AND (n.MaChucVu=N''CV005'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
+ IF EXISTS(SELECT 1 FROM inserted i WHERE i.TrangThai=N''Đã giao'' AND NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN n JOIN dbo.TAI_KHOAN t ON t.MaNV=n.MaNV WHERE n.MaNV=i.MaNVGiao AND (n.MaChucVu=N''CV005'' OR EXISTS(SELECT 1 FROM dbo.VAI_TRO v WHERE v.MaVaiTro=t.MaVaiTro AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'',N''QUẢN TRỊ VIÊN''))) AND n.TrangThai=N''Đang làm việc'' AND t.TrangThai=N''Đang hoạt động''))
  THROW 52121,N''Người giao phải là dược sĩ hoặc Admin đang hoạt động.'',1;
 END;';
 EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.[TR_CW_Audit_DM_TINH_TRANG_BENH] ON dbo.[DM_TINH_TRANG_BENH] AFTER INSERT,UPDATE,DELETE AS
@@ -3517,7 +3517,7 @@ SELECT N''XAC_NHAN_DOI_LICH_KHAM'' AS TenBang,COUNT_BIG(*) AS SoDong FROM dbo.[X
 
 
  DECLARE @hospitalAdmin nvarchar(50)=(SELECT TOP(1) t.MaTK FROM dbo.TAI_KHOAN t JOIN dbo.NHAN_VIEN n ON n.MaNV=t.MaNV JOIN dbo.VAI_TRO v ON v.MaVaiTro=t.MaVaiTro
- WHERE t.TrangThai=N'Đang hoạt động' AND n.TrangThai=N'Đang làm việc' AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N'ADMIN',N'QUẢN TRỊ')
+ WHERE t.TrangThai=N'Đang hoạt động' AND n.TrangThai=N'Đang làm việc' AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N'ADMIN',N'QUẢN TRỊ',N'QUẢN TRỊ VIÊN')
  ORDER BY CASE WHEN t.TenDangNhap=N'admin001' THEN 0 ELSE 1 END,t.MaTK);
  IF @hospitalAdmin IS NULL THROW 52272,N'Cần quản trị đang hoạt động để ghi nhật ký danh mục.',1;
  EXEC sys.sp_set_session_context @key=N'RHM.MaTK',@value=@hospitalAdmin;
@@ -4349,7 +4349,7 @@ INSERT @core VALUES
 (N''CA_THEO_NGAY'',N''NgayLam'',N''date'',3,0,0,0),
 (N''CA_THEO_NGAY'',N''MaCa'',N''nvarchar'',100,0,0,0);
 IF EXISTS(SELECT 1 FROM @core e LEFT JOIN sys.columns c ON c.object_id=OBJECT_ID(N''dbo.''+e.T) AND c.name=e.C LEFT JOIN sys.types t ON t.user_type_id=c.user_type_id
-WHERE c.column_id IS NULL OR t.name<>e.TypeName OR c.max_length<>e.L OR c.is_nullable<>e.N OR(e.TypeName=N''decimal'' AND(c.precision<>e.P OR c.scale<>e.S)) OR(e.TypeName IN(N''datetime2'',N''time'') AND c.scale<>e.S))
+WHERE c.column_id IS NULL OR t.name<>e.TypeName OR c.max_length<>e.L OR (c.is_nullable<>e.N AND NOT(c.is_nullable=1 AND ((e.T=N''PHIEU_KHAM_BENH'' AND e.C=N''MaNVTiepNhan'') OR(e.T=N''NHAT_KY_THAO_TAC'' AND e.C=N''MaTK'')))) OR(e.TypeName=N''decimal'' AND(c.precision<>e.P OR c.scale<>e.S)) OR(e.TypeName IN(N''datetime2'',N''time'') AND c.scale<>e.S))
 THROW 52271,N''Cấu trúc nền không khớp hợp đồng; dừng đồng bộ để bảo toàn dữ liệu.'',1;
 -- Chỉ đọc, kiểm chứng hợp đồng sau nâng cấp.
 SET NOCOUNT ON;
@@ -4434,11 +4434,11 @@ SELECT MaHD,MaLS,SoTienPhaiThu,DaThuRong,ConPhaiTra FROM dbo.VW_HOA_DON_THANH_TO
 IF COL_LENGTH(N''dbo.TINH_TRANG_BENH'',N''MucDo'') IS NOT NULL OR COL_LENGTH(N''dbo.TINH_TRANG_BENH'',N''ViTriRang'') IS NOT NULL THROW 52272,N''Schema tình trạng không khớp ứng dụng.'',1;
 IF OBJECT_ID(N''dbo.DICH_VU_TINH_TRANG'') IS NULL OR OBJECT_ID(N''dbo.TR_RHM_DichVu_ChiTrongKham'') IS NULL OR OBJECT_ID(N''dbo.TR_HD_ChotHoanTat'') IS NULL THROW 52272,N''Thiếu liên kết hoặc bảo vệ hoàn tất.'',1;
 IF NOT EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N''RHM.HospitalWorkflow.Version'' AND TRY_CONVERT(int,value)=3) THROW 52272,N''Chưa đồng bộ HospitalWorkflow3.'',1;
-IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N''PHIEN_DANG_NHAP'',N''PHAN_QUYEN_VAI_TRO'',N''ANH_XQUANG_LAN_KHAM'',N''PHAN_CONG_ANH_XQUANG'')) NOT IN(53,60) THROW 52272,N''Số bảng không đúng nền 53 hoặc bản hợp nhất 60.'',1;
+IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N''RHM_CAU_HINH_QUY_PHEP'',N''RHM_NGAY_PHEP_NAM'',N''AI_PHIEN_TIEP_NHAN'',N''AI_TIEP_NHAN_NHAP'',N''AI_TIN_NHAN'',N''AI_SU_KIEN'',N''AI_KET_QUA_TAO_PHIEU'',N''AI_SERVICE_IDENTITY'',N''AI_SERVICE_INTAKE_SESSION'',N''AI_YEU_CAU_TAO_PHIEU'') AND name NOT IN(N''PHIEN_DANG_NHAP'',N''PHAN_QUYEN_VAI_TRO'',N''ANH_XQUANG_LAN_KHAM'',N''PHAN_CONG_ANH_XQUANG'')) NOT IN(53,60) THROW 52272,N''Số bảng không đúng nền 53 hoặc bản hợp nhất 60.'',1;
 IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.triggers WHERE parent_class=1 AND is_disabled=1) THROW 52272,N''Ràng buộc hoặc trigger chưa hợp lệ.'',1;
 END;';
 
- IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N'PHIEN_DANG_NHAP',N'PHAN_QUYEN_VAI_TRO',N'ANH_XQUANG_LAN_KHAM',N'PHAN_CONG_ANH_XQUANG')) NOT IN(53,60) THROW 52272,N'Số bảng khác nền 53 hoặc bản hợp nhất 60 đã hỗ trợ.',1;
+ IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N'RHM_CAU_HINH_QUY_PHEP',N'RHM_NGAY_PHEP_NAM',N'AI_PHIEN_TIEP_NHAN',N'AI_TIEP_NHAN_NHAP',N'AI_TIN_NHAN',N'AI_SU_KIEN',N'AI_KET_QUA_TAO_PHIEU',N'AI_SERVICE_IDENTITY',N'AI_SERVICE_INTAKE_SESSION',N'AI_YEU_CAU_TAO_PHIEU') AND name NOT IN(N'PHIEN_DANG_NHAP',N'PHAN_QUYEN_VAI_TRO',N'ANH_XQUANG_LAN_KHAM',N'PHAN_CONG_ANH_XQUANG')) NOT IN(53,60) THROW 52272,N'Số bảng khác nền 53 hoặc bản hợp nhất 60 đã hỗ trợ.',1;
  IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE is_disabled=1 OR is_not_trusted=1) OR EXISTS(SELECT 1 FROM sys.triggers WHERE parent_class=1 AND is_disabled=1)
  THROW 52272,N'Có ràng buộc hoặc trigger bị tắt/chưa kiểm chứng.',1;
  IF EXISTS(SELECT 1 FROM sys.extended_properties WHERE class=0 AND name=N'RHM.HospitalWorkflow.Version')
@@ -4457,7 +4457,7 @@ END CATCH;
 GO
 -- Giai đoạn4: kê thuốc trong khám, nhóm thuốc độc lập mẫu.
 DECLARE @rxPreviousActor sql_variant=SESSION_CONTEXT(N'RHM.MaTK');
-DECLARE @rxCatalogActor nvarchar(50)=(SELECT TOP(1) t.MaTK FROM dbo.TAI_KHOAN t JOIN dbo.NHAN_VIEN n ON n.MaNV=t.MaNV JOIN dbo.VAI_TRO v ON v.MaVaiTro=t.MaVaiTro WHERE t.TrangThai=N'Đang hoạt động' AND n.TrangThai=N'Đang làm việc' AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N'ADMIN',N'QUẢN TRỊ') ORDER BY t.MaTK);
+DECLARE @rxCatalogActor nvarchar(50)=(SELECT TOP(1) t.MaTK FROM dbo.TAI_KHOAN t JOIN dbo.NHAN_VIEN n ON n.MaNV=t.MaNV JOIN dbo.VAI_TRO v ON v.MaVaiTro=t.MaVaiTro WHERE t.TrangThai=N'Đang hoạt động' AND n.TrangThai=N'Đang làm việc' AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N'ADMIN',N'QUẢN TRỊ',N'QUẢN TRỊ VIÊN') ORDER BY t.MaTK);
 -- RHM medicinal catalog, reference date 29/10/2026.
 -- Integrate after NHOM_THUOC_KE_DON creation in the canonical database script.
 -- 52 genuine products; 40 published reference prices; 12 explicitly unset prices (0).
@@ -5461,7 +5461,7 @@ BEGIN
   LEFT JOIN sys.types t ON t.user_type_id=c.user_type_id WHERE c.column_id IS NULL OR t.name<>e.Ty OR c.max_length<>e.L OR c.is_nullable<>e.N
   OR (e.Ty=N''decimal'' AND(c.precision<>e.P OR c.scale<>e.S)) OR(e.Ty=N''datetime2'' AND c.scale<>e.S))
   THROW 52335,N''Thiếu hoặc sai kiểu cột lịch khám/chấm công/lương V9.'',1;
- IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N''PHIEN_DANG_NHAP'',N''PHAN_QUYEN_VAI_TRO'',N''ANH_XQUANG_LAN_KHAM'',N''PHAN_CONG_ANH_XQUANG''))<>60
+ IF (SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N''RHM_CAU_HINH_QUY_PHEP'',N''RHM_NGAY_PHEP_NAM'',N''AI_PHIEN_TIEP_NHAN'',N''AI_TIEP_NHAN_NHAP'',N''AI_TIN_NHAN'',N''AI_SU_KIEN'',N''AI_KET_QUA_TAO_PHIEU'',N''AI_SERVICE_IDENTITY'',N''AI_SERVICE_INTAKE_SESSION'',N''AI_YEU_CAU_TAO_PHIEU'') AND name NOT IN(N''PHIEN_DANG_NHAP'',N''PHAN_QUYEN_VAI_TRO'',N''ANH_XQUANG_LAN_KHAM'',N''PHAN_CONG_ANH_XQUANG''))<>60
   THROW 52335,N''Schema hợp nhất phải có đủ 60 bảng.'',1;
  IF NOT EXISTS(SELECT 1 FROM sys.computed_columns WHERE object_id=OBJECT_ID(N''dbo.BANG_LUONG'') AND name=N''LuongTheoCa'' AND is_persisted=1 AND definition LIKE N''%PhienBanTinhLuong%'' AND definition LIKE N''%LuongTheoCaTruocDongBo%'' AND definition LIKE N''%CongThucTe%'')
  OR NOT EXISTS(SELECT 1 FROM sys.computed_columns WHERE object_id=OBJECT_ID(N''dbo.BANG_LUONG'') AND name=N''TongLuong'' AND is_persisted=1 AND definition LIKE N''%TongLuongTruocDongBo%'' AND definition LIKE N''%TienBaoHiem%'')
@@ -5484,7 +5484,7 @@ BEGIN
  OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE is_disabled=1 OR is_not_trusted=1)
  OR EXISTS(SELECT 1 FROM sys.triggers WHERE parent_class=1 AND is_disabled=1)
   THROW 52335,N''Có ràng buộc chưa trusted hoặc trigger bị tắt.'',1;
- SELECT N''SqlV9Merged'' SchemaVersion,(SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0) TableCount,
+ SELECT N''SqlV9Merged'' SchemaVersion,(SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0 AND name NOT IN(N''RHM_CAU_HINH_QUY_PHEP'',N''RHM_NGAY_PHEP_NAM'',N''AI_PHIEN_TIEP_NHAN'',N''AI_TIEP_NHAN_NHAP'',N''AI_TIN_NHAN'',N''AI_SU_KIEN'',N''AI_KET_QUA_TAO_PHIEU'',N''AI_SERVICE_IDENTITY'',N''AI_SERVICE_INTAKE_SESSION'',N''AI_YEU_CAU_TAO_PHIEU'')) TableCount,
  (SELECT COUNT(*) FROM dbo.BANG_LUONG WHERE PhienBanTinhLuong=8) PreservedLegacyPayroll;
 END;';
  EXEC sys.sp_executesql N'CREATE OR ALTER PROCEDURE dbo.usp_RHM_KiemTraSchema AS
@@ -5901,7 +5901,7 @@ BEGIN TRY
   SET @s3Before+=N',@changed AS TruongDaDoi';SET @s3After+=N',@changed AS TruongDaDoi';
   SET @s3Gate=N'';
   IF @s3Table IN(N'TAI_KHOAN',N'VAI_TRO',N'PHAN_QUYEN_VAI_TRO')
-   SET @s3Gate=N'IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.VAI_TRO v ON v.MaVaiTro=t.MaVaiTro WHERE t.MaTK=@actor AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'')) THROW 53023,N''Chỉ quản trị viên được sửa tài khoản, vai trò và phân quyền.'',1;';
+   SET @s3Gate=N'IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN t JOIN dbo.VAI_TRO v ON v.MaVaiTro=t.MaVaiTro WHERE t.MaTK=@actor AND UPPER(LTRIM(RTRIM(v.TenVaiTro))) IN(N''ADMIN'',N''QUẢN TRỊ'',N''QUẢN TRỊ VIÊN'')) THROW 53023,N''Chỉ quản trị viên được sửa tài khoản, vai trò và phân quyền.'',1;';
   SET @s3Sql=N'CREATE OR ALTER TRIGGER dbo.'+QUOTENAME(N'TR_S3_Audit_'+@s3Table)+N' ON dbo.'+QUOTENAME(@s3Table)+N' AFTER INSERT,UPDATE,DELETE AS
 BEGIN
  SET NOCOUNT ON;
@@ -5967,7 +5967,9 @@ BEGIN
  SET @s3Module=REPLACE(REPLACE(@s3Module,N'h.CoHuongLuong=1',N'h.CoHuongLuong=1 AND h.TrangThai=N''Đang hoạt động'''),N'x.CoHuongLuong=1',N'x.CoHuongLuong=1 AND x.TrangThai=N''Đang hoạt động''');
  SET @s3Module=REPLACE(@s3Module,N'CREATE OR ALTER ',N'ALTER ');
  SET @s3Create=CHARINDEX(N'CREATE',UPPER(@s3Module));
- IF @s3Create>0 AND @s3Create<20 SET @s3Module=STUFF(@s3Module,@s3Create,6,N'ALTER');
+ -- SQL Server preserves leading module comments and normalizes CREATE OR ALTER to CREATE.
+ -- The annual-leave procedure has a leading comment longer than 20 characters.
+ IF @s3Create>0 SET @s3Module=STUFF(@s3Module,@s3Create,6,N'ALTER');
  IF @s3Module<>@s3OldModule EXEC sys.sp_executesql @s3Module;
  FETCH NEXT FROM s3Payroll INTO @s3Module;
 END;
@@ -6003,6 +6005,8 @@ BEGIN TRY
   @LockMode=N'Exclusive',@LockOwner=N'Transaction',@LockTimeout=15000;
  IF @s3FoundationLock<0 THROW 53400,N'Không lấy được khóa nâng cấp nền tảng Sprint 3.',1;
 
+ IF COL_LENGTH(N'dbo.CHI_TIET_HOA_DON',N'MaPhienAI') IS NULL
+  EXEC(N'ALTER TABLE dbo.CHI_TIET_HOA_DON ADD MaPhienAI uniqueidentifier NULL;');
  IF COL_LENGTH(N'dbo.PHIEU_KHAM_BENH',N'LoaiKham') IS NULL
   EXEC(N'ALTER TABLE dbo.PHIEU_KHAM_BENH ADD LoaiKham nvarchar(20) NOT NULL CONSTRAINT DF_PKB_LoaiKham DEFAULT(N''Thông thường'') WITH VALUES;');
  IF COL_LENGTH(N'dbo.PHIEU_KHAM_BENH',N'PhiPhuThuDichVu') IS NULL
@@ -6021,10 +6025,11 @@ BEGIN TRY
  IF OBJECT_ID(N'dbo.CK_CHI_TIET_HOA_DON_3',N'C') IS NOT NULL
   ALTER TABLE dbo.CHI_TIET_HOA_DON DROP CONSTRAINT CK_CHI_TIET_HOA_DON_3;
  EXEC(N'ALTER TABLE dbo.CHI_TIET_HOA_DON WITH CHECK ADD CONSTRAINT CK_CHI_TIET_HOA_DON_3 CHECK
-  ((MaDVThucHien IS NOT NULL AND MaCTPX IS NULL AND MaCTDT IS NULL AND MaPhieuPhuThu IS NULL AND DonGia IS NULL)
-   OR(MaDVThucHien IS NULL AND MaCTPX IS NOT NULL AND MaCTDT IS NULL AND MaPhieuPhuThu IS NULL AND DonGia IS NOT NULL AND DonGia>=0)
-   OR(MaDVThucHien IS NULL AND MaCTPX IS NULL AND MaCTDT IS NOT NULL AND MaPhieuPhuThu IS NULL AND DonGia IS NOT NULL AND DonGia>=0)
-   OR(MaDVThucHien IS NULL AND MaCTPX IS NULL AND MaCTDT IS NULL AND MaPhieuPhuThu IS NOT NULL AND DonGia IS NOT NULL AND DonGia=30000));');
+  ((MaDVThucHien IS NOT NULL AND MaCTPX IS NULL AND MaCTDT IS NULL AND MaPhieuPhuThu IS NULL AND MaPhienAI IS NULL AND DonGia IS NULL)
+   OR(MaDVThucHien IS NULL AND MaCTPX IS NOT NULL AND MaCTDT IS NULL AND MaPhieuPhuThu IS NULL AND MaPhienAI IS NULL AND DonGia IS NOT NULL AND DonGia>=0)
+   OR(MaDVThucHien IS NULL AND MaCTPX IS NULL AND MaCTDT IS NOT NULL AND MaPhieuPhuThu IS NULL AND MaPhienAI IS NULL AND DonGia IS NOT NULL AND DonGia>=0)
+   OR(MaDVThucHien IS NULL AND MaCTPX IS NULL AND MaCTDT IS NULL AND MaPhieuPhuThu IS NOT NULL AND MaPhienAI IS NULL AND DonGia IS NOT NULL AND DonGia=30000)
+   OR(MaDVThucHien IS NULL AND MaCTPX IS NULL AND MaCTDT IS NULL AND MaPhieuPhuThu IS NULL AND MaPhienAI IS NOT NULL AND DonGia IS NOT NULL AND DonGia=30000));');
 
  EXEC sys.sp_executesql N'CREATE OR ALTER TRIGGER dbo.TR_PKB_KhoaLoaiKham ON dbo.PHIEU_KHAM_BENH AFTER UPDATE AS
  BEGIN
@@ -6388,6 +6393,7 @@ BEGIN TRY
    THROW 53417,N''Thiếu hoặc sai index chống trùng sự kiện nhật ký ứng dụng.'',1;
   -- Kiểm kho ảnh gọi tiếp nền tảng Sprint3, bao gồm loại khám/phụ thu/hóa đơn.
   EXEC dbo.usp_RHM_KiemTraKhoAnh;
+  IF OBJECT_ID(N''dbo.usp_RHM_KiemTraHopNhatAI'',N''P'') IS NOT NULL EXEC dbo.usp_RHM_KiemTraHopNhatAI;
  END;';
  EXEC dbo.usp_RHM_KiemTraSchema;
  COMMIT TRANSACTION;
@@ -6399,3 +6405,1835 @@ BEGIN CATCH
 END CATCH;
 GO
 -- END PROJECT SCHEMA SYNC 20261110
+-- BEGIN AI MERGE: annual leave, fixed shift pay, staff drafts and service identity.
+-- ============================================================================
+-- Chạy trên database QLBenhVienRangHamMat đang được ứng dụng kết nối.
+-- Không xóa hoặc sửa tài khoản/vai trò đang có. Chạy lại an toàn.
+SET XACT_ABORT ON;
+BEGIN TRY
+    BEGIN TRANSACTION;
+
+    IF DB_NAME() <> N'QLBenhVienRangHamMat'
+        THROW 52700, N'Khong dung database QLBenhVienRangHamMat; dung cap nhat phan quyen.', 1;
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.extended_properties
+        WHERE class = 0 AND name = N'RHM.MaintenanceSerial.Version'
+          AND TRY_CONVERT(int, value) = 1
+    )
+        THROW 52701, N'Pha 6 chua hoan tat; khong cai phan quyen.', 1;
+    IF OBJECT_ID(N'dbo.VAI_TRO', N'U') IS NULL
+        THROW 52702, N'Thieu bang VAI_TRO; khong the khoi tao phan quyen.', 1;
+
+    IF OBJECT_ID(N'dbo.PHAN_QUYEN_VAI_TRO', N'U') IS NULL
+    BEGIN
+        CREATE TABLE dbo.PHAN_QUYEN_VAI_TRO
+        (
+            MaVaiTro NVARCHAR(50) NOT NULL,
+            MaPhanHe NVARCHAR(60) NOT NULL,
+            DuocTruyCap BIT NOT NULL CONSTRAINT DF_PHAN_QUYEN_VAI_TRO_TruyCap DEFAULT (0),
+            NgayCapNhat DATETIME2(0) NOT NULL CONSTRAINT DF_PHAN_QUYEN_VAI_TRO_NgayCapNhat DEFAULT (SYSDATETIME()),
+            CONSTRAINT PK_PHAN_QUYEN_VAI_TRO PRIMARY KEY (MaVaiTro, MaPhanHe)
+        );
+    END;
+
+    -- Chỉ khởi tạo các vai trò chưa từng được cấu hình. Không ghi đè quyền đã lưu.
+    -- Admin và Quản trị nhận toàn bộ quyền (riêng Tài khoản được bảo vệ khi sửa).
+    -- User giữ 3 quyền cơ bản như MainWindow bản trước; các vai trò khác mặc định 0.
+    INSERT INTO dbo.PHAN_QUYEN_VAI_TRO (MaVaiTro, MaPhanHe, DuocTruyCap)
+    SELECT vt.MaVaiTro, mh.MaPhanHe,
+        CAST(CASE
+            WHEN vt.TenVaiTro IN (N'Admin', N'Quản trị', N'Quản trị viên') THEN 1
+            WHEN vt.TenVaiTro = N'User' AND mh.MaPhanHe IN
+                 (N'TongQuan', N'CaLamViec', N'XinNghiViec') THEN 1
+            ELSE 0
+        END AS BIT)
+    FROM dbo.VAI_TRO AS vt
+    CROSS JOIN (VALUES
+        (N'TongQuan'), (N'BenhNhan'), (N'KhamDieuTri'),
+        (N'DichVuThucHien'), (N'DonThuoc'), (N'NhanSu'),
+        (N'ChungChiNhanVien'), (N'CaLamViec'), (N'ThietBi'),
+        (N'BaoTri'), (N'Kho'), (N'DanhMucHangHoa'),
+        (N'NhaCungCap'), (N'NhapXuatVatTu'), (N'LichKham'),
+        (N'DichVu'), (N'HoaDon'), (N'BangLuong'), (N'ChamCong'),
+        (N'ChinhSachLuong'), (N'TaiKhoan'), (N'BaoCao'),
+        (N'PhieuHuongDan'), (N'NhatKy'), (N'XinNghiViec')
+    ) AS mh(MaPhanHe)
+    WHERE NOT EXISTS
+    (
+        SELECT 1 FROM dbo.PHAN_QUYEN_VAI_TRO AS pq
+        WHERE pq.MaVaiTro = vt.MaVaiTro
+    );
+
+    COMMIT TRANSACTION;
+    PRINT N'Đã tạo/kiểm tra PHAN_QUYEN_VAI_TRO và khởi tạo quyền mặc định.';
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+    THROW;
+END CATCH;
+GO
+
+SELECT vt.MaVaiTro, vt.TenVaiTro,
+       SUM(CASE WHEN pq.DuocTruyCap = 1 THEN 1 ELSE 0 END) AS SoPhanHeDuocMo
+FROM dbo.VAI_TRO AS vt
+LEFT JOIN dbo.PHAN_QUYEN_VAI_TRO AS pq ON pq.MaVaiTro = vt.MaVaiTro
+GROUP BY vt.MaVaiTro, vt.TenVaiTro
+ORDER BY vt.MaVaiTro;
+GO
+
+-- ============================================================================
+-- PHA 8: QUY PHEP NAM VA TINH LUONG NGHI PHEP (0.5 CONG/NGAY)
+-- Gop tu 01_CaiDat_QuyPhep.sql va 02_CapNhat_ThuTucLuong.sql.
+-- Mac dinh: 12 ngay/năm, 12 thang tieu chuan; chinh trong RHM_CAU_HINH_QUY_PHEP.
+-- Khong tu dong dong bo don nghi cu; khong can thiep bang luong DA CHOT.
+-- Ke hoach chay: PHA 1-7 (nen + phan quyen) -> PHA 8.1 -> PHA 8.2.
+-- Truoc khi chay tren database co du lieu: SAO LUU DATABASE.
+-- 5 phep kiem tra so luong bang nen o tren da duoc dieu chinh de khong dem
+-- cac bang mo rong PHAN_QUYEN_VAI_TRO, RHM_CAU_HINH_QUY_PHEP,
+-- RHM_NGAY_PHEP_NAM; van yeu cau du 60 bang nen cu.
+-- ============================================================================
+
+-- ------------------------------ PHA 8.1 -------------------------------------
+/* RHM - Quỹ phép năm. Dùng SAU QLBenhVienRangHamMat.sql V9.
+   Thiết kế: một ngày phép đã duyệt = 1 ngày trừ quỹ và 0,5 công hưởng lương,
+   dù có 1 hay 2 ca. Chỉ tính ngày có ít nhất 1 ca LICH_LAM_VIEC,
+   Thứ Hai-Thứ Bảy và không trùng lễ theo chuẩn V9.
+   Chạy với SSMS, sao lưu database trước. Không chạy lại file khởi tạo dữ liệu.
+   Quy định mặc định chưa chốt: 12 ngày/năm, 12 tháng tiêu chuẩn.
+*/
+USE [QLBenhVienRangHamMat];
+GO
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+IF OBJECT_ID(N'dbo.DON_XIN_NGHI',N'U') IS NULL OR OBJECT_ID(N'dbo.BANG_LUONG',N'U') IS NULL
+    THROW 53100,N'Chưa cài database dự án; hãy chạy file SQL gốc trước.',1;
+GO
+IF COL_LENGTH(N'dbo.DON_XIN_NGHI',N'LoaiNghi') IS NULL
+BEGIN
+    ALTER TABLE dbo.DON_XIN_NGHI
+        ADD LoaiNghi NVARCHAR(50) NOT NULL CONSTRAINT DF_DON_XIN_NGHI_LoaiNghi DEFAULT N'Chưa xác định';
+END;
+GO
+-- Chỉ phân loại đơn cũ khi ghi chú thực sự ghi rõ loại nghỉ; không suy đoán đơn không rõ.
+UPDATE dbo.DON_XIN_NGHI SET LoaiNghi=
+    CASE
+        WHEN GhiChu LIKE N'%Loại đơn: Nghỉ việc%' THEN N'Nghỉ việc'
+        WHEN GhiChu LIKE N'%Loại nghỉ: Nghỉ phép năm%' THEN N'Nghỉ phép năm'
+        WHEN GhiChu LIKE N'%Đơn khẩn cấp%' THEN N'Nghỉ phép khẩn cấp'
+        WHEN GhiChu LIKE N'%Loại nghỉ: Nghỉ ốm%' THEN N'Nghỉ ốm'
+        WHEN GhiChu LIKE N'%Loại nghỉ: Nghỉ việc riêng%' THEN N'Nghỉ việc riêng'
+        WHEN GhiChu LIKE N'%Loại nghỉ: Nghỉ không hưởng lương%' THEN N'Nghỉ không hưởng lương'
+        ELSE N'Chưa xác định'
+    END
+WHERE LoaiNghi=N'Chưa xác định';
+GO
+IF OBJECT_ID(N'dbo.RHM_CAU_HINH_QUY_PHEP',N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.RHM_CAU_HINH_QUY_PHEP
+    (
+        Nam INT NOT NULL CONSTRAINT PK_RHM_CAU_HINH_QUY_PHEP PRIMARY KEY,
+        SoNgayPhepNam DECIMAL(6,2) NOT NULL,
+        SoThangTieuChuan TINYINT NOT NULL,
+        NgayCapNhat DATETIME2(0) NOT NULL CONSTRAINT DF_RHM_CAU_HINH_PHEP_Ngay DEFAULT SYSDATETIME(),
+        CONSTRAINT CK_RHM_CAU_HINH_PHEP CHECK (
+            Nam BETWEEN 2000 AND 2100 AND SoNgayPhepNam BETWEEN 1 AND 60 AND SoThangTieuChuan BETWEEN 1 AND 12)
+    );
+END;
+IF NOT EXISTS (SELECT 1 FROM dbo.RHM_CAU_HINH_QUY_PHEP WHERE Nam=2026)
+    INSERT dbo.RHM_CAU_HINH_QUY_PHEP(Nam,SoNgayPhepNam,SoThangTieuChuan)
+    VALUES (2026,12,12);
+GO
+IF OBJECT_ID(N'dbo.RHM_NGAY_PHEP_NAM',N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.RHM_NGAY_PHEP_NAM
+    (
+        MaNV NVARCHAR(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+        NgayNghi DATE NOT NULL,
+        MaDonNghi NVARCHAR(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+        CongHuongLuong DECIMAL(4,2) NOT NULL CONSTRAINT DF_RHM_NGAYPHEP_Cong DEFAULT(0.50),
+        NgayGhiNhan DATETIME2(0) NOT NULL CONSTRAINT DF_RHM_NGAYPHEP_Ngay DEFAULT SYSDATETIME(),
+        CONSTRAINT PK_RHM_NGAY_PHEP_NAM PRIMARY KEY(MaNV,NgayNghi),
+        CONSTRAINT FK_RHM_NGAYPHEP_NhanVien FOREIGN KEY(MaNV) REFERENCES dbo.NHAN_VIEN(MaNV),
+        CONSTRAINT FK_RHM_NGAYPHEP_DonNghi FOREIGN KEY(MaDonNghi) REFERENCES dbo.DON_XIN_NGHI(MaDonNghi),
+        CONSTRAINT CK_RHM_NGAYPHEP_Cong CHECK(CongHuongLuong=0.50)
+    );
+    CREATE INDEX IX_RHM_NGAYPHEP_MaDon ON dbo.RHM_NGAY_PHEP_NAM(MaDonNghi,NgayNghi);
+END;
+GO
+/* Mức được hưởng trong từng năm; nhân viên làm từ trước năm sẽ có mức cả năm,
+   nhân viên mới trong năm hưởng tỷ lệ theo tháng làm việc trong năm.
+   Tháng đầu nếu làm dưới một nửa số ngày thì không tính tháng đó.
+   Đây là cách tính đơn giản phục vụ đồ án; điều kiện pháp lý đặc biệt và thâm niên
+   cần được rà soát trước khi đưa vào vận hành trả lương thực tế. */
+CREATE OR ALTER FUNCTION dbo.RHM_TinhPhepDuocHuong(@MaNV NVARCHAR(50), @Nam INT)
+RETURNS DECIMAL(7,2)
+AS
+BEGIN
+    DECLARE @Vao DATE, @Dau DATE, @Cuoi DATE, @BatDau DATE;
+    DECLARE @NgayPhep DECIMAL(6,2)=12, @ThangChuan INT=12, @Thang INT=0;
+    SELECT @Vao=NgayVaoLam FROM dbo.NHAN_VIEN WHERE MaNV=@MaNV;
+    IF @Vao IS NULL OR @Nam NOT BETWEEN 2000 AND 2100 RETURN 0;
+    SET @Dau=DATEFROMPARTS(@Nam,1,1);
+    SET @Cuoi=DATEFROMPARTS(@Nam,12,31);
+    SELECT TOP (1) @NgayPhep=SoNgayPhepNam,@ThangChuan=SoThangTieuChuan
+    FROM dbo.RHM_CAU_HINH_QUY_PHEP WHERE Nam<=@Nam ORDER BY Nam DESC;
+    IF @Vao>@Cuoi RETURN 0;
+    SET @BatDau=CASE WHEN @Vao>@Dau THEN @Vao ELSE @Dau END;
+    SET @Thang=DATEDIFF(MONTH,@BatDau,@Cuoi)+1;
+    IF DATEDIFF(DAY,@BatDau,EOMONTH(@BatDau))+1 < (DAY(EOMONTH(@BatDau))+1)/2
+        SET @Thang=@Thang-1;
+    IF @Thang<0 SET @Thang=0;
+    RETURN CAST(ROUND(@NgayPhep * (CASE WHEN @Thang>=@ThangChuan THEN 1.0
+                         ELSE CAST(@Thang AS DECIMAL(10,4))/@ThangChuan END),2) AS DECIMAL(7,2));
+END;
+GO
+/* Đọc quỹ phép hiện thời hoặc của năm cũ. Năm mới không mang số dư năm cũ qua. */
+CREATE OR ALTER PROCEDURE dbo.RHM_LayQuyPhep
+    @MaNV NVARCHAR(50), @Nam INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    IF NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN WHERE MaNV=@MaNV)
+        THROW 53101,N'Nhân viên không tồn tại.',1;
+    DECLARE @Phep DECIMAL(7,2)=dbo.RHM_TinhPhepDuocHuong(@MaNV,@Nam);
+    DECLARE @DaNghi INT, @DatTruoc INT;
+    SELECT
+        @DaNghi=COALESCE(SUM(CASE WHEN p.NgayNghi<=CONVERT(date,SYSDATETIME()) THEN 1 ELSE 0 END),0),
+        @DatTruoc=COALESCE(SUM(CASE WHEN p.NgayNghi>CONVERT(date,SYSDATETIME()) THEN 1 ELSE 0 END),0)
+    FROM dbo.RHM_NGAY_PHEP_NAM p
+    JOIN dbo.DON_XIN_NGHI d ON d.MaDonNghi=p.MaDonNghi
+    WHERE p.MaNV=@MaNV AND p.NgayNghi>=DATEFROMPARTS(@Nam,1,1)
+      AND p.NgayNghi<DATEFROMPARTS(@Nam+1,1,1)
+      AND d.TrangThaiDuyet=N'Đã duyệt' AND d.LoaiNghi=N'Nghỉ phép năm';
+    SELECT @Nam AS Nam, @MaNV AS MaNV, @Phep AS PhepDuocHuong,
+           @DaNghi AS PhepDaSuDung, @DatTruoc AS PhepDaDatTruoc,
+           CAST(@Phep-@DaNghi-@DatTruoc AS DECIMAL(7,2)) AS PhepConKhaDung;
+END;
+GO
+/* Bảng tổng hợp cho bộ phận nhân sự, không thay đổi dữ liệu. */
+CREATE OR ALTER PROCEDURE dbo.RHM_DanhSachQuyPhep @Nam INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    IF @Nam<2000 OR @Nam>2099 THROW 53111,N'Năm thống kê không hợp lệ.',1;
+    SELECT nv.MaNV,nv.HoTen,nv.NgayVaoLam,nv.TrangThai,
+           q.PhepDuocHuong,
+           COALESCE(t.PhepDaSuDung,0) AS PhepDaSuDung,
+           COALESCE(t.PhepDaDatTruoc,0) AS PhepDaDatTruoc,
+           CAST(q.PhepDuocHuong-COALESCE(t.PhepDaSuDung,0)-COALESCE(t.PhepDaDatTruoc,0)
+                AS DECIMAL(7,2)) AS PhepConKhaDung
+    FROM dbo.NHAN_VIEN nv
+    CROSS APPLY (SELECT dbo.RHM_TinhPhepDuocHuong(nv.MaNV,@Nam) AS PhepDuocHuong) q
+    OUTER APPLY (
+        SELECT SUM(CASE WHEN p.NgayNghi<=CONVERT(date,SYSDATETIME()) THEN 1 ELSE 0 END) AS PhepDaSuDung,
+               SUM(CASE WHEN p.NgayNghi>CONVERT(date,SYSDATETIME()) THEN 1 ELSE 0 END) AS PhepDaDatTruoc
+        FROM dbo.RHM_NGAY_PHEP_NAM p
+        JOIN dbo.DON_XIN_NGHI d ON d.MaDonNghi=p.MaDonNghi
+        WHERE p.MaNV=nv.MaNV AND p.NgayNghi>=DATEFROMPARTS(@Nam,1,1)
+          AND p.NgayNghi<DATEFROMPARTS(@Nam+1,1,1)
+          AND d.TrangThaiDuyet=N'Đã duyệt' AND d.LoaiNghi=N'Nghỉ phép năm'
+    ) t
+    ORDER BY nv.HoTen,nv.MaNV;
+END;
+GO
+/* Chỉ gọi từ một transaction duyệt đơn hoặc tạo đơn khẩn cấp. Có applock theo
+   nhân viên nhằm chống duyệt đồng thời vượt quỹ phép. Phép được ghi 1 dòng/ngày,
+   không phụ thuộc số ca có trong ngày. Chỉ tính ngày có ca đã xếp, Thứ 2-7,
+   trừ ngày lễ có hưởng lương, theo cùng quy ước tính công chuẩn trong V9. */
+CREATE OR ALTER PROCEDURE dbo.RHM_GhiNhanQuyPhepKhiDuyet
+    @MaDonNghi NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+    IF @@TRANCOUNT=0 THROW 53102,N'Phải duyệt đơn trong cùng một giao dịch.',1;
+
+    DECLARE @MaNV NVARCHAR(50),@TuNgay DATE,@DenNgay DATE,@LoaiNghi NVARCHAR(50),@TT NVARCHAR(50);
+    SELECT @MaNV=MaNV,@TuNgay=TuNgay,@DenNgay=DenNgay,@LoaiNghi=LoaiNghi,@TT=TrangThaiDuyet
+    FROM dbo.DON_XIN_NGHI WITH(UPDLOCK,HOLDLOCK) WHERE MaDonNghi=@MaDonNghi;
+    IF @MaNV IS NULL THROW 53103,N'Không tìm thấy đơn nghỉ.',1;
+    IF @LoaiNghi<>N'Nghỉ phép năm' RETURN; -- Các loại nghỉ khác không trừ quỹ phép năm
+    IF @TT NOT IN (N'Chờ duyệt',N'Đã duyệt')
+        THROW 53104,N'Đơn không ở trạng thái có thể duyệt.',1;
+    IF @DenNgay<@TuNgay OR DATEDIFF(DAY,@TuNgay,@DenNgay)>366
+        THROW 53105,N'Khoảng ngày nghỉ không hợp lệ hoặc quá dài.',1;
+    DECLARE @Khoa INT, @KhoaNguoiDung NVARCHAR(255)=N'RHM:QuyPhep:'+@MaNV;
+    EXEC @Khoa=sys.sp_getapplock @Resource=@KhoaNguoiDung,
+        @LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000;
+    IF @Khoa<0 THROW 53106,N'Có người đang duyệt phép cho nhân viên này. Vui lòng thử lại.',1;
+
+    CREATE TABLE #NgayMoi(NgayNghi DATE NOT NULL PRIMARY KEY);
+    ;WITH E1(N) AS (SELECT N FROM (VALUES(0),(1),(2),(3),(4),(5),(6),(7),(8),(9))t(N)),
+         E2(N) AS (SELECT 0 FROM E1 a CROSS JOIN E1 b),
+         E3(N) AS (SELECT 0 FROM E2 a CROSS JOIN E1 b),
+         T(N) AS (SELECT TOP(DATEDIFF(DAY,@TuNgay,@DenNgay)+1)
+                         ROW_NUMBER() OVER(ORDER BY (SELECT NULL))-1 FROM E3)
+    INSERT #NgayMoi(NgayNghi)
+    SELECT DATEADD(DAY,N,@TuNgay) FROM T
+    WHERE DATEDIFF(DAY,CONVERT(date,'19000107'),DATEADD(DAY,N,@TuNgay))%7<>0
+      AND NOT EXISTS(SELECT 1 FROM dbo.NGAY_NGHI_LE h
+          WHERE h.NgayNghi=DATEADD(DAY,N,@TuNgay) AND h.CoHuongLuong=1 AND h.TrangThai=N'Đang hoạt động')
+      AND EXISTS(SELECT 1 FROM dbo.LICH_LAM_VIEC ll WITH(HOLDLOCK)
+          WHERE ll.MaNV=@MaNV AND ll.NgayLam=DATEADD(DAY,N,@TuNgay)
+            AND ll.TrangThai NOT IN (N'Hủy',N'Từ chối',N'Nghỉ việc'));
+    IF NOT EXISTS(SELECT 1 FROM #NgayMoi)
+        THROW 53107,N'Khoảng nghỉ không có ngày làm việc đã xếp ca hợp lệ để tính phép.',1;
+
+    IF EXISTS(SELECT 1 FROM #NgayMoi ng JOIN dbo.RHM_NGAY_PHEP_NAM p WITH(UPDLOCK,HOLDLOCK)
+              ON p.MaNV=@MaNV AND p.NgayNghi=ng.NgayNghi AND p.MaDonNghi<>@MaDonNghi)
+        THROW 53108,N'Ngày nghỉ đã được cấp phép theo một đơn khác.',1;
+    IF EXISTS(SELECT 1 FROM #NgayMoi ng JOIN dbo.BANG_LUONG b WITH(UPDLOCK,HOLDLOCK)
+              ON b.MaNV=@MaNV AND ng.NgayNghi BETWEEN b.TuNgay AND b.DenNgay
+              WHERE b.TrangThai=N'Đã chốt')
+        THROW 53109,N'Có ngày nằm trong kỳ lương đã chốt; không thể cấp phép hồi tố.',1;
+
+    ;WITH TheoNam AS
+    (
+        SELECT YEAR(NgayNghi) AS Nam, COUNT(*) AS CanDung FROM #NgayMoi ng
+        WHERE NOT EXISTS(SELECT 1 FROM dbo.RHM_NGAY_PHEP_NAM p
+              WHERE p.MaNV=@MaNV AND p.NgayNghi=ng.NgayNghi AND p.MaDonNghi=@MaDonNghi)
+        GROUP BY YEAR(NgayNghi)
+    )
+    SELECT Nam,CanDung INTO #TheoNam FROM TheoNam;
+    IF EXISTS(
+        SELECT 1 FROM #TheoNam t WHERE
+        (SELECT COUNT(*) FROM dbo.RHM_NGAY_PHEP_NAM p WITH(UPDLOCK,HOLDLOCK)
+         WHERE p.MaNV=@MaNV AND p.NgayNghi>=DATEFROMPARTS(t.Nam,1,1)
+           AND p.NgayNghi<DATEFROMPARTS(t.Nam+1,1,1)) + t.CanDung
+         > dbo.RHM_TinhPhepDuocHuong(@MaNV,t.Nam)
+    ) THROW 53110,N'Số ngày nghỉ vượt quỹ phép năm được hưởng. Vui lòng kiểm tra số dư.',1;
+
+    INSERT dbo.RHM_NGAY_PHEP_NAM(MaNV,NgayNghi,MaDonNghi,CongHuongLuong)
+    SELECT @MaNV,ng.NgayNghi,@MaDonNghi,0.50 FROM #NgayMoi ng
+    WHERE NOT EXISTS (SELECT 1 FROM dbo.RHM_NGAY_PHEP_NAM p
+                     WHERE p.MaNV=@MaNV AND p.NgayNghi=ng.NgayNghi);
+END;
+GO
+PRINT N'Đã cài cấu trúc và thủ tục quỹ phép. Cần chạy tiếp 02_CapNhat_ThuTucLuong.sql.';
+GO
+
+-- ------------------------------ PHA 8.2 -------------------------------------
+/* Áp dụng sau 01_CaiDat_QuyPhep.sql. Thay thủ tục V9 bằng cùng phiên bản,
+   chỉ sửa cách tính CongPhep. Mỗi ngày phép năm 0,5 công (không nhân số ca).
+   Giữ nguyên công thức, giao dịch và kiểm tra chốt lương V9 khác. */
+USE [QLBenhVienRangHamMat];
+GO
+IF OBJECT_ID(N'dbo.RHM_NGAY_PHEP_NAM',N'U') IS NULL
+    THROW 53120,N'Chưa cài sổ quỹ phép năm.',1;
+GO
+CREATE OR ALTER PROCEDURE dbo.RHM_TinhLuongKy
+    @TuNgay DATE,
+    @DenNgay DATE,
+    @MaNVTinh NVARCHAR(50),
+    @MaBL NVARCHAR(50)=NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+    IF @TuNgay IS NULL OR @DenNgay<>EOMONTH(@TuNgay) OR DAY(@TuNgay)<>1
+        THROW 52001,N'Chỉ được tính lương cho một tháng đầy đủ.',1;
+    IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN tk JOIN dbo.VAI_TRO vt ON tk.MaVaiTro=vt.MaVaiTro
+                  WHERE tk.MaNV=@MaNVTinh AND vt.TenVaiTro=N'Admin' AND tk.TrangThai=N'Đang hoạt động')
+        THROW 52002,N'Chỉ tài khoản quản lý đang hoạt động được tính lương.',1;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        DECLARE @Khoa INT;
+        EXEC @Khoa=sys.sp_getapplock @Resource=N'RHM:TinhChotLuong',
+             @LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000;
+        IF @Khoa<0 THROW 52003,N'Kỳ lương đang được thao tác ở cửa sổ khác.',1;
+
+        IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG old WITH(UPDLOCK,HOLDLOCK)
+ WHERE old.PhienBanTinhLuong=8 AND old.TuNgay<=@DenNgay AND old.DenNgay>=@TuNgay
+ AND (old.TuNgay<>@TuNgay OR old.DenNgay<>@DenNgay)
+ AND (@MaBL IS NULL OR old.MaNV=(SELECT MaNV FROM dbo.BANG_LUONG WHERE MaBL=@MaBL)))
+ THROW 52333,N'Có phiếu lương cũ chưa đủ tháng hoặc chồng kỳ. Giữ nguyên phiếu cũ; cần đối chiếu trước khi lập/tính cả tháng để tránh chi trùng.',1;
+IF @MaBL IS NOT NULL AND NOT EXISTS(SELECT 1 FROM dbo.BANG_LUONG WITH(UPDLOCK,HOLDLOCK)
+            WHERE MaBL=@MaBL AND TuNgay=@TuNgay AND DenNgay=@DenNgay AND TrangThai=N'Nháp')
+            THROW 52004,N'Phiếu đã chốt, không còn hoặc không thuộc kỳ lương được chọn.',1;
+
+        -- Khi mở kỳ mới: lập phiếu nháp cho nhân viên đang làm việc và đã có
+        -- CHÍNH XÁC MỘT chính sách được duyệt áp dụng trọn tháng.
+        IF @MaBL IS NULL
+        BEGIN
+            IF EXISTS(
+                SELECT 1 FROM dbo.NHAN_VIEN nv
+                WHERE nv.TrangThai=N'Đang làm việc' AND nv.NgayVaoLam<=@DenNgay
+                  AND NOT EXISTS(SELECT 1 FROM dbo.BANG_LUONG bl WITH(UPDLOCK,HOLDLOCK)
+                                 WHERE bl.MaNV=nv.MaNV AND bl.TuNgay=@TuNgay AND bl.DenNgay=@DenNgay)
+                  AND (SELECT COUNT(*) FROM dbo.CHINH_SACH_LUONG cs
+                       WHERE cs.MaChucVu=nv.MaChucVu AND cs.TrangThai=N'Đã duyệt'
+                         AND cs.NgayHieuLuc<=@TuNgay AND (cs.NgayHetHieuLuc IS NULL OR cs.NgayHetHieuLuc>=@DenNgay))<>1
+            ) THROW 52005,N'Có nhân viên chưa có hoặc có nhiều chính sách lương hợp lệ. Hãy kiểm tra chính sách trước khi tạo kỳ.',1;
+
+            INSERT dbo.BANG_LUONG (MaBL,MaNV,MaCSL,TuNgay,DenNgay,SoCaTinh,LuongCoBan,
+                SoCaDinhMuc,CongChuan,CongNghiPhep,CongTruDiTre,CongThucTe,TienHoaHong,
+                TienPhuCap,TienTangCa,TienBaoHiem,TienKhauTruKhac,TrangThai,NgayChot,MaNVChot,GhiChu)
+            SELECT N'BL'+CONVERT(CHAR(6),@TuNgay,112)+N'-'+REPLACE(CONVERT(NVARCHAR(36),NEWID()),N'-',N''),
+                nv.MaNV,cs.MaCSL,@TuNgay,@DenNgay,0,cs.LuongCoBan,cs.SoCaDinhMuc,
+                1,0,0,0,0,0,0,0,0,N'Nháp',NULL,NULL,N'Phiếu được tạo từ chính sách lương đã duyệt.'
+            FROM dbo.NHAN_VIEN nv
+            CROSS APPLY (
+                SELECT cs.MaCSL,cs.LuongCoBan,cs.SoCaDinhMuc
+                FROM dbo.CHINH_SACH_LUONG cs WHERE cs.MaChucVu=nv.MaChucVu
+                    AND cs.TrangThai=N'Đã duyệt' AND cs.NgayHieuLuc<=@TuNgay
+                    AND (cs.NgayHetHieuLuc IS NULL OR cs.NgayHetHieuLuc>=@DenNgay)
+            ) cs
+            WHERE nv.TrangThai=N'Đang làm việc' AND nv.NgayVaoLam<=@DenNgay
+                AND NOT EXISTS(SELECT 1 FROM dbo.BANG_LUONG bl WITH(UPDLOCK,HOLDLOCK)
+                    WHERE bl.MaNV=nv.MaNV AND bl.TuNgay=@TuNgay AND bl.DenNgay=@DenNgay);
+        END;
+
+        -- Số công chuẩn tính thứ Hai-Thứ Bảy, loại ngày nghỉ lễ có hưởng lương
+        -- (theo cùng quy ước của trigger TR_BL_ChotLuong trong SQL V9).
+        DECLARE @CongChuan INT;
+        ;WITH N AS (
+            SELECT n.k FROM (VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9),
+                (10),(11),(12),(13),(14),(15),(16),(17),(18),(19),
+                (20),(21),(22),(23),(24),(25),(26),(27),(28),(29),(30)) n(k)
+        )
+        SELECT @CongChuan=COUNT(*) FROM N
+        WHERE DATEADD(DAY,N.k,@TuNgay)<=@DenNgay
+            AND DATEDIFF(DAY,CONVERT(DATE,'19000107'),DATEADD(DAY,N.k,@TuNgay))%7<>0
+            AND NOT EXISTS(SELECT 1 FROM dbo.NGAY_NGHI_LE h
+                WHERE h.NgayNghi=DATEADD(DAY,N.k,@TuNgay) AND h.CoHuongLuong=1 AND h.TrangThai=N'Đang hoạt động');
+        IF @CongChuan IS NULL OR @CongChuan<=0 THROW 52006,N'Không xác định được công chuẩn trong kỳ.',1;
+
+        IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG b
+            JOIN dbo.NHAN_VIEN nv ON nv.MaNV=b.MaNV
+            JOIN dbo.CHINH_SACH_LUONG cs ON cs.MaCSL=b.MaCSL
+            WHERE b.TuNgay=@TuNgay AND b.DenNgay=@DenNgay AND b.TrangThai=N'Nháp'
+            AND (@MaBL IS NULL OR b.MaBL=@MaBL)
+            AND (cs.TrangThai<>N'Đã duyệt' OR cs.MaChucVu<>nv.MaChucVu
+                OR cs.NgayHieuLuc>@TuNgay OR (cs.NgayHetHieuLuc IS NOT NULL AND cs.NgayHetHieuLuc<@DenNgay)))
+            THROW 52007,N'Chính sách lương của phiếu chưa duyệt, sai chức vụ hoặc không bao phủ cả kỳ.',1;
+
+        ;WITH SoCong AS (
+            SELECT b.MaBL,
+                COALESCE((SELECT SUM(cc.CongDuocTinh) FROM dbo.CHAM_CONG cc WITH(HOLDLOCK)
+                    JOIN dbo.LICH_LAM_VIEC ll WITH(HOLDLOCK) ON ll.MaLLV=cc.MaLLV
+                    WHERE ll.MaNV=b.MaNV AND ll.NgayLam BETWEEN @TuNgay AND @DenNgay
+                      AND cc.TrangThai=N'Đã xác nhận'),0) AS CongCa,
+                (SELECT COUNT(*) FROM dbo.CHAM_CONG cc WITH(HOLDLOCK)
+                    JOIN dbo.LICH_LAM_VIEC ll WITH(HOLDLOCK) ON ll.MaLLV=cc.MaLLV
+                    WHERE ll.MaNV=b.MaNV AND ll.NgayLam BETWEEN @TuNgay AND @DenNgay
+                      AND cc.TrangThai=N'Đã xác nhận' AND cc.CongDuocTinh=0.5) AS SoCa,
+                (SELECT COUNT(*) FROM dbo.CHAM_CONG cc WITH(HOLDLOCK)
+                    JOIN dbo.LICH_LAM_VIEC ll WITH(HOLDLOCK) ON ll.MaLLV=cc.MaLLV
+                    WHERE ll.MaNV=b.MaNV AND ll.NgayLam BETWEEN @TuNgay AND @DenNgay
+                      AND cc.TrangThai=N'Đã xác nhận' AND cc.CongDuocTinh=0.5
+                      AND cc.SoPhutDiTre BETWEEN 16 AND 60) * CAST(0.25 AS DECIMAL(7,2)) AS TruTre,
+                -- Mỗi NGÀY nghỉ phép năm đã duyệt = 0,5 công, dù được xếp một hay hai ca.
+                -- Không tính nghỉ việc, nghỉ không lương, nghỉ ốm vào quỹ phép năm.
+                (SELECT COUNT(*) * CAST(0.50 AS DECIMAL(7,2))
+                 FROM dbo.RHM_NGAY_PHEP_NAM p WITH(HOLDLOCK)
+                 JOIN dbo.DON_XIN_NGHI d WITH(HOLDLOCK) ON d.MaDonNghi=p.MaDonNghi
+                 WHERE p.MaNV=b.MaNV AND p.NgayNghi BETWEEN @TuNgay AND @DenNgay
+                   AND p.NgayNghi<=CONVERT(DATE,SYSDATETIME())
+                   AND d.TrangThaiDuyet=N'Đã duyệt' AND d.LoaiNghi=N'Nghỉ phép năm') AS CongPhep,
+                COALESCE((SELECT SUM(hh.TienHoaHong) FROM dbo.CHI_TIET_HOA_HONG_LUONG hh WITH(HOLDLOCK)
+                    WHERE hh.MaBL=b.MaBL),0) AS HoaHong,
+                COALESCE((SELECT SUM(ct.SoTien) FROM dbo.CHI_TIET_LUONG ct WITH(HOLDLOCK)
+                    WHERE ct.MaBL=b.MaBL AND ct.LoaiKhoan=N'Phụ cấp' AND ct.TinhChat=N'Cộng'),0) AS PhuCapThem,
+                COALESCE((SELECT SUM(ct.SoTien) FROM dbo.CHI_TIET_LUONG ct WITH(HOLDLOCK)
+                    WHERE ct.MaBL=b.MaBL AND ct.LoaiKhoan=N'Làm thêm giờ' AND ct.TinhChat=N'Cộng'),0) AS TangCa,
+                COALESCE((SELECT SUM(ct.SoTien) FROM dbo.CHI_TIET_LUONG ct WITH(HOLDLOCK)
+                    WHERE ct.MaBL=b.MaBL AND ct.TinhChat=N'Trừ'),0) AS KhauTru
+            FROM dbo.BANG_LUONG b WITH(UPDLOCK,HOLDLOCK)
+            WHERE b.TuNgay=@TuNgay AND b.DenNgay=@DenNgay AND b.TrangThai=N'Nháp'
+                AND (@MaBL IS NULL OR b.MaBL=@MaBL)
+        )
+        UPDATE b SET b.PhienBanTinhLuong=9,
+            b.SoCaTinh=c.SoCa,
+            b.SoCaDinhMuc=cs.SoCaDinhMuc,
+            b.LuongCoBan=cs.LuongCoBan,
+            b.CongChuan=@CongChuan,
+            b.CongNghiPhep=c.CongPhep,
+            b.CongTruDiTre=c.TruTre,
+            b.CongThucTe=c.CongCa+c.CongPhep-c.TruTre,
+            b.TienHoaHong=c.HoaHong,
+            b.TienPhuCap=cs.PhuCapCoDinh+c.PhuCapThem,
+            b.TienTangCa=c.TangCa,
+            b.TienBaoHiem=CAST(ROUND(cs.LuongCoBan*(cs.TyLeBHXH+cs.TyLeBHYT+cs.TyLeBHTN),2) AS DECIMAL(18,2)),
+            b.TienKhauTruKhac=c.KhauTru,
+            b.GhiChu=N'Tính tự động từ công đã duyệt, nghỉ phép, hoa hồng và chi tiết lương. Chỉ chi trả sau khi chốt.'
+        FROM dbo.BANG_LUONG b
+        JOIN SoCong c ON c.MaBL=b.MaBL
+        JOIN dbo.CHINH_SACH_LUONG cs ON cs.MaCSL=b.MaCSL;
+
+        IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG b WHERE b.TuNgay=@TuNgay AND b.DenNgay=@DenNgay
+            AND b.TrangThai=N'Nháp' AND (@MaBL IS NULL OR b.MaBL=@MaBL)
+            AND (b.CongThucTe<0 OR b.CongThucTe>b.CongChuan))
+            THROW 52008,N'Công thực tế vượt công chuẩn (hoặc âm); cần đối soát lại ca/nghỉ phép trước khi tính.',1;
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+
+GO
+
+-- -------------------- KIEM TRA SAU KHI GOP ----------------------------------
+USE [QLBenhVienRangHamMat];
+GO
+SELECT
+    DB_NAME() AS DatabaseDangChay,
+    CAST(CASE WHEN COL_LENGTH(N'dbo.DON_XIN_NGHI',N'LoaiNghi') IS NOT NULL THEN 1 ELSE 0 END AS bit) AS CoLoaiNghi,
+    CAST(CASE WHEN OBJECT_ID(N'dbo.PHAN_QUYEN_VAI_TRO',N'U') IS NOT NULL THEN 1 ELSE 0 END AS bit) AS CoPhanQuyen,
+    CAST(CASE WHEN OBJECT_ID(N'dbo.RHM_CAU_HINH_QUY_PHEP',N'U') IS NOT NULL THEN 1 ELSE 0 END AS bit) AS CoCauHinhQuyPhep,
+    CAST(CASE WHEN OBJECT_ID(N'dbo.RHM_NGAY_PHEP_NAM',N'U') IS NOT NULL THEN 1 ELSE 0 END AS bit) AS CoNgayPhepNam,
+    CAST(CASE WHEN OBJECT_ID(N'dbo.RHM_TinhPhepDuocHuong',N'FN') IS NOT NULL THEN 1 ELSE 0 END AS bit) AS CoHamTinhPhep,
+    CAST(CASE WHEN OBJECT_ID(N'dbo.RHM_GhiNhanQuyPhepKhiDuyet',N'P') IS NOT NULL THEN 1 ELSE 0 END AS bit) AS CoThuTucGhiPhep,
+    CAST(CASE WHEN OBJECT_ID(N'dbo.RHM_TinhLuongKy',N'P') IS NOT NULL THEN 1 ELSE 0 END AS bit) AS CoThuTucLuong;
+GO
+-- Luu y: file 03_DongBoPhepDaDuyet_CoDuLieuCu.sql KHONG tu dong chay.
+-- Vi can doi soat don cu, ca nghi va ky luong da chot truoc khi quy doi.
+GO
+
+-- NANG CAP LUONG CA + HOA HONG
+-- Nâng cấp lương ca cố định + tự động đối soát hoa hồng
+-- PHẢI chạy trên DB đã cài QLBenhVienRangHamMat_GopPhanQuyen_QuyPhep.sql.
+-- Sao lưu DB trước khi chạy. Không chỉnh sửa BANG_LUONG đã chốt.
+USE [QLBenhVienRangHamMat];
+GO
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET ARITHABORT ON;
+SET NUMERIC_ROUNDABORT OFF;
+SET XACT_ABORT ON;
+BEGIN TRY
+    BEGIN TRANSACTION;
+    IF OBJECT_ID(N'dbo.CHINH_SACH_LUONG',N'U') IS NULL
+       OR OBJECT_ID(N'dbo.BANG_LUONG',N'U') IS NULL
+       OR OBJECT_ID(N'dbo.CHI_TIET_HOA_HONG_LUONG',N'U') IS NULL
+       OR OBJECT_ID(N'dbo.RHM_NGAY_PHEP_NAM',N'U') IS NULL
+       OR OBJECT_ID(N'dbo.PHU_TA_DICH_VU',N'U') IS NULL
+       OR OBJECT_ID(N'dbo.VW_DICH_VU_DU_HOA_HONG',N'V') IS NULL
+        THROW 53901,N'Chưa có schema SQL V9 + quỹ phép năm.',1;
+    IF COL_LENGTH('dbo.CHINH_SACH_LUONG','DonGiaCa') IS NULL
+      ALTER TABLE dbo.CHINH_SACH_LUONG ADD DonGiaCa decimal(18,2) NULL;
+    IF COL_LENGTH('dbo.BANG_LUONG','DonGiaCa') IS NULL
+      ALTER TABLE dbo.BANG_LUONG ADD DonGiaCa decimal(18,2) NULL;
+    IF NOT EXISTS(SELECT 1 FROM sys.check_constraints WHERE parent_object_id=OBJECT_ID('dbo.CHINH_SACH_LUONG') AND name='CK_CSL_DonGiaCa')
+      EXEC sys.sp_executesql N'ALTER TABLE dbo.CHINH_SACH_LUONG WITH CHECK ADD CONSTRAINT CK_CSL_DonGiaCa CHECK (DonGiaCa IS NULL OR DonGiaCa>=0)';
+    IF NOT EXISTS(SELECT 1 FROM sys.check_constraints WHERE parent_object_id=OBJECT_ID('dbo.BANG_LUONG') AND name='CK_BL_DonGiaCa')
+      EXEC sys.sp_executesql N'ALTER TABLE dbo.BANG_LUONG WITH CHECK ADD CONSTRAINT CK_BL_DonGiaCa CHECK (DonGiaCa IS NULL OR DonGiaCa>=0)';
+    -- Chỉ các kỳ V9 có DonGiaCa mới dùng lương tính theo ca cố định.
+    -- Nháp và phiếu V9 cũ (DonGiaCa NULL) vẫn giữ nguyên công thức cũ.
+    -- Phiếu lịch sử V8 giữ nguyên số tiền snapshot, không tính lại.
+    -- CK_BANG_LUONG_5 phụ thuộc cột TongLuong nên phải tháo ra
+    -- trong cùng giao dịch rồi tạo lại sau khi đổi công thức.
+    IF OBJECT_ID(N'dbo.CK_BANG_LUONG_5',N'C') IS NOT NULL
+      EXEC(N'ALTER TABLE dbo.BANG_LUONG DROP CONSTRAINT CK_BANG_LUONG_5');
+    IF COL_LENGTH('dbo.BANG_LUONG','TongLuong') IS NOT NULL
+      EXEC(N'ALTER TABLE dbo.BANG_LUONG DROP COLUMN TongLuong');
+    IF COL_LENGTH('dbo.BANG_LUONG','LuongTheoCa') IS NOT NULL
+      EXEC(N'ALTER TABLE dbo.BANG_LUONG DROP COLUMN LuongTheoCa');
+    EXEC(N'ALTER TABLE dbo.BANG_LUONG ADD LuongTheoCa AS
+     CONVERT(decimal(18,2),CASE WHEN PhienBanTinhLuong=8 THEN LuongTheoCaTruocDongBo
+       WHEN DonGiaCa IS NOT NULL THEN ROUND(CONVERT(decimal(28,6),DonGiaCa)*CongThucTe*2,2)
+       ELSE ROUND(CONVERT(decimal(28,6),LuongCoBan)*CongThucTe/NULLIF(CongChuan,0),2) END) PERSISTED');
+    EXEC(N'ALTER TABLE dbo.BANG_LUONG ADD TongLuong AS
+     CONVERT(decimal(18,2),CASE WHEN PhienBanTinhLuong=8 THEN TongLuongTruocDongBo
+       ELSE (CASE WHEN DonGiaCa IS NOT NULL
+          THEN ROUND(CONVERT(decimal(28,6),DonGiaCa)*CongThucTe*2,2)
+          ELSE ROUND(CONVERT(decimal(28,6),LuongCoBan)*CongThucTe/NULLIF(CongChuan,0),2) END)
+        +TienHoaHong+TienPhuCap+TienTangCa-TienBaoHiem-TienKhauTruKhac END) PERSISTED');
+    ALTER TABLE dbo.BANG_LUONG WITH CHECK ADD CONSTRAINT CK_BANG_LUONG_5
+      CHECK (PhienBanTinhLuong=8 OR TrangThai<>N'Đã chốt' OR TongLuong>=0);
+    COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+    THROW;
+END CATCH;
+GO
+CREATE OR ALTER TRIGGER dbo.TR_CSL_KhoaChinhSach ON dbo.CHINH_SACH_LUONG
+AFTER INSERT, UPDATE, DELETE AS
+BEGIN
+ SET NOCOUNT ON;
+ -- Chính sách đã duyệt chỉ được rút ngắn NGÀY HẾT HẠN khi thay phiên bản,
+ -- không được thay đổi lương/tỷ lệ/nội dung hoặc xóa chính sách đã duyệt.
+ IF EXISTS(SELECT 1 FROM deleted d LEFT JOIN inserted i ON i.MaCSL=d.MaCSL
+           WHERE d.TrangThai=N'Đã duyệt' AND
+          (i.MaCSL IS NULL
+           OR EXISTS(SELECT i.MaChucVu,i.TenChinhSach,i.PhienBan,i.NgayHieuLuc,
+                     i.LuongCoBan,i.SoCaDinhMuc,i.CoSoHoaHong,i.TyLeHoaHong,
+                     i.MaNVDuyet,i.NgayDuyet,i.TrangThai,i.PhuCapCoDinh,
+                     i.TyLeBHXH,i.TyLeBHYT,i.TyLeBHTN,
+                     i.HeSoTangCaThuong,i.HeSoTangCaChuNhat,i.HeSoTangCaNgayLe,i.DonGiaCa
+                     EXCEPT
+                     SELECT d.MaChucVu,d.TenChinhSach,d.PhienBan,d.NgayHieuLuc,
+                     d.LuongCoBan,d.SoCaDinhMuc,d.CoSoHoaHong,d.TyLeHoaHong,
+                     d.MaNVDuyet,d.NgayDuyet,d.TrangThai,d.PhuCapCoDinh,
+                     d.TyLeBHXH,d.TyLeBHYT,d.TyLeBHTN,
+                     d.HeSoTangCaThuong,d.HeSoTangCaChuNhat,d.HeSoTangCaNgayLe,d.DonGiaCa)
+           OR i.NgayHetHieuLuc IS NULL OR i.NgayHetHieuLuc<d.NgayHieuLuc
+           OR (d.NgayHetHieuLuc IS NOT NULL AND i.NgayHetHieuLuc>=d.NgayHetHieuLuc)
+           OR EXISTS(SELECT 1 FROM dbo.BANG_LUONG b
+                      WHERE b.MaCSL=d.MaCSL AND b.DenNgay>i.NgayHetHieuLuc)
+          )) THROW 53902,N'Chính sách đã duyệt bất biến, chỉ được rút ngắn ngày hết hạn nếu chưa ảnh hưởng bảng lương.',1;
+ IF EXISTS(SELECT 1 FROM inserted WHERE TrangThai=N'Đã duyệt'
+           AND(MaNVDuyet IS NULL OR NgayDuyet IS NULL))
+    THROW 51037,N'Chính sách đã duyệt phải có người và ngày duyệt.',1;
+END;
+GO
+CREATE OR ALTER PROCEDURE dbo.RHM_DuyetChinhSachLuong
+ @MaCSL nvarchar(50), @MaNVDuyet nvarchar(50)
+AS
+BEGIN
+ SET NOCOUNT ON; SET XACT_ABORT ON;
+ IF NOT EXISTS (SELECT 1 FROM dbo.TAI_KHOAN tk
+ JOIN dbo.VAI_TRO vt ON vt.MaVaiTro=tk.MaVaiTro
+ WHERE tk.MaNV=@MaNVDuyet AND tk.TrangThai=N'Đang hoạt động'
+   AND vt.TenVaiTro IN (N'Admin',N'Quản trị',N'Quản trị viên'))
+  THROW 53903,N'Chỉ quản trị viên được duyệt chính sách lương.',1;
+ BEGIN TRY
+  BEGIN TRANSACTION;
+  DECLARE @Kho int;
+  EXEC @Kho=sys.sp_getapplock @Resource=N'RHM:DuyetChinhSachLuong',@LockMode='Exclusive',
+    @LockOwner='Transaction',@LockTimeout=15000;
+  IF @Kho<0 THROW 53904,N'Đang có phiên duyệt chính sách khác.',1;
+  DECLARE @ChucVu nvarchar(50),@HieuLuc date;
+  SELECT @ChucVu=MaChucVu,@HieuLuc=NgayHieuLuc
+  FROM dbo.CHINH_SACH_LUONG WITH(UPDLOCK,HOLDLOCK)
+  WHERE MaCSL=@MaCSL AND TrangThai=N'Nháp';
+  IF @ChucVu IS NULL THROW 53905,N'Chỉ có thể duyệt chính sách Nháp.',1;
+  IF DAY(@HieuLuc)<>1 THROW 53906,N'Chính sách phải có hiệu lực từ ngày 01 của tháng.',1;
+  IF EXISTS(SELECT 1 FROM dbo.CHINH_SACH_LUONG WITH(UPDLOCK,HOLDLOCK)
+    WHERE MaChucVu=@ChucVu AND MaCSL<>@MaCSL AND TrangThai=N'Đã duyệt'
+      AND NgayHieuLuc>=@HieuLuc)
+    THROW 53907,N'Đã có chính sách duyệt hiệu lực bằng hoặc sau ngày này.',1;
+  UPDATE dbo.CHINH_SACH_LUONG
+  SET NgayHetHieuLuc=DATEADD(day,-1,@HieuLuc)
+  WHERE MaChucVu=@ChucVu AND MaCSL<>@MaCSL AND TrangThai=N'Đã duyệt'
+    AND NgayHieuLuc<@HieuLuc AND (NgayHetHieuLuc IS NULL OR NgayHetHieuLuc>=@HieuLuc);
+  UPDATE dbo.CHINH_SACH_LUONG
+  SET TrangThai=N'Đã duyệt',MaNVDuyet=@MaNVDuyet,NgayDuyet=SYSDATETIME()
+  WHERE MaCSL=@MaCSL AND TrangThai=N'Nháp';
+  IF @@ROWCOUNT<>1 THROW 53908,N'Không duyệt được chính sách.',1;
+  COMMIT TRANSACTION;
+ END TRY
+ BEGIN CATCH IF @@TRANCOUNT>0 ROLLBACK TRANSACTION; THROW; END CATCH;
+END;
+GO
+
+-- Chỉ thay thủ tục tính lương V9 hiện hữu, KHÔNG sửa thủ tục chốt.
+CREATE OR ALTER PROCEDURE dbo.RHM_TinhLuongKy
+    @TuNgay DATE,
+    @DenNgay DATE,
+    @MaNVTinh NVARCHAR(50),
+    @MaBL NVARCHAR(50)=NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+    IF @TuNgay IS NULL OR @DenNgay<>EOMONTH(@TuNgay) OR DAY(@TuNgay)<>1
+        THROW 52001,N'Chỉ được tính lương cho một tháng đầy đủ.',1;
+    IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN tk JOIN dbo.VAI_TRO vt ON tk.MaVaiTro=vt.MaVaiTro
+                  WHERE tk.MaNV=@MaNVTinh AND vt.TenVaiTro=N'Admin' AND tk.TrangThai=N'Đang hoạt động')
+        THROW 52002,N'Chỉ tài khoản quản lý đang hoạt động được tính lương.',1;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        DECLARE @Khoa INT;
+        EXEC @Khoa=sys.sp_getapplock @Resource=N'RHM:TinhChotLuong',
+             @LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000;
+        IF @Khoa<0 THROW 52003,N'Kỳ lương đang được thao tác ở cửa sổ khác.',1;
+
+        IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG old WITH(UPDLOCK,HOLDLOCK)
+ WHERE old.PhienBanTinhLuong=8 AND old.TuNgay<=@DenNgay AND old.DenNgay>=@TuNgay
+ AND (old.TuNgay<>@TuNgay OR old.DenNgay<>@DenNgay)
+ AND (@MaBL IS NULL OR old.MaNV=(SELECT MaNV FROM dbo.BANG_LUONG WHERE MaBL=@MaBL)))
+ THROW 52333,N'Có phiếu lương cũ chưa đủ tháng hoặc chồng kỳ. Giữ nguyên phiếu cũ; cần đối chiếu trước khi lập/tính cả tháng để tránh chi trùng.',1;
+IF @MaBL IS NOT NULL AND NOT EXISTS(SELECT 1 FROM dbo.BANG_LUONG WITH(UPDLOCK,HOLDLOCK)
+            WHERE MaBL=@MaBL AND TuNgay=@TuNgay AND DenNgay=@DenNgay AND TrangThai=N'Nháp')
+            THROW 52004,N'Phiếu đã chốt, không còn hoặc không thuộc kỳ lương được chọn.',1;
+
+        -- Khi mở kỳ mới: lập phiếu nháp cho nhân viên đang làm việc và đã có
+        -- CHÍNH XÁC MỘT chính sách được duyệt áp dụng trọn tháng.
+        IF @MaBL IS NULL
+        BEGIN
+            IF EXISTS(
+                SELECT 1 FROM dbo.NHAN_VIEN nv
+                WHERE nv.TrangThai=N'Đang làm việc' AND nv.NgayVaoLam<=@DenNgay
+                  AND NOT EXISTS(SELECT 1 FROM dbo.BANG_LUONG bl WITH(UPDLOCK,HOLDLOCK)
+                                 WHERE bl.MaNV=nv.MaNV AND bl.TuNgay=@TuNgay AND bl.DenNgay=@DenNgay)
+                  AND (SELECT COUNT(*) FROM dbo.CHINH_SACH_LUONG cs
+                       WHERE cs.MaChucVu=nv.MaChucVu AND cs.TrangThai=N'Đã duyệt'
+                         AND cs.NgayHieuLuc<=@TuNgay AND (cs.NgayHetHieuLuc IS NULL OR cs.NgayHetHieuLuc>=@DenNgay))<>1
+            ) THROW 52005,N'Có nhân viên chưa có hoặc có nhiều chính sách lương hợp lệ. Hãy kiểm tra chính sách trước khi tạo kỳ.',1;
+
+            INSERT dbo.BANG_LUONG (MaBL,MaNV,MaCSL,TuNgay,DenNgay,SoCaTinh,LuongCoBan,
+                SoCaDinhMuc,CongChuan,CongNghiPhep,CongTruDiTre,CongThucTe,TienHoaHong,
+                TienPhuCap,TienTangCa,TienBaoHiem,TienKhauTruKhac,TrangThai,NgayChot,MaNVChot,GhiChu)
+            SELECT N'BL'+CONVERT(CHAR(6),@TuNgay,112)+N'-'+REPLACE(CONVERT(NVARCHAR(36),NEWID()),N'-',N''),
+                nv.MaNV,cs.MaCSL,@TuNgay,@DenNgay,0,cs.LuongCoBan,cs.SoCaDinhMuc,
+                1,0,0,0,0,0,0,0,0,N'Nháp',NULL,NULL,N'Phiếu được tạo từ chính sách lương đã duyệt.'
+            FROM dbo.NHAN_VIEN nv
+            CROSS APPLY (
+                SELECT cs.MaCSL,cs.LuongCoBan,cs.SoCaDinhMuc
+                FROM dbo.CHINH_SACH_LUONG cs WHERE cs.MaChucVu=nv.MaChucVu
+                    AND cs.TrangThai=N'Đã duyệt' AND cs.NgayHieuLuc<=@TuNgay
+                    AND (cs.NgayHetHieuLuc IS NULL OR cs.NgayHetHieuLuc>=@DenNgay)
+            ) cs
+            WHERE nv.TrangThai=N'Đang làm việc' AND nv.NgayVaoLam<=@DenNgay
+                AND NOT EXISTS(SELECT 1 FROM dbo.BANG_LUONG bl WITH(UPDLOCK,HOLDLOCK)
+                    WHERE bl.MaNV=nv.MaNV AND bl.TuNgay=@TuNgay AND bl.DenNgay=@DenNgay);
+        END;
+
+        -- Số công chuẩn tính thứ Hai-Thứ Bảy, loại ngày nghỉ lễ có hưởng lương
+        -- (theo cùng quy ước của trigger TR_BL_ChotLuong trong SQL V9).
+        DECLARE @CongChuan INT;
+        ;WITH N AS (
+            SELECT n.k FROM (VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9),
+                (10),(11),(12),(13),(14),(15),(16),(17),(18),(19),
+                (20),(21),(22),(23),(24),(25),(26),(27),(28),(29),(30)) n(k)
+        )
+        SELECT @CongChuan=COUNT(*) FROM N
+        WHERE DATEADD(DAY,N.k,@TuNgay)<=@DenNgay
+            AND DATEDIFF(DAY,CONVERT(DATE,'19000107'),DATEADD(DAY,N.k,@TuNgay))%7<>0
+            AND NOT EXISTS(SELECT 1 FROM dbo.NGAY_NGHI_LE h
+                WHERE h.NgayNghi=DATEADD(DAY,N.k,@TuNgay) AND h.CoHuongLuong=1 AND h.TrangThai=N'Đang hoạt động');
+        IF @CongChuan IS NULL OR @CongChuan<=0 THROW 52006,N'Không xác định được công chuẩn trong kỳ.',1;
+
+        IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG b
+            JOIN dbo.NHAN_VIEN nv ON nv.MaNV=b.MaNV
+            JOIN dbo.CHINH_SACH_LUONG cs ON cs.MaCSL=b.MaCSL
+            WHERE b.TuNgay=@TuNgay AND b.DenNgay=@DenNgay AND b.TrangThai=N'Nháp'
+            AND (@MaBL IS NULL OR b.MaBL=@MaBL)
+            AND (cs.TrangThai<>N'Đã duyệt' OR cs.MaChucVu<>nv.MaChucVu
+                OR cs.NgayHieuLuc>@TuNgay OR (cs.NgayHetHieuLuc IS NOT NULL AND cs.NgayHetHieuLuc<@DenNgay)))
+            THROW 52007,N'Chính sách lương của phiếu chưa duyệt, sai chức vụ hoặc không bao phủ cả kỳ.',1;
+
+        -- Làm lại chi tiết HOA HỒNG CHỈ cho phiếu nháp của kỳ tính.
+        -- Giá trị lấy từ view dịch vụ đã xác nhận và hóa đơn đã thu đủ;
+        -- mỗi (bảng lương, chi tiết hóa đơn, vai trò) chỉ được tính một lần.
+        DELETE hh
+        FROM dbo.CHI_TIET_HOA_HONG_LUONG hh
+        JOIN dbo.BANG_LUONG bl ON bl.MaBL=hh.MaBL JOIN dbo.CHINH_SACH_LUONG policy ON policy.MaCSL=bl.MaCSL
+        WHERE bl.TuNgay=@TuNgay AND bl.DenNgay=@DenNgay
+          AND bl.TrangThai=N'Nháp' AND (@MaBL IS NULL OR bl.MaBL=@MaBL) AND policy.DonGiaCa IS NOT NULL;
+
+        ;WITH NguonHoaHong AS (
+          SELECT b.MaBL,b.MaNV,v.MaCTHD,v.GiaTriHoaHong,
+                 cs.TyLeHoaHong AS TyLe,CAST(N'Bác sĩ' AS nvarchar(20)) AS VaiTro
+          FROM dbo.BANG_LUONG b
+          JOIN dbo.CHINH_SACH_LUONG cs ON cs.MaCSL=b.MaCSL
+          JOIN dbo.VW_DICH_VU_DU_HOA_HONG v ON v.MaNVThucHien=b.MaNV
+          WHERE b.TuNgay=@TuNgay AND b.DenNgay=@DenNgay AND b.TrangThai=N'Nháp'
+            AND (@MaBL IS NULL OR b.MaBL=@MaBL)
+            AND cs.TyLeHoaHong>0 AND cs.DonGiaCa IS NOT NULL
+            AND (CASE WHEN v.NgayThucHien>v.NgayDuDieuKien THEN v.NgayThucHien
+                      ELSE v.NgayDuDieuKien END) BETWEEN @TuNgay AND @DenNgay
+          UNION ALL
+          SELECT b.MaBL,b.MaNV,v.MaCTHD,v.GiaTriHoaHong,
+                 cs.TyLeHoaHong,CAST(N'Phụ tá' AS nvarchar(20))
+          FROM dbo.BANG_LUONG b
+          JOIN dbo.CHINH_SACH_LUONG cs ON cs.MaCSL=b.MaCSL
+          JOIN dbo.PHU_TA_DICH_VU pt ON pt.MaNV=b.MaNV AND pt.TrangThai=N'Đã xác nhận'
+          JOIN dbo.VW_DICH_VU_DU_HOA_HONG v ON v.MaDVThucHien=pt.MaDVThucHien
+          WHERE b.TuNgay=@TuNgay AND b.DenNgay=@DenNgay AND b.TrangThai=N'Nháp'
+            AND (@MaBL IS NULL OR b.MaBL=@MaBL)
+            AND cs.TyLeHoaHong>0 AND cs.DonGiaCa IS NOT NULL
+            AND (CASE WHEN v.NgayThucHien>v.NgayDuDieuKien THEN v.NgayThucHien
+                      ELSE v.NgayDuDieuKien END) BETWEEN @TuNgay AND @DenNgay
+        )
+        INSERT dbo.CHI_TIET_HOA_HONG_LUONG
+          (MaCTHH,MaBL,MaCTHD,VaiTroHoaHong,GiaTriTinh,TyLe)
+        SELECT N'HH'+REPLACE(CONVERT(nvarchar(36),NEWID()),N'-',N''),
+               n.MaBL,n.MaCTHD,n.VaiTro,n.GiaTriHoaHong,n.TyLe
+        FROM NguonHoaHong n
+        WHERE NOT EXISTS (
+          SELECT 1 FROM dbo.CHI_TIET_HOA_HONG_LUONG daTra WITH(HOLDLOCK)
+          JOIN dbo.BANG_LUONG blDaTra ON blDaTra.MaBL=daTra.MaBL
+          JOIN dbo.BANG_LUONG blMoi ON blMoi.MaBL=n.MaBL
+          WHERE daTra.MaCTHD=n.MaCTHD AND daTra.VaiTroHoaHong=n.VaiTro
+            AND blDaTra.MaNV=blMoi.MaNV AND blDaTra.MaBL<>n.MaBL
+        );
+
+        ;WITH SoCong AS (
+            SELECT b.MaBL,
+                COALESCE((SELECT SUM(cc.CongDuocTinh) FROM dbo.CHAM_CONG cc WITH(HOLDLOCK)
+                    JOIN dbo.LICH_LAM_VIEC ll WITH(HOLDLOCK) ON ll.MaLLV=cc.MaLLV
+                    WHERE ll.MaNV=b.MaNV AND ll.NgayLam BETWEEN @TuNgay AND @DenNgay
+                      AND cc.TrangThai=N'Đã xác nhận'),0) AS CongCa,
+                (SELECT COUNT(*) FROM dbo.CHAM_CONG cc WITH(HOLDLOCK)
+                    JOIN dbo.LICH_LAM_VIEC ll WITH(HOLDLOCK) ON ll.MaLLV=cc.MaLLV
+                    WHERE ll.MaNV=b.MaNV AND ll.NgayLam BETWEEN @TuNgay AND @DenNgay
+                      AND cc.TrangThai=N'Đã xác nhận' AND cc.CongDuocTinh=0.5) AS SoCa,
+                (SELECT COUNT(*) FROM dbo.CHAM_CONG cc WITH(HOLDLOCK)
+                    JOIN dbo.LICH_LAM_VIEC ll WITH(HOLDLOCK) ON ll.MaLLV=cc.MaLLV
+                    WHERE ll.MaNV=b.MaNV AND ll.NgayLam BETWEEN @TuNgay AND @DenNgay
+                      AND cc.TrangThai=N'Đã xác nhận' AND cc.CongDuocTinh=0.5
+                      AND cc.SoPhutDiTre BETWEEN 16 AND 60) * CAST(0.25 AS DECIMAL(7,2)) AS TruTre,
+                -- Mỗi NGÀY nghỉ phép năm đã duyệt = 0,5 công, dù được xếp một hay hai ca.
+                -- Không tính nghỉ việc, nghỉ không lương, nghỉ ốm vào quỹ phép năm.
+                (SELECT COUNT(*) * CAST(0.50 AS DECIMAL(7,2))
+                 FROM dbo.RHM_NGAY_PHEP_NAM p WITH(HOLDLOCK)
+                 JOIN dbo.DON_XIN_NGHI d WITH(HOLDLOCK) ON d.MaDonNghi=p.MaDonNghi
+                 WHERE p.MaNV=b.MaNV AND p.NgayNghi BETWEEN @TuNgay AND @DenNgay
+                   AND p.NgayNghi<=CONVERT(DATE,SYSDATETIME())
+                   AND d.TrangThaiDuyet=N'Đã duyệt' AND d.LoaiNghi=N'Nghỉ phép năm') +
+                -- Existing V9 leave with no assigned leave type keeps its original paid-day formula.
+                -- Explicit annual leave uses the ledger above; a day cannot be paid through both sources.
+                (SELECT COUNT(*) FROM(VALUES(0),(1),(2),(3),(4),(5),(6),(7),(8),(9),
+                    (10),(11),(12),(13),(14),(15),(16),(17),(18),(19),(20),
+                    (21),(22),(23),(24),(25),(26),(27),(28),(29),(30)) days(k)
+                 WHERE DATEADD(day,days.k,@TuNgay)<=@DenNgay
+                   AND DATEDIFF(day,CONVERT(date,'19000107'),DATEADD(day,days.k,@TuNgay))%7<>0
+                   AND NOT EXISTS(SELECT 1 FROM dbo.NGAY_NGHI_LE h WHERE h.NgayNghi=DATEADD(day,days.k,@TuNgay)
+                     AND h.CoHuongLuong=1 AND h.TrangThai=N'Đang hoạt động')
+                   AND EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI d WITH(HOLDLOCK) WHERE d.MaNV=b.MaNV
+                     AND d.TrangThaiDuyet=N'Đã duyệt' AND d.LoaiNghi=N'Chưa xác định'
+                     AND DATEADD(day,days.k,@TuNgay) BETWEEN d.TuNgay AND d.DenNgay)
+                   AND NOT EXISTS(SELECT 1 FROM dbo.RHM_NGAY_PHEP_NAM p WITH(HOLDLOCK) WHERE p.MaNV=b.MaNV
+                     AND p.NgayNghi=DATEADD(day,days.k,@TuNgay))) AS CongPhep,
+                COALESCE((SELECT SUM(hh.TienHoaHong) FROM dbo.CHI_TIET_HOA_HONG_LUONG hh WITH(HOLDLOCK)
+                    WHERE hh.MaBL=b.MaBL),0) AS HoaHong,
+                COALESCE((SELECT SUM(ct.SoTien) FROM dbo.CHI_TIET_LUONG ct WITH(HOLDLOCK)
+                    WHERE ct.MaBL=b.MaBL AND ct.LoaiKhoan=N'Phụ cấp' AND ct.TinhChat=N'Cộng'),0) AS PhuCapThem,
+                COALESCE((SELECT SUM(ct.SoTien) FROM dbo.CHI_TIET_LUONG ct WITH(HOLDLOCK)
+                    WHERE ct.MaBL=b.MaBL AND ct.LoaiKhoan=N'Làm thêm giờ' AND ct.TinhChat=N'Cộng'),0) AS TangCa,
+                COALESCE((SELECT SUM(ct.SoTien) FROM dbo.CHI_TIET_LUONG ct WITH(HOLDLOCK)
+                    WHERE ct.MaBL=b.MaBL AND ct.TinhChat=N'Trừ'),0) AS KhauTru
+            FROM dbo.BANG_LUONG b WITH(UPDLOCK,HOLDLOCK)
+            WHERE b.TuNgay=@TuNgay AND b.DenNgay=@DenNgay AND b.TrangThai=N'Nháp'
+                AND (@MaBL IS NULL OR b.MaBL=@MaBL)
+        )
+        UPDATE b SET b.PhienBanTinhLuong=9,
+            b.SoCaTinh=c.SoCa,
+            b.SoCaDinhMuc=cs.SoCaDinhMuc,
+            b.LuongCoBan=cs.LuongCoBan,
+            b.DonGiaCa=cs.DonGiaCa,
+            b.CongChuan=@CongChuan,
+            b.CongNghiPhep=c.CongPhep,
+            b.CongTruDiTre=c.TruTre,
+            b.CongThucTe=c.CongCa+c.CongPhep-c.TruTre,
+            b.TienHoaHong=c.HoaHong,
+            b.TienPhuCap=cs.PhuCapCoDinh+c.PhuCapThem,
+            b.TienTangCa=c.TangCa,
+            b.TienBaoHiem=CAST(ROUND(cs.LuongCoBan*(cs.TyLeBHXH+cs.TyLeBHYT+cs.TyLeBHTN),2) AS DECIMAL(18,2)),
+            b.TienKhauTruKhac=c.KhauTru,
+            b.GhiChu=N'Tính tự động từ công đã duyệt, nghỉ phép, hoa hồng và chi tiết lương. Chỉ chi trả sau khi chốt.'
+        FROM dbo.BANG_LUONG b
+        JOIN SoCong c ON c.MaBL=b.MaBL
+        JOIN dbo.CHINH_SACH_LUONG cs ON cs.MaCSL=b.MaCSL;
+
+        IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG b WHERE b.TuNgay=@TuNgay AND b.DenNgay=@DenNgay
+            AND b.TrangThai=N'Nháp' AND (@MaBL IS NULL OR b.MaBL=@MaBL)
+            AND (b.CongThucTe<0 OR b.CongThucTe>b.CongChuan))
+            THROW 52008,N'Công thực tế vượt công chuẩn (hoặc âm); cần đối soát lại ca/nghỉ phép trước khi tính.',1;
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO
+
+-- ==========================================================================
+-- KIEM TRA THANH PHAN SAU KHI CAI (CHI DOC, KHONG THAY DOI DU LIEU)
+-- ==========================================================================
+USE [QLBenhVienRangHamMat];
+GO
+SELECT DB_NAME() AS TenDatabase,
+       CONVERT(bit,CASE WHEN OBJECT_ID(N'dbo.PHAN_QUYEN_VAI_TRO',N'U') IS NOT NULL THEN 1 ELSE 0 END) AS CoPhanQuyen,
+       CONVERT(bit,CASE WHEN OBJECT_ID(N'dbo.RHM_NGAY_PHEP_NAM',N'U') IS NOT NULL THEN 1 ELSE 0 END) AS CoNgayPhepNam,
+       CONVERT(bit,CASE WHEN OBJECT_ID(N'dbo.RHM_TinhLuongKy',N'P') IS NOT NULL THEN 1 ELSE 0 END) AS CoTinhLuongKy,
+       CONVERT(bit,CASE WHEN OBJECT_ID(N'dbo.RHM_DuyetChinhSachLuong',N'P') IS NOT NULL THEN 1 ELSE 0 END) AS CoDuyetChinhSach,
+       CONVERT(bit,CASE WHEN COL_LENGTH(N'dbo.CHINH_SACH_LUONG',N'DonGiaCa') IS NOT NULL THEN 1 ELSE 0 END) AS CoDonGiaCaChinhSach,
+       CONVERT(bit,CASE WHEN COL_LENGTH(N'dbo.BANG_LUONG',N'DonGiaCa') IS NOT NULL THEN 1 ELSE 0 END) AS CoDonGiaCaBangLuong;
+GO
+
+
+
+/*
+  KIOSK AI / MVP LAN DAU - SQL SERVER 2019+
+  Chay SAU SQL F5 cua du an. KHONG drop table nghiep vu.
+  Chay lai migration an toan (idempotent) - khong doi schema da tao.
+*/
+USE [QLBenhVienRangHamMat];
+GO
+SET XACT_ABORT ON;
+GO
+IF OBJECT_ID(N'dbo.PHIEU_KHAM_BENH',N'U') IS NULL
+    THROW 51000, N'Can cai dat database benh vien truoc khi chay migration Kiosk AI.', 1;
+GO
+IF OBJECT_ID(N'dbo.AI_PHIEN_TIEP_NHAN', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AI_PHIEN_TIEP_NHAN
+    (
+        MaPhien uniqueidentifier NOT NULL CONSTRAINT PK_AI_PHIEN_TIEP_NHAN PRIMARY KEY,
+        MaKiosk nvarchar(40) NOT NULL CONSTRAINT DF_AI_PH_MaKiosk DEFAULT N'LAPTOP-01',
+        TokenHash binary(32) NOT NULL,
+        Buoc nvarchar(32) NOT NULL CONSTRAINT DF_AI_PH_Buoc DEFAULT N'TungKham',
+        TrangThai nvarchar(32) NOT NULL CONSTRAINT DF_AI_PH_TrangThai DEFAULT N'DangKhaiBao',
+        DongY bit NOT NULL,
+        PhienBanThongBao nvarchar(20) NOT NULL CONSTRAINT DF_AI_PH_ThongBao DEFAULT N'v1-demo',
+        NgayTao datetime2(3) NOT NULL CONSTRAINT DF_AI_PH_NgayTao DEFAULT SYSUTCDATETIME(),
+        NgayCapNhat datetime2(3) NOT NULL CONSTRAINT DF_AI_PH_NgayCapNhat DEFAULT SYSUTCDATETIME(),
+        HetHan datetime2(3) NOT NULL,
+        MaPhieu nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+        MaNVXacNhan nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+        NgayXacNhan datetime2(3) NULL,
+        PhienBan rowversion NOT NULL,
+        CONSTRAINT CK_AI_PH_TrangThai CHECK (TrangThai IN (
+             N'DangKhaiBao',N'ChoNhanVien',N'CanHoTro',N'DaDuyet',N'DaHuy',N'HetHan')),
+        CONSTRAINT CK_AI_PH_DongY CHECK (DongY=1),
+        CONSTRAINT CK_AI_PH_ThoiHan CHECK (HetHan > NgayTao),
+        CONSTRAINT FK_AI_PH_PhieuKham FOREIGN KEY (MaPhieu) REFERENCES dbo.PHIEU_KHAM_BENH(MaPhieu),
+        CONSTRAINT FK_AI_PH_NhanVien FOREIGN KEY (MaNVXacNhan) REFERENCES dbo.NHAN_VIEN(MaNV)
+    );
+END;
+GO
+IF OBJECT_ID(N'dbo.AI_TIEP_NHAN_NHAP', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AI_TIEP_NHAN_NHAP
+    (
+        MaPhien uniqueidentifier NOT NULL CONSTRAINT PK_AI_TIEP_NHAN_NHAP PRIMARY KEY,
+        DaTungKham bit NULL,
+        HoTen nvarchar(255) NULL,
+        NgaySinh date NULL,
+        SoDienThoai nvarchar(25) NULL,
+        LyDoKham nvarchar(1000) NULL,
+        TrieuChung nvarchar(1000) NULL,
+        CanHoTroGap bit NOT NULL CONSTRAINT DF_AI_NHAP_CanHoTro DEFAULT 0,
+        NgayCapNhat datetime2(3) NOT NULL CONSTRAINT DF_AI_NHAP_NgayCapNhat DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT FK_AI_NHAP_Phien FOREIGN KEY(MaPhien) REFERENCES dbo.AI_PHIEN_TIEP_NHAN(MaPhien)
+    );
+END;
+GO
+IF OBJECT_ID(N'dbo.AI_TIN_NHAN', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AI_TIN_NHAN
+    (
+        MaTin bigint IDENTITY(1,1) NOT NULL CONSTRAINT PK_AI_TIN_NHAN PRIMARY KEY,
+        MaPhien uniqueidentifier NOT NULL,
+        VaiTro nvarchar(12) NOT NULL,
+        NoiDung nvarchar(1200) NOT NULL,
+        NgayTao datetime2(3) NOT NULL CONSTRAINT DF_AI_TN_NgayTao DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT CK_AI_TN_VaiTro CHECK (VaiTro IN (N'BenhNhan',N'TroLy')),
+        CONSTRAINT FK_AI_TN_Phien FOREIGN KEY(MaPhien) REFERENCES dbo.AI_PHIEN_TIEP_NHAN(MaPhien)
+    );
+END;
+GO
+IF OBJECT_ID(N'dbo.AI_SU_KIEN', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AI_SU_KIEN
+    (
+        MaSuKien bigint IDENTITY(1,1) NOT NULL CONSTRAINT PK_AI_SU_KIEN PRIMARY KEY,
+        MaPhien uniqueidentifier NOT NULL,
+        LoaiSuKien nvarchar(40) NOT NULL,
+        MaNV nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+        NgayTao datetime2(3) NOT NULL CONSTRAINT DF_AI_SK_NgayTao DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT FK_AI_SK_Phien FOREIGN KEY(MaPhien) REFERENCES dbo.AI_PHIEN_TIEP_NHAN(MaPhien)
+    );
+END;
+GO
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.AI_PHIEN_TIEP_NHAN') AND name=N'UX_AI_PH_TokenHash')
+    CREATE UNIQUE INDEX UX_AI_PH_TokenHash ON dbo.AI_PHIEN_TIEP_NHAN(TokenHash);
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.AI_PHIEN_TIEP_NHAN') AND name=N'UX_AI_PH_MaPhieu')
+    CREATE UNIQUE INDEX UX_AI_PH_MaPhieu ON dbo.AI_PHIEN_TIEP_NHAN(MaPhieu) WHERE MaPhieu IS NOT NULL;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.AI_PHIEN_TIEP_NHAN') AND name=N'IX_AI_PH_TrangThai_NgayTao')
+    CREATE INDEX IX_AI_PH_TrangThai_NgayTao ON dbo.AI_PHIEN_TIEP_NHAN(TrangThai,NgayTao DESC);
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.AI_TIN_NHAN') AND name=N'IX_AI_TN_MaPhien')
+    CREATE INDEX IX_AI_TN_MaPhien ON dbo.AI_TIN_NHAN(MaPhien,MaTin);
+GO
+/* Chi nhan vien co phieu kham thuc te moi duoc gan MaPhieu.
+   Ngan 2 nhan vien cung duyet 1 phien (UPDLOCK, HOLDLOCK + transaction).
+   Chu y: KHONG tao BENH_NHAN / HO_SO_BENH_AN / PHIEU_KHAM_BENH o day.
+*/
+CREATE OR ALTER PROCEDURE dbo.AI_XacNhanPhien
+    @MaPhien uniqueidentifier,
+    @MaPhieu nvarchar(50),
+    @MaNV nvarchar(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+    BEGIN TRY
+        BEGIN TRAN;
+        IF NOT EXISTS(SELECT 1 FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)
+            JOIN dbo.TAI_KHOAN tk WITH(HOLDLOCK) ON tk.MaTK=s.MaTK
+            JOIN dbo.NHAN_VIEN nv WITH(HOLDLOCK) ON nv.MaNV=tk.MaNV
+            JOIN dbo.VAI_TRO vt WITH(HOLDLOCK) ON vt.MaVaiTro=tk.MaVaiTro
+            JOIN dbo.PHAN_QUYEN_VAI_TRO pq WITH(HOLDLOCK) ON pq.MaVaiTro=tk.MaVaiTro
+            WHERE s.MaPhien=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N'RHM.MaPhien'))
+              AND s.TrangThaiPhien=N'Đang mở' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())
+              AND nv.MaNV=@MaNV AND nv.TrangThai=N'Đang làm việc' AND tk.TrangThai=N'Đang hoạt động'
+              AND pq.MaPhanHe=N'PhieuHuongDan' AND pq.DuocTruyCap=1
+              AND(nv.MaChucVu IN(N'CV003',N'CV004') OR UPPER(LTRIM(RTRIM(vt.TenVaiTro))) IN(N'ADMIN',N'QUẢN TRỊ',N'QUẢN TRỊ VIÊN')))
+            THROW 55020,N'Phiên hiện tại không có quyền tiếp nhận bản khai.',1;
+        DECLARE @TrangThai nvarchar(32), @PhieuCu nvarchar(50);
+        SELECT @TrangThai=TrangThai, @PhieuCu=MaPhieu
+        FROM dbo.AI_PHIEN_TIEP_NHAN WITH(UPDLOCK,HOLDLOCK)
+        WHERE MaPhien=@MaPhien;
+        IF @TrangThai IS NULL THROW 51001, N'Khong tim thay phien AI.',1;
+        IF @TrangThai=N'DaDuyet' AND @PhieuCu=@MaPhieu
+        BEGIN
+            COMMIT;
+            RETURN; -- idempotent
+        END;
+        IF @TrangThai<>N'ChoNhanVien' THROW 51002, N'Phien chua san sang duyet hoac da xu ly.',1;
+        IF NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN WHERE MaNV=@MaNV AND TrangThai=N'Đang làm việc')
+           AND NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN WHERE MaNV=@MaNV AND TrangThai=N'Đang hoạt động')
+           THROW 51003,N'Nhan vien khong hoat dong hoac khong ton tai.',1;
+        IF NOT EXISTS(SELECT 1 FROM dbo.PHIEU_KHAM_BENH WHERE MaPhieu=@MaPhieu)
+           THROW 51004,N'Can tao phieu tiep nhan chinh thuc truoc.',1;
+        IF EXISTS(SELECT 1 FROM dbo.AI_PHIEN_TIEP_NHAN WITH(UPDLOCK,HOLDLOCK)
+                  WHERE MaPhieu=@MaPhieu AND MaPhien<>@MaPhien)
+           THROW 51005,N'Phieu nay da lien ket voi phien AI khac.',1;
+        IF EXISTS(
+            SELECT 1
+            FROM dbo.AI_TIEP_NHAN_NHAP n
+            JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=@MaPhieu
+            JOIN dbo.HO_SO_BENH_AN hs ON hs.MaHS=p.MaHS
+            JOIN dbo.BENH_NHAN b ON b.MaBN=hs.MaBN
+            WHERE n.MaPhien=@MaPhien
+              AND (
+                 (n.HoTen IS NOT NULL AND LTRIM(RTRIM(n.HoTen))<>LTRIM(RTRIM(b.HoTenBN)))
+                 OR (n.NgaySinh IS NOT NULL AND (b.NgaySinh IS NULL OR n.NgaySinh<>b.NgaySinh))
+                 OR (NULLIF(n.SoDienThoai,N'') IS NOT NULL AND
+                       (b.SDT IS NULL OR REPLACE(b.SDT,N' ',N'')<>REPLACE(n.SoDienThoai,N' ',N'')))
+              )
+        ) THROW 51006,N'Thong tin phieu kham khong khop ban khai AI (ho ten/ngay sinh/SDT). Hay doi chieu truoc.',1;
+        UPDATE dbo.AI_PHIEN_TIEP_NHAN
+        SET TrangThai=N'DaDuyet', MaPhieu=@MaPhieu,
+            MaNVXacNhan=@MaNV, NgayXacNhan=SYSUTCDATETIME(), NgayCapNhat=SYSUTCDATETIME()
+        WHERE MaPhien=@MaPhien AND TrangThai=N'ChoNhanVien';
+        IF @@ROWCOUNT<>1 THROW 51007,N'Phien da bi thay doi boi mot nhan vien khac.',1;
+        INSERT dbo.AI_SU_KIEN(MaPhien,LoaiSuKien,MaNV) VALUES(@MaPhien,N'DuyetPhieu',@MaNV);
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE()<>0 ROLLBACK;
+        THROW;
+    END CATCH
+END;
+GO
+/* Don dep theo lich CHI voi phien chua duyet; khong xoa ho so benh an */
+CREATE OR ALTER PROCEDURE dbo.AI_DonDepPhien
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+    BEGIN TRAN;
+    UPDATE dbo.AI_PHIEN_TIEP_NHAN
+      SET TrangThai=N'HetHan', NgayCapNhat=SYSUTCDATETIME()
+    WHERE TrangThai=N'DangKhaiBao' AND HetHan<SYSUTCDATETIME();
+    DELETE tn FROM dbo.AI_TIN_NHAN tn
+      JOIN dbo.AI_PHIEN_TIEP_NHAN p ON p.MaPhien=tn.MaPhien
+    WHERE p.TrangThai IN (N'HetHan',N'DaHuy') AND p.NgayCapNhat<DATEADD(day,-1,SYSUTCDATETIME());
+    DELETE n FROM dbo.AI_TIEP_NHAN_NHAP n
+      JOIN dbo.AI_PHIEN_TIEP_NHAN p ON p.MaPhien=n.MaPhien
+    WHERE p.TrangThai IN (N'HetHan',N'DaHuy') AND p.NgayCapNhat<DATEADD(day,-1,SYSUTCDATETIME());
+    COMMIT;
+END;
+GO
+PRINT N'Kiosk AI migration installed. Khong can thay doi bang PHIEU_KHAM_BENH.';
+SELECT N'AI_PHIEN_TIEP_NHAN' TenBang, COUNT(*) SoBanGhi FROM dbo.AI_PHIEN_TIEP_NHAN;
+GO
+
+/*
+  KIOSK AI V2: NHAN VIEN DUYET -> TU DONG TAO BENH NHAN (NEU MOI),
+  HO SO BENH AN (NEU CHUA CO), PHIEU KHAM BENH VA LIEN KET BAN KHAI.
+  Chay SAU SQL F5 benh vien va 07_KioskAI_TiepNhan.sql.
+  Khong chay script reset/recreate DB. Khong xoa du lieu.
+  Khong tu tao hoa don/phu thu 30.000: phu thu du kien duoc ghi nhat ky,
+  quy trinh hoa don phai su dung chinh sach gia cua du an de xac nhan thu tien.
+*/
+USE [QLBenhVienRangHamMat];
+GO
+SET XACT_ABORT ON;
+GO
+IF OBJECT_ID(N'dbo.AI_PHIEN_TIEP_NHAN',N'U') IS NULL OR OBJECT_ID(N'dbo.AI_TIEP_NHAN_NHAP',N'U') IS NULL
+    THROW 55000,N'Can chay 07_KioskAI_TiepNhan.sql truoc khi cai V2.',1;
+IF OBJECT_ID(N'dbo.PHIEU_KHAM_BENH',N'U') IS NULL
+    THROW 55000,N'Thieu database benh vien.',1;
+GO
+IF OBJECT_ID(N'dbo.AI_KET_QUA_TAO_PHIEU',N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AI_KET_QUA_TAO_PHIEU
+    (
+        MaPhien uniqueidentifier NOT NULL CONSTRAINT PK_AI_KET_QUA_TAO_PHIEU PRIMARY KEY,
+        MaBN nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+        MaHS nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+        MaPhieu nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+        MaNVDuyet nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+        LoaiKham nvarchar(20) NOT NULL,
+        PhuThuDuKien decimal(18,2) NOT NULL CONSTRAINT DF_AI_KQ_PhuThu DEFAULT(0),
+        HoTenXacNhan nvarchar(255) NOT NULL,
+        NgaySinhXacNhan date NOT NULL,
+        SDTXacNhan nvarchar(25) NOT NULL,
+        LyDoKhamXacNhan nvarchar(1000) NOT NULL,
+        NgayDuyet datetime2(0) NOT NULL CONSTRAINT DF_AI_KQ_Ngay DEFAULT(SYSDATETIME()),
+        CONSTRAINT FK_AI_KQ_Phien FOREIGN KEY(MaPhien) REFERENCES dbo.AI_PHIEN_TIEP_NHAN(MaPhien),
+        CONSTRAINT FK_AI_KQ_BN FOREIGN KEY(MaBN) REFERENCES dbo.BENH_NHAN(MaBN),
+        CONSTRAINT FK_AI_KQ_HS FOREIGN KEY(MaHS) REFERENCES dbo.HO_SO_BENH_AN(MaHS),
+        CONSTRAINT FK_AI_KQ_PKB FOREIGN KEY(MaPhieu) REFERENCES dbo.PHIEU_KHAM_BENH(MaPhieu),
+        CONSTRAINT FK_AI_KQ_NV FOREIGN KEY(MaNVDuyet) REFERENCES dbo.NHAN_VIEN(MaNV),
+        CONSTRAINT UQ_AI_KQ_Phieu UNIQUE(MaPhieu),
+        CONSTRAINT CK_AI_KQ_LoaiKham CHECK(LoaiKham IN(N'ThongThuong',N'DichVu')),
+        CONSTRAINT CK_AI_KQ_PhuThu CHECK(PhuThuDuKien>=0)
+    );
+END;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.AI_TaoPhieuTuBanKhai
+    @MaPhien uniqueidentifier,
+    @MaNV nvarchar(50),
+    @MaBNHienCo nvarchar(50) = NULL,
+    @HoTen nvarchar(255),
+    @NgaySinh date,
+    @SDT nvarchar(25),
+    @LyDoKham nvarchar(1000),
+    @LoaiKham nvarchar(20),
+    @MaPhong nvarchar(50),
+    @MaBS nvarchar(50) = NULL,
+    @MaDV nvarchar(50) = NULL,
+    @XacNhanChuaTungKham bit = 0, -- Tương thích V2.1 cũ, không còn được sử dụng.
+    @MaBNOut nvarchar(50) OUTPUT,
+    @MaHSOut nvarchar(50) OUTPUT,
+    @MaPhieuOut nvarchar(50) OUTPUT,
+    @SoThuTuOut int OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+    SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+    SET @HoTen=NULLIF(LTRIM(RTRIM(@HoTen)),N'');
+    SET @SDT=NULLIF(LTRIM(RTRIM(@SDT)),N'');
+    SET @LyDoKham=NULLIF(LTRIM(RTRIM(@LyDoKham)),N'');
+    SET @MaBNHienCo=NULLIF(LTRIM(RTRIM(@MaBNHienCo)),N'');
+    SET @MaBS=NULLIF(LTRIM(RTRIM(@MaBS)),N'');
+    SET @MaDV=NULLIF(LTRIM(RTRIM(@MaDV)),N'');
+    SET @MaBNOut=NULL; SET @MaHSOut=NULL; SET @MaPhieuOut=NULL; SET @SoThuTuOut=NULL;
+
+    IF @HoTen IS NULL OR LEN(@HoTen)<2 OR @NgaySinh IS NULL OR @NgaySinh>CONVERT(date,SYSDATETIME())
+        THROW 55001,N'Ho ten hoac ngay sinh khong hop le. Nhan vien phai kiem tra lai.',1;
+    IF @SDT IS NULL OR LEN(@SDT)<9 OR LEN(@SDT)>15 OR @SDT LIKE N'%[^0-9+]%'
+        THROW 55002,N'So dien thoai chua hop le.',1;
+    IF @LyDoKham IS NULL THROW 55003,N'Phai xac nhan ly do kham.',1;
+    IF @LoaiKham NOT IN(N'ThongThuong',N'DichVu') OR @LoaiKham IS NULL
+        THROW 55004,N'Loai kham khong hop le.',1;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        IF NOT EXISTS(SELECT 1 FROM dbo.PHIEN_DANG_NHAP s WITH(HOLDLOCK)
+            JOIN dbo.TAI_KHOAN tk WITH(HOLDLOCK) ON tk.MaTK=s.MaTK
+            JOIN dbo.NHAN_VIEN nv WITH(HOLDLOCK) ON nv.MaNV=tk.MaNV
+            JOIN dbo.VAI_TRO vt WITH(HOLDLOCK) ON vt.MaVaiTro=tk.MaVaiTro
+            WHERE s.MaPhien=TRY_CONVERT(uniqueidentifier,SESSION_CONTEXT(N'RHM.MaPhien'))
+              AND s.TrangThaiPhien=N'Đang mở' AND s.HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())
+              AND nv.MaNV=@MaNV AND nv.TrangThai=N'Đang làm việc' AND tk.TrangThai=N'Đang hoạt động'
+              AND(nv.MaChucVu IN(N'CV003',N'CV004') OR UPPER(LTRIM(RTRIM(vt.TenVaiTro))) IN(N'ADMIN',N'QUẢN TRỊ',N'QUẢN TRỊ VIÊN')))
+            THROW 55020,N'Phiên hiện tại không có quyền tiếp nhận bản khai.',1;
+        IF NOT EXISTS(
+           SELECT 1 FROM dbo.NHAN_VIEN nv JOIN dbo.TAI_KHOAN tk ON tk.MaNV=nv.MaNV
+           WHERE nv.MaNV=@MaNV AND nv.TrangThai=N'Đang làm việc' AND tk.TrangThai=N'Đang hoạt động')
+           THROW 55008,N'Nhan vien khong con tai khoan hoat dong.',1;
+        IF OBJECT_ID(N'dbo.PHAN_QUYEN_VAI_TRO',N'U') IS NOT NULL
+        BEGIN
+            IF NOT EXISTS(
+                SELECT 1 FROM dbo.TAI_KHOAN tk
+                JOIN dbo.PHAN_QUYEN_VAI_TRO pq ON pq.MaVaiTro=tk.MaVaiTro
+                WHERE tk.MaNV=@MaNV AND pq.MaPhanHe=N'PhieuHuongDan'
+                  AND pq.DuocTruyCap=1)
+                THROW 55020,N'Tai khoan khong duoc cap quyen tiep nhan hoac phieu huong dan.',1;
+        END;
+        IF NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN tk JOIN dbo.NHAN_VIEN nv ON nv.MaNV=tk.MaNV
+            JOIN dbo.VAI_TRO vt ON vt.MaVaiTro=tk.MaVaiTro
+            WHERE nv.MaNV=@MaNV AND tk.TrangThai=N'Đang hoạt động' AND nv.TrangThai=N'Đang làm việc'
+             AND(nv.MaChucVu IN(N'CV003',N'CV004') OR UPPER(LTRIM(RTRIM(vt.TenVaiTro))) IN(N'ADMIN',N'QUẢN TRỊ',N'QUẢN TRỊ VIÊN')))
+            THROW 55020,N'Chỉ nhân viên có quyền tiếp nhận được duyệt bản khai.',1;
+        DECLARE @TrangThai nvarchar(32), @CanHoTro bit, @TungKham bit, @MaPhieuCu nvarchar(50);
+        SELECT @TrangThai=p.TrangThai,@MaPhieuCu=p.MaPhieu,
+               @CanHoTro=ISNULL(n.CanHoTroGap,0),@TungKham=n.DaTungKham
+        FROM dbo.AI_PHIEN_TIEP_NHAN p WITH(UPDLOCK,HOLDLOCK)
+        JOIN dbo.AI_TIEP_NHAN_NHAP n WITH(UPDLOCK,HOLDLOCK) ON n.MaPhien=p.MaPhien
+        WHERE p.MaPhien=@MaPhien;
+        IF @TrangThai IS NULL THROW 55005,N'Khong tim thay ban khai AI.',1;
+        IF @TrangThai=N'DaDuyet'
+        BEGIN
+            SELECT @MaPhieuOut=p.MaPhieu,@MaHSOut=k.MaHS,@MaBNOut=k.MaBN,
+                   @SoThuTuOut=pk.SoThuTu
+            FROM dbo.AI_PHIEN_TIEP_NHAN p
+            LEFT JOIN dbo.AI_KET_QUA_TAO_PHIEU k ON k.MaPhien=p.MaPhien
+            LEFT JOIN dbo.PHIEU_KHAM_BENH pk ON pk.MaPhieu=p.MaPhieu
+            WHERE p.MaPhien=@MaPhien;
+            IF @MaPhieuOut IS NULL THROW 55006,N'Phien da duyet nhung thieu ma phieu, can nhan vien kiem tra.',1;
+            COMMIT TRANSACTION;
+            RETURN;
+        END;
+        IF @TrangThai<>N'ChoNhanVien' OR @CanHoTro=1
+            THROW 55007,N'Chi duoc tu dong tiep nhan ban khai ChoNhanVien, khong co canh bao khan.',1;
+        IF NOT EXISTS(SELECT 1 FROM dbo.PHONG WHERE MaPhong=@MaPhong AND TrangThai=N'Đang hoạt động')
+            THROW 55009,N'Phong kham khong hoat dong hoac khong ton tai.',1;
+        IF @LoaiKham=N'DichVu' AND (@MaBS IS NULL OR @MaDV IS NULL)
+            THROW 55010,N'Kham dich vu bat buoc chon bac si va dich vu.',1;
+        IF @LoaiKham=N'ThongThuong' AND @MaDV IS NOT NULL
+            THROW 55022,N'Kham thong thuong khong tu dong them dich vu. Hay chuyen sang loai kham dich vu neu can.',1;
+
+        IF @MaDV IS NOT NULL AND NOT EXISTS(
+            SELECT 1 FROM dbo.DICH_VU d
+            JOIN dbo.CHUYEN_KHOA ck ON ck.MaCK=d.MaCK
+            JOIN dbo.PHONG ph ON ph.MaKhoa=ck.MaKhoa
+            WHERE d.MaDV=@MaDV AND ph.MaPhong=@MaPhong
+              AND d.TrangThai=N'Đang hoạt động' AND d.NgayApDung<=CONVERT(date,SYSDATETIME()))
+            THROW 55011,N'Dich vu khong du dieu kien hoac khong thuoc khoa/phong da chon.',1;
+        IF @MaBS IS NULL OR NOT EXISTS(
+            SELECT 1 FROM dbo.NHAN_VIEN n WITH(HOLDLOCK)
+            JOIN dbo.CHUYEN_KHOA ck ON ck.MaCK=n.MaCK
+            JOIN dbo.PHONG ph WITH(HOLDLOCK) ON ph.MaPhong=@MaPhong AND ph.MaKhoa=ck.MaKhoa
+            JOIN dbo.LICH_LAM_VIEC lv WITH(HOLDLOCK) ON lv.MaNV=n.MaNV AND lv.MaPhong=ph.MaPhong
+            JOIN dbo.CA_LAM c WITH(HOLDLOCK) ON c.MaCa=lv.MaCa
+            WHERE n.MaNV=@MaBS AND n.MaChucVu=N'CV002' AND n.TrangThai=N'Đang làm việc'
+              AND EXISTS(SELECT 1 FROM dbo.TAI_KHOAN tk WITH(HOLDLOCK) WHERE tk.MaNV=n.MaNV AND tk.TrangThai=N'Đang hoạt động')
+              AND ph.TrangThai=N'Đang hoạt động' AND ph.LoaiPhong LIKE N'Phòng khám%'
+              AND lv.TrangThai=N'Đã xác nhận' AND c.TrangThai=N'Đang hoạt động'
+              AND lv.NgayLam BETWEEN DATEADD(day,-1,CONVERT(date,SYSDATETIME())) AND CONVERT(date,SYSDATETIME())
+              AND((@LoaiKham=N'DichVu' AND lv.TrangThaiHienDien=N'Có mặt')
+                 OR(@LoaiKham=N'ThongThuong' AND lv.TrangThaiHienDien NOT IN(N'Vắng mặt',N'Nghỉ phép')))
+              AND SYSDATETIME()>=DATEADD(second,DATEDIFF(second,CAST('00:00:00' AS time),c.GioBatDau),CAST(lv.NgayLam AS datetime2(0)))
+              AND SYSDATETIME()<DATEADD(day,CASE WHEN c.GioKetThuc<=c.GioBatDau THEN 1 ELSE 0 END,
+                  DATEADD(second,DATEDIFF(second,CAST('00:00:00' AS time),c.GioKetThuc),CAST(lv.NgayLam AS datetime2(0))))
+              AND NOT EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI d WITH(HOLDLOCK) WHERE d.MaNV=n.MaNV AND d.TrangThaiDuyet=N'Đã duyệt'
+                 AND CONVERT(date,SYSDATETIME()) BETWEEN d.TuNgay AND d.DenNgay))
+            THROW 55012,N'Bác sĩ không có ca/phòng/chuyên khoa và hiện diện phù hợp tại thời điểm lưu.',1;
+        IF @MaBS IS NOT NULL AND @MaDV IS NOT NULL AND NOT EXISTS(
+            SELECT 1 FROM dbo.NHAN_VIEN nv JOIN dbo.DICH_VU dv ON dv.MaCK=nv.MaCK
+            WHERE nv.MaNV=@MaBS AND dv.MaDV=@MaDV)
+            THROW 55013,N'Bac si khong thuoc chuyen khoa cua dich vu.',1;
+
+        -- Khóa thao tác kiểm tra và tạo người bệnh trong cùng transaction.
+        -- Không dùng @TungKham để quyết định; đó chỉ là lời khai, không phải hồ sơ thật.
+        DECLARE @KhoaBN int;
+        EXEC @KhoaBN=sys.sp_getapplock @Resource=N'RHM_AI_TAO_BENH_NHAN',
+             @LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000;
+        IF @KhoaBN<0 THROW 55016,N'Khong khoa duoc thao tac doi chieu benh nhan.',1;
+
+        DECLARE @SDTChuan nvarchar(50)=REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+            ISNULL(@SDT,N''),N' ',N''),N'-',N''),N'.',N''),N'(',N''),N')',N'');
+        DECLARE @UngVien TABLE(MaBN nvarchar(50) PRIMARY KEY, KhopDayDu bit NOT NULL);
+        INSERT @UngVien(MaBN,KhopDayDu)
+        SELECT b.MaBN,
+               CASE WHEN LTRIM(RTRIM(b.HoTenBN))=@HoTen AND b.NgaySinh=@NgaySinh
+                     AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ISNULL(b.SDT,N''),
+                         N' ',N''),N'-',N''),N'.',N''),N'(',N''),N')',N'')=@SDTChuan
+                    THEN 1 ELSE 0 END
+        FROM dbo.BENH_NHAN AS b WITH(UPDLOCK,HOLDLOCK)
+        WHERE (LTRIM(RTRIM(b.HoTenBN))=@HoTen AND b.NgaySinh=@NgaySinh)
+           OR (@SDTChuan<>N'' AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ISNULL(b.SDT,N''),
+               N' ',N''),N'-',N''),N'.',N''),N'(',N''),N')',N'')=@SDTChuan);
+
+        DECLARE @TongUngVien int, @TongKhopDayDu int;
+        SELECT @TongUngVien=COUNT(*),@TongKhopDayDu=COALESCE(SUM(CONVERT(int,KhopDayDu)),0)
+        FROM @UngVien;
+
+        IF @MaBNHienCo IS NOT NULL
+        BEGIN
+            -- Nếu có mâu thuẫn, không tự liên kết theo tên/SDT đơn lẻ.
+            -- Cho phép số điện thoại đã đổi nếu tên và ngày sinh khớp và nhân viên
+            -- chủ động chọn đúng mã bệnh nhân từ danh sách nghi trùng.
+            IF NOT EXISTS(SELECT 1 FROM @UngVien u JOIN dbo.BENH_NHAN b ON b.MaBN=u.MaBN
+                          WHERE u.MaBN=@MaBNHienCo AND LTRIM(RTRIM(b.HoTenBN))=@HoTen
+                            AND b.NgaySinh=@NgaySinh)
+                THROW 55014,N'Ho so cu khong khop ho ten va ngay sinh. Can xac minh danh tinh.',1;
+            SET @MaBNOut=@MaBNHienCo;
+            IF EXISTS(SELECT 1 FROM dbo.BENH_NHAN b WHERE b.MaBN=@MaBNOut
+                AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ISNULL(b.SDT,N''),
+                     N' ',N''),N'-',N''),N'.',N''),N'(',N''),N')',N'')<>@SDTChuan)
+                INSERT dbo.AI_SU_KIEN(MaPhien,LoaiSuKien,MaNV)
+                VALUES(@MaPhien,N'SDT_HoSoCu_Khac',@MaNV);
+        END
+        ELSE IF @TongUngVien=0
+        BEGIN
+            -- Không tồn tại hồ sơ khớp, tạo mới dù chatbot đã chọn 'từng khám'.
+            SET @MaBNOut=N'BN_AI_'+REPLACE(CONVERT(nvarchar(36),NEWID()),N'-',N'');
+            INSERT dbo.BENH_NHAN(MaBN,HoTenBN,GioiTinh,NgaySinh,SDT,DiaChi,MaBHYT,NhomMau,TienSuBenh,DiUng,TrangThai)
+            VALUES(@MaBNOut,@HoTen,NULL,@NgaySinh,@SDT,NULL,NULL,NULL,NULL,NULL,N'Đang theo dõi');
+            IF @TungKham=1
+                INSERT dbo.AI_SU_KIEN(MaPhien,LoaiSuKien,MaNV)
+                VALUES(@MaPhien,N'TuDongTaoMoi_KhaiTungKham',@MaNV);
+        END
+        ELSE IF @TongUngVien=1 AND @TongKhopDayDu=1
+        BEGIN
+            SELECT @MaBNOut=MaBN FROM @UngVien;
+            IF @TungKham=0
+                INSERT dbo.AI_SU_KIEN(MaPhien,LoaiSuKien,MaNV)
+                VALUES(@MaPhien,N'TuDongLienKet_KhaiMoi',@MaNV);
+        END
+        ELSE
+            THROW 55017,N'Co ho so nghi trung hoac khong khop du thong tin. Phai xac minh ho so, khong duoc tu tao moi.',1;
+
+        SELECT @MaHSOut=MaHS FROM dbo.HO_SO_BENH_AN WITH(UPDLOCK,HOLDLOCK) WHERE MaBN=@MaBNOut;
+        IF @MaHSOut IS NULL
+        BEGIN
+            SET @MaHSOut=N'HS_AI_'+REPLACE(CONVERT(nvarchar(36),NEWID()),N'-',N'');
+            INSERT dbo.HO_SO_BENH_AN(MaHS,MaBN,NgayLap,LyDoKhamBanDau,GhiChu,TrangThai)
+            VALUES(@MaHSOut,@MaBNOut,SYSDATETIME(),@LyDoKham,N'Ban khai ban dau da duoc nhan vien kiem tra qua AI.',N'Đang theo dõi');
+        END;
+
+        IF NOT EXISTS(SELECT 1 FROM dbo.BENH_NHAN WHERE MaBN=@MaBNOut AND TrangThai=N'Đang theo dõi') OR NOT EXISTS(SELECT 1 FROM dbo.HO_SO_BENH_AN WHERE MaHS=@MaHSOut AND TrangThai=N'Đang theo dõi')
+            THROW 55014,N'Hồ sơ bệnh nhân hiện không hoạt động.',1;
+        -- Nếu bệnh nhân đã có phiếu còn hiệu lực cùng ngày/phòng, dừng để nhân viên đối chiếu.
+        IF EXISTS(SELECT 1 FROM dbo.PHIEU_KHAM_BENH p WITH(UPDLOCK,HOLDLOCK)
+                  WHERE p.MaHS=@MaHSOut AND p.MaPhong=@MaPhong
+                    AND p.TrangThai<>N'Hủy'
+                    AND p.ThoiGianTiepNhan>=CONVERT(date,SYSDATETIME())
+                    AND p.ThoiGianTiepNhan<DATEADD(day,1,CONVERT(date,SYSDATETIME())))
+            THROW 55021,N'Benh nhan da co phieu kham hom nay o phong nay. Hay kiem tra truoc khi tao tiep.',1;
+
+        DECLARE @KhoaSTT int,@NgayHienTai date=CONVERT(date,SYSDATETIME()),
+                @Resource nvarchar(255)=N'RHM:TiepNhan:Queue:'+CONVERT(nvarchar(8),SYSDATETIME(),112)+N':'+@MaPhong;
+        EXEC @KhoaSTT=sys.sp_getapplock @Resource=@Resource,
+             @LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000;
+        IF @KhoaSTT<0 THROW 55018,N'Khong khoa duoc so thu tu, thu lai.',1;
+        SELECT @SoThuTuOut=ISNULL(MAX(SoThuTu),0)+1
+        FROM dbo.PHIEU_KHAM_BENH WITH(UPDLOCK,HOLDLOCK)
+        WHERE MaPhong=@MaPhong AND ThoiGianTiepNhan>=@NgayHienTai
+              AND ThoiGianTiepNhan<DATEADD(day,1,@NgayHienTai);
+        SET @MaPhieuOut=N'PKB_AI_'+REPLACE(CONVERT(nvarchar(36),NEWID()),N'-',N'');
+        INSERT dbo.PHIEU_KHAM_BENH
+            (MaPhieu,MaHS,MaLich,MaPhong,MaBS,MaNVTiepNhan,MaDV,SoThuTu,
+             ThoiGianTiepNhan,LyDoKham,TrangThai,GhiChu,LoaiKham,PhiPhuThuDichVu)
+        VALUES(@MaPhieuOut,@MaHSOut,NULL,@MaPhong,@MaBS,@MaNV,@MaDV,@SoThuTuOut,
+               SYSDATETIME(),@LyDoKham,N'Chờ khám',
+               N'Tiếp nhận từ bản khai AI; đã đối chiếu bởi nhân viên.',
+               CASE WHEN @LoaiKham=N'DichVu' THEN N'Dịch vụ' ELSE N'Thông thường' END,CASE WHEN @LoaiKham=N'DichVu' THEN 30000 ELSE 0 END);
+
+        UPDATE dbo.AI_PHIEN_TIEP_NHAN
+        SET TrangThai=N'DaDuyet',MaPhieu=@MaPhieuOut,MaNVXacNhan=@MaNV,
+            NgayXacNhan=SYSUTCDATETIME(),NgayCapNhat=SYSUTCDATETIME()
+        WHERE MaPhien=@MaPhien AND TrangThai=N'ChoNhanVien';
+        IF @@ROWCOUNT<>1 THROW 55019,N'Phien da bi thay doi boi nhan vien khac.',1;
+        INSERT dbo.AI_KET_QUA_TAO_PHIEU
+            (MaPhien,MaBN,MaHS,MaPhieu,MaNVDuyet,LoaiKham,PhuThuDuKien,
+             HoTenXacNhan,NgaySinhXacNhan,SDTXacNhan,LyDoKhamXacNhan)
+        VALUES(@MaPhien,@MaBNOut,@MaHSOut,@MaPhieuOut,@MaNV,@LoaiKham,
+               CASE WHEN @LoaiKham=N'DichVu' THEN 30000 ELSE 0 END,
+               @HoTen,@NgaySinh,@SDT,@LyDoKham);
+        INSERT dbo.AI_SU_KIEN(MaPhien,LoaiSuKien,MaNV)
+        VALUES(@MaPhien,N'TaoPhieuTuAI',@MaNV);
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE()<>0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END;
+GO
+PRINT N'Đã nâng cấp dbo.AI_TaoPhieuTuBanKhai V2.2: tự đối chiếu hồ sơ.';
+GO
+
+/* MIGRATION 14 - AI chat thuc su, khong can sua WPF/SQL phieu kham V2.2.
+   Cot nay chi danh dau benh nhan da duoc hoi ve dau hieu can ho tro.
+   Co the chay lai an toan. */
+USE [QLBenhVienRangHamMat];
+GO
+IF OBJECT_ID(N'dbo.AI_TIEP_NHAN_NHAP', N'U') IS NULL
+    THROW 51400, N'Chua cai dat Kiosk AI migration 07. Hay cai V1-V2.2 truoc.',1;
+GO
+IF COL_LENGTH(N'dbo.AI_TIEP_NHAN_NHAP',N'DaXacNhanCanhBao') IS NULL
+    EXEC(N'ALTER TABLE dbo.AI_TIEP_NHAN_NHAP ADD DaXacNhanCanhBao bit NOT NULL CONSTRAINT DF_AI_NHAP_XacNhanCanhBao DEFAULT(0)');
+GO
+PRINT N'Da cai migration 14: AI chat va kiem tra canh bao.';
+SELECT COL_LENGTH(N'dbo.AI_TIEP_NHAN_NHAP',N'DaXacNhanCanhBao') AS CotCanhBao;
+
+/*
+  Restore AI draft → staff creates official receipt.
+  Non-destructive: no DROP, no updates to existing clinical records.
+  Prerequisite: SQL/07_KioskAI_TiepNhan.sql; for existing kiosk 14 is recommended.
+*/
+USE [QLBenhVienRangHamMat];
+GO
+SET XACT_ABORT ON;
+GO
+IF OBJECT_ID(N'dbo.AI_PHIEN_TIEP_NHAN',N'U') IS NULL
+    OR OBJECT_ID(N'dbo.AI_TIEP_NHAN_NHAP',N'U') IS NULL
+    THROW 51801, N'Chưa cài SQL/07_KioskAI_TiepNhan.sql.', 1;
+GO
+IF COL_LENGTH(N'dbo.AI_TIEP_NHAN_NHAP',N'LoaiKham') IS NULL
+BEGIN
+    ALTER TABLE dbo.AI_TIEP_NHAN_NHAP ADD LoaiKham nvarchar(20) NULL;
+END;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints
+               WHERE name = N'CK_AI_NHAP_LoaiKham'
+               AND parent_object_id = OBJECT_ID(N'dbo.AI_TIEP_NHAN_NHAP'))
+BEGIN
+    ALTER TABLE dbo.AI_TIEP_NHAN_NHAP WITH CHECK
+    ADD CONSTRAINT CK_AI_NHAP_LoaiKham
+        CHECK (LoaiKham IS NULL OR LoaiKham IN(N'ThongThuong', N'DichVu'));
+END;
+GO
+SELECT N'AI_TIEP_NHAN_NHAP.LoaiKham' AS TenCot,
+       CASE WHEN COL_LENGTH(N'dbo.AI_TIEP_NHAN_NHAP',N'LoaiKham') IS NOT NULL
+            THEN N'OK' ELSE N'THIEU' END AS TrangThai;
+GO
+
+/* AI intake service identity and atomic official receipt creation.
+   Apply after SQL/14_AI_ChatThat.sql. Register certificate thumbprints out of band. */
+USE [QLBenhVienRangHamMat];
+GO
+SET XACT_ABORT ON;
+GO
+IF OBJECT_ID(N'dbo.AI_SERVICE_IDENTITY',N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AI_SERVICE_IDENTITY
+    (
+        MaAIService nvarchar(100) NOT NULL CONSTRAINT PK_AI_SERVICE_IDENTITY PRIMARY KEY,
+        CertificateThumbprint char(40) NOT NULL,
+        Quyen nvarchar(50) NOT NULL CONSTRAINT DF_AI_SERVICE_IDENTITY_Quyen DEFAULT(N'AI_TAO_PHIEU'),
+        TrangThai bit NOT NULL CONSTRAINT DF_AI_SERVICE_IDENTITY_TrangThai DEFAULT(1),
+        NgayTao datetime2(0) NOT NULL CONSTRAINT DF_AI_SERVICE_IDENTITY_NgayTao DEFAULT(SYSDATETIME()),
+        CONSTRAINT UQ_AI_SERVICE_IDENTITY_Thumbprint UNIQUE(CertificateThumbprint),
+        CONSTRAINT CK_AI_SERVICE_IDENTITY_Quyen CHECK(Quyen=N'AI_TAO_PHIEU')
+    );
+END;
+GO
+IF OBJECT_ID(N'dbo.AI_YEU_CAU_TAO_PHIEU',N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AI_YEU_CAU_TAO_PHIEU
+    (
+        IdempotencyKey uniqueidentifier NOT NULL CONSTRAINT PK_AI_YEU_CAU_TAO_PHIEU PRIMARY KEY,
+        MaPhien uniqueidentifier NOT NULL,
+        PayloadHash binary(32) NOT NULL,
+        MaAIService nvarchar(100) NOT NULL,
+        MaBN nvarchar(50) NULL,
+        MaHS nvarchar(50) NULL,
+        MaPhieu nvarchar(50) NULL,
+        SoThuTu int NULL,
+        MaPhong nvarchar(50) NULL,
+        MaBS nvarchar(50) NULL,
+        LoaiKham nvarchar(20) NOT NULL,
+        TrangThai nvarchar(20) NOT NULL,
+        NgayTao datetime2(0) NOT NULL CONSTRAINT DF_AI_YEU_CAU_NgayTao DEFAULT(SYSDATETIME()),
+        CONSTRAINT UQ_AI_YEU_CAU_TAO_PHIEU_MaPhien UNIQUE(MaPhien),
+        CONSTRAINT FK_AI_YEU_CAU_Service FOREIGN KEY(MaAIService) REFERENCES dbo.AI_SERVICE_IDENTITY(MaAIService),
+        CONSTRAINT FK_AI_YEU_CAU_BenhNhan FOREIGN KEY(MaBN) REFERENCES dbo.BENH_NHAN(MaBN),
+        CONSTRAINT FK_AI_YEU_CAU_HoSo FOREIGN KEY(MaHS) REFERENCES dbo.HO_SO_BENH_AN(MaHS),
+        CONSTRAINT FK_AI_YEU_CAU_Phieu FOREIGN KEY(MaPhieu) REFERENCES dbo.PHIEU_KHAM_BENH(MaPhieu),
+        CONSTRAINT CK_AI_YEU_CAU_TrangThai CHECK(TrangThai IN(N'Created')),
+        CONSTRAINT CK_AI_YEU_CAU_LoaiKham CHECK(LoaiKham IN(N'normal',N'service'))
+    );
+END;
+GO
+IF OBJECT_ID(N'dbo.AI_SERVICE_INTAKE_SESSION',N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AI_SERVICE_INTAKE_SESSION
+    (
+        MaPhien uniqueidentifier NOT NULL CONSTRAINT PK_AI_SERVICE_INTAKE_SESSION PRIMARY KEY,
+        MaAIService nvarchar(100) NOT NULL,
+        PatientConfirmed bit NOT NULL,
+        CanHoTro bit NOT NULL,
+        TrangThai nvarchar(20) NOT NULL,
+        NgayTao datetime2(0) NOT NULL CONSTRAINT DF_AI_SERVICE_SESSION_NgayTao DEFAULT(SYSDATETIME()),
+        CONSTRAINT FK_AI_SERVICE_SESSION_Service FOREIGN KEY(MaAIService) REFERENCES dbo.AI_SERVICE_IDENTITY(MaAIService),
+        CONSTRAINT CK_AI_SERVICE_SESSION_Confirmed CHECK(PatientConfirmed=1 AND CanHoTro=0),
+        CONSTRAINT CK_AI_SERVICE_SESSION_Status CHECK(TrangThai IN(N'Created'))
+    );
+END;
+GO
+IF NOT EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_AI_YEU_CAU_Session')
+    ALTER TABLE dbo.AI_YEU_CAU_TAO_PHIEU WITH CHECK ADD CONSTRAINT FK_AI_YEU_CAU_Session FOREIGN KEY(MaPhien) REFERENCES dbo.AI_SERVICE_INTAKE_SESSION(MaPhien);
+IF COL_LENGTH(N'dbo.PHIEU_KHAM_BENH',N'NguonTiepNhan') IS NULL
+    ALTER TABLE dbo.PHIEU_KHAM_BENH ADD NguonTiepNhan nvarchar(20) NOT NULL CONSTRAINT DF_PHIEU_NguonTiepNhan DEFAULT(N'NhanVien');
+IF COL_LENGTH(N'dbo.PHIEU_KHAM_BENH',N'MaPhienAI') IS NULL
+    ALTER TABLE dbo.PHIEU_KHAM_BENH ADD MaPhienAI uniqueidentifier NULL;
+IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_PHIEU_KHAM_BENH_MaNVTiepNhan')
+    ALTER TABLE dbo.PHIEU_KHAM_BENH DROP CONSTRAINT FK_PHIEU_KHAM_BENH_MaNVTiepNhan;
+IF EXISTS(SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID(N'dbo.PHIEU_KHAM_BENH') AND name=N'MaNVTiepNhan' AND is_nullable=0)
+    ALTER TABLE dbo.PHIEU_KHAM_BENH ALTER COLUMN MaNVTiepNhan nvarchar(50) NULL;
+IF NOT EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_PHIEU_KHAM_BENH_MaNVTiepNhan')
+    ALTER TABLE dbo.PHIEU_KHAM_BENH WITH CHECK ADD CONSTRAINT FK_PHIEU_KHAM_BENH_MaNVTiepNhan FOREIGN KEY(MaNVTiepNhan) REFERENCES dbo.NHAN_VIEN(MaNV);
+GO
+IF NOT EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_PHIEU_KHAM_BENH_AI_SESSION')
+    ALTER TABLE dbo.PHIEU_KHAM_BENH ADD CONSTRAINT FK_PHIEU_KHAM_BENH_AI_SESSION FOREIGN KEY(MaPhienAI) REFERENCES dbo.AI_SERVICE_INTAKE_SESSION(MaPhien);
+GO
+IF NOT EXISTS(SELECT 1 FROM sys.check_constraints WHERE name=N'CK_PHIEU_KHAM_BENH_NguonTiepNhan')
+    ALTER TABLE dbo.PHIEU_KHAM_BENH ADD CONSTRAINT CK_PHIEU_KHAM_BENH_NguonTiepNhan CHECK
+        ((NguonTiepNhan=N'NhanVien' AND MaNVTiepNhan IS NOT NULL AND MaPhienAI IS NULL)
+         OR (NguonTiepNhan=N'AI' AND MaNVTiepNhan IS NULL AND MaPhienAI IS NOT NULL));
+IF COL_LENGTH(N'dbo.NHAT_KY_THAO_TAC',N'MaAIService') IS NULL
+    ALTER TABLE dbo.NHAT_KY_THAO_TAC ADD MaAIService nvarchar(100) NULL;
+IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_NHAT_KY_THAO_TAC_MaTK')
+    ALTER TABLE dbo.NHAT_KY_THAO_TAC DROP CONSTRAINT FK_NHAT_KY_THAO_TAC_MaTK;
+IF EXISTS(SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID(N'dbo.NHAT_KY_THAO_TAC') AND name=N'MaTK' AND is_nullable=0)
+    ALTER TABLE dbo.NHAT_KY_THAO_TAC ALTER COLUMN MaTK nvarchar(50) NULL;
+IF NOT EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_NHAT_KY_THAO_TAC_MaTK')
+    ALTER TABLE dbo.NHAT_KY_THAO_TAC WITH CHECK ADD CONSTRAINT FK_NHAT_KY_THAO_TAC_MaTK FOREIGN KEY(MaTK) REFERENCES dbo.TAI_KHOAN(MaTK);
+GO
+IF NOT EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_NHAT_KY_THAO_TAC_AI_SERVICE')
+    ALTER TABLE dbo.NHAT_KY_THAO_TAC ADD CONSTRAINT FK_NHAT_KY_THAO_TAC_AI_SERVICE FOREIGN KEY(MaAIService) REFERENCES dbo.AI_SERVICE_IDENTITY(MaAIService);
+GO
+IF NOT EXISTS(SELECT 1 FROM sys.check_constraints WHERE name=N'CK_NHAT_KY_THAO_TAC_Actor')
+    ALTER TABLE dbo.NHAT_KY_THAO_TAC ADD CONSTRAINT CK_NHAT_KY_THAO_TAC_Actor CHECK
+        ((MaTK IS NOT NULL AND MaAIService IS NULL)
+         OR (MaTK IS NULL AND MaAIService IS NOT NULL)
+         OR (MaTK IS NULL AND MaAIService IS NULL AND HanhDong<>N'Tạo phiếu khám từ AI'));
+IF COL_LENGTH(N'dbo.CHI_TIET_HOA_DON',N'MaPhienAI') IS NULL
+    ALTER TABLE dbo.CHI_TIET_HOA_DON ADD MaPhienAI uniqueidentifier NULL;
+
+GO
+CREATE OR ALTER PROCEDURE dbo.AI_TaoPhieuTuKiosk
+    @CertificateThumbprint char(40),
+    @MaPhien uniqueidentifier, @IdempotencyKey uniqueidentifier, @PayloadHash binary(32),
+    @HoTen nvarchar(255), @NgaySinh date, @SDT nvarchar(25), @TungKham nvarchar(20),
+    @LyDoKham nvarchar(1000), @LoaiKham nvarchar(20),
+    @MaBSYeuCau nvarchar(50)=NULL, @MaDV nvarchar(50)=NULL, @MaPhongYeuCau nvarchar(50)=NULL
+AS
+BEGIN
+    SET NOCOUNT ON; SET XACT_ABORT ON; SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+    SET @HoTen=NULLIF(LTRIM(RTRIM(@HoTen)),N''); SET @SDT=NULLIF(LTRIM(RTRIM(@SDT)),N'');
+    SET @LyDoKham=NULLIF(LTRIM(RTRIM(@LyDoKham)),N'');
+    IF @IdempotencyKey IS NULL OR @MaPhien IS NULL OR @PayloadHash IS NULL OR @HoTen IS NULL OR LEN(@HoTen)<2
+       OR @NgaySinh IS NULL OR @NgaySinh>CONVERT(date,SYSDATETIME()) OR @SDT IS NULL OR LEN(@SDT)<9 OR LEN(@SDT)>15
+       OR @SDT LIKE N'%[^0-9+]%' OR @LyDoKham IS NULL OR @TungKham IS NULL OR @TungKham NOT IN(N'yes',N'no',N'unknown')
+       OR @LoaiKham NOT IN(N'normal',N'service')
+        THROW 55101,N'Dữ liệu tiếp nhận chưa hợp lệ.',1;
+    IF @LoaiKham=N'service' AND (@MaBSYeuCau IS NULL OR @MaDV IS NULL)
+        THROW 55102,N'Khám dịch vụ cần chọn bác sĩ và dịch vụ.',1;
+    IF @LoaiKham=N'normal' AND @MaDV IS NOT NULL
+        THROW 55103,N'Khám thông thường không nhận mã dịch vụ.',1;
+
+    BEGIN TRY
+      BEGIN TRANSACTION;
+      DECLARE @service nvarchar(100);
+      SELECT @service=MaAIService FROM dbo.AI_SERVICE_IDENTITY WITH(UPDLOCK,HOLDLOCK)
+       WHERE CertificateThumbprint=@CertificateThumbprint
+         AND Quyen=N'AI_TAO_PHIEU' AND TrangThai=1;
+      IF @service IS NULL THROW 55104,N'Thiết bị chưa được cấp quyền AI_TAO_PHIEU.',1;
+
+      DECLARE @existing uniqueidentifier,@oldHash binary(32),@oldSession uniqueidentifier,@maPhieu nvarchar(50);
+      SELECT @existing=IdempotencyKey,@oldHash=PayloadHash,@oldSession=MaPhien,@maPhieu=MaPhieu
+        FROM dbo.AI_YEU_CAU_TAO_PHIEU WITH(UPDLOCK,HOLDLOCK) WHERE IdempotencyKey=@IdempotencyKey;
+      IF @existing IS NULL
+        SELECT @existing=IdempotencyKey,@oldHash=PayloadHash,@oldSession=MaPhien,@maPhieu=MaPhieu
+          FROM dbo.AI_YEU_CAU_TAO_PHIEU WITH(UPDLOCK,HOLDLOCK) WHERE MaPhien=@MaPhien;
+      IF @existing IS NOT NULL
+      BEGIN
+        IF @existing<>@IdempotencyKey OR @oldSession<>@MaPhien OR @oldHash<>@PayloadHash
+          THROW 55105,N'Phiên đã có yêu cầu tạo phiếu khác hoặc dữ liệu đã thay đổi.',1;
+        SELECT N'created' AS Status,p.MaPhieu,p.SoThuTu,p.MaPhong,p.MaBS,
+               ph.TenPhong AS Phong,nv.HoTen AS BacSi,
+               TODATETIMEOFFSET(p.ThoiGianTiepNhan,DATEPART(TZOFFSET,SYSDATETIMEOFFSET())) AS ThoiGianTiepNhan,
+               p.TrangThai,CONVERT(bit,0) RequiresStaff
+          FROM dbo.PHIEU_KHAM_BENH p JOIN dbo.PHONG ph ON ph.MaPhong=p.MaPhong
+          LEFT JOIN dbo.NHAN_VIEN nv ON nv.MaNV=p.MaBS WHERE p.MaPhieu=@maPhieu;
+        COMMIT; RETURN;
+      END;
+
+      DECLARE @sessionService nvarchar(100),@confirmed bit,@urgent bit,@sessionStatus nvarchar(20),@now datetime2(0)=SYSDATETIME();
+      SELECT @sessionService=MaAIService,@confirmed=PatientConfirmed,@urgent=CanHoTro,@sessionStatus=TrangThai
+        FROM dbo.AI_SERVICE_INTAKE_SESSION WITH(UPDLOCK,HOLDLOCK) WHERE MaPhien=@MaPhien;
+      IF @sessionService IS NOT NULL AND @sessionService<>@service
+        THROW 55106,N'Phiên thuộc thiết bị AI khác.',1;
+      IF @sessionService IS NOT NULL AND @sessionStatus=N'Created'
+      BEGIN
+        SELECT N'created' AS Status,p.MaPhieu,p.SoThuTu,p.MaPhong,p.MaBS,ph.TenPhong AS Phong,
+               nv.HoTen AS BacSi,TODATETIMEOFFSET(p.ThoiGianTiepNhan,DATEPART(TZOFFSET,SYSDATETIMEOFFSET())) AS ThoiGianTiepNhan,
+               p.TrangThai,CONVERT(bit,0) RequiresStaff
+          FROM dbo.AI_SERVICE_INTAKE_SESSION s JOIN dbo.AI_YEU_CAU_TAO_PHIEU r ON r.MaPhien=s.MaPhien
+          JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=r.MaPhieu JOIN dbo.PHONG ph ON ph.MaPhong=p.MaPhong
+          LEFT JOIN dbo.NHAN_VIEN nv ON nv.MaNV=p.MaBS WHERE s.MaPhien=@MaPhien AND r.IdempotencyKey=@IdempotencyKey AND r.PayloadHash=@PayloadHash;
+        IF @@ROWCOUNT=0 THROW 55105,N'Phiên đã hoàn tất với yêu cầu khác.',1;
+        COMMIT; RETURN;
+      END;
+      IF @sessionService IS NULL
+        INSERT dbo.AI_SERVICE_INTAKE_SESSION(MaPhien,MaAIService,PatientConfirmed,CanHoTro,TrangThai)
+        VALUES(@MaPhien,@service,1,0,N'Created');
+      ELSE IF @confirmed<>1 OR @urgent<>0 OR @sessionStatus<>N'Created'
+        THROW 55106,N'Phiên không được xác nhận hoặc cần nhân viên hỗ trợ.',1;
+
+      DECLARE @doctor nvarchar(50)=@MaBSYeuCau,@room nvarchar(50)=@MaPhongYeuCau,
+              @specialty nvarchar(50),@shiftRoom nvarchar(50),@begin datetime2(0),@end datetime2(0);
+      IF @doctor IS NULL AND @LoaiKham=N'normal'
+      BEGIN
+        SELECT TOP(1) @doctor=n.MaNV,@room=lv.MaPhong,@begin=DATEADD(second,DATEDIFF(second,CAST('00:00:00' AS time),c.GioBatDau),CAST(lv.NgayLam AS datetime2(0))),
+          @end=DATEADD(second,DATEDIFF(second,CAST('00:00:00' AS time),c.GioKetThuc),CAST(lv.NgayLam AS datetime2(0)))
+        FROM dbo.NHAN_VIEN n JOIN dbo.LICH_LAM_VIEC lv ON lv.MaNV=n.MaNV JOIN dbo.CA_LAM c ON c.MaCa=lv.MaCa
+        JOIN dbo.CHUYEN_KHOA ck ON ck.MaCK=n.MaCK JOIN dbo.PHONG ph ON ph.MaPhong=lv.MaPhong AND ph.MaKhoa=ck.MaKhoa AND ph.TrangThai=N'Đang hoạt động'
+        WHERE n.MaChucVu=N'CV002' AND n.TrangThai=N'Đang làm việc' AND lv.NgayLam BETWEEN DATEADD(day,-1,CONVERT(date,@now)) AND CONVERT(date,@now)
+          AND lv.TrangThai=N'Đã xác nhận' AND ((@LoaiKham=N'service' AND lv.TrangThaiHienDien=N'Có mặt') OR(@LoaiKham=N'normal' AND lv.TrangThaiHienDien NOT IN(N'Vắng mặt',N'Nghỉ phép')))
+          AND c.TrangThai=N'Đang hoạt động'
+          AND @now>=DATEADD(second,DATEDIFF(second,CAST('00:00:00' AS time),c.GioBatDau),CAST(lv.NgayLam AS datetime2(0)))
+          AND @now<DATEADD(day,CASE WHEN c.GioKetThuc<=c.GioBatDau THEN 1 ELSE 0 END,
+            DATEADD(second,DATEDIFF(second,CAST('00:00:00' AS time),c.GioKetThuc),CAST(lv.NgayLam AS datetime2(0))))
+          AND ph.LoaiPhong LIKE N'Phòng khám%'
+          AND NOT EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI d WHERE d.MaNV=n.MaNV AND d.TrangThaiDuyet=N'Đã duyệt' AND CONVERT(date,@now) BETWEEN d.TuNgay AND d.DenNgay)
+          AND EXISTS(SELECT 1 FROM dbo.TAI_KHOAN tk WHERE tk.MaNV=n.MaNV AND tk.TrangThai=N'Đang hoạt động')
+        ORDER BY (SELECT COUNT(*) FROM dbo.PHIEU_KHAM_BENH q WHERE q.MaBS=n.MaNV AND q.ThoiGianTiepNhan>=CONVERT(date,@now) AND q.ThoiGianTiepNhan<DATEADD(day,1,CONVERT(date,@now))),n.MaNV;
+      END
+      ELSE
+      BEGIN
+        SELECT @shiftRoom=lv.MaPhong,@specialty=n.MaCK
+          FROM dbo.NHAN_VIEN n JOIN dbo.LICH_LAM_VIEC lv ON lv.MaNV=n.MaNV JOIN dbo.CA_LAM c ON c.MaCa=lv.MaCa
+          JOIN dbo.CHUYEN_KHOA ck ON ck.MaCK=n.MaCK JOIN dbo.PHONG ph ON ph.MaPhong=lv.MaPhong AND ph.MaKhoa=ck.MaKhoa AND ph.TrangThai=N'Đang hoạt động' AND ph.LoaiPhong LIKE N'Phòng khám%'
+         WHERE n.MaNV=@doctor AND n.MaChucVu=N'CV002' AND n.TrangThai=N'Đang làm việc'
+           AND lv.NgayLam BETWEEN DATEADD(day,-1,CONVERT(date,@now)) AND CONVERT(date,@now) AND lv.TrangThai=N'Đã xác nhận'
+           AND ((@LoaiKham=N'service' AND lv.TrangThaiHienDien=N'Có mặt') OR(@LoaiKham=N'normal' AND lv.TrangThaiHienDien NOT IN(N'Vắng mặt',N'Nghỉ phép'))) AND c.TrangThai=N'Đang hoạt động'
+           AND @now>=DATEADD(second,DATEDIFF(second,CAST('00:00:00' AS time),c.GioBatDau),CAST(lv.NgayLam AS datetime2(0)))
+           AND @now<DATEADD(day,CASE WHEN c.GioKetThuc<=c.GioBatDau THEN 1 ELSE 0 END,
+             DATEADD(second,DATEDIFF(second,CAST('00:00:00' AS time),c.GioKetThuc),CAST(lv.NgayLam AS datetime2(0))))
+           AND NOT EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI d WHERE d.MaNV=n.MaNV AND d.TrangThaiDuyet=N'Đã duyệt' AND CONVERT(date,@now) BETWEEN d.TuNgay AND d.DenNgay);
+        IF @doctor IS NOT NULL AND NOT EXISTS(SELECT 1 FROM dbo.TAI_KHOAN tk WHERE tk.MaNV=@doctor AND tk.TrangThai=N'Đang hoạt động')
+            THROW 55108,N'Bác sĩ không còn tài khoản hoạt động; vui lòng chọn lại.',1;
+        IF @MaBSYeuCau IS NOT NULL AND @shiftRoom IS NULL
+            THROW 55108,N'Bác sĩ vừa hết ca hoặc không còn lịch làm việc; vui lòng chọn lại.',1;
+        IF @shiftRoom IS NOT NULL AND @MaPhongYeuCau IS NOT NULL AND @MaPhongYeuCau<>@shiftRoom
+            THROW 55110,N'Phòng làm việc vừa thay đổi; vui lòng chọn lại.',1;
+        SET @room=COALESCE(@room,@shiftRoom);
+      END;
+      IF @doctor IS NULL OR @room IS NULL THROW 55108,N'Không có bác sĩ/phòng phù hợp đang làm việc; vui lòng gặp nhân viên.',1;
+      IF @LoaiKham=N'service' AND NOT EXISTS(SELECT 1 FROM dbo.DICH_VU d WHERE d.MaDV=@MaDV AND d.MaCK=@specialty AND d.TrangThai=N'Đang hoạt động' AND d.NgayApDung<=CONVERT(date,@now))
+        THROW 55109,N'Dịch vụ không còn phù hợp với bác sĩ đã chọn.',1;
+      IF @MaPhongYeuCau IS NOT NULL AND @MaPhongYeuCau<>@room THROW 55110,N'Phòng làm việc vừa thay đổi; vui lòng chọn lại.',1;
+
+      DECLARE @phoneNorm nvarchar(50)=REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@SDT,N' ',N''),N'-',N''),N'.',N''),N'(',N''),N')',N''),
+              @candidates int,@exact int,@bn nvarchar(50),@hs nvarchar(50),@phieu nvarchar(50),@order int;
+      DECLARE @patientLock int;
+      EXEC @patientLock=sp_getapplock @Resource=N'RHM_AI_SERVICE_PATIENT',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000;
+      IF @patientLock<0 THROW 55113,N'Không khóa được đối chiếu bệnh nhân, vui lòng thử lại.',1;
+      DECLARE @matches TABLE(MaBN nvarchar(50) PRIMARY KEY,ExactMatch bit);
+      INSERT @matches SELECT b.MaBN,CONVERT(bit,CASE WHEN b.HoTenBN=@HoTen AND b.NgaySinh=@NgaySinh AND
+          REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ISNULL(b.SDT,N''),N' ',N''),N'-',N''),N'.',N''),N'(',N''),N')',N'')=@phoneNorm THEN 1 ELSE 0 END)
+        FROM dbo.BENH_NHAN b WITH(UPDLOCK,HOLDLOCK)
+       WHERE b.HoTenBN=@HoTen AND b.NgaySinh=@NgaySinh OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ISNULL(b.SDT,N''),N' ',N''),N'-',N''),N'.',N''),N'(',N''),N')',N'')=@phoneNorm;
+      SELECT @candidates=COUNT(*),@exact=COALESCE(SUM(CONVERT(int,ExactMatch)),0) FROM @matches;
+      IF @candidates=1 AND @exact=1
+      BEGIN
+        SELECT @bn=m.MaBN FROM @matches m JOIN dbo.BENH_NHAN b ON b.MaBN=m.MaBN WHERE b.TrangThai=N'Đang theo dõi';
+        IF @bn IS NULL THROW 55111,N'Hồ sơ phù hợp hiện không hoạt động; cần nhân viên đối chiếu.',1;
+      END
+      ELSE IF @candidates=0 AND @TungKham=N'no'
+      BEGIN SET @bn=N'BN_AI_'+REPLACE(CONVERT(nvarchar(36),NEWID()),N'-',N'');
+        INSERT dbo.BENH_NHAN(MaBN,HoTenBN,GioiTinh,NgaySinh,SDT,DiaChi,MaBHYT,NhomMau,TienSuBenh,DiUng,TrangThai)
+        VALUES(@bn,@HoTen,NULL,@NgaySinh,@SDT,NULL,NULL,NULL,NULL,NULL,N'Đang theo dõi'); END
+      ELSE IF @candidates=0
+        THROW 55111,N'Chưa tìm được hồ sơ khớp với lời khai đã từng khám; cần nhân viên đối chiếu.',1;
+      ELSE THROW 55111,N'Cần nhân viên đối chiếu hồ sơ trùng hoặc thông tin không khớp.',1;
+
+      SELECT @hs=MaHS FROM dbo.HO_SO_BENH_AN WITH(UPDLOCK,HOLDLOCK) WHERE MaBN=@bn;
+      IF @hs IS NOT NULL AND NOT EXISTS(SELECT 1 FROM dbo.HO_SO_BENH_AN WHERE MaHS=@hs AND TrangThai=N'Đang theo dõi')
+        THROW 55111,N'Hồ sơ bệnh án hiện không hoạt động; cần nhân viên đối chiếu.',1;
+      IF @hs IS NULL BEGIN SET @hs=N'HS_AI_'+REPLACE(CONVERT(nvarchar(36),NEWID()),N'-',N'');
+        INSERT dbo.HO_SO_BENH_AN(MaHS,MaBN,NgayLap,LyDoKhamBanDau,GhiChu,TrangThai)
+        VALUES(@hs,@bn,@now,@LyDoKham,N'Tiếp nhận qua service AI.',N'Đang theo dõi'); END;
+      IF EXISTS(SELECT 1 FROM dbo.PHIEU_KHAM_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaHS=@hs AND TrangThai<>N'Hủy' AND ThoiGianTiepNhan>=CONVERT(date,@now) AND ThoiGianTiepNhan<DATEADD(day,1,CONVERT(date,@now)))
+        THROW 55112,N'Bệnh nhân đã có phiếu trong ngày; vui lòng gặp nhân viên đối chiếu.',1;
+
+      DECLARE @queueLock int,@resource nvarchar(255)=N'RHM:TiepNhan:Queue:'+CONVERT(nvarchar(8),@now,112)+N':'+@room;
+      EXEC @queueLock=sys.sp_getapplock @Resource=@resource,@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000;
+      IF @queueLock<0 THROW 55113,N'Không cấp được số thứ tự, vui lòng thử lại.',1;
+      SELECT @order=COALESCE(MAX(SoThuTu),0)+1 FROM dbo.PHIEU_KHAM_BENH WITH(UPDLOCK,HOLDLOCK) WHERE MaPhong=@room AND ThoiGianTiepNhan>=CONVERT(date,@now) AND ThoiGianTiepNhan<DATEADD(day,1,CONVERT(date,@now));
+      SET @phieu=N'PKB_AI_'+REPLACE(CONVERT(nvarchar(36),NEWID()),N'-',N'');
+      INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaLich,MaPhong,MaBS,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai,GhiChu,NguonTiepNhan,MaPhienAI,LoaiKham,PhiPhuThuDichVu)
+      VALUES(@phieu,@hs,NULL,@room,@doctor,NULL,@MaDV,@order,@now,@LyDoKham,N'Chờ khám',N'Tiếp nhận bởi service AI.',N'AI',@MaPhien,CASE WHEN @LoaiKham=N'service' THEN N'Dịch vụ' ELSE N'Thông thường' END,CASE WHEN @LoaiKham=N'service' THEN 30000 ELSE 0 END);
+      INSERT dbo.AI_YEU_CAU_TAO_PHIEU(IdempotencyKey,MaPhien,PayloadHash,MaAIService,MaBN,MaHS,MaPhieu,SoThuTu,MaPhong,MaBS,LoaiKham,TrangThai)
+      VALUES(@IdempotencyKey,@MaPhien,@PayloadHash,@service,@bn,@hs,@phieu,@order,@room,@doctor,@LoaiKham,N'Created');
+      INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,MaAIService,ThoiGian,ThoiGianUtc,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuSau)
+      VALUES(N'NK'+CONVERT(nvarchar(36),NEWID()),NULL,@service,@now,SYSUTCDATETIME(),NEWID(),N'PhieuHuongDan',N'Tạo phiếu khám từ AI',N'PHIEU_KHAM_BENH',@phieu,N'Thành công',
+          (SELECT @MaPhien AS MaPhien,@bn AS MaBN,@hs AS MaHS,@phieu AS MaPhieu,@order AS SoThuTu,@room AS MaPhong,@doctor AS MaBS,@LoaiKham AS LoaiKham FOR JSON PATH,WITHOUT_ARRAY_WRAPPER));
+      COMMIT;
+      SELECT N'created' AS Status,p.MaPhieu,p.SoThuTu,p.MaPhong,p.MaBS,ph.TenPhong AS Phong,nv.HoTen AS BacSi,
+             TODATETIMEOFFSET(p.ThoiGianTiepNhan,DATEPART(TZOFFSET,SYSDATETIMEOFFSET())) AS ThoiGianTiepNhan,
+             p.TrangThai,CONVERT(bit,0) RequiresStaff
+        FROM dbo.PHIEU_KHAM_BENH p JOIN dbo.PHONG ph ON ph.MaPhong=p.MaPhong LEFT JOIN dbo.NHAN_VIEN nv ON nv.MaNV=p.MaBS WHERE p.MaPhieu=@phieu;
+    END TRY
+    BEGIN CATCH IF XACT_STATE()<>0 ROLLBACK; THROW; END CATCH
+END;
+GO
+PRINT N'Đã cài đặt identity service AI, chống trùng idempotency và tạo phiếu trong transaction.';
+GO
+
+
+-- BEGIN MERGED AI CONTRACTS: Sprint3 receipts remain the fee source for all new intake.
+-- Legacy AI session sources are read only when the historical receipt has no stored fee.
+GO
+IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE name=N'FK_CTHD_AI_ServiceSession')
+    ALTER TABLE dbo.CHI_TIET_HOA_DON DROP CONSTRAINT FK_CTHD_AI_ServiceSession;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.CHI_TIET_HOA_DON') AND name=N'UX_CTHD_AI_ServiceSession')
+    CREATE UNIQUE INDEX UX_CTHD_AI_ServiceSession ON dbo.CHI_TIET_HOA_DON(MaPhienAI) WHERE MaPhienAI IS NOT NULL;
+GO
+CREATE OR ALTER VIEW dbo.VW_AI_PHIEU_PHU_THU AS
+ SELECT k.MaPhien,k.MaPhieu,CONVERT(decimal(18,2),30000) PhuThu
+ FROM dbo.AI_KET_QUA_TAO_PHIEU k WHERE k.LoaiKham=N'DichVu' AND k.PhuThuDuKien=30000
+ UNION ALL
+ SELECT r.MaPhien,r.MaPhieu,CONVERT(decimal(18,2),30000)
+ FROM dbo.AI_YEU_CAU_TAO_PHIEU r WHERE r.LoaiKham=N'service' AND r.TrangThai=N'Created'
+ AND NOT EXISTS(SELECT 1 FROM dbo.AI_KET_QUA_TAO_PHIEU k WHERE k.MaPhien=r.MaPhien);
+GO
+CREATE OR ALTER TRIGGER dbo.TR_CTHD_TinhTien ON dbo.CHI_TIET_HOA_DON
+ AFTER INSERT,UPDATE,DELETE AS
+ BEGIN
+  SET NOCOUNT ON;
+  IF TRIGGER_NESTLEVEL(OBJECT_ID(N'dbo.TR_CTHD_TinhTien'))>1 RETURN;
+  DECLARE @lock nvarchar(50);
+  SELECT @lock=h.MaHD FROM dbo.HOA_DON h WITH(UPDLOCK,HOLDLOCK)
+   WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted);
+  IF EXISTS(SELECT 1 FROM dbo.HOA_DON h JOIN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted) z ON z.MaHD=h.MaHD WHERE h.TrangThai<>N'Nháp')
+   THROW 51001,N'Chỉ thay đổi chi tiết hóa đơn nháp.',1;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD
+   LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=i.MaCTPX
+   WHERE h.TaoKhiHoanTat=1 AND(i.MaCTPX IS NULL OR NOT EXISTS(
+    SELECT 1 FROM dbo.CHI_TIET_HOA_DON pending WHERE pending.MaHD=i.MaHD AND pending.MaCTDT=x.MaCTDT
+     AND pending.DonGia=i.DonGia AND pending.NoiDung=i.NoiDung)))
+   THROW 52231,N'Hóa đơn đã chốt nguồn; chỉ thay thuốc theo đơn bằng đúng phần xuất kho.',1;
+  IF EXISTS(SELECT 1 FROM deleted d JOIN dbo.HOA_DON h ON h.MaHD=d.MaHD
+   LEFT JOIN dbo.CHI_TIET_DON_THUOC rx ON rx.MaCTDT=d.MaCTDT
+   OUTER APPLY(SELECT SUM(x.SoLuong) Qty,SUM(c.ThanhTien) Amount FROM dbo.CHI_TIET_HOA_DON c
+    JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX WHERE c.MaHD=d.MaHD AND x.MaCTDT=d.MaCTDT) a
+   WHERE h.TaoKhiHoanTat=1 AND(d.MaCTDT IS NULL OR EXISTS(SELECT 1 FROM inserted i WHERE i.MaCTHD=d.MaCTHD)
+    OR COALESCE(a.Qty,0)<>rx.SoLuong OR COALESCE(a.Amount,0)<>d.ThanhTien))
+   THROW 52232,N'Không xóa/sửa khoản đã chốt; phần xuất phải khớp toàn bộ lượng và tiền đơn thuốc.',1;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD
+   LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=i.MaDVThucHien
+   LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=i.MaCTPX
+   LEFT JOIN dbo.PHIEU_XUAT p ON p.MaPX=x.MaPX
+   LEFT JOIN dbo.CHI_TIET_DON_THUOC d ON d.MaCTDT=COALESCE(i.MaCTDT,x.MaCTDT)
+   LEFT JOIN dbo.DON_THUOC r ON r.MaDT=d.MaDT
+   LEFT JOIN dbo.VW_AI_PHIEU_PHU_THU ai ON ai.MaPhien=i.MaPhienAI
+   LEFT JOIN dbo.PHIEU_KHAM_BENH ap ON ap.MaPhieu=ai.MaPhieu
+   LEFT JOIN dbo.LICH_SU_KHAM_BENH al ON al.MaPhieu=ap.MaPhieu
+   WHERE(i.MaDVThucHien IS NOT NULL AND(s.MaLS<>h.MaLS OR s.TrangThai<>N'Đã xác nhận'))
+    OR(i.MaCTPX IS NOT NULL AND(x.MaCTDT IS NULL OR p.MaLS<>h.MaLS OR r.MaLS<>h.MaLS OR p.TrangThai<>N'Đã ghi sổ'))
+    OR(i.MaCTDT IS NOT NULL AND(r.MaLS<>h.MaLS OR r.TrangThai<>N'Đã xác nhận' OR r.NgayKe>h.NgayLap
+     OR NULLIF(LTRIM(RTRIM(d.TenThuocChot)),N'') IS NULL OR NULLIF(LTRIM(RTRIM(d.HamLuongChot)),N'') IS NULL
+     OR NULLIF(LTRIM(RTRIM(d.DonViTinhChot)),N'') IS NULL))
+    OR(i.MaPhienAI IS NOT NULL AND(ai.MaPhien IS NULL OR ai.PhuThu<>30000 OR al.MaLS IS NULL OR al.MaLS<>h.MaLS OR ap.PhiPhuThuDichVu<>0 OR i.DonGia<>30000)))
+   THROW 51002,N'Nguồn thu phải cùng lượt: dịch vụ xác nhận, đơn đã ký hoặc thuốc đã xuất.',1;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD
+   JOIN dbo.PHIEU_KHAM_BENH p WITH(HOLDLOCK) ON p.MaPhieu=i.MaPhieuPhuThu
+   WHERE p.LoaiKham<>N'Dịch vụ' OR p.PhiPhuThuDichVu<>30000 OR NOT EXISTS(
+    SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaLS=h.MaLS AND l.MaPhieu=p.MaPhieu))
+   THROW 53402,N'Phụ thu phải lấy từ phiếu khám dịch vụ của đúng lần khám trên hóa đơn.',1;
+  IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.HOA_DON h ON h.MaHD=i.MaHD
+   JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=i.MaCTPX JOIN dbo.CHI_TIET_DON_THUOC rx ON rx.MaCTDT=x.MaCTDT
+   WHERE h.TaoKhiHoanTat=1 AND(SELECT SUM(y.SoLuong) FROM dbo.CHI_TIET_HOA_DON c
+    JOIN dbo.CHI_TIET_PHIEU_XUAT y ON y.MaCTPX=c.MaCTPX WHERE c.MaHD=i.MaHD AND y.MaCTDT=x.MaCTDT)>rx.SoLuong)
+   THROW 52233,N'Phần xuất vượt lượng đã chốt.',1;
+  IF EXISTS(SELECT 1 FROM dbo.CHI_TIET_HOA_DON c WITH(UPDLOCK,HOLDLOCK)
+    LEFT JOIN dbo.VW_AI_PHIEU_PHU_THU ai ON ai.MaPhien=c.MaPhienAI
+    WHERE COALESCE(c.MaPhieuPhuThu,ai.MaPhieu) IN(
+      SELECT COALESCE(i.MaPhieuPhuThu,x.MaPhieu) FROM inserted i
+      LEFT JOIN dbo.VW_AI_PHIEU_PHU_THU x ON x.MaPhien=i.MaPhienAI)
+    GROUP BY COALESCE(c.MaPhieuPhuThu,ai.MaPhieu) HAVING COUNT(*)>1)
+    THROW 53402,N'Mỗi phiếu chỉ thu một khoản phụ thu qua một nguồn.',1;
+  UPDATE c SET ThanhTien=CASE WHEN c.MaPhienAI IS NOT NULL THEN 30000 WHEN c.MaDVThucHien IS NOT NULL THEN s.ThanhTien
+   WHEN c.MaPhieuPhuThu IS NOT NULL THEN p.PhiPhuThuDichVu
+   ELSE CAST(ROUND(COALESCE(x.SoLuong,d.SoLuong)*c.DonGia,2) AS decimal(18,2)) END
+  FROM dbo.CHI_TIET_HOA_DON c JOIN inserted i ON i.MaCTHD=c.MaCTHD
+  LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
+  LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
+  LEFT JOIN dbo.CHI_TIET_DON_THUOC d ON d.MaCTDT=c.MaCTDT
+  LEFT JOIN dbo.PHIEU_KHAM_BENH p ON p.MaPhieu=c.MaPhieuPhuThu;
+  IF EXISTS(SELECT 1 FROM dbo.HOA_DON h WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted)
+   AND h.GiamGia>COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0))
+   THROW 51003,N'Tổng mới thấp hơn giảm giá.',1;
+  UPDATE h SET TongTien=COALESCE((SELECT SUM(c.ThanhTien) FROM dbo.CHI_TIET_HOA_DON c WHERE c.MaHD=h.MaHD),0)
+  FROM dbo.HOA_DON h WHERE h.MaHD IN(SELECT MaHD FROM inserted UNION SELECT MaHD FROM deleted);
+ END;
+GO
+CREATE OR ALTER TRIGGER dbo.TR_HD_PhuThuDichVu ON dbo.HOA_DON AFTER INSERT,UPDATE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=i.MaLS
+  JOIN dbo.PHIEU_KHAM_BENH p WITH(HOLDLOCK) ON p.MaPhieu=l.MaPhieu
+  OUTER APPLY(SELECT MAX(a.PhuThu) Phi FROM dbo.VW_AI_PHIEU_PHU_THU a WHERE a.MaPhieu=p.MaPhieu) legacy
+  CROSS APPLY(SELECT CASE WHEN p.PhiPhuThuDichVu>0 THEN p.PhiPhuThuDichVu ELSE COALESCE(legacy.Phi,0) END Phi) fee
+  WHERE fee.Phi>0 AND i.GiamGia>CASE WHEN i.TongTien>fee.Phi THEN i.TongTien-fee.Phi ELSE 0 END)
+  THROW 53403,N'Giảm giá không được trừ vào khoản phụ thu khám dịch vụ bắt buộc.',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.LICH_SU_KHAM_BENH l ON l.MaLS=i.MaLS
+  JOIN dbo.PHIEU_KHAM_BENH p WITH(HOLDLOCK) ON p.MaPhieu=l.MaPhieu
+  OUTER APPLY(SELECT MAX(a.PhuThu) Phi FROM dbo.VW_AI_PHIEU_PHU_THU a WHERE a.MaPhieu=p.MaPhieu) legacy
+  WHERE (p.PhiPhuThuDichVu>0 OR COALESCE(legacy.Phi,0)>0) AND(i.TaoKhiHoanTat=1 OR i.TrangThai=N'Đã xác nhận')
+   AND(SELECT COUNT(*) FROM dbo.CHI_TIET_HOA_DON c LEFT JOIN dbo.VW_AI_PHIEU_PHU_THU a ON a.MaPhien=c.MaPhienAI
+    WHERE c.MaHD=i.MaHD AND((p.PhiPhuThuDichVu>0 AND c.MaPhieuPhuThu=p.MaPhieu)
+      OR(p.PhiPhuThuDichVu=0 AND a.MaPhieu=p.MaPhieu)) AND c.DonGia=30000 AND c.ThanhTien=30000)<>1)
+  THROW 53404,N'Hóa đơn khám dịch vụ cần đúng một dòng phụ thu 30.000đ trước khi chốt hoặc xác nhận.',1;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN dbo.CHI_TIET_HOA_DON c ON c.MaHD=i.MaHD
+  LEFT JOIN dbo.VW_AI_PHIEU_PHU_THU a ON a.MaPhien=c.MaPhienAI
+  WHERE (c.MaPhieuPhuThu IS NOT NULL OR c.MaPhienAI IS NOT NULL) AND NOT EXISTS(
+   SELECT 1 FROM dbo.LICH_SU_KHAM_BENH l WHERE l.MaLS=i.MaLS AND l.MaPhieu=COALESCE(c.MaPhieuPhuThu,a.MaPhieu)))
+  THROW 53402,N'Không chuyển hóa đơn có phụ thu sang lần khám khác.',1;
+END;
+GO
+CREATE OR ALTER VIEW dbo.VW_CHI_TIET_HOA_DON AS
+SELECT c.MaCTHD,c.MaHD,c.MaDVThucHien,c.MaCTPX,c.NoiDung,
+ CASE WHEN c.MaPhieuPhuThu IS NOT NULL OR c.MaPhienAI IS NOT NULL THEN N'Phụ thu khám dịch vụ'
+  WHEN c.MaDVThucHien IS NOT NULL THEN N'Dịch vụ' ELSE N'Thuốc' END LoaiKhoanThu,
+ CASE WHEN c.MaPhieuPhuThu IS NOT NULL OR c.MaPhienAI IS NOT NULL THEN CAST(1 AS decimal(18,3)) ELSE COALESCE(s.SoLuong,x.SoLuong,d.SoLuong) END SoLuong,
+ COALESCE(s.DonGia,c.DonGia) DonGia,COALESCE(d.DonViTinhChot,hh.DonViTinh) DonViTinhThuoc,
+ c.ThanhTien,c.MaCTDT,c.MaPhieuPhuThu,c.MaPhienAI
+FROM dbo.CHI_TIET_HOA_DON c
+LEFT JOIN dbo.DICH_VU_THUC_HIEN s ON s.MaDVThucHien=c.MaDVThucHien
+LEFT JOIN dbo.CHI_TIET_PHIEU_XUAT x ON x.MaCTPX=c.MaCTPX
+LEFT JOIN dbo.CHI_TIET_DON_THUOC d ON d.MaCTDT=COALESCE(c.MaCTDT,x.MaCTDT)
+LEFT JOIN dbo.HANG_HOA hh ON hh.MaHH=x.MaHH;
+GO
+CREATE OR ALTER TRIGGER dbo.TR_LS_NguonAnhPhuThu ON dbo.LICH_SU_KHAM_BENH AFTER UPDATE AS
+BEGIN
+ SET NOCOUNT ON;
+ IF EXISTS(SELECT 1 FROM inserted i JOIN deleted d ON d.MaLS=i.MaLS WHERE i.MaPhieu<>d.MaPhieu
+  AND(EXISTS(SELECT 1 FROM dbo.ANH_XQUANG_LAN_KHAM a WHERE a.MaLS=i.MaLS)
+   OR EXISTS(SELECT 1 FROM dbo.HOA_DON h JOIN dbo.CHI_TIET_HOA_DON c ON c.MaHD=h.MaHD
+    WHERE h.MaLS=i.MaLS AND(c.MaPhieuPhuThu IS NOT NULL OR c.MaPhienAI IS NOT NULL))))
+  THROW 53409,N'Lần khám có ảnh hoặc phụ thu không được đổi phiếu nguồn.',1;
+END;
+GO
+-- Only upgrade the untouched legacy User matrix. Customized grants/denials remain unchanged.
+BEGIN TRANSACTION;
+DECLARE @LegacyUser TABLE(MaVaiTro nvarchar(50) PRIMARY KEY);
+INSERT @LegacyUser SELECT vt.MaVaiTro FROM dbo.VAI_TRO vt
+ WHERE vt.TenVaiTro=N'User' AND(SELECT COUNT(*) FROM dbo.PHAN_QUYEN_VAI_TRO p WHERE p.MaVaiTro=vt.MaVaiTro)=25
+ AND NOT EXISTS(SELECT 1 FROM dbo.PHAN_QUYEN_VAI_TRO p WHERE p.MaVaiTro=vt.MaVaiTro
+  AND p.DuocTruyCap<>CASE WHEN p.MaPhanHe IN(N'TongQuan',N'CaLamViec',N'XinNghiViec') THEN 1 ELSE 0 END)
+ AND(SELECT MIN(NgayCapNhat) FROM dbo.PHAN_QUYEN_VAI_TRO p WHERE p.MaVaiTro=vt.MaVaiTro)
+   =(SELECT MAX(NgayCapNhat) FROM dbo.PHAN_QUYEN_VAI_TRO p WHERE p.MaVaiTro=vt.MaVaiTro)
+ AND NOT EXISTS(SELECT 1 FROM dbo.NHAT_KY_THAO_TAC a WHERE a.LoaiDoiTuong=N'PHAN_QUYEN_VAI_TRO'
+   AND(a.MaDoiTuong LIKE vt.MaVaiTro+N'/%'
+     OR JSON_VALUE(CASE WHEN ISJSON(a.DuLieuTruoc)=1 THEN a.DuLieuTruoc ELSE N'{}' END,N'$.MaVaiTro')=vt.MaVaiTro
+     OR JSON_VALUE(CASE WHEN ISJSON(a.DuLieuSau)=1 THEN a.DuLieuSau ELSE N'{}' END,N'$.MaVaiTro')=vt.MaVaiTro));
+UPDATE p SET DuocTruyCap=1,NgayCapNhat=SYSDATETIME() FROM dbo.PHAN_QUYEN_VAI_TRO p
+ JOIN @LegacyUser v ON v.MaVaiTro=p.MaVaiTro
+ WHERE p.MaPhanHe IN(N'BenhNhan',N'KhamDieuTri',N'DichVuThucHien',N'DonThuoc',N'HoaDon',N'PhieuHuongDan',N'BaoCao');
+INSERT dbo.PHAN_QUYEN_VAI_TRO(MaVaiTro,MaPhanHe,DuocTruyCap)
+ SELECT v.MaVaiTro,N'TroLyAI',CONVERT(bit,CASE WHEN v.TenVaiTro IN(N'Admin',N'Quản trị',N'Quản trị viên')
+   OR EXISTS(SELECT 1 FROM dbo.PHAN_QUYEN_VAI_TRO p WHERE p.MaVaiTro=v.MaVaiTro AND p.MaPhanHe=N'PhieuHuongDan' AND p.DuocTruyCap=1) THEN 1 ELSE 0 END)
+ FROM dbo.VAI_TRO v WHERE NOT EXISTS(SELECT 1 FROM dbo.PHAN_QUYEN_VAI_TRO p WHERE p.MaVaiTro=v.MaVaiTro AND p.MaPhanHe=N'TroLyAI');
+COMMIT;
+GO
+CREATE OR ALTER PROCEDURE dbo.usp_RHM_KiemTraHopNhatAI AS
+BEGIN
+ SET NOCOUNT ON;
+ IF(SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped=0)<>74
+  THROW 55992,N'Schema hợp nhất cần đủ 64 bảng Sprint3 và 10 bảng AI/quỹ phép.',1;
+ IF EXISTS(SELECT T FROM(VALUES(N'AI_PHIEN_TIEP_NHAN'),(N'AI_TIEP_NHAN_NHAP'),(N'AI_TIN_NHAN'),(N'AI_SU_KIEN'),
+  (N'AI_KET_QUA_TAO_PHIEU'),(N'AI_SERVICE_IDENTITY'),(N'AI_SERVICE_INTAKE_SESSION'),(N'AI_YEU_CAU_TAO_PHIEU'),
+  (N'RHM_CAU_HINH_QUY_PHEP'),(N'RHM_NGAY_PHEP_NAM')) required(T) WHERE OBJECT_ID(N'dbo.'+T,N'U') IS NULL)
+  THROW 55991,N'Thiếu bảng AI/quỹ phép.',1;
+ IF OBJECT_ID(N'dbo.AI_TaoPhieuTuBanKhai',N'P') IS NULL OR OBJECT_ID(N'dbo.AI_XacNhanPhien',N'P') IS NULL
+  OR OBJECT_ID(N'dbo.AI_TaoPhieuTuKiosk',N'P') IS NULL OR OBJECT_ID(N'dbo.RHM_GhiNhanQuyPhepKhiDuyet',N'P') IS NULL
+  OR COL_LENGTH(N'dbo.AI_TIEP_NHAN_NHAP',N'LoaiKham') IS NULL
+  OR COL_LENGTH(N'dbo.AI_TIEP_NHAN_NHAP',N'DaXacNhanCanhBao') IS NULL
+  OR COL_LENGTH(N'dbo.CHINH_SACH_LUONG',N'DonGiaCa') IS NULL OR COL_LENGTH(N'dbo.BANG_LUONG',N'DonGiaCa') IS NULL
+  OR COL_LENGTH(N'dbo.CHI_TIET_HOA_DON',N'MaPhienAI') IS NULL OR OBJECT_ID(N'dbo.VW_AI_PHIEU_PHU_THU',N'V') IS NULL
+  THROW 55993,N'Thiếu hợp đồng dữ liệu AI/quỹ phép/lương ca.',1;
+ IF EXISTS(SELECT 1 FROM sys.foreign_keys WHERE is_disabled=1 OR is_not_trusted=1)
+  OR EXISTS(SELECT 1 FROM sys.check_constraints WHERE is_disabled=1 OR is_not_trusted=1)
+  OR EXISTS(SELECT 1 FROM sys.triggers WHERE parent_class=1 AND is_disabled=1)
+  THROW 55994,N'Có ràng buộc/trigger chưa được kiểm chứng.',1;
+END;
+GO
+EXEC dbo.usp_RHM_KiemTraHopNhatAI;
+EXEC dbo.usp_RHM_KiemTraSchema;
+PRINT N'PROJECT_SCHEMA_READY: 74 bảng; Sprint3, ảnh X-quang, AI bản khai/duyệt, quỹ phép và lương ca đã hợp nhất.';
+GO
+-- END MERGED AI CONTRACTS

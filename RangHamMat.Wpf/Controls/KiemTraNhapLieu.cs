@@ -397,8 +397,9 @@ public static class KiemTraNhapLieu
         try
         {
             var table = root is UserControl form ? BieuMauHoSo.GetTable(form) : "";
-            var elements = Elements(root).OfType<FrameworkElement>().Distinct().Where(x => x.IsEnabled &&
+            FrameworkElement[] CurrentElements() => Elements(root).OfType<FrameworkElement>().Distinct().Where(x => x.IsEnabled &&
                 (x.IsVisible || root is FrameworkElement { IsVisible: false } && IsSectionAvailable(x,root) || table.Length > 0 && x.Tag is string tag && (tag.StartsWith("DB:" + table + ".") || tag.StartsWith("Time:" + table + ".")))).ToArray();
+            var elements = CurrentElements();
             var failures = new List<(FrameworkElement Field, LoiNhapLieu Error)>();
             // Chỉ chốt ô đang gõ và còn chờ LostFocus; binding PropertyChanged đã tự cập nhật.
             // Không đẩy lại chữ cũ từ control vào model đã được code xử lý/cập nhật trực tiếp.
@@ -410,6 +411,9 @@ public static class KiemTraNhapLieu
             foreach (var grid in elements.OfType<DataGrid>().Where(grid => !grid.IsReadOnly))
                 if (!grid.CommitEdit(DataGridEditingUnit.Cell, true) || !grid.CommitEdit(DataGridEditingUnit.Row, true))
                     failures.Add((grid, new LoiNhapLieu("", "Dòng đang sửa có dữ liệu sai. Nhập lần thứ là số nguyên dương; số lượng dương và đơn giá không âm, không dùng phân cách hàng nghìn.")));
+            // CommitEdit thay template sửa bằng template hiển thị. Không kiểm các ô đã bị tháo:
+            // DynamicResource của ComboBox cũ đã mất nhưng SelectedItem vẫn có thể còn nguyên.
+            elements = CurrentElements();
             var groups = new Dictionary<string, Dictionary<string, (object? Value, FrameworkElement Control)>>();
             foreach (var element in elements)
             {

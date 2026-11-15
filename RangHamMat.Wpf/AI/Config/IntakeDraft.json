@@ -1,0 +1,8 @@
+{
+  "Enabled": true,
+  "Path": "/api/ai/intake/drafts",
+  "TimeoutSeconds": 15,
+  "SubmitLabel": "Gửi bản khai cho nhân viên",
+  "EditLabel": "Sửa thông tin",
+  "StaffLabel": "Gửi thông tin & gặp nhân viên"
+}

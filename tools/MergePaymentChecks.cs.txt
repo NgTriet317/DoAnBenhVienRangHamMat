@@ -1,0 +1,98 @@
+using System.Data;
+using System.Windows;
+using BUS;
+using DAL;
+using Dapper;
+using ET;
+
+static class MergePaymentCheckEntry
+{
+    [STAThread] static int Main(string[] args) => Program.MergePaymentChecks(args);
+}
+
+internal static partial class Program
+{
+    // Reuses rollback-only fixtures and clinical helpers from HospitalWorkflowChecks.cs.txt.
+    internal static int MergePaymentChecks(string[] args)
+    {
+        if(args.Length!=2 || !System.Text.RegularExpressions.Regex.IsMatch(args[1],"^RHM_Hospital_Test_[A-Za-z0-9_]+$"))
+            throw new Exception("Isolated DB required");
+        cs=$"Data Source={args[0]};Initial Catalog={args[1]};Integrated Security=True;TrustServerCertificate=True;";
+        Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING",cs);
+        foreach(var (canonical,legacyDraft) in new[]{(false,false),(true,false),(false,true)})
+        {
+            Check($"Merge service fee canonical={canonical}, draft={legacyDraft}: one charge, fixed invoice, payment retry, print",()=>Tx(tx=>{
+                var (clinical,doctor,session)=MergeClinical(tx,canonical,legacyDraft);
+                Assert(clinical.LayTongKetKham("TC_LS",doctor).TongTien==130000,"Clinical summary omitted or doubled surcharge");
+                var done=clinical.HoanTatKham("TC_LS",clinical.LayBanNhap("TC_LS",doctor).DauVanTay,doctor);
+                var admin=Login(tx,"NV001","TK001");var finance=new DAL_THANHTOANTRONGOI(tx);
+                var preview=finance.LapBangTinh("TC_LS",null,admin);
+                Assert(preview.TongTien==130000 && preview.DuocThanhToan,"Missing or doubled surcharge");
+                var request=new YeuCauThanhToan{MaLS="TC_LS",MaYeuCau=Guid.NewGuid(),DauVanTayBangTinh=preview.DauVanTay!,PhuongThuc="Tiền mặt",SoTienKhachDua=150000};
+                var paid=finance.ThanhToan(request,admin);
+                Assert(paid.MaHD==done.MaHD && paid.SoTienThu==130000 && paid.TienThua==20000,"Changed finalized invoice or fee");
+                Assert(finance.ThanhToan(request,admin).MaTT==paid.MaTT,"Duplicate payment on retry");
+                var surcharge=tx.Connection!.Query<ET_CHITIETHOADON>("SELECT * FROM dbo.CHI_TIET_HOA_DON WHERE MaHD=@id AND (MaPhieuPhuThu IS NOT NULL OR MaPhienAI IS NOT NULL)",new{id=paid.MaHD},tx).ToArray();
+                Assert(surcharge.Length==1 && surcharge[0].ThanhTien==30000 && (canonical?surcharge[0].MaPhieuPhuThu=="TC_PH":surcharge[0].MaPhienAI==session),"Incorrect surcharge source");
+                var details=new DAL_CHITIETHOADON(tx).GetInvoiceDetails(paid.MaHD);
+                Assert(details.Rows.Count==2 && details.AsEnumerable().Count(r=>Convert.ToString(r["Loai"])!.Contains("Phụ thu"))==1,"Invalid invoice detail SQL or surcharge classification");
+                var printed=finance.LayBanInHoaDon(paid.MaHD,admin).CacDong.Where(d=>d.NoiDung.Contains("Phụ thu")).ToArray();
+                Assert(printed.Length==1 && printed[0].SoLuong==1 && printed[0].DonViTinh=="Lượt" && printed[0].ThanhTien==30000,"Surcharge print quantity or amount missing");
+                Assert(new DAL_CHITIETHOADON(tx).GetEligibleCharges("TC_LS").Rows.Count==0,"Surcharge eligible again after payment");
+                Assert(new DAL_DOISOATDULIEU(tx).KiemTra().QuyTac.Single(r=>r.Ma=="HD_PHUTHU").TongSo==0,"Valid surcharge rejected by reconciliation");
+            }));
+            Check($"Merge discount canonical={canonical}, draft={legacyDraft}: cannot discount service surcharge",()=>Tx(tx=>{
+                MergeClinical(tx,canonical,legacyDraft);tx.Connection!.Execute("UPDATE dbo.LICH_SU_KHAM_BENH SET TrangThai=N'Đã xác nhận',NgayXacNhan=SYSDATETIME() WHERE MaLS=N'TC_LS'",transaction:tx);
+                ExpectInvalid(()=>new DAL_HOADON(tx).CreateInvoice("TC_LS","NV002",100001));
+                Assert(tx.Connection.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.HOA_DON WHERE MaLS=N'TC_LS'",transaction:tx)==0,"Invalid discount left an invoice");
+            }));
+        }
+        Check("Merge finalized drug price survives catalog change and export replacement",()=>Tx(tx=>{
+            Fixture(tx);var doctor=Login(tx);var clinical=new BUS_KHAMDIEUTRI(tx);ReadyClinical(clinical,doctor);
+            tx.Connection!.Execute(FinanceFixtureSql,transaction:tx);ConfirmExecution(clinical,doctor);
+            var done=clinical.HoanTatKham("TC_LS",clinical.LayBanNhap("TC_LS",doctor).DauVanTay,doctor);
+            tx.Connection.Execute("UPDATE dbo.THUOC SET DonGiaBan=DonGiaBan+7000 WHERE MaThuoc=N'TH_TEST_RHM'",transaction:tx);
+            var finance=new DAL_THANHTOANTRONGOI(tx);var admin=Login(tx,"NV001","TK001");var preview=finance.LapBangTinh("TC_LS","KHO_TEST_RHM",admin);
+            Assert(preview.TongTien==130000 && preview.Thuoc.Single().DonGia==10000,"Catalog price replaced finalized price");
+            var paid=finance.ThanhToan(new(){MaLS="TC_LS",MaKhoCapThuoc="KHO_TEST_RHM",MaYeuCau=Guid.NewGuid(),DauVanTayBangTinh=preview.DauVanTay!,PhuongThuc="Tiền mặt",SoTienKhachDua=130000},admin);
+            Assert(paid.MaHD==done.MaHD && paid.SoTienThu==130000,"Invoice replaced or price changed at collection");
+        }));
+        Check("Merge zero-value invoice creates no payment receipt",()=>Tx(tx=>{
+            Fixture(tx);var doctor=Login(tx);var clinical=new BUS_KHAMDIEUTRI(tx);ReadyClinical(clinical,doctor);
+            tx.Connection!.Execute("UPDATE dbo.DICH_VU SET DonGia=0 WHERE MaDV=N'DV001'",transaction:tx);ConfirmExecution(clinical,doctor);
+            clinical.HoanTatKham("TC_LS",clinical.LayBanNhap("TC_LS",doctor).DauVanTay,doctor);
+            var admin=Login(tx,"NV001","TK001");var finance=new DAL_THANHTOANTRONGOI(tx);var preview=finance.LapBangTinh("TC_LS",null,admin);
+            Assert(preview.TongTien==0,"Zero fixture retained a charge");
+            var paid=finance.ThanhToan(new(){MaLS="TC_LS",MaYeuCau=Guid.NewGuid(),DauVanTayBangTinh=preview.DauVanTay!,PhuongThuc="Tiền mặt",SoTienKhachDua=0},admin);
+            Assert(paid.MaTT is null && paid.SoTienThu==0 && tx.Connection.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.THANH_TOAN WHERE MaHD=@id",new{id=paid.MaHD},tx)==0,"Created receipt without money");
+        }));
+        Console.WriteLine($"RESULT: {passed} passed, {failed} failed");return failed==0?0:1;
+    }
+
+    static (BUS_KHAMDIEUTRI,NguCanhNghiepVu,Guid) MergeClinical(IDbTransaction tx,bool canonical,bool legacyDraft=false)
+    {
+        Fixture(tx);var session=Guid.NewGuid();
+        if(canonical)tx.Connection!.Execute("""
+            DELETE dbo.LICH_SU_KHAM_BENH WHERE MaLS=N'TC_LS';
+            DELETE dbo.PHIEU_KHAM_BENH WHERE MaPhieu=N'TC_PH';
+            INSERT dbo.PHIEU_KHAM_BENH(MaPhieu,MaHS,MaPhong,MaBS,MaNVTiepNhan,MaDV,SoThuTu,ThoiGianTiepNhan,LyDoKham,TrangThai,LoaiKham,PhiPhuThuDichVu)
+            VALUES(N'TC_PH',N'HS001',N'PH001',N'NV002',N'NV005',N'DV001',999,DATEADD(minute,-5,SYSDATETIME()),N'FIXTURE',N'Đang khám',N'Dịch vụ',30000);
+            INSERT dbo.LICH_SU_KHAM_BENH(MaLS,MaPhieu,MaBS,MaPhong,ThoiGianKham,TrieuChung,ChanDoan,KeHoachXuLy,TrangThai)
+            VALUES(N'TC_LS',N'TC_PH',N'NV002',N'PH001',DATEADD(minute,-4,SYSDATETIME()),N'FIXTURE',N'FIXTURE',N'FIXTURE',N'Nháp');
+            """,transaction:tx);
+        if(legacyDraft)tx.Connection!.Execute("""
+            INSERT dbo.AI_PHIEN_TIEP_NHAN(MaPhien,TokenHash,DongY,HetHan,MaPhieu,MaNVXacNhan,TrangThai)
+            VALUES(@session,HASHBYTES('SHA2_256',N'fixture'),1,DATEADD(hour,1,SYSUTCDATETIME()),N'TC_PH',N'NV005',N'DaDuyet');
+            INSERT dbo.AI_KET_QUA_TAO_PHIEU(MaPhien,MaBN,MaHS,MaPhieu,MaNVDuyet,LoaiKham,PhuThuDuKien,HoTenXacNhan,NgaySinhXacNhan,SDTXacNhan,LyDoKhamXacNhan)
+            VALUES(@session,N'BN001',N'HS001',N'TC_PH',N'NV005',N'DichVu',30000,N'FIXTURE','19900101',N'0900000000',N'FIXTURE');
+            """,new{session},tx);
+        else tx.Connection!.Execute("""
+            INSERT dbo.AI_SERVICE_IDENTITY(MaAIService,CertificateThumbprint) VALUES(N'MERGE_SERVICE','0000000000000000000000000000000000000123');
+            INSERT dbo.AI_SERVICE_INTAKE_SESSION(MaPhien,MaAIService,PatientConfirmed,CanHoTro,TrangThai) VALUES(@session,N'MERGE_SERVICE',1,0,N'Created');
+            INSERT dbo.AI_YEU_CAU_TAO_PHIEU(IdempotencyKey,MaPhien,PayloadHash,MaAIService,MaBN,MaHS,MaPhieu,SoThuTu,MaPhong,MaBS,LoaiKham,TrangThai)
+            VALUES(NEWID(),@session,HASHBYTES('SHA2_256',N'fixture'),N'MERGE_SERVICE',N'BN001',N'HS001',N'TC_PH',999,N'PH001',N'NV002',N'service',N'Created');
+            """,new{session},tx);
+        var doctor=Login(tx);var clinical=new BUS_KHAMDIEUTRI(tx);ReadyClinical(clinical,doctor);ConfirmExecution(clinical,doctor);
+        return(clinical,doctor,session);
+    }
+}
