@@ -5189,16 +5189,9 @@ BEGIN
             THROW 52013,N''Phiếu lương phải thuộc một tháng đầy đủ.'',1;
         IF CONVERT(DATE,SYSDATETIME()) < DATEADD(DAY,5,@DenNgay)
             THROW 52014,N''Chưa tới ngày được chốt: phải sau khi hết tháng ít nhất 5 ngày.'',1;
-        IF EXISTS(
-            SELECT 1 FROM dbo.LICH_LAM_VIEC ll WITH(HOLDLOCK)
-            LEFT JOIN dbo.CHAM_CONG cc WITH(HOLDLOCK) ON cc.MaLLV=ll.MaLLV
-            WHERE ll.MaNV=@MaNV AND ll.NgayLam BETWEEN @TuNgay AND @DenNgay
-              AND ll.TrangThai NOT IN(N''Hủy'',N''Từ chối'',N''Nghỉ phép'',N''Nghỉ việc'')
-              AND NOT EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI d WITH(HOLDLOCK)
-                  WHERE d.MaNV=ll.MaNV AND d.TrangThaiDuyet=N''Đã duyệt''
-                    AND ll.NgayLam BETWEEN d.TuNgay AND d.DenNgay)
-              AND (cc.MaCC IS NULL OR cc.TrangThai<>N''Đã xác nhận'')
-        ) THROW 52015,N''Nhân viên còn ca chưa xác nhận công. Hãy đối soát ở mục Chấm công.'',1;
+        -- CHAM CONG TU GHI NHAN (17/11/2026): khong con bat buoc BQL duyet moi ca.
+        -- Ca qua ngay khong cham cong duoc tinh 0 cong, khong chan chot luong.
+        -- Giu kiem tra don nghi, trung ngay phep, chung tu, hoa hong va khoa ky luong.
         IF EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI d WITH(HOLDLOCK)
             WHERE d.MaNV=@MaNV AND d.TrangThaiDuyet=N''Chờ duyệt''
                 AND d.TuNgay<=@DenNgay AND d.DenNgay>=@TuNgay)

@@ -70,7 +70,21 @@ static class Program
                 new DAL_BANGLUONG().chotLuongNhanVien("SYNC_BL",admin,0,0,0);
             }, calculate:false));
             Reject("Stale viewed salary cannot be closed", 52018, () => Fixture(() => { Calculate(); var r=Payroll(); new DAL_BANGLUONG().chotLuongNhanVien((string)r["MaBL"],admin,999,0,0); }));
-            Reject("Unapproved attendance blocks closing", 52015, () => Fixture(() => { Exec("UPDATE dbo.CHAM_CONG SET TrangThai=N'Chờ đối soát' WHERE MaLLV=N'SYNC_L1'"); Calculate(); Close(); }));
+            Check("Unrecorded past shift contributes zero and allows salary closing", () => Fixture(() => {
+                Exec("UPDATE dbo.CHI_TIET_LUONG SET SoTien=500000 WHERE MaCTL=N'SYNC_PC'");
+                Exec("DELETE dbo.CHAM_CONG WHERE MaLLV=N'SYNC_L1'; UPDATE dbo.LICH_LAM_VIEC SET GioVao=NULL,GioRa=NULL WHERE MaLLV=N'SYNC_L1'");
+                Calculate(); Close();
+                Assert(Scalar<string>("SELECT TrangThai FROM dbo.BANG_LUONG WHERE MaNV=N'SYNC_NV'")=="Đã chốt", "Unrecorded past shift blocked closing");
+                Assert(Scalar<decimal>("SELECT CongThucTe FROM dbo.BANG_LUONG WHERE MaNV=N'SYNC_NV'")==1.25m, "Expected one paid leave day plus 0.25 earned attendance; unrecorded shift must earn zero");
+                Assert(Scalar<decimal>("SELECT SoCaTinh FROM dbo.BANG_LUONG WHERE MaNV=N'SYNC_NV'")==1m, "Unrecorded shift must not count as a worked shift");
+            }));
+            Check("Unconfirmed attendance contributes zero and allows salary closing", () => Fixture(() => {
+                Exec("UPDATE dbo.CHI_TIET_LUONG SET SoTien=500000 WHERE MaCTL=N'SYNC_PC'");
+                Exec("UPDATE dbo.CHAM_CONG SET TrangThai=N'Chờ đối soát' WHERE MaLLV=N'SYNC_L1'");
+                Calculate(); Close();
+                Assert(Scalar<decimal>("SELECT CongThucTe FROM dbo.BANG_LUONG WHERE MaNV=N'SYNC_NV'")==1.25m, "Expected one paid leave day plus 0.25 earned attendance; unconfirmed shift must earn zero");
+                Assert(Scalar<decimal>("SELECT SoCaTinh FROM dbo.BANG_LUONG WHERE MaNV=N'SYNC_NV'")==1m, "Unconfirmed shift must not count as a worked shift");
+            }));
             Reject("Pending leave blocks closing", 52016, () => Fixture(() => { Exec("UPDATE dbo.DON_XIN_NGHI SET TrangThaiDuyet=N'Chờ duyệt' WHERE MaDonNghi=N'SYNC_DN'"); Calculate(); Close(); }));
             Reject("Paid attendance overlapping approved leave blocks closing", 52017, () => Fixture(() => { Exec("UPDATE dbo.DON_XIN_NGHI SET TuNgay='20000103',DenNgay='20000103' WHERE MaDonNghi=N'SYNC_DN'"); Calculate(); Close(); }));
             Reject("Unclassified positive adjustment blocks closing", 52022, () => Fixture(() => { Exec("UPDATE dbo.CHI_TIET_LUONG SET LoaiKhoan=N'Điều chỉnh' WHERE MaCTL=N'SYNC_PC'"); Calculate(); Close(); }));
