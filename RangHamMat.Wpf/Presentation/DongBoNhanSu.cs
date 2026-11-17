@@ -86,29 +86,47 @@ public partial class CaLamViec
             SetShiftOverlay.IsVisible || DonXinNghiOverlay.IsVisible);
 }
 
+
 public partial class ChamCong
 {
     private DataTable? dongBoChamCong;
-    private string? dongBoMocForm;
-    private string DongBoGiaTriForm() => string.Join("\u001f", txtGioVao.Text, txtGioRa.Text, txtLyDo.Text, cboKetQua.SelectedIndex);
-    private void DongBoGhiNhanForm() => dongBoMocForm = DongBoGiaTriForm();
+
     private Task<Action> ChuanBiDongBo(CancellationToken token)
     {
         int thang = cboThang.SelectedIndex + 1;
         int nam = int.Parse(txtNam.Text);
-        return DongBoChuanBi.Doc(() => new BUS_CHAMCONG().layChamCongTheoThang(thang, nam), data =>
-        {
-            dongBoChamCong = data;
-            try { DongBoLuaChon.GiuDong(gridChamCong, ["MaLLV"], hienThiDuLieu); }
-            finally { dongBoChamCong = null; }
-        }, token);
+        string maTK = PhienDangNhap.MaTK;
+
+        return DongBoChuanBi.Doc(
+            () => new BUS_CHAMCONG().layChamCongTheoThang(thang, nam, maTK),
+            data =>
+            {
+                dongBoChamCong = data;
+                try
+                {
+                    DongBoLuaChon.GiuDong(
+                        gridChamCong, ["MaLLV"], hienThiDuLieu);
+                }
+                finally
+                {
+                    dongBoChamCong = null;
+                }
+            },
+            token);
     }
 
-    private void DangKyDongBoManHinh() => DongBoManHinh.RegisterPrepared(this,
-        ["CHAM_CONG", "NHAT_KY_DUYET_CHAM_CONG", "LICH_LAM_VIEC", "NHAN_VIEN", "CHUC_VU", "CA_LAM", "DON_XIN_NGHI", "BANG_LUONG"],
-        ChuanBiDongBo, () => dangTai || !PhienDangNhap.IsAdmin || cboThang.SelectedIndex < 0 ||
-            !int.TryParse(txtNam.Text, out int y) || y is < 2000 or > 2100 ||
-            gridChamCong.SelectedItem is not null && dongBoMocForm != DongBoGiaTriForm());
+    private void DangKyDongBoManHinh() =>
+        DongBoManHinh.RegisterPrepared(
+            this,
+            ["CHAM_CONG", "NHAT_KY_DUYET_CHAM_CONG",
+             "LICH_LAM_VIEC", "NHAN_VIEN", "CHUC_VU",
+             "CA_LAM", "DON_XIN_NGHI", "BANG_LUONG"],
+            ChuanBiDongBo,
+            () => dangTai
+                || string.IsNullOrWhiteSpace(PhienDangNhap.MaTK)
+                || cboThang.SelectedIndex < 0
+                || !int.TryParse(txtNam.Text, out int nam)
+                || nam is < 2000 or > 2100);
 }
 
 public partial class BangLuong

@@ -1,70 +1,63 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using BUS;
-using ET;
 
 namespace RangHamMat.Views
 {
-    /// <summary>
-    /// Phần xử lý chấm công của màn hình, phối hợp dữ liệu và các sự kiện khai báo trong XAML.
-    /// </summary>
     public partial class ChamCong : UserControl
     {
-        /// <summary>
-        /// Đối tượng nghiệp vụ chấm công được màn hình dùng để đọc/ghi dữ liệu.
-        /// </summary>
         private readonly BUS_CHAMCONG busChamCong = new BUS_CHAMCONG();
-        /// <summary>
-        /// Danh sách công dùng trong chấm công được giữ trong phạm vi lớp để các thao tác dùng lại.
-        /// </summary>
+        // SQL Server quyết định quyền chấm; 1 giây cập nhật UI, 10 giây đồng bộ lại giờ máy chủ.
+        private readonly DispatcherTimer dongHo = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        private readonly Stopwatch boDemMayChu = new Stopwatch();
+        private DateTime mocGioMayChu;
+        private bool coGioMayChu;
         private DataTable danhSachCong = new DataTable();
-        /// <summary>
-        /// Lọc tìm kiểm được giữ trong phạm vi lớp để các thao tác dùng lại.
-        /// </summary>
+        private DataView? danhSachDuocCham;
         private string locTimKiem = "";
-        /// <summary>
-        /// Lọc trạng thái được giữ trong phạm vi lớp để các thao tác dùng lại.
-        /// </summary>
         private string locTrangThai = "";
-        /// <summary>
-        /// Cờ Đã tải; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
-        /// </summary>
+        private string maLLVDangChon = "";
+        private DateTime gioMayChu;
         private bool daTai;
-        /// <summary>
-        /// Cờ Đang tải; các nhánh xử lý kiểm tra cờ này trước khi tiếp tục.
-        /// </summary>
         private bool dangTai;
+        private bool dangPhanLoai;
+        private bool dangChon;
+        private bool dangChamCong;
 
-        /// <summary>
-        /// Khởi tạo chấm công. Nạp giao diện từ XAML trước khi thiết lập dữ liệu, quyền và sự kiện của cửa sổ/điều khiển.
-        /// </summary>
         public ChamCong()
         {
-            InitializeComponent(); DangKyDongBoManHinh();
+            InitializeComponent();
+            DangKyDongBoManHinh();
             cboThang.SelectedIndex = DateTime.Today.Month - 1;
             txtNam.Text = DateTime.Today.Year.ToString();
-            Loaded += (sender, e) => { if (!daTai) hienThiDuLieu(); };
+            dongHo.Tick += (_, _) =>
+            {
+                if (IsLoaded && daTai && !dangTai && !dangChamCong)
+                    capNhatPhanLoai();
+            };
+            Loaded += (_, _) =>
+            {
+                dongHo.Start();
+                if (!daTai) hienThiDuLieu();
+            };
+            Unloaded += (_, _) => dongHo.Stop();
         }
 
-        /// <summary>
-        /// Đưa các dòng chấm công đã nạp lên giao diện và đồng bộ thông tin chi tiết.
-        /// </summary>
-        /// <remarks>Các bước được phối hợp qua <c>int.TryParse</c>, <c>busChamCong.layChamCongTheoThang</c>, <c>danhSachCong.Rows.Count.ToString</c>, <c>danhSachCong.AsEnumerable</c>.</remarks>
         public void hienThiDuLieu()
         {
             if (dangTai) return;
-            if (!PhienDangNhap.IsAdmin || string.IsNullOrWhiteSpace(PhienDangNhap.MaNV))
+            if (string.IsNullOrWhiteSpace(PhienDangNhap.MaTK) || string.IsNullOrWhiteSpace(PhienDangNhap.MaNV))
             {
-                lblThongBao.Text = "Chỉ tài khoản BQL/Admin đã gắn nhân viên mới được duyệt chấm công.";
+                lblThongBao.Text = "Cần đăng nhập bằng tài khoản đã liên kết nhân viên để xem chấm công.";
                 return;
             }
-            if (cboThang.SelectedIndex < 0 || !int.TryParse(txtNam.Text, out int nam)
-                || nam < 2000 || nam > 2100)
+            if (cboThang.SelectedIndex < 0 || !int.TryParse(txtNam.Text, out int nam) || nam < 2000 || nam > 2100)
             {
                 lblThongBao.Text = "Vui lòng nhập kỳ chấm công hợp lệ.";
                 return;
@@ -72,24 +65,51 @@ namespace RangHamMat.Views
             dangTai = true;
             try
             {
-                danhSachCong = dongBoChamCong ?? busChamCong.layChamCongTheoThang(cboThang.SelectedIndex + 1, nam);
-                danhSachCong.DefaultView.Sort = "NgayLam ASC, MaCa ASC, HoTen ASC";
-                // Bỏ bảng cũ để DataGrid đo lại đúng chiều rộng cột khi đổi kỳ.
-                gridChamCong.SelectedItem = null;
-                gridChamCong.ItemsSource = null;
-                gridChamCong.ItemsSource = danhSachCong.DefaultView;
+                // Không thay đổi phương thức BUS/DAL lấy danh sách hiện tại.
+                danhSachCong = dongBoChamCong ?? busChamCong.layChamCongTheoThang(
+                    cboThang.SelectedIndex + 1, nam, PhienDangNhap.MaTK);
+
+                if (!danhSachCong.Columns.Contains("DuocCham"))
+                    danhSachCong.Columns.Add("DuocCham", typeof(bool));
+                if (!danhSachCong.Columns.Contains("LyDoKhongCham"))
+                    danhSachCong.Columns.Add("LyDoKhongCham", typeof(string));
+                if (!danhSachCong.Columns.Contains("CongDuKien"))
+                    danhSachCong.Columns.Add("CongDuKien", typeof(decimal));
+                if (!danhSachCong.Columns.Contains("SoPhutDiTreDuKien"))
+                    danhSachCong.Columns.Add("SoPhutDiTreDuKien", typeof(int));
+
+                const string sapXep = "NgayLam DESC, GioBatDau ASC, HoTen ASC";
+                danhSachCong.DefaultView.Sort = sapXep;
+                danhSachDuocCham = new DataView(danhSachCong) { Sort = sapXep };
+
+                dangPhanLoai = true;
+                try
+                {
+                    gridDuocCham.ItemsSource = null;
+                    gridChamCong.ItemsSource = null;
+                    gridDuocCham.ItemsSource = danhSachDuocCham;
+                    gridChamCong.ItemsSource = danhSachCong.DefaultView;
+                }
+                finally { dangPhanLoai = false; }
+
                 lblTongCa.Text = danhSachCong.Rows.Count.ToString("N0");
-                lblChoDuyet.Text = danhSachCong.AsEnumerable().Count(r => r.Field<string>("TrangThai") == "Chờ đối soát").ToString("N0");
-                lblDaDuyet.Text = danhSachCong.AsEnumerable().Count(r => r.Field<string>("TrangThai") == "Đã xác nhận").ToString("N0");
-                locDuLieu();
-                if (danhSachCong.DefaultView.Count > 0) gridChamCong.SelectedIndex = 0;
-                else xoaChiTiet();
+                lblChuaCham.Text = danhSachCong.AsEnumerable().Count(
+                    r => r.Field<string>("TrangThai") == "Chưa chấm công").ToString("N0");
+                lblDaCham.Text = danhSachCong.AsEnumerable().Count(
+                    r => (r.Field<string>("TrangThai") ?? "").StartsWith("Đã chấm công", StringComparison.Ordinal)).ToString("N0");
+
                 daTai = true;
-                lblThongBao.Text = "BQL có thể duyệt ca ngắn hơn 8 giờ, mỗi ca hoàn tất tính 0,5 công; không tính lại bảng lương đã lưu.";
+                lblThongBao.Text = PhienDangNhap.IsAdmin
+                    ? "BQL xem toàn bộ ca; chỉ được chấm công ca của chính mình. Ca hết giờ sẽ khóa tự động."
+                    : "Chỉ hiển thị ca của bạn. Chấm trước khi hết ca; đúng giờ 0,5 công, trễ tối đa 60 phút 0,25 công, trễ hơn 60 phút 0 công.";
+                capNhatPhanLoai();
             }
             catch (Exception ex)
-            { if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
+            {
+                if (RangHamMat.Services.DongBoManHinh.DangCapNhatTuDong) throw;
                 daTai = false;
+                danhSachDuocCham = null;
+                gridDuocCham.ItemsSource = null;
                 gridChamCong.ItemsSource = null;
                 danhSachCong = new DataTable();
                 xoaChiTiet();
@@ -99,24 +119,20 @@ namespace RangHamMat.Views
             finally { dangTai = false; }
         }
 
-        /// <summary>
-        /// Lọc dữ liệu đã nạp theo từ khóa và các lựa chọn kỳ/trạng thái của màn hình.
-        /// </summary>
+        // Cùng một nguồn dữ liệu nhưng hai DataView được lọc riêng, không ghi dữ liệu phân loại xuống SQL.
         private void locDuLieu()
         {
-            if (danhSachCong.Columns.Count == 0) return;
+            if (danhSachCong.Columns.Count == 0 || danhSachDuocCham == null) return;
             string dieuKien = locTimKiem;
             if (locTrangThai != "") dieuKien += (dieuKien == "" ? "" : " AND ") + locTrangThai;
-            danhSachCong.DefaultView.RowFilter = dieuKien;
-            lblSoDong.Text = $"{danhSachCong.DefaultView.Count:N0} ca đang hiển thị";
+            string tienTo = dieuKien == "" ? "" : dieuKien + " AND ";
+            danhSachDuocCham.RowFilter = tienTo + "DuocCham = true";
+            danhSachCong.DefaultView.RowFilter = tienTo + "DuocCham = false";
+            lblCaDuocCham.Text = $"{danhSachDuocCham.Count:N0} ca có thể chấm công";
+            lblSoDong.Text = $"{danhSachCong.DefaultView.Count:N0} ca không thể thao tác · " +
+                                $"{danhSachDuocCham.Count + danhSachCong.DefaultView.Count:N0} ca đang hiển thị";
         }
 
-        /// <summary>
-        /// Tiếp nhận thay đổi ô nhập tìm kiểm và cập nhật trạng thái/dữ liệu phụ thuộc.
-        /// </summary>
-        /// <remarks>Các bước được phối hợp qua <c>Regex.Replace</c>, <c>noiDung.Trim</c>, <c>locDuLieu</c>.</remarks>
-        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void txtTimKiem_TextChanged(object sender, TextChangedEventArgs e)
         {
             string noiDung = Regex.Replace(txtTimKiem.Text, @"[^\p{L}\p{M}\p{N} ]", "");
@@ -129,208 +145,270 @@ namespace RangHamMat.Views
             }
             locTimKiem = noiDung.Trim() == "" ? "" :
                 $"(MaNV LIKE '%{noiDung.Trim()}%' OR HoTen LIKE '%{noiDung.Trim()}%')";
-            if (daTai && !dangTai) locDuLieu();
+            if (daTai && !dangTai) { locDuLieu(); chonLaiCa(); capNhatChiTiet(); }
         }
 
-        /// <summary>
-        /// Phản ánh lựa chọn hộp chọn trạng thái vào dữ liệu và phần hiển thị liên quan.
-        /// </summary>
-        /// <remarks>Các bước được phối hợp qua <c>.ToString</c>, <c>locDuLieu</c>.</remarks>
-        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void cboTrangThai_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string trangThai = (cboTrangThai.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
-            locTrangThai = trangThai == "Tất cả trạng thái" || trangThai == "" ? "" : $"TrangThai = '{trangThai}'";
-            if (daTai && !dangTai) locDuLieu();
+            locTrangThai = trangThai == "Tất cả trạng thái" || trangThai == "" ? "" :
+                trangThai == "Đã chấm công" ? "TrangThai LIKE 'Đã chấm công%'" :
+                $"TrangThai = '{trangThai}'";
+            if (daTai && !dangTai) { locDuLieu(); chonLaiCa(); capNhatChiTiet(); }
         }
 
-        /// <summary>
-        /// Phản ánh lựa chọn hộp chọn tháng vào dữ liệu và phần hiển thị liên quan.
-        /// </summary>
-        /// <remarks>Các bước được phối hợp qua <c>hienThiDuLieu</c>.</remarks>
-        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void cboThang_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (daTai && !dangTai) hienThiDuLieu();
         }
 
-        /// <summary>
-        /// Tiếp nhận thay đổi ô nhập năm và cập nhật trạng thái/dữ liệu phụ thuộc.
-        /// </summary>
-        /// <remarks>Các bước được phối hợp qua <c>int.TryParse</c>, <c>hienThiDuLieu</c>.</remarks>
-        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void txtNam_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (daTai && !dangTai && txtNam.Text.Length == 4 && int.TryParse(txtNam.Text, out _)) hienThiDuLieu();
+            if (daTai && !dangTai && txtNam.Text.Length == 4 && int.TryParse(txtNam.Text, out _))
+                hienThiDuLieu();
         }
 
-        /// <summary>
-        /// Xử lý thao tác nút tải lại khi người dùng bấm nút tương ứng trên màn hình.
-        /// </summary>
-        /// <remarks>Các bước được phối hợp qua <c>hienThiDuLieu</c>.</remarks>
-        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
         private void btnTaiLai_Click(object sender, RoutedEventArgs e) => hienThiDuLieu();
 
-        /// <summary>
-        /// Phản ánh lựa chọn bảng hiển thị chấm công vào dữ liệu và phần hiển thị liên quan.
-        /// </summary>
-        /// <remarks>Các bước được phối hợp qua <c>xoaChiTiet</c>, <c>vao.ToString</c>, <c>ra.ToString</c>, <c>hang[&quot;TrangThai&quot;].ToString</c>.</remarks>
-        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
+        // Tính lại theo giờ SQL Server. Khi không kết nối được, toàn bộ ca bị khóa an toàn.
+        private void capNhatPhanLoai()
+        {
+            if (danhSachCong.Columns.Count == 0 || danhSachDuocCham == null) return;
+            string? loiDongHo = null;
+            if (!coGioMayChu || !boDemMayChu.IsRunning ||
+                boDemMayChu.Elapsed >= TimeSpan.FromSeconds(10))
+            {
+                try
+                {
+                    mocGioMayChu = busChamCong.layThoiGianMayChu();
+                    boDemMayChu.Restart();
+                    coGioMayChu = true;
+                }
+                catch (Exception ex)
+                {
+                    coGioMayChu = false;
+                    boDemMayChu.Reset();
+                    loiDongHo = "Không xác định được giờ SQL Server: " + ex.Message;
+                }
+            }
+            if (coGioMayChu)
+                gioMayChu = mocGioMayChu.Add(boDemMayChu.Elapsed);
+            else
+                loiDongHo ??= "Chưa đồng bộ được giờ SQL Server. Vui lòng tải lại.";
+
+            dangPhanLoai = true;
+            try
+            {
+                foreach (DataRow dong in danhSachCong.Rows)
+                {
+                    string lyDo = loiDongHo ?? layLyDoKhongCham(dong);
+                    dong["DuocCham"] = lyDo == "";
+                    dong["LyDoKhongCham"] = lyDo;
+                    int soPhutDiTre = 0;
+                    if (coGioMayChu)
+                    {
+                        DateTime mocBatDau = Convert.ToDateTime(dong["NgayLam"]).Date
+                            .Add((TimeSpan)dong["GioBatDau"]);
+                        if (gioMayChu > mocBatDau)
+                            soPhutDiTre = (int)Math.Ceiling((gioMayChu - mocBatDau).TotalMinutes);
+                    }
+                    dong["SoPhutDiTreDuKien"] = soPhutDiTre;
+                    dong["CongDuKien"] = soPhutDiTre == 0 ? 0.5m :
+                        (soPhutDiTre <= 60 ? 0.25m : 0m);
+                }
+            }
+            finally { dangPhanLoai = false; }
+
+            locDuLieu();
+            chonLaiCa();
+            capNhatChiTiet();
+            if (loiDongHo != null) lblThongBao.Text = loiDongHo;
+        }
+
+        // Mọi ca đều có lý do rõ ràng nếu không được phép. Điều kiện DAL là quyết định cuối cùng.
+        private string layLyDoKhongCham(DataRow hang)
+        {
+            if (!Convert.ToBoolean(hang["LaCaCuaToi"]))
+                return "Chỉ được xem; không thể chấm công thay nhân viên khác.";
+            if (Convert.ToBoolean(hang["DaChot"]))
+                return "Kỳ lương đã chốt, không thể thay đổi công.";
+            if (Convert.ToBoolean(hang["CoDonNghi"]))
+                return "Ngày này có đơn nghỉ phép được duyệt.";
+            if (hang["TrangThaiLich"].ToString() != "Đã xác nhận")
+                return "Ca chưa được xác nhận phân công hoặc đã bị hủy/nghỉ.";
+            if (Convert.ToBoolean(hang["DaCoGhiNhan"]))
+                return "Ca đã có dữ liệu chấm công; không thể chấm lại.";
+
+            DateTime ngay = Convert.ToDateTime(hang["NgayLam"]).Date;
+            if (ngay < gioMayChu.Date) return "Đã quá ngày làm việc, không được chấm bù.";
+            if (ngay > gioMayChu.Date) return "Chưa đến ngày làm việc.";
+
+            TimeSpan batDau = (TimeSpan)hang["GioBatDau"];
+            TimeSpan ketThuc = (TimeSpan)hang["GioKetThuc"];
+            DateTime mocKetThuc = ngay.Add(ketThuc);
+            if (ketThuc <= batDau) mocKetThuc = mocKetThuc.AddDays(1);
+            if (gioMayChu >= mocKetThuc)
+                return $"Ca đã hết giờ lúc {mocKetThuc:HH:mm}. Không được chấm công bù.";
+
+            if (hang["GioKetThucCaTruoc"] is TimeSpan ketThucTruoc &&
+                hang["GioBatDauCaTruoc"] is TimeSpan batDauTruoc)
+            {
+                DateTime mocCaTruoc = ngay.Add(ketThucTruoc);
+                if (ketThucTruoc <= batDauTruoc) mocCaTruoc = mocCaTruoc.AddDays(1);
+                if (gioMayChu < mocCaTruoc)
+                    return $"Chưa đến lượt. Ca trước kết thúc lúc {mocCaTruoc:HH:mm}.";
+            }
+            return "";
+        }
+
+        // Giữ một dòng đang chọn dù nó vừa chuyển từ khung có thể chấm sang khung bị khóa.
+        private void chonLaiCa()
+        {
+            if (danhSachDuocCham == null) return;
+            DataRowView? duocCham = null;
+            DataRowView? khongTheCham = null;
+            if (maLLVDangChon != "")
+            {
+                duocCham = danhSachDuocCham.Cast<DataRowView>().FirstOrDefault(
+                    x => x["MaLLV"].ToString() == maLLVDangChon);
+                khongTheCham = danhSachCong.DefaultView.Cast<DataRowView>().FirstOrDefault(
+                    x => x["MaLLV"].ToString() == maLLVDangChon);
+            }
+            if (duocCham == null && khongTheCham == null)
+            {
+                duocCham = danhSachDuocCham.Cast<DataRowView>().FirstOrDefault();
+                if (duocCham == null)
+                    khongTheCham = danhSachCong.DefaultView.Cast<DataRowView>().FirstOrDefault();
+            }
+            dangChon = true;
+            try
+            {
+                gridDuocCham.SelectedItem = duocCham;
+                gridChamCong.SelectedItem = duocCham == null ? khongTheCham : null;
+            }
+            finally { dangChon = false; }
+            var ca = duocCham ?? khongTheCham;
+            maLLVDangChon = ca?["MaLLV"]?.ToString() ?? "";
+        }
+
         private void gridChamCong_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (gridChamCong.SelectedItem is not DataRowView hang) { xoaChiTiet(); return; }
-            lblNhanVien.Text = hang["HoTen"] + "  ·  " + hang["MaNV"];
-            DateTime ngay = Convert.ToDateTime(hang["NgayLam"]);
-            lblThongTinCa.Text = $"{ngay:dd/MM/yyyy}  •  {hang["MaCa"]}  •  {hang["TenChucVu"]}  •  {hang["TrangThai"]}";
-            lblKhungGio.Text = $"{(TimeSpan)hang["GioBatDau"]:hh\\:mm} — {(TimeSpan)hang["GioKetThuc"]:hh\\:mm}";
-            txtGioVao.Text = hang["GioVao"] is DateTime vao ? vao.ToString("HH:mm") : "";
-            txtGioRa.Text = hang["GioRa"] is DateTime ra ? ra.ToString("HH:mm") : "";
-            txtLyDo.Text = "";
-            cboKetQua.SelectedIndex = 0;
-            if (hang["GioVao"] == DBNull.Value || hang["GioRa"] == DBNull.Value)
-                cboKetQua.SelectedIndex = 1;
-            if (hang["TrangThai"].ToString() == "Không hợp lệ") cboKetQua.SelectedIndex = 2;
-            lblLichSu.Text = hang["NgayDoiSoat"] is DateTime duyet
-                ? $"Đối soát gần nhất: {duyet:dd/MM/yyyy HH:mm} · {hang["MaNVDoiSoat"]}"
-                : "Chưa có lần đối soát";
-            bool khoa = Convert.ToBoolean(hang["DaChot"]);
-            bool nghi = Convert.ToBoolean(hang["CoDonNghi"]);
-            string trangThaiLich = hang["TrangThaiLich"].ToString() ?? "";
-            bool huy = new[] { "Hủy", "Từ chối", "Nghỉ phép", "Nghỉ việc" }.Contains(trangThaiLich);
-            bool quaSom = ngay.Date > DateTime.Today;
-            lblCanhBao.Text = khoa ? "Kỳ lương đã chốt: không thể sửa công." :
-                nghi ? "Ngày này có đơn nghỉ đã duyệt: không được tính trùng công." :
-                huy ? "Lịch này đã bị hủy hoặc nghỉ phép: không được duyệt công." :
-                quaSom ? "Không được duyệt ca làm việc trong tương lai." :
-                "Ca hoàn tất được 0,5 công, không yêu cầu đủ 8 giờ; đi trễ 16–60 phút vẫn trừ 0,25 công khi tổng hợp lương.";
-            bool duocDuyet = !khoa && !nghi && !huy && !quaSom;
-            btnDuyetMot.IsEnabled = duocDuyet;
-            txtGioVao.IsEnabled = duocDuyet && cboKetQua.SelectedIndex == 0;
-            txtGioRa.IsEnabled = duocDuyet && cboKetQua.SelectedIndex == 0;
-            cboKetQua.IsEnabled = duocDuyet;
-            txtLyDo.IsEnabled = duocDuyet;
-            btnDuyetNhieu.IsEnabled = duocDuyet && gridChamCong.SelectedItems.Count > 1;
-            DongBoGhiNhanForm();
+            if (dangPhanLoai || dangChon) return;
+            if (sender is not DataGrid grid || grid.SelectedItem is not DataRowView hang)
+            {
+                if (gridDuocCham.SelectedItem == null && gridChamCong.SelectedItem == null) xoaChiTiet();
+                return;
+            }
+            dangChon = true;
+            try
+            {
+                if (ReferenceEquals(grid, gridDuocCham)) gridChamCong.SelectedItem = null;
+                else gridDuocCham.SelectedItem = null;
+            }
+            finally { dangChon = false; }
+            maLLVDangChon = hang["MaLLV"].ToString() ?? "";
+            capNhatChiTiet();
         }
 
-        /// <summary>
-        /// Phản ánh lựa chọn hộp chọn kết quả vào dữ liệu và phần hiển thị liên quan.
-        /// </summary>
-        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
-        private void cboKetQua_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void capNhatChiTiet()
         {
-            if (txtGioVao == null || btnDuyetMot == null) return;
-            bool hoanTat = cboKetQua.SelectedIndex == 0 && btnDuyetMot.IsEnabled;
-            txtGioVao.IsEnabled = hoanTat;
-            txtGioRa.IsEnabled = hoanTat;
+            if ((gridDuocCham.SelectedItem ?? gridChamCong.SelectedItem) is not DataRowView hang)
+            {
+                xoaChiTiet();
+                return;
+            }
+            lblNhanVien.Text = hang["HoTen"] + " · " + hang["MaNV"];
+            DateTime ngay = Convert.ToDateTime(hang["NgayLam"]);
+            lblThongTinCa.Text = $"{ngay:dd/MM/yyyy} • {hang["MaCa"]} • {hang["TenChucVu"]} • {hang["TrangThai"]}";
+            TimeSpan batDau = (TimeSpan)hang["GioBatDau"];
+            TimeSpan ketThuc = (TimeSpan)hang["GioKetThuc"];
+            lblKhungGio.Text = $"{batDau:hh\\:mm} — {ketThuc:hh\\:mm}";
+            lblGhiNhan.Text = hang["GioVao"] is DateTime vao ? vao.ToString("dd/MM/yyyy HH:mm") : "Chưa chấm công";
+            bool duocCham = hang["DuocCham"] is bool b && b;
+            string lyDo = hang["LyDoKhongCham"].ToString() ?? "";
+            if (duocCham)
+            {
+                int phut = Convert.ToInt32(hang["SoPhutDiTreDuKien"]);
+                decimal cong = Convert.ToDecimal(hang["CongDuKien"]);
+                lblCanhBao.Text = $"Chấm công lúc này: đi trễ {phut} phút, được {cong:0.##} công. " +
+                    "Hệ thống tính lại chính xác theo giờ SQL Server khi xác nhận.";
+            }
+            else if (Convert.ToBoolean(hang["DaCoGhiNhan"]))
+            {
+                int phut = Convert.ToInt32(hang["SoPhutDiTre"]);
+                decimal cong = Convert.ToDecimal(hang["CongThucNhan"]);
+                lblCanhBao.Text = $"{lyDo} Đi trễ {phut} phút, thực nhận {cong:0.##} công.";
+            }
+            else lblCanhBao.Text = lyDo;
+            btnChamCong.IsEnabled = duocCham && !dangChamCong;
+            btnChamCong.Content = duocCham ? "Chấm công ca này" : "Không thể chấm công";
         }
 
-        /// <summary>
-        /// Xóa nội dung chi tiết và lựa chọn đang xem trên màn hình.
-        /// </summary>
         private void xoaChiTiet()
         {
             lblNhanVien.Text = "Chọn một ca làm việc";
             lblThongTinCa.Text = "—";
             lblKhungGio.Text = "—";
-            txtGioVao.Text = txtGioRa.Text = txtLyDo.Text = "";
+            lblGhiNhan.Text = "Chưa chấm công";
             lblCanhBao.Text = "";
-            lblLichSu.Text = "";
-            btnDuyetMot.IsEnabled = false;
-            btnDuyetNhieu.IsEnabled = false;
+            btnChamCong.IsEnabled = false;
+            btnChamCong.Content = "Chấm công ca này";
         }
 
-        /// <summary>
-        /// Xử lý thao tác nút duyệt một khi người dùng bấm nút tương ứng trên màn hình.
-        /// </summary>
-        /// <remarks>Các bước được phối hợp qua <c>.ToString</c>, <c>TimeSpan.TryParseExact</c>, <c>txtGioVao.Text.Trim</c>, <c>txtGioRa.Text.Trim</c>.</remarks>
-        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
-        private void btnDuyetMot_Click(object sender, RoutedEventArgs e)
+        private void btnChamCong_Click(object sender, RoutedEventArgs e)
         {
-            if (!PhienDangNhap.IsAdmin || gridChamCong.SelectedItem is not DataRowView hang) return;
+            if (gridDuocCham.SelectedItem is DataRowView hang && btnChamCong.IsEnabled)
+                thucHienChamCong(hang.Row);
+        }
+
+        private void btnChamTrongDanhSach_Click(object sender, RoutedEventArgs e)
+        {
+            string maLLV = (sender as Button)?.CommandParameter?.ToString() ?? "";
+            DataRow? ca = danhSachCong.AsEnumerable().FirstOrDefault(
+                x => x["MaLLV"].ToString() == maLLV);
+            if (ca != null) thucHienChamCong(ca);
+        }
+
+        private void thucHienChamCong(DataRow ca)
+        {
+            if (dangChamCong || ca["DuocCham"] is not bool duocCham || !duocCham) return;
+            string maLLV = ca["MaLLV"].ToString() ?? "";
+            if (maLLV == "") return;
+            int phutDuKien = Convert.ToInt32(ca["SoPhutDiTreDuKien"]);
+            decimal congDuKien = Convert.ToDecimal(ca["CongDuKien"]);
+            string xacNhan = "Xác nhận chấm công ca " + ca["MaCa"] + " ngày " +
+                Convert.ToDateTime(ca["NgayLam"]).ToString("dd/MM/yyyy") + "?" +
+                $"\nĐi trễ dự kiến: {phutDuKien} phút; công dự kiến: {congDuKien:0.##}." +
+                "\nMức công cuối cùng được xác định theo giờ SQL Server khi ghi nhận.";
+            if (MessageBox.Show(xacNhan, "Chấm công", MessageBoxButton.YesNo, MessageBoxImage.Question)
+                != MessageBoxResult.Yes) return;
+
+            dangChamCong = true;
+            btnChamCong.IsEnabled = false;
             try
             {
-                string ketQua = (cboKetQua.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
-                DateTime ngay = Convert.ToDateTime(hang["NgayLam"]);
-                DateTime? vao = null, ra = null;
-                if (ketQua == "Hoàn tất")
-                {
-                    if (!TimeSpan.TryParseExact(txtGioVao.Text.Trim(), @"hh\:mm", null, out TimeSpan gioVao) ||
-                        !TimeSpan.TryParseExact(txtGioRa.Text.Trim(), @"hh\:mm", null, out TimeSpan gioRa))
-                        throw new ArgumentException("Nhập giờ theo định dạng HH:mm, ví dụ 06:00 và 14:00.");
-                    vao = ngay.Date + gioVao;
-                    ra = ngay.Date + gioRa;
-                    if (ra < vao) ra = ra.Value.AddDays(1); // Ca qua đêm.
-                }
-                var ca = new ET_CHAMCONG
-                {
-                    MaLLV = hang["MaLLV"].ToString() ?? "",
-                    TrangThaiCu = hang["TrangThai"].ToString() ?? "",
-                    GioVaoCu = hang.Row.Field<DateTime?>("GioVao"),
-                    GioRaCu = hang.Row.Field<DateTime?>("GioRa"),
-                    GioVao = vao,
-                    GioRa = ra,
-                    KetQua = ketQua,
-                    LyDo = txtLyDo.Text.Trim()
-                };
-                if (MessageBox.Show("BQL xác nhận đối soát ca " + ca.MaLLV + "?", "Duyệt chấm công",
-                    MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-                busChamCong.duyetChamCong(new[] { ca }, PhienDangNhap.MaNV);
+                // DAL kiểm tra lại giờ SQL Server trong cùng giao dịch trước khi ghi nhận.
+                busChamCong.chamCong(maLLV, PhienDangNhap.MaTK);
+                maLLVDangChon = maLLV;
                 hienThiDuLieu();
-                MessageBox.Show("Đã lưu kết quả duyệt ca. Dữ liệu đã được ghi nhật ký.", "Thông báo");
+                DataRow? daCham = danhSachCong.AsEnumerable().FirstOrDefault(
+                    r => r["MaLLV"].ToString() == maLLV);
+                string ketQua = daCham != null
+                    ? $" Đi trễ {Convert.ToInt32(daCham["SoPhutDiTre"])} phút; " +
+                      $"thực nhận {Convert.ToDecimal(daCham["CongThucNhan"]):0.##} công."
+                    : " Công thực nhận sẽ được thể hiện sau khi tải lại dữ liệu.";
+                MessageBox.Show("Đã chấm công thành công." + ketQua, "Thông báo");
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Không thể duyệt ca: " + ex.Message, "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
-        /// <summary>
-        /// Xử lý thao tác nút duyệt nhiều khi người dùng bấm nút tương ứng trên màn hình.
-        /// </summary>
-        /// <remarks>Các bước được phối hợp qua <c>gridChamCong.SelectedItems.OfType&lt;DataRowView&gt;</c>, <c>ds.Add</c>, <c>hang[&quot;MaLLV&quot;].ToString</c>, <c>hang[&quot;TrangThai&quot;].ToString</c>.</remarks>
-        /// <param name="sender">Đối tượng phát sinh sự kiện giao diện.</param>
-        /// <param name="e">Thông tin sự kiện do WPF cung cấp cho lần gọi này.</param>
-        private void btnDuyetNhieu_Click(object sender, RoutedEventArgs e)
-        {
-            if (!PhienDangNhap.IsAdmin) return;
-            var ds = new List<ET_CHAMCONG>();
-            try
-            {
-                foreach (DataRowView hang in gridChamCong.SelectedItems.OfType<DataRowView>())
-                {
-                    // Chỉ duyệt nhóm khi đã có giờ vào/ra; không kiểm tra đủ 8 giờ.
-                    if (hang["GioVao"] is not DateTime vao || hang["GioRa"] is not DateTime ra)
-                        throw new ArgumentException("Ca " + hang["MaLLV"] + " chưa đủ giờ vào/ra; hãy duyệt riêng.");
-                    ds.Add(new ET_CHAMCONG
-                    {
-                        MaLLV = hang["MaLLV"].ToString() ?? "",
-                        TrangThaiCu = hang["TrangThai"].ToString() ?? "",
-                        GioVaoCu = vao,
-                        GioRaCu = ra,
-                        GioVao = vao,
-                        GioRa = ra,
-                        KetQua = "Hoàn tất",
-                        LyDo = "BQL đối soát hàng loạt theo giờ vào/ra đã ghi nhận"
-                    });
-                }
-                if (ds.Count < 2) { MessageBox.Show("Chọn từ hai ca trở lên để duyệt hàng loạt."); return; }
-                if (MessageBox.Show($"Duyệt {ds.Count} ca? Nếu một ca sai, sẽ không lưu ca nào.", "Xác nhận",
-                    MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-                int soCa = busChamCong.duyetChamCong(ds, PhienDangNhap.MaNV);
+                MessageBox.Show("Không thể chấm công: " + ex.Message,
+                    "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
                 hienThiDuLieu();
-                MessageBox.Show($"Đã đối soát {soCa} ca.", "Thông báo");
             }
-            catch (Exception ex)
+            finally
             {
-                MessageBox.Show("Không thể duyệt hàng loạt: " + ex.Message, "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
+                dangChamCong = false;
+                capNhatChiTiet();
             }
         }
     }
