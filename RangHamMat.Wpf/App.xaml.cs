@@ -40,15 +40,27 @@ namespace wpftest
             PhienDangNhap.KhoiTaoPhienUngDung();
             // Xác nhận database trước khi kiểm tra phiên đã ghi nhớ hoặc đăng nhập.
             var busKetNoi = new BUS_CAUHINHCSDL();
-            if (!await busKetNoi.khoiPhucKetNoiAsync())
+            var khoiDongCSDL = new DichVuKhoiDongCSDL();
+            try
             {
-                var formKetNoi = new CauHinhMayChu(busKetNoi, false);
-                MainWindow = formKetNoi;
-                if (formKetNoi.ShowDialog() != true)
+                if (await khoiDongCSDL.CanHienCauHinhAsync(busKetNoi.khoiPhucKetNoiAsync))
                 {
-                    Shutdown();
-                    return;
+                    var formKetNoi = new CauHinhMayChu(busKetNoi, false);
+                    MainWindow = formKetNoi;
+                    if (formKetNoi.ShowDialog() != true)
+                    {
+                        Shutdown();
+                        return;
+                    }
+                    khoiDongCSDL.XacNhanCauHinh();
                 }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show("Không thể hoàn tất cấu hình kết nối database: " + ex.Message,
+                    "Cấu hình kết nối", MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown();
+                return;
             }
             bool restored = false;
             try { restored = dichVuDangNhap.ThuKhoiPhuc(); }

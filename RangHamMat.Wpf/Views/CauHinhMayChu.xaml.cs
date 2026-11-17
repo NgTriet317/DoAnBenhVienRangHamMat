@@ -197,9 +197,11 @@ public partial class CauHinhMayChu : Window
 
             if (phuHop.Count == 1 && chuoiHopLe is not null)
             {
-                DoiTrangThai(true, "Đã tìm thấy một database phù hợp. Đang ghi nhớ kết nối...");
-                await nghiepVu.luuVaSuDungAsync(chuoiHopLe, huyXuLy.Token);
-                if (!huyXuLy.IsCancellationRequested) DialogResult = true;
+                cboMayChu.Text = phuHop[0];
+                chkWindows.IsChecked = true;
+                cboDatabase.Text = "QLBenhVienRangHamMat";
+                DoiTrangThai(false,
+                    "Đã tìm thấy một database phù hợp. Hãy kiểm tra thông tin rồi bấm Lưu và tiếp tục.");
                 return;
             }
             if (phuHop.Count > 1)

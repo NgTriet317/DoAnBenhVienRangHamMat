@@ -32,7 +32,7 @@
     </ItemGroup>
     <Copy SourceFiles="@(CurrentKioskFiles)" DestinationFiles="@(CurrentKioskFiles->'$(TargetDir)KioskServer\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
-  <Target Name="PublishCurrentKioskBackend" BeforeTargets="ComputeFilesToPublish">
+  <Target Name="PublishCurrentKioskBackend" BeforeTargets="ComputeResolvedFilesToPublishList">
     <MSBuild Projects="..\RangHamMat.Kiosk.Api\RangHamMat.Kiosk.Api.csproj" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=$(MSBuildProjectDirectory)\obj\KioskPublish\$(Configuration)\;SelfContained=false;PublishSingleFile=false" RemoveProperties="RuntimeIdentifier" />
     <ItemGroup>
       <PublishedKioskFiles Include="$(MSBuildProjectDirectory)\obj\KioskPublish\$(Configuration)\**\*" />
