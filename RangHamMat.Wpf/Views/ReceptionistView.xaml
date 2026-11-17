@@ -1,0 +1,236 @@
+<UserControl x:Class="RangHamMat.Views.ReceptionistView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#EFF5FB" FontFamily="Segoe UI">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#1377C9"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Padding" Value="16,12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="12" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#075CA8"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.48"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="SoftButton" BasedOn="{StaticResource PrimaryButton}" TargetType="Button">
+            <Setter Property="Background" Value="#DCEEF9"/>
+            <Setter Property="Foreground" Value="#14538B"/>
+        </Style>
+        <Style x:Key="FormInput" TargetType="TextBox">
+            <Setter Property="MinHeight" Value="44"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="BorderBrush" Value="#CADDEB"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="#FAFDFF"/>
+        </Style>
+        <Style x:Key="ChatBubble" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="14,14,14,3"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="MaxWidth" Value="540"/>
+            <Setter Property="Margin" Value="0,6,60,8"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsUser}" Value="True">
+                    <Setter Property="Background" Value="#D9F0FF"/>
+                    <Setter Property="CornerRadius" Value="14,14,3,14"/>
+                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                    <Setter Property="Margin" Value="60,6,0,8"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#33546C"/>
+            <Setter Property="Margin" Value="0,10,0,5"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="20,16,20,18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0" Margin="4,0,4,16">
+            <StackPanel>
+                <TextBlock Text="LỄ TÂN AI" Foreground="#0C64B2" FontSize="13" FontWeight="Bold"/>
+                <TextBlock Text="Hướng dẫn khám Răng Hàm Mặt" FontSize="27" FontWeight="Bold" Foreground="#123857"/>
+                <TextBlock Text="Hỗ trợ phân luồng sơ bộ • Không thay thế tư vấn bác sĩ" FontSize="13" Foreground="#627E95"/>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 60%: hội thoại -->
+            <Border Grid.Column="0" CornerRadius="18" Background="White" BorderBrush="#D8E7F2" BorderThickness="1" Padding="18">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Grid.Row="0" Margin="4,0,4,10">
+                        <Ellipse Width="11" Height="11" Fill="#25AF89" Margin="0,0,9,0"/>
+                        <TextBlock Text="Lễ tân AI • Kết nối nghiệp vụ tạo phiếu SQL" FontSize="16" FontWeight="SemiBold" Foreground="#203E57"/>
+                    </DockPanel>
+                    <ScrollViewer x:Name="ChatScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="#F6FAFE" Padding="12">
+                        <ItemsControl ItemsSource="{Binding Messages}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource ChatBubble}" Padding="14,11">
+                                        <TextBlock Text="{Binding Content}" FontSize="15" TextWrapping="Wrap" Foreground="#163752" LineHeight="23"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                    <WrapPanel Grid.Row="2" Margin="0,12,0,10">
+                        <Button Style="{StaticResource SoftButton}" Content="Tôi bị đau răng" Command="{Binding QuickReplyCommand}" CommandParameter="Tôi bị đau răng" Margin="0,0,8,8"/>
+                        <Button Style="{StaticResource SoftButton}" Content="Nhổ răng khôn" Command="{Binding QuickReplyCommand}" CommandParameter="Tôi muốn nhổ răng khôn" Margin="0,0,8,8"/>
+                        <Button Style="{StaticResource SoftButton}" Content="Khám tổng quát" Command="{Binding QuickReplyCommand}" CommandParameter="Tôi muốn khám tổng quát" Margin="0,0,8,8"/>
+                        <Button Style="{StaticResource SoftButton}" Content="Đã chụp X-quang" Command="{Binding QuickReplyCommand}" CommandParameter="Có" Margin="0,0,8,8"/>
+                        <Button Style="{StaticResource SoftButton}" Content="Chưa chụp" Command="{Binding QuickReplyCommand}" CommandParameter="Chưa" Margin="0,0,8,8"/>
+                    </WrapPanel>
+                    <Grid Grid.Row="3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="ChatInput" Grid.Column="0" Style="{StaticResource FormInput}"
+                                 Text="{Binding Input, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 KeyDown="ChatInput_KeyDown" MaxLength="500" Margin="0,0,10,0"
+                                 ToolTip="Nhập triệu chứng, nhu cầu hoặc câu hỏi"/>
+                        <Button Grid.Column="1" Content="Gửi tin nhắn" Style="{StaticResource PrimaryButton}" Command="{Binding SendCommand}" MinWidth="125"/>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- 40%: phiếu / chọn nhanh -->
+            <Border Grid.Column="2" CornerRadius="18" Background="White" BorderBrush="#D8E7F2" BorderThickness="1" Padding="20">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="370"
+                                Visibility="{Binding IsWelcomeVisible, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="PHIẾU HƯỚNG DẪN" FontSize="18" FontWeight="Bold" Foreground="#1B4A70" TextAlignment="Center"/>
+                        <TextBlock Text="Phiếu sẽ xuất hiện tại đây khi hoàn tất trao đổi. Bạn cũng có thể chọn nhanh dịch vụ khi mạng yếu."
+                                   FontSize="15" Foreground="#607A91" TextAlignment="Center" TextWrapping="Wrap" Margin="0,14,0,22"/>
+                        <Button Style="{StaticResource PrimaryButton}" Content="Chọn nhanh không cần AI" Command="{Binding SwitchToFallbackCommand}"/>
+                    </StackPanel>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding IsFallbackVisible, Converter={StaticResource BoolToVisibility}}" Background="White">
+                        <StackPanel>
+                            <TextBlock Text="CHỌN NHANH DỊCH VỤ" FontSize="19" FontWeight="Bold" Foreground="#145B92" Margin="0,0,0,6"/>
+                            <TextBlock Text="Chế độ dự phòng • Không cần Groq • Lưu phiếu thật qua SQL Server" Foreground="#647E92" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,14"/>
+                            <UniformGrid Columns="2" Rows="3">
+                                <Button Content="Đau cấp tính" Command="{Binding SelectGroupCommand}" CommandParameter="DAU_CAP_TINH" Style="{StaticResource SoftButton}" Margin="0,0,8,8"/>
+                                <Button Content="Nhổ răng khôn" Command="{Binding SelectGroupCommand}" CommandParameter="NHO_RANG_KHON" Style="{StaticResource SoftButton}" Margin="0,0,0,8"/>
+                                <Button Content="Chỉnh nha" Command="{Binding SelectGroupCommand}" CommandParameter="CHINH_NHA_THAM_MY" Style="{StaticResource SoftButton}" Margin="0,0,8,8"/>
+                                <Button Content="Implant" Command="{Binding SelectGroupCommand}" CommandParameter="IMPLANT_PHUC_HINH" Style="{StaticResource SoftButton}" Margin="0,0,0,8"/>
+                                <Button Content="Khám tổng quát" Command="{Binding SelectGroupCommand}" CommandParameter="KHAM_TONG_QUAT" Style="{StaticResource SoftButton}" Margin="0,0,8,8"/>
+                                <Button Content="Tái khám" Command="{Binding SelectGroupCommand}" CommandParameter="TAI_KHAM" Style="{StaticResource SoftButton}" Margin="0,0,0,8"/>
+                            </UniformGrid>
+                            <TextBlock Text="Nhóm đã chọn" Style="{StaticResource SectionLabel}"/>
+                            <ComboBox ItemsSource="{Binding AvailableGroups}" SelectedItem="{Binding SelectedGroup, Mode=TwoWay}"
+                                      MinHeight="40" FontSize="14"/>
+                            <TextBlock Text="Họ và tên bệnh nhân" Style="{StaticResource SectionLabel}"/>
+                            <TextBox Style="{StaticResource FormInput}" Text="{Binding FallbackName, UpdateSourceTrigger=PropertyChanged}" MaxLength="90"/>
+                            <TextBlock Text="Ngày sinh bệnh nhân" Style="{StaticResource SectionLabel}"/>
+                            <DatePicker SelectedDate="{Binding FallbackBirthDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        Height="46" FontSize="15" SelectedDateFormat="Short"/>
+                            <TextBlock Text="Số điện thoại" Style="{StaticResource SectionLabel}"/>
+                            <TextBox Style="{StaticResource FormInput}" Text="{Binding FallbackPhone, UpdateSourceTrigger=PropertyChanged}" MaxLength="15"/>
+                            <TextBlock Text="Triệu chứng / nhu cầu (dưới 15 từ)" Style="{StaticResource SectionLabel}"/>
+                            <TextBox Style="{StaticResource FormInput}" Text="{Binding FallbackSymptom, UpdateSourceTrigger=PropertyChanged}" MaxLength="180"/>
+                            <TextBlock Text="Đã có phim X-quang trong 6 tháng?" Style="{StaticResource SectionLabel}"/>
+                            <ComboBox SelectedIndex="{Binding FallbackXraySelection, Mode=TwoWay}" MinHeight="42" FontSize="14">
+                                <ComboBoxItem Content="Có"/>
+                                <ComboBoxItem Content="Chưa"/>
+                            </ComboBox>
+                            <TextBlock Text="Bắt buộc chọn X-quang nếu đau cấp / răng khôn / implant. Chụp phim chỉ khi có chỉ định của bác sĩ."
+                                       FontSize="12" Foreground="#627B90" TextWrapping="Wrap" Margin="0,8,0,14"/>
+                            <Button Content="Xem lại thông tin tạo phiếu" Style="{StaticResource PrimaryButton}" Command="{Binding CreateFallbackCommand}"/>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <ScrollViewer Background="White" Visibility="{Binding IsConfirmationVisible, Converter={StaticResource BoolToVisibility}}">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="XÁC NHẬN TẠO PHIẾU KHÁM" FontSize="19" FontWeight="Bold" Foreground="#145B92"/>
+                            <TextBlock Text="Dữ liệu dưới đây sẽ được lưu vào hồ sơ bệnh viện. Hãy kiểm tra trước khi xác nhận."
+                                       Margin="0,12,0,14" TextWrapping="Wrap" Foreground="#6B7F90"/>
+                            <TextBlock Text="Họ tên" Style="{StaticResource SectionLabel}"/>
+                            <TextBlock Text="{Binding PendingRequest.PatientName}" FontSize="17" TextWrapping="Wrap"/>
+                            <TextBlock Text="Ngày sinh" Style="{StaticResource SectionLabel}"/>
+                            <TextBlock Text="{Binding PendingRequest.DateOfBirth, StringFormat={}{0:dd/MM/yyyy}}" FontSize="17"/>
+                            <TextBlock Text="Điện thoại" Style="{StaticResource SectionLabel}"/>
+                            <TextBlock Text="{Binding PendingRequest.PhoneNumber}" FontSize="17"/>
+                            <TextBlock Text="Nhóm khám" Style="{StaticResource SectionLabel}"/>
+                            <TextBlock Text="{Binding PendingGroupName}" FontSize="17" TextWrapping="Wrap"/>
+                            <TextBlock Text="Triệu chứng / nhu cầu" Style="{StaticResource SectionLabel}"/>
+                            <TextBlock Text="{Binding PendingRequest.SymptomSummary}" FontSize="17" TextWrapping="Wrap"/>
+                            <TextBlock Text="Loại khám: Thông thường (nếu cần khám dịch vụ, gặp nhân viên)"
+                                       Margin="0,10,0,14" FontSize="12" TextWrapping="Wrap" Foreground="#60788B"/>
+                            <Button Content="Xác nhận và tạo phiếu khám THẬT" Command="{Binding ConfirmCreateCommand}"
+                                    Style="{StaticResource PrimaryButton}" Margin="0,0,0,8"/>
+                            <Button Content="Sửa thông tin / Hủy tạo" Command="{Binding CancelConfirmationCommand}"
+                                    Style="{StaticResource SoftButton}"/>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <ScrollViewer Background="White" Visibility="{Binding IsSlipVisible, Converter={StaticResource BoolToVisibility}}">
+                        <StackPanel>
+                            <TextBlock Text="PHIẾU HƯỚNG DẪN" TextAlignment="Center" FontSize="20" FontWeight="Bold" Foreground="#135C94"/>
+                            <TextBlock Text="{Binding SlipModeLabel}" TextAlignment="Center" FontSize="12" FontWeight="Bold" Foreground="#17885C" TextWrapping="Wrap" Margin="0,5,0,10"/>
+                            <TextBlock Text="{Binding CurrentSlip.Code}" FontWeight="Bold" FontSize="15" TextAlignment="Center" Foreground="#16436B"/>
+                            <TextBlock Text="{Binding CurrentSlip.PatientName}" FontSize="18" TextAlignment="Center" Margin="0,12,0,4"/>
+                            <TextBlock Text="SỐ THỨ TỰ" Foreground="#6B8395" TextAlignment="Center" FontSize="12"/>
+                            <TextBlock Text="{Binding CurrentSlip.QueueNumber}" FontSize="43" FontWeight="Bold" TextAlignment="Center" Foreground="#1477BE"/>
+                            <Border BorderBrush="#DEEBF5" BorderThickness="0,1,0,0" Margin="0,8,0,12"/>
+                            <TextBlock Text="LỘ TRÌNH PHÒNG KHÁM" FontWeight="SemiBold" Foreground="#204C6D"/>
+                            <TextBlock Text="{Binding CurrentSlip.RouteText}" TextWrapping="Wrap" FontSize="16" Margin="0,10" Foreground="#244B68"/>
+                            <TextBlock Text="{Binding CurrentSlip.EstimatedWaitMinutes, StringFormat='Chờ dự kiến: ~{0} phút'}" FontSize="14" Foreground="#536F84"/>
+                            <TextBlock Text="Thời gian còn hiển thị" Margin="0,14,0,6" FontWeight="SemiBold" Foreground="#315876"/>
+                            <ProgressBar Maximum="45" Minimum="0" Value="{Binding RemainingSeconds, Mode=OneWay}" Height="8" Foreground="#1B9DC4"/>
+                            <TextBlock Text="{Binding RemainingSeconds, StringFormat='{}{0} giây'}" Foreground="#607A90" Margin="0,4,0,12"/>
+                            <Button Content="In phiếu A5 (mẫu hiện có)" Style="{StaticResource SoftButton}" Command="{Binding ReprintCommand}" Margin="0,0,0,8"/>
+                            <Button Content="Hoàn tất / Phiên mới" Style="{StaticResource PrimaryButton}" Command="{Binding ResetCommand}"/>
+                            <TextBlock Text="{Binding PrintStatus}" TextWrapping="Wrap" Foreground="#86613C" FontSize="12" Margin="0,10,0,0"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+        <DockPanel Grid.Row="2" Margin="6,10,0,0" LastChildFill="True">
+            <Button DockPanel.Dock="Right" Content="Bắt đầu phiên mới" Command="{Binding ResetCommand}"
+                    Style="{StaticResource SoftButton}" Padding="12,7" Margin="12,0,0,0"/>
+            <Ellipse DockPanel.Dock="Left" Width="8" Height="8" Fill="#28A589" Margin="0,0,8,0"/>
+            <TextBlock Text="{Binding Status}" Foreground="#446A87" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center"/>
+        </DockPanel>
+    </Grid>
+</UserControl>

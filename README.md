@@ -1,126 +1,64 @@
-﻿# Quản lý Bệnh viện Răng Hàm Mặt
+# Nâng cấp Lễ tân AI WPF – Tạo phiếu khám SQL thật, KHÔNG QR
 
-WPF .NET8 + SQL Server2016SP1 trở lên. Solution gồm bốn tầng RangHamMat.Wpf (giao diện), ET, DAL, BUS và backend RangHamMat.Kiosk.Api. Views chỉ có các cặp XAML/code-behind; C# phụ trợ ở Presentation/Controls. Các project trong Test là bộ kiểm tra, không phải ứng dụng phát hành.
+**Cơ sở mã nguồn:** `NgTriet317/DoAnBenhVienRangHamMat`, nhánh `dong_bo_giua_cac_may` đã đọc ngày 16/11/2026. Target `net8.0-windows`.
 
-Bản hợp nhất `Sprint3_tan` và `AI` trên nhánh `tan` dùng chung SQL **74 bảng**, cấu hình kết nối, luồng tiếp nhận và hóa đơn. AI lưu bản khai để nhân viên có quyền tiếp nhận xác minh trước khi lập phiếu. Chính sách lương tháng cũ và chính sách lương ca được giữ riêng theo cấu hình chính sách; phụ thu khám dịch vụ chỉ được tính một lần. Xem [kết quả kiểm chứng tích hợp](docs/integration/HOP_NHAT_TAN_AI_20261115.md).
+## Những thay đổi
 
-## Database: một file SQL duy nhất
+- **Bỏ QR hoàn toàn** khỏi `ReceptionistView.xaml`, ViewModel và hàm in bill. Dùng `SlipPrintService.cs`, không còn `CreateQrBitmap` hay phụ thuộc QRCoder từ module.
+- **Mặc định SQL thật**, `UseMockRepository: false` ở `AI/Config/ReceptionistSettings.json`. Còn `MockHospitalRepository` khi chạy kiểm thử với `UseMockRepository:true`, hiển thị DEMO rõ ràng; không ghi SQL trong mode này.
+- **AI gọi `create_guidance_slip`** để chuẩn bị yêu cầu, bệnh nhân xác nhận trên màn hình, sau đó `SqlHospitalRepository.CreateGuidanceSlipAsync` -> `BUS_AI_LETAN.TaoPhieuKham` -> `DAL_AI_LETAN.DamBaoPhienChoTaoPhieu` -> **`BUS_AI_TAOPHIEU.taoPhieu` -> `DAL_AI_TAOPHIEU.taoPhieu` -> `dbo.AI_TaoPhieuTuBanKhai`**. Đây là phiếu khám thật trong `PHIEU_KHAM_BENH`, không chỉ bản khai.
+- Không bỏ qua phân quyền/định danh SQL. Phải đăng nhập nhân viên có **quyền TiepNhan** trong WPF và phiên SQL còn hoạt động. Không mạo danh nhân viên từ lời bệnh nhân.
+- AI phải hỏi **ngày sinh** vì thủ tục SQL tạo phiếu yêu cầu ngày sinh; đồng thời tên, điện thoại, lý do, nhóm khám và tình trạng phim liên quan. Bệnh nhân kiểm tra và bấm **Xác nhận và tạo phiếu khám THẬT** trước khi ghi chính thức.
+- Bộ điều phối lấy phòng từ `PHONG`, số bệnh nhân chờ từ `PHIEU_KHAM_BENH`, kiểm tra bác sĩ trực từ `BUS_AI_TAOPHIEU.layBacSi`, chọn phòng đang có bác sĩ với số người chờ ít nhất. SQL kiểm tra lại trước khi lưu.
+- Không tự chỉ định chụp X-quang; đưa người bệnh đến phòng khám được lựa chọn và ghi chú hỏi bác sĩ về chụp phim nếu cần.
+- Giữ Groq GPT-OSS-20B, hai tool schema phẳng, 6 tin nhắn gần nhất, fallback khi API lỗi, 45 giây ẩn phiếu, in bill 80 mm không QR.
 
-Dùng SSMS hoặc sqlcmd chạy **toàn bộ** [Database/QLBenhVienRangHamMat.sql](Database/QLBenhVienRangHamMat.sql). Không còn thư mục hay bước chạy Migrations.
+## Cài đặt
 
-Bản SQL đồng bộ ngày10/11/2026 có checker tổng cho đủ schema64/khám dịch vụ/phụ thu/ảnh và nhật ký, kiểm liên kết ET/DAL và chặn báo sẵn sàng khi pha trước lỗi. Xem [thay đổi, bằng chứng và cách áp dụng](docs/sprint3/DONG_BO_DATABASE_20261110.md). File SQL không tự nâng cấp database khi mở ứng dụng.
-
-```powershell
-sqlcmd -S . -E -C -b -f65001 -i Database/QLBenhVienRangHamMat.sql
-```
-
-File chỉ tạo một database **QLBenhVienRangHamMat**, schema hiện tại **64 bảng**. Khi chưa có bảng, script nạp đầy đủ schema và bộ dữ liệu đồ án đã chuẩn hóa ngày12/11/2026 (gồm hồ sơ phục hồi và dữ liệu giả lập liên thông), sau đó kiểm tra đồng bộ. Khi chạy lại trên database đã có bảng, script giữ dữ liệu hiện tại, không nạp đè snapshot và không tự dọn dữ liệu. Sao lưu trước khi đồng bộ database ClinicalWorkflow v2/v3 được hỗ trợ.
-
-Đã hợp nhất các phần còn thiếu từ SQL_V9_CAI_MOI_TEST_F5.sql: lịch khám có mức nghiêm trọng/bác sĩ dự bị; chấm công, nhật ký duyệt; lương, phụ cấp, khấu trừ, bảo hiểm, hoa hồng và khóa kỳ đã chốt. Chỉ chạy file SQL chính; không cần chạy thêm các file nâng cấp trong SQL/. File V9 gốc chỉ dùng đối chiếu, có dữ liệu mẫu và không dùng để chạy tiếp trên database đang sử dụng. Xem [đối chiếu và cách bảo toàn lương cũ](docs/database/HOP_NHAT_V9.md).
-
-Phiếu lương từ công thức cũ giữ nguyên số tiền, ghi chú và trạng thái bằng bản tiền trước đồng bộ. Phiếu đã chốt không được sửa; không tự điền người chốt khi dữ liệu cũ chưa có. Bấm Tính lương mới chuyển các phiếu Nháp sang công thức V9 và vẫn giữ bản tiền gốc để đối chiếu. Nhập lịch nghỉ đã được bệnh viện duyệt vào NGAY_NGHI_LE trước khi tính kỳ liên quan; bản cài không tự áp lịch nghỉ hoặc tạo chứng từ lương mẫu.
-
-Cài mới có **47 bệnh nhân,58 dịch vụ,68 thuốc,24 vật tư,18 thiết bị,14 nhân viên/tài khoản,36 hóa đơn** cùng nguồn kho, lịch làm việc, hồ sơ và bàn giao liên thông. Snapshot ngày **14/11/2026** có **64 bảng,3.296 dòng**, giữ **36 lượt khám lịch sử**, không nạp sẵn hàng chờ khám; gồm **4 ảnh X-quang tham khảo** gắn đúng lượt/dịch vụ. Toàn bộ **1.102 lịch làm việc** đã có phòng phù hợp. Có 13 hóa đơn chờ thu và sáu đơn chờ giao để thao tác tiếp. Dữ liệu hiển thị đã bỏ nhãn đồ án, dùng mã cùng tiền tố dữ liệu cũ; nguồn gốc dữ liệu giả lập của đồ án được ghi trong tài liệu. Mật khẩu cũ và tiền lương lịch sử được giữ; Admin **admin001 / 123456**. Xem [tài khoản, mã và kiểm chứng hiện tại](docs/database/DU_LIEU_THONG_NHAT_20261112.md).
-
-Bộ dữ liệu hiện có53 tình trạng,58 dịch vụ,121 liên kết; gồm chấn thương, khớp thái dương hàm, niêm mạc, tuyến nước bọt, nhiễm trùng, nang/u, khe hở, thần kinh, hậu phẫu và bệnh răng. Danh mục nguồn và giá tham khảo ban đầu tại [DANH_MUC_RHM.md](docs/clinical-workflow/DANH_MUC_RHM.md); nguồn gốc giá cấu hình bổ sung được ghi trong tài liệu dữ liệu hiện tại.
-
-Danh mục gốc có52 sản phẩm có nguồn và20 nhóm độc lập mẫu đơn:40 giá tham khảo công khai,12 giá chưa thiết lập. Bộ dữ liệu hiện có68 thuốc sau thêm sáu sản phẩm; 12 giá thiếu đã được đặt giá cấu hình cho đồ án. Đã nhập lô và tồn bằng chứng từ để dùng thử cấp thuốc. Không tự tạo mẫu liều hay người phê duyệt hướng dẫn. Cơ chế ứng dụng vẫn coi thuốc giá0 là **Chưa thiết lập giá** và chặn thanh toán. Xem [nguồn danh mục gốc](docs/clinical-workflow/DANH_MUC_THUOC_RHM.md) và [bộ dữ liệu hiện tại](docs/database/DU_LIEU_THONG_NHAT_20261112.md).
-
-## Cấu hình và chạy
-
-Nhánh `dong_bo_giua_cac_may` bổ sung kiểm tra thay đổi SQL mỗi khoảng 2 giây, cập nhật màn hình liên quan và giữ nội dung đang nhập. Cần áp dụng phần Change Tracking trong file SQL chính từ nhánh này trên server và chạy ứng dụng mới trên các máy. Xem [cài đặt và vận hành đồng bộ](docs/database/DONG_BO_GIUA_CAC_MAY.md).
-
-Mở BenhVienRangHamMat.sln bằng Visual Studio2022 có .NET desktop development/.NET8 SDK, chọn RangHamMat.Wpf làm startup rồi F5. Hoặc mở PhatHanh/RangHamMat.Wpf.exe với .NET8 Desktop Runtime trên Windows. Backend Kiosk trong bản phát hành cần thêm ASP.NET Core Runtime8. Build/publish WPF tự dựng backend từ mã nguồn hiện tại và đặt vào KioskServer; các DLL/MSI cũ trong thư mục nguồn không được dùng để phát hành bản hợp nhất.
-
-Máy mới cần cài SQL Server2016SP1 trở lên, mở toàn bộ file SQL chính trong SSMS rồi F5 và cấu hình đúng instance/quyền truy cập trước khi F5 ứng dụng. Không cần SQLCMD mode hoặc đường dẫn backup của máy cũ. File hiện tại chứa dữ liệu phục hồi; dữ liệu nhập sau lần đóng gói cần sao lưu/khôi phục hoặc cập nhật snapshot bằng tools/CapNhatDuLieuSql.ps1 trước khi chuyển máy.
-
-Ứng dụng kết nối **SQL Server**, không kết nối trực tiếp vào file .sql. File SQL là nguồn khởi tạo/đồng bộ duy nhất. Sửa RangHamMat.Wpf/appsettings.json (hoặc bản cạnh exe):
-
-```json
-{"ConnectionStrings":{"RangHamMat":"Data Source=.;Initial Catalog=QLBenhVienRangHamMat;Integrated Security=True;TrustServerCertificate=True;"}}
-```
-
-Biến môi trường RHM_CONNECTION_STRING được ưu tiên hơn file. Instance có tên cần viết hai dấu gạch chéo trong JSON, ví dụ TEN_MAY\\SQLEXPRESS. Giữ toàn bộ thư mục PhatHanh khi chuyển máy, không chỉ chép exe.
-
-## Báo cáo và thống kê Sprint3
-
-Kế hoạch `KeHoachTrienKhai.docx` ngày07/11/2026 đã triển khai **P0–P5**: nền tảng SQL/ET, tiếp nhận khám dịch vụ, phụ thu xuyên suốt hóa đơn/thu/in, ảnh X-quang và đối soát/dữ liệu trình diễn báo cáo. Tại **Đến trực tiếp**, khám thông thường giữ dịch vụ → bác sĩ; khám dịch vụ chọn bác sĩ có ca/hiện diện/phòng hợp lệ trước rồi lọc dịch vụ đúng chuyên khoa. Phụ thu **30.000đ/lượt** có dòng hóa đơn riêng, không được giảm giá vào khoản bắt buộc này; phiếu cũ và lịch hẹn giữ Thông thường/0đ. **P6 nội bộ ngày10/11 đạt32/32 bước,20/21 tiêu chí**; XR04 còn chờ kiểm kho UNC và phục hồi qua máy khác, chưa phát hành. Xem [nghiệm thu P6](docs/sprint3/NGHIEM_THU_P6_20261110.md), [triển khai/rollback](docs/sprint3/HUONG_DAN_TRIEN_KHAI_VA_ROLLBACK.md), [tiến độ](docs/sprint3/KE_HOACH_TRIEN_KHAI_20261107.md), [kiểm nền tảng](docs/sprint3/KET_QUA_NEN_TANG_20261107.md), [kết quả khám dịch vụ](docs/sprint3/KET_QUA_KHAM_DICH_VU_20261107.md), [ảnh X-quang](docs/sprint3/KET_QUA_ANH_XQUANG_20261107.md), [đối soát và DEMO ba kỳ](docs/sprint3/KET_QUA_DOI_SOAT_P5_20261108.md).
-
-## Ảnh X-quang theo lần khám
-
-Bác sĩ mở tab **Ảnh X-quang** trong lần khám để tải JPG/JPEG/PNG hoặc **DICOM (.dcm, .dicom)**, xem trước/phóng thu hoặc ẩn ảnh. JPG/PNG giữ nguyên byte gốc; DICOM tự chuyển khung đầu tiên sang PNG, áp mức xám/window level của ảnh nguồn và giữ tên DICOM gốc trong metadata. Kho lưu PNG để xem, không lưu bản DICOM nguồn. Cả tệp tải và ảnh PNG sau chuyển đổi đều tối đa20 MiB/40 triệu điểm ảnh; ẩn giữ lại tệp trong kho và metadata. Lượt đã chốt chỉ xem. Bác sĩ có thể giao dịch vụ chụp đã ghi nhận ở bước **4. Thực hiện** cho kỹ thuật viên; kỹ thuật viên mở **Dịch vụ thực hiện → Ảnh X-quang được giao** và chỉ thấy phần được giao. Phân công được lưu riêng, giữ nguyên người thực hiện và giá của chứng từ dịch vụ.
-
-Chuyển đổi dùng fo-dicom/ImageSharp và fo-dicom.Codecs (JPEG, JPEG-LS, JPEG 2000, RLE). Máy Windows đọc DICOM nén cần Visual C++ Redistributable v14 và các thư viện native đi kèm bản build/publish theo [hướng dẫn của bộ codec](https://github.com/Efferent-Health/fo-dicom.Codecs#dependencies). Không cần cập nhật schema SQL. Chạy `powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraDicomXquang.ps1` để kiểm chuyển đổi, lưu/mở lại và bộ xem WPF bằng ảnh tổng hợp, không kết nối SQL.
-
-Cấu hình kho chung trong `XQuang` của `appsettings.json` cạnh ứng dụng:
-
-```json
-"XQuang": {
-  "ThuMucDungChung": "\\\\MAYCHU\\RHM_XQuang",
-  "DungLuongToiDaMB": 20,
-  "DiemAnhToiDa": 40000000,
-  "ChoPhepDuongDanCucBo": false
-}
-```
-
-Biến môi trường `RHM_XRAY_ROOT` ưu tiên hơn đường dẫn trong file. Quản trị viên cấp quyền share/NTFS cho tài khoản Windows chạy ứng dụng và cấu hình cùng một kho cho các máy. Bản đồ án mặc định dùng `DuLieu/AnhXquang` cạnh exe với `ChoPhepDuongDanCucBo=true`; đường dẫn tương đối luôn giải theo thư mục ứng dụng. Build/publish tự chép bốn ảnh tham khảo có giấy phép; nguồn được đóng gói riêng trong `DuLieu/NguonAnhXquang`. Mở **Khám và điều trị → Lịch sử khám → LS006, LS017, LS023 hoặc LS035 → Ảnh X-quang** để xem. Đây là ảnh công khai minh họa hồ sơ giả lập, không phải phim chụp của các bệnh nhân này. Xem [liên kết dữ liệu và cách cập nhật database đã có](docs/database/ANH_XQUANG_LICH_SU_20261114.md). Khi triển khai nhiều máy, đặt cùng một kho UNC, chép đủ tệp và đặt `ChoPhepDuongDanCucBo=false`. Xem [kiểm kho, sao lưu SQL kèm ảnh và phục hồi thử](docs/sprint3/KET_QUA_ANH_XQUANG_20261107.md#vận-hành-kho-và-phục-hồi).
-
-Đã chuẩn bị [bộ chạy XR04 cho máy nghiệm thu](docs/sprint3/BO_NGHIEM_THU_XR04.md), gồm binary/manifest/hash và wrapper dùng runtime. [Kết quả gói ngày10/11](docs/sprint3/KET_QUA_BO_NGHIEM_THU_XR04_20261110.md):17/17 guard,12/12 bước từ ZIP giải nén, phục hồi đủ15 ảnh và viewer đạt. Các ca vẫn trên một máy qua UNC loopback; XR04 còn chờ hai máy/SQL từ xa, chưa chuyển môi trường nghiệp vụ.
-
-**Tổng quan điều hành** hiển thị số bệnh nhân đến khám, tổng lượt khám, tiền thực thu và tổng lịch hẹn; có tình hình lịch, thu/hoàn, dịch vụ thực hiện nhiều, hồ sơ cần rà soát, xu hướng và đối chiếu tháng. Xem [hướng dẫn tổng quan và kết quả 58/58 kiểm tra SQL/WPF](docs/sprint3/TONG_QUAN_DIEU_HANH.md). Chuyên đề **Bệnh/tình trạng thường gặp** có bảng bệnh nhân và đối chiếu tình trạng riêng. Luồng Chọn nhanh của bác sĩ giữ mã tình trạng khi lưu lượt khám mới; không tự gán mã cho hồ sơ cũ.
-
-Phân hệ Báo cáo mở cho nhân viên có phiên hợp lệ, có dashboard và thống kê tình trạng theo mã, giữ đủ 18 chuyên đề cũ. Hỗ trợ MoM/YoY, so sánh hai năm, chuỗi tối đa 24 tháng, MTD, CSV và phân quyền riêng cho chi tiết tài chính/lương/kho. Xem [hướng dẫn, định nghĩa KPI và bằng chứng kiểm thử](docs/sprint3/BAO_CAO_TRIEN_KHAI.md). Chạy `powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraBaoCao.ps1 -Sql -Render` để kiểm báo cáo bằng SQL và render WPF; không cần chạy thêm SQL nâng cấp cho thay đổi báo cáo này.
-
-Tab **Bệnh/tình trạng thường gặp** có bốn ô tổng quan bệnh nhân/lượt khám/loại bệnh/tình trạng phổ biến, bảng từng bệnh nhân kèm giờ khám/chẩn đoán/tình trạng, chọn hai tháng cùng năm hoặc khác năm để đối chiếu và CSV đầy đủ. Chi tiết bệnh nhân dùng quyền dữ liệu lâm sàng hiện có. Xem [cách chọn kỳ và đọc thống kê bệnh lý](docs/sprint3/BAO_CAO_BENH_LY_SO_SANH_THANG.md); bản ngày15/11/2026 đạt54/54 kiểm tra SQL/WPF.
-
-## Đối soát dữ liệu và bộ trình diễn
-
-`tools/DoiSoatDuLieu.ps1` chỉ SELECT, xuất JSON/CSV/Markdown gồm PK/nguyên nhân, tách sai xác định và cần đối chiếu; không tự sửa mã bệnh hoặc chứng từ. Công cụ nhận quyền đọc SQL của người vận hành. Kiểm trên database đang dùng62 bảng ghi nhận11 lượt thiếu mã tình trạng và3 mục schema chưa nâng cấp; không có phép ghi vào database này.
-
-`tools/TaoDuLieuTrinhDien.ps1` tạo **DB mới** `RHM_Hospital_Test_P5Demo_...`, không chép snapshot hay ghi đè DB hiện hữu. Bộ giả lập có18 người/26 lượt qua08–10/2026 (8→12→6), đủ nguồn dịch vụ/thuốc/kho/phụ thu/hóa đơn/thanh toán. Hóa đơn3.250.000đ khác thu trong quý3.150.000đ vì100.000đ thu tháng11. Báo cáo/CSV có nhãn DEMO. Dùng `-ChiXuatMinhChung` để xuất lại chỉ đọc nếu mất output; xem [lệnh tạo/mở DEMO, bảng số liệu và kết quả kiểm](docs/sprint3/KET_QUA_DOI_SOAT_P5_20261108.md).
-
-## Bảo trì thiết bị theo serial
-
-Lịch sử bảo trì quản lý theo serial: chọn thiết bị hư hại để **lập phiếu bảo trì hoặc thanh lý**. Xác nhận phiếu chuyển thẳng **Đang thực hiện**, thiết bị chuyển **Đang bảo trì**; hoàn thành đưa thiết bị về Đang hoạt động. Tab **Thanh lý** lưu ngày, nhân viên, lý do, giá trị thu hồi và thông tin thiết bị tại lúc thanh lý; thiết bị được ngưng sử dụng, thu hồi khỏi phòng và không được sửa/xóa lịch sử. Các thay đổi SQL và dữ liệu giao diện cùng giao dịch. Chạy lại toàn bộ file SQL chính trước khi dùng bản mới. Xem [hướng dẫn bảo trì và thanh lý theo serial](docs/database/BAO_TRI_SERIAL.md).
-
-## Luồng khám và thu tiền
-
-1. Tiếp nhận chọn bác sĩ/phòng/dịch vụ; bác sĩ mở Hàng chờ khám theo giờ tiếp nhận, ai đến trước hiện trước. Admin xem được tất cả, User theo chức vụ và phạm vi SQL.
-2. Bác sĩ ghi chẩn đoán/tình trạng, chọn nhanh theo nhóm bệnh và chọn dịch vụ liên quan. Kế hoạch có sẵn mã/giá từ SQL; chỉnh lượng/buổi rồi lưu và duyệt. Không có Mức độ hoặc Vị trí răng trong tình trạng bệnh.
-3. Sau khi đã làm xong toàn bộ kế hoạch, mở **4. Thực hiện**, đối chiếu dịch vụ và xác nhận. Hệ thống ghi dịch vụ thực tế theo giá đã duyệt, gồm phí khám một lần; chưa tạo hóa đơn. Kế hoạch nháp/chưa xong chặn bước kê thuốc và hoàn tất. Lượt chỉ khám, không có kế hoạch thủ thuật, vẫn xác nhận dịch vụ khám tại bước này.
-4. Mở **5. Kê thuốc**, bấm **Kê thuốc** để mở cửa sổ. Lọc nhóm/tên/hàm lượng ở bên trái, thêm thuốc rồi chọn từng dòng bên phải để nhập số lượng, số ngày, liều, đường dùng và hướng dẫn. Bấm **Xác nhận đơn thuốc** để lưu nháp và đưa danh sách về lần khám; còn sửa được bằng **Sửa danh sách thuốc**. Không dùng mẫu/phiên bản hay tự áp liều. Nếu không kê, chọn Không kê thuốc, nhập lý do và Lưu khám. Đóng cửa sổ khi chưa lưu có lựa chọn lưu/bỏ/ở lại; giữ một nút Hủy nháp.
-5. **6. Tổng kết** đọc dịch vụ thực tế và thuốc chờ chốt/đang hiệu lực từ SQL, không cộng lại đơn nguồn đang được thay. Kiểm tra xong chọn **Chốt và lập hóa đơn**. Hệ thống kiểm bản đã xem, ký đơn nháp, khóa lượt và tạo một hóa đơn chờ thu trong cùng giao dịch; lỗi giữ lại đơn nháp để sửa. Không tự ghi thêm phần điều trị chưa xác nhận.
-6. Quầy thu dùng lại chính hóa đơn đó; giữ giá đã chốt, thu tiền/xuất thuốc phối hợp theo giao dịch. Không thêm dịch vụ sau hoàn tất; retry không sinh hóa đơn hoặc khoản thu thứ hai. Mục **Đơn thuốc** chỉ tra cứu/in đơn đã kê và bàn giao sau khi thu đủ, theo quyền.
-7. Dịch vụ thực hiện chỉ là **Lịch sử dịch vụ đã thực hiện** của lượt hoàn tất. Không có thêm/sửa/xác nhận hoặc dịch vụ phát sinh. Điều dưỡng chỉ xem phần được giao; thu ngân không xem kết quả lâm sàng.
-
-Admin toàn quyền chức năng nhưng vẫn tuân thủ trạng thái chứng từ, kiểm tra dữ liệu, tiền và tồn kho. Xem [cửa sổ kê thuốc và chốt hóa đơn](docs/clinical-workflow/CUA_SO_KE_THUOC.md). Các mốc HospitalWorkflow3/PrescriptionFlow1 mô tả nền tảng trước; hướng dẫn hiện tại áp dụng cửa sổ xác nhận nháp rồi chốt ký/hóa đơn.
-
-## Đăng nhập và đăng xuất
-
-Sau khi đăng nhập thành công, phần mềm ghi nhớ tài khoản trên người dùng Windows hiện tại. Bấm **Thoát ứng dụng** hoặc đóng cửa sổ thì lần mở tiếp theo vào thẳng màn hình chính bằng tài khoản đó. Bấm **Đăng xuất** ở cuối màn hình chính để xóa phiên ghi nhớ và quay lại đăng nhập; có thể đăng nhập bằng tài khoản khác ngay trong cùng lần chạy.
-
-Phiên lưu tại `%LOCALAPPDATA%\RangHamMat\phien-dang-nhap.dat`, được Windows mã hóa, không chứa mật khẩu rõ. Mỗi lần mở lại đều kiểm tra tài khoản và quyền hiện hành từ SQL; tài khoản bị khóa/xóa, đổi mật khẩu hoặc đổi nhân viên liên kết phải đăng nhập lại. Các kiểm tra dữ liệu đang nhập vẫn áp dụng khi đăng xuất.
-
-## Kiểm tra và đóng gói
-
-Hướng dẫn đọc từng tầng, quy ước chú thích tiếng Việt và phạm vi bổ sung ngày30/10/2026 tại [HƯỚNG DẪN CHÚ THÍCH CODE](docs/HUONG_DAN_CHU_THICH_CODE.md). Chú thích bổ sung không thay đổi token thực thi C#, cấu trúc XAML hoặc nội dung file SQL chính.
-
-[Rà soát ngày14/11/2026](docs/database/RA_SOAT_LIEN_KET_NGHIEP_VU_20261114.md) đối chiếu toàn bộ64 bảng/3.285 dòng với luồng nghiệp vụ, giữ riêng các bước chờ thu/giao/chấm công và lương lịch sử; đồng thời bổ sung chú thích cho120 tệp còn thiếu. Có manifest SHA256 và kết quả kiểm chứng kèm theo.
+1. Mở terminal PowerShell ở thư mục `ReceptionistAI_Module` (đã giải nén).
+2. Đảm bảo local Git đang checkout `dong_bo_giua_cac_may`, đã commit/backup các thay đổi cá nhân trước.
+3. Chạy:
 
 ```powershell
-.\KiemTra.bat -KiemTraSql -MayChu . -Database QLBenhVienRangHamMat
-# Kiểm tra lưu phiên và luồng đăng nhập/đăng xuất qua nhiều tiến trình; tạo database thử mới:
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraPhienDangNhap.ps1 -KiemTraSql
-# Dựng/chạy bộ kiểm trên database thử riêng; mọi dữ liệu nghiệp vụ fixture rollback:
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraQuyTrinhBenhVien.ps1 -TaoDatabaseKiemThu
-# Chỉ kiểm đăng nhập Admin/mở27 phân hệ, gồm chấm công, không ghi hồ sơ khám:
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraQuyTrinhBenhVien.ps1 -ChiGiaoDien -Database QLBenhVienRangHamMat
-# Kiểm đồng bộ ET/DAL và nghiệp vụ chấm công/lương trên database thử đã cài SQL chính:
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraDongBoSql.ps1 -Database RHM_Hospital_Test_20261029
-# Nghiệm thu P6 nội bộ: tự tạo các DB thử mới, log/ma trận/hash trong obj/P6Evidence:
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraNghiemThu.ps1 -MayChu .
-
-dotnet publish RangHamMat.Wpf -c Release -o PhatHanh
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\Install-ReceptionistAI.ps1 -RepositoryRoot 'D:\DuAn\DoAnBenhVienRangHamMat'
 ```
 
-Kiểm SQL gọi thủ tục chỉ đọc được cài từ file SQL chính. Project kiểm tạm sinh trong obj, không thêm project sản phẩm. Bộ kiểm ghi chỉ nhận database tiền tố RHM_Hospital_Test_. Hướng dẫn và bằng chứng các mốc cũ có nhắc Migrations/dữ liệu demo là lịch sử đã ngừng sử dụng; dùng README và file SQL hiện tại để cài/chạy.
+Script thay thế điểm mở `TroLyAI` bằng `ReceptionistView`, giữ mã quyền `TroLyAI` đã cấp. Nó **không sửa** `TiepNhanAI`, `PhieuHuongDan` hoặc `RangHamMat.Kiosk.Api`. Script copy 14 file và build. Chạy `-SkipBuild` nếu chỉ muốn áp dụng patch và tự build trong Visual Studio.
+
+4. SQL Server phải có các bảng `AI_PHIEN_TIEP_NHAN`, `AI_TIEP_NHAN_NHAP`, `AI_SU_KIEN`, `AI_KET_QUA_TAO_PHIEU` và stored procedure `dbo.AI_TaoPhieuTuBanKhai` của nhánh trên. **Không cần chạy SQL migration mới**.
+5. Cấu hình biến môi trường `GROQ_API_KEY` riêng trên máy chạy WPF. Khởi động lại Visual Studio sau khi cấu hình.
+6. Đăng nhập WPF bằng tài khoản có quyền nghiệp vụ tiếp nhận, quyền truy cập `PhieuHuongDan` trong SQL và quyền mở phân hệ `TroLyAI`. Tài khoản chỉ có quyền `TroLyAI` nhưng không có quyền `TiepNhan` sẽ bị DAL từ chối khi tạo phiếu.
+7. Trong WPF, vào ô **Lễ tân AI – Tạo phiếu khám** (giữ Tag=`TroLyAI`).
+
+## Bảng quy trình thực tế
+
+| Lượt | Xử lý |
+|---|---|
+| 1 | Bệnh nhân cung cấp triệu chứng/nhu cầu. C# chặn các biểu hiện cấp cứu. |
+| 2 | AI hỏi phim X-quang nếu liên quan, họ tên, ngày sinh, số điện thoại; dữ liệu được đối chiếu lại với văn bản bệnh nhân và C#. |
+| 3 | Groq trả function `create_guidance_slip` (6 tham số, bổ sung `date_of_birth` do SQL yêu cầu). |
+| 4 | UI hiển thị tóm tắt; bệnh nhân nhấn xác nhận; C# tự gọi BUS/DAL với nhân viên đang đăng nhập. |
+| 5 | DAL tạo phiên AI cùng MaPhien, sau đó gọi procedure hiện có. Procedure kiểm tra SQL: quyền tiếp nhận, ca/phòng bác sĩ, hồ sơ nghi trùng, phiếu cùng ngày, phân bổ STT. Dữ liệu X-quang đã/chưa có trong 6 tháng cũng được ghi vào lý do khám nếu liên quan. |
+| 6 | Trả mã phiếu `PKB_AI_...`, số thứ tự, phòng khám thật; WPF in bill 80mm **không có QR**. |
+
+## Giới hạn và an toàn
+
+- Chỉ hỗ trợ **khám thông thường** tự động. Khám dịch vụ cần nhân viên chọn bác sĩ và dịch vụ hợp lệ, nên không gán dịch vụ hoặc phí phụ thu từ AI. Nhóm chỉnh nha, implant, tái khám hiện được điều phối về khoa khám tổng hợp `KHOA001` do SQL nhánh hiện chưa có khoa độc lập; hãy hiệu chỉnh ánh xạ khi tổ chức thay đổi.
+- Phân quyền SQL **không được bỏ** chỉ vì bệnh nhân sử dụng kiosk; trên máy sảnh không nên để lộ phiên đăng nhập nhân viên. Để cung cấp tự phục vụ độc lập, cần backend ủy quyền được kiểm soát và phê duyệt nghiệp vụ riêng.
+- Thủ tục `AI_TaoPhieuTuBanKhai` đã có chống tạo phiếu trùng cùng `MaPhien` và đối chiếu hồ sơ, sử dụng lại nguyên trạng. Nếu hồ sơ nghi trùng, không có bác sĩ trực, không có quyền hoặc SQL lỗi, không tạo phiếu; gặp nhân viên.
+- Giới hạn thời gian 45 giây chỉ xóa dữ liệu **trên màn hình**, không xóa phiếu đã lưu SQL; cần cân nhắc quyền riêng tư bệnh nhân và việc gửi thông tin y tế lên Groq.
+- Backend kiosk trình duyệt (`RangHamMat.Kiosk.Api`) vẫn trả HTTP 410 cho `/api/ai/intake/receipts`. Bản này chỉ thay **WPF**; không âm thầm mở quyền ghi cho endpoint công khai không xác thực.
+- Không thể xác nhận biên dịch / kết nối SQL / in bill / gọi Groq thực tế trong môi trường Linux hiện tại. Script cung cấp restore+build và bài kiểm thử dưới đây.
+
+## Kiểm thử cần làm tại Windows + SQL test
+
+1. Đăng nhập nhân viên có quyền `TiepNhan`, kiểm tra module mới hiển thị qua ô AI cũ.
+2. Với ca bác sĩ đang làm, bệnh nhân mới đủ thông tin và xác nhận: `PHIEU_KHAM_BENH` tăng đúng **1**, `AI_PHIEN_TIEP_NHAN.TrangThai` thành `DaDuyet`, có đúng `SoThuTu`.
+3. Nhấn tạo hai lần/cùng MaPhien: chỉ một phiếu, STT không tăng lần hai.
+4. Bệnh nhân cũ trùng đủ ba trường: liên kết hồ sơ cũ. Hồ sơ nghi trùng/đang có phiếu ở cùng phòng hôm nay: báo lỗi từ SQL, không cấp thêm phiếu.
+5. Không có bác sĩ trực/không có quyền nghiệp vụ/ngày sinh thiếu: không được tạo phiếu.
+6. API 429/500/timeout: fallback chọn nhanh; **vẫn lưu SQL thật** sau khi xác nhận (nếu SQL hoạt động).
+7. Không có máy in hoặc mặc định máy A4: phiếu vẫn hiển thị, không crash. Máy in bill đúng 80mm: in không QR.
+8. Phiếu đã tạo được xóa khỏi màn hình sau 45 giây hoặc bấm hoàn tất; bản ghi SQL vẫn còn.
+9. Chạy thử trên database test trước khi áp dụng dữ liệu thật, đặc biệt các trường hợp nhân viên đang đăng nhập và hoạt động ca bác sĩ thực tế.
