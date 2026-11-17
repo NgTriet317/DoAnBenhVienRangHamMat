@@ -2,12 +2,14 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <UseWPF>true</UseWPF>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>RangHamMat</RootNamespace>
     <AssemblyName>RangHamMat.Wpf</AssemblyName>
+    <Version>1.0.1</Version>
   </PropertyGroup>
   <ItemGroup>
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
@@ -21,7 +23,7 @@
     <ProjectReference Include="..\BUS\BUS.csproj" />
     <ProjectReference Include="..\ET\ET.csproj" />
     <!-- Build backend từ cùng mã nguồn, không chạy các DLL đóng gói cũ trong Git. -->
-    <ProjectReference Include="..\RangHamMat.Kiosk.Api\RangHamMat.Kiosk.Api.csproj" ReferenceOutputAssembly="false" Private="false" />
+    <ProjectReference Include="..\RangHamMat.Kiosk.Api\RangHamMat.Kiosk.Api.csproj" ReferenceOutputAssembly="false" Private="false" SkipGetTargetFrameworkProperties="true" GlobalPropertiesToRemove="TargetFramework;RuntimeIdentifier;SelfContained;PublishProfile" />
     <None Remove="AI\Config\AiSecrets.local.json" />
     <None Update="AI\Prompts\**\*.md;AI\Config\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Include="AI\Config\AiSecrets.local.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" Condition="'$(Configuration)' == 'Debug' and Exists('AI\Config\AiSecrets.local.json')" />
@@ -32,10 +34,15 @@
     </ItemGroup>
     <Copy SourceFiles="@(CurrentKioskFiles)" DestinationFiles="@(CurrentKioskFiles->'$(TargetDir)KioskServer\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
-  <Target Name="PublishCurrentKioskBackend" BeforeTargets="ComputeResolvedFilesToPublishList">
-    <MSBuild Projects="..\RangHamMat.Kiosk.Api\RangHamMat.Kiosk.Api.csproj" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=$(MSBuildProjectDirectory)\obj\KioskPublish\$(Configuration)\;SelfContained=false;PublishSingleFile=false" RemoveProperties="RuntimeIdentifier" />
+  <Target Name="PublishCurrentKioskBackend" AfterTargets="ComputeResolvedFilesToPublishList">
+    <PropertyGroup>
+      <KioskPublishRuntime Condition="'$(RuntimeIdentifier)' == ''">portable</KioskPublishRuntime>
+      <KioskPublishRuntime Condition="'$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</KioskPublishRuntime>
+      <KioskPublishDirectory>$(MSBuildProjectDirectory)\obj\KioskPublish\$(Configuration)\$(KioskPublishRuntime)\</KioskPublishDirectory>
+    </PropertyGroup>
+    <MSBuild Projects="..\RangHamMat.Kiosk.Api\RangHamMat.Kiosk.Api.csproj" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=$(KioskPublishDirectory);RuntimeIdentifier=$(RuntimeIdentifier);SelfContained=$(SelfContained);PublishSingleFile=false" RemoveProperties="PublishProfile;PublishProfileFullPath;PublishProfileRootFolder" />
     <ItemGroup>
-      <PublishedKioskFiles Include="$(MSBuildProjectDirectory)\obj\KioskPublish\$(Configuration)\**\*" />
+      <PublishedKioskFiles Include="$(KioskPublishDirectory)**\*" />
       <ResolvedFileToPublish Include="@(PublishedKioskFiles)">
         <RelativePath>KioskServer\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

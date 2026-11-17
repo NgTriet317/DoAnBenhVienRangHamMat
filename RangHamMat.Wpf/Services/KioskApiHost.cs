@@ -45,7 +45,9 @@ public sealed class KioskApiHost
             lock (errorsLock) recentErrors.Clear();
             int port = PickFreePort();
             string endpoint = $"http://127.0.0.1:{port}";
-            var startInfo = new ProcessStartInfo("dotnet")
+            var appHost = Path.Combine(serverFolder, "RangHamMat.Kiosk.Api.exe");
+            bool coAppHost = File.Exists(appHost);
+            var startInfo = new ProcessStartInfo(coAppHost ? appHost : "dotnet")
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -53,7 +55,7 @@ public sealed class KioskApiHost
                 RedirectStandardError = true,
                 RedirectStandardOutput = true
             };
-            startInfo.ArgumentList.Add(dll);
+            if (!coAppHost) startInfo.ArgumentList.Add(dll);
             startInfo.Environment["RHM_KIOSK_EMBEDDED_PORT"] = port.ToString();
             if (!string.IsNullOrWhiteSpace(apiKey))
                 startInfo.Environment["RHM_AI_API_KEY"] = apiKey.Trim();
@@ -64,7 +66,7 @@ public sealed class KioskApiHost
             child.ErrorDataReceived += (_, e) => CaptureLine(e.Data);
             try
             {
-                if (!child.Start()) throw new InvalidOperationException("Không thể chạy dotnet host cho API.");
+                if (!child.Start()) throw new InvalidOperationException("Không thể khởi động API Kiosk.");
                 child.BeginOutputReadLine();
                 child.BeginErrorReadLine();
             }

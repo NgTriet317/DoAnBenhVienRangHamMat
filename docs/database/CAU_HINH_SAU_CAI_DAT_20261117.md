@@ -1,5 +1,7 @@
 # Cấu hình SQL sau khi cài lại — 17/11/2026
 
+> Bản ghi kiểm chứng ban đầu của 1.0.0. Bộ cài và đường dẫn phát hành hiện tại đã được thay bằng 1.0.1 trong [sửa lỗi bộ cài thiếu DLL](SUA_LOI_BO_CAI_20261117.md).
+
 Lần mở đầu sau khi cài MSI luôn hiện Cấu hình kết nối SQL Server. Cấu hình cũ có thể điền sẵn nhưng không tự bỏ qua màn hình. Chỉ Lưu và tiếp tục thành công mới xác nhận; đóng/hủy hoặc lưu lỗi vẫn hỏi lại lần sau. Tự tìm kết nối chỉ điền thông tin để kiểm tra. Những lần mở tiếp theo dùng cơ chế khôi phục kết nối hiện có; kết nối lỗi sẽ mở lại màn hình.
 
 ## Bộ cài

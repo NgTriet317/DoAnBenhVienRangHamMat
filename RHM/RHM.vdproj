@@ -46,11 +46,6 @@
             "ComponentsUrl" = "8:"
                 "Items"
                 {
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
-                    {
-                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
-                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
-                    }
                 }
             }
         }
@@ -59,7 +54,7 @@
         "DisplayName" = "8:Release"
         "IsDebugOnly" = "11:FALSE"
         "IsReleaseOnly" = "11:TRUE"
-        "OutputFilename" = "8:Release-CauHinhDatabase\\RHM.msi"
+        "OutputFilename" = "8:Release\\RHM.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -78,11 +73,6 @@
             "ComponentsUrl" = "8:"
                 "Items"
                 {
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
-                    {
-                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
-                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
-                    }
                 }
             }
         }
@@ -172,15 +162,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:RHM"
-        "ProductCode" = "8:{AEBC0638-1050-4FD3-AC7A-DE145A2ECE28}"
-        "PackageCode" = "8:{EF6B285C-9705-40CF-9161-BFE45699245C}"
+        "ProductCode" = "8:{9FBD42B0-9B5B-40B7-9001-9402E43ED2F9}"
+        "PackageCode" = "8:{D2A6AA31-43CC-4162-BB32-7C9FBB36ED49}"
         "UpgradeCode" = "8:{0B1B634E-CA5A-4A98-A52E-0B50717FB2E5}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.0"
+        "ProductVersion" = "8:1.0.1"
         "Manufacturer" = "8:Default Company Name"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
@@ -248,20 +238,6 @@
                     "Transitive" = "11:FALSE"
                         "Keys"
                         {
-                            "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_D96E559F9D224D3598DB8C92DA42595B"
-                            {
-                            "Name" = "8:[Manufacturer]"
-                            "Condition" = "8:"
-                            "AlwaysCreate" = "11:FALSE"
-                            "DeleteAtUninstall" = "11:FALSE"
-                            "Transitive" = "11:FALSE"
-                                "Keys"
-                                {
-                                }
-                                "Values"
-                                {
-                                }
-                            }
                             "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_7905719BE8D84A84A5FDFD6D78645BC4"
                             {
                             "Name" = "8:RangHamMat"
@@ -293,6 +269,20 @@
                                             }
                                         }
                                     }
+                                }
+                                "Values"
+                                {
+                                }
+                            }
+                            "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_D96E559F9D224D3598DB8C92DA42595B"
+                            {
+                            "Name" = "8:[Manufacturer]"
+                            "Condition" = "8:"
+                            "AlwaysCreate" = "11:FALSE"
+                            "DeleteAtUninstall" = "11:FALSE"
+                            "Transitive" = "11:FALSE"
+                                "Keys"
+                                {
                                 }
                                 "Values"
                                 {
@@ -766,6 +756,7 @@
             "OutputGroupCanonicalName" = "8:PublishItems"
             "OutputProjectGuid" = "8:{B429F28D-467D-4550-B2B3-496715CD3468}"
             "ShowKeyOutput" = "11:TRUE"
+            "PublishProfilePath" = "8:Properties\\PublishProfiles\\Installer.pubxml"
                 "ExcludeFilters"
                 {
                 }

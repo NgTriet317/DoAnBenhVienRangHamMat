@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <KioskHostSource Condition="'$(KioskHostSource)' == ''">../../RangHamMat.Wpf/Services/KioskApiHost.cs</KioskHostSource>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../DAL/DAL.csproj" />
+    <Compile Include="$(KioskHostSource)" Link="KioskApiHost.cs" />
+  </ItemGroup>
+</Project>
