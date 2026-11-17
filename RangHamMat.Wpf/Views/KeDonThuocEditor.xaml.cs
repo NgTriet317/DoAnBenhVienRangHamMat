@@ -84,7 +84,7 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
     {
         this.transaction=transaction;service=new(transaction);actor=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(user?.MaNV??PhienDangNhap.MaNV);if(!actor.CoQuyen(QuyenLamViec.Kham))throw new TuChoiQuyenNghiepVuException();
         InitializeComponent();
-        RangHamMat.Services.DongBoManHinh.Register(this,["DON_THUOC","CHI_TIET_DON_THUOC","THUOC","NHOM_THUOC_KE_DON","HUONG_DAN_THUOC","LICH_SU_KHAM_BENH"],DongBoDonThuoc,()=>CoThayDoiChuaLuu);
+        RangHamMat.Services.DongBoManHinh.Register(this,["DON_THUOC","CHI_TIET_DON_THUOC","THUOC","HANG_HOA","NHOM_THUOC_KE_DON","CAU_HINH_THUOC_KE_DON","LICH_SU_KHAM_BENH","PHIEU_KHAM_BENH","HO_SO_BENH_AN","BENH_NHAN","DICH_VU_THUC_HIEN","HOA_DON","LO_HANG_HOA","PHIEU_NHAP","CHI_TIET_PHIEU_NHAP","PHIEU_XUAT","CHI_TIET_PHIEU_XUAT"],DongBoDonThuoc,()=>CoThayDoiChuaLuu);
         KiemTraNhapLieu.SetFieldValidator(RouteEditor,()=>{if(string.IsNullOrWhiteSpace(RouteEditor.Text))throw new LoiNhapLieu("DuongDung","Nhập đường dùng thuốc theo chỉ định của bác sĩ.");});
         KiemTraNhapLieu.SetFieldValidator(ReplacementReason,()=>{if(replacement is not null&&string.IsNullOrWhiteSpace(ReplacementReason.Text))throw new LoiNhapLieu("LyDoThayThe","Nhập lý do thay đơn để đối chiếu với đơn thuốc cũ.");});
         RxLines.ItemsSource=lines;lines.CollectionChanged+=(_,_)=>{if(!loading)dirty=true;};RxLines.BeginningEdit+=(_,_)=>{if(!loading)dirty=true;};LoadGroups();LoadVisits();Search();loading=false;UpdateRights();
@@ -132,7 +132,7 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
         var next=selectedVisit is null?null:service.LayKhongGianKeDon(selectedVisit,actor);
         var order=selectedOrder is null?null:service.LayBanNhapDon(selectedOrder,actor);
         loading=true;
-        try{board=next;LoadVisits();VisitPicker.SelectedValue=selectedVisit;RefreshOrders(selectedOrder);Fill(order);Search();}
+        try{var group=GroupChoice.SelectedValue;LoadGroups();GroupChoice.SelectedValue=group;board=next;LoadVisits();VisitPicker.SelectedValue=selectedVisit;RefreshOrders(selectedOrder);Fill(order);Search();}
         finally{loading=false;}
     }
     /// <summary>
@@ -212,7 +212,7 @@ public partial class KeDonThuocEditor:UserControl,IPatientScoped
     /// <param name="a">Giá trị a dùng khi thực hiện thao tác; kiểu Action.</param>
     /// <param name="error">Giá trị lỗi dùng khi thực hiện thao tác; kiểu string.</param>
     /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
-    private bool Run(Action a,out string error){error="";ErrorText.Text="";ClinicalFormInput.ClearErrors(this);try{a();return true;}catch(InvalidOperationException ex){error=ErrorText.Text=ClinicalFormInput.Message(ex);ClinicalFormInput.ShowError(this,ex);return false;}}
+    private bool Run(Action a,out string error){error="";ErrorText.Text="";ClinicalFormInput.ClearErrors(this);try{a();return true;}catch(InvalidOperationException ex){RangHamMat.Services.DongBoManHinh.ThrowIfAutomaticRefresh(ex);error=ErrorText.Text=ClinicalFormInput.Message(ex);ClinicalFormInput.ShowError(this,ex);return false;}}
     /// <summary>
     /// Kiểm tra nội dung chưa lưu và điều kiện cho phép rời trình nhập liệu.
     /// </summary>

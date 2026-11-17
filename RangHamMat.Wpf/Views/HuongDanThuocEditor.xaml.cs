@@ -49,7 +49,7 @@ public partial class HuongDanThuocEditor:UserControl
     /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
     /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
     public HuongDanThuocEditor(NguCanhNghiepVu? user=null,IDbTransaction? transaction=null)
-    {this.transaction=transaction;service=new(transaction);actor=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(user?.MaNV??PhienDangNhap.MaNV);if(!actor.LaAdmin&&!actor.CoQuyen(QuyenLamViec.CauHinhHoTro))throw new TuChoiQuyenNghiepVuException();InitializeComponent();Groups();SearchDrugs();loading=false;}
+    {this.transaction=transaction;service=new(transaction);actor=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(user?.MaNV??PhienDangNhap.MaNV);if(!actor.LaAdmin&&!actor.CoQuyen(QuyenLamViec.CauHinhHoTro))throw new TuChoiQuyenNghiepVuException();InitializeComponent();DangKyDongBoManHinh();Groups();SearchDrugs();loading=false;}
     /// <summary>
     /// Đọc các nhóm thuốc phục vụ lựa chọn cấu hình hướng dẫn.
     /// </summary>

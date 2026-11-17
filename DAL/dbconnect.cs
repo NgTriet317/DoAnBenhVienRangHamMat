@@ -52,14 +52,7 @@ namespace DAL
             try
             {
                 connection.Open();
-                var principal=Thread.CurrentPrincipal as System.Security.Claims.ClaimsPrincipal;
-                var sessionClaim=principal?.FindFirst("RHM.MaPhien")?.Value;
-                if(Guid.TryParse(sessionClaim,out var auditSession))
-                {
-                    var account=principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                    DAL_NHATKY.KiemTraPhien(connection,null,account??"",auditSession);
-                    connection.Execute("EXEC sys.sp_set_session_context @key=N'RHM.MaPhien',@value=@session",new{session=auditSession.ToString("D")});
-                }
+                ChuanBiNguCanhPhien(connection, null);
                 return connection;
             }
             catch
@@ -69,6 +62,20 @@ namespace DAL
             }
         }
 
+        /// <summary>Đối chiếu claims cả khi dùng kết nối/giao dịch được cấp sẵn; giữ khóa phiên tới khi giao dịch ghi kết thúc.</summary>
+        private static void ChuanBiNguCanhPhien(IDbConnection connection, IDbTransaction? currentTransaction)
+        {
+            var principal = Thread.CurrentPrincipal as System.Security.Claims.ClaimsPrincipal;
+            var claims = principal?.FindAll("RHM.MaPhien").ToArray();
+            if (claims is null || claims.Length == 0) return; // Giai đoạn xác thực mật khẩu chưa tạo phiên.
+            if (claims.Length != 1 || !Guid.TryParse(claims[0].Value, out var session) || session == Guid.Empty)
+                throw new UnauthorizedAccessException("Định danh phiên đăng nhập không hợp lệ.");
+            var account = principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+            DAL_NHATKY.KiemTraPhien(connection, currentTransaction, account, session);
+            connection.Execute("EXEC sys.sp_set_session_context @key=N'RHM.MaPhien',@value=@session",
+                new { session = session.ToString("D") }, currentTransaction);
+        }
+
         /// <summary>
         /// Mở kết nối rồi tạo giao dịch Serializable; nơi gọi chịu trách nhiệm commit/rollback và giải phóng transaction/kết nối.
         /// </summary>
@@ -76,12 +83,16 @@ namespace DAL
         public IDbTransaction BatDauGiaoDich()
         {
             var connection = MoKetNoi();
+            IDbTransaction? local = null;
             try
             {
-                return connection.BeginTransaction(IsolationLevel.Serializable);
+                local = connection.BeginTransaction(IsolationLevel.Serializable);
+                ChuanBiNguCanhPhien(connection, local);
+                return local;
             }
             catch
             {
+                local?.Dispose();
                 connection.Dispose();
                 throw;
             }
@@ -104,6 +115,7 @@ namespace DAL
                     throw new InvalidOperationException("Giao dịch đã kết thúc.");
                 }
 
+                ChuanBiNguCanhPhien(ketNoiChung, transaction);
                 return action(ketNoiChung, transaction);
             }
 
@@ -118,6 +130,7 @@ namespace DAL
             using var local = connection.BeginTransaction(IsolationLevel.Serializable);
             try
             {
+                ChuanBiNguCanhPhien(connection, local);
                 T ketQua = action(connection, local);
                 local.Commit();
                 return ketQua;

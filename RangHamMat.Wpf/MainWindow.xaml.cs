@@ -51,6 +51,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         KhoiTaoDongBo();
+        KhoiTaoGiamSatPhien();
         if(Content is Panel root)root.Children.Add(detachedWorkError);
         RolePicker.Items.Clear();
         RolePicker.Items.Add(new ComboBoxItem { Content = PhienDangNhap.IsAdmin ? "Admin" : "User" });
@@ -62,7 +63,7 @@ public partial class MainWindow : Window
             if (e.Key == Key.Escape && AppHost.Content is AppWorkspace workspace && workspace.ReturnToPage())
                 e.Handled = true;
         };
-        Closing+=(_,e)=>{if(!TryLeaveClinicalWork())e.Cancel=true;};
+        Closing+=(_,e)=>{if(!PhienBiThayThe&&!TryLeaveClinicalWork())e.Cancel=true;};
         PhienNhatKy.LoiPhien+=ShowSessionError;
         Closed+=(_,_)=>
         {
@@ -284,6 +285,7 @@ public partial class MainWindow : Window
     /// <returns>Kết quả đúng/sai của điều kiện hoặc thao tác được biểu diễn trong thân hàm; lỗi có thể được phát ra bằng ngoại lệ.</returns>
     public bool TryLeaveClinicalWork(Func<string,MessageBoxResult>? decision=null)
     {
+        if (PhienBiThayThe) return true;
         var owned=ClinicalWindowLifecycle.Owned(this).Where(ClinicalWindowLifecycle.IsClinical).Cast<DependencyObject>();
         if(AppHost.Content is AppWorkspace workspace)return workspace.TryLeaveClinicalWork(decision??LeaveDecision,workspace.ClinicalRoots.Concat(owned));
         var ok=ClinicalPendingWork.TryLeave(owned,decision??LeaveDecision,out var error);detachedWorkError.Text=error;detachedWorkError.Visibility=string.IsNullOrEmpty(error)?Visibility.Collapsed:Visibility.Visible;return ok;
@@ -300,6 +302,7 @@ public partial class MainWindow : Window
     /// <remarks>Các bước được phối hợp qua <c>.FindFirst</c>, <c>ClinicalWindowLifecycle.Owned</c>, <c>ClinicalWindowLifecycle.IsClinical</c>, <c>child.Close</c>.</remarks>
     private void IdentityChanged()
     {
+        if (PhienBiThayThe) return;
         var currentAccount=(Thread.CurrentPrincipal as ClaimsPrincipal)?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var currentEmployee=(Thread.CurrentPrincipal as ClaimsPrincipal)?.FindFirst(ET.DinhDanhNghiepVu.MaNhanVienClaim)?.Value;
         if(currentAccount!=sessionAccount||currentEmployee!=sessionEmployee)

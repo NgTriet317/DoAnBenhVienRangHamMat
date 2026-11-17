@@ -22,7 +22,7 @@ public partial class PhieuHuongDan
     }
 
     private void DangKyDongBoManHinh() => DongBoManHinh.RegisterPrepared(this,
-        ["PHIEU_KHAM_BENH", "BENH_NHAN", "HO_SO_BENH_AN", "LICH_SU_KHAM_BENH", "LICH_KHAM", "NHAN_VIEN", "PHONG", "DICH_VU", "AI_KET_QUA_TAO_PHIEU"],
+        ["PHIEU_KHAM_BENH", "BENH_NHAN", "HO_SO_BENH_AN", "LICH_SU_KHAM_BENH", "LICH_KHAM", "NHAN_VIEN", "PHONG", "KHOA", "DICH_VU", "AI_KET_QUA_TAO_PHIEU"],
         ChuanBiDongBo, () => dangTai);
 
     private void DongBoLamMoi() => DongBoLuaChon.GiuDong(gridPhieu, ["MaPhieu"], () =>

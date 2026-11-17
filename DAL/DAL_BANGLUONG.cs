@@ -172,28 +172,28 @@ namespace DAL
         /// <summary>
         /// Gọi nghiệp vụ tính lương cho kỳ được chỉ định; giữ phiếu đã chốt theo quy tắc SQL và đối soát đầu vào.
         /// </summary>
-        /// <remarks>Các bước được phối hợp qua <c>CreateConnection</c>, <c>ketNoi.CreateCommand</c>, <c>lenh.Parameters.Add</c>, <c>ketNoi.Open</c>.</remarks>
+        /// <remarks>ThucHien giữ guard phiên và audit context tới commit; lệnh SQL dùng cùng transaction.</remarks>
         /// <param name="tuNgay">Giá trị từ ngày dùng khi thực hiện thao tác; kiểu DateTime.</param>
         /// <param name="denNgay">Giá trị đến ngày dùng khi thực hiện thao tác; kiểu DateTime.</param>
         /// <param name="maNVQuanLy">Mã nhân viên quản lý xác định đối tượng cần xử lý.</param>
         public void tinhLuongTheoKy(DateTime tuNgay, DateTime denNgay, string maNVQuanLy)
+            => ThucHien((ketNoi, transaction) =>
         {
-            using var ketNoi = CreateConnection();
             using var lenh = ketNoi.CreateCommand();
+            lenh.Transaction = transaction;
             lenh.CommandType = CommandType.StoredProcedure;
             lenh.CommandText = "dbo.RHM_TinhLuongKy";
             lenh.CommandTimeout = 90;
             lenh.Parameters.Add(new SqlParameter("@TuNgay",SqlDbType.Date){Value=tuNgay.Date});
             lenh.Parameters.Add(new SqlParameter("@DenNgay",SqlDbType.Date){Value=denNgay.Date});
             lenh.Parameters.Add(new SqlParameter("@MaNVTinh",SqlDbType.NVarChar,50){Value=maNVQuanLy});
-            ketNoi.Open();
-            lenh.ExecuteNonQuery();
-        }
+            return lenh.ExecuteNonQuery();
+        });
 
         /// <summary>
         /// Chốt một phiếu lương sau khi đối chiếu số công, tổng tiền và hoa hồng mà người dùng đã xem.
         /// </summary>
-        /// <remarks>Các bước được phối hợp qua <c>CreateConnection</c>, <c>ketNoi.CreateCommand</c>, <c>lenh.Parameters.Add</c>, <c>ketNoi.Open</c>.</remarks>
+        /// <remarks>ThucHien giữ guard phiên và audit context tới commit; lệnh SQL dùng cùng transaction.</remarks>
         /// <param name="maBL">Mã bảng lương xác định đối tượng cần xử lý.</param>
         /// <param name="maNVQuanLy">Mã nhân viên quản lý xác định đối tượng cần xử lý.</param>
         /// <param name="congDaXem">Giá trị công đã xem dùng khi thực hiện thao tác; kiểu decimal.</param>
@@ -201,9 +201,10 @@ namespace DAL
         /// <param name="hoaHongDaXem">Giá trị hóa hồng đã xem dùng khi thực hiện thao tác; kiểu decimal.</param>
         public void chotLuongNhanVien(string maBL, string maNVQuanLy, decimal congDaXem,
             decimal tongDaXem, decimal hoaHongDaXem)
+            => ThucHien((ketNoi, transaction) =>
         {
-            using var ketNoi = CreateConnection();
             using var lenh = ketNoi.CreateCommand();
+            lenh.Transaction = transaction;
             lenh.CommandType = CommandType.StoredProcedure;
             lenh.CommandText = "dbo.RHM_ChotLuongNhanVien";
             lenh.CommandTimeout = 90;
@@ -212,8 +213,7 @@ namespace DAL
             lenh.Parameters.Add(new SqlParameter("@CongDaXem",SqlDbType.Decimal){Precision=7,Scale=2,Value=congDaXem});
             lenh.Parameters.Add(new SqlParameter("@TongDaXem",SqlDbType.Decimal){Precision=18,Scale=2,Value=tongDaXem});
             lenh.Parameters.Add(new SqlParameter("@HoaHongDaXem",SqlDbType.Decimal){Precision=18,Scale=2,Value=hoaHongDaXem});
-            ketNoi.Open();
-            lenh.ExecuteNonQuery();
-        }
+            return lenh.ExecuteNonQuery();
+        });
     }
 }

@@ -86,7 +86,7 @@ public partial class KhamLamSang : UserControl,IPatientScoped
         PlanStart.AddHandler(TextBox.TextChangedEvent,new TextChangedEventHandler(PlanDate_TextChanged));
         PlanEnd.AddHandler(TextBox.TextChangedEvent,new TextChangedEventHandler(PlanDate_TextChanged));
         conditions.CollectionChanged+=(_,_)=>{if(!loading)dirty=true;};steps.CollectionChanged+=(_,e)=>{if(!loading)planDirty=true;if(e.NewItems is not null)foreach(BuocKeHoachNhap row in e.NewItems)row.PropertyChanged+=(_,_)=>UpdatePlanTotal();UpdatePlanTotal();};
-        RangHamMat.Services.DongBoManHinh.RegisterPrepared(this,["LICH_SU_KHAM_BENH","TINH_TRANG_BENH","KE_HOACH_DIEU_TRI","CHI_TIET_KE_HOACH","DICH_VU_THUC_HIEN","DON_THUOC","CHI_TIET_DON_THUOC","HOA_DON","BENH_NHAN","DICH_VU"],PrepareDongBoKham,()=>CoThayDoiChuaLuu);
+        RangHamMat.Services.DongBoManHinh.RegisterPrepared(this,["LICH_SU_KHAM_BENH","PHIEU_KHAM_BENH","HO_SO_BENH_AN","TINH_TRANG_BENH","DM_TINH_TRANG_BENH","DICH_VU_TINH_TRANG","KE_HOACH_DIEU_TRI","CHI_TIET_KE_HOACH","DICH_VU_THUC_HIEN","DON_THUOC","CHI_TIET_DON_THUOC","HOA_DON","CHI_TIET_HOA_DON","CHI_TIET_PHIEU_XUAT","BENH_NHAN","DICH_VU","THUOC","HANG_HOA","AI_KET_QUA_TAO_PHIEU","AI_YEU_CAU_TAO_PHIEU"],PrepareDongBoKham,()=>CoThayDoiChuaLuu);
         LoadWorkspace();
     }
     /// <summary>

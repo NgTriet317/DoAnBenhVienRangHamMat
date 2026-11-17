@@ -41,6 +41,7 @@ internal static class Program
             ("unsaved-clinical-input-preserved", UnsavedClinicalInput),
             ("modal-nested-dispatcher-postpones", ModalWindow),
             ("editable-textbox-focus-postpones", TextBoxFocus),
+            ("filter-focus-does-not-block-runtime-updates", FilterFocus),
             ("datagrid-row-edit-postpones", DataGridEditing),
             ("failed-refresh-restores-source-selection-and-retries", FailedRefresh),
             ("audit-session-changes-skip-cache-observer", AuditExclusion),
@@ -252,6 +253,19 @@ internal static class Program
         input.IsReadOnly = true;
         await host.Apply();
         Require(calls == 1 && !host.Pending.CoThayDoi, "Read-only text unnecessarily blocked the pending refresh.");
+    }
+    private static async Task FilterFocus()
+    {
+        using var host=new Host();
+        var input=new TextBox{Name="AccountFilter",Text="Bộ lọc chưa áp dụng"};
+        var control=new UserControl{Content=input};
+        NameScope.SetNameScope(control,new NameScope());control.RegisterName("AccountFilter",input);
+        var calls=0;host.Register(control,()=>calls++);
+        await Drain();host.Owner.Activate();Keyboard.Focus(input);await Drain();
+        Require(ReferenceEquals(Keyboard.FocusedElement,input),"Could not establish filter focus");
+        host.Pending.GhiNhan(["BENH_NHAN"]);await host.Apply();
+        Require(calls==1&&!host.Pending.CoThayDoi&&input.Text=="Bộ lọc chưa áp dụng",
+            "A focused search/filter field blocks live updates even though it is not an unsaved business form");
     }
 
     // Removing the DataGridRow edit guard must fail even after keyboard focus leaves its editing TextBox.

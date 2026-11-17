@@ -53,7 +53,7 @@ public partial class BangTinhPhiEditor : UserControl
         WarehouseFilter.SelectedIndex = 0;
         InitializePayment();
         FocusContext(null);
-        RangHamMat.Services.DongBoManHinh.RegisterPrepared(this,["HOA_DON","CHI_TIET_HOA_DON","THANH_TOAN","DON_THUOC","CHI_TIET_DON_THUOC","DICH_VU_THUC_HIEN","LO_HANG_HOA","KHO"],PrepareDongBoBangTinh,()=>DangXuLy||ChoDoiChieu);
+        RangHamMat.Services.DongBoManHinh.RegisterPrepared(this,["HOA_DON","CHI_TIET_HOA_DON","THANH_TOAN","DON_THUOC","CHI_TIET_DON_THUOC","DICH_VU_THUC_HIEN","DICH_VU","THUOC","HANG_HOA","LICH_SU_KHAM_BENH","PHIEU_KHAM_BENH","HO_SO_BENH_AN","BENH_NHAN","AI_KET_QUA_TAO_PHIEU","AI_YEU_CAU_TAO_PHIEU","LO_HANG_HOA","KHO","PHIEU_NHAP","CHI_TIET_PHIEU_NHAP","PHIEU_XUAT","CHI_TIET_PHIEU_XUAT"],PrepareDongBoBangTinh,()=>DangXuLy||ChoDoiChieu);
     }
     private async Task<Action> PrepareDongBoBangTinh(CancellationToken token)
     {

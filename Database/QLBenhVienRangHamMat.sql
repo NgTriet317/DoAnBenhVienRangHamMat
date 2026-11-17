@@ -8285,6 +8285,53 @@ PRINT N'PROJECT_SCHEMA_READY: 74 bảng; Sprint3, ảnh X-quang, AI bản khai/d
 GO
 -- END MERGED AI CONTRACTS
 
+-- BEGIN RHM SINGLE ACCOUNT SESSION
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET ARITHABORT ON;
+SET NUMERIC_ROUNDABORT OFF;
+-- Chạy trên database ứng dụng đã chọn. Phiên mới thay thế phiên cũ;
+-- PhienKeTiep ngăn tệp ghi nhớ cũ tự chiếm lại phiên ở máy khác.
+IF OBJECT_ID(N'dbo.PHIEN_DANG_NHAP',N'U') IS NULL
+ THROW 56030,N'Thiếu bảng PHIEN_DANG_NHAP. Chạy đầy đủ SQL chính trước khi cài phiên duy nhất.',1;
+IF COL_LENGTH(N'dbo.PHIEN_DANG_NHAP',N'PhienKeTiep') IS NULL
+ EXEC(N'ALTER TABLE dbo.PHIEN_DANG_NHAP ADD PhienKeTiep uniqueidentifier NULL');
+GO
+SET XACT_ABORT ON;
+BEGIN TRY
+ BEGIN TRANSACTION;
+ IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.PHIEN_DANG_NHAP') AND name=N'IX_Rhm_Phien_Account')
+  CREATE INDEX IX_Rhm_Phien_Account ON dbo.PHIEN_DANG_NHAP(MaTK) INCLUDE(PhienKeTiep,TrangThaiPhien);
+ DECLARE @RhmSessionReplaced TABLE(MaPhien uniqueidentifier,MaTK nvarchar(50));
+ ;WITH ActiveRank AS
+ (
+  SELECT MaPhien,ROW_NUMBER() OVER(PARTITION BY MaTK ORDER BY DangNhapUtc DESC,MaPhien DESC) AS ThuTu,
+   FIRST_VALUE(MaPhien) OVER(PARTITION BY MaTK ORDER BY DangNhapUtc DESC,MaPhien DESC) AS MoiNhat
+  FROM dbo.PHIEN_DANG_NHAP WITH(UPDLOCK,HOLDLOCK) WHERE TrangThaiPhien=N'Đang mở'
+ )
+ UPDATE p SET TrangThaiPhien=N'Kết thúc bất thường',DangXuatUtc=SYSUTCDATETIME(),
+  LyDoKetThuc=N'tài khoản đã được đăng nhập vào máy khác',PhienKeTiep=r.MoiNhat
+ OUTPUT inserted.MaPhien,inserted.MaTK INTO @RhmSessionReplaced
+ FROM dbo.PHIEN_DANG_NHAP p JOIN ActiveRank r ON r.MaPhien=p.MaPhien WHERE r.ThuTu>1;
+ INSERT dbo.NHAT_KY_THAO_TAC(MaNK,MaTK,ThoiGian,ThoiGianUtc,MaPhien,MaSuKien,PhanHe,HanhDong,LoaiDoiTuong,MaDoiTuong,KetQua,DuLieuSau)
+ SELECT CONVERT(nvarchar(50),NEWID()),MaTK,SYSDATETIME(),SYSUTCDATETIME(),MaPhien,NEWID(),
+  N'Phiên đăng nhập',N'LOGOUT',N'PHIEN_DANG_NHAP',CONVERT(nvarchar(50),MaPhien),N'Thành công',
+  N'tài khoản đã được đăng nhập vào máy khác' FROM @RhmSessionReplaced;
+ IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.PHIEN_DANG_NHAP') AND name=N'UX_RHM_PhienDangMo_MaTK')
+  CREATE UNIQUE INDEX UX_RHM_PhienDangMo_MaTK ON dbo.PHIEN_DANG_NHAP(MaTK) WHERE TrangThaiPhien=N'Đang mở';
+ COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+ IF XACT_STATE()<>0 ROLLBACK TRANSACTION;
+ THROW;
+END CATCH;
+PRINT N'SINGLE_ACCOUNT_SESSION_READY: một phiên đang mở trên mỗi tài khoản.';
+GO
+-- END RHM SINGLE ACCOUNT SESSION
+
 -- BEGIN RHM CROSS-MACHINE CHANGE TRACKING
 -- Có thể chọn riêng phần này để cài trên database đã có schema/dữ liệu.
 -- Ứng dụng chỉ SELECT, không tự chạy phần ALTER này khi mở WPF.

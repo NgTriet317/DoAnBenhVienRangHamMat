@@ -2,6 +2,8 @@
 
 Ngày kiểm: 16/11/2026. Ma trận phân biệt đăng ký mã nguồn với nghiệm thu giao diện/hai máy. Không dùng build thành công để kết luận đã nghiệm thu hai máy vật lý.
 
+Bổ sung ngày 17/11: [ma trận đường chạy và lỗ phụ thuộc đã sửa](DONG_BO_RUNTIME_MA_TRAN.md), gồm child Hướng dẫn thuốc có adapter riêng và hồi quy Nhật ký/LOGIN/LOGOUT.
+
 ## Quy ước
 
 - **Prepared**: chụp tham số trên Dispatcher, đọc BUS/DAL và vật hóa POCO/DataTable ở nền, sau đó áp dụng trên Dispatcher. Không đọc/đổi control hoặc ObservableCollection từ luồng nền.

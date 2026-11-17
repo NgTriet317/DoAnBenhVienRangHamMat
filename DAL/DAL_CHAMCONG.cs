@@ -51,14 +51,12 @@ namespace DAL
             return duLieu;
         }
 
-        // Toàn bộ duyệt hàng loạt được thực hiện trong một giao dịch; nếu một ca sai thì không lưu ca nào.
+        // ThucHien giữ guard phiên/audit và toàn bộ duyệt hàng loạt trong một giao dịch; một ca sai thì không lưu ca nào.
         public int duyetChamCong(IReadOnlyList<ET_CHAMCONG> danhSach, string maNVQuanLy)
-        {
-            using var ketNoi = (SqlConnection)CreateConnection();
-            ketNoi.Open();
-            using var giaoDich = ketNoi.BeginTransaction(IsolationLevel.Serializable);
-            try
+            => ThucHien((connection, transaction) =>
             {
+                var ketNoi = (SqlConnection)connection;
+                var giaoDich = (SqlTransaction?)transaction;
                 using (var quyen = new SqlCommand(@"
                   IF NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN WHERE MaNV=@MaNV)
                     THROW 51100,N'Nhân viên duyệt không tồn tại.',1;
@@ -81,15 +79,8 @@ namespace DAL
                     if (!daChon.Add(ca.MaLLV)) throw new InvalidOperationException("Danh sách có ca bị trùng.");
                     duyetMotCa(ketNoi,giaoDich,ca,maNVQuanLy);
                 }
-                giaoDich.Commit();
                 return danhSach.Count;
-            }
-            catch
-            {
-                try { giaoDich.Rollback(); } catch (InvalidOperationException) { } catch (SqlException) { }
-                throw;
-            }
-        }
+            });
 
         /// <summary>
         /// Duyệt kết quả chấm công một ca và lưu người duyệt theo dữ liệu được kiểm tra. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
@@ -99,7 +90,7 @@ namespace DAL
         /// <param name="giaoDich">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
         /// <param name="ca">Giá trị ca dùng khi thực hiện thao tác; kiểu ET_CHAMCONG.</param>
         /// <param name="maNVQuanLy">Mã nhân viên quản lý xác định đối tượng cần xử lý.</param>
-        private static void duyetMotCa(SqlConnection ketNoi, SqlTransaction giaoDich,
+        private static void duyetMotCa(SqlConnection ketNoi, SqlTransaction? giaoDich,
             ET_CHAMCONG ca, string maNVQuanLy)
         {
             using var lenh = new SqlCommand(@"

@@ -44,7 +44,7 @@ public partial class ThucHienDichVuEditor:UserControl,IPatientScoped
  /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
  /// <param name="transaction">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
  public ThucHienDichVuEditor(NguCanhNghiepVu? user=null,IDbTransaction? transaction=null)
- {this.transaction=transaction;service=new(transaction);actor=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(user?.MaNV??PhienDangNhap.MaNV);InitializeComponent();AssignedImagesButton.Visibility=actor.LaAdmin||actor.CoQuyen(QuyenLamViec.CapNhatKetQuaDuocGiao)?Visibility.Visible:Visibility.Collapsed;LoadHistory();RangHamMat.Services.DongBoManHinh.Register(this,["DICH_VU_THUC_HIEN","LICH_SU_KHAM_BENH","ANH_XQUANG_LAN_KHAM"],LoadHistory);}
+ {this.transaction=transaction;service=new(transaction);actor=new BUS_QUYENNGHIEPVU(transaction).LayNguCanh(user?.MaNV??PhienDangNhap.MaNV);InitializeComponent();AssignedImagesButton.Visibility=actor.LaAdmin||actor.CoQuyen(QuyenLamViec.CapNhatKetQuaDuocGiao)?Visibility.Visible:Visibility.Collapsed;LoadHistory();RangHamMat.Services.DongBoManHinh.Register(this,["DICH_VU_THUC_HIEN","LICH_SU_KHAM_BENH","PHIEU_KHAM_BENH","HO_SO_BENH_AN","BENH_NHAN","DICH_VU","NHAN_VIEN","CHI_TIET_HOA_DON","ANH_XQUANG_LAN_KHAM","PHAN_CONG_ANH_XQUANG"],LoadHistory);}
  /// <summary>
  /// Áp dụng bệnh nhân được chỉ định làm phạm vi dữ liệu của màn hình.
  /// </summary>

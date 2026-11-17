@@ -97,6 +97,8 @@ Admin toàn quyền chức năng nhưng vẫn tuân thủ trạng thái chứng 
 
 ## Đăng nhập và đăng xuất
 
+Bản sửa ngày 17/11 trên nhánh đồng bộ áp dụng một phiên đang hoạt động cho mỗi tài khoản: lần đăng nhập mới thu hồi phiên cũ và máy cũ hiện thông báo “tài khoản đã được đăng nhập vào máy khác”. Cần cài phần SQL mới và cập nhật ứng dụng trên tất cả máy. Tệp ghi nhớ v2 giữ mã phiên; tệp v1 cần đăng nhập bằng mật khẩu lại một lần. Xem [sửa đồng bộ và quản lý phiên](docs/database/SUA_DONG_BO_VA_PHIEN_20261117.md).
+
 Sau khi đăng nhập thành công, phần mềm ghi nhớ tài khoản trên người dùng Windows hiện tại. Bấm **Thoát ứng dụng** hoặc đóng cửa sổ thì lần mở tiếp theo vào thẳng màn hình chính bằng tài khoản đó. Bấm **Đăng xuất** ở cuối màn hình chính để xóa phiên ghi nhớ và quay lại đăng nhập; có thể đăng nhập bằng tài khoản khác ngay trong cùng lần chạy.
 
 Phiên lưu tại `%LOCALAPPDATA%\RangHamMat\phien-dang-nhap.dat`, được Windows mã hóa, không chứa mật khẩu rõ. Mỗi lần mở lại đều kiểm tra tài khoản và quyền hiện hành từ SQL; tài khoản bị khóa/xóa, đổi mật khẩu hoặc đổi nhân viên liên kết phải đăng nhập lại. Các kiểm tra dữ liệu đang nhập vẫn áp dụng khi đăng xuất.

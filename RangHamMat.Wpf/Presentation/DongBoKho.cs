@@ -31,7 +31,7 @@ public partial class Kho
     }
 
     private void DangKyDongBoManHinh() => DongBoManHinh.RegisterPrepared(this,
-        ["KHO", "NHAN_VIEN", "HANG_HOA", "LOAI_HANG_HOA", "VAT_TU", "THUOC", "LO_HANG_HOA",
+        ["KHO", "NHAN_VIEN", "HANG_HOA", "LOAI_HANG_HOA", "VAT_TU", "THUOC", "LO_HANG_HOA", "NHA_CUNG_CAP",
          "PHIEU_NHAP", "CHI_TIET_PHIEU_NHAP", "PHIEU_XUAT", "CHI_TIET_PHIEU_XUAT"],
         ChuanBiDongBo, () => dangTai);
 }

@@ -37,6 +37,7 @@ public partial class MainWindow
         var previous=dongBoCancellation;dongBoCancellation=null;
         if(previous is not null){previous.Cancel();previous.Dispose();}
     }
+    internal void DungDongBoDoMatPhien(){dongBoClosed=true;HuyDongBo();}
     private void DoiPhienDongBo(){HuyDongBo();if(IsLoaded&&!dongBoClosed)BatDauDongBo();}
     private void BatDauDongBo()
     {

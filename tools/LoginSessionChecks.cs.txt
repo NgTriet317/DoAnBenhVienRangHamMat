@@ -34,6 +34,8 @@ static class Program
             var store = Activator.CreateInstance(storeType, methods, null, new object[] { path }, null)!;
             var account = new ET_TAIKHOAN("TK_SESSION", "staff-session", "password-hash-session", "VT_USER", "NV_SESSION", null, null, "Đang hoạt động");
             Check(Call(store, "Doc") is null, "Chưa có phiên lưu thì yêu cầu đăng nhập");
+            var sessionId = Guid.Parse("df35ba60-ad5d-41e5-89b4-9101080adf92");
+            typeof(PhienDangNhap).GetProperty(nameof(PhienDangNhap.MaPhien))!.SetValue(null, sessionId);
             Call(store, "Luu", account);
             Check(File.Exists(path), "Đăng nhập lưu phiên xuống đĩa");
             var bytes = File.ReadAllBytes(path);
@@ -42,6 +44,9 @@ static class Program
             var secondStore = Activator.CreateInstance(storeType, methods, null, new object[] { path }, null)!;
             var saved = Call(secondStore, "Doc")!;
             Check(saved is not null && (bool)Call(saved, "KhopTaiKhoan", account)!, "Mở lại kho lưu vẫn khôi phục đúng tài khoản");
+            Check(saved!.GetType().GetProperty("PhienBan")!.GetValue(saved) is 2
+                && saved.GetType().GetProperty("MaPhien")!.GetValue(saved) is Guid token && token == sessionId,
+                "Phiên v2 giữ token SQL để máy bị thay không tự giành lại đăng nhập");
             account.MatKhauHash = "changed-password-hash";
             Check(!(bool)Call(saved!, "KhopTaiKhoan", account)!, "Đổi mật khẩu vô hiệu phiên cũ");
             account.MatKhauHash = "password-hash-session";
@@ -63,6 +68,8 @@ static class Program
             Call(store, "Xoa");
             Check(!File.Exists(path) && Call(secondStore, "Doc") is null, "Đăng xuất xóa phiên cho lần mở kế tiếp");
             Call(store, "Xoa");
+
+            typeof(PhienDangNhap).GetProperty(nameof(PhienDangNhap.MaPhien))!.SetValue(null, Guid.Empty);
 
             PhienDangNhap.MaNV = "NV_SESSION";
             PhienDangNhap.TenDangNhap = "staff-session";

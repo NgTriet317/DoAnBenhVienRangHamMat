@@ -37,12 +37,9 @@ namespace DAL
             return bang;
         }
 
+        // Guard phiên và audit context được giữ trong cùng giao dịch tới lúc lưu xong.
         public string luuChinhSach(string maNguoiSua, ET_CHINHSACHLUONG chinhSach)
-        {
-            using var db = (SqlConnection)CreateConnection();
-            db.Open();
-            using var tx = db.BeginTransaction(IsolationLevel.Serializable);
-            try
+            => ThucHien((db, tx) =>
             {
                 int khoa = db.ExecuteScalar<int>(@"DECLARE @k int;
                     EXEC @k=sys.sp_getapplock @Resource=N'RHM:LuuChinhSachLuong',
@@ -85,21 +82,19 @@ namespace DAL
                         chinhSach,tx);
                     if(n!=1) throw new InvalidOperationException("Chỉ được sửa chính sách nháp chưa sử dụng.");
                 }
-                tx.Commit();
                 return chinhSach.MaCSL;
-            }
-            catch {tx.Rollback();throw;}
-        }
+            });
 
         public void duyetChinhSach(string maCSL, string maNguoiDuyet)
+            => ThucHien((db, tx) =>
         {
-            using var db = (SqlConnection)CreateConnection();
             using var cmd = db.CreateCommand();
+            cmd.Transaction = tx;
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.CommandText = "dbo.RHM_DuyetChinhSachLuong";
             cmd.Parameters.Add(new SqlParameter("@MaCSL",SqlDbType.NVarChar,50){Value=maCSL});
             cmd.Parameters.Add(new SqlParameter("@MaNVDuyet",SqlDbType.NVarChar,50){Value=maNguoiDuyet});
-            db.Open();cmd.ExecuteNonQuery();
-        }
+            return cmd.ExecuteNonQuery();
+        });
     }
 }

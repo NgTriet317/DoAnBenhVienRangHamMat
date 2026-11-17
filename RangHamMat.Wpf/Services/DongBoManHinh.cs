@@ -14,6 +14,14 @@ internal sealed class DongBoDaDoiManHinhException : InvalidOperationException;
 /// <summary>Đăng ký làm mới tường minh; giữ biểu mẫu và giao dịch đang xử lý.</summary>
 public static class DongBoManHinh
 {
+    public static readonly DependencyProperty LaBoLocProperty=DependencyProperty.RegisterAttached(
+        "LaBoLoc",typeof(bool),typeof(DongBoManHinh),new FrameworkPropertyMetadata(false,FrameworkPropertyMetadataOptions.Inherits));
+    public static void SetLaBoLoc(DependencyObject control,bool value)=>control.SetValue(LaBoLocProperty,value);
+    public static bool GetLaBoLoc(DependencyObject control)=>(bool)control.GetValue(LaBoLocProperty);
+    private static readonly string[] filterNames=["AccountFilter","ActionFilter","DoctorFilter","DrugSearch","EmployeeFilter",
+        "FinanceSearch","FromDate","FromTime","GenderFilter","ModuleFilter","ObjectFilter","PatientFilter","PatientVisitSearch",
+        "PrescriptionFilter","ReportSearch","ResultFilter","SearchBox","ServiceSearch","StateFilter","StatusFilter","StrengthFilter",
+        "ToDate","ToTime","txtNam","txtNamQuyPhep","txtSearch","txtTimKiem","txtTimNhanVien","VisitFilter","WarehouseFilter"];
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool IsWindowEnabled(IntPtr window);
@@ -81,7 +89,8 @@ public static class DongBoManHinh
     private static readonly string[] sharedTables=["BENH_NHAN","HO_SO_BENH_AN","PHIEU_KHAM_BENH","LICH_KHAM","LICH_SU_KHAM_BENH",
         "TINH_TRANG_BENH","KE_HOACH_DIEU_TRI","CHI_TIET_KE_HOACH","DICH_VU_THUC_HIEN","DON_THUOC","CHI_TIET_DON_THUOC",
         "NHAN_VIEN","PHONG","CA_LAM","DICH_VU","THUOC","HANG_HOA","KHO","LO_HANG_HOA","HOA_DON","CHI_TIET_HOA_DON",
-        "THANH_TOAN","PHIEU_XUAT","CHI_TIET_PHIEU_XUAT","BAO_TRI_THIET_BI","THIET_BI","NHA_CUNG_CAP","HOA_DON_NHAP"];
+        "THANH_TOAN","PHIEU_XUAT","CHI_TIET_PHIEU_XUAT","BAO_TRI_THIET_BI","THIET_BI","NHA_CUNG_CAP","HOA_DON_NHAP",
+        "DM_TINH_TRANG_BENH","DICH_VU_TINH_TRANG","CAU_HINH_THUOC_KE_DON","NHOM_THUOC_KE_DON"];
     private static string[] CacheTables(string name)=>name switch
     {
         "NhaCungCap"=>["NHA_CUNG_CAP","HOA_DON_NHAP"],
@@ -94,6 +103,8 @@ public static class DongBoManHinh
         =>tables.Contains("*")||sharedTables.Intersect(tables,StringComparer.OrdinalIgnoreCase).Any();
     private static void RegisterCore(Registration registration)
     {
+        foreach(var name in filterNames)
+            if(registration.Control.FindName(name) is FrameworkElement field)SetLaBoLoc(field,true);
         registration.Applied=observedSequence;
         registration.Control.Loaded += (_,_) => { registration.Generation++;if (!active.Contains(registration)) active.Add(registration);RequestStale(registration); };
         registration.Control.Unloaded += (_,_) => {registration.Generation++;active.Remove(registration);};
@@ -148,7 +159,7 @@ public static class DongBoManHinh
         if(nodes.OfType<DataGridRow>().Any(r=>r.IsEditing))return true;
         if(active.Any(r=>r.Control.IsVisible && (r.Busy?.Invoke()??false)))return true;
         // Giữ cả nội dung gõ đang nằm ở binding UpdateSourceTrigger=LostFocus.
-        return Keyboard.FocusedElement is TextBoxBase text && !text.IsReadOnly;
+        return Keyboard.FocusedElement is TextBoxBase text && !text.IsReadOnly && !GetLaBoLoc(text);
     }
 
     internal static void Refresh(IReadOnlyCollection<string> tables)

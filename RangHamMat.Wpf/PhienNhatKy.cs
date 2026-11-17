@@ -22,11 +22,13 @@ internal static class PhienNhatKy
     /// <summary>
     /// Tạo phiên nhật ký nếu chưa có, gắn mã phiên vào định danh và bắt đầu bộ hẹn giờ heartbeat.
     /// </summary>
-    internal static void BatDau()
+    internal static void BatDau(Guid? phienGhiNho = null)
     {
         if(PhienDangNhap.MaPhien!=Guid.Empty)return;
         var actor=new BUS_QUYENNGHIEPVU().LayNguCanh(PhienDangNhap.MaNV);
-        PhienDangNhap.MaPhien=new BUS_NHATKY().BatDauPhien(actor);
+        var bus = new BUS_NHATKY();
+        PhienDangNhap.MaPhien = phienGhiNho is Guid saved
+            ? bus.KhoiPhucPhien(saved, actor) : bus.BatDauPhien(actor);
         PhienDangNhap.GanPhienAudit(PhienDangNhap.MaPhien);
         timer=new DispatcherTimer{Interval=TimeSpan.FromMinutes(1)};
         timer.Tick+=Tick;timer.Start();
@@ -38,13 +40,21 @@ internal static class PhienNhatKy
     {
         if(running||PhienDangNhap.MaPhien==Guid.Empty)return;
         running=true;
+        var id=PhienDangNhap.MaPhien;var account=PhienDangNhap.MaTK;
+        var actor=new NguCanhNghiepVu{MaNV=PhienDangNhap.MaNV,MaTK=account};
+        var principal=new System.Security.Claims.ClaimsPrincipal(
+            (Thread.CurrentPrincipal as System.Security.Claims.ClaimsPrincipal)?.Identities.Select(x=>x.Clone())
+            ?? Enumerable.Empty<System.Security.Claims.ClaimsIdentity>());
         try
         {
-            var actor=new NguCanhNghiepVu{MaNV=PhienDangNhap.MaNV,MaTK=PhienDangNhap.MaTK};
-            var id=PhienDangNhap.MaPhien;
-            await Task.Run(()=>new BUS_NHATKY().Heartbeat(id,actor));
+            await Task.Run(()=>
+            {
+                var previous=Thread.CurrentPrincipal;
+                try{Thread.CurrentPrincipal=principal;new BUS_NHATKY().Heartbeat(id,actor);}
+                finally{Thread.CurrentPrincipal=previous;}
+            });
         }
-        catch(Exception ex){LoiPhien?.Invoke("Không thể cập nhật phiên: "+ex.Message);}
+        catch(Exception ex){if(PhienDangNhap.MaPhien==id&&PhienDangNhap.MaTK==account)LoiPhien?.Invoke("Không thể cập nhật phiên: "+ex.Message);}
         finally{running=false;}
     }
     /// <summary>
@@ -59,5 +69,15 @@ internal static class PhienNhatKy
             timer?.Stop();timer=null;PhienDangNhap.MaPhien=Guid.Empty;
             PhienDangNhap.GanPhienAudit(Guid.Empty);
         }
+    }
+
+    /// <summary>Dừng phiên đã bị SQL thu hồi; không gửi thêm heartbeat hay ghi đăng xuất bằng token cũ.</summary>
+    internal static void BoPhien()
+    {
+        timer?.Stop();
+        if (timer is not null) timer.Tick -= Tick;
+        timer = null;
+        PhienDangNhap.MaPhien = Guid.Empty;
+        if (PhienDangNhap.DaDangNhap) PhienDangNhap.GanPhienAudit(Guid.Empty);
     }
 }

@@ -3,12 +3,70 @@ using System.Security.Claims;
 using System.Text.Json;
 using Dapper;
 using ET;
+using Microsoft.Data.SqlClient;
 
 namespace DAL;
 
 /// <summary>Audit SQL cùng giao dịch nơi gọi; không nhận payload bệnh án hoặc bí mật.</summary>
 public sealed class DAL_NHATKY(IDbTransaction? transaction = null) : dbconnect(transaction)
 {
+    private const string SchemaPhienCu = "Cấu trúc phiên đăng nhập chưa được cập nhật. Vui lòng chạy Database/QLBenhVienRangHamMat.sql mới nhất.";
+    private const string SessionStateQuery = """
+        SELECT CASE
+          WHEN PhienKeTiep IS NOT NULL OR LyDoKetThuc=@replaced THEN 1
+          WHEN TrangThaiPhien=N'Đã đăng xuất' THEN 3
+          WHEN TrangThaiPhien=N'Đang mở' AND HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME()) THEN 0
+          ELSE 2 END
+        FROM dbo.PHIEN_DANG_NHAP
+        WHERE MaPhien=@session AND MaTK=@account
+        """;
+
+    /// <summary>Đối chiếu đúng một định danh đã xác thực, tài khoản và mã phiên; không nhận token khác từ UI.</summary>
+    internal static void KiemTraClaimsPhien(string account, Guid session)
+    {
+        var identities = (Thread.CurrentPrincipal as ClaimsPrincipal)?.Identities
+            .Where(i => i.IsAuthenticated && i.AuthenticationType == DinhDanhNghiepVu.KieuXacThuc).ToArray();
+        if (identities?.Length != 1) throw new UnauthorizedAccessException("Chưa đăng nhập.");
+        var accounts = identities[0].FindAll(ClaimTypes.NameIdentifier).ToArray();
+        var sessions = identities[0].FindAll("RHM.MaPhien").ToArray();
+        if (string.IsNullOrWhiteSpace(account) || account.Length > 50 || session == Guid.Empty ||
+            accounts.Length != 1 || accounts[0].Value != account || sessions.Length != 1 ||
+            !Guid.TryParse(sessions[0].Value, out Guid claimed) || claimed != session)
+            throw new UnauthorizedAccessException("Định danh phiên đăng nhập không hợp lệ.");
+    }
+
+    /// <summary>Đọc trạng thái trên kết nối riêng, không heartbeat, không đi qua guard của phiên đã bị thu hồi.</summary>
+    public TrangThaiPhienHienTai KiemTraPhienHienTai(Guid session, string account)
+    {
+        KiemTraClaimsPhien(account, session);
+        using var db = new SqlConnection(new SqlConnectionStringBuilder(CauHinhKetNoi.LayChuoiKetNoi()) { Enlist = false }.ConnectionString);
+        db.Open();
+        try
+        {
+            return (TrangThaiPhienHienTai)(db.QuerySingleOrDefault<int?>(SessionStateQuery,
+                new { session, account, replaced = ThongBaoPhien.DangNhapMayKhac }) ?? (int)TrangThaiPhienHienTai.KhongTonTai);
+        }
+        catch (SqlException e) when (e.Number == 207) { throw new InvalidOperationException(SchemaPhienCu, e); }
+    }
+
+    /// <summary>Watcher hủy được, dùng chuỗi kết nối đã chụp và token tường minh để phát hiện phiên bị thay thế.</summary>
+    public async Task<TrangThaiPhienHienTai> KiemTraPhienHienTaiAsync(string connectionString, Guid session, string account, CancellationToken cancellationToken = default)
+    {
+        KiemTraClaimsPhien(account, session);
+        await using var db = new SqlConnection(new SqlConnectionStringBuilder(connectionString) { Enlist = false }.ConnectionString);
+        await db.OpenAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var state = await db.QuerySingleOrDefaultAsync<int?>(new CommandDefinition(SessionStateQuery,
+                new { session, account, replaced = ThongBaoPhien.DangNhapMayKhac }, cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return (TrangThaiPhienHienTai)(state ?? (int)TrangThaiPhienHienTai.KhongTonTai);
+        }
+        catch (SqlException e) when (e.Number == 207) { throw new InvalidOperationException(SchemaPhienCu, e); }
+    }
+
+    public Task<TrangThaiPhienHienTai> KiemTraPhienHienTaiAsync(Guid session, string account, CancellationToken cancellationToken = default)
+        => KiemTraPhienHienTaiAsync(CauHinhKetNoi.LayChuoiKetNoi(), session, account, cancellationToken);
+
     // Áp dụng tại SQL trước COUNT/OFFSET để lịch sử cũ không làm sai phân trang/KPI.
     private const string OperationScope="""
         HanhDong NOT IN(N'SESSION_ABNORMAL_END',N'VIEW_LOG',N'EXPORT_LOG',N'VIEW',N'READ',N'SEARCH',N'HEARTBEAT',N'Đối chiếu yêu cầu thanh toán')
@@ -94,15 +152,25 @@ public sealed class DAL_NHATKY(IDbTransaction? transaction = null) : dbconnect(t
     }
 
     /// <summary>
-    /// Giữ khóa phiên và yêu cầu đúng tài khoản, trạng thái Đang mở cùng heartbeat trong 5 phút gần nhất.
+    /// Khóa tài khoản trước phiên theo cùng thứ tự với login; yêu cầu claims khớp và heartbeat trong 5 phút gần nhất.
     /// </summary>
     internal static void KiemTraPhien(IDbConnection db, IDbTransaction? tx, string account, Guid session)
     {
-        if (session == Guid.Empty || db.ExecuteScalar<int>("""
-            SELECT COUNT(*) FROM dbo.PHIEN_DANG_NHAP WITH(UPDLOCK,HOLDLOCK)
-            WHERE MaPhien=@session AND MaTK=@account AND TrangThaiPhien=N'Đang mở'
-              AND HoatDongCuoiUtc>=DATEADD(minute,-5,SYSUTCDATETIME())
-            """, new { session, account }, tx) != 1)
+        KiemTraClaimsPhien(account, session);
+        int? state;
+        try
+        {
+            // Cùng thứ tự khóa account -> session ở mọi giao dịch, kể cả thao tác sửa chính tài khoản đó.
+            state = db.QuerySingleOrDefault<int?>("""
+                DECLARE @lockedAccount nvarchar(50);
+                SELECT @lockedAccount=MaTK FROM dbo.TAI_KHOAN WITH(UPDLOCK,HOLDLOCK) WHERE MaTK=@account;
+                """ + SessionStateQuery.Replace("FROM dbo.PHIEN_DANG_NHAP", "FROM dbo.PHIEN_DANG_NHAP WITH(UPDLOCK,HOLDLOCK)"),
+                new { session, account, replaced = ThongBaoPhien.DangNhapMayKhac }, tx);
+        }
+        catch (SqlException e) when (e.Number == 207) { throw new InvalidOperationException(SchemaPhienCu, e); }
+        if (state == (int)TrangThaiPhienHienTai.DaDangNhapMayKhac)
+            throw new UnauthorizedAccessException(ThongBaoPhien.DangNhapMayKhac);
+        if (state != (int)TrangThaiPhienHienTai.DangHoatDong)
             throw new UnauthorizedAccessException("Phiên đã hết hạn; vui lòng đăng nhập lại.");
     }
 
@@ -121,22 +189,58 @@ public sealed class DAL_NHATKY(IDbTransaction? transaction = null) : dbconnect(t
     }
 
     /// <summary>
-    /// Xác thực người dùng, đánh dấu bất thường các phiên quá 5 phút rồi tạo phiên mới cùng sự kiện đăng nhập.
+    /// Khóa tài khoản, thu hồi phiên đang mở rồi tạo phiên mới trong cùng giao dịch; lần đăng nhập sau cùng giữ quyền.
     /// </summary>
-    public Guid BatDauPhien(NguCanhNghiepVu actor) => ThucHien((db, tx) =>
+    public Guid BatDauPhien(NguCanhNghiepVu actor) => TaoPhien(actor, null);
+
+    /// <summary>Chỉ khôi phục token được ghi nhớ chưa có phiên kế tiếp; kiểm tra và nhận phiên mới trong cùng khóa tài khoản.</summary>
+    public Guid KhoiPhucPhien(Guid rememberedSession, NguCanhNghiepVu actor)
     {
+        if (rememberedSession == Guid.Empty) throw new UnauthorizedAccessException("Cần đăng nhập lại để cập nhật phiên đã ghi nhớ.");
+        return TaoPhien(actor, rememberedSession);
+    }
+
+    private Guid TaoPhien(NguCanhNghiepVu actor, Guid? rememberedSession) => ThucHien((db, tx) =>
+    {
+        DAL_QUYENNGHIEPVU.KiemTraMa(actor?.MaTK);
+        if (db.ExecuteScalar<int>("""
+            SELECT CASE WHEN COL_LENGTH(N'dbo.PHIEN_DANG_NHAP',N'PhienKeTiep') IS NOT NULL
+              AND EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.PHIEN_DANG_NHAP') AND name=N'IX_Rhm_Phien_Account')
+              THEN 1 ELSE 0 END
+            """, transaction: tx) != 1)
+            throw new InvalidOperationException(SchemaPhienCu);
+        // UPDLOCK từ đầu tránh hai login cùng giữ S-lock rồi cùng nâng cấp khóa.
+        if (db.QuerySingleOrDefault<string>("SELECT MaTK FROM dbo.TAI_KHOAN WITH(UPDLOCK,HOLDLOCK) WHERE MaTK=@MaTK", new { actor!.MaTK }, tx) is null)
+            throw new UnauthorizedAccessException("Tài khoản không hợp lệ.");
         var user = DAL_QUYENNGHIEPVU.XacThuc(db, tx, actor);
-        // Khóa các phiên quá hạn trước khi tạo phiên mới; không suy diễn giờ đăng xuất.
-        db.Execute("""
-            UPDATE dbo.PHIEN_DANG_NHAP WITH(UPDLOCK)
-            SET TrangThaiPhien=N'Kết thúc bất thường',LyDoKetThuc=N'Không nhận heartbeat quá 5 phút'
-            WHERE TrangThaiPhien=N'Đang mở' AND HoatDongCuoiUtc<DATEADD(minute,-5,SYSUTCDATETIME())
-            """, transaction:tx);
+        if (rememberedSession is not null && db.ExecuteScalar<int>("""
+            SELECT COUNT(*) FROM dbo.PHIEN_DANG_NHAP WITH(UPDLOCK,HOLDLOCK)
+            WHERE MaPhien=@rememberedSession AND MaTK=@MaTK AND PhienKeTiep IS NULL
+              AND (LyDoKetThuc IS NULL OR LyDoKetThuc<>@replaced)
+            """, new { rememberedSession, user.MaTK, replaced = ThongBaoPhien.DangNhapMayKhac }, tx) != 1)
+            throw new UnauthorizedAccessException(ThongBaoPhien.DangNhapMayKhac);
         var id = Guid.NewGuid();
+        // Account UPDLOCK là mutex của mọi thao tác ứng dụng trên tài khoản này.
+        // READCOMMITTED ở các UPDATE tránh khóa range sang tài khoản kế bên trong index.
+        var oldSessions = db.Query<Guid>("""
+            UPDATE s
+            SET TrangThaiPhien=N'Kết thúc bất thường',LyDoKetThuc=@replaced,DangXuatUtc=SYSUTCDATETIME()
+            OUTPUT inserted.MaPhien
+            FROM dbo.PHIEN_DANG_NHAP s WITH(READCOMMITTED,INDEX(IX_Rhm_Phien_Account))
+            WHERE s.MaTK=@MaTK AND s.TrangThaiPhien=N'Đang mở'
+            """, new { user.MaTK, replaced = ThongBaoPhien.DangNhapMayKhac }, tx).ToArray();
+        db.Execute("""
+            UPDATE s SET PhienKeTiep=@id
+            FROM dbo.PHIEN_DANG_NHAP s WITH(READCOMMITTED,INDEX(IX_Rhm_Phien_Account))
+            WHERE s.MaTK=@MaTK AND s.PhienKeTiep IS NULL
+            """, new { id, user.MaTK }, tx);
         db.Execute("""
             INSERT dbo.PHIEN_DANG_NHAP(MaPhien,MaTK,DangNhapUtc,HoatDongCuoiUtc,TrangThaiPhien)
             VALUES(@id,@MaTK,SYSUTCDATETIME(),SYSUTCDATETIME(),N'Đang mở')
             """, new { id, user.MaTK },tx);
+        foreach (var old in oldSessions)
+            Ghi(db, tx, user.MaTK, old, "LOGOUT", "Phiên đăng nhập", "PHIEN_DANG_NHAP", old.ToString(),
+                after: JsonSerializer.Serialize(new { TrangThai = "Kết thúc bất thường", LyDoKetThuc = ThongBaoPhien.DangNhapMayKhac }));
         Ghi(db,tx,user.MaTK,id,"LOGIN_SUCCESS","Phiên đăng nhập","PHIEN_DANG_NHAP",id.ToString());
         return id;
     });
@@ -159,6 +263,7 @@ public sealed class DAL_NHATKY(IDbTransaction? transaction = null) : dbconnect(t
     {
         var account=(Thread.CurrentPrincipal as ClaimsPrincipal)?.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? throw new UnauthorizedAccessException("Chưa đăng nhập.");
+        KiemTraClaimsPhien(account, session);
         // Cho phép đóng đúng phiên kể cả tài khoản vừa bị khóa; không cấp quyền ghi dữ liệu nghiệp vụ.
         int count=db.Execute("""
             UPDATE dbo.PHIEN_DANG_NHAP SET DangXuatUtc=SYSUTCDATETIME(),HoatDongCuoiUtc=SYSUTCDATETIME(),

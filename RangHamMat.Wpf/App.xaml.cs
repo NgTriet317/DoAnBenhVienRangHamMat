@@ -96,12 +96,13 @@ namespace wpftest
             }
 
             var mainWindow = new MainWindow();
+            mainWindow.XoaPhienGhiNho = dichVuDangNhap.QuenPhien;
             MainWindow = mainWindow;
             // Giữ tiến trình trong lúc đổi cửa sổ chính sang hộp thoại đăng nhập.
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
             mainWindow.Closing += (_, e) =>
             {
-                if (e.Cancel || !mainWindow.YeuCauDangXuat) return;
+                if (e.Cancel || mainWindow.PhienBiThayThe || !mainWindow.YeuCauDangXuat) return;
                 try { dichVuDangNhap.QuenPhien(); }
                 catch (System.Exception ex)
                 {
@@ -112,7 +113,7 @@ namespace wpftest
             };
             mainWindow.Closed += (_, _) =>
             {
-                if (!mainWindow.YeuCauDangXuat)
+                if (!mainWindow.YeuCauDangXuat && !mainWindow.PhienBiThayThe)
                 {
                     Shutdown();
                     return;

@@ -79,7 +79,7 @@ public partial class PrescriptionHistoryDetail : UserControl, IClinicalPendingWo
         prescriptions = new(transaction);
         handover = new(transaction);
         InitializeComponent();
-        RangHamMat.Services.DongBoManHinh.Register(this,["DON_THUOC","CHI_TIET_DON_THUOC","BAN_GIAO_THUOC","THANH_TOAN","HOA_DON"],LoadDetail,()=>MustKeepSource||ReceiverChecked.IsChecked==true||GuidanceChecked.IsChecked==true);
+        RangHamMat.Services.DongBoManHinh.Register(this,["DON_THUOC","CHI_TIET_DON_THUOC","BAN_GIAO_THUOC","THANH_TOAN","HOA_DON","CHI_TIET_HOA_DON","PHIEU_XUAT","CHI_TIET_PHIEU_XUAT","LICH_SU_KHAM_BENH","PHIEU_KHAM_BENH","HO_SO_BENH_AN","BENH_NHAN","NHAN_VIEN"],LoadDetail,()=>MustKeepSource||ReceiverChecked.IsChecked==true||GuidanceChecked.IsChecked==true);
         HandoverPanel.Visibility = actor.LaAdmin || actor.CoQuyen(QuyenLamViec.GiaoThuoc) ? Visibility.Visible : Visibility.Collapsed;
         LoadDetail();
     }

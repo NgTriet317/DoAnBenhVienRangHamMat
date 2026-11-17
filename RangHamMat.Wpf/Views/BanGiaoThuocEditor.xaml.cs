@@ -52,7 +52,7 @@ public partial class BanGiaoThuocEditor : UserControl
     /// <param name="user">Ngữ cảnh định danh và quyền nghiệp vụ của người thực hiện; DAL có thể xác thực lại theo dữ liệu hiện tại.</param>
     public BanGiaoThuocEditor(NguCanhNghiepVu? user=null)
     {InitializeComponent();DrugLines.RowHeight=double.NaN;actor=user??QuyenNghiepVu.LayNguCanh();GuidanceButton.Visibility=actor.CoQuyen(QuyenLamViec.CauHinhHoTro)?Visibility.Visible:Visibility.Collapsed;Reload(null,false);
-        RangHamMat.Services.DongBoManHinh.Register(this,["BAN_GIAO_THUOC","HOA_DON","THANH_TOAN","DON_THUOC","CHI_TIET_DON_THUOC","PHIEU_XUAT"],()=>Reload(ChiTiet?.Luot.MaDT,false),()=>DangXuLy||pendingId is not null||ReceiverChecked.IsChecked==true||GuidanceChecked.IsChecked==true);}
+        RangHamMat.Services.DongBoManHinh.Register(this,["BAN_GIAO_THUOC","HOA_DON","CHI_TIET_HOA_DON","THANH_TOAN","DON_THUOC","CHI_TIET_DON_THUOC","PHIEU_XUAT","CHI_TIET_PHIEU_XUAT","LICH_SU_KHAM_BENH","PHIEU_KHAM_BENH","HO_SO_BENH_AN","BENH_NHAN","NHAN_VIEN"],()=>Reload(ChiTiet?.Luot.MaDT,false),()=>DangXuLy||pendingId is not null||ReceiverChecked.IsChecked==true||GuidanceChecked.IsChecked==true);}
     /// <summary>
     /// Chuyển màn hình tới đúng bệnh nhân/lần khám hoặc chứng từ theo ngữ cảnh được yêu cầu.
     /// </summary>

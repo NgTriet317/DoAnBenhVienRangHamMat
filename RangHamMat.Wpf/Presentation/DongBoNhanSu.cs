@@ -136,7 +136,7 @@ public partial class BangLuong
 
     private void DangKyDongBoManHinh() => DongBoManHinh.RegisterPrepared(this,
         ["BANG_LUONG", "CHI_TIET_LUONG", "CHI_TIET_HOA_HONG_LUONG", "CHAM_CONG", "LICH_LAM_VIEC", "NHAN_VIEN",
-         "CHUC_VU", "CHINH_SACH_LUONG", "DON_XIN_NGHI", "RHM_NGAY_PHEP_NAM", "HOA_DON", "THANH_TOAN", "DICH_VU_THUC_HIEN"],
+         "CHUC_VU", "CHINH_SACH_LUONG", "DON_XIN_NGHI", "RHM_NGAY_PHEP_NAM", "HOA_DON", "CHI_TIET_HOA_DON", "THANH_TOAN", "DICH_VU_THUC_HIEN"],
         ChuanBiDongBo, () => dangTai || PhieuLuongOverlay.IsVisible || !PhienDangNhap.IsAdmin ||
             cboThang.SelectedIndex < 0 || !int.TryParse(txtNam.Text, out int y) || y is < 2000 or > 2100);
 

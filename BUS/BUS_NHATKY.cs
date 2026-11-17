@@ -24,6 +24,14 @@ public sealed class BUS_NHATKY
     /// Tạo phiên sau khi xác thực lại người dùng và ghi sự kiện đăng nhập thành công qua DAL.
     /// </summary>
     public Guid BatDauPhien(NguCanhNghiepVu actor)=>dal.BatDauPhien(actor);
+    /// <summary>Nhận phiên mới chỉ khi token ghi nhớ chưa bị lần đăng nhập khác thay thế, dưới cùng khóa tài khoản.</summary>
+    public Guid KhoiPhucPhien(Guid rememberedSession,NguCanhNghiepVu actor)=>dal.KhoiPhucPhien(rememberedSession,actor);
+    /// <summary>Đọc trạng thái phiên hiện tại mà không gia hạn hoạt động hoặc cần guard của phiên còn mở.</summary>
+    public TrangThaiPhienHienTai KiemTraPhienHienTai(Guid session,string account)=>dal.KiemTraPhienHienTai(session,account);
+    public Task<TrangThaiPhienHienTai> KiemTraPhienHienTaiAsync(Guid session,string account,CancellationToken cancellationToken=default)
+        =>dal.KiemTraPhienHienTaiAsync(session,account,cancellationToken);
+    public Task<TrangThaiPhienHienTai> KiemTraPhienHienTaiAsync(string connectionString,Guid session,string account,CancellationToken cancellationToken=default)
+        =>dal.KiemTraPhienHienTaiAsync(connectionString,session,account,cancellationToken);
     /// <summary>
     /// Cập nhật hoạt động cuối của đúng phiên còn hiệu lực sau khi DAL xác thực lại người dùng.
     /// </summary>
