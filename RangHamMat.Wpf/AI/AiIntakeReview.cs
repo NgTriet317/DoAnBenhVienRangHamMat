@@ -29,11 +29,11 @@ public sealed class AiIntakeReview(Guid sessionId)
     public bool RequiresStaff { get; private set; }
     public IReadOnlyDictionary<string, string> Intake => intake;
 
-    public static string ProtectAssistantMessage(string message)
+    public static string ProtectAssistantMessage(string message, string? unverifiedMessage = null)
     {
         ArgumentNullException.ThrowIfNull(message);
         if (!ReceiptClaim.IsMatch(message)) return message;
-        return "Tôi chưa thể xác nhận phiếu khám đã được tạo. AI chỉ lưu bản khai; nhân viên sẽ đối chiếu và tạo phiếu chính thức. Chưa có số thứ tự.";
+        return unverifiedMessage ?? "Tôi chưa thể xác nhận phiếu khám đã được tạo. AI chỉ lưu bản khai; nhân viên sẽ đối chiếu và tạo phiếu chính thức. Chưa có số thứ tự.";
     }
 
     public void ReplaceIntake(IReadOnlyDictionary<string, string> values)

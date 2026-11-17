@@ -1,8 +1,8 @@
-﻿# Quản lý Bệnh viện Răng Hàm Mặt
+# Quản lý Bệnh viện Răng Hàm Mặt
 
 WPF .NET8 + SQL Server2016SP1 trở lên. Solution gồm bốn tầng RangHamMat.Wpf (giao diện), ET, DAL, BUS và backend RangHamMat.Kiosk.Api. Views chỉ có các cặp XAML/code-behind; C# phụ trợ ở Presentation/Controls. Các project trong Test là bộ kiểm tra, không phải ứng dụng phát hành.
 
-Bản hợp nhất `Sprint3_tan` và `AI` trên nhánh `tan` dùng chung SQL **74 bảng**, cấu hình kết nối, luồng tiếp nhận và hóa đơn. AI lưu bản khai để nhân viên có quyền tiếp nhận xác minh trước khi lập phiếu. Chính sách lương tháng cũ và chính sách lương ca được giữ riêng theo cấu hình chính sách; phụ thu khám dịch vụ chỉ được tính một lần. Xem [kết quả kiểm chứng tích hợp](docs/integration/HOP_NHAT_TAN_AI_20261115.md).
+Bản hợp nhất trên nhánh `tan` dùng chung SQL **74 bảng**, cấu hình kết nối, luồng tiếp nhận và hóa đơn. Ngày 17/11/2026 đã gộp `dong_bo_giua_cac_may`, `chamcongmoinhat` và SQL chấm công F5: nhân viên tự chấm công, đồng bộ đa máy, một phiên đăng nhập/tài khoản và Lễ tân AI WPF tạo phiếu sau xác nhận. Kiosk trình duyệt vẫn lưu bản khai cho nhân viên duyệt. Chính sách lương tháng cũ và chính sách lương ca được giữ riêng; phụ thu khám dịch vụ chỉ tính một lần. Xem [chi tiết gộp và kiểm chứng](docs/database/HOP_NHAT_CHAM_CONG_VA_TAN_20261117.md) và [mốc tích hợp trước](docs/integration/HOP_NHAT_TAN_AI_20261115.md).
 
 ## Database: một file SQL duy nhất
 

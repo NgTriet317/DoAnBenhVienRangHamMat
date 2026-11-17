@@ -82,7 +82,7 @@
                                 </StackPanel>
                             </Border>
                             <Border Background="#213F46" CornerRadius="8" Padding="12,8">
-                                <TextBlock x:Name="lblTrangThaiKy" Text="●  CHỜ ĐỐI SOÁT" Foreground="#75E3CA" FontSize="11" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="lblTrangThaiKy" Text="●  CHƯA TẢI SỐ LIỆU" Foreground="#75E3CA" FontSize="11" FontWeight="SemiBold"/>
                             </Border>
                         </StackPanel>
                     </StackPanel>
@@ -107,7 +107,7 @@
                     <StackPanel><TextBlock Text="QUỸ LƯƠNG ĐANG LƯU" Style="{StaticResource NhanNho}"/><TextBlock x:Name="lblQuyLuong" Text="—" FontSize="27" FontWeight="Bold" Foreground="#0E756D" Margin="0,5,0,0"/><TextBlock Text="Số trong bản lương hiện tại" Foreground="#8A96A3" FontSize="11"/></StackPanel>
                 </Border>
                 <Border Grid.Column="2" Style="{StaticResource OThongKe}">
-                    <StackPanel><TextBlock Text="CHỜ XÁC NHẬN CÔNG" Style="{StaticResource NhanNho}"/><TextBlock x:Name="lblChoDoiSoat" Text="—" FontSize="27" FontWeight="Bold" Foreground="#C17D35" Margin="0,5,0,0"/><TextBlock Text="Toàn bộ nhân viên trong kỳ" Foreground="#8A96A3" FontSize="11"/></StackPanel>
+                    <StackPanel><TextBlock Text="CA CHƯA GHI NHẬN/XÁC NHẬN" Style="{StaticResource NhanNho}"/><TextBlock x:Name="lblChoDoiSoat" Text="—" FontSize="27" FontWeight="Bold" Foreground="#C17D35" Margin="0,5,0,0"/><TextBlock Text="Tính 0 công; không chặn chốt lương" Foreground="#8A96A3" FontSize="11"/></StackPanel>
                 </Border>
                 <Border Grid.Column="3" Style="{StaticResource OThongKe}">
                     <StackPanel><TextBlock Text="HOA HỒNG HỢP LỆ" Style="{StaticResource NhanNho}"/><TextBlock x:Name="lblHoaHong" Text="—" FontSize="27" FontWeight="Bold" Foreground="#48639E" Margin="0,5,0,0"/><TextBlock Text="Chỉ tính hóa đơn thu đủ" Foreground="#8A96A3" FontSize="11"/></StackPanel>

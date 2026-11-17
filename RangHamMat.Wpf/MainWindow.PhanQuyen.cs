@@ -49,6 +49,12 @@ public partial class MainWindow
                 maTaiKhoanDaTai = maTK;
                 phienBanQuyenDaTai = BUS_PHANQUYENVAITRO.PhienBan;
             }
+            // Chấm công cá nhân là quyền tự phục vụ của tài khoản nhân viên đang hoạt động.
+            // Các phân hệ khác vẫn kiểm tra quyền SQL theo vai trò như trước.
+            if (module == "ChamCong")
+                return PhienDangNhap.DaDangNhap
+                    && PhienDangNhap.MaTK == maTK
+                    && !string.IsNullOrWhiteSpace(PhienDangNhap.MaNV);
             return quyenPhanHeDaTai.Contains(module);
         }
         catch (Exception)

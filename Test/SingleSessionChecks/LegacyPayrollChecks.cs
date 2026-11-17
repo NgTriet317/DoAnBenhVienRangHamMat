@@ -25,8 +25,8 @@ internal static class LegacyPayrollChecks
             CREATE TABLE dbo.NHAT_KY_DUYET_CHAM_CONG(Id int IDENTITY PRIMARY KEY,MaLLV nvarchar(50),MaNV nvarchar(50),NguoiThucHien nvarchar(50),NgayThucHien datetime2,
               TrangThaiCu nvarchar(50),TrangThaiMoi nvarchar(50),GioVaoCu datetime2,GioRaCu datetime2,GioVaoMoi datetime2,GioRaMoi datetime2,CongCu decimal(4,2),CongMoi decimal(4,2),LyDo nvarchar(500));
             INSERT dbo.BANG_LUONG VALUES(N'BL_CHECK',N'NV1',NULL,N'Nháp','20260101','20260131',0);
-            INSERT dbo.CA_LAM VALUES(N'CA_CHECK','08:00','12:00');
-            INSERT dbo.LICH_LAM_VIEC VALUES(N'LLV_CHECK',N'NV1',N'CA_CHECK',DATEADD(day,-1,CONVERT(date,SYSDATETIME())),N'Đã xác nhận',NULL,NULL,N'Vắng');
+            INSERT dbo.CA_LAM VALUES(N'CA_CHECK','00:00','23:59:59.9999999');
+            INSERT dbo.LICH_LAM_VIEC VALUES(N'LLV_CHECK',N'NV1',N'CA_CHECK',CONVERT(date,SYSDATETIME()),N'Đã xác nhận',NULL,NULL,N'Vắng');
             """);
         // Lightweight procedures exercise the real DAL dispatch/transaction/context, not payroll formulas.
         foreach (string sql in new[]
@@ -60,11 +60,10 @@ internal static class LegacyPayrollChecks
         var policies = new DAL_CHINHSACHLUONG();
         var attendance = new DAL_CHAMCONG();
         var salary = new DAL_BANGLUONG();
-        var shift = new ET_CHAMCONG { MaLLV="LLV_CHECK",TrangThaiCu="Chờ đối soát",KetQua="Vắng",LyDo="Kiểm tra phiên" };
         var operations = new (string Name,Action Write)[]
         {
             ("luuChinhSach",()=>policies.luuChinhSach("NV1",policy)),
-            ("duyetChamCong",()=>attendance.duyetChamCong([shift],"NV1")),
+            ("chamCong",()=>attendance.chamCong("LLV_CHECK","TK1")),
             ("tinhLuongTheoKy",()=>salary.tinhLuongTheoKy(new(2026,1,1),new(2026,1,31),"NV1")),
             ("chotLuongNhanVien",()=>salary.chotLuongNhanVien("BL_CHECK","NV1",0,1,0)),
             ("duyetChinhSach",()=>policies.duyetChinhSach(policy.MaCSL,"NV1"))

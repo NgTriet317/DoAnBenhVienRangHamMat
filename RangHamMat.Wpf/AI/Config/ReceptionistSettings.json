@@ -1,0 +1,10 @@
+{
+  "Endpoint": "https://api.groq.com/openai/v1/chat/completions",
+  "Model": "openai/gpt-oss-20b",
+  "KeyVariable": "GROQ_API_KEY",
+  "PromptFile": "AI/Prompts/LeTanKiosk.md",
+  "TimeoutSeconds": 8,
+  "MaxRecentMessages": 6,
+  "MaxCompletionTokens": 300,
+  "UseMockRepository": false
+}

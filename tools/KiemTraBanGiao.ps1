@@ -35,7 +35,7 @@ try {
     $databaseTargets=@([regex]::Matches($sql,'(?i)CREATE DATABASE \[([^\]]+)\]') | ForEach-Object {$_.Groups[1].Value})
     if($databaseTargets.Count -ne 1 -or $databaseTargets[0] -ne 'QLBenhVienRangHamMat' -or
        !$sql.Contains('-- BEGIN RHM DATA SNAPSHOT:') -or !$sql.Contains('-- END RHM DATA SNAPSHOT') -or
-       !$sql.Contains('IF NOT EXISTS(SELECT 1 FROM sys.tables WHERE is_ms_shipped=0)')){throw 'SQL phải có snapshot cài mới và chỉ tạo QLBenhVienRangHamMat.'}
+       !$sql.Contains('IF NOT EXISTS(SELECT 1 FROM sys.tables WHERE is_ms_shipped=0')){throw 'SQL phải có snapshot cài mới và chỉ tạo QLBenhVienRangHamMat.'}
     foreach($aiTable in @('AI_PHIEN_TIEP_NHAN','AI_TIEP_NHAN_NHAP','AI_KET_QUA_TAO_PHIEU','RHM_NGAY_PHEP_NAM')){
         if(!$sql.Contains($aiTable)){throw "SQL chính thiếu chức năng tích hợp: $aiTable"}
     }

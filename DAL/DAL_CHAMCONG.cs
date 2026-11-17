@@ -1,34 +1,58 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.SqlClient;
-using ET;
 
 namespace DAL
 {
-    /// <summary>
-    /// Tầng truy cập dữ liệu chấm công, thực hiện truy vấn và kiểm tra trong phạm vi kết nối/giao dịch của dbconnect.
-    /// </summary>
+    // SQL Server là nguồn thời gian và kiểm tra cuối cùng, không tin dữ liệu giờ/người dùng từ giao diện.
     public class DAL_CHAMCONG : dbconnect
     {
-        /// <summary>
-        /// Đọc dữ liệu chấm công theo kỳ được chọn.
-        /// </summary>
-        /// <remarks>Các bước được phối hợp qua <c>CreateConnection</c>, <c>ketNoi.CreateCommand</c>, <c>lenh.Parameters.Add</c>, <c>dauThang.AddMonths</c>.</remarks>
-        /// <param name="dauThang">Giá trị đầu tháng dùng khi thực hiện thao tác; kiểu DateTime.</param>
-        /// <returns>Kết quả kiểu DataTable dùng cho bước xử lý tiếp theo.</returns>
-        public DataTable layChamCongTheoThang(DateTime dauThang)
+        public DateTime layThoiGianMayChu()
+        {
+            using var ketNoi = (SqlConnection)CreateConnection();
+            using var lenh = new SqlCommand("SELECT SYSDATETIME()", ketNoi);
+            ketNoi.Open();
+            return Convert.ToDateTime(lenh.ExecuteScalar());
+        }
+
+        public DataTable layChamCongTheoThang(DateTime dauThang, string maTK)
         {
             using var ketNoi = (SqlConnection)CreateConnection();
             using var lenh = ketNoi.CreateCommand();
             lenh.CommandText = @"
+                DECLARE @MaNV NVARCHAR(50), @LaBQL BIT = 0;
+                SELECT @MaNV=tk.MaNV,
+                    @LaBQL=CASE WHEN vt.TenVaiTro=N'Admin' THEN 1 ELSE 0 END
+                FROM dbo.TAI_KHOAN tk JOIN dbo.VAI_TRO vt ON vt.MaVaiTro=tk.MaVaiTro
+                WHERE tk.MaTK=@MaTK AND tk.TrangThai=N'Đang hoạt động';
+                IF @MaNV IS NULL
+                    THROW 51200,N'Tài khoản không hoạt động hoặc chưa liên kết nhân viên.',1;
+
                 SELECT l.MaLLV,l.MaNV,n.HoTen,ISNULL(cv.TenChucVu,N'Chưa phân loại') AS TenChucVu,
                     l.MaCa,l.NgayLam,c.GioBatDau,c.GioKetThuc,l.GioVao,l.GioRa,
                     l.TrangThai AS TrangThaiLich,l.TrangThaiHienDien,
-                    ISNULL(cc.TrangThai,N'Chờ đối soát') AS TrangThai,
-                    ISNULL(cc.SoPhutDiTre,0) AS SoPhutDiTre,
+                    CASE WHEN cc.TrangThai=N'Đã xác nhận' AND cc.CongDuocTinh>0
+                         THEN N'Đã chấm công'
+                         WHEN cc.TrangThai=N'Đã xác nhận' AND l.GioVao IS NOT NULL
+                         THEN N'Đã chấm công (0 công)'
+                         WHEN cc.TrangThai=N'Đã xác nhận' THEN N'Đã ghi nhận vắng'
+                         WHEN cc.TrangThai=N'Không hợp lệ' THEN N'Không hợp lệ'
+                         ELSE N'Chưa chấm công' END AS TrangThai,
                     ISNULL(cc.CongDuocTinh,0) AS CongDuocTinh,
+                    ISNULL(cc.SoPhutDiTre,0) AS SoPhutDiTre,
+                    -- Trừ 0,25 công qua CongTruDiTre ở SQL tính lương, KHÔNG trừ 2 lần.
+                    CAST(CASE WHEN cc.TrangThai=N'Đã xác nhận'
+                                   AND cc.CongDuocTinh=0.50 AND cc.SoPhutDiTre BETWEEN 1 AND 60
+                              THEN 0.25
+                              ELSE ISNULL(cc.CongDuocTinh,0)
+                         END AS DECIMAL(4,2)) AS CongThucNhan,
                     cc.MaNVDoiSoat,cc.NgayDoiSoat,cc.GhiChu,
+                    CAST(CASE WHEN l.MaNV=@MaNV THEN 1 ELSE 0 END AS BIT) AS LaCaCuaToi,
+                    CAST(CASE WHEN l.GioVao IS NOT NULL OR
+                      (cc.MaCC IS NOT NULL AND cc.TrangThai<>N'Chờ đối soát')
+                      THEN 1 ELSE 0 END AS BIT) AS DaCoGhiNhan,
+                    truoc.GioBatDau AS GioBatDauCaTruoc,
+                    truoc.GioKetThuc AS GioKetThucCaTruoc,
                     CAST(CASE WHEN EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI dn
                       WHERE dn.MaNV=l.MaNV AND dn.TrangThaiDuyet=N'Đã duyệt'
                         AND l.NgayLam BETWEEN dn.TuNgay AND dn.DenNgay) THEN 1 ELSE 0 END AS BIT) AS CoDonNghi,
@@ -40,8 +64,19 @@ namespace DAL
                 JOIN dbo.NHAN_VIEN n ON n.MaNV=l.MaNV
                 LEFT JOIN dbo.CHUC_VU cv ON cv.MaChucVu=n.MaChucVu
                 LEFT JOIN dbo.CHAM_CONG cc ON cc.MaLLV=l.MaLLV
+                OUTER APPLY (
+                    SELECT TOP(1) c2.GioBatDau,c2.GioKetThuc
+                    FROM dbo.LICH_LAM_VIEC l2 JOIN dbo.CA_LAM c2 ON c2.MaCa=l2.MaCa
+                    WHERE l2.MaNV=l.MaNV AND l2.NgayLam=l.NgayLam
+                      AND l2.TrangThai=N'Đã xác nhận'
+                      AND (c2.GioBatDau<c.GioBatDau OR
+                           (c2.GioBatDau=c.GioBatDau AND l2.MaLLV<l.MaLLV))
+                    ORDER BY c2.GioBatDau DESC,l2.MaLLV DESC
+                ) truoc
                 WHERE l.NgayLam>=@TuNgay AND l.NgayLam<@DenNgay
-                ORDER BY l.NgayLam,l.MaCa,n.HoTen";
+                    AND (@LaBQL=1 OR l.MaNV=@MaNV)
+                ORDER BY l.NgayLam,c.GioBatDau,n.HoTen";
+            lenh.Parameters.Add(new SqlParameter("@MaTK",SqlDbType.NVarChar,50){Value=maTK});
             lenh.Parameters.Add(new SqlParameter("@TuNgay",SqlDbType.Date){Value=dauThang.Date});
             lenh.Parameters.Add(new SqlParameter("@DenNgay",SqlDbType.Date){Value=dauThang.AddMonths(1).Date});
             ketNoi.Open();
@@ -51,148 +86,148 @@ namespace DAL
             return duLieu;
         }
 
-        // ThucHien giữ guard phiên/audit và toàn bộ duyệt hàng loạt trong một giao dịch; một ca sai thì không lưu ca nào.
-        public int duyetChamCong(IReadOnlyList<ET_CHAMCONG> danhSach, string maNVQuanLy)
+        public void chamCong(string maLLV, string maTK)
             => ThucHien((connection, transaction) =>
             {
+                // Dùng chung guard phiên, ngữ cảnh audit và giao dịch của tầng DAL.
                 var ketNoi = (SqlConnection)connection;
                 var giaoDich = (SqlTransaction?)transaction;
-                using (var quyen = new SqlCommand(@"
-                  IF NOT EXISTS(SELECT 1 FROM dbo.NHAN_VIEN WHERE MaNV=@MaNV)
-                    THROW 51100,N'Nhân viên duyệt không tồn tại.',1;
-                  IF OBJECT_ID('dbo.NHAT_KY_DUYET_CHAM_CONG','U') IS NULL
-                    THROW 51101,N'Cần chạy toàn bộ Database/QLBenhVienRangHamMat.sql để đồng bộ chấm công trước.',1;",ketNoi,giaoDich))
-                {
-                    quyen.Parameters.AddWithValue("@MaNV",maNVQuanLy);
-                    quyen.ExecuteNonQuery();
-                }
-                // Khóa chung để hai BQL không đồng thời duyệt, tránh phát sinh mã trùng.
+                // Chung khóa với thủ tục tính/chốt lương để không ghi công vào lúc đang chốt.
                 using (var khoa = new SqlCommand(@"
-                  DECLARE @ketQua int;
-                  EXEC @ketQua=sys.sp_getapplock @Resource=N'RHM:DuyetChamCong',
-                    @LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000;
-                  IF @ketQua<0 THROW 51102,N'Có người đang duyệt công, vui lòng thử lại.',1;",ketNoi,giaoDich))
+                    DECLARE @KetQua INT;
+                    EXEC @KetQua=sys.sp_getapplock @Resource=N'RHM:TinhChotLuong',
+                        @LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000;
+                    IF @KetQua<0 THROW 51201,N'Đang xử lý bảng lương, vui lòng thử lại.',1;",ketNoi,giaoDich))
                     khoa.ExecuteNonQuery();
-                var daChon = new HashSet<string>(StringComparer.Ordinal);
-                foreach (ET_CHAMCONG ca in danhSach)
-                {
-                    if (!daChon.Add(ca.MaLLV)) throw new InvalidOperationException("Danh sách có ca bị trùng.");
-                    duyetMotCa(ketNoi,giaoDich,ca,maNVQuanLy);
-                }
-                return danhSach.Count;
-            });
 
-        /// <summary>
-        /// Duyệt kết quả chấm công một ca và lưu người duyệt theo dữ liệu được kiểm tra. Các truy vấn có gợi ý khóa giữ bản dữ liệu liên quan trong phạm vi giao dịch.
-        /// </summary>
-        /// <remarks>Các bước được phối hợp qua <c>lenh.Parameters.AddWithValue</c>, <c>lenh.ExecuteReader</c>, <c>hienTai.Load</c>, <c>dong.Field&lt;string&gt;</c>.</remarks>
-        /// <param name="ketNoi">Giá trị kết nối dùng khi thực hiện thao tác; kiểu SqlConnection.</param>
-        /// <param name="giaoDich">Giao dịch dùng chung; null nếu nơi gọi không truyền giao dịch. Quyền commit/rollback thuộc nơi quản lý giao dịch.</param>
-        /// <param name="ca">Giá trị ca dùng khi thực hiện thao tác; kiểu ET_CHAMCONG.</param>
-        /// <param name="maNVQuanLy">Mã nhân viên quản lý xác định đối tượng cần xử lý.</param>
-        private static void duyetMotCa(SqlConnection ketNoi, SqlTransaction? giaoDich,
-            ET_CHAMCONG ca, string maNVQuanLy)
-        {
-            using var lenh = new SqlCommand(@"
-              SELECT l.MaNV,l.NgayLam,l.TrangThai AS TrangThaiLich,
-                     l.GioVao,l.GioRa,c.GioBatDau,c.GioKetThuc,
-                     cc.MaCC,ISNULL(cc.TrangThai,N'Chờ đối soát') AS TrangThai,
-                     cc.CongDuocTinh,cc.SoPhutDiTre
-              FROM dbo.LICH_LAM_VIEC l WITH(UPDLOCK,HOLDLOCK)
-              JOIN dbo.CA_LAM c ON c.MaCa=l.MaCa
-              LEFT JOIN dbo.CHAM_CONG cc WITH(UPDLOCK,HOLDLOCK) ON cc.MaLLV=l.MaLLV
-              WHERE l.MaLLV=@MaLLV",ketNoi,giaoDich);
-            lenh.Parameters.AddWithValue("@MaLLV",ca.MaLLV);
-            var hienTai = new DataTable();
-            using (var doc = lenh.ExecuteReader()) hienTai.Load(doc);
-            if (hienTai.Rows.Count!=1) throw new InvalidOperationException("Không tìm thấy ca làm: "+ca.MaLLV);
-            DataRow dong = hienTai.Rows[0];
-            string maNV=dong.Field<string>("MaNV") ?? "";
-            DateTime ngay=dong.Field<DateTime>("NgayLam").Date;
-            string trangThai=dong.Field<string>("TrangThai") ?? "";
-            DateTime? gioVaoCu=dong.Field<DateTime?>("GioVao");
-            DateTime? gioRaCu=dong.Field<DateTime?>("GioRa");
-            if (trangThai!=ca.TrangThaiCu || gioVaoCu!=ca.GioVaoCu || gioRaCu!=ca.GioRaCu)
-                throw new InvalidOperationException("Ca đã được người khác cập nhật, vui lòng tải lại: "+ca.MaLLV);
-            if (ngay>DateTime.Today) throw new InvalidOperationException("Không được duyệt ca ở tương lai.");
-            // Không yêu cầu làm đủ giờ ca mới được BQL xác nhận công.
-            string trangThaiLich=dong.Field<string>("TrangThaiLich") ?? "";
-            if (trangThaiLich=="Hủy" || trangThaiLich=="Từ chối" || trangThaiLich=="Nghỉ phép" || trangThaiLich=="Nghỉ việc")
-                throw new InvalidOperationException("Không thể chấm công lịch đã hủy/nghỉ: "+ca.MaLLV);
-            using (var kiemTra = new SqlCommand(@"
-                IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG WITH(UPDLOCK,HOLDLOCK)
-                  WHERE MaNV=@MaNV AND TrangThai=N'Đã chốt' AND @Ngay BETWEEN TuNgay AND DenNgay)
-                  THROW 51103,N'Kỳ lương đã chốt, không thể thay đổi chấm công.',1;
-                IF EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI WITH(UPDLOCK,HOLDLOCK)
-                  WHERE MaNV=@MaNV AND TrangThaiDuyet=N'Đã duyệt' AND @Ngay BETWEEN TuNgay AND DenNgay)
-                  THROW 51104,N'Ngày này đã có đơn nghỉ được duyệt. Không được tính trùng công.',1;",ketNoi,giaoDich))
-            {
-                kiemTra.Parameters.AddWithValue("@MaNV",maNV);
-                kiemTra.Parameters.Add(new SqlParameter("@Ngay",SqlDbType.Date){Value=ngay});
-                kiemTra.ExecuteNonQuery();
-            }
-            if (ca.LyDo.Length>500)
-                throw new InvalidOperationException("Ghi chú/lý do không được quá 500 ký tự.");
-            if ((trangThai=="Đã xác nhận" || (ca.KetQua=="Vắng" && (gioVaoCu.HasValue || gioRaCu.HasValue))) && ca.LyDo.Trim().Length<5)
-                throw new InvalidOperationException("Sửa ca đã duyệt phải ghi lý do ít nhất 5 ký tự.");
-            if (ca.KetQua=="Không hợp lệ" && ca.LyDo.Trim().Length<5)
-                throw new InvalidOperationException("Ca không hợp lệ phải có lý do ít nhất 5 ký tự.");
-            int soPhut=0;
-            decimal cong=0;
-            string hienDien="Vắng";
-            DateTime? gioVao=null;
-            DateTime? gioRa=null;
-            if (ca.KetQua=="Hoàn tất")
-            {
-                gioVao=ca.GioVao;
-                gioRa=ca.GioRa;
-                DateTime batDau=ngay+dong.Field<TimeSpan>("GioBatDau");
-                if (!gioVao.HasValue || !gioRa.HasValue || gioVao.Value.Date!=ngay ||
-                    gioRa.Value<gioVao.Value || gioRa.Value>DateTime.Now)
-                    throw new InvalidOperationException("Giờ vào/ra không hợp lệ hoặc nằm trong tương lai: "+ca.MaLLV);
-                soPhut=Math.Max(0,(int)Math.Floor((gioVao.Value-batDau).TotalMinutes));
-                cong=0.5m; // Mỗi ca hoàn tất là 0,5 công, không phụ thuộc thời lượng ca.
-                hienDien="Có mặt";
-            }
-            if (ca.KetQua=="Không hợp lệ")
-            {
-                // Giữ giờ gốc để BQL vẫn có bằng chứng của ca chưa hợp lệ.
-                hienDien="Chưa xác định";
-                gioVao=gioVaoCu;
-                gioRa=gioRaCu;
-            }
-            string trangThaiMoi=ca.KetQua=="Không hợp lệ"?"Không hợp lệ":"Đã xác nhận";
-            string? maCC=dong.Field<string?>("MaCC");
-            if (string.IsNullOrWhiteSpace(maCC)) maCC="CC"+Guid.NewGuid().ToString("N");
-            using var luu = new SqlCommand(@"
-                UPDATE dbo.LICH_LAM_VIEC SET GioVao=@GioVao,GioRa=@GioRa,
-                    TrangThaiHienDien=@HienDien WHERE MaLLV=@MaLLV;
-                IF EXISTS(SELECT 1 FROM dbo.CHAM_CONG WHERE MaLLV=@MaLLV)
-                    UPDATE dbo.CHAM_CONG SET SoPhutDiTre=@SoPhut,CongDuocTinh=@Cong,
-                        TrangThai=@TrangThai,MaNVDoiSoat=@NguoiDuyet,NgayDoiSoat=SYSDATETIME(),
-                        GhiChu=@GhiChu WHERE MaLLV=@MaLLV;
-                ELSE
-                    INSERT dbo.CHAM_CONG(MaCC,MaLLV,SoPhutDiTre,CongDuocTinh,TrangThai,MaNVDoiSoat,NgayDoiSoat,GhiChu)
-                    VALUES (@MaCC,@MaLLV,@SoPhut,@Cong,@TrangThai,@NguoiDuyet,SYSDATETIME(),@GhiChu);
-                INSERT dbo.NHAT_KY_DUYET_CHAM_CONG(MaLLV,MaNV,NguoiThucHien,NgayThucHien,
-                    TrangThaiCu,TrangThaiMoi,GioVaoCu,GioRaCu,GioVaoMoi,GioRaMoi,
-                    CongCu,CongMoi,LyDo)
-                VALUES (@MaLLV,@MaNV,@NguoiDuyet,SYSDATETIME(),@TrangThaiCu,@TrangThai,
-                    @GioVaoCu,@GioRaCu,@GioVao,@GioRa,@CongCu,@Cong,@GhiChu);",ketNoi,giaoDich);
-            luu.Parameters.AddWithValue("@MaLLV",ca.MaLLV);
-            luu.Parameters.AddWithValue("@MaCC",maCC);
-            luu.Parameters.AddWithValue("@MaNV",maNV);
-            luu.Parameters.AddWithValue("@NguoiDuyet",maNVQuanLy);
-            luu.Parameters.AddWithValue("@TrangThai",trangThaiMoi);
-            luu.Parameters.AddWithValue("@TrangThaiCu",trangThai);
-            luu.Parameters.AddWithValue("@HienDien",hienDien);
-            luu.Parameters.AddWithValue("@SoPhut",soPhut);
-            luu.Parameters.Add(new SqlParameter("@Cong",SqlDbType.Decimal){Precision=4,Scale=2,Value=cong});
-            luu.Parameters.Add(new SqlParameter("@CongCu",SqlDbType.Decimal){Precision=4,Scale=2,Value=dong.Field<decimal?>("CongDuocTinh") ?? 0m});
-            foreach (var pair in new[]{("@GioVao",gioVao),("@GioRa",gioRa),("@GioVaoCu",gioVaoCu),("@GioRaCu",gioRaCu)})
-                luu.Parameters.Add(new SqlParameter(pair.Item1,SqlDbType.DateTime2){Value=(object?)pair.Item2 ?? DBNull.Value});
-            luu.Parameters.AddWithValue("@GhiChu",ca.LyDo.Trim());
-            luu.ExecuteNonQuery();
-        }
+                using var lenh = new SqlCommand(@"
+                    SELECT l.MaLLV,l.MaNV,l.NgayLam,l.TrangThai,l.GioVao,l.GioRa,
+                           c.GioBatDau,c.GioKetThuc,
+                           cc.MaCC,cc.TrangThai AS TrangThaiCong,cc.CongDuocTinh,
+                           tk.MaTK AS TaiKhoanHopLe,
+                           (SELECT TOP(1) c2.GioBatDau
+                            FROM dbo.LICH_LAM_VIEC l2 JOIN dbo.CA_LAM c2 ON c2.MaCa=l2.MaCa
+                            WHERE l2.MaNV=l.MaNV AND l2.NgayLam=l.NgayLam
+                              AND l2.TrangThai=N'Đã xác nhận'
+                              AND (c2.GioBatDau<c.GioBatDau OR
+                                   (c2.GioBatDau=c.GioBatDau AND l2.MaLLV<l.MaLLV))
+                            ORDER BY c2.GioBatDau DESC,l2.MaLLV DESC) AS GioBatDauCaTruoc,
+                           (SELECT TOP(1) c2.GioKetThuc
+                            FROM dbo.LICH_LAM_VIEC l2 JOIN dbo.CA_LAM c2 ON c2.MaCa=l2.MaCa
+                            WHERE l2.MaNV=l.MaNV AND l2.NgayLam=l.NgayLam
+                              AND l2.TrangThai=N'Đã xác nhận'
+                              AND (c2.GioBatDau<c.GioBatDau OR
+                                   (c2.GioBatDau=c.GioBatDau AND l2.MaLLV<l.MaLLV))
+                            ORDER BY c2.GioBatDau DESC,l2.MaLLV DESC) AS GioKetThucCaTruoc
+                    FROM dbo.LICH_LAM_VIEC l WITH(UPDLOCK,HOLDLOCK)
+                    JOIN dbo.CA_LAM c ON c.MaCa=l.MaCa
+                    LEFT JOIN dbo.CHAM_CONG cc WITH(UPDLOCK,HOLDLOCK) ON cc.MaLLV=l.MaLLV
+                    LEFT JOIN dbo.TAI_KHOAN tk ON tk.MaNV=l.MaNV AND tk.MaTK=@MaTK
+                      AND tk.TrangThai=N'Đang hoạt động'
+                    WHERE l.MaLLV=@MaLLV;",ketNoi,giaoDich);
+                lenh.Parameters.Add(new SqlParameter("@MaLLV",SqlDbType.NVarChar,50){Value=maLLV});
+                lenh.Parameters.Add(new SqlParameter("@MaTK",SqlDbType.NVarChar,50){Value=maTK});
+                var duLieu = new DataTable();
+                using (var doc = lenh.ExecuteReader()) duLieu.Load(doc);
+                if (duLieu.Rows.Count!=1)
+                    throw new InvalidOperationException("Không tìm thấy ca được phân công.");
+                DataRow ca = duLieu.Rows[0];
+                if (ca.IsNull("TaiKhoanHopLe"))
+                    throw new UnauthorizedAccessException("Chỉ nhân viên sở hữu ca và có tài khoản đang hoạt động mới được chấm công.");
+                if (ca.Field<string>("TrangThai")!="Đã xác nhận")
+                    throw new InvalidOperationException("Ca chưa được xác nhận phân công hoặc đã bị hủy/nghỉ.");
+                if (!ca.IsNull("GioVao") || !ca.IsNull("GioRa") ||
+                    (!ca.IsNull("MaCC") && ca.Field<string>("TrangThaiCong")!="Chờ đối soát"))
+                    throw new InvalidOperationException("Ca đã có dữ liệu chấm công, không thể chấm trùng hoặc ghi đè dữ liệu cũ.");
+
+                // Lấy thời gian tại SQL Server ngay trong giao dịch, tuyệt đối không dùng DateTime.Now của máy WPF.
+                DateTime hienTai;
+                using (var gio = new SqlCommand("SELECT SYSDATETIME()",ketNoi,giaoDich))
+                    hienTai = Convert.ToDateTime(gio.ExecuteScalar());
+                DateTime ngay = ca.Field<DateTime>("NgayLam").Date;
+                if (ngay != hienTai.Date)
+                    throw new InvalidOperationException("Chỉ được chấm công trong đúng ngày làm việc (không chấm trước hoặc bù ngày cũ).");
+                // Phương án A: hết giờ kết thúc ca là khóa ngay, kể cả vẫn trong cùng ngày.
+                // Ca xuyên đêm tính mốc kết thúc sang ngày hôm sau; quy tắc chỉ chấm
+                // trong đúng ngày NgayLam ở trên vẫn được giữ để tương thích dữ liệu cũ.
+                TimeSpan batDauCa = ca.Field<TimeSpan>("GioBatDau");
+                TimeSpan ketThucCa = ca.Field<TimeSpan>("GioKetThuc");
+                DateTime mocKetThuc = ngay.Add(ketThucCa);
+                if (ketThucCa <= batDauCa) mocKetThuc = mocKetThuc.AddDays(1);
+                if (hienTai >= mocKetThuc)
+                    throw new InvalidOperationException("Ca đã kết thúc lúc " +
+                        mocKetThuc.ToString("HH:mm") + ". Không được chấm công bù sau giờ kết thúc ca.");
+
+                // Chỉ thời gian của SQL Server quyết định số phút trễ.
+                // Trễ từ giây đầu tiên làm tròn lên 1 phút; đúng mốc 60 phút = 0,25 công.
+                DateTime mocBatDau = ngay.Add(batDauCa);
+                int soPhutDiTre = hienTai <= mocBatDau ? 0 :
+                    (int)Math.Ceiling((hienTai - mocBatDau).TotalMinutes);
+                // CHECK CHAM_CONG chỉ cho CongDuocTinh = 0 hoặc 0,50.
+                // Với 1..60 phút, lưu 0,50 công gốc; SQL trừ 0,25 trong bảng lương.
+                // Trên 60 phút: lưu 0 công, không còn trừ thêm ở bảng lương.
+                decimal congGoc = soPhutDiTre > 60 ? 0m : 0.5m;
+                decimal congThucNhan = soPhutDiTre == 0 ? 0.5m :
+                    (soPhutDiTre <= 60 ? 0.25m : 0m);
+
+                if (!ca.IsNull("GioKetThucCaTruoc"))
+                {
+                    TimeSpan batDauTruoc = ca.Field<TimeSpan>("GioBatDauCaTruoc");
+                    TimeSpan ketThucTruoc = ca.Field<TimeSpan>("GioKetThucCaTruoc");
+                    DateTime moc = ngay.Add(ketThucTruoc);
+                    if (ketThucTruoc<=batDauTruoc) moc = moc.AddDays(1);
+                    if (hienTai<moc)
+                        throw new InvalidOperationException("Ca trước chưa kết thúc ("+moc.ToString("HH:mm")+"). Vui lòng chấm công ca sau khi hết ca trước.");
+                }
+
+                using (var kiemTra = new SqlCommand(@"
+                    IF EXISTS(SELECT 1 FROM dbo.BANG_LUONG WITH(UPDLOCK,HOLDLOCK)
+                      WHERE MaNV=@MaNV AND TrangThai=N'Đã chốt' AND @Ngay BETWEEN TuNgay AND DenNgay)
+                      THROW 51202,N'Kỳ lương đã chốt, không thể ghi công.',1;
+                    IF EXISTS(SELECT 1 FROM dbo.DON_XIN_NGHI WITH(UPDLOCK,HOLDLOCK)
+                      WHERE MaNV=@MaNV AND TrangThaiDuyet=N'Đã duyệt' AND @Ngay BETWEEN TuNgay AND DenNgay)
+                      THROW 51203,N'Ngày này đã có đơn nghỉ phép được duyệt.',1;
+                    IF OBJECT_ID('dbo.NHAT_KY_DUYET_CHAM_CONG','U') IS NULL
+                      THROW 51204,N'Chưa có bảng nhật ký chấm công từ phiên bản V9.',1;",ketNoi,giaoDich))
+                {
+                    kiemTra.Parameters.Add(new SqlParameter("@MaNV",SqlDbType.NVarChar,50){Value=ca.Field<string>("MaNV")!});
+                    kiemTra.Parameters.Add(new SqlParameter("@Ngay",SqlDbType.Date){Value=ngay});
+                    kiemTra.ExecuteNonQuery();
+                }
+
+                string maNV = ca.Field<string>("MaNV")!;
+                string? maCC = ca.Field<string>("MaCC");
+                if (string.IsNullOrWhiteSpace(maCC)) maCC="CC"+Guid.NewGuid().ToString("N");
+                using var luu = new SqlCommand(@"
+                    UPDATE dbo.LICH_LAM_VIEC SET GioVao=@ThoiDiem,GioRa=NULL,
+                        TrangThaiHienDien=N'Có mặt' WHERE MaLLV=@MaLLV;
+                    IF EXISTS(SELECT 1 FROM dbo.CHAM_CONG WHERE MaLLV=@MaLLV)
+                        UPDATE dbo.CHAM_CONG SET SoPhutDiTre=@SoPhutDiTre,CongDuocTinh=@CongGoc,
+                            TrangThai=N'Đã xác nhận',MaNVDoiSoat=@MaNV,
+                            NgayDoiSoat=@ThoiDiem,GhiChu=@GhiChu
+                        WHERE MaLLV=@MaLLV;
+                    ELSE
+                        INSERT dbo.CHAM_CONG(MaCC,MaLLV,SoPhutDiTre,CongDuocTinh,
+                            TrangThai,MaNVDoiSoat,NgayDoiSoat,GhiChu)
+                        VALUES(@MaCC,@MaLLV,@SoPhutDiTre,@CongGoc,N'Đã xác nhận',@MaNV,@ThoiDiem,
+                            @GhiChu);
+                    INSERT dbo.NHAT_KY_DUYET_CHAM_CONG(
+                        MaLLV,MaNV,NguoiThucHien,NgayThucHien,TrangThaiCu,TrangThaiMoi,
+                        GioVaoCu,GioRaCu,GioVaoMoi,GioRaMoi,CongCu,CongMoi,LyDo)
+                    VALUES(@MaLLV,@MaNV,@MaNV,@ThoiDiem,@TrangThaiCu,
+                        N'Đã xác nhận',NULL,NULL,@ThoiDiem,NULL,@CongCu,@CongGoc,@GhiChu);",ketNoi,giaoDich);
+                luu.Parameters.Add(new SqlParameter("@MaLLV",SqlDbType.NVarChar,50){Value=maLLV});
+                luu.Parameters.Add(new SqlParameter("@MaCC",SqlDbType.NVarChar,50){Value=maCC});
+                luu.Parameters.Add(new SqlParameter("@MaNV",SqlDbType.NVarChar,50){Value=maNV});
+                luu.Parameters.Add(new SqlParameter("@ThoiDiem",SqlDbType.DateTime2){Value=hienTai});
+                luu.Parameters.Add(new SqlParameter("@SoPhutDiTre",SqlDbType.Int){Value=soPhutDiTre});
+                luu.Parameters.Add(new SqlParameter("@CongGoc",SqlDbType.Decimal){Precision=4,Scale=2,Value=congGoc});
+                luu.Parameters.Add(new SqlParameter("@GhiChu",SqlDbType.NVarChar,500){
+                    Value=$"Nhân viên tự chấm công; trễ {soPhutDiTre} phút; công thực nhận {congThucNhan:0.##}"});
+                luu.Parameters.Add(new SqlParameter("@TrangThaiCu",SqlDbType.NVarChar,50){Value=ca.Field<string>("TrangThaiCong") ?? "Chưa chấm công"});
+                luu.Parameters.Add(new SqlParameter("@CongCu",SqlDbType.Decimal){Precision=4,Scale=2,Value=ca.Field<decimal?>("CongDuocTinh") ?? 0m});
+                luu.ExecuteNonQuery();
+                return 0;
+            });
     }
 }

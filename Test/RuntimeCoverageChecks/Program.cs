@@ -31,6 +31,11 @@ internal static class Program
             ("warehouse-supplier-name-dependency", () => Dependencies(new Kho(), "NHA_CUNG_CAP")),
             ("reception-department-name-dependency", () => Dependencies(new PhieuHuongDan(), "KHOA")),
             ("payroll-reconciliation-invoice-lines-dependency", () => Dependencies(new BangLuong(), "CHI_TIET_HOA_DON")),
+            ("payroll-missing-attendance-allows-closing-with-zero-credit", () => PayrollClosing(false)),
+            ("payroll-pending-leave-still-blocks-closing", () => PayrollClosing(true)),
+            ("ai-chat-preserves-patient-name-across-answers", ReceptionistMergeChecks.NameCapture),
+            ("ai-confirmed-create-protects-navigation-and-reset", ReceptionistMergeChecks.InFlightGuard),
+            ("ai-unverified-model-output-cannot-invent-a-receipt", ReceptionistMergeChecks.UnverifiedReceipt),
             ("clinical-reference-conditions-and-links-dependencies", () => ConstructorTables(typeof(KhamLamSang), "DM_TINH_TRANG_BENH", "DICH_VU_TINH_TRANG", "PHIEU_KHAM_BENH", "THUOC", "HANG_HOA", "CHI_TIET_HOA_DON", "CHI_TIET_PHIEU_XUAT", "AI_KET_QUA_TAO_PHIEU", "AI_YEU_CAU_TAO_PHIEU")),
             ("prescription-drug-inventory-and-guidance-dependencies", () => ConstructorTables(typeof(KeDonThuocEditor), "HANG_HOA", "CAU_HINH_THUOC_KE_DON", "PHIEU_XUAT", "CHI_TIET_PHIEU_XUAT", "DICH_VU_THUC_HIEN", "PHIEU_KHAM_BENH", "BENH_NHAN")),
             ("completed-services-name-and-invoice-dependencies", () => ConstructorTables(typeof(ThucHienDichVuEditor), "BENH_NHAN", "DICH_VU", "NHAN_VIEN", "CHI_TIET_HOA_DON")),
@@ -147,6 +152,48 @@ internal static class Program
         catch (TargetInvocationException error) { failure = error.InnerException; }
         Require(failure is InvalidOperationException && failure.Message.Contains("fixture prescription refresh failed"), "Nested prescription refresh swallowed its read failure, so the pending batch would be acknowledged.");
     }
+    private static void PayrollClosing(bool pendingLeave)
+    {
+        // Exercise the actual closing button with in-memory SQL result rows, without loading a database.
+        var view = (BangLuong)RuntimeHelpers.GetUninitializedObject(typeof(BangLuong));
+        var salary = new DataTable();
+        foreach (var (name, type) in new (string, Type)[] {
+            ("MaBL",typeof(string)), ("TrangThai",typeof(string)), ("TuNgay",typeof(DateTime)),
+            ("DenNgay",typeof(DateTime)), ("CongThucTe",typeof(decimal)),
+            ("CongChuan",typeof(decimal)), ("TongLuong",typeof(decimal)) }) salary.Columns.Add(name,type);
+        salary.Rows.Add("TEST_BL","Nháp",new DateTime(2000,1,1),new DateTime(2000,1,31),0m,26m,100000m);
+        var grid = new DataGrid { ItemsSource = salary.DefaultView };
+        grid.SelectedItem = salary.DefaultView[0];
+        var reconciliation = new DataTable();
+        reconciliation.Columns.Add("MaBL",typeof(string));
+        foreach (string name in new[] { "CongChuaDuyet", "DonNghiChoDuyet", "CongTrungNgayPhep",
+            "HoaHongChuaHopLe", "KhoanCongChuaPhanLoai", "ChungTuChuaDuyet" })
+            reconciliation.Columns.Add(name,typeof(int));
+        reconciliation.Columns.Add("ChinhSachHopLe",typeof(bool));
+        reconciliation.Rows.Add("TEST_BL",2,pendingLeave ? 1 : 0,0,0,0,0,true);
+        var button = new Button();
+        var month = new ComboBox(); month.Items.Add("January"); month.SelectedIndex = 0;
+        Field(view,"gridBangLuong").SetValue(view,grid);
+        Field(view,"btnChotLuong").SetValue(view,button);
+        Field(view,"lblDoiSoatChiTiet").SetValue(view,new TextBlock());
+        Field(view,"cboThang").SetValue(view,month);
+        Field(view,"txtNam").SetValue(view,new TextBox { Text="2000" });
+        Field(view,"danhSachDoiSoat").SetValue(view,reconciliation);
+        Field(view,"daCaiTinhLuong").SetValue(view,true);
+        Field(view,"kyDaTinh").SetValue(view,new DateTime(2000,1,1));
+        Field(view,"ngayMayChu").SetValue(view,new DateTime(2000,2,5));
+        bool wasAdmin = RangHamMat.PhienDangNhap.IsAdmin;
+        try
+        {
+            RangHamMat.PhienDangNhap.IsAdmin = true;
+            Call(view,"capNhatDoiSoat");
+            Require(button.IsEnabled == !pendingLeave, pendingLeave
+                ? "Pending leave must still block salary closing."
+                : "Missing attendance must contribute zero without disabling salary closing.");
+        }
+        finally { RangHamMat.PhienDangNhap.IsAdmin = wasAdmin; }
+    }
+
     private static void GuidancePending()
     {
         var type = typeof(HuongDanThuocEditor);

@@ -30,7 +30,7 @@ static class Program
     /// <summary>
     /// Quản trị viên được giữ trong phạm vi lớp để các thao tác dùng lại.
     /// </summary>
-    static string admin = "";
+    static string admin = "", account = "";
 
     /// <summary>
     /// Bước kiểm chứng chính; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
@@ -46,10 +46,11 @@ static class Program
             TrustServerCertificate=true, ConnectTimeout=8, Pooling=true }.ConnectionString;
         Environment.SetEnvironmentVariable("RHM_CONNECTION_STRING", cs);
         Console.WriteLine($"SQL sync checks: {args[1]}; rollback-only fixtures");
+        account = Scalar<string>("SELECT TOP(1) tk.MaTK FROM dbo.TAI_KHOAN tk JOIN dbo.VAI_TRO v ON v.MaVaiTro=tk.MaVaiTro WHERE v.TenVaiTro=N'Admin' AND tk.TrangThai=N'Đang hoạt động'");
         Check("Every direct ET table/property exists in SQL", MappedColumns);
         Check("V9 salary/attendance tables, procedures and active protection triggers", RequiredObjects);
         Check("DAL appointment display query", () => new DAL_LICHKHAM().layLichKhamHienThi().ToArray());
-        Check("DAL monthly attendance query", () => Assert(new DAL_CHAMCONG().layChamCongTheoThang(First).Columns.Contains("CongDuocTinh"), "Missing attendance display columns"));
+        Check("DAL monthly attendance query", () => Assert(new DAL_CHAMCONG().layChamCongTheoThang(First,account).Columns.Contains("CongDuocTinh"), "Missing attendance display columns"));
         Check("DAL V9 payroll display and reconciliation queries", () => {
             var dal = new DAL_BANGLUONG(); Assert(dal.suDungSchemaV9() && dal.daCaiTinhLuong(), "V9 schema/procedures unavailable");
             Assert(dal.layBangLuongTheoKy(First, Last).Columns.Contains("TienBaoHiem"), "Missing payroll columns");
@@ -58,7 +59,9 @@ static class Program
         if (!args.Contains("--schema-only"))
         {
             admin = Scalar<string>("SELECT TOP(1) tk.MaNV FROM dbo.TAI_KHOAN tk JOIN dbo.VAI_TRO v ON v.MaVaiTro=tk.MaVaiTro WHERE v.TenVaiTro=N'Admin' AND tk.TrangThai=N'Đang hoạt động'");
-            Check("DAL short completed shift is 0.5 day with audit source", ShortShift);
+            Check("Self attendance on time earns 0.5 day and records server time and audit", () => SelfAttendance(-5,0.5m));
+            Check("Self attendance late under 60 minutes earns 0.25 day", () => SelfAttendance(10,0.25m));
+            Check("Self attendance late over 60 minutes earns zero", () => SelfAttendance(61,0m));
             Check("DAL full salary calculation, leave, lateness, adjustments and source commission", () => Fixture(() => { Calculate(); VerifySalary(); TraceSource(); }));
             Check("Paid holiday is excluded from standard days", () => Fixture(() => {
                 Exec("INSERT dbo.NGAY_NGHI_LE(MaNgayNghi,NgayNghi,TenNgayNghi,LoaiNgayNghi,CoHuongLuong) VALUES(N'SYNC_HOLIDAY','20000106',N'Rollback holiday',N'Nghỉ theo quy định nội bộ',1)");
@@ -198,13 +201,13 @@ static class Program
     /// <param name="args">Giá trị đối số dùng khi thực hiện thao tác; kiểu object?.</param>
     /// <returns>Kết quả kiểu T dùng cho bước xử lý tiếp theo.</returns>
     /// <typeparam name="T">Kiểu dữ liệu dùng cho thao tác tổng quát này.</typeparam>
-    static T Scalar<T>(string sql,object? args=null){using var db=Open();return db.ExecuteScalar<T>(sql,args ?? new{admin})!;}
+    static T Scalar<T>(string sql,object? args=null){using var db=Open();return db.ExecuteScalar<T>(sql,args ?? new{admin,account})!;}
     /// <summary>
     /// Bước kiểm chứng thi hành SQL; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
     /// </summary>
     /// <remarks>Các bước được phối hợp qua <c>Open</c>, <c>db.Execute</c>.</remarks>
     /// <param name="sql">Giá trị SQL dùng khi thực hiện thao tác; kiểu string.</param>
-    static void Exec(string sql){using var db=Open();db.Execute(sql,new{admin},commandTimeout:90);}
+    static void Exec(string sql){using var db=Open();db.Execute(sql,new{admin,account},commandTimeout:90);}
     // Sequential connections reuse SqlClient's ambient transaction connection. No Complete: always rollback.
     static void Fixture(Action action,bool calculate=true)
     {
@@ -261,7 +264,7 @@ static class Program
         var reconciliation=new DAL_BANGLUONG().layDoiSoatTheoKy(First,Last).AsEnumerable().Single(x=>x.Field<string>("MaBL")==r.Field<string>("MaBL"));
         foreach(var name in new[]{"CongChuaDuyet","DonNghiChoDuyet","CongTrungNgayPhep","KhoanCongChuaPhanLoai","ChungTuChuaDuyet","HoaHongChuaHopLe"})Assert(Convert.ToInt32(reconciliation[name])==0,"Reconciliation issue: "+name);
         Assert((bool)reconciliation["ChinhSachHopLe"],"Policy invalid");
-        var attendance=new DAL_CHAMCONG().layChamCongTheoThang(First).AsEnumerable().Where(x=>x.Field<string>("MaNV")==Staff).ToArray();
+        var attendance=new DAL_CHAMCONG().layChamCongTheoThang(First,account).AsEnumerable().Where(x=>x.Field<string>("MaNV")==Staff).ToArray();
         Assert(attendance.Length==2 && attendance.All(x=>x.Field<decimal>("CongDuocTinh")==0.5m),"Monthly DAL query lost approved shifts");
         Assert(attendance.Single(x=>x.Field<string>("MaLLV")=="SYNC_L2").Field<int>("SoPhutDiTre")==20,"Monthly DAL query lost lateness source");
         var appointment=new DAL_LICHKHAM().layLichKhamHienThiTheoMa("SYNC_LK");
@@ -276,19 +279,24 @@ static class Program
     /// Bước kiểm chứng ngắn ca; chuẩn bị dữ liệu hoặc kiểm tra kết quả theo các điều kiện trong hàm.
     /// </summary>
     /// <remarks>Các bước được phối hợp qua <c>Open</c>, <c>db.BeginTransaction</c>, <c>db.Execute</c>, <c>method.Invoke</c>.</remarks>
-    static void ShortShift()
+    static void SelfAttendance(int lateMinutes,decimal expected) => Fixture(() =>
     {
-        using var db=Open();using var tx=db.BeginTransaction();
-        try{
-            db.Execute(FixtureSql,new{admin},tx);
-            db.Execute("DELETE dbo.CHAM_CONG WHERE MaLLV=N'SYNC_L1'; UPDATE dbo.LICH_LAM_VIEC SET GioVao=NULL,GioRa=NULL WHERE MaLLV=N'SYNC_L1'",transaction:tx);
-            // Public approval owns a transaction. Invoke its unchanged per-shift implementation with this rollback fixture's transaction.
-            var method=typeof(DAL_CHAMCONG).GetMethod("duyetMotCa",BindingFlags.Static|BindingFlags.NonPublic) ?? throw new Exception("Attendance DAL implementation changed; update rollback adapter");
-            method.Invoke(null,new object[]{db,tx,new ET_CHAMCONG{MaLLV="SYNC_L1",TrangThaiCu="Chờ đối soát",KetQua="Hoàn tất",GioVao=new DateTime(2000,1,3,8,0,0),GioRa=new DateTime(2000,1,3,8,10,0),LyDo="Rollback short shift fixture"},admin});
-            Assert(db.ExecuteScalar<decimal>("SELECT CongDuocTinh FROM dbo.CHAM_CONG WHERE MaLLV=N'SYNC_L1'",transaction:tx)==0.5m,"Ten-minute completed shift must receive 0.5 day");
-            Assert(db.ExecuteScalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_DUYET_CHAM_CONG WHERE MaLLV=N'SYNC_L1' AND CongMoi=0.5 AND NguoiThucHien=@admin AND GioRaMoi='20000103 08:10'",new{admin},tx)==1,"Missing attendance audit source");
-        }finally{if(tx.Connection is not null)tx.Rollback();}
-    }
+        Exec("UPDATE dbo.TAI_KHOAN SET MaNV=N'SYNC_NV' WHERE MaTK=@account; DELETE dbo.CHAM_CONG WHERE MaLLV=N'SYNC_L1'; UPDATE dbo.LICH_LAM_VIEC SET NgayLam=CONVERT(date,SYSDATETIME()),TrangThai=N'Đã xác nhận',GioVao=NULL,GioRa=NULL WHERE MaLLV=N'SYNC_L1'");
+        using(var db=Open()) db.Execute("UPDATE dbo.CA_LAM SET GioBatDau=CONVERT(time,DATEADD(minute,-@lateMinutes,SYSDATETIME())),GioKetThuc='23:59:59.9999999' WHERE MaCa=N'SYNC_CA'",new{lateMinutes});
+        var dal=new DAL_CHAMCONG();
+        DateTime before=dal.layThoiGianMayChu();
+        dal.chamCong("SYNC_L1",account);
+        DateTime after=dal.layThoiGianMayChu();
+        var row=dal.layChamCongTheoThang(new DateTime(after.Year,after.Month,1),account).AsEnumerable().Single(x=>x.Field<string>("MaLLV")=="SYNC_L1");
+        Assert(row.Field<decimal>("CongThucNhan")==expected,"Wrong attendance credit for server time");
+        // LICH_LAM_VIEC.GioVao is datetime2(0), rounded to the nearest second.
+        Assert(row.Field<DateTime>("GioVao")>=before.AddSeconds(-0.5) && row.Field<DateTime>("GioVao")<=after.AddSeconds(0.5),"Check-in did not use SQL Server time");
+        Assert(row.IsNull("GioRa"),"Self check-in must not fabricate an exit time");
+        Assert(Scalar<int>("SELECT COUNT(*) FROM dbo.NHAT_KY_DUYET_CHAM_CONG WHERE MaLLV=N'SYNC_L1' AND NguoiThucHien=N'SYNC_NV'")==1,"Missing self-attendance audit");
+        bool duplicate=false;
+        try{dal.chamCong("SYNC_L1",account);}catch(InvalidOperationException){duplicate=true;}
+        Assert(duplicate,"Duplicate check-in was accepted");
+    },calculate:false);
     /// <summary>
     /// Câu lệnh SQL dữ liệu kiểm thử SQL dùng trong các thao tác của lớp; giá trị đầu vào được truyền theo cách nơi gọi quy định.
     /// </summary>

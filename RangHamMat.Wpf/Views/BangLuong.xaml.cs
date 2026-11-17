@@ -71,7 +71,7 @@ namespace RangHamMat.Views
                 lblHoaHong.Text = danhSachLuong.AsEnumerable().Sum(h => h.Field<decimal>("TienHoaHong")).ToString("N0")+" đ";
                 lblChoDoiSoat.Text = choDoiSoat < 0 ? "Chưa có" : choDoiSoat.ToString("N0");
                 lblThongTinKy.Text = $"{tuNgay:MM/yyyy}  •  {danhSachLuong.Rows.Count} NHÂN VIÊN";
-                lblTrangThaiKy.Text = !laV9 ? "●  DATABASE CŨ" : choDoiSoat > 0 ? "●  CHỜ ĐỐI SOÁT" : "●  ĐÃ TẢI SỐ LIỆU";
+                lblTrangThaiKy.Text = !laV9 ? "●  DATABASE CŨ" : choDoiSoat > 0 ? "●  CA CHƯA GHI NHẬN: 0 CÔNG" : "●  ĐÃ TẢI SỐ LIỆU";
 
                 cboChucVu.Items.Clear();
                 cboChucVu.Items.Add(new ComboBoxItem { Content = "Tất cả chức vụ" });
@@ -347,12 +347,11 @@ namespace RangHamMat.Views
             decimal cong = Convert.ToDecimal(hang["CongThucTe"]);
             bool congHopLe = cong>=0 && cong<=Convert.ToDecimal(hang["CongChuan"]);
             bool tongHopLe = Convert.ToDecimal(hang["TongLuong"])>=0;
-            bool hopLe = caCho==0 && donCho==0 && congTrung==0 && hoaHongSai==0
+            bool hopLe = donCho==0 && congTrung==0 && hoaHongSai==0
                 && khoanCongSai==0 && chungTuCho==0 && chinhSachDung
                 && tongHopLe && congHopLe;
             string[] lyDo = new[]
             {
-                caCho>0 ? $"{caCho} ca chưa đối soát của nhân viên này" : "",
                 donCho>0 ? $"{donCho} đơn nghỉ chưa duyệt" : "",
                 congTrung>0 ? $"{congTrung} ca trùng ngày nghỉ đã duyệt" : "",
                 hoaHongSai>0 ? $"{hoaHongSai} khoản hoa hồng chưa hợp lệ" : "",
@@ -365,7 +364,7 @@ namespace RangHamMat.Views
                 ngayMayChu.Date<ngayDuocChot ? $"SQL Server chưa đến ngày {ngayDuocChot:dd/MM/yyyy}" : ""
             };
             string canhBao = string.Join("; ", lyDo.Where(s => s != ""));
-            lblDoiSoatChiTiet.Text = $"Ca chờ duyệt của nhân viên: {caCho}  •  Đơn nghỉ chờ: {donCho}  •  Trùng công/phép: {congTrung}\n" +
+            lblDoiSoatChiTiet.Text = $"Ca chưa ghi nhận/xác nhận (0 công, không chặn chốt): {caCho}  •  Đơn nghỉ chờ: {donCho}  •  Trùng công/phép: {congTrung}\n" +
                 $"Hoa hồng sai nguồn: {hoaHongSai}  •  Khoản cộng chưa phân loại: {khoanCongSai}  •  Chứng từ chờ duyệt: {chungTuCho}\n" +
                 $"Chính sách: {(chinhSachDung?"Hợp lệ":"Chưa hợp lệ")}  •  Chốt từ: {ngayDuocChot:dd/MM/yyyy}  •  Ngày SQL Server: {ngayMayChu:dd/MM/yyyy}\n" +
                 (canhBao=="" ? "Đã đủ điều kiện đối soát." : "Chưa thể chốt: " + canhBao);
