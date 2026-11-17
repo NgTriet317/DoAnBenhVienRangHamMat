@@ -1,0 +1,11 @@
+<Project>
+  <!-- Dicom.Native.dll is mixed-mode C++/CLI. Bundling treats it as a managed
+       assembly, but its P/Invoke exports require a physical DLL on Windows. -->
+  <Target Name="KeepMixedModeDicomCodecBesideBundle" BeforeTargets="_ComputeFilesToBundle" Condition="'$(PublishSingleFile)' == 'true'">
+    <ItemGroup>
+      <ResolvedFileToPublish Update="@(ResolvedFileToPublish)" Condition="'%(Filename)%(Extension)' == 'Dicom.Native.dll'">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+</Project>

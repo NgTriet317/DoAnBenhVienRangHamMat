@@ -44,7 +44,7 @@ Biến môi trường RHM_CONNECTION_STRING được ưu tiên hơn file. Instan
 
 Lần mở đầu sau khi cài MSI (kể cả gỡ rồi cài lại cùng phiên bản), ứng dụng luôn hiện **Cấu hình kết nối SQL Server**. Bấm **Lưu và tiếp tục** sau khi chọn đúng server/database; những lần mở sau tự dùng kết nối đã xác nhận. Đóng/hủy hoặc lưu lỗi sẽ yêu cầu cấu hình lại khi mở tiếp. Bộ cài quản lý cờ `HKCU\Software\RangHamMat\CaiDat\CanCauHinhDatabase`; không xóa database hay cấu hình SQL đã mã hóa. Chép đè tệp hoặc mở lại bộ cài ở chế độ sửa chữa không tương đương một lần gỡ/cài mới.
 
-Bộ cài ở `RHM/Release/setup.exe` và `RHM.msi` khi build **Release** project **RHM**; build Debug xuất vào `RHM/Debug`. Bộ cài 1.0.1 dùng profile `RangHamMat.Wpf/Properties/PublishProfiles/Installer.pubxml`, dành cho Windows x64, kèm runtime .NET 8 của WPF và Kiosk API; máy đích không cần cài SDK hay runtime .NET riêng. Giữ `setup.exe` và `RHM.msi` cùng thư mục khi chuyển máy. Bộ cài dùng tài khoản Windows hiện tại để cờ xác nhận cùng phạm vi với cấu hình SQL. Nút **Tự tìm kết nối** điền thông tin để người dùng kiểm tra và bấm **Lưu và tiếp tục**. Máy đích vẫn cần truy cập SQL Server có database ứng dụng. Kiểm tra cờ và đủ DLL đúng thư mục bằng `powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraCauHinhSauCaiDat.ps1`; lệnh chỉ đọc MSI, không cài/gỡ ứng dụng. Xem [sửa lỗi bộ cài thiếu DLL](docs/database/SUA_LOI_BO_CAI_20261117.md).
+Bộ cài ở `RHM/Release/setup.exe` và `RHM.msi` khi build **Release** project **RHM**; build Debug xuất vào `RHM/Debug`. Bộ cài **1.0.2** dùng profile `RangHamMat.Wpf/Properties/PublishProfiles/Installer.pubxml`, dành cho Windows x64. Thư viện và runtime .NET 8 được gom vào hai executable của WPF/Kiosk; máy đích không cần cài SDK hay runtime .NET riêng. Thư mục chính còn executable, `appsettings.json`, codec **`Dicom.Native.dll`** và bốn thư mục `AI`, **`Database`**, `DuLieu`, `KioskServer`. Codec mixed-mode phải nằm ngoài bundle để đọc ảnh DICOM nén. Giữ `setup.exe` và `RHM.msi` cùng thư mục khi chuyển máy. Bộ cài dùng tài khoản Windows hiện tại để cờ xác nhận cùng phạm vi với cấu hình SQL. Nút **Tự tìm kết nối** điền thông tin để người dùng kiểm tra và bấm **Lưu và tiếp tục**. Máy đích vẫn cần truy cập SQL Server có database ứng dụng. Kiểm tra payload/cờ bằng `powershell -NoProfile -ExecutionPolicy Bypass -File tools/KiemTraCauHinhSauCaiDat.ps1`; lệnh chỉ đọc MSI, không cài/gỡ ứng dụng. Xem [bộ cài gọn và hướng dẫn phát hành](docs/database/BO_CAI_GON_20261117.md); [lịch sử sửa lỗi thiếu DLL 1.0.1](docs/database/SUA_LOI_BO_CAI_20261117.md).
 
 ## Báo cáo và thống kê Sprint3
 
@@ -126,7 +126,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraDongBoSql.ps1
 # Nghiệm thu P6 nội bộ: tự tạo các DB thử mới, log/ma trận/hash trong obj/P6Evidence:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\KiemTraNghiemThu.ps1 -MayChu .
 
-dotnet publish RangHamMat.Wpf -c Release -o PhatHanh
+# Bản thư mục gọn, kèm runtime .NET, giữ Database và các tài nguyên:
+dotnet publish RangHamMat.Wpf -c Release -p:PublishProfile=FolderProfile -o PhatHanh
 ```
 
 Kiểm SQL gọi thủ tục chỉ đọc được cài từ file SQL chính. Project kiểm tạm sinh trong obj, không thêm project sản phẩm. Bộ kiểm ghi chỉ nhận database tiền tố RHM_Hospital_Test_. Hướng dẫn và bằng chứng các mốc cũ có nhắc Migrations/dữ liệu demo là lịch sử đã ngừng sử dụng; dùng README và file SQL hiện tại để cài/chạy.

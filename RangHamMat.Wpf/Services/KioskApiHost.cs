@@ -37,16 +37,17 @@ public sealed class KioskApiHost
         {
             if (Url is { } existing) return existing;
             var serverFolder = Path.Combine(AppContext.BaseDirectory, "KioskServer");
+            var appHost = Path.Combine(serverFolder, "RangHamMat.Kiosk.Api.exe");
+            bool coAppHost = File.Exists(appHost);
             var dll = Path.Combine(serverFolder, "RangHamMat.Kiosk.Api.dll");
-            if (!File.Exists(dll))
-                throw new FileNotFoundException("Thiếu KioskServer\\RangHamMat.Kiosk.Api.dll. Hãy build hoặc publish lại RangHamMat.Wpf từ mã nguồn đã hợp nhất.", dll);
+            // Bundle chứa DLL bên trong exe; DLL rời chỉ cần cho bản phát triển dùng dotnet.
+            if (!coAppHost && !File.Exists(dll))
+                throw new FileNotFoundException("Thiếu executable hoặc DLL của KioskServer. Hãy build hoặc publish lại RangHamMat.Wpf từ mã nguồn đã hợp nhất.", appHost);
 
             if (process != null) { try { process.Dispose(); } catch { } process = null; }
             lock (errorsLock) recentErrors.Clear();
             int port = PickFreePort();
             string endpoint = $"http://127.0.0.1:{port}";
-            var appHost = Path.Combine(serverFolder, "RangHamMat.Kiosk.Api.exe");
-            bool coAppHost = File.Exists(appHost);
             var startInfo = new ProcessStartInfo(coAppHost ? appHost : "dotnet")
             {
                 UseShellExecute = false,

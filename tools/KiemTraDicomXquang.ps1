@@ -1,4 +1,5 @@
 <# Kiểm chuyển đổi DICOM và bộ xem WPF với dữ liệu tổng hợp, không kết nối SQL. #>
+param([switch]$BanGon)
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 $scratch=Join-Path $root 'obj/DicomXrayChecks'
@@ -10,6 +11,13 @@ Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'DicomXrayChecks.cs.txt') -Desti
 if($LASTEXITCODE -ne 0){throw 'Restore bộ kiểm DICOM thất bại.'}
 Push-Location -LiteralPath $root
 try{
-    & dotnet run --project $project --no-restore -p:NuGetAudit=false -v quiet
+    if($BanGon){
+        $publishFolder=Join-Path $scratch 'compact'
+        & dotnet publish $project -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:WebView2NeverCopyLoaderDllToOutputDirectory=true -p:DebugType=None -p:DebugSymbols=false -p:NuGetAudit=false -o $publishFolder -v quiet
+        if($LASTEXITCODE -ne 0){throw 'Publish bộ kiểm DICOM single-file thất bại.'}
+        & (Join-Path $publishFolder 'DicomXrayChecks.exe')
+    }else{
+        & dotnet run --project $project --no-restore -p:NuGetAudit=false -v quiet
+    }
     if($LASTEXITCODE -ne 0){throw 'Kiểm DICOM thất bại; xem các dòng FAIL.'}
 }finally{Pop-Location}

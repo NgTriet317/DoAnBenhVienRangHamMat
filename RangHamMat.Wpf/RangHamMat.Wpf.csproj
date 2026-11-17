@@ -9,13 +9,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>RangHamMat</RootNamespace>
     <AssemblyName>RangHamMat.Wpf</AssemblyName>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
   </PropertyGroup>
   <ItemGroup>
-    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="..\Database\AnhXquang\*.jpg" Link="DuLieu\AnhXquang\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="..\Database\AnhXquang\*.json;..\Database\AnhXquang\*.md" Link="DuLieu\NguonAnhXquang\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="..\Database\QLBenhVienRangHamMat.sql" Link="Database\QLBenhVienRangHamMat.sql" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <Content Include="..\Database\AnhXquang\*.jpg" Link="DuLieu\AnhXquang\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <Content Include="..\Database\AnhXquang\*.json;..\Database\AnhXquang\*.md" Link="DuLieu\NguonAnhXquang\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <Content Include="..\Database\QLBenhVienRangHamMat.sql" Link="Database\QLBenhVienRangHamMat.sql" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
     <EmbeddedResource Include="Controls\QuyTacNhapLieu.xml" />
     <PackageReference Include="fo-dicom" Version="5.2.6" />
     <PackageReference Include="fo-dicom.Imaging.ImageSharp" Version="5.2.6" />
@@ -25,7 +25,7 @@
     <!-- Build backend từ cùng mã nguồn, không chạy các DLL đóng gói cũ trong Git. -->
     <ProjectReference Include="..\RangHamMat.Kiosk.Api\RangHamMat.Kiosk.Api.csproj" ReferenceOutputAssembly="false" Private="false" SkipGetTargetFrameworkProperties="true" GlobalPropertiesToRemove="TargetFramework;RuntimeIdentifier;SelfContained;PublishProfile" />
     <None Remove="AI\Config\AiSecrets.local.json" />
-    <None Update="AI\Prompts\**\*.md;AI\Config\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Update="AI\Prompts\**\*.md;AI\Config\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
     <None Include="AI\Config\AiSecrets.local.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" Condition="'$(Configuration)' == 'Debug' and Exists('AI\Config\AiSecrets.local.json')" />
   </ItemGroup>
   <Target Name="CopyCurrentKioskBackend" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
@@ -38,9 +38,11 @@
     <PropertyGroup>
       <KioskPublishRuntime Condition="'$(RuntimeIdentifier)' == ''">portable</KioskPublishRuntime>
       <KioskPublishRuntime Condition="'$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</KioskPublishRuntime>
-      <KioskPublishDirectory>$(MSBuildProjectDirectory)\obj\KioskPublish\$(Configuration)\$(KioskPublishRuntime)\</KioskPublishDirectory>
+      <KioskPackageFormat Condition="'$(PublishSingleFile)' == 'true'">single-file</KioskPackageFormat>
+      <KioskPackageFormat Condition="'$(PublishSingleFile)' != 'true'">folder</KioskPackageFormat>
+      <KioskPublishDirectory>$(MSBuildProjectDirectory)\obj\KioskPublish\$(Configuration)\$(KioskPublishRuntime)\$(KioskPackageFormat)\</KioskPublishDirectory>
     </PropertyGroup>
-    <MSBuild Projects="..\RangHamMat.Kiosk.Api\RangHamMat.Kiosk.Api.csproj" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=$(KioskPublishDirectory);RuntimeIdentifier=$(RuntimeIdentifier);SelfContained=$(SelfContained);PublishSingleFile=false" RemoveProperties="PublishProfile;PublishProfileFullPath;PublishProfileRootFolder" />
+    <MSBuild Projects="..\RangHamMat.Kiosk.Api\RangHamMat.Kiosk.Api.csproj" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=$(KioskPublishDirectory);RuntimeIdentifier=$(RuntimeIdentifier);SelfContained=$(SelfContained);PublishSingleFile=$(PublishSingleFile);IncludeNativeLibrariesForSelfExtract=$(IncludeNativeLibrariesForSelfExtract);EnableCompressionInSingleFile=$(EnableCompressionInSingleFile);DebugType=$(DebugType);DebugSymbols=$(DebugSymbols);CopyOutputSymbolsToPublishDirectory=$(CopyOutputSymbolsToPublishDirectory);PublishTrimmed=false" RemoveProperties="PublishProfile;PublishProfileFullPath;PublishProfileRootFolder" />
     <ItemGroup>
       <PublishedKioskFiles Include="$(KioskPublishDirectory)**\*" />
       <ResolvedFileToPublish Include="@(PublishedKioskFiles)">
@@ -48,6 +50,12 @@
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
         <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+  <Target Name="ExcludeLoosePublishDocumentation" BeforeTargets="_ComputeFilesToBundle" Condition="'$(PublishSingleFile)' == 'true'">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.pdb'" />
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.xml' and ('%(Filename)' == 'Microsoft.Web.WebView2.Core' or '%(Filename)' == 'Microsoft.Web.WebView2.Wpf' or '%(Filename)' == 'Microsoft.Web.WebView2.WinForms')" />
     </ItemGroup>
   </Target>
 </Project>

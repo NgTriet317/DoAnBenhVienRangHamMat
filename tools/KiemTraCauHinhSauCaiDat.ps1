@@ -81,23 +81,25 @@ try {
         $installedFiles[$relativePath] = $file
     }
     foreach ($requiredFile in @(
-        'RangHamMat.Wpf.exe', 'RangHamMat.Wpf.dll', 'RangHamMat.Wpf.deps.json', 'RangHamMat.Wpf.runtimeconfig.json',
-        'DAL.dll', 'BUS.dll', 'ET.dll', 'Dapper.dll', 'System.Configuration.ConfigurationManager.dll',
-        'Microsoft.Data.SqlClient.dll', 'WebView2Loader.dll', 'appsettings.json',
-        'coreclr.dll', 'hostfxr.dll', 'System.Private.CoreLib.dll', 'wpfgfx_cor3.dll',
-        'KioskServer/RangHamMat.Kiosk.Api.exe', 'KioskServer/coreclr.dll', 'KioskServer/hostfxr.dll',
-        'KioskServer/RangHamMat.Kiosk.Api.dll', 'KioskServer/RangHamMat.Kiosk.Api.runtimeconfig.json',
-        'KioskServer/DAL.dll', 'KioskServer/appsettings.json'
+        'RangHamMat.Wpf.exe', 'Dicom.Native.dll', 'appsettings.json', 'Database/QLBenhVienRangHamMat.sql',
+        'AI/Config/ReceptionistSettings.json', 'AI/Prompts/LeTanKiosk.md',
+        'KioskServer/RangHamMat.Kiosk.Api.exe', 'KioskServer/Dicom.Native.dll', 'KioskServer/appsettings.json', 'KioskServer/wwwroot/index.html'
     )) {
         Assert-Package ($installedFiles.ContainsKey($requiredFile) -and [int]$installedFiles[$requiredFile].FileSize -gt 0) "MSI chua dung vi tri: $requiredFile"
     }
     Assert-Package (@($installedFiles.Keys | Where-Object { $_ -like '*AiSecrets.local.json' }).Count -eq 0) 'Khong dong goi file khoa AI cuc bo'
-    foreach ($versionedFile in @('RangHamMat.Wpf.dll', 'KioskServer/RangHamMat.Kiosk.Api.dll')) {
-        Assert-Package ([version]$installedFiles[$versionedFile].Version -ge [version]'1.0.1.0') "Version file duoc tang de nang cap: $versionedFile"
+    Assert-Package (@($installedFiles.Keys | Where-Object {
+        ($_ -like '*.dll' -and $_ -notin @('Dicom.Native.dll', 'KioskServer/Dicom.Native.dll')) -or $_ -like '*.pdb'
+    }).Count -eq 0) 'Chi giu DLL codec DICOM mixed-mode, con lai DLL/runtime da gom vao executable'
+    Assert-Package ($installedFiles.Count -le 50) 'Payload gon khong qua 50 file'
+    foreach ($versionedFile in @('RangHamMat.Wpf.exe', 'KioskServer/RangHamMat.Kiosk.Api.exe')) {
+        Assert-Package ([version]$installedFiles[$versionedFile].Version -ge [version]'1.0.2.0') "Version file duoc tang de nang cap: $versionedFile"
+        Assert-Package ([long]$installedFiles[$versionedFile].FileSize -gt 20MB) "Executable kem runtime: $versionedFile"
     }
     if ($PublishPath) {
         $publishRoot = (Resolve-Path -LiteralPath $PublishPath).Path.TrimEnd('\', '/')
         $publishFiles = @(Get-ChildItem -LiteralPath $publishRoot -Recurse -File)
+        Assert-Package ($publishFiles.Count -eq $installedFiles.Count) 'MSI khong them/bo sot file so voi publish'
         foreach ($publishFile in $publishFiles) {
             $relativePath = $publishFile.FullName.Substring($publishRoot.Length + 1).Replace('\', '/')
             Assert-Package ($installedFiles.ContainsKey($relativePath) -and [long]$installedFiles[$relativePath].FileSize -eq $publishFile.Length) "Khop file publish: $relativePath" -Quiet
