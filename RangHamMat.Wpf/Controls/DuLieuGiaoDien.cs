@@ -340,7 +340,7 @@ public static class DuLieuGiaoDien
             ["CHI_TIET_DON_THUOC"] = new BUS_CHITIETDONTHUOC(transaction).layToanBoChiTietDonThuoc().Cast<object>().ToArray(),
             ["NHAN_VIEN"] = (clinicalMode.HasValue
                 ? new BUS_NHANVIEN(transaction).DocDanhSachKhongGhi()
-                : new BUS_NHANVIEN().layToanBoNhanVien()).Cast<object>().ToArray(),
+                : new BUS_NHANVIEN(transaction).layToanBoNhanVien()).Cast<object>().ToArray(),
             ["PHONG"] = new BUS_PHONG(transaction).layToanBoPhong().Cast<object>().ToArray(),
             ["CA_LAM"] = new BUS_CALAM(transaction).layToanBoCaLam().Cast<object>().ToArray(),
             ["DICH_VU"] = new BUS_DICHVU(transaction).layToanBoDichVu().Cast<object>().ToArray(),

@@ -96,6 +96,9 @@ public partial class MainWindow
     private async Task ApDungDongBoAsync(CancellationToken token)
     {
         if(!dongBoPending.CoThayDoi){dongBoStatus.Text="Đồng bộ: đang theo dõi thay đổi";return;}
+        var safeWindowTables=dongBoPending.Chup().Keys.ToArray();
+        await DongBoManHinh.RefreshWindowsAsync(this,safeWindowTables,token);
+        token.ThrowIfCancellationRequested();
         if(DongBoManHinh.IsBusy(this))
         {dongBoStatus.Text="Có dữ liệu mới; lưu hoặc kết thúc thao tác để cập nhật";return;}
         var snapshot=dongBoPending.Chup();var tables=snapshot.Keys.ToArray();

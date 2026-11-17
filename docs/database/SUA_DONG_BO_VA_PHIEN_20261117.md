@@ -50,9 +50,10 @@ Các bộ SQL chỉ ghi database có tiền tố RHM_Hospital_Test_. Chưa nghi�
 | --- | --- |
 | SingleSessionChecks | 12 nhóm SQL pass, gồm 5 API ghi lương/chấm công/chính sách và giữ khóa tới commit |
 | SessionWpfChecks | 12/12, token DPAPI v2 và forced logout cửa sổ có nháp |
-| WpfSyncChecks | 26/26, bổ sung focus bộ lọc không chặn runtime |
+| WpfSyncChecks | 28/28, gồm focus bộ lọc và danh sách modal giữ nội dung đối chiếu |
 | RuntimeCoverageChecks | 15/15, Nhật ký, dependency và retry |
-| RuntimeLoginSyncChecks | 4/4 với WPF và SQL thật: login/logout, focus, watcher, phiên mới tiếp tục dùng được |
+| RuntimeLoginSyncChecks | 6/6 với WPF và SQL thật: login/logout, focus, danh sách AI trong modal, xung đột bản khai, watcher và phiên mới tiếp tục dùng được |
+| AllModulesSyncChecks | 29/29: 26 route chính và 3 tab con kho; đọc SQL và áp dụng adapter thật, 2 route tĩnh/cục bộ được phân biệt rõ |
 | SqlSyncChecks --full-schema | 21/21, 74 bảng và giữ dữ liệu khi cài lại tracking |
 | Hồi quy khám/điều trị | 47/47 |
 | Hồi quy ghi nhớ đăng nhập | 15 kiểm tệp và 7 pha SQL ở các tiến trình riêng đều pass |
@@ -60,4 +61,30 @@ Các bộ SQL chỉ ghi database có tiền tố RHM_Hospital_Test_. Chưa nghi�
 
 Lệnh kiểm SQL đều chạy trên fixture riêng. RuntimeLoginSyncChecks nhận server và tên database đã được cài đủ schema; chỉ chấp nhận tiền tố RHM_Hospital_Test_. Log cục bộ ở obj/sync17-*.log và obj/runtime-session-flow.log.
 
-Trạng thái triển khai tại thời điểm bàn giao mã: chưa áp dụng SQL lên database nghiệp vụ; đã gửi yêu cầu duyệt bước cấu hình database đang dùng. Phần đã thử gồm cả chạy lại installer riêng trên database fixture. Khi triển khai thực tế, dùng script ở trên và cập nhật bản ứng dụng mới trên tất cả máy.
+## Triển khai thực tế ngày 17/11/2026
+
+Đã áp dụng sau khi người dùng xác nhận “Hãy triển khai giúp tôi”, trên `DESKTOP-C9VCE8A`, database `QLBenhVienRangHamMat`. Dùng installer riêng, không chạy lại phần nạp snapshot nghiệp vụ.
+
+- Sao lưu COPY_ONLY có CHECKSUM và `RESTORE VERIFYONLY` thành công trước khi thay đổi. Tệp trên SQL server: `C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Backup\QLBenhVienRangHamMat_BeforeSessionSync_20261117_102510_7FC51A2A.bak`.
+- Cả 74/74 bảng đã bật Change Tracking; `snapshot_isolation_state=1`.
+- Có cột `PhienKeTiep`, chỉ mục `UX_RHM_PhienDangMo_MaTK` và `IX_Rhm_Phien_Account`; không có tài khoản trùng phiên đang mở sau cài.
+- Số bệnh nhân/hóa đơn/lượt khám/nhân viên trước và sau vẫn là 47/36/36/14. Bộ kiểm chức năng ghi dữ liệu chỉ chạy trên database `RHM_Hospital_Test_*`.
+- Bản chạy xuất vào `PhatHanh`, `DongBo:Bat=true`, `ChuKyGiay=2`. Sao chép toàn bộ thư mục này tới các máy trạm và cấu hình cùng SQL server/database. Chưa truy cập hoặc cập nhật trực tiếp các máy trạm khác.
+- Kiểm lại gói Release: hash WPF/BUS/DAL/ET/backend trùng bản build; công cụ mở giao diện dùng DLL trong `PhatHanh` đạt 2/2. Hồi quy sau bản sửa giao dịch đạt 47/47, polling nhân sự/cache đạt 5/5.
+
+## Phần hoàn thiện toàn bộ phân hệ
+
+`AllModulesSyncChecks` mở theo chính `MainWindow.AllPages`, kiểm adapter đang hiển thị rồi đưa một lượt invalidation đầy đủ qua bộ điều phối thật. Đây là kiểm điều hướng/đọc/áp dụng với SQL, không phải 29 kiểm mạng hoặc toàn bộ nút ghi nghiệp vụ. Tab nhập kho được chuyển từ form tạo mới sang xem phiếu đã có để kiểm chế độ đọc; form nhập vẫn được hoãn có chủ đích.
+
+Kiểm này phát hiện tải cache ngoài lâm sàng mở BUS nhân sự trên kết nối thứ hai, tự chờ khóa tài khoản đang được giao dịch cache giữ. Đã dùng `BUS_NHANVIEN(transaction)` cùng giao dịch như các bảng còn lại; hành vi cập nhật trạng thái nghỉ khi tải chủ động được giữ, tải tự động vẫn chỉ đọc.
+
+Cửa sổ tiếp nhận AI có đường cập nhật danh sách riêng ngay cả khi modal đang mở. Không thay đối tượng gốc hoặc ô đối chiếu; nếu bản khai đang chọn thay đổi/được xử lý trên máy khác thì khóa nút tạo phiếu và yêu cầu Làm mới để đối chiếu lại. Không tự tạo bệnh nhân/phiếu chính thức. Bản in và hội thoại cục bộ vẫn giữ nội dung của phiên đang xem.
+
+Lệnh kiểm mới:
+
+```powershell
+dotnet run --project Test/AllModulesSyncChecks -- 'lpc:.' RHM_Hospital_Test_RuntimeSession_20261117
+dotnet run --project Test/RuntimeLoginSyncChecks -- 'lpc:.' RHM_Hospital_Test_RuntimeSession_20261117
+```
+
+Fixture phải được cài đủ schema và dữ liệu thử (có admin001 và chứng từ kho); không trỏ các lệnh kiểm này tới database nghiệp vụ. Hai kiểm không chạy đồng thời trên cùng fixture vì đăng nhập mới sẽ thu hồi phiên trước.

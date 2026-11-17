@@ -42,6 +42,8 @@ internal static class Program
             ("modal-nested-dispatcher-postpones", ModalWindow),
             ("editable-textbox-focus-postpones", TextBoxFocus),
             ("filter-focus-does-not-block-runtime-updates", FilterFocus),
+            ("modal-safe-list-refreshes-without-overwriting-editor", ModalSafeList),
+            ("ai-intake-list-preserves-draft-and-detects-remote-approval", AiIntakeList),
             ("datagrid-row-edit-postpones", DataGridEditing),
             ("failed-refresh-restores-source-selection-and-retries", FailedRefresh),
             ("audit-session-changes-skip-cache-observer", AuditExclusion),
@@ -266,6 +268,56 @@ internal static class Program
         host.Pending.GhiNhan(["BENH_NHAN"]);await host.Apply();
         Require(calls==1&&!host.Pending.CoThayDoi&&input.Text=="Bộ lọc chưa áp dụng",
             "A focused search/filter field blocks live updates even though it is not an unsaved business form");
+    }
+    private static async Task ModalSafeList()
+    {
+        await Drain();
+        var register=typeof(DongBoManHinh).GetMethod("RegisterPreparedWindow",All);
+        Require(register is not null,"Read-only lists in an open modal have no runtime registration");
+        using var host=new Host();
+        var editor=new TextBox{Text="Nội dung nhân viên đang đối chiếu"};
+        var list=new ListBox{ItemsSource=new[]{"BanKhai1"}};
+        var panel=new StackPanel();panel.Children.Add(editor);panel.Children.Add(list);
+        var modal=new Window{Owner=host.Owner,Content=panel,Width=400,Height=260,ShowInTaskbar=false};
+        int reads=0;Exception? failure=null;
+        Func<CancellationToken,Task<Action>> prepare=_=>
+        {
+            reads++;return Task.FromResult<Action>(()=>list.ItemsSource=new[]{"BanKhai1","BanKhai2"});
+        };
+        register!.Invoke(null,[modal,new[]{"BENH_NHAN"},prepare,null]);
+        modal.Loaded+=async(_,_)=>
+        {
+            try
+            {
+                await Drain();Invoke(typeof(DongBoManHinh),null,"ObserveChanges",(object)new[]{"BENH_NHAN"});host.Pending.GhiNhan(["BENH_NHAN"]);
+                await host.Apply();
+                Require(reads==1&&list.Items.Count==2&&editor.Text=="Nội dung nhân viên đang đối chiếu",
+                    "The modal list failed to update, or its editor was overwritten");
+                Require(host.Pending.CoThayDoi,"Refreshing a safe modal list acknowledged the deferred owner batch");
+                await host.Apply();Require(reads==1,"The same pending owner batch repeatedly reloads the modal list");
+            }
+            catch(Exception error){failure=error;}
+            finally{modal.Close();}
+        };
+        modal.ShowDialog();if(failure is not null)ExceptionDispatchInfo.Capture(failure).Throw();
+    }
+    private static Task AiIntakeList()
+    {
+        var window=new RangHamMat.Views.TiepNhanAI();
+        var apply=window.GetType().GetMethod("ApplyDongBoBanKhai",All);
+        Require(apply is not null,"AI intake list has no isolated runtime application path");
+        var selected=new ET.ET_AITIEPNHAN{MaPhien=Guid.NewGuid(),HoTen="Bản khai gốc",TrangThai="ChoNhanVien"};
+        window.GetType().GetField("dangDoiChieu",All)!.SetValue(window,true);
+        window.GetType().GetField("dangChon",All)!.SetValue(window,selected);
+        var editor=(TextBox)window.FindName("txtHoTenDuyet");editor.Text="Nội dung nhân viên đang sửa";
+        window.GetType().GetField("dangDoiChieu",All)!.SetValue(window,false);
+        var fresh=new ET.ET_AITIEPNHAN{MaPhien=selected.MaPhien,HoTen=selected.HoTen,TrangThai="DaDuyet",MaPhieu="PK_REMOTE"};
+        apply!.Invoke(window,[new List<ET.ET_AITIEPNHAN>{fresh,new(){MaPhien=Guid.NewGuid(),HoTen="Bản khai mới"}}]);
+        Require(((DataGrid)window.FindName("gridPhien")).Items.Count==2&&editor.Text=="Nội dung nhân viên đang sửa",
+            "A new AI draft failed to reach the list or overwrote the current review");
+        Require(ReferenceEquals(window.GetType().GetField("dangChon",All)!.GetValue(window),selected),"Runtime refresh replaced the original write snapshot");
+        Require(!((Button)window.FindName("btnTaoPhieu")).IsEnabled,"Remote approval did not block creation from the old review");
+        window.Close();return Task.CompletedTask;
     }
 
     // Removing the DataGridRow edit guard must fail even after keyboard focus leaves its editing TextBox.

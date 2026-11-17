@@ -59,7 +59,7 @@ Bổ sung ngày 17/11: [ma trận đường chạy và lỗ phụ thuộc đã s
 | `NhaCungCap` | Cache/Observe | NHA_CUNG_CAP, hóa đơn nhập/lô/thiết bị liên quan; modal nhập liệu hoãn | Tĩnh + build |
 | `BaoCao` | RegisterAsync tại view | Nguồn theo báo cáo hiện tại; giữ kỳ/bộ lọc; chặn khi đang tải | Tĩnh + build |
 | `TroLyAI` | Giữ phiên chat cục bộ | Không đăng ký phát lại hội thoại/AI_TIN_NHAN; bản khai đã lưu nhận qua luồng tiếp nhận AI | Đọc mã nguồn |
-| `TiepNhanAI` | Window modal, hoãn | Các bản khai AI đã lưu và lựa chọn tiếp nhận; không refresh Window khi đang đối chiếu/nhập xác nhận; mở lại/tải lại chủ động đọc trạng thái mới | Đọc mã nguồn; cố ý hoãn |
+| `TiepNhanAI` | Prepared danh sách riêng trong Window | Cập nhật bản khai đã lưu ngay khi modal mở; giữ ô đối chiếu và đối tượng gốc; bản khai đang chọn đổi ở máy khác thì khóa tạo phiếu, yêu cầu Làm mới | WpfSyncChecks + RuntimeLoginSyncChecks, SQL thật |
 | `CuaSoTaiKhoan` | Prepared cùng adapter `TaiKhoan` | Đọc trước tài khoản/vai trò/nhân viên/khoa/phòng; mốc nội dung riêng bảo vệ editor nhúng | Tĩnh + build |
 | `ChiTietNhanSu`, `ChiTietChungChi`, `CuaSoThemChungChi`, các Window thêm/sửa/in/xem ảnh | Hoãn bởi modal/cửa sổ đang mở | Giữ nội dung/bản gốc lúc bắt đầu sửa; đóng cửa sổ rồi áp dụng dữ liệu còn chờ | Đọc mã nguồn |
 | `ChiTietHoSo`, `CuaSoBenhNhan`, `CuaSoKhamDieuTri`, `CuaSoDonThuoc`, `CuaSoDichVu`, `CuaSoHoaDon`, `CuaSoPhieuHuongDan`, `CuaSoNhapXuatVatTu`, `CuaSoBaoTri`, `CuaSoBangLuong`, `CuaSoNhaCungCap` | Form/modal workspace; Observe nếu có | Không đăng ký tải đè form nhập; phần hiển thị cache cập nhật sau khi workspace hết pending | Tĩnh + build |
@@ -76,3 +76,5 @@ Bổ sung ngày 17/11: [ma trận đường chạy và lỗ phụ thuộc đã s
 - Kiểm tích hợp cùng nhánh đã báo pass: 5 tình huống polling thật, giữ nháp nhân sự và cập nhật/xóa cache nhà cung cấp trên database test riêng, 21 kiểm SQL Change Tracking, 47 hồi quy lâm sàng, 2 kiểm mở các màn hình WPF và kiểm trạng thái AI. Phạm vi này không chứng minh mọi đường tương tác của từng adapter hoặc nghiệm thu mạng hai máy vật lý.
 - Các observer lâm sàng cũ có thể còn lời gọi SQL đồng bộ ngắn sau khi cache đã được chuẩn bị ở nền; đây là giới hạn của đường tải cũ, không coi chúng là toàn bộ đường apply đã loại SQL. Các adapter Prepared tải riêng trong bảng trên dùng dữ liệu vật hóa để áp dụng.
 - Chưa thực hiện nghiệm thu giao diện tương tác cho từng hàng hoặc hai máy vật lý trong phần kiểm adapter này. Các kiểm runtime/SQL và hướng dẫn triển khai được tổng hợp riêng trong `DONG_BO_GIUA_CAC_MAY.md`; cần ghi đúng cấp bằng chứng của chúng.
+
+Cập nhật 17/11: `AllModulesSyncChecks` đã mở 26 route chính và 3 tab con kho, chạy adapter với SQL thật (29 kiểm pass; TongQuan/TroLyAI là tĩnh/cục bộ). Kiểm này dùng invalidation đầy đủ có kiểm soát; polling thật được kiểm riêng tại RuntimeSyncChecks và RuntimeLoginSyncChecks. Chi tiết và triển khai SQL thật xem [bản ghi sửa đồng bộ/phiên](SUA_DONG_BO_VA_PHIEN_20261117.md).

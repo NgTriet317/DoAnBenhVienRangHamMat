@@ -80,7 +80,7 @@ Kiểm độc lập Nhật ký xác nhận mặc định không đặt ngày, h�
 | TiepNhanKham / AppWorkspace | Cố ý hoãn suốt khi form tiếp nhận mở |
 | ThemLichKham, ChiTietLichKham, ChiTietHoSo / lịch và workspace | Form/modal giữ bản gốc; ThemLichKham có dirty input tường minh |
 | ChiTietNhanSu, CuaSoThemChungChi, ChiTietChungChi / nhân sự và chứng chỉ | Window modal; đóng xong mới áp dụng pending |
-| TiepNhanAI / PhieuHuongDan | Window modal; nhân viên đối chiếu bản khai/danh tính/phòng/bác sĩ; tải lại chủ động hoặc mở lại. Không tự tạo phiếu hoặc tự duyệt |
+| TiepNhanAI / PhieuHuongDan | Prepared danh sách bản khai ngay trong modal; giữ phần đối chiếu/danh tính/phòng/bác sĩ và bản gốc; bản khai đổi từ xa thì khóa tạo phiếu, bấm Làm mới để đối chiếu lại. Không tự tạo phiếu hoặc tự duyệt |
 | CauHinhMayChu / khởi động | Cấu hình kết nối của máy, trước vòng đồng bộ; không nhận thay đổi cấu hình máy khác |
 | XemAnhXquang, XemTruocHoaDon, XemTruocDonThuoc, các document/print controls | Tài liệu hoặc tệp đã dựng; không tự đổi bản in đang xem. Các danh sách read-only trong Window thường vẫn có adapter riêng |
 | ScheduleView, ChartView, PrescriptionCard, ExaminationCard, InvoiceDocument, PrescriptionPrintLine | Trình bày nguồn cha; không có vòng đồng bộ SQL độc lập |
@@ -99,3 +99,13 @@ Không đưa MAU_KE_HOACH_DIEU_TRI/CHI_TIET_MAU_KE_HOACH vào adapter KhamLamSan
 - Nghiệm thu nhiều màn hình và hai tiến trình SQL do các bộ WpfSyncChecks/RuntimeSyncChecks/SqlSyncChecks cung cấp riêng; không dùng kết quả 15 kiểm trên để khẳng định đã nghiệm thu hai máy vật lý hoặc mọi nút nghiệp vụ.
 
 Chạy kiểm mới không cần database. Mọi kiểm SQL phải dùng database fixture `RHM_Hospital_Test_*`; không dùng database nghiệp vụ.
+
+## Kiểm tích hợp bổ sung toàn bộ lối vào
+
+`AllModulesSyncChecks`: 29/29 pass với WPF và SQL thật, gồm 26 lối vào từ `MainWindow.AllPages` và 3 tab con nhập/xuất. Mỗi màn hình dữ liệu phải có adapter hiển thị, đọc/áp dụng thành công và xác nhận hết pending; TongQuan và TroLyAI được kiểm là nội dung tĩnh/cục bộ. Tab nhập kho chọn phiếu đã lưu để thoát form tạo mới mặc định. Invalidation được đưa chủ động qua bộ điều phối; không đánh đồng kết quả này với 29 tình huống polling từ máy khác.
+
+`RuntimeLoginSyncChecks`: 6/6 pass với vòng polling thật và các kết nối SQL riêng, bổ sung hai tình huống mở modal tiếp nhận AI: bản khai mới xuất hiện trong danh sách, trạng thái bản khai đang đối chiếu đổi từ xa làm khóa tạo phiếu. Cả hai giữ ô đang nhập; số bệnh nhân/phiếu khám không đổi do đồng bộ.
+
+`WpfSyncChecks`: 28/28 pass, thêm bảo vệ nháp AI và danh sách modal độc lập, không xác nhận nhầm pending của cửa sổ cha. Các giới hạn hai máy vật lý và các nút nghiệp vụ vẫn như trên.
+
+Đã sửa lỗi dùng kết nối phụ khi cache ngoài lâm sàng tải nhân sự: kết nối đó chờ khóa phiên do chính giao dịch cache giữ. BUS nhân sự nay nhận cùng transaction; toàn bộ 29 lượt điều hướng/áp dụng đã chạy qua sau sửa.

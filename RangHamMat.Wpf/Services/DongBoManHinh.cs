@@ -12,7 +12,7 @@ namespace RangHamMat.Services;
 internal sealed class DongBoDaDoiManHinhException : InvalidOperationException;
 
 /// <summary>Đăng ký làm mới tường minh; giữ biểu mẫu và giao dịch đang xử lý.</summary>
-public static class DongBoManHinh
+public static partial class DongBoManHinh
 {
     public static readonly DependencyProperty LaBoLocProperty=DependencyProperty.RegisterAttached(
         "LaBoLoc",typeof(bool),typeof(DongBoManHinh),new FrameworkPropertyMetadata(false,FrameworkPropertyMetadataOptions.Inherits));
@@ -123,7 +123,7 @@ public static class DongBoManHinh
         var previous=DangCapNhatTuDong;DangCapNhatTuDong=true;
         try{apply();}finally{DangCapNhatTuDong=previous;}
     }
-    private static Action CaptureSources(UserControl control)
+    private static Action CaptureSources(FrameworkElement control)
     {
         var sources=ClinicalPendingWork.Nodes(control).OfType<ItemsControl>()
             .Select(c=>(Control:c,Source:c.ItemsSource,Selected:(c as Selector)?.SelectedItem)).ToArray();

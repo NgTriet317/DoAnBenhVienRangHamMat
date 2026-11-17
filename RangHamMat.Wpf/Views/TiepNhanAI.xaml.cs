@@ -28,6 +28,7 @@ public partial class TiepNhanAI : Window
     public TiepNhanAI()
     {
         InitializeComponent();
+        DangKyDongBoBanKhai();
         Loaded += (_, _) =>
         {
             if (!CoQuyenDuyetBanKhai())
@@ -95,6 +96,8 @@ public partial class TiepNhanAI : Window
 
     private void gridPhien_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if(dongBoDangDienDanhSach)return;
+        dongBoBanKhaiXungDot=false;btnTaoPhieu.IsEnabled=true;
         // Ngăn các sự kiện sửa ngày sinh gọi SQL giữa lúc đang nạp bản khai.
         dangDoiChieu = true;
         dangChon = gridPhien.SelectedItem as ET_AITIEPNHAN;
@@ -315,6 +318,7 @@ public partial class TiepNhanAI : Window
 
     private void TaoPhieu_Click(object sender, RoutedEventArgs e)
     {
+        if(dongBoBanKhaiXungDot){lblThongBao.Text="Bản khai đã đổi ở máy khác; chọn lại hoặc Làm mới để đối chiếu.";return;}
         if (!CoQuyenDuyetBanKhai())
         {
             MessageBox.Show("Tài khoản không còn quyền tiếp nhận bệnh nhân.", "Phân quyền");
@@ -376,6 +380,7 @@ public partial class TiepNhanAI : Window
                             "Dữ liệu sẽ được ghi chính thức vào bệnh nhân, hồ sơ và phiếu khám.",
                 "Xác nhận tạo phiếu từ AI", MessageBoxButton.YesNo, MessageBoxImage.Question)
             != MessageBoxResult.Yes) return;
+        if(dongBoBanKhaiXungDot)return;
         try
         {
             btnTaoPhieu.IsEnabled = false;

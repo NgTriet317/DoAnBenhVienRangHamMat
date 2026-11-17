@@ -53,6 +53,7 @@ internal static class Program
     await As(other,()=>{new BUS_NHATKY().KetThucPhien(otherSession);return true;},otherSession);
     await Until(()=>Has(otherSession,"LOGOUT"),main);
     Console.WriteLine("PASS remote LOGOUT appears without reload in the open audit view");
+    await AiModal(main,db,other);
     var newAdmin=await As(admin,()=>new BUS_NHATKY().BatDauPhien(new(){MaTK=admin.MaTK,MaNV=admin.MaNV}));
     await Until(()=>closed&&message==ThongBaoPhien.DangNhapMayKhac,main);
     Require(!PhienDangNhap.DaDangNhap&&PhienDangNhap.MaPhien==Guid.Empty,"Revoked UI retained its account/session");
@@ -69,6 +70,43 @@ internal static class Program
    }
   }));
   app.Run();return exit;
+ }
+ private static async Task AiModal(MainWindow main,SqlConnection db,ET_TAIKHOAN sender)
+ {
+  var first=Guid.NewGuid();var second=Guid.NewGuid();
+  ET_AI_BAN_KHAI Draft(Guid id)=>new(){MaPhien=id,HoTen="Fixture runtime AI",NgaySinh=new DateTime(2000,1,1),SoDienThoai="0901234567",LyDoKham="Kiểm tra danh sách đồng bộ",LoaiKham="ThongThuong"};
+  try
+  {
+   await As(sender,()=>new BUS_AITIEPNHAN().luuBanKhai(Draft(first)));
+   var counts=await db.QuerySingleAsync<(int,int)>("SELECT (SELECT COUNT(*) FROM dbo.BENH_NHAN),(SELECT COUNT(*) FROM dbo.PHIEU_KHAM_BENH)");
+   var modal=new RangHamMat.Views.TiepNhanAI{Owner=main};Exception? failure=null;
+   modal.Loaded+=async(_,_)=>
+   {
+    try
+    {
+     var list=(DataGrid)modal.FindName("gridPhien");
+     list.SelectedItem=list.Items.OfType<ET_AITIEPNHAN>().Single(x=>x.MaPhien==first);
+     var editor=(TextBox)modal.FindName("txtLyDoDuyet");editor.Text="Nội dung đối chiếu chưa lưu";Keyboard.Focus(editor);
+     await As(sender,()=>new BUS_AITIEPNHAN().luuBanKhai(Draft(second)));
+     await Until(()=>list.Items.OfType<ET_AITIEPNHAN>().Any(x=>x.MaPhien==second),main);
+     Require(editor.Text=="Nội dung đối chiếu chưa lưu","AI modal list overwrote the current review");
+     Console.WriteLine("PASS remote AI draft appears through the real poll while a modal review retains input");
+     await db.ExecuteAsync("UPDATE dbo.AI_PHIEN_TIEP_NHAN SET TrangThai=N'CanHoTro',NgayCapNhat=SYSUTCDATETIME() WHERE MaPhien=@first",new{first});
+     await Until(()=>!((Button)modal.FindName("btnTaoPhieu")).IsEnabled,main);
+     Require(editor.Text=="Nội dung đối chiếu chưa lưu","Remote status change overwrote review input");
+     var after=await db.QuerySingleAsync<(int,int)>("SELECT (SELECT COUNT(*) FROM dbo.BENH_NHAN),(SELECT COUNT(*) FROM dbo.PHIEU_KHAM_BENH)");
+     Require(after==counts,"Automatic AI refresh created a patient or official receipt");
+     Console.WriteLine("PASS remote AI status disables stale approval without creating records or losing input");
+    }
+    catch(Exception error){failure=error;}
+    finally{modal.Close();}
+   };
+   modal.ShowDialog();if(failure is not null)System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
+  }
+  finally
+  {
+   await db.ExecuteAsync("DELETE dbo.AI_SU_KIEN WHERE MaPhien IN(@first,@second);DELETE dbo.AI_TIEP_NHAN_NHAP WHERE MaPhien IN(@first,@second);DELETE dbo.AI_PHIEN_TIEP_NHAN WHERE MaPhien IN(@first,@second)",new{first,second});
+  }
  }
  private static async Task<T> As<T>(ET_TAIKHOAN account,Func<T> action,Guid? session=null)
   =>await Task.Run(()=>
