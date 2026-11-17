@@ -22,7 +22,6 @@
     <ProjectReference Include="..\ET\ET.csproj" />
     <!-- Build backend từ cùng mã nguồn, không chạy các DLL đóng gói cũ trong Git. -->
     <ProjectReference Include="..\RangHamMat.Kiosk.Api\RangHamMat.Kiosk.Api.csproj" ReferenceOutputAssembly="false" Private="false" />
-    <None Remove="AI\Config\AiSecrets.local.json" />
     <None Update="AI\Prompts\**\*.md;AI\Config\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Include="AI\Config\AiSecrets.local.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" Condition="'$(Configuration)' == 'Debug' and Exists('AI\Config\AiSecrets.local.json')" />
   </ItemGroup>
